@@ -21,6 +21,18 @@ need to handle.
 - [ePerolehan Tender Notices (DIIKLANKAN)](data/eperolehan-diklankan.md)
 - [PriceCatcher (Daily Grocery Prices)](data/pricecatcher.md)
 
+### Daily Reference Data (Bank Negara Malaysia)
+
+These four BNM reference-rate datasets are updated on weekdays at fixed MYT
+publication times:
+
+- [BNM Daily Exchange Rates (0900)](data/exchangerates_daily_0900.md)
+- [BNM Daily Exchange Rates (1130)](data/exchangerates_daily_1130.md)
+- [BNM Daily Exchange Rates (1200)](data/exchangerates_daily_1200.md)
+- [BNM Daily Exchange Rates (1700)](data/exchangerates_daily_1700.md)
+
+DataPulse MY currently tracks seven datasets in total.
+
 ## How to use it
 
 Start with [`datapulse.json`](datapulse.json) to discover datasets and their
