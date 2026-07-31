@@ -8,6 +8,8 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  # openwiki writes a new workflow file to the repo as part of its refresh; allow it.
+  workflows: write
 
 jobs:
   update:
