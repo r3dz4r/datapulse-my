@@ -26,15 +26,14 @@ jobs:
 
       # OpenWiki reads credentials from ~/.openwiki/.env in non-interactive mode.
       # The README's example workflow writes that file before invoking openwiki.
-      # See https://docs.openwik... (provider-and-model-config).
+      # See https://github.com/langchain-ai/openwiki/blob/main/openwiki/operations/credentials-and-updates.md
       - name: Write OpenWiki credentials
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           mkdir -p ~/.openwiki
-          cat > ~/.openwiki/.env <<EOF
-          OPENWIKI_PROVIDER=openrouter
-          OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
-          OPENWIKI_MODEL_ID=z-ai/glm-5.2
-          EOF
+          # Use printf so the secret is expanded by the shell, not the heredoc.
+          printf 'OPENWIKI_PROVIDER=openrouter\nOPENROUTER_API_KEY=%s\nOPENWIKI_MODEL_ID=z-ai/glm-5.2\n' "$OPENROUTER_API_KEY" > ~/.openwiki/.env
           chmod 600 ~/.openwiki/.env
 
       - name: Run OpenWiki
