@@ -19,6 +19,7 @@ need to handle.
 
 - [Malaysian Fuel Prices](data/fuelprice.md)
 - [ePerolehan Tender Notices (DIIKLANKAN)](data/eperolehan-diklankan.md)
+- [PriceCatcher (Daily Grocery Prices)](data/pricecatcher.md)
 
 ## How to use it
 

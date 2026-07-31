@@ -1,0 +1,78 @@
+{
+  "id": "pricecatcher",
+  "status": "healthy",
+  "last_checked": "2026-07-31T08:00:00Z",
+  "freshness_days": 0,
+  "next_expected_update": "2026-08-31",
+  "refresh_frequency": "monthly",
+  "files": [
+    {
+      "role": "main",
+      "url": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-07.parquet",
+      "size_bytes": 2286215
+    },
+    {
+      "role": "item_lookup",
+      "url": "https://storage.data.gov.my/pricecatcher/lookup_item.parquet",
+      "size_bytes": 16398
+    },
+    {
+      "role": "premise_lookup",
+      "url": "https://storage.data.gov.my/pricecatcher/lookup_premise.parquet",
+      "size_bytes": 140582
+    }
+  ],
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "premise_code",
+      "type": "integer"
+    },
+    {
+      "name": "item_code",
+      "type": "integer"
+    },
+    {
+      "name": "price",
+      "type": "number",
+      "unit": "RM"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned HTTP 200 for each file URL"
+    },
+    {
+      "name": "file_size_stable",
+      "status": "pass",
+      "method": "Content-Length values matched the last known sizes"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Main-file fields and types matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Not available via OpenAPI - bulk download only.",
+    "premise_code and item_code are integer foreign keys requiring lookup tables.",
+    "The Parquet filename pattern is pricecatcher_YYYY-MM.parquet.",
+    "Files are released monthly with the filename suffix representing the publish month."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "commands": [
+      "curl -I https://storage.data.gov.my/pricecatcher/pricecatcher_2026-07.parquet",
+      "curl -I https://storage.data.gov.my/pricecatcher/lookup_item.parquet",
+      "curl -I https://storage.data.gov.my/pricecatcher/lookup_premise.parquet"
+    ]
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "KPDN Malaysia via data.gov.my"
+}
