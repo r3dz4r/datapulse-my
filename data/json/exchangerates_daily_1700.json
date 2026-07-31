@@ -1,0 +1,30 @@
+{
+  "id": "exchangerates_daily_1700",
+  "status": "healthy",
+  "last_checked": "2026-07-31T08:00:00Z",
+  "freshness_days": 0,
+  "next_expected_update": "2026-08-03",
+  "refresh_frequency": "daily (weekdays, 1700 MYT)",
+  "record_count": "~7000",
+  "date_range": { "start": "1997-01-02", "end": "2026-07-31" },
+  "fields": [
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "rate_type", "type": "string", "values": ["buying", "middle", "selling"] },
+    { "name": "aed, aud, bnd, cad, chf, cny, egp, eur, gbp, hkd, idr, inr, jpy, khr, krw, mmk, npr, nzd, php, pkr, sar, sgd, thb, twd, usd, vnd, xdr", "type": "number", "description": "27 currency columns identified by ISO 4217 code" }
+  ],
+  "checks": [
+    { "name": "api_reachable", "status": "pass", "method": "GET request returned a JSON record" },
+    { "name": "freshness", "status": "pass", "method": "Latest record date was 2026-07-31" },
+    { "name": "schema_stable", "status": "pass", "method": "Fields matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Four daily endpoints are published at 0900, 1130, 1200, and 1700 MYT.",
+    "The endpoint returns full history back to 1997.",
+    "The 1700 publication captures end-of-day rates.",
+    "rate_type varies between buying, selling, and middle."
+  ],
+  "breaking_changes": [],
+  "reproducibility": { "commands": ["curl \"https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700&limit=1\""] },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "Bank Negara Malaysia via data.gov.my"
+}
