@@ -24,15 +24,28 @@ jobs:
       - name: Install OpenWiki
         run: npm install -g openwiki
 
+      # OpenWiki reads credentials from ~/.openwiki/.env in non-interactive mode.
+      # The README's example workflow writes that file before invoking openwiki.
+      # See https://docs.openwik... (provider-and-model-config).
+      - name: Write OpenWiki credentials
+        run: |
+          mkdir -p ~/.openwiki
+          cat > ~/.openwiki/.env <<EOF
+          OPENWIKI_PROVIDER=openrouter
+          OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
+          OPENWIKI_MODEL_ID=z-ai/glm-5.2
+          EOF
+          chmod 600 ~/.openwiki/.env
+
       - name: Run OpenWiki
-        run: openwiki code --update --print
+        run: |
+          set -a
+          source ~/.openwiki/.env
+          set +a
+          openwiki code --update --print
         env:
-          # OpenWiki sends anonymous reliability telemetry from CI runs.
-          # Disabled per repo owner preference.
+          # Telemetry off per repo owner preference.
           OPENWIKI_TELEMETRY_DISABLED: "1"
-          OPENWIKI_PROVIDER: openrouter
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENWIKI_MODEL_ID: "z-ai/glm-5.2"
 
       - name: Commit and push if changed
         run: |
