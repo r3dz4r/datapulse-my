@@ -1,47 +1,58 @@
 {
-  "id": "fuelprice",
+  "schema": "datapulse/v0.1/dataset-health",
+  "dataset_id": "fuelprice",
+  "last_checked": "2026-07-31T08:00:00Z",
   "status": "healthy",
-  "freshness_days": 0,
-  "row_count": 472,
-  "date_range": {
-    "start": "2017-03-30",
-    "end": "2026-07-30"
-  },
-  "refresh_frequency": "weekly",
-  "fields": [
-    {
-      "name": "date",
-      "type": "date"
+  "checks": {
+    "freshness": {
+      "status": "pass",
+      "delta_days": 0,
+      "latest_date": "2026-07-30",
+      "next_expected": "2026-08-06"
     },
-    {
-      "name": "rous97",
-      "type": "number"
+    "schema": {
+      "status": "pass",
+      "version": "1.1",
+      "drift": "none",
+      "field_count": 14
     },
-    {
-      "name": "ron95",
-      "type": "number"
-    },
-    {
-      "name": "diesel",
-      "type": "number"
-    },
-    {
-      "name": "diesel_euro5",
-      "type": "number"
-    },
-    {
-      "name": "lpg",
-      "type": "number"
-    },
-    {
-      "name": "kerosene",
-      "type": "number"
+    "record_count": {
+      "status": "pass",
+      "count": 472,
+      "trend": "stable"
     }
+  },
+  "schema_fields": [
+    {"name": "date", "type": "string", "format": "YYYY-MM-DD", "nullable": false},
+    {"name": "ron95", "type": "float", "unit": "RM/litre", "nullable": false},
+    {"name": "ron97", "type": "float", "unit": "RM/litre", "nullable": false},
+    {"name": "diesel", "type": "float", "unit": "RM/litre", "nullable": false},
+    {"name": "diesel_eastmsia", "type": "float", "unit": "RM/litre", "nullable": false},
+    {"name": "ron95_skps", "type": "float", "unit": "RM/litre", "nullable": true},
+    {"name": "diesel_budi", "type": "float", "unit": "RM/litre", "nullable": true},
+    {"name": "diesel_skds", "type": "float", "unit": "RM/litre", "nullable": true},
+    {"name": "ron95_budi95", "type": "float", "unit": "RM/litre", "nullable": true},
+    {"name": "series_type", "type": "string", "nullable": false, "constant": "level"},
+    {"name": "title", "type": "string", "nullable": false},
+    {"name": "agency", "type": "string", "nullable": false, "constant": "MOF"},
+    {"name": "dataset_id", "type": "string", "nullable": false, "constant": "fuelprice"},
+    {"name": "url", "type": "string", "nullable": false}
   ],
   "known_quirks": [
-    "The offset parameter is silently ignored.",
-    "The date filter is silently ignored."
+    "offset parameter silently ignored",
+    "date filter silently ignored",
+    "default sort ascending",
+    "client-side dedup by date required",
+    "subsidy fields nullable for older dates"
   ],
-  "licence": "Open Government Licence (Malaysia)",
-  "attribution": "Ministry of Finance Malaysia via data.gov.my"
+  "breaking_changes": [],
+  "licence": {
+    "name": "Open Government Licence (Malaysia)",
+    "url": "https://www.data.gov.my/pages/terms-of-use"
+  },
+  "attribution": "Ministry of Finance Malaysia via data.gov.my",
+  "reproducibility": {
+    "command": "curl \"https://api.data.gov.my/data-catalogue?id=fuelprice&limit=500\" | jq '. | length'",
+    "expected_result": "~500 raw rows, 472 unique after deduplication by date"
+  }
 }
