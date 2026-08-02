@@ -1,0 +1,37 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_payments_transactions_fpx",
+  "status": "current",
+  "last_checked": "2026-08-02T17:18:27Z",
+  "freshness_days": 1,
+  "next_expected_update": "daily",
+  "refresh_frequency": "daily",
+  "record_count": 7206,
+  "date_range": { "start": "2020-01-01", "end": "2026-08-01" },
+  "fields": [
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "model", "type": "string", "values": ["both", "B2B", "B2C"] },
+    { "name": "volume", "type": "integer" },
+    { "name": "value", "type": "number" }
+  ],
+  "checks": [
+    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 271127-byte CSV payload" },
+    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 7206 data rows" },
+    { "name": "freshness", "status": "pass", "method": "Latest observation and file Last-Modified are both 2026-08-01" },
+    { "name": "schema_stable", "status": "pass", "method": "4 CSV columns matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Both-model aggregate rows coexist with B2B and B2C rows.",
+    "Value and volume use different units.",
+    "Three two-day gaps occur in the date series.",
+    "Dates are calendar dates rather than business-day labels."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/finsector/payments/trnsc_daily_fpx.csv",
+    "alternate_format": "https://storage.data.gov.my/finsector/payments/trnsc_daily_fpx.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "Bank Negara Malaysia via data.gov.my"
+}
