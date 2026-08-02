@@ -12,6 +12,46 @@ journalists, civic technologists, data engineers, and AI systems that need stabl
 machine-readable dataset-health metadata. This index is forward-compatible agent
 infrastructure and does not imply adoption by any LLM provider or improved citations.
 
+## Model Context Protocol (MCP)
+
+DataPulse MY exposes a **read-only MCP server** so AI agents (Claude Desktop, Cursor, Cline, etc.) can query the 92-dataset catalogue natively.
+
+- **MCP endpoint:** https://mcp.datapulse-my.my/mcp
+- **Transport:** Streamable HTTP (POST-only, single endpoint)
+- **Auth:** none required (all 5 tools are read-only)
+- **Source:** reads the same `datapulse.json` + `health/latest.json` served from this repository; no separate API
+
+### Tools
+
+| Tool | Use when |
+|---|---|
+| `search_datasets(query, licence?, source?, limit?)` | Find datasets by topic, agency, or licence |
+| `get_dataset(dataset_id)` | Full detail + health for one dataset |
+| `find_stale(max_age_hours?)` | Find datasets whose health is not green |
+| `get_provenance(dataset_ids[])` | Citation-ready metadata for one or many datasets |
+| `find_by_licence(licence)` | Enumerate what's available under a given licence |
+
+### Resources (read-only context)
+
+- `datapulse://index` — lightweight list of all 92 datasets (read first)
+- `datapulse://licences` — licence summary (80 CC BY 4.0 + 12 OGL)
+- `datapulse://{dataset_id}` — full manifest entry for one dataset (on-demand)
+
+### Connect from Claude Desktop
+
+```json
+{
+  "mcpServers": {
+    "datapulse-my": {
+      "transport": "streamable-http",
+      "url": "https://mcp.datapulse-my.my/mcp"
+    }
+  }
+}
+```
+
+Note: the durable public URL requires Cloudflare Named Tunnel credentials. Until that's configured, the verified transport is reachable only on the VPS (`http://127.0.0.1:8788/mcp`) and behind nginx (`https://127.0.0.1:8443/mcp`). The repo keeps these endpoint references current as soon as a public hostname is bound. Deployment and service details for `datapulse-mcp` are in [`docs/mcp-deploy.md`](https://r3dz4r.github.io/datapulse-my/docs/mcp-deploy.md).
+
 ## Manifest
 
 - [datapulse.json](https://r3dz4r.github.io/datapulse-my/datapulse.json): Full manifest — 92 datasets, official URL, licence, attribution, refresh cadence, geographic coverage, and health-report link. Machine-readable.
