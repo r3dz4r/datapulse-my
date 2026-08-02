@@ -2,7 +2,7 @@
 
 **Live dashboard:** https://r3dz4r.github.io/datapulse-my/
 
-> **🤖 AI-ready** — Point your AI agent at [`https://r3dz4r.github.io/datapulse-my/llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) to consume all 15 datasets (manifest, freshness, licences) in one request.
+> **🤖 AI-ready** — Point your AI agent at [`https://r3dz4r.github.io/datapulse-my/llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) to consume all 24 datasets (manifest, freshness, licences) in one request.
 
 DataPulse MY is an open-source trust layer for Malaysian public data. It makes
 official datasets easier to assess and reuse by publishing a small manifest,
@@ -120,8 +120,26 @@ publication times:
   [Sample JSON](samples/dosm_cpi_state.json)
 - [OpenDOSM Annual Real GDP by State](data/dosm_gdp_state_real_supply.md) —
   [Sample JSON](samples/dosm_gdp_state_real_supply.json)
+- [OpenDOSM Quarterly Real GDP](data/dosm_gdp_qtr_real.md) —
+  [Sample JSON](samples/dosm_gdp_qtr_real.json)
+- [OpenDOSM Annual Real GDP by Supply Sector](data/dosm_gdp_annual_real_supply.md) —
+  [Sample JSON](samples/dosm_gdp_annual_real_supply.json)
+- [OpenDOSM Monthly Trade Headline](data/dosm_trade_headline.md) —
+  [Sample JSON](samples/dosm_trade_headline.json)
+- [OpenDOSM Monthly CPI Inflation by Division](data/dosm_cpi_inflation.md) —
+  [Sample JSON](samples/dosm_cpi_inflation.json)
+- [OpenDOSM Monthly Trade by End Use (BEC)](data/dosm_trade_enduse_bec.md) —
+  [Sample JSON](samples/dosm_trade_enduse_bec.json)
+- [OpenDOSM Quarterly Labour Force Statistics](data/dosm_lfs_qtr.md) —
+  [Sample JSON](samples/dosm_lfs_qtr.json)
+- [OpenDOSM Quarterly Labour Force Statistics by State](data/dosm_lfs_qtr_state.md) —
+  [Sample JSON](samples/dosm_lfs_qtr_state.json)
+- [OpenDOSM Annual Employment by Sector and Sex](data/dosm_employment_sector.md) —
+  [Sample JSON](samples/dosm_employment_sector.json)
+- [OpenDOSM Annual Population by State](data/dosm_population_state.md) —
+  [Sample JSON](samples/dosm_population_state.json)
 
-DataPulse MY currently tracks fifteen datasets in total.
+DataPulse MY currently tracks twenty-four datasets in total.
 
 ## Current coverage
 
@@ -144,6 +162,15 @@ DataPulse MY currently tracks fifteen datasets in total.
 | OpenDOSM Crime by District (`dosm_crime_district`) | Annual |
 | OpenDOSM CPI by State (`dosm_cpi_state`) | Monthly |
 | OpenDOSM GDP by State (`dosm_gdp_state_real_supply`) | Annual |
+| OpenDOSM Quarterly Real GDP (`dosm_gdp_qtr_real`) | Quarterly |
+| OpenDOSM Annual Real GDP by Supply Sector (`dosm_gdp_annual_real_supply`) | Annual |
+| OpenDOSM Trade Headline (`dosm_trade_headline`) | Monthly |
+| OpenDOSM CPI Inflation by Division (`dosm_cpi_inflation`) | Monthly |
+| OpenDOSM Trade by End Use (`dosm_trade_enduse_bec`) | Monthly |
+| OpenDOSM Labour Force Statistics (`dosm_lfs_qtr`) | Quarterly |
+| OpenDOSM Labour Force Statistics by State (`dosm_lfs_qtr_state`) | Quarterly |
+| OpenDOSM Employment by Sector and Sex (`dosm_employment_sector`) | Annual |
+| OpenDOSM Population by State (`dosm_population_state`) | Annual |
 
 ## How to use it
 
