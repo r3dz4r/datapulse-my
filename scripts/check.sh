@@ -330,7 +330,14 @@ while IFS=$'\t' read -r dataset_id source_url; do
     dgm_money_aggregates|dgm_currency_in_circulation|dgm_payments_systems|\
     dgm_payments_instruments|dgm_payments_channels|dgm_interest_rates_annual|\
     dgm_epf_dividend|dgm_vehicle_registrations_type_fuel|\
-    dgm_payments_transactions_fpx|dosm_birth_state|dosm_death_state|\
+    dgm_payments_transactions_fpx|dgm_hospital_beds|dgm_healthcare_staff|\
+    dgm_blood_donations_state|dgm_infant_immunisation|dgm_std_state|\
+    dgm_pekab40_screenings_state|dgm_mnha|dgm_electricity_consumption|\
+    dgm_electricity_supply|dgm_water_consumption|dgm_water_production|\
+    dgm_water_access|dgm_ridership_headline|dgm_ktmb_ridership_monthly|\
+    dgm_cellular_subscribers|dgm_prisoners_state|dgm_drug_addicts_age|\
+    dgm_local_authority_sex|dgm_parliament_sex|dgm_fish_landings|\
+    dgm_crops_state|dgm_schools_district|dosm_birth_state|dosm_death_state|\
     dosm_death_maternal_state|dosm_marriages_state)
       check_head_dataset "$dataset_id" "$source_url"
       ;;
