@@ -312,7 +312,10 @@ while IFS=$'\t' read -r dataset_id source_url; do
     doe_rqims|doe_mqims|kkm_idengue|eperolehan-diklankan)
       check_browser_dataset "$dataset_id" "$source_url" 12
       ;;
-    dosm_crime_district|dosm_cpi_state|dosm_gdp_state_real_supply)
+    dosm_crime_district|dosm_cpi_state|dosm_gdp_state_real_supply|\
+    dosm_gdp_qtr_real|dosm_gdp_annual_real_supply|dosm_trade_headline|\
+    dosm_cpi_inflation|dosm_trade_enduse_bec|dosm_lfs_qtr|\
+    dosm_lfs_qtr_state|dosm_employment_sector|dosm_population_state)
       check_head_dataset "$dataset_id" "$source_url"
       ;;
     met_weather)
