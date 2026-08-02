@@ -93,6 +93,38 @@
       font-size: clamp(1rem, 2vw, 1.2rem);
     }
 
+    .ai-ready {
+      display: inline-flex;
+      max-width: 100%;
+      align-items: center;
+      gap: 0.65rem;
+      margin-top: 1.25rem;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--browser);
+      border-radius: 0.5rem;
+      color: var(--text);
+      background: var(--surface);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 0.9rem;
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    .ai-ready:hover { border-color: var(--link); color: var(--text); background: var(--raised); }
+
+    .ai-ready-glyph {
+      display: inline-grid;
+      width: 1.5rem;
+      height: 1.5rem;
+      flex: none;
+      place-items: center;
+      border-radius: 0.25rem;
+      color: var(--bg);
+      background: var(--link);
+    }
+
+    .ai-ready strong { color: var(--link); }
+
     .header-meta, .card-links, .metrics {
       display: flex;
       flex-wrap: wrap;
@@ -257,6 +289,10 @@
       <p class="eyebrow">Open data observatory / Malaysia</p>
       <h1>DataPulse MY</h1>
       <p class="tagline">A live trust layer for Malaysian public data: provenance, freshness signals, and reusable samples.</p>
+      <a class="ai-ready" href="https://r3dz4r.github.io/datapulse-my/llms.txt">
+        <span class="ai-ready-glyph" aria-hidden="true">✦</span>
+        <span><strong>AI-ready</strong> · point your agent at llms.txt to consume all 15 datasets</span>
+      </a>
       <div class="header-meta">
         <span id="last-updated">Last checked: loading…</span>
         <a href="https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/feed.xml">RSS health feed</a>
