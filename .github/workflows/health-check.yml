@@ -1,0 +1,33 @@
+name: Weekly dataset health check
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check dataset health
+        run: |
+          mkdir -p health
+          bash scripts/check.sh > health/latest.json
+
+      - name: Commit changed health summary
+        run: |
+          if [ -z "$(git status --porcelain -- health/latest.json)" ]; then
+            echo "No health summary changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add health/latest.json
+          git commit -m "chore(health): update weekly dataset health"
+          git push
