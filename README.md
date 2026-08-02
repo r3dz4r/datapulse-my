@@ -4,7 +4,7 @@
 
 > **🤖 AI-agent-ready** — DataPulse MY is built for AI. An agent fetches one file
 > ([`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt)) and can use all
-> **53 official Malaysian datasets** immediately — no integration, no scraping,
+> **75 official Malaysian datasets** immediately — no integration, no scraping,
 > always fresh, licences declared.
 
 DataPulse MY is an open-source trust layer for Malaysian public data. It makes
@@ -75,7 +75,7 @@ RAG systems, and internal knowledge tools to consume.
 - **RAG and knowledge-base ready:** drop the envelopes into a retrieval pipeline
   to ground chatbots and AI tools in current Malaysian public data.
 
-**53 datasets, 41 under CC BY 4.0, 12 under OGL.**
+**75 datasets, 63 under CC BY 4.0, 12 under OGL.**
 
 ### How to consume the data
 
@@ -222,8 +222,52 @@ publication times:
   [Sample JSON](samples/dosm_death_maternal_state.json)
 - [OpenDOSM Annual Marriages by State and Sex](data/dosm_marriages_state.md) —
   [Sample JSON](samples/dosm_marriages_state.json)
+- [data.gov.my Hospital Beds by State and Hospital Type](data/dgm_hospital_beds.md) —
+  [Sample JSON](samples/dgm_hospital_beds.json)
+- [data.gov.my Healthcare Staff by State and Staff Type](data/dgm_healthcare_staff.md) —
+  [Sample JSON](samples/dgm_healthcare_staff.json)
+- [data.gov.my Daily Blood Donations by Blood Group and State](data/dgm_blood_donations_state.md) —
+  [Sample JSON](samples/dgm_blood_donations_state.json)
+- [data.gov.my Infant Immunisation Coverage](data/dgm_infant_immunisation.md) —
+  [Sample JSON](samples/dgm_infant_immunisation.json)
+- [data.gov.my Sexually Transmitted Diseases by State](data/dgm_std_state.md) —
+  [Sample JSON](samples/dgm_std_state.json)
+- [data.gov.my Daily PeKaB40 Health Screenings by State](data/dgm_pekab40_screenings_state.md) —
+  [Sample JSON](samples/dgm_pekab40_screenings_state.json)
+- [data.gov.my Malaysian National Health Accounts Expenditure](data/dgm_mnha.md) —
+  [Sample JSON](samples/dgm_mnha.json)
+- [data.gov.my Monthly Electricity Consumption](data/dgm_electricity_consumption.md) —
+  [Sample JSON](samples/dgm_electricity_consumption.json)
+- [data.gov.my Monthly Electricity Supply](data/dgm_electricity_supply.md) —
+  [Sample JSON](samples/dgm_electricity_supply.json)
+- [data.gov.my Water Consumption by State and Sector](data/dgm_water_consumption.md) —
+  [Sample JSON](samples/dgm_water_consumption.json)
+- [data.gov.my Water Production by State](data/dgm_water_production.md) —
+  [Sample JSON](samples/dgm_water_production.json)
+- [data.gov.my Access to Treated Water by State and Strata](data/dgm_water_access.md) —
+  [Sample JSON](samples/dgm_water_access.json)
+- [data.gov.my Daily Public Transport Ridership](data/dgm_ridership_headline.md) —
+  [Sample JSON](samples/dgm_ridership_headline.json)
+- [data.gov.my Monthly KTMB Ridership](data/dgm_ktmb_ridership_monthly.md) —
+  [Sample JSON](samples/dgm_ktmb_ridership_monthly.json)
+- [data.gov.my Cellular Subscribers by Plan Type](data/dgm_cellular_subscribers.md) —
+  [Sample JSON](samples/dgm_cellular_subscribers.json)
+- [data.gov.my Prisoners by State and Sex](data/dgm_prisoners_state.md) —
+  [Sample JSON](samples/dgm_prisoners_state.json)
+- [data.gov.my Drug Addicts by State and Age Group](data/dgm_drug_addicts_age.md) —
+  [Sample JSON](samples/dgm_drug_addicts_age.json)
+- [data.gov.my Female Representation in Local Authorities](data/dgm_local_authority_sex.md) —
+  [Sample JSON](samples/dgm_local_authority_sex.json)
+- [data.gov.my Female Representation in Parliament](data/dgm_parliament_sex.md) —
+  [Sample JSON](samples/dgm_parliament_sex.json)
+- [data.gov.my Monthly Marine Fish Landings by State](data/dgm_fish_landings.md) —
+  [Sample JSON](samples/dgm_fish_landings.json)
+- [data.gov.my Crop Area and Production by State](data/dgm_crops_state.md) —
+  [Sample JSON](samples/dgm_crops_state.json)
+- [data.gov.my Public Education Institutions by District](data/dgm_schools_district.md) —
+  [Sample JSON](samples/dgm_schools_district.json)
 
-DataPulse MY currently tracks 53 datasets in total.
+DataPulse MY currently tracks 75 datasets in total.
 
 ## Current coverage
 
@@ -284,6 +328,28 @@ DataPulse MY currently tracks 53 datasets in total.
 | OpenDOSM Deaths by State (`dosm_death_state`) | Annual |
 | OpenDOSM Maternal Deaths by State (`dosm_death_maternal_state`) | Annual |
 | OpenDOSM Marriages by State and Sex (`dosm_marriages_state`) | Annual |
+| data.gov.my Hospital Beds (`dgm_hospital_beds`) | Annual |
+| data.gov.my Healthcare Staff (`dgm_healthcare_staff`) | Annual |
+| data.gov.my Blood Donations by State (`dgm_blood_donations_state`) | Daily |
+| data.gov.my Infant Immunisation (`dgm_infant_immunisation`) | Annual |
+| data.gov.my Sexually Transmitted Diseases by State (`dgm_std_state`) | Annual |
+| data.gov.my PeKaB40 Screenings by State (`dgm_pekab40_screenings_state`) | Daily |
+| data.gov.my Malaysian National Health Accounts (`dgm_mnha`) | Annual |
+| data.gov.my Electricity Consumption (`dgm_electricity_consumption`) | Monthly |
+| data.gov.my Electricity Supply (`dgm_electricity_supply`) | Monthly |
+| data.gov.my Water Consumption (`dgm_water_consumption`) | Annual |
+| data.gov.my Water Production (`dgm_water_production`) | Annual |
+| data.gov.my Treated Water Access (`dgm_water_access`) | Annual |
+| data.gov.my Public Transport Ridership (`dgm_ridership_headline`) | Daily |
+| data.gov.my KTMB Ridership (`dgm_ktmb_ridership_monthly`) | Monthly |
+| data.gov.my Cellular Subscribers (`dgm_cellular_subscribers`) | Annual |
+| data.gov.my Prisoners by State and Sex (`dgm_prisoners_state`) | Annual |
+| data.gov.my Drug Addicts by State and Age (`dgm_drug_addicts_age`) | Annual |
+| data.gov.my Female Representation in Local Authorities (`dgm_local_authority_sex`) | Annual |
+| data.gov.my Female Representation in Parliament (`dgm_parliament_sex`) | Annual |
+| data.gov.my Marine Fish Landings (`dgm_fish_landings`) | Monthly |
+| data.gov.my Crops by State (`dgm_crops_state`) | Annual |
+| data.gov.my Schools by District (`dgm_schools_district`) | Annual |
 
 ## How to use it
 
