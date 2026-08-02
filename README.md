@@ -57,8 +57,12 @@ publication times:
   [Sample JSON](samples/doe_rqims.json)
 - [DOE MQIMS Marine Water Quality (Monthly)](data/doe_mqims.md) —
   [Sample JSON](samples/doe_mqims.json)
+- [KKM iDengue Weekly Dengue Cases](data/kkm_idengue.md) —
+  [Sample JSON](samples/kkm_idengue.json)
+- [OpenDOSM Crime by District (Annual)](data/dosm_crime_district.md) —
+  [Sample JSON](samples/dosm_crime_district.json)
 
-DataPulse MY currently tracks eleven datasets in total.
+DataPulse MY currently tracks thirteen datasets in total.
 
 ## Current coverage
 
@@ -77,6 +81,8 @@ DataPulse MY currently tracks eleven datasets in total.
 | DOE APIMS Air Quality (`doe_apims`) | Hourly |
 | DOE RQIMS River Water Quality (`doe_rqims`) | Hourly |
 | DOE MQIMS Marine Water Quality (`doe_mqims`) | Monthly |
+| KKM iDengue (`kkm_idengue`) | Daily |
+| OpenDOSM Crime by District (`dosm_crime_district`) | Annual |
 
 ## How to use it
 
