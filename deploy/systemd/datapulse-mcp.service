@@ -1,0 +1,24 @@
+[Unit]
+Description=DataPulse MY read-only MCP server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/redza/.local/share/datapulse-mcp
+ExecStart=/home/redza/.local/share/datapulse-mcp/venv/bin/python /home/redza/.local/share/datapulse-mcp/server.py
+Environment=DATA_BASE=https://r3dz4r.github.io/datapulse-my
+Environment=MCP_HOST=127.0.0.1
+Environment=MCP_PORT=8788
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+
+[Install]
+WantedBy=default.target
