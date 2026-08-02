@@ -1,0 +1,85 @@
+---
+dataset_id: doe_mqims
+last_checked: 2026-08-02T14:00:00Z
+status: healthy
+freshness_delta: within monthly cadence
+next_expected_update: 2026-09-01
+record_count: 368
+date_range: latest monthly sampling view
+schema_version: 1.0
+schema_drift: none
+known_quirks: ["JavaScript-rendered and requires Camofox", "manual monthly sampling", "MMWQI cells may be empty in the accessibility tree while asynchronous data loads"]
+breaking_changes: []
+licence: Open Government Licence (Malaysia)
+attribution: DOE Malaysia via MyEQMS
+---
+
+# DOE MQIMS Marine Water Quality (Manual)
+
+## Status
+
+**Status:** Healthy  
+**Freshness:** Within monthly cadence  
+**Refresh frequency:** Monthly
+
+The Camofox-rendered MyEQMS view is reachable and reports 368 stations: 214
+Excellent, 46 Good, 95 Moderate, and 13 Poor.
+
+## Last checked
+
+2026-08-02 at 14:00:00 UTC using Camofox.
+
+## Coverage
+
+The view covers 368 manual marine monitoring stations across Coastal, Estuary,
+and Island categories. It publishes the Manual Marine Water Quality Index
+(MMWQI) from monthly manual sampling.
+
+## Classification
+
+| Classification | MMWQI range |
+| --- | --- |
+| Excellent | 90-100 |
+| Good | 80-90 |
+| Moderate | 50-80 |
+| Poor | 0-50 |
+
+## Schema
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `NO` | integer | Row number. |
+| `STATE` | string | Malaysian state. |
+| `LOCATION` | string | Marine monitoring location. |
+| `CATEGORY` | string | Coastal, Estuary, or Island. |
+| `STATION_ID` | string | DOE manual marine station identifier. |
+| `MMWQI_SAMPLING_MONTH` | number or null | MMWQI value for the displayed sampling month. |
+
+## Known quirks
+
+- The table is JavaScript-rendered and collection requires Camofox.
+- Measurements come from monthly manual sampling rather than continuous
+  sensors.
+- MMWQI cells may be empty in the accessibility tree while their asynchronous
+  data is loading. Samples preserve an observed empty value rather than
+  inventing a measurement.
+
+## Breaking changes
+
+None observed.
+
+## Sample
+
+- [samples/doe_mqims.csv](samples/doe_mqims.csv)
+- [samples/doe_mqims.json](samples/doe_mqims.json)
+
+## Reproducibility
+
+Open `https://eqms.doe.gov.my/MQIMS/main` in Camofox, wait 12 seconds for the
+table to render, capture the accessibility snapshot, and close the tab.
+
+## Licence
+
+Licensed under the Open Government Licence (Malaysia).
+
+Attribution: DOE Malaysia via MyEQMS.
