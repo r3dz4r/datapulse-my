@@ -1,0 +1,75 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_hh_expenditure_dun",
+  "status": "current",
+  "last_checked": "2026-08-02T19:11:50Z",
+  "freshness_days": 28,
+  "next_expected_update": null,
+  "refresh_frequency": "biennial to triennial (survey years)",
+  "record_count": 1800,
+  "date_range": {
+    "start": "2019-01-01",
+    "end": "2024-01-01"
+  },
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "state",
+      "type": "string",
+      "distinct_values": 13
+    },
+    {
+      "name": "parlimen",
+      "type": "string",
+      "distinct_values": 209
+    },
+    {
+      "name": "dun",
+      "type": "string",
+      "distinct_values": 600
+    },
+    {
+      "name": "expenditure",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 98562-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 1800 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "File last modified 2026-07-05; latest observation is 2024-01-01 on its biennial to triennial (survey years) cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "5 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Only the 2019, 2022, and 2024 survey years are present.",
+    "Federal territories are absent because they do not have state legislative constituencies.",
+    "Expenditure values are source-reported nominal mean monthly ringgit amounts."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/hies/hh_expenditure_dun.csv",
+    "alternate_format": "https://storage.dosm.gov.my/hies/hh_expenditure_dun.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
