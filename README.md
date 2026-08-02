@@ -24,6 +24,26 @@ need to handle.
 - **RAG knowledge base:** consume the JSON envelopes as structured context for
   a chatbot answering "what's the latest BNM rate?"
 
+## Dataset health
+
+![fuelprice](badges/fuelprice.svg)
+![eperolehan-diklankan](badges/eperolehan-diklankan.svg)
+![pricecatcher](badges/pricecatcher.svg)
+![exchangerates_daily_0900](badges/exchangerates_daily_0900.svg)
+![exchangerates_daily_1130](badges/exchangerates_daily_1130.svg)
+![exchangerates_daily_1200](badges/exchangerates_daily_1200.svg)
+![exchangerates_daily_1700](badges/exchangerates_daily_1700.svg)
+![met_weather](badges/met_weather.svg)
+![doe_apims](badges/doe_apims.svg)
+![doe_rqims](badges/doe_rqims.svg)
+![doe_mqims](badges/doe_mqims.svg)
+![kkm_idengue](badges/kkm_idengue.svg)
+![dosm_crime_district](badges/dosm_crime_district.svg)
+![dosm_cpi_state](badges/dosm_cpi_state.svg)
+![dosm_gdp_state_real_supply](badges/dosm_gdp_state_real_supply.svg)
+
+**Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
+
 ## Included datasets
 
 - [Malaysian Fuel Prices](data/fuelprice.md) — Samples:
@@ -103,9 +123,9 @@ designing a collection method.
 
 ## Roadmap
 
-- Scheduled health checks — in progress.
-- RSS feed — planned.
-- Status badges — planned.
+- Scheduled health checks — weekly.
+- RSS feed — available.
+- Status badges — available.
 - More datasets — planned.
 
 ## Adopt a dataset
