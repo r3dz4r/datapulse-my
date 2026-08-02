@@ -6,8 +6,16 @@ on:
       - main
     paths:
       - "docs/**"
+      - "llms.txt"
+      - "robots.txt"
+      - "sitemap.xml"
+      - "feed.xml"
       - "datapulse.json"
+      - "datapulse.schema.json"
       - "health/latest.json"
+      - "badges/**"
+      - "samples/**"
+      - "data/**"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
@@ -64,10 +72,17 @@ jobs:
               output.write(html)
           PY
 
-      - name: Upload dashboard artifact
+      - name: Assemble Pages artifact
+        run: |
+          mkdir -p _site
+          cp -R docs/. _site/
+          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json datapulse.schema.json _site/
+          cp -R health badges samples data _site/
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: _site
 
       - name: Deploy dashboard
         id: deployment
