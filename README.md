@@ -63,8 +63,10 @@ publication times:
   [Sample JSON](samples/dosm_crime_district.json)
 - [OpenDOSM Monthly CPI by State](data/dosm_cpi_state.md) —
   [Sample JSON](samples/dosm_cpi_state.json)
+- [OpenDOSM Annual Real GDP by State](data/dosm_gdp_state_real_supply.md) —
+  [Sample JSON](samples/dosm_gdp_state_real_supply.json)
 
-DataPulse MY currently tracks fourteen datasets in total.
+DataPulse MY currently tracks fifteen datasets in total.
 
 ## Current coverage
 
@@ -86,6 +88,7 @@ DataPulse MY currently tracks fourteen datasets in total.
 | KKM iDengue (`kkm_idengue`) | Daily |
 | OpenDOSM Crime by District (`dosm_crime_district`) | Annual |
 | OpenDOSM CPI by State (`dosm_cpi_state`) | Monthly |
+| OpenDOSM GDP by State (`dosm_gdp_state_real_supply`) | Annual |
 
 ## How to use it
 
