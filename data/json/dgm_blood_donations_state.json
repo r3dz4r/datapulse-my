@@ -1,0 +1,72 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_blood_donations_state",
+  "status": "current",
+  "last_checked": "2026-08-03T02:00:00Z",
+  "freshness_days": 1,
+  "next_expected_update": "daily",
+  "refresh_frequency": "daily",
+  "record_count": 488670,
+  "date_range": {
+    "start": "2006-01-01",
+    "end": "2026-08-01"
+  },
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "state",
+      "type": "string",
+      "distinct_values": 13
+    },
+    {
+      "name": "blood_type",
+      "type": "string",
+      "distinct_values": 5
+    },
+    {
+      "name": "donations",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 12545337-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 488670 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "The latest observation is 2026-08-01 and the file is within its daily cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "4 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Dates are daily calendar dates.",
+    "The `all` blood-group rows coexist with the four detailed blood groups and must not be summed together.",
+    "The 22 BBISv2 sites cover about 80% of donations; Perlis and W.P. Labuan are unavailable.",
+    "W.P. Kuala Lumpur includes W.P. Putrajaya and mobile campaigns around Selangor."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://data.gov.my/data-catalogue/blood_donations_state",
+    "url": "https://storage.data.gov.my/healthcare/blood_donations_state.csv",
+    "alternate_format": "https://storage.data.gov.my/healthcare/blood_donations_state.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "National Blood Centre and Ministry of Health Malaysia via data.gov.my"
+}
