@@ -61,8 +61,10 @@ publication times:
   [Sample JSON](samples/kkm_idengue.json)
 - [OpenDOSM Crime by District (Annual)](data/dosm_crime_district.md) —
   [Sample JSON](samples/dosm_crime_district.json)
+- [OpenDOSM Monthly CPI by State](data/dosm_cpi_state.md) —
+  [Sample JSON](samples/dosm_cpi_state.json)
 
-DataPulse MY currently tracks thirteen datasets in total.
+DataPulse MY currently tracks fourteen datasets in total.
 
 ## Current coverage
 
@@ -83,6 +85,7 @@ DataPulse MY currently tracks thirteen datasets in total.
 | DOE MQIMS Marine Water Quality (`doe_mqims`) | Monthly |
 | KKM iDengue (`kkm_idengue`) | Daily |
 | OpenDOSM Crime by District (`dosm_crime_district`) | Annual |
+| OpenDOSM CPI by State (`dosm_cpi_state`) | Monthly |
 
 ## How to use it
 
