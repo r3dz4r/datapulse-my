@@ -54,6 +54,10 @@ Each record contains `date` (`YYYY-MM-DD`), `rate_type` (`buying`, `middle`, or
 
 None observed.
 
+## Sample
+
+- [samples/exchangerates_daily_0900.json](samples/exchangerates_daily_0900.json)
+
 ## Reproducibility
 
 ```sh
