@@ -1,0 +1,71 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_trade_sitc_1d",
+  "status": "current",
+  "last_checked": "2026-08-02T16:47:48Z",
+  "freshness_days": 0,
+  "next_expected_update": "monthly",
+  "refresh_frequency": "monthly",
+  "record_count": 3498,
+  "date_range": {
+    "start": "2000-01-01",
+    "end": "2026-06-01"
+  },
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "section",
+      "type": "string",
+      "distinct_values": 11
+    },
+    {
+      "name": "exports",
+      "type": "number"
+    },
+    {
+      "name": "imports",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 138635-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 3498 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Latest observation is 2026-06-01 and file Last-Modified is 2026-08-02"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "4 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of the month.",
+    "SITC section codes must remain strings.",
+    "The overall aggregate coexists with sections 0 through 9.",
+    "The latest two months are provisional."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/trade_sitc_1d",
+    "url": "https://storage.dosm.gov.my/trade/trade_sitc_1d.csv",
+    "alternate_format": "https://storage.dosm.gov.my/trade/trade_sitc_1d.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
