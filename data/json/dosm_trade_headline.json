@@ -1,0 +1,42 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_trade_headline",
+  "status": "stale",
+  "last_checked": "2026-08-02T16:01:47Z",
+  "freshness_days": 74,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 743,
+  "date_range": { "start": "2000-01-01", "end": "2026-04-01" },
+  "fields": [
+    { "name": "series", "type": "string", "values": ["abs", "growth_yoy", "growth_mom"] },
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "exports", "type": "number" },
+    { "name": "exports_domestic", "type": "number", "nullable": true },
+    { "name": "re_exports", "type": "number", "nullable": true },
+    { "name": "imports", "type": "number" },
+    { "name": "imports_retained", "type": "number", "nullable": true },
+    { "name": "total", "type": "number" },
+    { "name": "balance", "type": "number" }
+  ],
+  "checks": [
+    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 56287-byte payload" },
+    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 743 data rows" },
+    { "name": "freshness", "status": "warn", "method": "Latest observation is 2026-04-01 and file Last-Modified is 2026-05-20 for a monthly dataset" },
+    { "name": "schema_stable", "status": "pass", "method": "Nine CSV columns matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of each month.",
+    "Absolute amounts and percentage growth rates share the measure columns.",
+    "Three component fields have blank values in early observations."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/trade_headline",
+    "url": "https://storage.dosm.gov.my/trade/trade_headline.csv",
+    "alternate_format": "https://storage.dosm.gov.my/trade/trade_headline.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
