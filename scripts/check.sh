@@ -89,7 +89,7 @@ while IFS=$'\t' read -r dataset_id source_url; do
   elif [[ "$dataset_id" == "kkm_idengue" ]]; then
     check_eqms_dataset "$dataset_id" "https://idengue.mysa.gov.my/" 12 >> "$results_file"
     continue
-  elif [[ "$dataset_id" == "dosm_crime_district" ]]; then
+  elif [[ "$dataset_id" == "dosm_crime_district" || "$dataset_id" == "dosm_cpi_state" ]]; then
     http_status="$(curl --location --silent --show-error --fail --head \
       --dump-header "$headers_file" --output /dev/null --write-out '%{http_code}' \
       "$source_url")" || {
