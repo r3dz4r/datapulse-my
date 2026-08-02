@@ -1,0 +1,87 @@
+---
+dataset_id: dgm_crops_state
+last_checked: 2026-08-03T02:00:00Z
+status: stale
+freshness_delta: 681 days since file update
+next_expected_update: overdue
+record_count: 864
+date_range: 2017-01-01 to 2022-01-01
+schema_version: 1.0
+schema_drift: none
+known_quirks: ["Annual dates use 1 January.", "Malaysia aggregate rows coexist with state rows and must not be summed together.", "Planted area is measured in hectares and production in metric tonnes.", "W.P. Putrajaya is absent because it has no commercial agriculture; rounded breakdowns may differ from totals."]
+breaking_changes: []
+licence: Creative Commons Attribution 4.0
+attribution: MAFS, Department of Agriculture, and DOSM via data.gov.my
+---
+
+# data.gov.my Crop Area and Production by State
+
+## Provenance
+
+Department of Agriculture Malaysia publishes this dataset through data.gov.my as direct CSV and
+Parquet downloads:
+
+- `https://storage.data.gov.my/agriculture/crops_state.csv`
+- `https://storage.data.gov.my/agriculture/crops_state.parquet`
+
+Catalogue description: [Production and planted area of crops by state from 2017 to 2022, broken down by crop type.](https://data.gov.my/data-catalogue/crops_state).
+
+## Status
+
+**Status:** Stale
+
+**Freshness:** File last updated 2024-09-21; observations end on 2022-01-01
+
+**Refresh frequency:** Annual
+
+The CSV endpoint returned HTTP 200 and its expected 37,398-byte file. It
+contains 864 data rows.
+
+## Last checked
+
+2026-08-03 by direct HTTP HEAD request and CSV download.
+
+## Coverage
+
+The dataset covers Malaysia (national and 15 state-level areas) from 2017-01-01 through 2022-01-01.
+
+## Schema
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `state` | string | One of 16 states, or Malaysia. Note that there is no data for W.P. Putrajaya, due to the lack of commercial agriculture in the state. |
+| `date` | date | The date in YYYY-MM-DD format, with MM-DD set to 01-01 as the data is at annual frequency |
+| `crop_type` | string | The type of crop in snake case, covering cash crops, industrial crops, coconut, paddy, flowers, herbs, spices, fruits and vegetables |
+| `planted_area` | number | The total planted area of the crop in hectares |
+| `production` | number | The total production of the crop in metric tonnes |
+
+## Known quirks
+
+- Annual dates use 1 January.
+- Malaysia aggregate rows coexist with state rows and must not be summed together.
+- Planted area is measured in hectares and production in metric tonnes.
+- W.P. Putrajaya is absent because it has no commercial agriculture; rounded breakdowns may differ from totals.
+
+## Breaking changes
+
+None observed.
+
+## Reproducibility
+
+```sh
+curl -sS --max-time 30 \
+  "https://storage.data.gov.my/agriculture/crops_state.csv" \
+  -o /tmp/crops_state.csv
+```
+
+## Licence
+
+Licensed under the Creative Commons Attribution 4.0 licence, as stated on the
+official catalogue page.
+
+Attribution: MAFS, Department of Agriculture, and DOSM via data.gov.my.
+
+## Sample
+
+- [samples/dgm_crops_state.csv](../samples/dgm_crops_state.csv)
+- [samples/dgm_crops_state.json](../samples/dgm_crops_state.json)
