@@ -1,0 +1,40 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_lfs_qtr",
+  "status": "stale",
+  "last_checked": "2026-08-02T16:01:47Z",
+  "freshness_days": 195,
+  "next_expected_update": null,
+  "refresh_frequency": "quarterly",
+  "record_count": 63,
+  "date_range": { "start": "2010-01-01", "end": "2025-07-01" },
+  "fields": [
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "lf", "type": "number" },
+    { "name": "lf_employed", "type": "number" },
+    { "name": "lf_unemployed", "type": "number" },
+    { "name": "lf_outside", "type": "number" },
+    { "name": "p_rate", "type": "number" },
+    { "name": "ep_ratio", "type": "number" },
+    { "name": "u_rate", "type": "number" }
+  ],
+  "checks": [
+    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 3470-byte payload" },
+    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 63 data rows" },
+    { "name": "freshness", "status": "warn", "method": "Latest observation is 2025-07-01 and file Last-Modified is 2026-01-19 for a quarterly dataset" },
+    { "name": "schema_stable", "status": "pass", "method": "Eight CSV columns matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Quarterly dates use the first day of each quarter.",
+    "Labour-force levels and rates share each row."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/lfs_qtr",
+    "url": "https://storage.dosm.gov.my/labour/lfs_qtr.csv",
+    "alternate_format": "https://storage.dosm.gov.my/labour/lfs_qtr.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
