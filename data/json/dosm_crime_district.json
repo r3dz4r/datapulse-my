@@ -1,0 +1,39 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_crime_district",
+  "status": "stale",
+  "last_checked": "2026-08-02T14:30:00Z",
+  "freshness_days": 655,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 19152,
+  "date_range": { "start": "2016-01-01", "end": "2023-01-01" },
+  "fields": [
+    { "name": "state", "type": "string" },
+    { "name": "district", "type": "string" },
+    { "name": "category", "type": "string", "values": ["assault", "property"] },
+    { "name": "type", "type": "string", "distinct_values": 13 },
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "crimes", "type": "integer" }
+  ],
+  "checks": [
+    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 1038732-byte binary payload" },
+    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 19152 data rows" },
+    { "name": "freshness", "status": "warn", "method": "Latest observation is 2023 and file Last-Modified is 2024-10-16" },
+    { "name": "schema_stable", "status": "pass", "method": "Six CSV columns matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Annual observations use January 1 as the reporting date.",
+    "Malaysia aggregate rows coexist with district-level rows.",
+    "State coverage has no Labuan rows."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/crime_district",
+    "url": "https://storage.data.gov.my/publicsafety/crime_district.csv",
+    "alternate_format": "https://storage.data.gov.my/publicsafety/crime_district.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM, data from PDRM"
+}
