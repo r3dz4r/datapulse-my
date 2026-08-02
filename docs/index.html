@@ -297,10 +297,8 @@
     (() => {
       "use strict";
 
-      const RAW = "https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/";
+      const RAW_BASE = "https://raw.githubusercontent.com/r3dz4r/datapulse-my/main";
       const REPO = "https://github.com/r3dz4r/datapulse-my/blob/main/";
-      const local = ["localhost", "127.0.0.1"].includes(location.hostname);
-      const assets = local ? "../" : RAW;
       const grid = document.querySelector("#dataset-grid");
       const dateFormat = new Intl.DateTimeFormat("en-MY", {
         dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kuala_Lumpur"
@@ -316,7 +314,7 @@
         if (typeof window.__DATAPULSE_FETCH__ === "function") {
           return window.__DATAPULSE_FETCH__(path);
         }
-        const response = await fetch(`${assets}${path}`, { cache: "no-store" });
+        const response = await fetch(`${RAW_BASE}/${path}`, { cache: "no-store" });
         if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
         return response.json();
       }
