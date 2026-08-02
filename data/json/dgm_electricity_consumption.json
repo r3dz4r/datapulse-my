@@ -1,0 +1,67 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_electricity_consumption",
+  "status": "stale",
+  "last_checked": "2026-08-03T02:00:00Z",
+  "freshness_days": 690,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 468,
+  "date_range": {
+    "start": "2018-01-01",
+    "end": "2024-06-01"
+  },
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "sector",
+      "type": "string",
+      "distinct_values": 6
+    },
+    {
+      "name": "consumption",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 17338-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 468 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "The latest observation is 2024-06-01 and the file has not been refreshed on its monthly cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "3 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of the month.",
+    "The `total` and `local` aggregates coexist with detailed sectors and must not be summed together.",
+    "Consumption is measured in millions of kilowatt-hours (MKWh).",
+    "The most recent six months may be revised."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://data.gov.my/data-catalogue/electricity_consumption",
+    "url": "https://storage.data.gov.my/energy/electricity_consumption.csv",
+    "alternate_format": "https://storage.data.gov.my/energy/electricity_consumption.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "Energy Commission, DOSM, and Malaysian electricity utilities via data.gov.my"
+}
