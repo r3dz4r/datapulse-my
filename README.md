@@ -2,6 +2,8 @@
 
 **Live dashboard:** https://r3dz4r.github.io/datapulse-my/
 
+> **🤖 AI-ready** — Point your AI agent at [`https://r3dz4r.github.io/datapulse-my/llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) to consume all 15 datasets (manifest, freshness, licences) in one request.
+
 DataPulse MY is an open-source trust layer for Malaysian public data. It makes
 official datasets easier to assess and reuse by publishing a small manifest,
 human-readable health reports, and machine-readable health envelopes.
