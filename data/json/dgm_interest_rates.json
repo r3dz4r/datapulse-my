@@ -1,0 +1,72 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_interest_rates",
+  "status": "stale",
+  "last_checked": "2026-08-02T16:47:48Z",
+  "freshness_days": 118,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 5712,
+  "date_range": {
+    "start": "1997-01-01",
+    "end": "2026-02-01"
+  },
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "bank",
+      "type": "string",
+      "distinct_values": 2
+    },
+    {
+      "name": "rate",
+      "type": "string",
+      "distinct_values": 18
+    },
+    {
+      "name": "value",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 228401-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 5712 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "The latest observation is 2026-02-01 and the file has not been refreshed on its monthly cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "4 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of the month.",
+    "Rate codes require the official money-and-banking lookup table.",
+    "Fixed-deposit series methodology changes in August 2000.",
+    "The Standardised Base Rate replaced the Base Rate for new retail floating-rate loans in August 2022."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://data.gov.my/data-catalogue/interestrates",
+    "url": "https://storage.data.gov.my/finsector/interest_rates.csv",
+    "alternate_format": "https://storage.data.gov.my/finsector/interest_rates.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "Bank Negara Malaysia via data.gov.my"
+}
