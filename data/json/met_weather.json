@@ -1,0 +1,35 @@
+{
+  "id": "met_weather",
+  "status": "healthy",
+  "last_checked": "2026-08-02T14:00:00Z",
+  "freshness_days": 0,
+  "next_expected_update": "2026-08-03",
+  "refresh_frequency": "daily",
+  "record_count": 2520,
+  "date_range": { "start": "2026-08-02", "end": "2026-08-08" },
+  "fields": [
+    { "name": "location", "type": "object", "fields": ["location_id", "location_name"] },
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "morning_forecast", "type": "string", "language": "ms" },
+    { "name": "afternoon_forecast", "type": "string", "language": "ms" },
+    { "name": "night_forecast", "type": "string", "language": "ms" },
+    { "name": "summary_forecast", "type": "string", "language": "ms" },
+    { "name": "summary_when", "type": "string", "language": "ms" },
+    { "name": "min_temp", "type": "number", "unit": "degrees Celsius" },
+    { "name": "max_temp", "type": "number", "unit": "degrees Celsius" }
+  ],
+  "checks": [
+    { "name": "api_reachable", "status": "pass", "method": "GET request returned JSON" },
+    { "name": "freshness", "status": "pass", "method": "Forecast begins on 2026-08-02" },
+    { "name": "schema_stable", "status": "pass", "method": "Nine fields matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Forecast text is published in Bahasa Malaysia.",
+    "location is a nested object.",
+    "The direct endpoint has no canonical data.gov.my dataset id."
+  ],
+  "breaking_changes": [],
+  "reproducibility": { "commands": ["curl -sL \"https://api.data.gov.my/weather/forecast\" -o /tmp/met.json"] },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "MET Malaysia via data.gov.my"
+}
