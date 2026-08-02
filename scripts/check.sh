@@ -25,7 +25,7 @@ headers_file="$(mktemp)"
 trap 'rm -f "$results_file" "$body_file" "$headers_file"' EXIT
 
 curl_timeout="${DATAPULSE_CURL_TIMEOUT:-30}"
-camofox_timeout="${CAMOFOX_TIMEOUT:-15}"
+camofox_timeout="${CAMOFOX_TIMEOUT:-30}"
 camofox_base_url="${CAMOFOX_BASE_URL:-http://100.74.84.121:9377}"
 
 emit() {
@@ -307,7 +307,7 @@ check_direct_dataset() {
 while IFS=$'\t' read -r dataset_id source_url; do
   case "$dataset_id" in
     doe_apims)
-      check_browser_dataset "$dataset_id" "$source_url" 10
+      check_browser_dataset "$dataset_id" "$source_url" 12
       ;;
     doe_rqims|doe_mqims|kkm_idengue|eperolehan-diklankan)
       check_browser_dataset "$dataset_id" "$source_url" 12
