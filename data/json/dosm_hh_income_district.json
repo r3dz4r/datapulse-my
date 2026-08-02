@@ -1,0 +1,74 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_hh_income_district",
+  "status": "current",
+  "last_checked": "2026-08-02T19:11:50Z",
+  "freshness_days": 27,
+  "next_expected_update": null,
+  "refresh_frequency": "biennial to triennial (survey years)",
+  "record_count": 480,
+  "date_range": {
+    "start": "2019-01-01",
+    "end": "2024-01-01"
+  },
+  "fields": [
+    {
+      "name": "state",
+      "type": "string",
+      "distinct_values": 16
+    },
+    {
+      "name": "district",
+      "type": "string",
+      "distinct_values": 172
+    },
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "income_mean",
+      "type": "integer"
+    },
+    {
+      "name": "income_median",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 18323-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 480 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "File last modified 2026-07-06; latest observation is 2024-01-01 on its biennial to triennial (survey years) cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "5 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Only the 2019, 2022, and 2024 survey years are present.",
+    "District coverage varies across survey years, so the 172 labels do not form a complete panel.",
+    "Income values are source-reported nominal monthly ringgit amounts."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/hies/hh_income_district.csv",
+    "alternate_format": "https://storage.dosm.gov.my/hies/hh_income_district.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
