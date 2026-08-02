@@ -75,7 +75,7 @@ printf 'Following health link: %s\n' "$health_url"
 curl --fail --location --silent --show-error "$health_url" --output "$health_file"
 
 if ! jq -e '
-  (.datasets | type == "array" and length == 53) and
+  (.datasets | type == "array" and length == 75) and
   ([.datasets[].id] | length == (unique | length)) and
   all(.datasets[];
     (.id | type == "string" and length > 0) and
@@ -83,20 +83,20 @@ if ! jq -e '
     (.licence | type == "string" and length > 0)
   )
 ' "$manifest_file" >/dev/null; then
-  printf 'Manifest is invalid or does not contain 53 uniquely identified datasets\n' >&2
+  printf 'Manifest is invalid or does not contain 75 uniquely identified datasets\n' >&2
   exit 1
 fi
 
 if ! jq -e '
   (.checked_at | type == "string" and length > 0) and
-  (.datasets | type == "array" and length == 53) and
+  (.datasets | type == "array" and length == 75) and
   ([.datasets[].dataset_id] | length == (unique | length)) and
   all(.datasets[];
     (.dataset_id | type == "string" and length > 0) and
     (.status | type == "string" and length > 0)
   )
 ' "$health_file" >/dev/null; then
-  printf 'Health snapshot is invalid or does not contain 53 uniquely identified datasets\n' >&2
+  printf 'Health snapshot is invalid or does not contain 75 uniquely identified datasets\n' >&2
   exit 1
 fi
 
@@ -110,9 +110,9 @@ fi
 checked_at="$(jq -r '.checked_at' "$health_file")"
 healthy_count="$(jq '[.datasets[] | select(.status == "healthy")] | length' "$health_file")"
 
-printf '\nAgent-ready verification passed: 53 manifest datasets match 53 health records.\n'
+printf '\nAgent-ready verification passed: 75 manifest datasets match 75 health records.\n'
 printf 'Health snapshot checked at: %s\n' "$checked_at"
-printf 'Fresh/healthy datasets (status=healthy): %s/53\n' "$healthy_count"
+printf 'Fresh/healthy datasets (status=healthy): %s/75\n' "$healthy_count"
 jq -r --slurpfile health "$health_file" '
   ($health[0].datasets | map({key: .dataset_id, value: .status}) | from_entries) as $statuses
   | .datasets[]
@@ -120,7 +120,7 @@ jq -r --slurpfile health "$health_file" '
   | "- \(.name) [\(.id)] — \(.licence)"
 ' "$manifest_file"
 
-if (( healthy_count < 53 )); then
+if (( healthy_count < 75 )); then
   printf '\nOther dataset statuses:\n'
   jq -r --slurpfile health "$health_file" '
     ($health[0].datasets | map({key: .dataset_id, value: .status}) | from_entries) as $statuses
@@ -130,7 +130,7 @@ if (( healthy_count < 53 )); then
   ' "$manifest_file"
 fi
 
-printf '\nLicence summary (all 53 datasets):\n'
+printf '\nLicence summary (all 75 datasets):\n'
 jq -r '
   [.datasets[] | .licence]
   | group_by(.)
