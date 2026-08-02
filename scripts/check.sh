@@ -315,7 +315,13 @@ while IFS=$'\t' read -r dataset_id source_url; do
     dosm_crime_district|dosm_cpi_state|dosm_gdp_state_real_supply|\
     dosm_gdp_qtr_real|dosm_gdp_annual_real_supply|dosm_trade_headline|\
     dosm_cpi_inflation|dosm_trade_enduse_bec|dosm_lfs_qtr|\
-    dosm_lfs_qtr_state|dosm_employment_sector|dosm_population_state)
+    dosm_lfs_qtr_state|dosm_employment_sector|dosm_population_state|\
+    dosm_gdp_annual_nominal_supply|dosm_gdp_qtr_nominal|\
+    dosm_gdp_qtr_real_sa|dosm_gdp_gni_annual_nominal|\
+    dosm_cpi_core_inflation|dosm_cpi_state_inflation|dosm_ppi|\
+    dosm_lfs_year|dosm_lfs_month|dosm_trade_sitc_1d|dosm_ipi_export|\
+    dosm_ipi_domestic|dgm_interest_rates|dgm_federal_finance_qtr_revenue|\
+    dgm_federal_finance_qtr_oe|dgm_state_finance_expenditure)
       check_head_dataset "$dataset_id" "$source_url"
       ;;
     met_weather)
