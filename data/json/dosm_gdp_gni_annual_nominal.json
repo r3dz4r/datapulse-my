@@ -1,0 +1,79 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_gdp_gni_annual_nominal",
+  "status": "current",
+  "last_checked": "2026-08-02T16:47:48Z",
+  "freshness_days": 11,
+  "next_expected_update": "annual",
+  "refresh_frequency": "annual",
+  "record_count": 157,
+  "date_range": {
+    "start": "1947-01-01",
+    "end": "2025-01-01"
+  },
+  "fields": [
+    {
+      "name": "series",
+      "type": "string",
+      "distinct_values": 2
+    },
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "gdp",
+      "type": "number"
+    },
+    {
+      "name": "gni",
+      "type": "number"
+    },
+    {
+      "name": "gdp_capita",
+      "type": "number"
+    },
+    {
+      "name": "gni_capita",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 6921-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 157 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Latest observation is 2025-01-01 and file Last-Modified is 2026-07-22"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "6 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Annual dates use 1 January.",
+    "The 1954 observation is unavailable.",
+    "Historical geographic scope changes before 1963.",
+    "Absolute values and year-on-year growth rates share the measure columns."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/gdp_gni_annual_nominal",
+    "url": "https://storage.dosm.gov.my/gdp/gdp_gni_annual_nominal.csv",
+    "alternate_format": "https://storage.dosm.gov.my/gdp/gdp_gni_annual_nominal.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
