@@ -61,6 +61,12 @@ lookup maps `premise_code` to premise name, address, district, and state.
 
 None observed.
 
+## Sample
+
+- [samples/pricecatcher.csv](samples/pricecatcher.csv)
+- [samples/pricecatcher_lookup_item.csv](samples/pricecatcher_lookup_item.csv)
+- [samples/pricecatcher_lookup_premise.csv](samples/pricecatcher_lookup_premise.csv)
+
 ## Reproducibility
 
 Check reachability and reported file sizes with:
