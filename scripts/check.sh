@@ -1,173 +1,285 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# Dataset failures are data: record them and continue so the summary is complete.
 
 manifest="${1:-datapulse.json}"
+
+if ! command -v jq >/dev/null 2>&1; then
+  printf 'jq is required\n' >&2
+  exit 1
+fi
+
+if [[ ! -r "$manifest" ]]; then
+  printf 'Cannot read manifest: %s\n' "$manifest" >&2
+  exit 1
+fi
+
+if ! jq -e '.datasets | type == "array" and all(.[]; (.id | type == "string") and (.url | type == "string"))' \
+  "$manifest" >/dev/null 2>&1; then
+  printf 'Invalid dataset manifest: %s\n' "$manifest" >&2
+  exit 1
+fi
+
 results_file="$(mktemp)"
 body_file="$(mktemp)"
 headers_file="$(mktemp)"
 trap 'rm -f "$results_file" "$body_file" "$headers_file"' EXIT
 
-check_eqms_dataset() {
+curl_timeout="${DATAPULSE_CURL_TIMEOUT:-30}"
+camofox_timeout="${CAMOFOX_TIMEOUT:-15}"
+camofox_base_url="${CAMOFOX_BASE_URL:-http://100.74.84.121:9377}"
+
+emit() {
+  local dataset_id="$1"
+  local url="$2"
+  local status="$3"
+  local message="$4"
+  local details="${5:-\{\}}"
+
+  jq -cn \
+    --arg dataset_id "$dataset_id" \
+    --arg url "$url" \
+    --arg status "$status" \
+    --arg message "$message" \
+    --argjson details "$details" \
+    '{dataset_id: $dataset_id, url: $url, status: $status, message: $message} + $details' \
+    >> "$results_file"
+}
+
+http_status_name() {
+  local http_status="$1"
+
+  case "$http_status" in
+    2??) printf 'healthy' ;;
+    4??) printf 'down' ;;
+    5??) printf 'degraded' ;;
+    *) printf 'unknown' ;;
+  esac
+}
+
+emit_http_failure() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local request_url="$3"
+  local http_status="$4"
+  local access_method="${5:-direct curl GET}"
+  local status details
+
+  status="$(http_status_name "$http_status")"
+  details="$(jq -cn \
+    --arg request_url "$request_url" \
+    --arg access_method "$access_method" \
+    --argjson http_status "$http_status" \
+    '{request_url: $request_url, access_method: $access_method, http_status: $http_status}')"
+  emit "$dataset_id" "$source_url" "$status" "HTTP ${http_status}" "$details"
+}
+
+close_camofox_tab() {
+  local tab_id="$1"
+  local user_id="$2"
+
+  curl --silent --show-error --fail --max-time "$camofox_timeout" \
+    --request DELETE "${camofox_base_url}/tabs/${tab_id}" \
+    --header 'Content-Type: application/json' \
+    --data "$(jq -cn --arg userId "$user_id" '{userId: $userId}')" >/dev/null 2>&1
+}
+
+check_browser_dataset() {
   local dataset_id="$1"
   local source_url="$2"
   local wait_seconds="$3"
-  local camofox_base_url="${CAMOFOX_BASE_URL:-http://100.74.84.121:9377}"
   local user_id="datapulse-check-${dataset_id}"
-  local open_response tab_id snapshot_response snapshot
+  local open_response tab_id snapshot_response snapshot details
   local stations timestamp snapshot_chars
 
-  open_response="$(curl --location --silent --show-error --fail \
+  if ! open_response="$(curl --location --silent --show-error --fail \
+    --max-time "$camofox_timeout" \
     --request POST "${camofox_base_url}/tabs/open" \
     --header 'Content-Type: application/json' \
-    --data "$(jq -n --arg userId "$user_id" --arg url "$source_url" \
-      '{userId: $userId, url: $url}')")" || {
-      printf 'Camofox tab open failed for %s (%s)\n' "$dataset_id" "$source_url" >&2
-      exit 1
-    }
+    --data "$(jq -cn --arg userId "$user_id" --arg url "$source_url" \
+      '{userId: $userId, url: $url}')" 2>/dev/null)"; then
+    details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
+    emit "$dataset_id" "$source_url" "browser-required" \
+      "Camofox unavailable; browser check required" "$details"
+    return 0
+  fi
 
-  tab_id="$(jq -r '.tabId // empty' <<< "$open_response")"
+  tab_id="$(jq -r '.tabId // empty' <<< "$open_response" 2>/dev/null)"
   if [[ -z "$tab_id" ]]; then
-    printf 'Camofox returned no tab id for %s (%s)\n' "$dataset_id" "$source_url" >&2
-    exit 1
+    details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
+    emit "$dataset_id" "$source_url" "error" "Camofox returned no tab id" "$details"
+    return 0
   fi
 
   sleep "$wait_seconds"
 
-  snapshot_response="$(curl --location --silent --show-error --fail \
-    "${camofox_base_url}/tabs/${tab_id}/snapshot?userId=${user_id}")" || {
-      curl --silent --show-error --request DELETE \
-        "${camofox_base_url}/tabs/${tab_id}" \
-        --header 'Content-Type: application/json' \
-        --data "$(jq -n --arg userId "$user_id" '{userId: $userId}')" >/dev/null || true
-      printf 'Camofox snapshot failed for %s (%s)\n' "$dataset_id" "$source_url" >&2
-      exit 1
-    }
+  if ! snapshot_response="$(curl --location --silent --show-error --fail \
+    --max-time "$camofox_timeout" \
+    "${camofox_base_url}/tabs/${tab_id}/snapshot?userId=${user_id}" 2>/dev/null)"; then
+    close_camofox_tab "$tab_id" "$user_id" || true
+    details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
+    emit "$dataset_id" "$source_url" "error" "Camofox snapshot failed" "$details"
+    return 0
+  fi
 
-  snapshot="$(jq -r '.snapshot // empty' <<< "$snapshot_response")"
+  snapshot="$(jq -r '.snapshot // empty' <<< "$snapshot_response" 2>/dev/null)"
+  if [[ -z "$snapshot" ]]; then
+    close_camofox_tab "$tab_id" "$user_id" || true
+    details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
+    emit "$dataset_id" "$source_url" "error" "Camofox returned no snapshot" "$details"
+    return 0
+  fi
+
   stations="$(grep -Ec 'row "[0-9]+ [A-Z]' <<< "$snapshot" || true)"
   timestamp="$(grep -Eo '[0-9]{2}/[0-9]{2}/[0-9]{4}, [0-9]{2}:[0-9]{2}' \
     <<< "$snapshot" | head -n 1 || true)"
   snapshot_chars="${#snapshot}"
 
-  curl --silent --show-error --fail --request DELETE \
-    "${camofox_base_url}/tabs/${tab_id}" \
-    --header 'Content-Type: application/json' \
-    --data "$(jq -n --arg userId "$user_id" '{userId: $userId}')" >/dev/null || {
-      printf 'Camofox tab close failed for %s (%s)\n' "$dataset_id" "$source_url" >&2
-      exit 1
-    }
+  if ! close_camofox_tab "$tab_id" "$user_id"; then
+    details="$(jq -cn \
+      --arg access_method 'Camofox' \
+      --argjson wait_seconds "$wait_seconds" \
+      '{access_method: $access_method, wait_seconds: $wait_seconds}')"
+    emit "$dataset_id" "$source_url" "error" "Camofox tab close failed" "$details"
+    return 0
+  fi
 
-  jq -n \
-    --arg dataset_id "$dataset_id" \
-    --arg url "$source_url" \
-    --arg access_method "Camofox" \
+  details="$(jq -cn \
+    --arg access_method 'Camofox' \
     --argjson wait_seconds "$wait_seconds" \
     --argjson stations "$stations" \
     --arg timestamp "$timestamp" \
     --argjson snapshot_chars "$snapshot_chars" \
     '{
-      dataset_id: $dataset_id,
-      url: $url,
       access_method: $access_method,
       wait_seconds: $wait_seconds,
       stations: $stations,
       timestamp: (if $timestamp == "" then null else $timestamp end),
       snapshot_chars: $snapshot_chars
-    }'
+    }')"
+  emit "$dataset_id" "$source_url" "healthy" "Browser check succeeded" "$details"
 }
 
-while IFS=$'\t' read -r dataset_id source_url; do
-  if [[ "$dataset_id" == "doe_apims" ]]; then
-    check_eqms_dataset "$dataset_id" "$source_url" 10 >> "$results_file"
-    continue
-  elif [[ "$dataset_id" == "doe_rqims" ]]; then
-    check_eqms_dataset "$dataset_id" "$source_url" 12 >> "$results_file"
-    continue
-  elif [[ "$dataset_id" == "doe_mqims" ]]; then
-    check_eqms_dataset "$dataset_id" "$source_url" 12 >> "$results_file"
-    continue
-  elif [[ "$dataset_id" == "kkm_idengue" ]]; then
-    check_eqms_dataset "$dataset_id" "https://idengue.mysa.gov.my/" 12 >> "$results_file"
-    continue
-  elif [[ "$dataset_id" == "dosm_crime_district" || "$dataset_id" == "dosm_cpi_state" || "$dataset_id" == "dosm_gdp_state_real_supply" ]]; then
-    http_status="$(curl --location --silent --show-error --fail --head \
-      --dump-header "$headers_file" --output /dev/null --write-out '%{http_code}' \
-      "$source_url")" || {
-        printf 'curl HEAD failed for %s (%s)\n' "$dataset_id" "$source_url" >&2
-        exit 1
-      }
+check_head_dataset() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local http_status status content_length last_modified details
 
-    content_length="$(awk 'BEGIN { IGNORECASE=1 } /^content-length:/ { value=$2 } END { gsub("\\r", "", value); print value }' "$headers_file")"
-    last_modified="$(awk 'BEGIN { IGNORECASE=1 } /^last-modified:/ { sub(/^[^:]+:[[:space:]]*/, ""); value=$0 } END { gsub("\\r", "", value); print value }' "$headers_file")"
-
-    if [[ -z "$content_length" || -z "$last_modified" ]]; then
-      printf 'Missing expected headers for %s (%s)\n' "$dataset_id" "$source_url" >&2
-      exit 1
-    fi
-
-    jq -n \
-      --arg dataset_id "$dataset_id" \
-      --arg url "$source_url" \
-      --argjson http_status "$http_status" \
-      --argjson content_length "$content_length" \
-      --arg last_modified "$last_modified" \
-      '{
-        dataset_id: $dataset_id,
-        url: $url,
-        access_method: "direct curl HEAD",
-        http_status: $http_status,
-        content_length: $content_length,
-        last_modified: $last_modified
-      }' >> "$results_file"
-    continue
-  elif [[ "$dataset_id" == "met_weather" ]]; then
-    http_status="$(curl --location --silent --show-error \
-      --output "$body_file" --write-out '%{http_code}' "$source_url")" || {
-        printf 'curl failed for %s (%s)\n' "$dataset_id" "$source_url" >&2
-        exit 1
-      }
-
-    if [[ ! "$http_status" =~ ^2[0-9][0-9]$ ]]; then
-      printf 'HTTP %s for %s (%s)\n' "$http_status" "$dataset_id" "$source_url" >&2
-      exit 1
-    fi
-
-    jq -n \
-      --arg dataset_id "$dataset_id" \
-      --arg url "$source_url" \
-      --argjson http_status "$http_status" \
-      --argjson content_length "$(wc -c < "$body_file" | tr -d '[:space:]')" \
-      --argjson record_count "$(jq 'length' "$body_file")" \
-      --argjson locations "$(jq '[.[].location.location_id] | unique | length' "$body_file")" \
-      --arg date_start "$(jq -r '[.[].date] | min' "$body_file")" \
-      --arg date_end "$(jq -r '[.[].date] | max' "$body_file")" \
-      '{
-        dataset_id: $dataset_id,
-        url: $url,
-        request_url: $url,
-        http_status: $http_status,
-        content_length: $content_length,
-        record_count: $record_count,
-        locations: $locations,
-        date_range: {start: $date_start, end: $date_end}
-      }' >> "$results_file"
-    continue
+  : > "$headers_file"
+  if ! http_status="$(curl --location --silent --show-error --head \
+    --max-time "$curl_timeout" \
+    --dump-header "$headers_file" --output /dev/null --write-out '%{http_code}' \
+    "$source_url" 2>/dev/null)"; then
+    details="$(jq -cn --arg access_method 'direct curl HEAD' \
+      '{access_method: $access_method}')"
+    emit "$dataset_id" "$source_url" "error" "curl HEAD request failed" "$details"
+    return 0
   fi
 
-  request_url="$source_url"
+  status="$(http_status_name "$http_status")"
+  if [[ "$status" != "healthy" ]]; then
+    emit_http_failure "$dataset_id" "$source_url" "$source_url" "$http_status" \
+      "direct curl HEAD"
+    return 0
+  fi
+
+  content_length="$(awk 'BEGIN { IGNORECASE=1 } /^content-length:/ { value=$2 } END { gsub("\\r", "", value); print value }' "$headers_file")"
+  last_modified="$(awk 'BEGIN { IGNORECASE=1 } /^last-modified:/ { sub(/^[^:]+:[[:space:]]*/, ""); value=$0 } END { gsub("\\r", "", value); print value }' "$headers_file")"
+
+  if [[ ! "$content_length" =~ ^[0-9]+$ || -z "$last_modified" ]]; then
+    details="$(jq -cn \
+      --arg access_method 'direct curl HEAD' \
+      --argjson http_status "$http_status" \
+      '{access_method: $access_method, http_status: $http_status}')"
+    emit "$dataset_id" "$source_url" "error" "Missing expected response headers" "$details"
+    return 0
+  fi
+
+  details="$(jq -cn \
+    --arg access_method 'direct curl HEAD' \
+    --argjson http_status "$http_status" \
+    --argjson content_length "$content_length" \
+    --arg last_modified "$last_modified" \
+    '{
+      access_method: $access_method,
+      http_status: $http_status,
+      content_length: $content_length,
+      last_modified: $last_modified
+    }')"
+  emit "$dataset_id" "$source_url" "healthy" "HTTP ${http_status}" "$details"
+}
+
+check_weather_dataset() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local http_status content_length record_count locations date_start date_end details
+
+  if ! http_status="$(curl --location --silent --show-error \
+    --max-time "$curl_timeout" \
+    --output "$body_file" --write-out '%{http_code}' "$source_url" 2>/dev/null)"; then
+    emit "$dataset_id" "$source_url" "error" "curl request failed" \
+      '{"access_method":"direct curl GET"}'
+    return 0
+  fi
+
+  if [[ ! "$http_status" =~ ^2[0-9][0-9]$ ]]; then
+    emit_http_failure "$dataset_id" "$source_url" "$source_url" "$http_status"
+    return 0
+  fi
+
+  if ! jq -e 'type == "array"' "$body_file" >/dev/null 2>&1; then
+    details="$(jq -cn --argjson http_status "$http_status" \
+      '{access_method: "direct curl GET", http_status: $http_status}')"
+    emit "$dataset_id" "$source_url" "error" "Response was not a JSON array" "$details"
+    return 0
+  fi
+
+  content_length="$(wc -c < "$body_file" | tr -d '[:space:]')"
+  record_count="$(jq 'length' "$body_file")"
+  locations="$(jq '[.[].location.location_id] | unique | length' "$body_file")"
+  date_start="$(jq -r '[.[].date] | min // empty' "$body_file")"
+  date_end="$(jq -r '[.[].date] | max // empty' "$body_file")"
+  details="$(jq -cn \
+    --arg request_url "$source_url" \
+    --argjson http_status "$http_status" \
+    --argjson content_length "$content_length" \
+    --argjson record_count "$record_count" \
+    --argjson locations "$locations" \
+    --arg date_start "$date_start" \
+    --arg date_end "$date_end" \
+    '{
+      request_url: $request_url,
+      access_method: "direct curl GET",
+      http_status: $http_status,
+      content_length: $content_length,
+      record_count: $record_count,
+      locations: $locations,
+      date_range: {start: ($date_start // null), end: ($date_end // null)}
+    }')"
+  emit "$dataset_id" "$source_url" "healthy" "HTTP ${http_status}" "$details"
+}
+
+check_direct_dataset() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local request_url="$source_url"
+  local http_status content_length first_record_timestamp details
+
   if [[ "$dataset_id" == "fuelprice" ]]; then
     request_url="https://api.data.gov.my/data-catalogue?id=fuelprice&limit=1"
   fi
 
-  http_status="$(curl --location --silent --show-error \
-    --output "$body_file" --write-out '%{http_code}' "$request_url")" || {
-      printf 'curl failed for %s (%s)\n' "$dataset_id" "$request_url" >&2
-      exit 1
-    }
+  if ! http_status="$(curl --location --silent --show-error \
+    --max-time "$curl_timeout" \
+    --output "$body_file" --write-out '%{http_code}' "$request_url" 2>/dev/null)"; then
+    details="$(jq -cn --arg request_url "$request_url" \
+      '{request_url: $request_url, access_method: "direct curl GET"}')"
+    emit "$dataset_id" "$source_url" "error" "curl request failed" "$details"
+    return 0
+  fi
 
   if [[ ! "$http_status" =~ ^2[0-9][0-9]$ ]]; then
-    printf 'HTTP %s for %s (%s)\n' "$http_status" "$dataset_id" "$request_url" >&2
-    exit 1
+    emit_http_failure "$dataset_id" "$source_url" "$request_url" "$http_status"
+    return 0
   fi
 
   content_length="$(wc -c < "$body_file" | tr -d '[:space:]')"
@@ -175,27 +287,73 @@ while IFS=$'\t' read -r dataset_id source_url; do
     jq -r 'if type == "array" then .[0] else . end
       | .timestamp // .date // .publish_date // empty' "$body_file" 2>/dev/null || true
   )"
-
-  jq -n \
-    --arg dataset_id "$dataset_id" \
-    --arg url "$source_url" \
+  details="$(jq -cn \
     --arg request_url "$request_url" \
     --argjson http_status "$http_status" \
     --argjson content_length "$content_length" \
     --arg first_record_timestamp "$first_record_timestamp" \
     '{
-      dataset_id: $dataset_id,
-      url: $url,
       request_url: $request_url,
+      access_method: "direct curl GET",
       http_status: $http_status,
       content_length: $content_length,
       first_record_timestamp: (
         if $first_record_timestamp == "" then null else $first_record_timestamp end
       )
-    }' >> "$results_file"
+    }')"
+  emit "$dataset_id" "$source_url" "healthy" "HTTP ${http_status}" "$details"
+}
+
+while IFS=$'\t' read -r dataset_id source_url; do
+  case "$dataset_id" in
+    doe_apims)
+      check_browser_dataset "$dataset_id" "$source_url" 10
+      ;;
+    doe_rqims|doe_mqims|kkm_idengue|eperolehan-diklankan)
+      check_browser_dataset "$dataset_id" "$source_url" 12
+      ;;
+    dosm_crime_district|dosm_cpi_state|dosm_gdp_state_real_supply)
+      check_head_dataset "$dataset_id" "$source_url"
+      ;;
+    met_weather)
+      check_weather_dataset "$dataset_id" "$source_url"
+      ;;
+    *)
+      check_direct_dataset "$dataset_id" "$source_url"
+      ;;
+  esac
 done < <(jq -r '.datasets[] | [.id, .url] | @tsv' "$manifest")
+
+expected_count="$(jq '.datasets | length' "$manifest")"
+actual_count="$(wc -l < "$results_file" | tr -d '[:space:]')"
+if [[ "$actual_count" != "$expected_count" ]]; then
+  printf 'Internal error: expected %s results, wrote %s\n' "$expected_count" "$actual_count" >&2
+  exit 1
+fi
 
 jq -s \
   --arg schema "datapulse/v0.1/dataset-health" \
   --arg checked_at "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-  '{schema: $schema, checked_at: $checked_at, datasets: .}' "$results_file"
+  '{
+    schema: $schema,
+    checked_at: $checked_at,
+    datasets: map({
+      dataset_id: (.dataset_id // null),
+      url: (.url // null),
+      status: (.status // "unknown"),
+      message: (.message // null),
+      request_url: (.request_url // null),
+      access_method: (.access_method // null),
+      http_status: (.http_status // null),
+      content_length: (.content_length // null),
+      last_modified: (.last_modified // null),
+      first_record_timestamp: (.first_record_timestamp // null),
+      wait_seconds: (.wait_seconds // null),
+      stations: (.stations // null),
+      timestamp: (.timestamp // null),
+      snapshot_chars: (.snapshot_chars // null),
+      record_count: (.record_count // null),
+      locations: (.locations // null),
+      date_range: (.date_range // null)
+    })
+  }' "$results_file"
