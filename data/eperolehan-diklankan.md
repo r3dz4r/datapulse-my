@@ -5,9 +5,13 @@
 **Freshness:** 0 days  
 **Access method:** JavaScript-rendered via Camofox
 
+**Source URL:** <https://www.eperolehan.gov.my/quotation-tender-notice>
+
 ## Coverage
 
-The observed dataset contains 20 rows. Each listing exposes six fields:
+The browser-rendered listing exposed 29 tender rows in the observed snapshot.
+Its paginator reported 834 total results across 42 pages. Each listing exposes
+six fields:
 
 - `title`
 - `agency`
@@ -30,7 +34,8 @@ Following a listing to its detail view exposes seven additional fields:
 
 The listing and detail views are available and current, with no freshness lag.
 Collection requires a browser-capable workflow because the site is rendered
-with JavaScript.
+with JavaScript. The public source uses the `www.eperolehan.gov.my` host; the
+bare `eperolehan.gov.my` host is not publicly DNS-resolvable.
 
 ## Known quirks
 
