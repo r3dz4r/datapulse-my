@@ -1,0 +1,37 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_gdp_annual_real_supply",
+  "status": "current",
+  "last_checked": "2026-08-02T16:01:47Z",
+  "freshness_days": 11,
+  "next_expected_update": "annual",
+  "refresh_frequency": "annual",
+  "record_count": 147,
+  "date_range": { "start": "2015-01-01", "end": "2025-01-01" },
+  "fields": [
+    { "name": "series", "type": "string", "values": ["abs", "growth_yoy"] },
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "sector", "type": "string", "distinct_values": 7 },
+    { "name": "value", "type": "number" }
+  ],
+  "checks": [
+    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 4276-byte payload" },
+    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 147 data rows" },
+    { "name": "freshness", "status": "pass", "method": "Latest observation is 2025-01-01 and file Last-Modified is 2026-07-22" },
+    { "name": "schema_stable", "status": "pass", "method": "Four CSV columns matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Annual dates use January 1 as the reporting date.",
+    "Overall GDP p0 rows coexist with p1 through p6 components.",
+    "Absolute values and year-on-year growth rates share the value column."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/gdp_annual_real_supply",
+    "url": "https://storage.dosm.gov.my/gdp/gdp_annual_real_supply.csv",
+    "alternate_format": "https://storage.dosm.gov.my/gdp/gdp_annual_real_supply.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
