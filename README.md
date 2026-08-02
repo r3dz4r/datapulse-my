@@ -58,7 +58,7 @@ public data without first building a custom integration. DataPulse MY makes the
 full portfolio discoverable from one self-describing index, ready for agents,
 RAG systems, and internal knowledge tools to consume.
 
-**What being agent-ready gives you**
+**What being AI-ready gives you**
 
 - **Zero integration work:** an AI agent or LLM/RAG system fetches one
   [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) and can use the
@@ -76,6 +76,35 @@ RAG systems, and internal knowledge tools to consume.
   to ground chatbots and AI tools in current Malaysian public data.
 
 **92 datasets, 80 under CC BY 4.0, 12 under OGL.**
+
+### MCP server (read-only)
+
+DataPulse MY also exposes an AI-ready, read-only MCP server so agents can query
+the catalogue natively:
+
+- Endpoint: `https://mcp.datapulse-my.my/mcp` (Streamable HTTP, no auth)
+- 5 tools: `search_datasets`, `get_dataset`, `find_stale`, `get_provenance`, `find_by_licence`
+- 3 resources: `datapulse://index`, `datapulse://licences`, `datapulse://{dataset_id}`
+
+The durable public hostname is pending Cloudflare Named Tunnel credentials and
+DNS; the transport is currently verified only on the VPS and behind nginx.
+
+Connect from Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "datapulse-my": {
+      "transport": "streamable-http",
+      "url": "https://mcp.datapulse-my.my/mcp"
+    }
+  }
+}
+```
+
+See [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) for the full
+discovery index, and [`docs/mcp-deploy.md`](./docs/mcp-deploy.md) for the
+deployment architecture.
 
 ### How to consume the data
 

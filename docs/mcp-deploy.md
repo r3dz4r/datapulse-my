@@ -18,6 +18,19 @@ The durable services currently terminate at nginx on
 `https://127.0.0.1:8443/mcp`. The MCP process itself is reachable only from the
 VPS at `http://127.0.0.1:8788/mcp`.
 
+Once the named tunnel and DNS are configured, connect from Claude Desktop with:
+
+```json
+{
+  "mcpServers": {
+    "datapulse-my": {
+      "transport": "streamable-http",
+      "url": "https://mcp.datapulse-my.my/mcp"
+    }
+  }
+}
+```
+
 ## Services
 
 The MCP server runs as the enabled user service `datapulse-mcp.service`.
