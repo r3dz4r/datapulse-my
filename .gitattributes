@@ -1,0 +1,21 @@
+# Force LF for shell scripts and config files that bash/yaml parsers require.
+# Without this, Windows git clients convert LF → CRLF on checkout, which
+# breaks bash scripts with "syntax error near unexpected token".
+#
+# Verified needed: scripts/check.sh had 166 CR chars after Codex dispatch
+# on 2026-08-02, causing `bash -n` to fail with:
+#   syntax error near unexpected token $'{\r'
+
+# Shell scripts: bash, sh, dash, zsh
+*.sh text eol=lf
+
+# CI workflows: YAML, must be LF for GitHub Actions
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# JSON: technically tolerant of CRLF but cleaner as LF
+*.json text eol=lf
+
+# Markdown and CSV: LF for consistency
+*.md text eol=lf
+*.csv text eol=lf
