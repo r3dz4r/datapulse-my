@@ -41,6 +41,10 @@ with JavaScript.
 Collectors should wait for the detail content after clicking and account for
 the gridcell offset when mapping values.
 
+## Sample
+
+- [samples/eperolehan-diklankan.json](samples/eperolehan-diklankan.json)
+
 ## Licence and attribution
 
 Licensed under the Open Government Licence (Malaysia).
