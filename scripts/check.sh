@@ -115,10 +115,15 @@ check_browser_dataset() {
   if ! snapshot_response="$(curl --location --silent --show-error --fail \
     --max-time "$camofox_timeout" \
     "${camofox_base_url}/tabs/${tab_id}/snapshot?userId=${user_id}" 2>/dev/null)"; then
-    close_camofox_tab "$tab_id" "$user_id" || true
-    details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
-    emit "$dataset_id" "$source_url" "error" "Camofox snapshot failed" "$details"
-    return 0
+    sleep 6
+    if ! snapshot_response="$(curl --location --silent --show-error --fail \
+      --max-time "$camofox_timeout" \
+      "${camofox_base_url}/tabs/${tab_id}/snapshot?userId=${user_id}" 2>/dev/null)"; then
+      close_camofox_tab "$tab_id" "$user_id" || true
+      details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
+      emit "$dataset_id" "$source_url" "error" "Camofox snapshot failed" "$details"
+      return 0
+    fi
   fi
 
   snapshot="$(jq -r '.snapshot // empty' <<< "$snapshot_response" 2>/dev/null)"
