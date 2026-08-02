@@ -1,0 +1,86 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_lfs_month",
+  "status": "current",
+  "last_checked": "2026-08-02T16:47:48Z",
+  "freshness_days": 16,
+  "next_expected_update": "monthly",
+  "refresh_frequency": "monthly",
+  "record_count": 197,
+  "date_range": {
+    "start": "2010-01-01",
+    "end": "2026-05-01"
+  },
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "lf",
+      "type": "number"
+    },
+    {
+      "name": "lf_employed",
+      "type": "number"
+    },
+    {
+      "name": "lf_unemployed",
+      "type": "number"
+    },
+    {
+      "name": "lf_outside",
+      "type": "number"
+    },
+    {
+      "name": "p_rate",
+      "type": "number"
+    },
+    {
+      "name": "ep_ratio",
+      "type": "number"
+    },
+    {
+      "name": "u_rate",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 10706-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 197 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Latest observation is 2026-05-01 and file Last-Modified is 2026-07-17"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "8 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of the month.",
+    "Counts are reported in thousands of persons.",
+    "A population-benchmark break occurs in 2025 when the reference changes from the 2010 to the 2020 Census.",
+    "Rounded components may not sum exactly to published totals."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/lfs_month",
+    "url": "https://storage.dosm.gov.my/labour/lfs_month.csv",
+    "alternate_format": "https://storage.dosm.gov.my/labour/lfs_month.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
