@@ -1,5 +1,7 @@
 # DataPulse MY
 
+**Live dashboard:** https://r3dz4r.github.io/datapulse-my/
+
 DataPulse MY is an open-source trust layer for Malaysian public data. It makes
 official datasets easier to assess and reuse by publishing a small manifest,
 human-readable health reports, and machine-readable health envelopes.
