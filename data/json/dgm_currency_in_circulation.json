@@ -1,0 +1,36 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_currency_in_circulation",
+  "status": "stale",
+  "last_checked": "2026-08-02T17:18:27Z",
+  "freshness_days": 119,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 5966,
+  "date_range": { "start": "2000-01-01", "end": "2026-02-01" },
+  "fields": [
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "denomination", "type": "string", "distinct_values": 19 },
+    { "name": "value", "type": "number" }
+  ],
+  "checks": [
+    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 157801-byte CSV payload" },
+    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 5966 data rows" },
+    { "name": "freshness", "status": "warn", "method": "Latest observation is 2026-02-01 and the file has not been refreshed on its monthly cadence" },
+    { "name": "schema_stable", "status": "pass", "method": "3 CSV columns matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of the month.",
+    "Values are reported in RM millions.",
+    "Total rows coexist with denomination rows.",
+    "Historical and other-denomination codes remain in the schema."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/finsector/currency_in_circulation.csv",
+    "alternate_format": "https://storage.data.gov.my/finsector/currency_in_circulation.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "Bank Negara Malaysia via data.gov.my"
+}
