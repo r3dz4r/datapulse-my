@@ -1,0 +1,64 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_death_maternal",
+  "status": "current",
+  "last_checked": "2026-08-02T19:11:50Z",
+  "freshness_days": 26,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 79,
+  "date_range": {
+    "start": "1946-01-01",
+    "end": "2024-01-01"
+  },
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "abs",
+      "type": "number"
+    },
+    {
+      "name": "rate",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 1508-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 79 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "File last modified 2026-07-07; latest observation is 2024-01-01 on its annual cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "3 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Annual dates use 1 January.",
+    "Absolute maternal-death counts are blank from 1946 through 1999; rates remain available.",
+    "Small absolute counts can produce volatile maternal mortality ratios."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/demography/death_maternal.csv",
+    "alternate_format": "https://storage.dosm.gov.my/demography/death_maternal.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
