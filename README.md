@@ -82,12 +82,12 @@ RAG systems, and internal knowledge tools to consume.
 DataPulse MY also exposes an AI-ready, read-only MCP server so agents can query
 the catalogue natively:
 
-- Endpoint: `https://mcp.datapulse-my.my/mcp` (Streamable HTTP, no auth)
+- Endpoint: `https://mcp.data-pulse.my/mcp` (Streamable HTTP, no auth)
 - 5 tools: `search_datasets`, `get_dataset`, `find_stale`, `get_provenance`, `find_by_licence`
 - 3 resources: `datapulse://index`, `datapulse://licences`, `datapulse://{dataset_id}`
 
-The durable public hostname is pending Cloudflare Named Tunnel credentials and
-DNS; the transport is currently verified only on the VPS and behind nginx.
+The public endpoint is live and serves all 5 read-only tools over the
+92-dataset catalogue.
 
 Connect from Claude Desktop:
 
@@ -96,7 +96,7 @@ Connect from Claude Desktop:
   "mcpServers": {
     "datapulse-my": {
       "transport": "streamable-http",
-      "url": "https://mcp.datapulse-my.my/mcp"
+      "url": "https://mcp.data-pulse.my/mcp"
     }
   }
 }

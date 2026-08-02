@@ -16,7 +16,7 @@ infrastructure and does not imply adoption by any LLM provider or improved citat
 
 DataPulse MY exposes a **read-only MCP server** so AI agents (Claude Desktop, Cursor, Cline, etc.) can query the 92-dataset catalogue natively.
 
-- **MCP endpoint:** https://mcp.datapulse-my.my/mcp
+- **MCP endpoint:** https://mcp.data-pulse.my/mcp
 - **Transport:** Streamable HTTP (POST-only, single endpoint)
 - **Auth:** none required (all 5 tools are read-only)
 - **Source:** reads the same `datapulse.json` + `health/latest.json` served from this repository; no separate API
@@ -44,13 +44,13 @@ DataPulse MY exposes a **read-only MCP server** so AI agents (Claude Desktop, Cu
   "mcpServers": {
     "datapulse-my": {
       "transport": "streamable-http",
-      "url": "https://mcp.datapulse-my.my/mcp"
+      "url": "https://mcp.data-pulse.my/mcp"
     }
   }
 }
 ```
 
-Note: the durable public URL requires Cloudflare Named Tunnel credentials. Until that's configured, the verified transport is reachable only on the VPS (`http://127.0.0.1:8788/mcp`) and behind nginx (`https://127.0.0.1:8443/mcp`). The repo keeps these endpoint references current as soon as a public hostname is bound. Deployment and service details for `datapulse-mcp` are in [`docs/mcp-deploy.md`](https://r3dz4r.github.io/datapulse-my/docs/mcp-deploy.md).
+The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 5 read-only tools over the 92-dataset catalogue. Deployment and service details for `datapulse-mcp` are in [`docs/mcp-deploy.md`](https://r3dz4r.github.io/datapulse-my/docs/mcp-deploy.md).
 
 ## Manifest
 
