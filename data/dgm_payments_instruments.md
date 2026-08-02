@@ -1,0 +1,84 @@
+---
+dataset_id: dgm_payments_instruments
+last_checked: 2026-08-02T17:18:27Z
+status: stale
+freshness_delta: 119 days since file update
+next_expected_update: overdue
+record_count: 688
+date_range: 2019-01-01 to 2026-02-01
+schema_version: 1.0
+schema_drift: none
+known_quirks: ["Monthly dates use 1 January.", "Instrument codes separate face-to-face and online activity.", "Value and volume use different units.", "The earliest charge-card rows contain null value and volume fields."]
+breaking_changes: []
+licence: Creative Commons Attribution 4.0
+attribution: Bank Negara Malaysia via data.gov.my
+---
+
+# data.gov.my Monthly Payment Instruments
+
+## Provenance
+
+Bank Negara Malaysia publishes this dataset through data.gov.my as direct CSV
+and Parquet downloads:
+
+- `https://storage.data.gov.my/finsector/payments/instruments.csv`
+- `https://storage.data.gov.my/finsector/payments/instruments.parquet`
+
+## Status
+
+**Status:** Stale
+
+**Freshness:** File last updated 2026-04-05; observations end on 2026-02-01
+
+**Refresh frequency:** Monthly
+
+The CSV endpoint returned HTTP 200 and its expected 32,818-byte file. It
+contains 688 data rows.
+
+## Last checked
+
+2026-08-02 by direct HTTP HEAD request and CSV download.
+
+## Coverage
+
+The dataset covers eight payment-instrument series in Malaysia from 2019-01-01
+through 2026-02-01.
+
+## Schema
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `date` | date | Monthly observation date in YYYY-MM-DD format. |
+| `instrument` | string | Payment instrument and channel code. |
+| `value` | number or null | Total transaction value in ringgit. |
+| `volume` | number or null | Number of transactions. |
+
+## Known quirks
+
+- Monthly dates use the first day of the month.
+- Instrument codes distinguish face-to-face (`f2f`) and online activity.
+- The first 18 `charge_f2f` observations have blank value and volume fields.
+- `value` is monetary while `volume` is a transaction count.
+
+## Breaking changes
+
+None observed.
+
+## Reproducibility
+
+```sh
+curl -sS --max-time 30 \
+  "https://storage.data.gov.my/finsector/payments/instruments.csv" \
+  -o /tmp/payments_instruments.csv
+```
+
+## Licence
+
+Licensed under the Creative Commons Attribution 4.0 licence.
+
+Attribution: Bank Negara Malaysia via data.gov.my.
+
+## Sample
+
+- [samples/dgm_payments_instruments.csv](../samples/dgm_payments_instruments.csv)
+- [samples/dgm_payments_instruments.json](../samples/dgm_payments_instruments.json)

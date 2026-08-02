@@ -1,0 +1,37 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_payments_instruments",
+  "status": "stale",
+  "last_checked": "2026-08-02T17:18:27Z",
+  "freshness_days": 119,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 688,
+  "date_range": { "start": "2019-01-01", "end": "2026-02-01" },
+  "fields": [
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "instrument", "type": "string", "distinct_values": 8 },
+    { "name": "value", "type": "number", "nullable": true },
+    { "name": "volume", "type": "number", "nullable": true }
+  ],
+  "checks": [
+    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 32818-byte CSV payload" },
+    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 688 data rows" },
+    { "name": "freshness", "status": "warn", "method": "Latest observation is 2026-02-01 and the file has not been refreshed on its monthly cadence" },
+    { "name": "schema_stable", "status": "pass", "method": "4 CSV columns matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of the month.",
+    "Instrument codes separate face-to-face and online activity.",
+    "Value and volume use different units.",
+    "The earliest charge-card rows contain null value and volume fields."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/finsector/payments/instruments.csv",
+    "alternate_format": "https://storage.data.gov.my/finsector/payments/instruments.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "Bank Negara Malaysia via data.gov.my"
+}
