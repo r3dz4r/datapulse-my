@@ -52,6 +52,10 @@ buying rate). Historical records commonly expose `aud`, `cad`, `eur`, `gbp`,
 
 None observed.
 
+## Sample
+
+- [samples/exchangerates_daily_1130.json](samples/exchangerates_daily_1130.json)
+
 ## Reproducibility
 
 ```sh

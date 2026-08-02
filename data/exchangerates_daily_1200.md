@@ -55,6 +55,10 @@ The middle rate is the average of the buying and selling rates.
 
 None observed.
 
+## Sample
+
+- [samples/exchangerates_daily_1200.json](samples/exchangerates_daily_1200.json)
+
 ## Reproducibility
 
 ```sh
