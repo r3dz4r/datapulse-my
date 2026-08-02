@@ -1,0 +1,72 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_water_consumption",
+  "status": "stale",
+  "last_checked": "2026-08-03T02:00:00Z",
+  "freshness_days": 680,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 600,
+  "date_range": {
+    "start": "2003-01-01",
+    "end": "2022-01-01"
+  },
+  "fields": [
+    {
+      "name": "state",
+      "type": "string",
+      "distinct_values": 15
+    },
+    {
+      "name": "sector",
+      "type": "string",
+      "distinct_values": 2
+    },
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "value",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 20564-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 600 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "The latest observation is 2022-01-01 and the file has not been refreshed on its annual cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "4 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Observed dates are annual and use 1 January.",
+    "Malaysia-level and state-level rows coexist and must not be summed together.",
+    "Values are millions of litres per day (MLD).",
+    "W.P. Kuala Lumpur and W.P. Putrajaya are included under Selangor; the most recent year is provisional."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://data.gov.my/data-catalogue/water_consumption",
+    "url": "https://storage.data.gov.my/water/water_consumption.csv",
+    "alternate_format": "https://storage.data.gov.my/water/water_consumption.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "SPAN, NRES, and DOSM via data.gov.my"
+}
