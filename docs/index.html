@@ -293,31 +293,23 @@
     </div>
   </footer>
 
+  <script id="embedded-data">
+    window.__DATAPULSE_DATA__ = { health: null, manifest: null };
+  </script>
   <script>
     (() => {
       "use strict";
 
-      const RAW_BASE = "https://raw.githubusercontent.com/r3dz4r/datapulse-my/main";
+      const assets = 'https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/';
       const REPO = "https://github.com/r3dz4r/datapulse-my/blob/main/";
+      const DATA = window.__DATAPULSE_DATA__ || { health: null, manifest: null };
+      const health = DATA.health;
+      const manifest = DATA.manifest;
       const grid = document.querySelector("#dataset-grid");
       const dateFormat = new Intl.DateTimeFormat("en-MY", {
         dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kuala_Lumpur"
       });
       const numberFormat = new Intl.NumberFormat("en-MY");
-
-      /* Mock fetch for a console smoke test:
-       * window.__DATAPULSE_FETCH__ = async path =>
-       *   path.includes("health/latest.json") ? healthFixture : manifestFixture;
-       * Reload after defining both fixtures; one card renders per manifest entry.
-       */
-      async function loadJSON(path) {
-        if (typeof window.__DATAPULSE_FETCH__ === "function") {
-          return window.__DATAPULSE_FETCH__(path);
-        }
-        const response = await fetch(`${RAW_BASE}/${path}`, { cache: "no-store" });
-        if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
-        return response.json();
-      }
 
       function make(tag, className, text) {
         const node = document.createElement(tag);
@@ -417,13 +409,10 @@
         return card;
       }
 
-      async function renderDashboard() {
+      function renderDashboard() {
         try {
-          const [health, manifest] = await Promise.all([
-            loadJSON("health/latest.json"), loadJSON("datapulse.json")
-          ]);
           if (!Array.isArray(health.datasets) || !Array.isArray(manifest.datasets)) {
-            throw new Error("Live JSON is missing its datasets array");
+            throw new Error("Embedded JSON is missing its datasets array");
           }
           const healthById = new Map(health.datasets.map(row => [row.dataset_id, row]));
           const cards = manifest.datasets.map(row => buildCard(row, healthById.get(row.id)));
