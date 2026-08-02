@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import json
 from asyncio import gather
 from datetime import datetime, timezone
 from typing import Any
@@ -275,6 +276,63 @@ async def find_by_licence(licence: str) -> dict[str, Any]:
         "count": len(datasets),
         "datasets": datasets,
     }
+
+
+@mcp.resource(
+    "datapulse://index",
+    description=(
+        "Read first; lightweight list of all DataPulse MY dataset ids with current "
+        "status, title, source, and licence."
+    ),
+    mime_type="application/json",
+)
+async def dataset_index() -> str:
+    """Return the lightweight live catalogue index as JSON."""
+    manifest, health = await _load_catalogue()
+    health_records = _health_by_id(health)
+    index = [
+        {
+            "id": entry["id"],
+            "status": health_records.get(entry["id"], {}).get("status", "missing"),
+            "title": entry["name"],
+            "source": entry["source"],
+            "licence": entry["licence"],
+        }
+        for entry in manifest.get("datasets", [])
+    ]
+    return json.dumps(index, ensure_ascii=False)
+
+
+@mcp.resource(
+    "datapulse://licences",
+    description="Live count of DataPulse MY datasets grouped by licence.",
+    mime_type="application/json",
+)
+async def licence_summary() -> str:
+    """Return a licence-to-dataset-count JSON object."""
+    manifest = await _load_manifest()
+    summary: dict[str, int] = {}
+    for entry in manifest.get("datasets", []):
+        licence = entry["licence"]
+        summary[licence] = summary.get(licence, 0) + 1
+    return json.dumps(summary, ensure_ascii=False, sort_keys=True)
+
+
+@mcp.resource(
+    "datapulse://{dataset_id}",
+    description="Full published manifest entry for one exact DataPulse MY dataset id.",
+    mime_type="application/json",
+)
+async def dataset_resource(dataset_id: str) -> str:
+    """Return one on-demand manifest entry without adding inferred fields."""
+    manifest = await _load_manifest()
+    entry = next(
+        (item for item in manifest.get("datasets", []) if item.get("id") == dataset_id),
+        None,
+    )
+    if entry is None:
+        raise ValueError(f"Unknown dataset id: {dataset_id}")
+    return json.dumps(entry, ensure_ascii=False)
 
 
 if __name__ == "__main__":
