@@ -1,0 +1,11 @@
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /home/redza/.cloudflared/REPLACE_WITH_TUNNEL_UUID.json
+
+ingress:
+  - hostname: mcp.datapulse-my.my
+    service: https://127.0.0.1:8443
+    originRequest:
+      httpHostHeader: mcp.datapulse-my.my
+      originServerName: mcp.datapulse-my.my
+      caPool: /etc/nginx/tls/datapulse-mcp.crt
+  - service: http_status:404
