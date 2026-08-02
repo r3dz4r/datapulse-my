@@ -1,0 +1,72 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_state_finance_expenditure",
+  "status": "stale",
+  "last_checked": "2026-08-02T16:47:48Z",
+  "freshness_days": 688,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 104,
+  "date_range": {
+    "start": "2020-01-01",
+    "end": "2022-01-01"
+  },
+  "fields": [
+    {
+      "name": "state",
+      "type": "string",
+      "distinct_values": 13
+    },
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "category",
+      "type": "string",
+      "distinct_values": 8
+    },
+    {
+      "name": "expenditure",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 3946-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 104 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "The latest observation is 2022-01-01 and the file has not been refreshed on its annual cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "4 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Annual dates use 1 January.",
+    "Values are in RM millions.",
+    "Sarawak is represented by 2020 data while the other states use 2022.",
+    "Federal territories are excluded because they do not have State Legislative Assemblies."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://data.gov.my/data-catalogue/state_finance_expenditure",
+    "url": "https://storage.data.gov.my/publicadmin/state_finance_expenditure.csv",
+    "alternate_format": "https://storage.data.gov.my/publicadmin/state_finance_expenditure.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "National Audit Department and Malaysian state governments via data.gov.my"
+}
