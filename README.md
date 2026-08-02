@@ -2,7 +2,7 @@
 
 **Live dashboard:** https://r3dz4r.github.io/datapulse-my/
 
-> **🤖 AI-ready** — Point your AI agent at [`https://r3dz4r.github.io/datapulse-my/llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) to consume all 40 datasets (manifest, freshness, licences) in one request.
+> **🤖 AI-ready** — Point your AI agent at [`https://r3dz4r.github.io/datapulse-my/llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) to consume all 53 datasets (manifest, freshness, licences) in one request.
 
 DataPulse MY is an open-source trust layer for Malaysian public data. It makes
 official datasets easier to assess and reuse by publishing a small manifest,
@@ -170,8 +170,34 @@ publication times:
   [Sample JSON](samples/dgm_federal_finance_qtr_oe.json)
 - [data.gov.my State Government Expenditure](data/dgm_state_finance_expenditure.md) —
   [Sample JSON](samples/dgm_state_finance_expenditure.json)
+- [data.gov.my Monthly Money Aggregates](data/dgm_money_aggregates.md) —
+  [Sample JSON](samples/dgm_money_aggregates.json)
+- [data.gov.my Monthly Currency in Circulation](data/dgm_currency_in_circulation.md) —
+  [Sample JSON](samples/dgm_currency_in_circulation.json)
+- [data.gov.my Monthly Payment Systems](data/dgm_payments_systems.md) —
+  [Sample JSON](samples/dgm_payments_systems.json)
+- [data.gov.my Monthly Payment Instruments](data/dgm_payments_instruments.md) —
+  [Sample JSON](samples/dgm_payments_instruments.json)
+- [data.gov.my Monthly Payment Channels](data/dgm_payments_channels.md) —
+  [Sample JSON](samples/dgm_payments_channels.json)
+- [data.gov.my Annual Interest Rates](data/dgm_interest_rates_annual.md) —
+  [Sample JSON](samples/dgm_interest_rates_annual.json)
+- [data.gov.my Annual EPF Dividend Rates](data/dgm_epf_dividend.md) —
+  [Sample JSON](samples/dgm_epf_dividend.json)
+- [data.gov.my Monthly Vehicle Registrations by Type and Fuel](data/dgm_vehicle_registrations_type_fuel.md) —
+  [Sample JSON](samples/dgm_vehicle_registrations_type_fuel.json)
+- [data.gov.my Daily FPX Transactions](data/dgm_payments_transactions_fpx.md) —
+  [Sample JSON](samples/dgm_payments_transactions_fpx.json)
+- [OpenDOSM Annual Births by State](data/dosm_birth_state.md) —
+  [Sample JSON](samples/dosm_birth_state.json)
+- [OpenDOSM Annual Deaths by State](data/dosm_death_state.md) —
+  [Sample JSON](samples/dosm_death_state.json)
+- [OpenDOSM Annual Maternal Deaths by State](data/dosm_death_maternal_state.md) —
+  [Sample JSON](samples/dosm_death_maternal_state.json)
+- [OpenDOSM Annual Marriages by State and Sex](data/dosm_marriages_state.md) —
+  [Sample JSON](samples/dosm_marriages_state.json)
 
-DataPulse MY currently tracks forty datasets in total.
+DataPulse MY currently tracks 53 datasets in total.
 
 ## Current coverage
 
@@ -219,6 +245,19 @@ DataPulse MY currently tracks forty datasets in total.
 | data.gov.my Federal Revenue (`dgm_federal_finance_qtr_revenue`) | Quarterly |
 | data.gov.my Federal Operating Expenditure (`dgm_federal_finance_qtr_oe`) | Quarterly |
 | data.gov.my State Government Expenditure (`dgm_state_finance_expenditure`) | Annual |
+| data.gov.my Money Aggregates (`dgm_money_aggregates`) | Monthly |
+| data.gov.my Currency in Circulation (`dgm_currency_in_circulation`) | Monthly |
+| data.gov.my Payment Systems (`dgm_payments_systems`) | Monthly |
+| data.gov.my Payment Instruments (`dgm_payments_instruments`) | Monthly |
+| data.gov.my Payment Channels (`dgm_payments_channels`) | Monthly |
+| data.gov.my Annual Interest Rates (`dgm_interest_rates_annual`) | Annual |
+| data.gov.my EPF Dividend Rates (`dgm_epf_dividend`) | Annual |
+| data.gov.my Vehicle Registrations by Type and Fuel (`dgm_vehicle_registrations_type_fuel`) | Monthly |
+| data.gov.my FPX Transactions (`dgm_payments_transactions_fpx`) | Daily |
+| OpenDOSM Births by State (`dosm_birth_state`) | Annual |
+| OpenDOSM Deaths by State (`dosm_death_state`) | Annual |
+| OpenDOSM Maternal Deaths by State (`dosm_death_maternal_state`) | Annual |
+| OpenDOSM Marriages by State and Sex (`dosm_marriages_state`) | Annual |
 
 ## How to use it
 
