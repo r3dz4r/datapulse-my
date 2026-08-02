@@ -1,0 +1,86 @@
+---
+dataset_id: dosm_employment_sector
+last_checked: 2026-08-02T16:01:47Z
+status: stale
+freshness_delta: 613 days since file update
+next_expected_update: overdue
+record_count: 198
+date_range: 2001-01-01 to 2022-01-01
+schema_version: 1.0
+schema_drift: none
+known_quirks: ["annual dates use January 1", "both-sex aggregates coexist with male and female rows", "sector proportions sum to 100 within a date and sex"]
+breaking_changes: []
+licence: Creative Commons Attribution 4.0
+attribution: DOSM via OpenDOSM
+---
+
+# OpenDOSM Annual Employment by Sector and Sex
+
+## Provenance
+
+DOSM publishes this national dataset through OpenDOSM as direct CSV and
+Parquet downloads:
+
+- `https://storage.dosm.gov.my/labour/employment_sector.csv`
+- `https://storage.dosm.gov.my/labour/employment_sector.parquet`
+
+## Status
+
+**Status:** Stale
+
+**Freshness:** File last updated 2024-11-27; observations end in 2022
+
+**Refresh frequency:** Annual
+
+The CSV endpoint returned HTTP 200 and its expected 6,458-byte file. It
+contains 198 data rows, but the latest observation is beyond the expected
+annual update cycle.
+
+## Last checked
+
+2026-08-02 by direct HTTP HEAD request and CSV download.
+
+## Coverage
+
+The dataset contains national annual employment proportions for Malaysia from
+2001 through 2022. It has no subnational geographic field. Rows cover
+agriculture, industry, and services for both sexes, females, and males.
+
+## Schema
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `date` | date | Annual observation date in `YYYY-MM-DD` format. |
+| `sector` | string | `agriculture`, `industry`, or `services`. |
+| `sex` | string | `both`, `female`, or `male`. |
+| `proportion` | number | Share of employment in the sector. |
+
+## Known quirks
+
+- Annual dates use January 1 as the reporting date.
+- `both` is an aggregate and coexists with sex-disaggregated rows.
+- The three sector proportions sum to 100 for each date and sex, subject to
+  displayed precision.
+
+## Breaking changes
+
+None observed.
+
+## Reproducibility
+
+```sh
+curl -sS --max-time 30 \
+  "https://storage.dosm.gov.my/labour/employment_sector.csv" \
+  -o /tmp/employment_sector.csv
+```
+
+## Licence
+
+Licensed under the Creative Commons Attribution 4.0 licence.
+
+Attribution: DOSM via OpenDOSM.
+
+## Sample
+
+- [samples/dosm_employment_sector.csv](../samples/dosm_employment_sector.csv)
+- [samples/dosm_employment_sector.json](../samples/dosm_employment_sector.json)
