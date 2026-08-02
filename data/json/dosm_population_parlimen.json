@@ -1,0 +1,86 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_population_parlimen",
+  "status": "current",
+  "last_checked": "2026-08-02T19:11:50Z",
+  "freshness_days": 28,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 5550,
+  "date_range": {
+    "start": "2020-01-01",
+    "end": "2024-01-01"
+  },
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "state",
+      "type": "string",
+      "distinct_values": 16
+    },
+    {
+      "name": "parlimen",
+      "type": "string",
+      "distinct_values": 222
+    },
+    {
+      "name": "sex",
+      "type": "string",
+      "distinct_values": 3
+    },
+    {
+      "name": "age",
+      "type": "string",
+      "distinct_values": 3
+    },
+    {
+      "name": "ethnicity",
+      "type": "string",
+      "distinct_values": 3
+    },
+    {
+      "name": "population",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 346540-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 5550 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "File last modified 2026-07-05; latest observation is 2024-01-01 on its annual cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "7 CSV columns matched schema version 1.0; citizenship categories move from ethnicity in 2020 to age from 2021"
+    }
+  ],
+  "known_quirks": [
+    "Annual dates use 1 January.",
+    "Overall and detailed dimension rows coexist and must not be summed together.",
+    "Citizenship appears in `ethnicity` in 2020 but in `age` from 2021 onward.",
+    "Population values are reported in thousands."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/population/population_parlimen.csv",
+    "alternate_format": "https://storage.dosm.gov.my/population/population_parlimen.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
