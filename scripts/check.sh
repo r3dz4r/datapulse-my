@@ -4,7 +4,8 @@ set -euo pipefail
 manifest="${1:-datapulse.json}"
 results_file="$(mktemp)"
 body_file="$(mktemp)"
-trap 'rm -f "$results_file" "$body_file"' EXIT
+headers_file="$(mktemp)"
+trap 'rm -f "$results_file" "$body_file" "$headers_file"' EXIT
 
 check_eqms_dataset() {
   local dataset_id="$1"
@@ -84,6 +85,40 @@ while IFS=$'\t' read -r dataset_id source_url; do
     continue
   elif [[ "$dataset_id" == "doe_mqims" ]]; then
     check_eqms_dataset "$dataset_id" "$source_url" 12 >> "$results_file"
+    continue
+  elif [[ "$dataset_id" == "kkm_idengue" ]]; then
+    check_eqms_dataset "$dataset_id" "https://idengue.mysa.gov.my/" 12 >> "$results_file"
+    continue
+  elif [[ "$dataset_id" == "dosm_crime_district" ]]; then
+    http_status="$(curl --location --silent --show-error --fail --head \
+      --dump-header "$headers_file" --output /dev/null --write-out '%{http_code}' \
+      "$source_url")" || {
+        printf 'curl HEAD failed for %s (%s)\n' "$dataset_id" "$source_url" >&2
+        exit 1
+      }
+
+    content_length="$(awk 'BEGIN { IGNORECASE=1 } /^content-length:/ { value=$2 } END { gsub("\\r", "", value); print value }' "$headers_file")"
+    last_modified="$(awk 'BEGIN { IGNORECASE=1 } /^last-modified:/ { sub(/^[^:]+:[[:space:]]*/, ""); value=$0 } END { gsub("\\r", "", value); print value }' "$headers_file")"
+
+    if [[ -z "$content_length" || -z "$last_modified" ]]; then
+      printf 'Missing expected headers for %s (%s)\n' "$dataset_id" "$source_url" >&2
+      exit 1
+    fi
+
+    jq -n \
+      --arg dataset_id "$dataset_id" \
+      --arg url "$source_url" \
+      --argjson http_status "$http_status" \
+      --argjson content_length "$content_length" \
+      --arg last_modified "$last_modified" \
+      '{
+        dataset_id: $dataset_id,
+        url: $url,
+        access_method: "direct curl HEAD",
+        http_status: $http_status,
+        content_length: $content_length,
+        last_modified: $last_modified
+      }' >> "$results_file"
     continue
   elif [[ "$dataset_id" == "met_weather" ]]; then
     http_status="$(curl --location --silent --show-error \
