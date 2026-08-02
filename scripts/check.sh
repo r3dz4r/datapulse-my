@@ -321,7 +321,12 @@ while IFS=$'\t' read -r dataset_id source_url; do
     dosm_cpi_core_inflation|dosm_cpi_state_inflation|dosm_ppi|\
     dosm_lfs_year|dosm_lfs_month|dosm_trade_sitc_1d|dosm_ipi_export|\
     dosm_ipi_domestic|dgm_interest_rates|dgm_federal_finance_qtr_revenue|\
-    dgm_federal_finance_qtr_oe|dgm_state_finance_expenditure)
+    dgm_federal_finance_qtr_oe|dgm_state_finance_expenditure|\
+    dgm_money_aggregates|dgm_currency_in_circulation|dgm_payments_systems|\
+    dgm_payments_instruments|dgm_payments_channels|dgm_interest_rates_annual|\
+    dgm_epf_dividend|dgm_vehicle_registrations_type_fuel|\
+    dgm_payments_transactions_fpx|dosm_birth_state|dosm_death_state|\
+    dosm_death_maternal_state|dosm_marriages_state)
       check_head_dataset "$dataset_id" "$source_url"
       ;;
     met_weather)
