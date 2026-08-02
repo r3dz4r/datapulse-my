@@ -1,0 +1,38 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_marriages_state",
+  "status": "stale",
+  "last_checked": "2026-08-02T17:18:27Z",
+  "freshness_days": 676,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 192,
+  "date_range": { "start": "2017-01-01", "end": "2022-01-01" },
+  "fields": [
+    { "name": "state", "type": "string", "distinct_values": 16 },
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "sex", "type": "string", "values": ["female", "male"] },
+    { "name": "abs", "type": "integer" },
+    { "name": "rate", "type": "number" }
+  ],
+  "checks": [
+    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 7202-byte CSV payload" },
+    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 192 data rows" },
+    { "name": "freshness", "status": "warn", "method": "Latest observation is 2022-01-01 and the file has not been refreshed on its annual cadence" },
+    { "name": "schema_stable", "status": "pass", "method": "5 CSV columns matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Annual dates use 1 January.",
+    "The file has no Malaysia aggregate.",
+    "Each state-year has separate female and male rows.",
+    "Counts and marriage rates use different units."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/demography/marriages_state.csv",
+    "alternate_format": "https://storage.dosm.gov.my/demography/marriages_state.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
