@@ -1,0 +1,71 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_ppi",
+  "status": "current",
+  "last_checked": "2026-08-02T16:47:48Z",
+  "freshness_days": 5,
+  "next_expected_update": "monthly",
+  "refresh_frequency": "monthly",
+  "record_count": 581,
+  "date_range": {
+    "start": "2010-01-01",
+    "end": "2026-06-01"
+  },
+  "fields": [
+    {
+      "name": "series",
+      "type": "string",
+      "distinct_values": 3
+    },
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "index",
+      "type": "number"
+    },
+    {
+      "name": "index_sa",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 16784-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 581 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Latest observation is 2026-06-01 and file Last-Modified is 2026-07-28"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "4 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of the month.",
+    "Absolute index values and percentage growth rates share rows selected by series.",
+    "The seasonally adjusted field is not populated for every row.",
+    "The latest three months may be revised."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/ppi",
+    "url": "https://storage.dosm.gov.my/ppi/ppi.csv",
+    "alternate_format": "https://storage.dosm.gov.my/ppi/ppi.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
