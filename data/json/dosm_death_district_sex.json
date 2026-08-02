@@ -1,0 +1,80 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_death_district_sex",
+  "status": "current",
+  "last_checked": "2026-08-02T19:11:50Z",
+  "freshness_days": 26,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 2361,
+  "date_range": {
+    "start": "2020-01-01",
+    "end": "2024-01-01"
+  },
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "state",
+      "type": "string",
+      "distinct_values": 16
+    },
+    {
+      "name": "district",
+      "type": "string",
+      "distinct_values": 160
+    },
+    {
+      "name": "sex",
+      "type": "string",
+      "distinct_values": 3
+    },
+    {
+      "name": "abs",
+      "type": "number"
+    },
+    {
+      "name": "rate",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 129831-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 2361 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "File last modified 2026-07-07; latest observation is 2024-01-01 on its annual cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "6 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Annual dates use 1 January.",
+    "Both-sex aggregates coexist with male and female rows and must not be summed together.",
+    "The 2020 file has 147 district labels; 2021 onward has 160.",
+    "Absolute counts are stored as decimal-valued numbers in the source."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/demography/death_district_sex.csv",
+    "alternate_format": "https://storage.dosm.gov.my/demography/death_district_sex.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
