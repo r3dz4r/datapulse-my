@@ -46,6 +46,37 @@ need to handle.
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
 
+## For AI agents
+
+DataPulse MY is AI-agent-friendly. Agents can discover and consume the full
+dataset portfolio from a single self-describing index.
+
+Verify access:
+
+```sh
+curl -s https://r3dz4r.github.io/datapulse-my/llms.txt
+```
+
+- [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) — curated dataset index
+- [`datapulse.json`](https://r3dz4r.github.io/datapulse-my/datapulse.json) — manifest with a declared `$schema`
+- [`health/latest.json`](https://r3dz4r.github.io/datapulse-my/health/latest.json) — latest freshness snapshot
+- [`feed.xml`](https://r3dz4r.github.io/datapulse-my/feed.xml) — dataset health change feed
+- [`datapulse.schema.json`](https://r3dz4r.github.io/datapulse-my/datapulse.schema.json) — manifest schema
+
+To consume the portfolio:
+
+1. Fetch [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) for the curated index.
+2. Fetch [`datapulse.json`](https://r3dz4r.github.io/datapulse-my/datapulse.json)
+   for the machine-readable manifest, including licence, refresh cadence, and
+   geographic coverage.
+3. Fetch [`health/latest.json`](https://r3dz4r.github.io/datapulse-my/health/latest.json)
+   to check freshness before use.
+4. Cite each dataset according to its licence and attribution requirements.
+
+[`robots.txt`](https://r3dz4r.github.io/datapulse-my/robots.txt) allows all agents;
+[`scripts/verify_agent_ready.sh`](https://github.com/r3dz4r/datapulse-my/blob/main/scripts/verify_agent_ready.sh)
+is the agent-consumer self-test.
+
 ## Included datasets
 
 - [Malaysian Fuel Prices](data/fuelprice.md) — Samples:
