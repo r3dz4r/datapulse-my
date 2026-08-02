@@ -56,6 +56,11 @@ attribution: Ministry of Finance Malaysia via data.gov.my
 
 None since initial scrape (2026-07-30).
 
+## Sample
+
+- [samples/fuelprice.csv](samples/fuelprice.csv)
+- [samples/fuelprice.json](samples/fuelprice.json)
+
 ## Reproducibility
 
 Anyone with `curl` and `jq` can verify:
