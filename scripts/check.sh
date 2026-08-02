@@ -83,6 +83,27 @@ close_camofox_tab() {
     --data "$(jq -cn --arg userId "$user_id" '{userId: $userId}')" >/dev/null 2>&1
 }
 
+warm_camofox_browser() {
+  local user_id="datapulse-check-warmup"
+  local open_response tab_id
+
+  # Boot Camofox once before browser checks to prevent cold-start flapping.
+  if ! open_response="$(curl --location --silent --show-error --fail \
+    --max-time "$camofox_timeout" \
+    --request POST "${camofox_base_url}/tabs/open" \
+    --header 'Content-Type: application/json' \
+    --data "$(jq -cn --arg userId "$user_id" --arg url 'about:blank' \
+      '{userId: $userId, url: $url}')" 2>/dev/null)"; then
+    return 0
+  fi
+
+  tab_id="$(jq -r '.tabId // empty' <<< "$open_response" 2>/dev/null)"
+  [[ -n "$tab_id" ]] || return 0
+
+  sleep 5
+  close_camofox_tab "$tab_id" "$user_id" || true
+}
+
 check_browser_dataset() {
   local dataset_id="$1"
   local source_url="$2"
@@ -308,6 +329,8 @@ check_direct_dataset() {
     }')"
   emit "$dataset_id" "$source_url" "healthy" "HTTP ${http_status}" "$details"
 }
+
+warm_camofox_browser
 
 while IFS=$'\t' read -r dataset_id source_url; do
   case "$dataset_id" in
