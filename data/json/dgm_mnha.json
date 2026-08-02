@@ -1,0 +1,72 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_mnha",
+  "status": "stale",
+  "last_checked": "2026-08-03T02:00:00Z",
+  "freshness_days": 630,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 60,
+  "date_range": {
+    "start": "2013-01-01",
+    "end": "2022-01-01"
+  },
+  "fields": [
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "variable",
+      "type": "string",
+      "distinct_values": 2
+    },
+    {
+      "name": "sector",
+      "type": "string",
+      "distinct_values": 3
+    },
+    {
+      "name": "expenditure",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 2450-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 60 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "The latest observation is 2022-01-01 and the file has not been refreshed on its annual cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "4 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Annual dates use 1 January.",
+    "Total-sector rows coexist with public- and private-sector rows and must not be summed together.",
+    "Current expenditure on health excludes health-related expenditure included in total expenditure on health.",
+    "Values are Malaysian ringgit and may be revised with methodology updates."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://data.gov.my/data-catalogue/mnha",
+    "url": "https://storage.data.gov.my/healthcare/mnha.csv",
+    "alternate_format": "https://storage.data.gov.my/healthcare/mnha.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "Ministry of Health Malaysia via data.gov.my"
+}
