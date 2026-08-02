@@ -20,14 +20,20 @@ jobs:
           mkdir -p health
           bash scripts/check.sh > health/latest.json
 
+      - name: Generate dataset badges
+        run: bash scripts/gen_badges.sh
+
+      - name: Generate RSS feed
+        run: bash scripts/gen_rss.sh
+
       - name: Commit changed health summary
         run: |
-          if [ -z "$(git status --porcelain -- health/latest.json)" ]; then
-            echo "No health summary changes."
+          if [ -z "$(git status --porcelain -- health/ badges/ feed.xml)" ]; then
+            echo "No health artifact changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add health/latest.json
+          git add health/ badges/ feed.xml
           git commit -m "chore(health): update weekly dataset health"
           git push
