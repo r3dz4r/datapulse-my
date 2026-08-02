@@ -4,7 +4,7 @@
 
 > **🤖 AI-agent-ready** — DataPulse MY is built for AI. An agent fetches one file
 > ([`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt)) and can use all
-> **75 official Malaysian datasets** immediately — no integration, no scraping,
+> **92 official Malaysian datasets** immediately — no integration, no scraping,
 > always fresh, licences declared.
 
 DataPulse MY is an open-source trust layer for Malaysian public data. It makes
@@ -75,7 +75,7 @@ RAG systems, and internal knowledge tools to consume.
 - **RAG and knowledge-base ready:** drop the envelopes into a retrieval pipeline
   to ground chatbots and AI tools in current Malaysian public data.
 
-**75 datasets, 63 under CC BY 4.0, 12 under OGL.**
+**92 datasets, 80 under CC BY 4.0, 12 under OGL.**
 
 ### How to consume the data
 
@@ -266,8 +266,42 @@ publication times:
   [Sample JSON](samples/dgm_crops_state.json)
 - [data.gov.my Public Education Institutions by District](data/dgm_schools_district.md) —
   [Sample JSON](samples/dgm_schools_district.json)
+- [OpenDOSM Household Income, Malaysia](data/dosm_hh_income.md) —
+  [Sample JSON](samples/dosm_hh_income.json)
+- [OpenDOSM Household Income by State](data/dosm_hh_income_state.md) —
+  [Sample JSON](samples/dosm_hh_income_state.json)
+- [OpenDOSM Household Income by District](data/dosm_hh_income_district.md) —
+  [Sample JSON](samples/dosm_hh_income_district.json)
+- [OpenDOSM Poverty, Malaysia](data/dosm_hh_poverty.md) —
+  [Sample JSON](samples/dosm_hh_poverty.json)
+- [OpenDOSM Poverty by State](data/dosm_hh_poverty_state.md) —
+  [Sample JSON](samples/dosm_hh_poverty_state.json)
+- [OpenDOSM Poverty by District](data/dosm_hh_poverty_district.md) —
+  [Sample JSON](samples/dosm_hh_poverty_district.json)
+- [OpenDOSM Income Inequality, Malaysia](data/dosm_hh_inequality.md) —
+  [Sample JSON](samples/dosm_hh_inequality.json)
+- [OpenDOSM Income Inequality by State](data/dosm_hh_inequality_state.md) —
+  [Sample JSON](samples/dosm_hh_inequality_state.json)
+- [OpenDOSM Income Inequality by District](data/dosm_hh_inequality_district.md) —
+  [Sample JSON](samples/dosm_hh_inequality_district.json)
+- [OpenDOSM Household Expenditure by DUN](data/dosm_hh_expenditure_dun.md) —
+  [Sample JSON](samples/dosm_hh_expenditure_dun.json)
+- [OpenDOSM Household Expenditure by Parliamentary Constituency](data/dosm_hh_expenditure_parlimen.md) —
+  [Sample JSON](samples/dosm_hh_expenditure_parlimen.json)
+- [OpenDOSM Annual Population, Malaysia](data/dosm_population_malaysia.md) —
+  [Sample JSON](samples/dosm_population_malaysia.json)
+- [OpenDOSM Annual Population by Parliamentary Constituency](data/dosm_population_parlimen.md) —
+  [Sample JSON](samples/dosm_population_parlimen.json)
+- [OpenDOSM Annual Deaths by District and Sex](data/dosm_death_district_sex.md) —
+  [Sample JSON](samples/dosm_death_district_sex.json)
+- [OpenDOSM Annual Marriages by State, Age, and Sex](data/dosm_marriages_state_age.md) —
+  [Sample JSON](samples/dosm_marriages_state_age.json)
+- [OpenDOSM Annual Fertility](data/dosm_fertility.md) —
+  [Sample JSON](samples/dosm_fertility.json)
+- [OpenDOSM Annual Maternal Deaths, Malaysia](data/dosm_death_maternal.md) —
+  [Sample JSON](samples/dosm_death_maternal.json)
 
-DataPulse MY currently tracks 75 datasets in total.
+DataPulse MY currently tracks 92 datasets in total.
 
 ## Current coverage
 
@@ -350,6 +384,23 @@ DataPulse MY currently tracks 75 datasets in total.
 | data.gov.my Marine Fish Landings (`dgm_fish_landings`) | Monthly |
 | data.gov.my Crops by State (`dgm_crops_state`) | Annual |
 | data.gov.my Schools by District (`dgm_schools_district`) | Annual |
+| OpenDOSM Household Income, Malaysia (`dosm_hh_income`) | Biennial to triennial (survey years) |
+| OpenDOSM Household Income by State (`dosm_hh_income_state`) | Biennial to triennial (survey years) |
+| OpenDOSM Household Income by District (`dosm_hh_income_district`) | Biennial to triennial (survey years) |
+| OpenDOSM Poverty, Malaysia (`dosm_hh_poverty`) | Biennial to triennial (survey years) |
+| OpenDOSM Poverty by State (`dosm_hh_poverty_state`) | Biennial to triennial (survey years) |
+| OpenDOSM Poverty by District (`dosm_hh_poverty_district`) | Biennial to triennial (survey years) |
+| OpenDOSM Income Inequality, Malaysia (`dosm_hh_inequality`) | Biennial to triennial (survey years) |
+| OpenDOSM Income Inequality by State (`dosm_hh_inequality_state`) | Biennial to triennial (survey years) |
+| OpenDOSM Income Inequality by District (`dosm_hh_inequality_district`) | Biennial to triennial (survey years) |
+| OpenDOSM Household Expenditure by DUN (`dosm_hh_expenditure_dun`) | Biennial to triennial (survey years) |
+| OpenDOSM Household Expenditure by Parliament (`dosm_hh_expenditure_parlimen`) | Biennial to triennial (survey years) |
+| OpenDOSM Population, Malaysia (`dosm_population_malaysia`) | Annual |
+| OpenDOSM Population by Parliament (`dosm_population_parlimen`) | Annual |
+| OpenDOSM Deaths by District and Sex (`dosm_death_district_sex`) | Annual |
+| OpenDOSM Marriages by State, Age, and Sex (`dosm_marriages_state_age`) | Annual |
+| OpenDOSM Fertility (`dosm_fertility`) | Annual |
+| OpenDOSM Maternal Deaths, Malaysia (`dosm_death_maternal`) | Annual |
 
 ## How to use it
 
