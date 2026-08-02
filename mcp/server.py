@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 from asyncio import gather
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -25,6 +26,10 @@ LICENCE_ALIASES = {
     "ogl": OGL_MY,
     "open government licence (malaysia)": OGL_MY,
 }
+LICENCE_URLS = {
+    CC_BY_4: "https://creativecommons.org/licenses/by/4.0/",
+    OGL_MY: "https://www.data.gov.my/pages/terms-of-use",
+}
 
 SEARCH_DESCRIPTION = (
     "Search DataPulse MY's 92 Malaysian public datasets by natural-language query. "
@@ -37,6 +42,21 @@ GET_DATASET_DESCRIPTION = (
     "Return full detail for one dataset id, including its latest health status and "
     "last-verified timestamp. Use to fetch the provenance/citation metadata for a "
     "dataset found via search_datasets."
+)
+FIND_STALE_DESCRIPTION = (
+    "Return datasets whose status is not 'healthy' (browser-required, error, or "
+    "missing from latest health snapshot). Use when an agent needs to know which "
+    "data is currently unreliable."
+)
+GET_PROVENANCE_DESCRIPTION = (
+    "Return citation-ready provenance metadata for the listed dataset ids: source "
+    "steward, licence (with URL), source URL, access method (curl/Camofox), "
+    "last-verified timestamp. Use when an agent needs to cite DataPulse MY data in "
+    "a response and must include proper attribution and licence."
+)
+FIND_BY_LICENCE_DESCRIPTION = (
+    "Return all datasets with the given licence, summarised. Use to enumerate what's "
+    "available under a specific licence for compliance/reuse scoping."
 )
 
 mcp = FastMCP(
@@ -155,6 +175,105 @@ async def get_dataset(dataset_id: str) -> dict[str, Any]:
         **health_record,
         "last_verified": health.get("checked_at"),
         "schema_version": health.get("schema"),
+    }
+
+
+def _snapshot_age_seconds(checked_at: str | None) -> int | None:
+    if not checked_at:
+        return None
+    checked = datetime.fromisoformat(checked_at.replace("Z", "+00:00"))
+    return max(0, int((datetime.now(timezone.utc) - checked).total_seconds()))
+
+
+@mcp.tool(description=FIND_STALE_DESCRIPTION)
+async def find_stale(
+    max_age_hours: Annotated[int, Field(ge=0)] = 24,
+) -> list[dict[str, Any]]:
+    """Return unhealthy, missing, or snapshot-aged dataset health summaries."""
+    manifest, health = await _load_catalogue()
+    health_records = _health_by_id(health)
+    age_seconds = _snapshot_age_seconds(health.get("checked_at"))
+    snapshot_is_old = age_seconds is None or age_seconds > max_age_hours * 3600
+    stale: list[dict[str, Any]] = []
+
+    for entry in manifest.get("datasets", []):
+        record = health_records.get(entry["id"])
+        if record is None:
+            stale.append(
+                {
+                    "id": entry["id"],
+                    "status": "missing",
+                    "message": "Missing from latest health snapshot",
+                    "age_seconds": age_seconds,
+                }
+            )
+        elif record.get("status") != "healthy" or snapshot_is_old:
+            message = record.get("message", "No health message")
+            if snapshot_is_old and record.get("status") == "healthy":
+                message = "Latest health snapshot is older than the requested maximum age"
+            stale.append(
+                {
+                    "id": entry["id"],
+                    "status": record.get("status", "missing"),
+                    "message": message,
+                    "age_seconds": age_seconds,
+                }
+            )
+    return stale
+
+
+@mcp.tool(description=GET_PROVENANCE_DESCRIPTION)
+async def get_provenance(
+    dataset_ids: Annotated[list[str], Field(min_length=1, max_length=50)],
+) -> list[dict[str, Any]]:
+    """Build provenance from manifest and health fields without inference."""
+    manifest, health = await _load_catalogue()
+    manifest_by_id = {item["id"]: item for item in manifest.get("datasets", [])}
+    health_records = _health_by_id(health)
+    unknown_ids = [dataset_id for dataset_id in dataset_ids if dataset_id not in manifest_by_id]
+    if unknown_ids:
+        raise ValueError(f"Unknown dataset id(s): {', '.join(unknown_ids)}")
+
+    provenance = []
+    for dataset_id in dataset_ids:
+        entry = manifest_by_id[dataset_id]
+        health_record = health_records.get(dataset_id, {})
+        provenance.append(
+            {
+                "id": dataset_id,
+                "steward": entry.get("steward"),
+                "source": entry.get("source"),
+                "licence": entry.get("licence"),
+                "licence_url": LICENCE_URLS.get(entry.get("licence")),
+                "url": entry.get("url"),
+                "access_method": health_record.get("access_method", "unknown"),
+                "last_verified": health.get("checked_at") if health_record else None,
+                "schema_version": health.get("schema"),
+            }
+        )
+    return provenance
+
+
+@mcp.tool(description=FIND_BY_LICENCE_DESCRIPTION)
+async def find_by_licence(licence: str) -> dict[str, Any]:
+    """Return a canonical licence label, count, and dataset summaries."""
+    manifest, health = await _load_catalogue()
+    canonical_licence = _canonical_licence(licence)
+    health_records = _health_by_id(health)
+    datasets = [
+        {
+            "id": entry["id"],
+            "title": entry["name"],
+            "source": entry["source"],
+            "status": health_records.get(entry["id"], {}).get("status", "missing"),
+        }
+        for entry in manifest.get("datasets", [])
+        if entry.get("licence", "").casefold() == canonical_licence.casefold()
+    ]
+    return {
+        "licence": canonical_licence,
+        "count": len(datasets),
+        "datasets": datasets,
     }
 
 
