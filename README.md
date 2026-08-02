@@ -2,7 +2,10 @@
 
 **Live dashboard:** https://r3dz4r.github.io/datapulse-my/
 
-> **🤖 AI-ready** — Point your AI agent at [`https://r3dz4r.github.io/datapulse-my/llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) to consume all 53 datasets (manifest, freshness, licences) in one request.
+> **🤖 AI-agent-ready** — DataPulse MY is built for AI. An agent fetches one file
+> ([`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt)) and can use all
+> **53 official Malaysian datasets** immediately — no integration, no scraping,
+> always fresh, licences declared.
 
 DataPulse MY is an open-source trust layer for Malaysian public data. It makes
 official datasets easier to assess and reuse by publishing a small manifest,
@@ -48,10 +51,33 @@ need to handle.
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
 
-## For AI agents
+## AI-agent-ready — what it means for you
 
-DataPulse MY is AI-agent-friendly. Agents can discover and consume the full
-dataset portfolio from a single self-describing index.
+Give your organisation's AI tools current, licensed, and verified Malaysian
+public data without first building a custom integration. DataPulse MY makes the
+full portfolio discoverable from one self-describing index, ready for agents,
+RAG systems, and internal knowledge tools to consume.
+
+**What being agent-ready gives you**
+
+- **Zero integration work:** an AI agent or LLM/RAG system fetches one
+  [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) and can use the
+  entire portfolio immediately — no scraping, API-key setup, or data-format
+  reverse-engineering.
+- **Always-fresh data:** automatic weekly health monitoring flags stale datasets
+  and schema changes, reducing the risk that your AI is grounded in outdated
+  numbers.
+- **Machine-readable and licence-clear:** every dataset has a JSON envelope with
+  its schema, licence, and refresh cadence, giving legal and engineering teams
+  the information they need to approve and integrate it.
+- **Trustworthy for AI:** verified official sources and explicit licences let
+  agents cite and use the data without permission ambiguity.
+- **RAG and knowledge-base ready:** drop the envelopes into a retrieval pipeline
+  to ground chatbots and AI tools in current Malaysian public data.
+
+**53 datasets, 41 under CC BY 4.0, 12 under OGL.**
+
+### How to consume the data
 
 Verify access:
 
