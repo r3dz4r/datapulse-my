@@ -1,0 +1,72 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_ipi_export",
+  "status": "current",
+  "last_checked": "2026-08-02T16:47:48Z",
+  "freshness_days": 13,
+  "next_expected_update": "monthly",
+  "refresh_frequency": "monthly",
+  "record_count": 5174,
+  "date_range": {
+    "start": "2015-01-01",
+    "end": "2026-05-01"
+  },
+  "fields": [
+    {
+      "name": "series",
+      "type": "string",
+      "distinct_values": 3
+    },
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "division",
+      "type": "string",
+      "distinct_values": 13
+    },
+    {
+      "name": "index",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 155817-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 5174 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Latest observation is 2026-05-01 and file Last-Modified is 2026-07-20"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "4 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of the month.",
+    "MSIC division codes must remain strings.",
+    "Absolute index values and percentage growth rates share the index column.",
+    "Seasonally adjusted data is not provided."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/ipi_export",
+    "url": "https://storage.dosm.gov.my/ipi/ipi_export.csv",
+    "alternate_format": "https://storage.dosm.gov.my/ipi/ipi_export.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
