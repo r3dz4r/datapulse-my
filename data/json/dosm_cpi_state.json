@@ -1,0 +1,37 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_cpi_state",
+  "status": "current",
+  "last_checked": "2026-08-02T07:29:25Z",
+  "freshness_days": 16,
+  "next_expected_update": "monthly",
+  "refresh_frequency": "monthly",
+  "record_count": 44352,
+  "date_range": { "start": "2010-01-01", "end": "2026-06-01" },
+  "fields": [
+    { "name": "state", "type": "string", "distinct_values": 16 },
+    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
+    { "name": "division", "type": "string", "distinct_values": 14 },
+    { "name": "index", "type": "number" }
+  ],
+  "checks": [
+    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 1328705-byte binary payload" },
+    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 44352 data rows" },
+    { "name": "freshness", "status": "pass", "method": "Latest observation is 2026-06-01 and file Last-Modified is 2026-07-17" },
+    { "name": "schema_stable", "status": "pass", "method": "Four CSV columns matched schema version 1.0" }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of each month.",
+    "Division codes must remain strings so leading zeroes are preserved.",
+    "Aggregate overall rows coexist with division-specific rows."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/cpi_state",
+    "url": "https://storage.dosm.gov.my/cpi/cpi_2d_state.csv",
+    "alternate_format": "https://storage.dosm.gov.my/cpi/cpi_2d_state.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
