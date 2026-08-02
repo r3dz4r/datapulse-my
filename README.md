@@ -49,7 +49,16 @@ publication times:
 - [BNM Daily Exchange Rates (1700)](data/exchangerates_daily_1700.md) —
   [Sample JSON](samples/exchangerates_daily_1700.json)
 
-DataPulse MY currently tracks seven datasets in total.
+- [MET Malaysia Weather Forecast](data/met_weather.md) — Samples:
+  [CSV](samples/met_weather.csv), [JSON](samples/met_weather.json)
+- [DOE APIMS Air Quality (Hourly)](data/doe_apims.md) —
+  [Sample JSON](samples/doe_apims.json)
+- [DOE RQIMS River Water Quality (Continuous)](data/doe_rqims.md) —
+  [Sample JSON](samples/doe_rqims.json)
+- [DOE MQIMS Marine Water Quality (Monthly)](data/doe_mqims.md) —
+  [Sample JSON](samples/doe_mqims.json)
+
+DataPulse MY currently tracks eleven datasets in total.
 
 ## Current coverage
 
@@ -64,6 +73,10 @@ DataPulse MY currently tracks seven datasets in total.
 | BNM Daily Exchange Rates (`exchangerates_daily_1130`) | Daily on weekdays at 1130 MYT |
 | BNM Daily Exchange Rates (`exchangerates_daily_1200`) | Daily on weekdays at 1200 MYT |
 | BNM Daily Exchange Rates (`exchangerates_daily_1700`) | Daily on weekdays at 1700 MYT |
+| MET Malaysia Weather Forecast (`met_weather`) | Daily |
+| DOE APIMS Air Quality (`doe_apims`) | Hourly |
+| DOE RQIMS River Water Quality (`doe_rqims`) | Hourly |
+| DOE MQIMS Marine Water Quality (`doe_mqims`) | Monthly |
 
 ## How to use it
 
