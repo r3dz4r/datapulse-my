@@ -1,0 +1,74 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_hh_poverty_state",
+  "status": "current",
+  "last_checked": "2026-08-02T19:11:50Z",
+  "freshness_days": 27,
+  "next_expected_update": null,
+  "refresh_frequency": "biennial to triennial (survey years)",
+  "record_count": 310,
+  "date_range": {
+    "start": "1970-01-01",
+    "end": "2024-01-01"
+  },
+  "fields": [
+    {
+      "name": "state",
+      "type": "string",
+      "distinct_values": 16
+    },
+    {
+      "name": "date",
+      "type": "date",
+      "format": "YYYY-MM-DD"
+    },
+    {
+      "name": "poverty_absolute",
+      "type": "number"
+    },
+    {
+      "name": "poverty_hardcore",
+      "type": "number"
+    },
+    {
+      "name": "poverty_relative",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "HEAD request returned 200 with a 10041-byte CSV payload"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Downloaded CSV contained 310 data rows"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "File last modified 2026-07-06; latest observation is 2024-01-01 on its biennial to triennial (survey years) cadence"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "5 CSV columns matched schema version 1.0"
+    }
+  ],
+  "known_quirks": [
+    "Dates mark survey years and are not a continuous annual series.",
+    "State coverage expands over the historical series.",
+    "The source contains blanks in all three poverty measures, concentrated in earlier years.",
+    "Rates are percentages, not proportions."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/hies/hh_poverty_state.csv",
+    "alternate_format": "https://storage.dosm.gov.my/hies/hh_poverty_state.parquet",
+    "access_method": "direct CSV or Parquet download"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via OpenDOSM"
+}
