@@ -13,6 +13,7 @@ from fastmcp import Client
 
 
 MCP_DIR = Path(__file__).resolve().parents[1]
+REPO_DIR = MCP_DIR.parent
 sys.path.insert(0, str(MCP_DIR))
 
 import server  # noqa: E402
@@ -103,6 +104,8 @@ async def test_get_dataset_surfaces_trust_taxonomy_details(
                 "staleness_days": 12,
                 "access_dependency": "direct",
                 "expected_record_count": 100,
+                "content_freshness_date": "2026-07-22",
+                "freshness_signal_source": "content_parse",
             }
         ],
     }
@@ -119,6 +122,8 @@ async def test_get_dataset_surfaces_trust_taxonomy_details(
     assert result.data["staleness_days"] == 12
     assert result.data["access_dependency"] == "direct"
     assert result.data["expected_record_count"] == 100
+    assert result.data["content_freshness_date"] == "2026-07-22"
+    assert result.data["freshness_signal_source"] == "content_parse"
 
 
 async def test_find_stale_matches_live_health(live_data: tuple[dict, dict]) -> None:
@@ -164,6 +169,7 @@ async def test_find_stale_returns_only_freshness_or_schema_risks(
         "browser-dependent",
         "unreachable",
         "unknown",
+        "unknown-freshness",
     ]
     manifest = {
         "datasets": [
@@ -284,3 +290,34 @@ async def test_dataset_resource_template_returns_full_manifest_entry(
         result = await client.read_resource(f"datapulse://{expected['id']}")
 
     assert json.loads(result[0].text) == expected
+
+
+def test_met_weather_uses_content_freshness() -> None:
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+    weather = next(
+        item for item in health["datasets"] if item["dataset_id"] == "met_weather"
+    )
+
+    assert weather["last_modified"] is None
+    assert weather["content_freshness_date"]
+    assert weather["freshness_signal_source"] == "content_parse"
+    assert weather["status"] == "fresh"
+
+
+def test_unknown_freshness_for_headerless_datasets() -> None:
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+    headerless_without_content_date = [
+        item
+        for item in health["datasets"]
+        if item.get("http_status") == 200
+        and item.get("access_dependency") == "direct"
+        and item.get("last_modified") is None
+        and item.get("content_freshness_date") is None
+    ]
+
+    assert len(headerless_without_content_date) >= 5
+    assert all(
+        item["freshness_signal_source"] == "none"
+        and item["status"] == "unknown-freshness"
+        for item in headerless_without_content_date
+    )

@@ -41,8 +41,10 @@ SEARCH_DESCRIPTION = (
 )
 GET_DATASET_DESCRIPTION = (
     "Return full detail for one dataset id, including its latest health status and "
-    "last-verified timestamp. Use to fetch the provenance/citation metadata for a "
-    "dataset found via search_datasets."
+    "last-verified timestamp, content_freshness_date, and freshness_signal_source "
+    "(last_modified, content_parse, or none). Use to fetch the provenance/citation "
+    "metadata for a dataset found via search_datasets and distinguish "
+    "unknown-freshness from proven stale data."
 )
 FIND_STALE_DESCRIPTION = (
     "Return datasets whose status is aging, stale, or degraded, plus datasets missing "
@@ -172,8 +174,19 @@ async def get_dataset(dataset_id: str) -> dict[str, Any]:
             "staleness_days": None,
             "access_dependency": "direct",
             "expected_record_count": entry.get("expected_record_count"),
+            "content_freshness_date": None,
+            "freshness_signal_source": "none",
         },
     )
+    content_freshness_date = health_record.get("content_freshness_date")
+    freshness_signal_source = health_record.get("freshness_signal_source")
+    if freshness_signal_source not in {"last_modified", "content_parse", "none"}:
+        if health_record.get("last_modified"):
+            freshness_signal_source = "last_modified"
+        elif content_freshness_date:
+            freshness_signal_source = "content_parse"
+        else:
+            freshness_signal_source = "none"
     return {
         **entry,
         "status": "unknown",
@@ -183,6 +196,8 @@ async def get_dataset(dataset_id: str) -> dict[str, Any]:
         ),
         "expected_record_count": entry.get("expected_record_count"),
         **health_record,
+        "content_freshness_date": content_freshness_date,
+        "freshness_signal_source": freshness_signal_source,
         "last_verified": health.get("checked_at"),
         "schema_version": health.get("schema"),
     }
