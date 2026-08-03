@@ -46,6 +46,11 @@ Geographic coverage: Kuantan, Pahang.
 - The probe requires agency.txt, stops.txt, routes.txt, trips.txt, stop_times.txt, and calendar.txt.
 - The configured API category currently returns HTTP 404; the reference ZIP was retained from the official backing S3 object.
 
+## Known issues
+
+- **Deprecated endpoint:** The configured data.gov.my URL first returned HTTP 404 on 2026-08-04: `https://api.data.gov.my/gtfs-static/prasarana?category=rapid-bus-kuantan`.
+- This manifest entry is retained as a permanent `unreachable` record so a future steward fix remains visible; no live schedule data is currently available from the configured endpoint.
+
 ## Last checked
 
 2026-08-04 by the DataPulse MY automated GTFS probe using curl, zipfile/csv, and google.transit.gtfs_realtime_pb2 as applicable.
