@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Live health for 92 Malaysian public datasets tracked by DataPulse MY.">
+  <meta name="description" content="Live health for 122 Malaysian public datasets tracked by DataPulse MY.">
   <title>DataPulse MY — Malaysian public data health</title>
   <style>
     :root {
@@ -207,6 +207,29 @@
       gap: 1rem;
     }
 
+    .category-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .55rem;
+      margin: 0 0 1.25rem;
+    }
+
+    .category-filter {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font: inherit;
+      padding: .5rem .8rem;
+    }
+
+    .category-filter[aria-pressed="true"] {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+    }
+
     .dataset-card {
       display: flex;
       min-width: 0;
@@ -319,7 +342,7 @@
       <p class="tagline">A live trust layer for Malaysian public data: provenance, freshness signals, and reusable samples.</p>
       <a class="ai-ready" href="https://r3dz4r.github.io/datapulse-my/llms.txt">
         <span class="ai-ready-glyph" aria-hidden="true">✦</span>
-        <span><strong>AI-agent-ready</strong> · agents consume all 92 datasets from a single index — no integration, licences declared</span>
+        <span><strong>AI-agent-ready</strong> · agents consume all 122 datasets from a single index — no integration, licences declared</span>
       </a>
       <div class="header-meta">
         <span id="last-updated">Last checked: loading…</span>
@@ -359,6 +382,16 @@
         <h2 id="dataset-heading">Dataset health</h2>
         <p class="section-note">Live from the latest committed health envelope</p>
       </div>
+      <nav class="category-filters" aria-label="Filter datasets by category">
+        <button class="category-filter" type="button" data-namespace="all" aria-pressed="true">All (122)</button>
+        <button class="category-filter" type="button" data-namespace="economy" aria-pressed="false">Economy (45)</button>
+        <button class="category-filter" type="button" data-namespace="government_open_data" aria-pressed="false">Government open data (35)</button>
+        <button class="category-filter" type="button" data-namespace="transport" aria-pressed="false">Transport (30)</button>
+        <button class="category-filter" type="button" data-namespace="environment" aria-pressed="false">Environment (3)</button>
+        <button class="category-filter" type="button" data-namespace="weather" aria-pressed="false">Weather (1)</button>
+        <button class="category-filter" type="button" data-namespace="healthcare" aria-pressed="false">Healthcare (1)</button>
+        <button class="category-filter" type="button" data-namespace="other" aria-pressed="false">Other (7)</button>
+      </nav>
       <div id="dataset-grid" class="dataset-grid" aria-live="polite" aria-busy="true">
         <p class="loading" role="status">Loading live dataset health…</p>
       </div>
@@ -370,7 +403,7 @@
       <section class="agent-access" aria-label="For AI agents">
         <p><strong>AI-agent-ready:</strong>
           <a href="https://r3dz4r.github.io/datapulse-my/llms.txt">one llms.txt index</a>
-          gives agents access to 92 current, licence-declared datasets for RAG and knowledge tools.
+          gives agents access to 122 current, licence-declared datasets for RAG and knowledge tools.
         </p>
       </section>
       <p>DataPulse MY documents official sources; it does not replace them.
@@ -395,6 +428,7 @@
       const health = DATA.health;
       const manifest = DATA.manifest;
       const grid = document.querySelector("#dataset-grid");
+      const categoryFilters = document.querySelectorAll(".category-filter");
       const dateFormat = new Intl.DateTimeFormat("en-MY", {
         dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kuala_Lumpur"
       });
@@ -427,6 +461,12 @@
       }
 
       function sampleFiles(id) {
+        if (id.startsWith("gtfs_static_")) {
+          return [["Sample ZIP", `samples/gtfs-static/${id}.zip`]];
+        }
+        if (id.startsWith("gtfs_realtime_")) {
+          return [["Sample protobuf", `samples/gtfs-realtime/${id}.pb`]];
+        }
         if (id === "pricecatcher") return [
           ["Sample CSV", "samples/pricecatcher.csv"],
           ["Items", "samples/pricecatcher_lookup_item.csv"],
@@ -448,7 +488,10 @@
           ["Records", health.record_count],
           ["Expected", health.expected_record_count],
           ["Locations", health.locations],
-          ["Stations", health.stations]
+          ["Stations", health.stations],
+          ["Routes", health.routes],
+          ["Trips", health.trips],
+          ["Vehicles", health.vehicle_count]
         ].filter(([, value]) => value !== null && value !== undefined);
       }
 
@@ -461,6 +504,7 @@
       function buildCard(dataset, health = {}) {
         const status = health.status || "unknown";
         const card = make("article", `dataset-card status-${status}`);
+        card.dataset.namespace = dataset.namespace || "other";
         const heading = make("div", "card-heading");
         const badge = make("img", "status-badge");
         badge.src = `${assets}badges/${encodeURIComponent(dataset.id)}.svg`;
@@ -500,6 +544,19 @@
         if (counts.childElementCount) card.append(counts);
         card.append(links);
         return card;
+      }
+
+      function filterCards(namespace) {
+        for (const card of grid.querySelectorAll(".dataset-card")) {
+          card.hidden = namespace !== "all" && card.dataset.namespace !== namespace;
+        }
+        for (const button of categoryFilters) {
+          button.setAttribute("aria-pressed", String(button.dataset.namespace === namespace));
+        }
+      }
+
+      for (const button of categoryFilters) {
+        button.addEventListener("click", () => filterCards(button.dataset.namespace));
       }
 
       function renderDashboard() {

@@ -25,7 +25,8 @@ body_file="$(mktemp)"
 content_body_file="$(mktemp)"
 headers_file="$(mktemp)"
 previous_file="$(mktemp)"
-trap 'rm -f "$results_file" "$body_file" "$content_body_file" "$headers_file" "$previous_file"' EXIT
+probe_results_dir="$(mktemp -d)"
+trap 'rm -f "$results_file" "$body_file" "$content_body_file" "$headers_file" "$previous_file"; rm -rf "$probe_results_dir"' EXIT
 
 if [[ -s health/latest.json ]]; then
   cp health/latest.json "$previous_file"
@@ -34,7 +35,8 @@ elif command -v git >/dev/null 2>&1; then
 fi
 
 curl_timeout="${DATAPULSE_CURL_TIMEOUT:-30}"
-camofox_timeout="${CAMOFOX_TIMEOUT:-30}"
+gtfs_timeout="${DATAPULSE_GTFS_TIMEOUT:-45}"
+camofox_timeout="${CAMOFOX_TIMEOUT:-12}"
 camofox_base_url="${CAMOFOX_BASE_URL:-http://100.74.84.121:9377}"
 
 declare -A DATASET_CONTENT_DATE_FIELDS=(
@@ -180,7 +182,7 @@ check_browser_dataset() {
     --header 'Content-Type: application/json' \
     --data "$(jq -cn --arg userId "$user_id" --arg url "$source_url" \
       '{userId: $userId, url: $url}')" 2>/dev/null)"; then
-    sleep 6
+    sleep 2
     if ! open_response="$(curl --location --silent --show-error --fail \
       --max-time "$camofox_timeout" \
       --request POST "${camofox_base_url}/tabs/open" \
@@ -206,7 +208,7 @@ check_browser_dataset() {
   if ! snapshot_response="$(curl --location --silent --show-error --fail \
     --max-time "$camofox_timeout" \
     "${camofox_base_url}/tabs/${tab_id}/snapshot?userId=${user_id}" 2>/dev/null)"; then
-    sleep 6
+    sleep 2
     if ! snapshot_response="$(curl --location --silent --show-error --fail \
       --max-time "$camofox_timeout" \
       "${camofox_base_url}/tabs/${tab_id}/snapshot?userId=${user_id}" 2>/dev/null)"; then
@@ -476,10 +478,40 @@ check_direct_dataset() {
   emit "$dataset_id" "$source_url" "fresh" "HTTP ${http_status}" "$details"
 }
 
-warm_camofox_browser
+check_gtfs_dataset() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local sample_path
 
-while IFS=$'\t' read -r dataset_id source_url; do
+  if [[ "$dataset_id" == gtfs_static_* ]]; then
+    sample_path="samples/gtfs-static/${dataset_id}.zip"
+  else
+    sample_path="samples/gtfs-realtime/${dataset_id}.pb"
+  fi
+
+  if ! python3 "$script_dir/probe_gtfs.py" \
+    "$dataset_id" "$source_url" --sample "$sample_path" --timeout "$gtfs_timeout" \
+    >> "$results_file"; then
+    emit "$dataset_id" "$source_url" "unreachable" "GTFS probe helper failed" \
+      '{"access_method":"direct curl"}'
+  fi
+}
+
+dispatch_dataset() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local dataset_result_file="$3"
+
+  results_file="$dataset_result_file"
+  body_file="${dataset_result_file}.body"
+  content_body_file="${dataset_result_file}.content"
+  headers_file="${dataset_result_file}.headers"
+  : > "$results_file"
+
   case "$dataset_id" in
+    gtfs_*)
+      check_gtfs_dataset "$dataset_id" "$source_url"
+      ;;
     doe_apims)
       check_browser_dataset "$dataset_id" "$source_url" 12
       ;;
@@ -524,7 +556,29 @@ while IFS=$'\t' read -r dataset_id source_url; do
       check_direct_dataset "$dataset_id" "$source_url"
       ;;
   esac
+}
+
+warm_camofox_browser
+
+max_parallel="${DATAPULSE_MAX_PARALLEL:-16}"
+active_jobs=0
+dataset_index=0
+while IFS=$'\t' read -r dataset_id source_url; do
+  printf -v result_path '%s/%03d.json' "$probe_results_dir" "$dataset_index"
+  dispatch_dataset "$dataset_id" "$source_url" "$result_path" &
+  ((active_jobs += 1))
+  ((dataset_index += 1))
+  if (( active_jobs >= max_parallel )); then
+    wait -n
+    ((active_jobs -= 1))
+  fi
 done < <(jq -r '.datasets[] | [.id, .url] | @tsv' "$manifest")
+wait
+
+: > "$results_file"
+for result_path in "$probe_results_dir"/*.json; do
+  cat "$result_path" >> "$results_file"
+done
 
 expected_count="$(jq '.datasets | length' "$manifest")"
 actual_count="$(wc -l < "$results_file" | tr -d '[:space:]')"
@@ -562,7 +616,11 @@ jq -s \
       | (first($previous_rows[] | select(.dataset_id == $probe.dataset_id)) // {}) as $old
       | cadence_days($entry.refresh_frequency) as $cadence
       | ($probe.last_modified // null) as $last_modified
-      | ($probe.content_freshness_date // null) as $content_freshness_date
+      | ($probe.content_freshness_date //
+          (if ($probe.access_method // "" | ascii_downcase) == "camofox"
+           then ($old.content_freshness_date // null)
+           else null
+           end)) as $content_freshness_date
       | (if $last_modified == null then null
          else (($last_modified | fromdateiso8601) as $modified
            | ([0, (($checked_epoch - $modified) / 86400 | floor)] | max))
@@ -594,6 +652,8 @@ jq -s \
            if $probe.status == "browser-dependent" then "browser-dependent" else "unreachable" end
          elif (($probe.http_status | type) != "number" or $probe.http_status < 200 or $probe.http_status >= 300) then
            "unreachable"
+         elif $probe.status == "degraded" then
+           "degraded"
          elif $shape_changed
            or (($expected_record_count | type) == "number"
              and ($probe.record_count | type) == "number"
@@ -626,16 +686,27 @@ jq -s \
           content_shape_changed: $shape_changed,
           locations: ($probe.locations // null),
           date_range: ($probe.date_range // null),
+          agency: ($probe.agency // null),
+          stops: ($probe.stops // null),
+          routes: ($probe.routes // null),
+          trips: ($probe.trips // null),
+          stop_times: ($probe.stop_times // null),
+          calendar: ($probe.calendar // null),
+          vehicle_count: ($probe.vehicle_count // null),
+          header_timestamp: ($probe.header_timestamp // null),
+          newest_vehicle_timestamp: ($probe.newest_vehicle_timestamp // null),
           expected_record_count: $expected_record_count,
           record_count_within_tolerance: $within_tolerance,
           staleness_days: $staleness_days,
           staleness_status: $staleness_status,
           access_dependency: (if ($probe.access_method // "" | ascii_downcase) == "camofox" then "browser" else "direct" end),
-          freshness_signal: (if $last_modified != null then "last-modified-header"
+          freshness_signal: (if ($probe.dataset_id | startswith("gtfs_")) and $content_freshness_date != null then "content-date-parse"
+                             elif $last_modified != null then "last-modified-header"
                              elif $content_freshness_date != null then "content-date-parse"
                              elif ($probe.access_method // "" | ascii_downcase) == "camofox" then "browser-only"
                              else "no-header" end),
-          freshness_signal_source: (if $last_modified != null then "last_modified_header"
+          freshness_signal_source: (if ($probe.dataset_id | startswith("gtfs_")) and $content_freshness_date != null then "content_date_parse"
+                                    elif $last_modified != null then "last_modified_header"
                                     elif $content_freshness_date != null then "content_date_parse"
                                     else "none" end)
         }

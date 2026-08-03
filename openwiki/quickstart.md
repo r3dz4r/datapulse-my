@@ -1,7 +1,7 @@
 # DataPulse MY — OpenWiki Quickstart
 
 DataPulse MY is an open-source **trust layer for Malaysian public data**. It
-does not republish official datasets. Instead, for each of the **92 tracked
+does not republish official datasets. Instead, for each of the **122 tracked
 datasets** across eight Malaysian government agencies, it publishes a set of
 artifacts that together let journalists, researchers, civic technologists, and
 AI agents assess whether a source is usable and how to handle its quirks:
@@ -22,7 +22,7 @@ On top of these per-dataset artifacts, the project publishes three aggregate
 layers:
 
 - **`health/latest.json`** — a weekly machine-readable freshness snapshot of all
-  92 datasets, produced by [`scripts/check.sh`](../scripts/check.sh).
+  122 datasets, produced by [`scripts/check.sh`](../scripts/check.sh).
 - **Status badges** (`badges/<id>.svg`) and an **RSS feed** (`feed.xml`) generated
   from the health snapshot.
 - A **single-page dashboard** (`docs/index.html`) and an **AI-agent discovery
@@ -37,7 +37,7 @@ original work only.
 
 ## What is tracked
 
-92 datasets across eight agencies, grouped by the ID prefix used in the manifest
+122 datasets across official source groups, categorized by the manifest namespace
 and the underlying source portal:
 
 | Prefix / group | Agencies | Count | Notes |
@@ -101,7 +101,7 @@ marker files are handled.
 
 - [Datasets & schema](datasets.md) — manifest schema, health-report and
   JSON-envelope formats, the validation rules, and an agency-grouped catalog of
-  all 92 datasets with representative schemas and quirks.
+  all 122 datasets with representative schemas and quirks.
 - [Operations & contribution](operations.md) — the weekly health-check CI
   pipeline, GitHub Pages deploy, the OpenWiki refresh workflow, the
   three-file contribution model, the PR checklist, and agent marker files.
@@ -134,7 +134,7 @@ marker files are handled.
   a dataset accumulates enough distinct collection/quirk detail to justify it.
 - **Full per-dataset schema tables in the wiki** — the authoritative field-level
   schema for each dataset already lives in its `data/<id>.md` report; duplicating
-  all 92 here would be unmaintainable.
+  all 122 here would be unmaintainable.
 - **GitHub Pages dashboard internals** — source anchor: `docs/index.html`. The
   dashboard is a static page with embedded data injected at deploy time; it has
   no runtime API surface worth a dedicated page yet.

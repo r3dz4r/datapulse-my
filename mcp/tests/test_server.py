@@ -262,7 +262,7 @@ async def test_index_resource_returns_all_live_datasets(live_data: tuple[dict, d
     payload = json.loads(result[0].text)
     assert len(payload) == len(manifest["datasets"]) == 92
     assert all(
-        set(item) == {"id", "status", "title", "source", "licence"}
+        set(item) == {"id", "status", "title", "source", "licence", "namespace"}
         for item in payload
     )
 
@@ -357,4 +357,79 @@ def test_headerless_direct_datasets_use_content_freshness() -> None:
         item["freshness_signal_source"] == "none"
         and item["status"] == "unknown-freshness"
         for item in headerless_without_content_date
+    )
+
+
+def test_gtfs_static_ktmb_in_manifest() -> None:
+    manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
+    entry = next(item for item in manifest["datasets"] if item["id"] == "gtfs_static_ktmb")
+
+    assert entry["source"] == "data.gov.my (GTFS API)"
+    assert entry["steward"] == "Keretapi Tanah Melayu Berhad (KTMB)"
+    assert entry["url"] == "https://api.data.gov.my/gtfs-static/ktmb"
+    assert entry["licence"] == "Creative Commons Attribution 4.0"
+    assert entry["namespace"] == "transport"
+
+
+def test_gtfs_realtime_in_manifest() -> None:
+    manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
+    entry = next(item for item in manifest["datasets"] if item["id"] == "gtfs_realtime_ktmb")
+
+    assert entry["url"] == "https://api.data.gov.my/gtfs-realtime/vehicle-position/ktmb"
+    assert entry["refresh_frequency"] == "30 seconds"
+    assert entry["namespace"] == "transport"
+
+
+async def test_search_datasets_transport_namespace(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+
+    async def fake_load_catalogue() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("search_datasets", {"query": "ktmb"})
+
+    assert result.data[0]["id"] == "gtfs_static_ktmb"
+
+
+async def test_get_dataset_gtfs_has_calendar_signal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+
+    async def fake_load_catalogue() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
+    async with Client(server.mcp) as client:
+        result = await client.call_tool(
+            "get_dataset", {"dataset_id": "gtfs_static_ktmb"}
+        )
+
+    assert result.data["content_freshness_date"]
+    assert result.data["freshness_signal_source"] == "content_date_parse"
+
+
+async def test_gtfs_namespace_present_in_index_resource(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+
+    async def fake_load_catalogue() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
+    async with Client(server.mcp) as client:
+        result = await client.read_resource("datapulse://index")
+
+    payload = json.loads(result[0].text)
+    assert any(
+        item["id"] == "gtfs_static_ktmb" and item["namespace"] == "transport"
+        for item in payload
     )

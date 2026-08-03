@@ -3,7 +3,7 @@
 ## Endpoint status
 
 The stable public endpoint is live at `https://mcp.data-pulse.my/mcp`. It has
-been verified end to end: `tools/list` returns 5 tools over the 92-dataset
+been verified end to end: `tools/list` returns 5 tools over the 122-dataset
 catalogue.
 
 The durable services currently terminate at nginx on

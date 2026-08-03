@@ -1,7 +1,7 @@
 # MCP Server & Deployment
 
 DataPulse MY exposes a **read-only Model Context Protocol (MCP) server** that lets
-AI agents (Claude Desktop, Cursor, etc.) query the 92-dataset catalogue natively
+AI agents (Claude Desktop, Cursor, etc.) query the 122-dataset catalogue natively
 without scraping or API-key setup. It is the programmatic counterpart to the
 human-facing [`llms.txt`](../llms.txt) discovery index and the dashboard at
 `https://r3dz4r.github.io/datapulse-my/`.
@@ -30,7 +30,7 @@ until descriptions are published.
 
 Three resources are exposed:
 
-- `datapulse://index` — lightweight JSON array of all 92 datasets:
+- `datapulse://index` — lightweight JSON array of all 122 datasets:
   `{id, status, title, source, licence}`.
 - `datapulse://licences` — JSON object mapping licence name → dataset count.
 - `datapulse://{dataset_id}` — full manifest entry for one dataset (on-demand).

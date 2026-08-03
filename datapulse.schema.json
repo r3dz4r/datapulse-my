@@ -48,7 +48,8 @@
         "refresh_frequency",
         "expected_record_count",
         "geo_coverage",
-        "health_report"
+        "health_report",
+        "namespace"
       ],
       "properties": {
         "id": {
@@ -97,6 +98,19 @@
         "health_report": {
           "type": "string",
           "pattern": "^data/[A-Za-z0-9_-]+\\.md$"
+        },
+        "namespace": {
+          "type": "string",
+          "enum": [
+            "economy",
+            "government_open_data",
+            "environment",
+            "weather",
+            "healthcare",
+            "financial",
+            "transport",
+            "other"
+          ]
         }
       },
       "additionalProperties": false

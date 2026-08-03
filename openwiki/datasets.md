@@ -2,13 +2,13 @@
 
 This page documents the manifest registry and its JSON Schema, the health-report
 and JSON-envelope formats, the validation rules every contribution must pass,
-and an agency-grouped catalog of all **92 tracked datasets** with representative
+and an agency-grouped catalog of all **122 tracked datasets** with representative
 schemas and quirks.
 
 ## Manifest: `datapulse.json`
 
 `datapulse.json` is the top-level discovery registry. It contains a `datasets`
-array of 92 entries; every entry must include exactly these ten fields (see
+array of 122 entries; every entry must include exactly these twelve fields (see
 `datapulse.schema.json`, JSON Schema 2020-12, `additionalProperties: false`):
 
 - `id` — short, lowercase, hyphen-separated dataset ID; unique and must match
@@ -21,8 +21,11 @@ array of 92 entries; every entry must include exactly these ten fields (see
 - `attribution` — required attribution string.
 - `refresh_frequency` — expected cadence (free text, e.g. `weekly`, `daily`,
   `daily (weekdays, 0900 MYT)`, `biennial to triennial (survey years)`).
+- `expected_record_count` — optional numeric baseline represented as an integer
+  or `null` when no stable baseline is declared.
 - `geo_coverage` — geographic scope (free text; conventions vary, see below).
 - `health_report` — relative path matching `^data/[A-Za-z0-9_-]+\.md$`.
+- `namespace` — source category such as `economy`, `weather`, or `transport`.
 
 The `$schema` field at the root must equal the schema's own URL. The schema
 enforces `minItems: 1` and a closed per-dataset shape with no optional fields.
@@ -125,7 +128,7 @@ Get-Content -Raw data/json/<dataset-id>.json | ConvertFrom-Json | Out-Null
 
 ## Dataset catalog
 
-The 92 datasets are grouped below by ID prefix / source agency. Each group lists
+The 122 datasets are grouped below by namespace and ID prefix / source agency. Each group lists
 the IDs and documents representative schemas and shared quirks; the
 authoritative per-dataset schema lives in `data/<id>.md`.
 
