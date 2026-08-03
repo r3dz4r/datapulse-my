@@ -456,6 +456,13 @@ Adopt it: verify its source and licence, document its schema and quirks, and
 submit a health report. See [CONTRIBUTING.md](CONTRIBUTING.md) for the expected
 three-file contribution model.
 
+New contributors can start with the repository's
+[Good first issues](https://github.com/r3dz4r/datapulse-my/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22)
+or propose a dataset through the GitHub issue forms. Maintainers use
+`good first issue` (yellow), `adopt-a-dataset` (blue), `freshness-check`
+(blue), `bug` (red), `documentation` (blue), `question` (purple), and
+`wontfix` (gray) to route contributions.
+
 ## Licence
 
 DataPulse MY is released under the [MIT License](LICENSE). Source datasets

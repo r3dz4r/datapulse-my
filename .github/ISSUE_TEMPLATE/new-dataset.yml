@@ -1,0 +1,82 @@
+name: Add a dataset
+description: Propose a Malaysian public dataset for adoption by DataPulse MY.
+title: "Adopt: "
+labels:
+  - adopt-a-dataset
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping DataPulse MY cover another public dataset. Please verify the source and licence before submitting.
+
+  - type: input
+    id: dataset-name
+    attributes:
+      label: Dataset name
+      placeholder: Monthly Consumer Price Index by State
+    validations:
+      required: true
+
+  - type: input
+    id: source-url
+    attributes:
+      label: Source URL
+      description: Link to the official catalogue, API, or download page.
+      placeholder: https://example.gov.my/data-catalogue/dataset
+    validations:
+      required: true
+
+  - type: input
+    id: steward
+    attributes:
+      label: Steward
+      description: The agency or organisation responsible for the dataset.
+      placeholder: Department of Statistics Malaysia
+    validations:
+      required: true
+
+  - type: input
+    id: licence
+    attributes:
+      label: Licence
+      placeholder: Creative Commons Attribution 4.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: refresh-frequency
+    attributes:
+      label: Refresh frequency
+      options:
+        - daily
+        - weekly
+        - monthly
+        - quarterly
+        - annual
+        - ad-hoc
+    validations:
+      required: true
+
+  - type: textarea
+    id: usefulness
+    attributes:
+      label: Why is it useful?
+      description: Please provide at least 30 characters about who could use this dataset and why.
+      placeholder: This dataset would help researchers compare...
+    validations:
+      required: true
+
+  - type: input
+    id: existing-source
+    attributes:
+      label: "Source I can already add: GitHub URL"
+      description: Optional link to code, a probe, or a prepared contribution in GitHub.
+      placeholder: https://github.com/owner/repository/blob/main/probe.py
+
+  - type: checkboxes
+    id: attestation
+    attributes:
+      label: Self-attestation
+      options:
+        - label: I have verified the dataset URL and confirmed the licence
+          required: true

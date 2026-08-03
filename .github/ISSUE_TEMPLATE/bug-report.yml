@@ -1,0 +1,56 @@
+name: Bug report
+description: Report incorrect behaviour in DataPulse MY or its tooling.
+title: "Bug: "
+labels:
+  - bug
+body:
+  - type: input
+    id: title
+    attributes:
+      label: Title
+      description: Summarise the problem in one sentence.
+      placeholder: Health check rejects a valid envelope
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include any error output or incorrect result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run ...
+        2. Open ...
+        3. See ...
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Include operating system, shell, runtime, or browser versions where relevant.
+      placeholder: Ubuntu 24.04, Bash 5.2, Python 3.12
+    validations:
+      required: true
+
+  - type: input
+    id: sample-url
+    attributes:
+      label: Sample URL
+      description: Link to the affected dataset, report, envelope, or minimal reproduction.
+      placeholder: https://github.com/r3dz4r/datapulse-my/blob/main/data/example.md
