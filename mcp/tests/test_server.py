@@ -105,7 +105,7 @@ async def test_get_dataset_surfaces_trust_taxonomy_details(
                 "access_dependency": "direct",
                 "expected_record_count": 100,
                 "content_freshness_date": "2026-07-22",
-                "freshness_signal_source": "content_parse",
+                "freshness_signal_source": "content_date_parse",
             }
         ],
     }
@@ -123,7 +123,7 @@ async def test_get_dataset_surfaces_trust_taxonomy_details(
     assert result.data["access_dependency"] == "direct"
     assert result.data["expected_record_count"] == 100
     assert result.data["content_freshness_date"] == "2026-07-22"
-    assert result.data["freshness_signal_source"] == "content_parse"
+    assert result.data["freshness_signal_source"] == "content_date_parse"
 
 
 async def test_find_stale_matches_live_health(live_data: tuple[dict, dict]) -> None:
@@ -300,11 +300,48 @@ def test_met_weather_uses_content_freshness() -> None:
 
     assert weather["last_modified"] is None
     assert weather["content_freshness_date"]
-    assert weather["freshness_signal_source"] == "content_parse"
+    assert weather["freshness_signal_source"] == "content_date_parse"
     assert weather["status"] == "fresh"
 
 
-def test_unknown_freshness_for_headerless_datasets() -> None:
+def test_pricecatcher_last_modified_from_header() -> None:
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+    pricecatcher = next(
+        item for item in health["datasets"] if item["dataset_id"] == "pricecatcher"
+    )
+
+    assert pricecatcher["last_modified"]
+    assert pricecatcher["freshness_signal_source"] == "last_modified_header"
+
+
+def test_fuelprice_content_freshness_date() -> None:
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+    fuelprice = next(
+        item for item in health["datasets"] if item["dataset_id"] == "fuelprice"
+    )
+    sample = json.loads((REPO_DIR / "samples/fuelprice.json").read_text(encoding="utf-8"))
+
+    assert fuelprice["content_freshness_date"] == sample["date"]
+    assert fuelprice["freshness_signal_source"] == "content_date_parse"
+
+
+def test_browser_content_freshness_extraction() -> None:
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+    browser_dataset_ids = {
+        "doe_apims",
+        "doe_rqims",
+        "doe_mqims",
+        "kkm_idengue",
+        "eperolehan-diklankan",
+    }
+    browser_datasets = [
+        item for item in health["datasets"] if item["dataset_id"] in browser_dataset_ids
+    ]
+
+    assert any(item["content_freshness_date"] for item in browser_datasets)
+
+
+def test_headerless_direct_datasets_use_content_freshness() -> None:
     health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
     headerless_without_content_date = [
         item
@@ -315,7 +352,7 @@ def test_unknown_freshness_for_headerless_datasets() -> None:
         and item.get("content_freshness_date") is None
     ]
 
-    assert len(headerless_without_content_date) >= 5
+    assert len(headerless_without_content_date) <= 2
     assert all(
         item["freshness_signal_source"] == "none"
         and item["status"] == "unknown-freshness"

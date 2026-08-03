@@ -180,11 +180,22 @@ async def get_dataset(dataset_id: str) -> dict[str, Any]:
     )
     content_freshness_date = health_record.get("content_freshness_date")
     freshness_signal_source = health_record.get("freshness_signal_source")
-    if freshness_signal_source not in {"last_modified", "content_parse", "none"}:
+    source_aliases = {
+        "last_modified": "last_modified_header",
+        "content_parse": "content_date_parse",
+    }
+    freshness_signal_source = source_aliases.get(
+        freshness_signal_source, freshness_signal_source
+    )
+    if freshness_signal_source not in {
+        "last_modified_header",
+        "content_date_parse",
+        "none",
+    }:
         if health_record.get("last_modified"):
-            freshness_signal_source = "last_modified"
+            freshness_signal_source = "last_modified_header"
         elif content_freshness_date:
-            freshness_signal_source = "content_parse"
+            freshness_signal_source = "content_date_parse"
         else:
             freshness_signal_source = "none"
     return {
