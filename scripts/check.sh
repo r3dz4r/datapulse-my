@@ -190,7 +190,7 @@ check_browser_dataset() {
       --data "$(jq -cn --arg userId "$user_id" --arg url "$source_url" \
         '{userId: $userId, url: $url}')" 2>/dev/null)"; then
       details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
-      emit "$dataset_id" "$source_url" "unreachable" \
+      emit "$dataset_id" "$source_url" "browser-dependent" \
         "Camofox unavailable; browser check required" "$details"
       return 0
     fi
@@ -199,7 +199,7 @@ check_browser_dataset() {
   tab_id="$(jq -r '.tabId // empty' <<< "$open_response" 2>/dev/null)"
   if [[ -z "$tab_id" ]]; then
     details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
-    emit "$dataset_id" "$source_url" "unreachable" "Camofox returned no tab id" "$details"
+    emit "$dataset_id" "$source_url" "browser-dependent" "Camofox returned no tab id" "$details"
     return 0
   fi
 
@@ -214,7 +214,7 @@ check_browser_dataset() {
       "${camofox_base_url}/tabs/${tab_id}/snapshot?userId=${user_id}" 2>/dev/null)"; then
       close_camofox_tab "$tab_id" "$user_id" || true
       details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
-      emit "$dataset_id" "$source_url" "unreachable" "Camofox snapshot failed" "$details"
+      emit "$dataset_id" "$source_url" "browser-dependent" "Camofox snapshot failed" "$details"
       return 0
     fi
   fi
@@ -223,7 +223,7 @@ check_browser_dataset() {
   if [[ -z "$snapshot" ]]; then
     close_camofox_tab "$tab_id" "$user_id" || true
     details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
-    emit "$dataset_id" "$source_url" "unreachable" "Camofox returned no snapshot" "$details"
+    emit "$dataset_id" "$source_url" "browser-dependent" "Camofox returned no snapshot" "$details"
     return 0
   fi
 
@@ -240,7 +240,7 @@ check_browser_dataset() {
       --arg access_method 'Camofox' \
       --argjson wait_seconds "$wait_seconds" \
       '{access_method: $access_method, wait_seconds: $wait_seconds}')"
-    emit "$dataset_id" "$source_url" "unreachable" "Camofox tab close failed" "$details"
+    emit "$dataset_id" "$source_url" "browser-dependent" "Camofox tab close failed" "$details"
     return 0
   fi
 
@@ -649,7 +649,7 @@ jq -s \
          else "unknown-freshness"
          end) as $staleness_status
       | (if ($probe.access_method // "" | ascii_downcase) == "camofox" then
-           if $probe.status == "browser-dependent" then "browser-dependent" else "unreachable" end
+           "browser-dependent"
          elif (($probe.http_status | type) != "number" or $probe.http_status < 200 or $probe.http_status >= 300) then
            "unreachable"
          elif $probe.status == "degraded" then
