@@ -85,6 +85,42 @@ async def test_get_dataset_merges_manifest_and_health(live_data: tuple[dict, dic
     assert result.data["last_verified"] == health["checked_at"]
 
 
+async def test_get_dataset_surfaces_trust_taxonomy_details(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = {
+        "datasets": [
+            {"id": "sample", "name": "Sample", "expected_record_count": 100}
+        ]
+    }
+    health = {
+        "schema": "datapulse/v0.2/dataset-health",
+        "checked_at": "2026-08-03T00:00:00Z",
+        "datasets": [
+            {
+                "dataset_id": "sample",
+                "status": "aging",
+                "staleness_days": 12,
+                "access_dependency": "direct",
+                "expected_record_count": 100,
+            }
+        ],
+    }
+
+    async def fake_load_catalogue() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("get_dataset", {"dataset_id": "sample"})
+
+    assert result.data["status"] == "aging"
+    assert result.data["staleness_days"] == 12
+    assert result.data["access_dependency"] == "direct"
+    assert result.data["expected_record_count"] == 100
+
+
 async def test_find_stale_matches_live_health(live_data: tuple[dict, dict]) -> None:
     manifest, health = live_data
     checked_at = datetime.fromisoformat(health["checked_at"].replace("Z", "+00:00"))
@@ -94,7 +130,7 @@ async def test_find_stale_matches_live_health(live_data: tuple[dict, dict]) -> N
         item["id"]
         for item in manifest["datasets"]
         if item["id"] not in health_by_id
-        or health_by_id[item["id"]].get("status") != "healthy"
+        or health_by_id[item["id"]].get("status") in {"aging", "stale", "degraded"}
         or snapshot_age > 24 * 3600
     }
 
@@ -102,7 +138,67 @@ async def test_find_stale_matches_live_health(live_data: tuple[dict, dict]) -> N
         result = await client.call_tool("find_stale", {"max_age_hours": 24})
 
     assert {item["id"] for item in result.data} == expected_ids
-    assert all(set(item) == {"id", "status", "message", "age_seconds"} for item in result.data)
+    assert all(
+        set(item)
+        == {
+            "id",
+            "status",
+            "message",
+            "age_seconds",
+            "staleness_days",
+            "access_dependency",
+            "expected_record_count",
+        }
+        for item in result.data
+    )
+
+
+async def test_find_stale_returns_only_freshness_or_schema_risks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    statuses = [
+        "fresh",
+        "aging",
+        "stale",
+        "degraded",
+        "browser-dependent",
+        "unreachable",
+        "unknown",
+    ]
+    manifest = {
+        "datasets": [
+            {"id": status, "name": status, "expected_record_count": 10}
+            for status in statuses
+        ]
+    }
+    health = {
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "datasets": [
+            {
+                "dataset_id": status,
+                "status": status,
+                "message": f"{status} signal",
+                "staleness_days": index,
+                "access_dependency": "browser" if status == "browser-dependent" else "direct",
+                "expected_record_count": 10,
+            }
+            for index, status in enumerate(statuses)
+        ],
+    }
+
+    async def fake_load_catalogue() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("find_stale", {"max_age_hours": 24})
+
+    assert [item["status"] for item in result.data] == ["aging", "stale", "degraded"]
+    assert all(
+        {"staleness_days", "access_dependency", "expected_record_count"} <= set(item)
+        for item in result.data
+    )
 
 
 async def test_get_provenance_returns_citation_fields(live_data: tuple[dict, dict]) -> None:

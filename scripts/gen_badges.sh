@@ -28,24 +28,28 @@ while IFS=$'\t' read -r dataset_id raw_status; do
   fi
 
   case "$raw_status" in
-    healthy)
-      status="healthy"
+    fresh)
+      status="fresh"
       color="#4c1"
+      ;;
+    aging)
+      status="aging"
+      color="#dfb317"
+      ;;
+    stale)
+      status="stale"
+      color="#fe7d37"
       ;;
     degraded)
       status="degraded"
-      color="#dfb317"
-      ;;
-    down)
-      status="down"
       color="#e05d44"
       ;;
-    error)
-      status="error"
+    unreachable)
+      status="unreachable"
       color="#e05d44"
       ;;
-    browser-required)
-      status="browser-required"
+    browser-dependent)
+      status="browser-dependent"
       color="#007ec6"
       ;;
     *)

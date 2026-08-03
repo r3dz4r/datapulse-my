@@ -15,9 +15,11 @@
       --text: #eef4f8;
       --muted: #9dafbd;
       --link: #79c8ff;
-      --healthy: #4c1;
-      --degraded: #dfb317;
-      --down: #e05d44;
+      --fresh: #4c1;
+      --aging: #dfb317;
+      --stale: #fe7d37;
+      --degraded: #e05d44;
+      --unreachable: #e05d44;
       --browser: #007ec6;
       --unknown: #9f9f9f;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -67,7 +69,7 @@
 
     .eyebrow {
       margin: 0 0 0.5rem;
-      color: var(--healthy);
+      color: var(--fresh);
       font-size: 0.78rem;
       font-weight: 700;
       letter-spacing: 0.12em;
@@ -162,6 +164,19 @@
       text-transform: uppercase;
     }
 
+    .trust-posture {
+      margin-block: 1.5rem;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      background: var(--surface);
+    }
+
+    .trust-posture h2 { font-size: 1rem; }
+    .trust-distribution { margin: 0.5rem 0 0; font-weight: 700; }
+    .trust-gaps { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.78rem; }
+    .trust-link { display: inline-block; margin-top: 0.65rem; font-size: 0.78rem; }
+
     main { padding-bottom: 4rem; }
 
     .section-heading {
@@ -194,10 +209,12 @@
     }
 
     .dataset-card:hover { background: var(--raised); }
-    .status-healthy { --status: var(--healthy); }
+    .status-fresh { --status: var(--fresh); }
+    .status-aging { --status: var(--aging); }
+    .status-stale { --status: var(--stale); }
     .status-degraded { --status: var(--degraded); }
-    .status-down, .status-error { --status: var(--down); }
-    .status-browser-required { --status: var(--browser); }
+    .status-unreachable { --status: var(--unreachable); }
+    .status-browser-dependent { --status: var(--browser); }
 
     .card-heading {
       display: flex;
@@ -302,11 +319,18 @@
   </header>
 
   <main id="datasets" class="shell">
+    <section class="trust-posture" aria-labelledby="trust-heading">
+      <h2 id="trust-heading">Honest trust posture</h2>
+      <p id="trust-distribution" class="trust-distribution">Loading status distribution…</p>
+      <p id="trust-gaps" class="trust-gaps">Loading signal gaps…</p>
+      <a class="trust-link" href="/health/latest.json">View detailed health →</a>
+    </section>
+
     <section class="summary" aria-label="Dataset health summary">
       <div><strong id="summary-total">—</strong><span>Datasets tracked</span></div>
-      <div><strong id="summary-healthy">—</strong><span>Healthy</span></div>
-      <div><strong id="summary-attention">—</strong><span>Need attention</span></div>
-      <div><strong>v0.1</strong><span>Health schema</span></div>
+      <div><strong id="summary-fresh">—</strong><span>Fresh</span></div>
+      <div><strong id="summary-aging">—</strong><span>Aging</span></div>
+      <div><strong id="summary-stale">—</strong><span>Stale</span></div>
     </section>
 
     <section aria-labelledby="dataset-heading">
@@ -401,6 +425,7 @@
           ["HTTP", health.http_status],
           ["Size", formatBytes(health.content_length)],
           ["Records", health.record_count],
+          ["Expected", health.expected_record_count],
           ["Locations", health.locations],
           ["Stations", health.stations]
         ].filter(([, value]) => value !== null && value !== undefined);
@@ -427,6 +452,7 @@
         source.setAttribute("aria-label", `Official source for ${dataset.name}`);
         const facts = make("dl", "facts");
         addFact(facts, "Last modified", formatDate(health.last_modified));
+        addFact(facts, "Freshness", health.staleness_status || "Unknown");
         addFact(facts, "Next expected update",
           dataset.refresh_frequency ? `On its ${dataset.refresh_frequency} cadence` : "Not published");
         addFact(facts, "Health note", health.message || "No health check available");
@@ -460,16 +486,31 @@
           }
           const healthById = new Map(health.datasets.map(row => [row.dataset_id, row]));
           const cards = manifest.datasets.map(row => buildCard(row, healthById.get(row.id)));
-          const healthy = health.datasets.filter(row => row.status === "healthy").length;
+          const summary = health._trust_summary || {};
+          const byStatus = summary.by_status || {};
+          const statusCount = status => Number(byStatus[status] || 0);
+          const distribution = [
+            ["fresh", statusCount("fresh")],
+            ["aging", statusCount("aging")],
+            ["stale", statusCount("stale")],
+            ["degraded", statusCount("degraded")],
+            ["browser-dependent", statusCount("browser_dependent")],
+            ["unreachable", statusCount("unreachable")],
+            ["unknown", statusCount("unknown")]
+          ].map(([label, count]) => `${numberFormat.format(count)} ${label}`).join(" · ");
 
           grid.replaceChildren(...cards);
           grid.setAttribute("aria-busy", "false");
           document.querySelector("#last-updated").textContent =
             `Last checked: ${formatDate(health.checked_at)} MYT`;
           document.querySelector("#summary-total").textContent = numberFormat.format(cards.length);
-          document.querySelector("#summary-healthy").textContent = numberFormat.format(healthy);
-          document.querySelector("#summary-attention").textContent =
-            numberFormat.format(Math.max(0, cards.length - healthy));
+          document.querySelector("#summary-fresh").textContent = numberFormat.format(statusCount("fresh"));
+          document.querySelector("#summary-aging").textContent = numberFormat.format(statusCount("aging"));
+          document.querySelector("#summary-stale").textContent = numberFormat.format(statusCount("stale"));
+          document.querySelector("#trust-distribution").textContent = distribution;
+          document.querySelector("#trust-gaps").textContent =
+            `${numberFormat.format(summary.datasets_with_no_last_modified_header || 0)} without Last-Modified · ` +
+            `${numberFormat.format(summary.datasets_with_no_record_count_extracted || 0)} without extracted row counts`;
         } catch (error) {
           console.error("DataPulse dashboard load failed", error);
           const state = make("div", "empty-state");

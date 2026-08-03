@@ -61,7 +61,7 @@ fi
       "$health_file")"
 
     case "$status" in
-      healthy|degraded|down|browser-required|error|unknown) ;;
+      fresh|aging|stale|degraded|browser-dependent|unreachable|unknown) ;;
       *) status="unknown" ;;
     esac
 

@@ -89,6 +89,9 @@ fi
 
 if ! jq -e '
   (.checked_at | type == "string" and length > 0) and
+  (._trust_summary.datasets_total == 92) and
+  (._trust_summary.by_status | type == "object") and
+  ([._trust_summary.by_status[]] | add == 92) and
   (.datasets | type == "array" and length == 92) and
   ([.datasets[].dataset_id] | length == (unique | length)) and
   all(.datasets[];
@@ -108,24 +111,24 @@ if [[ "$manifest_ids" != "$health_ids" ]]; then
 fi
 
 checked_at="$(jq -r '.checked_at' "$health_file")"
-healthy_count="$(jq '[.datasets[] | select(.status == "healthy")] | length' "$health_file")"
+fresh_count="$(jq '[.datasets[] | select(.status == "fresh")] | length' "$health_file")"
 
 printf '\nAgent-ready verification passed: 92 manifest datasets match 92 health records.\n'
 printf 'Health snapshot checked at: %s\n' "$checked_at"
-printf 'Fresh/healthy datasets (status=healthy): %s/92\n' "$healthy_count"
+printf 'Fresh datasets (status=fresh): %s/92\n' "$fresh_count"
 jq -r --slurpfile health "$health_file" '
   ($health[0].datasets | map({key: .dataset_id, value: .status}) | from_entries) as $statuses
   | .datasets[]
-  | select($statuses[.id] == "healthy")
+  | select($statuses[.id] == "fresh")
   | "- \(.name) [\(.id)] — \(.licence)"
 ' "$manifest_file"
 
-if (( healthy_count < 92 )); then
+if (( fresh_count < 92 )); then
   printf '\nOther dataset statuses:\n'
   jq -r --slurpfile health "$health_file" '
     ($health[0].datasets | map({key: .dataset_id, value: .status}) | from_entries) as $statuses
     | .datasets[]
-    | select($statuses[.id] != "healthy")
+    | select($statuses[.id] != "fresh")
     | "- \(.name) [\(.id)] — \($statuses[.id]) — \(.licence)"
   ' "$manifest_file"
 fi
