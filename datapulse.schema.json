@@ -21,6 +21,20 @@
   },
   "additionalProperties": false,
   "$defs": {
+    "healthStatus": {
+      "description": "Dataset health statuses emitted by scripts/check.sh.",
+      "type": "string",
+      "enum": [
+        "fresh",
+        "aging",
+        "stale",
+        "degraded",
+        "browser-dependent",
+        "unreachable",
+        "unknown",
+        "unknown-freshness"
+      ]
+    },
     "dataset": {
       "type": "object",
       "required": [

@@ -52,6 +52,10 @@ while IFS=$'\t' read -r dataset_id raw_status; do
       status="browser-dependent"
       color="#007ec6"
       ;;
+    unknown-freshness)
+      status="unknown-freshness"
+      color="#9f7aea"
+      ;;
     *)
       status="unknown"
       color="#9f9f9f"

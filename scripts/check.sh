@@ -2,6 +2,7 @@
 # Dataset failures are data: record them and continue so the summary is complete.
 
 manifest="${1:-datapulse.json}"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if ! command -v jq >/dev/null 2>&1; then
   printf 'jq is required\n' >&2
@@ -116,7 +117,7 @@ check_browser_dataset() {
   local wait_seconds="$3"
   local user_id="datapulse-check-${dataset_id}"
   local open_response tab_id snapshot_response snapshot details
-  local stations timestamp snapshot_chars
+  local stations timestamp snapshot_chars content_freshness_date
 
   if ! open_response="$(curl --location --silent --show-error --fail \
     --max-time "$camofox_timeout" \
@@ -173,6 +174,9 @@ check_browser_dataset() {
   timestamp="$(grep -Eo '[0-9]{2}/[0-9]{2}/[0-9]{4}, [0-9]{2}:[0-9]{2}' \
     <<< "$snapshot" | head -n 1 || true)"
   snapshot_chars="${#snapshot}"
+  printf '%s' "$snapshot" > "$body_file"
+  content_freshness_date="$(DATAPULSE_CONTENT_FILE="$body_file" \
+    "$script_dir/extract_content_freshness.sh" "$source_url" "$dataset_id" || true)"
 
   if ! close_camofox_tab "$tab_id" "$user_id"; then
     details="$(jq -cn \
@@ -189,12 +193,16 @@ check_browser_dataset() {
     --argjson stations "$stations" \
     --arg timestamp "$timestamp" \
     --argjson snapshot_chars "$snapshot_chars" \
+    --arg content_freshness_date "$content_freshness_date" \
     '{
       access_method: $access_method,
       wait_seconds: $wait_seconds,
       stations: $stations,
       timestamp: (if $timestamp == "" then null else $timestamp end),
-      snapshot_chars: $snapshot_chars
+      snapshot_chars: $snapshot_chars,
+      content_freshness_date: (
+        if $content_freshness_date == "" then null else $content_freshness_date end
+      )
     }')"
   emit "$dataset_id" "$source_url" "browser-dependent" "Browser check succeeded" "$details"
 }
@@ -248,6 +256,7 @@ check_weather_dataset() {
   local dataset_id="$1"
   local source_url="$2"
   local http_status content_length record_count locations date_start date_end details
+  local content_freshness_date
   local column_count first_row_hash
 
   if ! http_status="$(curl --location --silent --show-error \
@@ -277,6 +286,8 @@ check_weather_dataset() {
   locations="$(jq '[.[].location.location_id] | unique | length' "$body_file")"
   date_start="$(jq -r '[.[].date] | min // empty' "$body_file")"
   date_end="$(jq -r '[.[].date] | max // empty' "$body_file")"
+  content_freshness_date="$(DATAPULSE_CONTENT_FILE="$body_file" \
+    "$script_dir/extract_content_freshness.sh" "$source_url" "$dataset_id" || true)"
   details="$(jq -cn \
     --arg request_url "$source_url" \
     --argjson http_status "$http_status" \
@@ -287,6 +298,7 @@ check_weather_dataset() {
     --argjson locations "$locations" \
     --arg date_start "$date_start" \
     --arg date_end "$date_end" \
+    --arg content_freshness_date "$content_freshness_date" \
     '{
       request_url: $request_url,
       access_method: "direct curl GET",
@@ -296,7 +308,10 @@ check_weather_dataset() {
       column_count: $column_count,
       first_row_hash: $first_row_hash,
       locations: $locations,
-      date_range: {start: ($date_start // null), end: ($date_end // null)}
+      date_range: {start: ($date_start // null), end: ($date_end // null)},
+      content_freshness_date: (
+        if $content_freshness_date == "" then null else $content_freshness_date end
+      )
     }')"
   emit "$dataset_id" "$source_url" "fresh" "HTTP ${http_status}" "$details"
 }
@@ -424,7 +439,7 @@ checked_epoch="$(date -u -d "$checked_at" +%s)"
 jq -s \
   --slurpfile manifest "$manifest" \
   --slurpfile previous "$previous_file" \
-  --arg schema "datapulse/v0.2/dataset-health" \
+  --arg schema "datapulse/v0.3/dataset-health" \
   --arg checked_at "$checked_at" \
   --argjson checked_epoch "$checked_epoch" \
   '
@@ -438,7 +453,7 @@ jq -s \
       else null
       end;
   def status_key($status):
-    if $status == "browser-dependent" then "browser_dependent" else $status end;
+    $status | gsub("-"; "_");
 
   ($manifest[0].datasets // []) as $manifest_rows
   | ((($previous[0] // {}).datasets) // []) as $previous_rows
@@ -448,13 +463,16 @@ jq -s \
       | (first($previous_rows[] | select(.dataset_id == $probe.dataset_id)) // {}) as $old
       | cadence_days($entry.refresh_frequency) as $cadence
       | ($probe.last_modified // null) as $last_modified
+      | ($probe.content_freshness_date // null) as $content_freshness_date
       | (if $last_modified == null then null
          else (($last_modified | fromdateiso8601) as $modified
            | ([0, (($checked_epoch - $modified) / 86400 | floor)] | max))
-         end) as $staleness_days
-      | (($old.content_length | type) == "number"
-          and ($probe.content_length | type) == "number"
-          and $old.content_length == $probe.content_length) as $content_length_stable
+         end) as $last_modified_age
+      | (if $content_freshness_date == null then null
+         else ((($content_freshness_date + "T00:00:00Z") | fromdateiso8601) as $content_date
+           | ([0, (($checked_epoch - $content_date) / 86400 | floor)] | max))
+         end) as $content_freshness_age
+      | ([$last_modified_age, $content_freshness_age] | map(select(. != null)) | min // null) as $staleness_days
       | (((($old.column_count | type) == "number"
             and ($probe.column_count | type) == "number"
             and $old.column_count != $probe.column_count)
@@ -465,15 +483,13 @@ jq -s \
       | (($expected_record_count | type) == "number"
           and ($probe.record_count | type) == "number"
           and $probe.record_count >= ($expected_record_count * 0.5)) as $within_tolerance
-      | (if $last_modified != null and $cadence != null then
+      | (if $staleness_days != null and $cadence != null then
            if $staleness_days <= ($cadence * 1.5) then "fresh"
            elif $staleness_days <= ($cadence * 3) then "aging"
            else "stale"
            end
-         elif $last_modified == null and $cadence != null then
-           if $content_length_stable then "aging" else "stale" end
-         elif $last_modified != null then "fresh"
-         else "unknown"
+         elif $staleness_days != null then "fresh"
+         else "unknown-freshness"
          end) as $staleness_status
       | (if ($probe.access_method // "" | ascii_downcase) == "camofox" then
            if $probe.status == "browser-dependent" then "browser-dependent" else "unreachable" end
@@ -486,6 +502,7 @@ jq -s \
            "degraded"
          elif $staleness_status == "stale" then "stale"
          elif $staleness_status == "aging" then "aging"
+         elif $staleness_status == "unknown-freshness" then "unknown-freshness"
          else "fresh"
          end) as $status
       | {
@@ -498,6 +515,7 @@ jq -s \
           http_status: ($probe.http_status // null),
           content_length: ($probe.content_length // null),
           last_modified: $last_modified,
+          content_freshness_date: $content_freshness_date,
           first_record_timestamp: ($probe.first_record_timestamp // null),
           wait_seconds: ($probe.wait_seconds // null),
           stations: ($probe.stations // null),
@@ -515,11 +533,15 @@ jq -s \
           staleness_status: $staleness_status,
           access_dependency: (if ($probe.access_method // "" | ascii_downcase) == "camofox" then "browser" else "direct" end),
           freshness_signal: (if ($probe.access_method // "" | ascii_downcase) == "camofox" then "browser-only"
-                             elif $last_modified == null then "no-header"
-                             else "last-modified-header" end)
+                             elif $last_modified != null then "last-modified-header"
+                             elif $content_freshness_date != null then "content-date-parse"
+                             else "no-header" end),
+          freshness_signal_source: (if $last_modified != null then "last_modified"
+                                    elif $content_freshness_date != null then "content_parse"
+                                    else "none" end)
         }
     ) as $datasets
-  | (reduce ["fresh", "aging", "stale", "degraded", "browser-dependent", "unreachable", "unknown"][] as $status
+  | (reduce ["fresh", "aging", "stale", "degraded", "browser-dependent", "unreachable", "unknown", "unknown-freshness"][] as $status
       ({}; .[status_key($status)] = ([$datasets[] | select(.status == $status)] | length))) as $by_status
   | {
       schema: $schema,
@@ -528,6 +550,11 @@ jq -s \
         checked_at: $checked_at,
         datasets_total: ($datasets | length),
         by_status: $by_status,
+        datasets_health_signal_source: {
+          last_modified_header: ([$datasets[] | select(.freshness_signal_source == "last_modified")] | length),
+          content_date_parse: ([$datasets[] | select(.freshness_signal_source == "content_parse")] | length),
+          neither: ([$datasets[] | select(.freshness_signal_source == "none")] | length)
+        },
         datasets_with_no_last_modified_header: ([$datasets[] | select(.last_modified == null)] | length),
         datasets_with_no_record_count_extracted: ([$datasets[] | select(.record_count == null)] | length),
         oldest_last_modified: ([$datasets[].last_modified | select(. != null)] | min // null),

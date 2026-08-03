@@ -22,6 +22,7 @@
       --unreachable: #e05d44;
       --browser: #007ec6;
       --unknown: #9f9f9f;
+      --unknown-freshness: #9f7aea;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 
@@ -175,6 +176,15 @@
     .trust-posture h2 { font-size: 1rem; }
     .trust-distribution { margin: 0.5rem 0 0; font-weight: 700; }
     .trust-gaps { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.78rem; }
+    .status-legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+      gap: 0.5rem 1rem;
+      margin: 0.85rem 0 0;
+    }
+    .status-legend div { min-width: 0; }
+    .status-legend dt { color: var(--text); font-weight: 700; }
+    .status-legend dd { margin: 0.1rem 0 0; color: var(--muted); font-size: 0.72rem; }
     .trust-link { display: inline-block; margin-top: 0.65rem; font-size: 0.78rem; }
 
     main { padding-bottom: 4rem; }
@@ -215,6 +225,7 @@
     .status-degraded { --status: var(--degraded); }
     .status-unreachable { --status: var(--unreachable); }
     .status-browser-dependent { --status: var(--browser); }
+    .status-unknown-freshness { --status: var(--unknown-freshness); }
 
     .card-heading {
       display: flex;
@@ -323,6 +334,16 @@
       <h2 id="trust-heading">Honest trust posture</h2>
       <p id="trust-distribution" class="trust-distribution">Loading status distribution…</p>
       <p id="trust-gaps" class="trust-gaps">Loading signal gaps…</p>
+      <dl class="status-legend" aria-label="Health status legend">
+        <div><dt>Fresh</dt><dd>Freshness evidence is within cadence.</dd></div>
+        <div><dt>Aging</dt><dd>Evidence is 1.5–3× beyond cadence.</dd></div>
+        <div><dt>Stale</dt><dd>Evidence is more than 3× beyond cadence.</dd></div>
+        <div><dt>Degraded</dt><dd>Too few records or content shape changed.</dd></div>
+        <div><dt>Browser-dependent</dt><dd>A browser is required to reach the page.</dd></div>
+        <div><dt>Unreachable</dt><dd>The latest HTTP or browser probe failed.</dd></div>
+        <div><dt>Unknown</dt><dd>No successful probe in the last seven days.</dd></div>
+        <div><dt>Unknown-freshness</dt><dd>URL works, but no freshness signal is available.</dd></div>
+      </dl>
       <a class="trust-link" href="/health/latest.json">View detailed health →</a>
     </section>
 
@@ -452,6 +473,8 @@
         source.setAttribute("aria-label", `Official source for ${dataset.name}`);
         const facts = make("dl", "facts");
         addFact(facts, "Last modified", formatDate(health.last_modified));
+        addFact(facts, "Content freshness", formatDate(health.content_freshness_date));
+        addFact(facts, "Freshness signal", health.freshness_signal_source || "none");
         addFact(facts, "Freshness", health.staleness_status || "Unknown");
         addFact(facts, "Next expected update",
           dataset.refresh_frequency ? `On its ${dataset.refresh_frequency} cadence` : "Not published");
@@ -496,7 +519,8 @@
             ["degraded", statusCount("degraded")],
             ["browser-dependent", statusCount("browser_dependent")],
             ["unreachable", statusCount("unreachable")],
-            ["unknown", statusCount("unknown")]
+            ["unknown", statusCount("unknown")],
+            ["unknown-freshness", statusCount("unknown_freshness")]
           ].map(([label, count]) => `${numberFormat.format(count)} ${label}`).join(" · ");
 
           grid.replaceChildren(...cards);
@@ -508,8 +532,11 @@
           document.querySelector("#summary-aging").textContent = numberFormat.format(statusCount("aging"));
           document.querySelector("#summary-stale").textContent = numberFormat.format(statusCount("stale"));
           document.querySelector("#trust-distribution").textContent = distribution;
+          const sources = summary.datasets_health_signal_source || {};
           document.querySelector("#trust-gaps").textContent =
-            `${numberFormat.format(summary.datasets_with_no_last_modified_header || 0)} without Last-Modified · ` +
+            `${numberFormat.format(sources.last_modified_header || 0)} via Last-Modified · ` +
+            `${numberFormat.format(sources.content_date_parse || 0)} via content date · ` +
+            `${numberFormat.format(sources.neither || 0)} with neither freshness signal · ` +
             `${numberFormat.format(summary.datasets_with_no_record_count_extracted || 0)} without extracted row counts`;
         } catch (error) {
           console.error("DataPulse dashboard load failed", error);

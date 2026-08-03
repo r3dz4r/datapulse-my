@@ -59,7 +59,7 @@ The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 5 
 
 ## Health
 
-- [Latest health snapshot](https://r3dz4r.github.io/datapulse-my/health/latest.json): Every dataset's current status, HTTP status, last-modified metadata, record counts, and check time. Machine-readable.
+- [Latest health snapshot](https://r3dz4r.github.io/datapulse-my/health/latest.json): Every dataset's current status, HTTP status, Last-Modified metadata, parsed content freshness date, freshness signal source, record counts, and check time. Machine-readable.
 - [RSS feed](https://r3dz4r.github.io/datapulse-my/feed.xml): Dataset health changes with status-tagged entries and RFC 822 publication dates.
 
 ## Trust posture
@@ -69,7 +69,8 @@ DataPulse MY distinguishes between:
 - HTTP reachability (URL returns any response)
 - Browser-required access (Camofox needed to render the page)
 - Schema validity (record count within expected tolerance)
-- Freshness (Last-Modified header within declared cadence)
+- Freshness (Last-Modified header or parsed content date within declared cadence)
+- Unknown freshness (`unknown-freshness`) when HTTP and content shape pass but neither freshness signal is available
 
 A dataset is marked `fresh` only when the applicable direct-access, schema, and
 freshness signals pass. See `health/latest.json` `_trust_summary` for the current

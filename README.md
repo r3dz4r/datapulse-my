@@ -5,7 +5,7 @@
 > **🤖 AI-agent-ready** — DataPulse MY is built for AI. An agent fetches one file
 > ([`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt)) and can use all
 > **92 official Malaysian datasets** immediately — no integration, no scraping,
-> licences declared, with an honest seven-status trust taxonomy instead of a
+> licences declared, with an honest eight-status trust taxonomy instead of a
 > blanket green checkmark.
 
 DataPulse MY is an open-source trust layer for Malaysian public data. It makes
@@ -35,7 +35,9 @@ need to handle.
 ## Dataset health
 
 Health is reported as `fresh`, `aging`, `stale`, `degraded`,
-`browser-dependent`, `unreachable`, or `unknown`. The public
+`browser-dependent`, `unreachable`, `unknown`, or `unknown-freshness`. The last
+value means the URL and content shape work, but neither a Last-Modified header
+nor a parseable content date proves when the data was updated. The public
 [`_trust_summary`](health/latest.json) shows the distribution and explicitly
 counts missing freshness and row-count signals.
 
@@ -82,7 +84,7 @@ RAG systems, and internal knowledge tools to consume.
   to ground chatbots and AI tools in current Malaysian public data.
 
 **92 datasets, 80 under CC BY 4.0, 12 under OGL, each assessed with the honest
-seven-status trust taxonomy.**
+eight-status trust taxonomy.**
 
 ### MCP server (read-only)
 
@@ -445,9 +447,9 @@ official sources. Follow each `health_report` link for a plain-language
 assessment, or consume the matching file under `data/json/` in an automated
 workflow.
 
-For example, a data pipeline can inspect `status` and `freshness_days` before
-processing a source, while a researcher can review the known quirks before
-designing a collection method.
+For example, a data pipeline can inspect `status`, `content_freshness_date`, and
+`freshness_signal_source` before processing a source, while a researcher can
+review the known quirks before designing a collection method.
 
 ## Roadmap
 
