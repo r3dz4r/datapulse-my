@@ -1,0 +1,44 @@
+name: Re-verify dataset freshness
+description: Report a new freshness observation for an existing dataset.
+title: "Re-verify: "
+labels:
+  - freshness-check
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Re-run the dataset's documented probe and share what the live source reports. Valid dataset IDs are listed in [`datapulse.json`](https://github.com/r3dz4r/datapulse-my/blob/main/datapulse.json).
+
+  - type: input
+    id: dataset-id
+    attributes:
+      label: Dataset ID
+      description: Copy an existing ID from the linked manifest.
+      placeholder: dosm_cpi_state
+    validations:
+      required: true
+
+  - type: input
+    id: last-verified-date
+    attributes:
+      label: Last verified date
+      description: Use YYYY-MM-DD when possible.
+      placeholder: "2026-08-03"
+    validations:
+      required: true
+
+  - type: input
+    id: observed-freshness
+    attributes:
+      label: New observed freshness
+      placeholder: Updated 2026-08-01, monthly cadence
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: source-rechecked
+    attributes:
+      label: Source URL re-checked
+      options:
+        - label: I re-checked the live source URL
+          required: true

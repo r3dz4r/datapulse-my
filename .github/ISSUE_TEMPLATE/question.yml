@@ -1,0 +1,41 @@
+name: Data or project question
+description: Ask about a dataset, its health metadata, or the DataPulse MY project.
+title: "Question: "
+labels:
+  - question
+body:
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic
+      options:
+        - A dataset or its source
+        - Freshness or health metadata
+        - Contributing a dataset
+        - Using DataPulse MY
+        - Project direction
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: dataset-id
+    attributes:
+      label: Dataset ID
+      description: Optional. Include the manifest ID if the question concerns a specific dataset.
+      placeholder: dosm_cpi_state
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Include enough context for another contributor to investigate.
+    validations:
+      required: true
+
+  - type: input
+    id: source-url
+    attributes:
+      label: Relevant URL
+      description: Optional link to a source, health report, or other context.
+      placeholder: https://example.gov.my/dataset
