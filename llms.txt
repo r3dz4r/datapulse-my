@@ -62,6 +62,19 @@ The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 5 
 - [Latest health snapshot](https://r3dz4r.github.io/datapulse-my/health/latest.json): Every dataset's current status, HTTP status, last-modified metadata, record counts, and check time. Machine-readable.
 - [RSS feed](https://r3dz4r.github.io/datapulse-my/feed.xml): Dataset health changes with status-tagged entries and RFC 822 publication dates.
 
+## Trust posture
+
+DataPulse MY distinguishes between:
+
+- HTTP reachability (URL returns any response)
+- Browser-required access (Camofox needed to render the page)
+- Schema validity (record count within expected tolerance)
+- Freshness (Last-Modified header within declared cadence)
+
+A dataset is marked `fresh` only when the applicable direct-access, schema, and
+freshness signals pass. See `health/latest.json` `_trust_summary` for the current
+distribution and the count of signals that could not be extracted.
+
 ## Datasets
 
 - [Malaysian Fuel Prices](https://r3dz4r.github.io/datapulse-my/data/fuelprice.md): Open Government Licence (Malaysia); weekly.

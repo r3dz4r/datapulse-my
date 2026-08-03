@@ -5,7 +5,8 @@
 > **🤖 AI-agent-ready** — DataPulse MY is built for AI. An agent fetches one file
 > ([`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt)) and can use all
 > **92 official Malaysian datasets** immediately — no integration, no scraping,
-> always fresh, licences declared.
+> licences declared, with an honest seven-status trust taxonomy instead of a
+> blanket green checkmark.
 
 DataPulse MY is an open-source trust layer for Malaysian public data. It makes
 official datasets easier to assess and reuse by publishing a small manifest,
@@ -32,6 +33,11 @@ need to handle.
   a chatbot answering "what's the latest BNM rate?"
 
 ## Dataset health
+
+Health is reported as `fresh`, `aging`, `stale`, `degraded`,
+`browser-dependent`, `unreachable`, or `unknown`. The public
+[`_trust_summary`](health/latest.json) shows the distribution and explicitly
+counts missing freshness and row-count signals.
 
 ![fuelprice](badges/fuelprice.svg)
 ![eperolehan-diklankan](badges/eperolehan-diklankan.svg)
@@ -64,9 +70,9 @@ RAG systems, and internal knowledge tools to consume.
   [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) and can use the
   entire portfolio immediately — no scraping, API-key setup, or data-format
   reverse-engineering.
-- **Always-fresh data:** automatic weekly health monitoring flags stale datasets
-  and schema changes, reducing the risk that your AI is grounded in outdated
-  numbers.
+- **Honest freshness signals:** automatic weekly monitoring separates HTTP
+  reachability, browser dependency, schema validity, and source freshness so
+  missing evidence is visible instead of being labelled healthy.
 - **Machine-readable and licence-clear:** every dataset has a JSON envelope with
   its schema, licence, and refresh cadence, giving legal and engineering teams
   the information they need to approve and integrate it.
@@ -75,7 +81,8 @@ RAG systems, and internal knowledge tools to consume.
 - **RAG and knowledge-base ready:** drop the envelopes into a retrieval pipeline
   to ground chatbots and AI tools in current Malaysian public data.
 
-**92 datasets, 80 under CC BY 4.0, 12 under OGL.**
+**92 datasets, 80 under CC BY 4.0, 12 under OGL, each assessed with the honest
+seven-status trust taxonomy.**
 
 ### MCP server (read-only)
 

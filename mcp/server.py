@@ -45,9 +45,9 @@ GET_DATASET_DESCRIPTION = (
     "dataset found via search_datasets."
 )
 FIND_STALE_DESCRIPTION = (
-    "Return datasets whose status is not 'healthy' (browser-required, error, or "
-    "missing from latest health snapshot). Use when an agent needs to know which "
-    "data is currently unreliable."
+    "Return datasets whose status is aging, stale, or degraded, plus datasets missing "
+    "from the latest health snapshot. Use when an agent needs to know which data has "
+    "a freshness or schema-validity risk."
 )
 GET_PROVENANCE_DESCRIPTION = (
     "Return citation-ready provenance metadata for the listed dataset ids: source "
@@ -143,7 +143,7 @@ async def search_datasets(
                 "title": entry["name"],
                 "source": entry["source"],
                 "licence": entry["licence"],
-                "status": health_record.get("status", "missing"),
+                "status": health_record.get("status", "unknown"),
                 "score": score,
             }
         )
@@ -167,12 +167,21 @@ async def get_dataset(dataset_id: str) -> dict[str, Any]:
         dataset_id,
         {
             "dataset_id": dataset_id,
-            "status": "missing",
+            "status": "unknown",
             "message": "Missing from latest health snapshot",
+            "staleness_days": None,
+            "access_dependency": "direct",
+            "expected_record_count": entry.get("expected_record_count"),
         },
     )
     return {
         **entry,
+        "status": "unknown",
+        "staleness_days": None,
+        "access_dependency": (
+            "browser" if health_record.get("access_method") == "Camofox" else "direct"
+        ),
+        "expected_record_count": entry.get("expected_record_count"),
         **health_record,
         "last_verified": health.get("checked_at"),
         "schema_version": health.get("schema"),
@@ -190,7 +199,7 @@ def _snapshot_age_seconds(checked_at: str | None) -> int | None:
 async def find_stale(
     max_age_hours: Annotated[int, Field(ge=0)] = 24,
 ) -> list[dict[str, Any]]:
-    """Return unhealthy, missing, or snapshot-aged dataset health summaries."""
+    """Return datasets with explicit freshness or schema-validity risks."""
     manifest, health = await _load_catalogue()
     health_records = _health_by_id(health)
     age_seconds = _snapshot_age_seconds(health.get("checked_at"))
@@ -203,21 +212,29 @@ async def find_stale(
             stale.append(
                 {
                     "id": entry["id"],
-                    "status": "missing",
+                    "status": "unknown",
                     "message": "Missing from latest health snapshot",
                     "age_seconds": age_seconds,
+                    "staleness_days": None,
+                    "access_dependency": "direct",
+                    "expected_record_count": entry.get("expected_record_count"),
                 }
             )
-        elif record.get("status") != "healthy" or snapshot_is_old:
+        elif record.get("status") in {"aging", "stale", "degraded"} or snapshot_is_old:
             message = record.get("message", "No health message")
-            if snapshot_is_old and record.get("status") == "healthy":
+            if snapshot_is_old and record.get("status") not in {"aging", "stale", "degraded"}:
                 message = "Latest health snapshot is older than the requested maximum age"
             stale.append(
                 {
                     "id": entry["id"],
-                    "status": record.get("status", "missing"),
+                    "status": record.get("status", "unknown"),
                     "message": message,
                     "age_seconds": age_seconds,
+                    "staleness_days": record.get("staleness_days"),
+                    "access_dependency": record.get("access_dependency", "direct"),
+                    "expected_record_count": record.get(
+                        "expected_record_count", entry.get("expected_record_count")
+                    ),
                 }
             )
     return stale
@@ -266,7 +283,7 @@ async def find_by_licence(licence: str) -> dict[str, Any]:
             "id": entry["id"],
             "title": entry["name"],
             "source": entry["source"],
-            "status": health_records.get(entry["id"], {}).get("status", "missing"),
+            "status": health_records.get(entry["id"], {}).get("status", "unknown"),
         }
         for entry in manifest.get("datasets", [])
         if entry.get("licence", "").casefold() == canonical_licence.casefold()
@@ -293,7 +310,7 @@ async def dataset_index() -> str:
     index = [
         {
             "id": entry["id"],
-            "status": health_records.get(entry["id"], {}).get("status", "missing"),
+            "status": health_records.get(entry["id"], {}).get("status", "unknown"),
             "title": entry["name"],
             "source": entry["source"],
             "licence": entry["licence"],
