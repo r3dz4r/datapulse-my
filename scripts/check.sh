@@ -666,6 +666,7 @@ jq -s \
          end) as $status
       | {
           dataset_id: ($probe.dataset_id // null),
+          namespace: ($entry.namespace // null),
           url: ($probe.url // null),
           status: $status,
           message: ($probe.message // null),

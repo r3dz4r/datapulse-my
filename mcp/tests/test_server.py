@@ -86,6 +86,26 @@ async def test_get_dataset_merges_manifest_and_health(live_data: tuple[dict, dic
     assert result.data["last_verified"] == health["checked_at"]
 
 
+async def test_get_dataset_surfaces_namespace(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+    dataset_id = manifest["datasets"][0]["id"]
+    expected_namespace = manifest["datasets"][0]["namespace"]
+    manifest["datasets"][0].pop("namespace")
+
+    async def fake_load_catalogue() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("get_dataset", {"dataset_id": dataset_id})
+
+    assert result.data["namespace"] == expected_namespace
+
+
 async def test_get_dataset_surfaces_trust_taxonomy_details(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
