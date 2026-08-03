@@ -1,25 +1,25 @@
 {
   "schema": "datapulse/v0.3/dataset-health",
-  "checked_at": "2026-08-03T17:20:02Z",
+  "checked_at": "2026-08-03T17:50:11Z",
   "_trust_summary": {
-    "checked_at": "2026-08-03T17:20:02Z",
+    "checked_at": "2026-08-03T17:50:11Z",
     "datasets_total": 92,
     "by_status": {
-      "fresh": 46,
-      "aging": 24,
+      "fresh": 51,
+      "aging": 25,
       "stale": 11,
       "degraded": 0,
       "browser_dependent": 5,
       "unreachable": 0,
       "unknown": 0,
-      "unknown_freshness": 6
+      "unknown_freshness": 0
     },
     "datasets_health_signal_source": {
-      "last_modified_header": 80,
-      "content_date_parse": 1,
-      "neither": 11
+      "last_modified_header": 81,
+      "content_date_parse": 10,
+      "neither": 1
     },
-    "datasets_with_no_last_modified_header": 12,
+    "datasets_with_no_last_modified_header": 11,
     "datasets_with_no_record_count_extracted": 86,
     "oldest_last_modified": "2024-06-05T08:41:56Z",
     "newest_last_modified": "2026-08-03T06:52:42Z",
@@ -74,20 +74,20 @@
     {
       "dataset_id": "fuelprice",
       "url": "https://data.gov.my/data-catalogue/fuelprice",
-      "status": "unknown-freshness",
+      "status": "fresh",
       "message": "HTTP 200",
-      "request_url": "https://api.data.gov.my/data-catalogue?id=fuelprice&limit=1",
+      "request_url": "https://api.data.gov.my/data-catalogue?id=fuelprice&limit=2000",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 203,
+      "content_length": 204338,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-07-30",
       "first_record_timestamp": "2017-03-30",
       "wait_seconds": null,
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 1,
+      "record_count": 943,
       "column_count": 10,
       "first_row_hash": "c33b409b4be57d0408ae7bcf8824364b903c09777c7780f6a12285eb231f8b8d",
       "content_shape_changed": false,
@@ -95,11 +95,11 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 4,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "eperolehan-diklankan",
@@ -111,7 +111,7 @@
       "http_status": null,
       "content_length": null,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-09-15",
       "first_record_timestamp": null,
       "wait_seconds": 12,
       "stations": 0,
@@ -125,22 +125,22 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "browser",
-      "freshness_signal": "browser-only",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "pricecatcher",
       "url": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-07.parquet",
-      "status": "unknown-freshness",
+      "status": "fresh",
       "message": "HTTP 200",
       "request_url": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-07.parquet",
       "access_method": "direct curl GET",
       "http_status": 200,
       "content_length": 2286215,
-      "last_modified": null,
+      "last_modified": "2026-07-31T12:00:40Z",
       "content_freshness_date": null,
       "first_record_timestamp": null,
       "wait_seconds": null,
@@ -155,29 +155,29 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 3,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none"
+      "freshness_signal": "last-modified-header",
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "exchangerates_daily_0900",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900",
-      "status": "unknown-freshness",
+      "status": "fresh",
       "message": "HTTP 200",
-      "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900",
+      "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900&limit=2000",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 7932748,
+      "content_length": 828165,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-08-03",
       "first_record_timestamp": "2003-05-02",
       "wait_seconds": null,
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 17105,
+      "record_count": 2000,
       "column_count": 29,
       "first_row_hash": "3549deaec9d733b1b27bb1578aacda17bf10f80b0a3644d7320b8c79810a8ee4",
       "content_shape_changed": false,
@@ -185,29 +185,29 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "exchangerates_daily_1130",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130",
-      "status": "unknown-freshness",
+      "status": "aging",
       "message": "HTTP 200",
-      "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130",
+      "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130&limit=2000",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 1710960,
+      "content_length": 294968,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-07-31",
       "first_record_timestamp": "2003-05-02",
       "wait_seconds": null,
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 11378,
+      "record_count": 2000,
       "column_count": 9,
       "first_row_hash": "705c255c6984a32c74177536954e17ea13b79dc88e8b6d393fbe6cbfe6d1f81e",
       "content_shape_changed": false,
@@ -215,29 +215,29 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 3,
+      "staleness_status": "aging",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "exchangerates_daily_1200",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
-      "status": "unknown-freshness",
+      "status": "fresh",
       "message": "HTTP 200",
-      "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
+      "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200&limit=2000",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 8698850,
+      "content_length": 874862,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-08-03",
       "first_record_timestamp": "2004-09-02",
       "wait_seconds": null,
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 18670,
+      "record_count": 2000,
       "column_count": 29,
       "first_row_hash": "e7f10a3225f98d9021054a19f64eb09de0abd31be9bd78851f90fba3920c1bcd",
       "content_shape_changed": false,
@@ -245,29 +245,29 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "exchangerates_daily_1700",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
-      "status": "unknown-freshness",
+      "status": "fresh",
       "message": "HTTP 200",
-      "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
+      "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700&limit=2000",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 8030548,
+      "content_length": 886535,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-08-03",
       "first_record_timestamp": "2005-12-14",
       "wait_seconds": null,
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 17139,
+      "record_count": 2000,
       "column_count": 29,
       "first_row_hash": "9698833dcf6387482c69fdcc862dc199713bdbcd97150c9ef371e97181220c1a",
       "content_shape_changed": false,
@@ -275,11 +275,11 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "met_weather",
@@ -312,7 +312,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
-      "freshness_signal_source": "content_parse"
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "doe_apims",
@@ -324,12 +324,12 @@
       "http_status": null,
       "content_length": null,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-08-03",
       "first_record_timestamp": null,
       "wait_seconds": 12,
       "stations": 15,
-      "timestamp": "03/08/2026, 10:16",
-      "snapshot_chars": 13163,
+      "timestamp": "03/08/2026, 10:47",
+      "snapshot_chars": 13252,
       "record_count": null,
       "column_count": null,
       "first_row_hash": null,
@@ -338,11 +338,11 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "browser",
-      "freshness_signal": "browser-only",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "doe_rqims",
@@ -354,12 +354,12 @@
       "http_status": null,
       "content_length": null,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-08-03",
       "first_record_timestamp": null,
       "wait_seconds": 12,
       "stations": 2,
-      "timestamp": "03/08/2026, 10:17",
-      "snapshot_chars": 4279,
+      "timestamp": "03/08/2026, 10:48",
+      "snapshot_chars": 4313,
       "record_count": null,
       "column_count": null,
       "first_row_hash": null,
@@ -368,11 +368,11 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "browser",
-      "freshness_signal": "browser-only",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "doe_mqims",
@@ -384,11 +384,11 @@
       "http_status": null,
       "content_length": null,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-08-03",
       "first_record_timestamp": null,
       "wait_seconds": 12,
       "stations": 12,
-      "timestamp": "03/08/2026, 10:18",
+      "timestamp": "03/08/2026, 10:48",
       "snapshot_chars": 7337,
       "record_count": null,
       "column_count": null,
@@ -398,11 +398,11 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "browser",
-      "freshness_signal": "browser-only",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "kkm_idengue",
@@ -462,7 +462,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_cpi_state",
@@ -492,7 +492,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_gdp_state_real_supply",
@@ -522,7 +522,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_gdp_qtr_real",
@@ -552,7 +552,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_gdp_annual_real_supply",
@@ -582,7 +582,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_trade_headline",
@@ -612,7 +612,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_cpi_inflation",
@@ -642,7 +642,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_trade_enduse_bec",
@@ -672,7 +672,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_lfs_qtr",
@@ -702,7 +702,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_lfs_qtr_state",
@@ -732,7 +732,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_employment_sector",
@@ -762,7 +762,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_population_state",
@@ -792,7 +792,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_gdp_annual_nominal_supply",
@@ -822,7 +822,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_gdp_qtr_nominal",
@@ -852,7 +852,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_gdp_qtr_real_sa",
@@ -882,7 +882,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_gdp_gni_annual_nominal",
@@ -912,7 +912,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_cpi_core_inflation",
@@ -942,7 +942,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_cpi_state_inflation",
@@ -972,7 +972,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_ppi",
@@ -1002,7 +1002,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_lfs_year",
@@ -1032,7 +1032,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_lfs_month",
@@ -1062,7 +1062,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_trade_sitc_1d",
@@ -1092,7 +1092,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_ipi_export",
@@ -1122,7 +1122,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_ipi_domestic",
@@ -1152,7 +1152,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_interest_rates",
@@ -1182,7 +1182,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_federal_finance_qtr_revenue",
@@ -1212,7 +1212,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_federal_finance_qtr_oe",
@@ -1242,7 +1242,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_state_finance_expenditure",
@@ -1272,7 +1272,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_money_aggregates",
@@ -1302,7 +1302,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_currency_in_circulation",
@@ -1332,7 +1332,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_payments_systems",
@@ -1362,7 +1362,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_payments_instruments",
@@ -1392,7 +1392,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_payments_channels",
@@ -1422,7 +1422,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_interest_rates_annual",
@@ -1452,7 +1452,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_epf_dividend",
@@ -1482,7 +1482,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_vehicle_registrations_type_fuel",
@@ -1512,7 +1512,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_payments_transactions_fpx",
@@ -1538,11 +1538,11 @@
       "date_range": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": 0,
+      "staleness_days": 1,
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_birth_state",
@@ -1572,7 +1572,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_death_state",
@@ -1602,7 +1602,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_death_maternal_state",
@@ -1632,7 +1632,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_marriages_state",
@@ -1662,7 +1662,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_hospital_beds",
@@ -1692,7 +1692,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_healthcare_staff",
@@ -1722,7 +1722,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_blood_donations_state",
@@ -1752,7 +1752,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_infant_immunisation",
@@ -1782,7 +1782,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_std_state",
@@ -1812,7 +1812,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_pekab40_screenings_state",
@@ -1842,7 +1842,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_mnha",
@@ -1872,7 +1872,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_electricity_consumption",
@@ -1902,7 +1902,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_electricity_supply",
@@ -1932,7 +1932,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_water_consumption",
@@ -1962,7 +1962,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_water_production",
@@ -1992,7 +1992,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_water_access",
@@ -2022,7 +2022,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_ridership_headline",
@@ -2052,7 +2052,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_ktmb_ridership_monthly",
@@ -2082,7 +2082,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_cellular_subscribers",
@@ -2112,7 +2112,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_prisoners_state",
@@ -2142,7 +2142,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_drug_addicts_age",
@@ -2172,7 +2172,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_local_authority_sex",
@@ -2202,7 +2202,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_parliament_sex",
@@ -2232,7 +2232,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_fish_landings",
@@ -2262,7 +2262,7 @@
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_crops_state",
@@ -2292,7 +2292,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dgm_schools_district",
@@ -2322,7 +2322,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_income",
@@ -2352,7 +2352,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_income_state",
@@ -2382,7 +2382,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_income_district",
@@ -2412,7 +2412,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_poverty",
@@ -2442,7 +2442,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_poverty_state",
@@ -2472,7 +2472,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_poverty_district",
@@ -2502,7 +2502,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_inequality",
@@ -2532,7 +2532,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_inequality_state",
@@ -2562,7 +2562,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_inequality_district",
@@ -2592,7 +2592,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_expenditure_dun",
@@ -2622,7 +2622,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_hh_expenditure_parlimen",
@@ -2652,7 +2652,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_population_malaysia",
@@ -2682,7 +2682,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_population_parlimen",
@@ -2712,7 +2712,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_death_district_sex",
@@ -2742,7 +2742,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_marriages_state_age",
@@ -2772,7 +2772,7 @@
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_fertility",
@@ -2802,7 +2802,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_death_maternal",
@@ -2832,7 +2832,7 @@
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
-      "freshness_signal_source": "last_modified"
+      "freshness_signal_source": "last_modified_header"
     }
   ]
 }

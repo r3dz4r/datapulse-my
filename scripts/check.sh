@@ -22,9 +22,10 @@ fi
 
 results_file="$(mktemp)"
 body_file="$(mktemp)"
+content_body_file="$(mktemp)"
 headers_file="$(mktemp)"
 previous_file="$(mktemp)"
-trap 'rm -f "$results_file" "$body_file" "$headers_file" "$previous_file"' EXIT
+trap 'rm -f "$results_file" "$body_file" "$content_body_file" "$headers_file" "$previous_file"' EXIT
 
 if [[ -s health/latest.json ]]; then
   cp health/latest.json "$previous_file"
@@ -35,6 +36,60 @@ fi
 curl_timeout="${DATAPULSE_CURL_TIMEOUT:-30}"
 camofox_timeout="${CAMOFOX_TIMEOUT:-30}"
 camofox_base_url="${CAMOFOX_BASE_URL:-http://100.74.84.121:9377}"
+
+declare -A DATASET_CONTENT_DATE_FIELDS=(
+  [fuelprice]=date
+  [pricecatcher]=date
+  [exchangerates_daily_0900]=date
+  [exchangerates_daily_1130]=date
+  [exchangerates_daily_1200]=date
+  [exchangerates_daily_1700]=date
+)
+
+declare -A DATASET_BROWSER_DATE_REGEX=(
+  [doe_apims]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
+  [doe_rqims]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
+  [doe_mqims]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
+  [kkm_idengue]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
+  [eperolehan-diklankan]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}|[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}'
+)
+
+extract_max_date() {
+  local body_path="$1"
+  local date_field="$2"
+
+  jq -r --arg f "$date_field" '
+    if type == "array" then
+      [.[].[$f]] | map(select(. != null)) | max
+    elif type == "object" then
+      [.[$f]] | map(select(. != null)) | max
+    else null
+    end
+  ' "$body_path"
+}
+
+extract_browser_dates() {
+  local snapshot_file="$1"
+  local date_regex="$2"
+  local matched_date year month day iso_date
+
+  while IFS= read -r matched_date; do
+    if [[ "$matched_date" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})$ ]]; then
+      year="${BASH_REMATCH[1]}"
+      month="${BASH_REMATCH[2]}"
+      day="${BASH_REMATCH[3]}"
+    elif [[ "$matched_date" =~ ^([0-9]{1,2})[/\-]([0-9]{1,2})[/\-]([0-9]{4})$ ]]; then
+      day="${BASH_REMATCH[1]}"
+      month="${BASH_REMATCH[2]}"
+      year="${BASH_REMATCH[3]}"
+    else
+      continue
+    fi
+
+    printf -v iso_date '%04d-%02d-%02d' "$((10#$year))" "$((10#$month))" "$((10#$day))"
+    date -u -d "$iso_date" +'%Y-%m-%d' 2>/dev/null || true
+  done < <(grep -oE "$date_regex" "$snapshot_file" || true) | sort -u | tail -1
+}
 
 emit() {
   local dataset_id="$1"
@@ -117,7 +172,7 @@ check_browser_dataset() {
   local wait_seconds="$3"
   local user_id="datapulse-check-${dataset_id}"
   local open_response tab_id snapshot_response snapshot details
-  local stations timestamp snapshot_chars content_freshness_date
+  local stations timestamp snapshot_chars content_freshness_date date_regex
 
   if ! open_response="$(curl --location --silent --show-error --fail \
     --max-time "$camofox_timeout" \
@@ -175,8 +230,8 @@ check_browser_dataset() {
     <<< "$snapshot" | head -n 1 || true)"
   snapshot_chars="${#snapshot}"
   printf '%s' "$snapshot" > "$body_file"
-  content_freshness_date="$(DATAPULSE_CONTENT_FILE="$body_file" \
-    "$script_dir/extract_content_freshness.sh" "$source_url" "$dataset_id" || true)"
+  date_regex="${DATASET_BROWSER_DATE_REGEX[$dataset_id]:-}"
+  content_freshness_date="$(extract_browser_dates "$body_file" "$date_regex")"
 
   if ! close_camofox_tab "$tab_id" "$user_id"; then
     details="$(jq -cn \
@@ -320,15 +375,22 @@ check_direct_dataset() {
   local dataset_id="$1"
   local source_url="$2"
   local request_url="$source_url"
-  local http_status content_length first_record_timestamp details
+  local http_status content_length first_record_timestamp details last_modified
+  local content_freshness_date content_request_url date_field
   local record_count column_count first_row_hash first_row
 
-  if [[ "$dataset_id" == "fuelprice" ]]; then
-    request_url="https://api.data.gov.my/data-catalogue?id=fuelprice&limit=1"
+  date_field="${DATASET_CONTENT_DATE_FIELDS[$dataset_id]:-}"
+  if [[ -n "$date_field" ]]; then
+    request_url="https://api.data.gov.my/data-catalogue?id=${dataset_id}&limit=2000"
+    if [[ "$dataset_id" == exchangerates_daily_* ]]; then
+      content_request_url="${request_url}&date_start=$(date -u -d '1 year ago' +'%Y-%m-%d')@date"
+    fi
   fi
 
+  : > "$headers_file"
   if ! http_status="$(curl --location --silent --show-error \
     --max-time "$curl_timeout" \
+    --dump-header "$headers_file" \
     --output "$body_file" --write-out '%{http_code}' "$request_url" 2>/dev/null)"; then
     details="$(jq -cn --arg request_url "$request_url" \
       '{request_url: $request_url, access_method: "direct curl GET"}')"
@@ -336,9 +398,30 @@ check_direct_dataset() {
     return 0
   fi
 
+  # The catalogue API currently has no pricecatcher route. Preserve the S3
+  # availability/header probe while retaining the configured content attempt.
+  if [[ "$dataset_id" == "pricecatcher" && ! "$http_status" =~ ^2[0-9][0-9]$ ]]; then
+    request_url="$source_url"
+    : > "$headers_file"
+    if ! http_status="$(curl --location --silent --show-error \
+      --max-time "$curl_timeout" \
+      --dump-header "$headers_file" \
+      --output "$body_file" --write-out '%{http_code}' "$request_url" 2>/dev/null)"; then
+      details="$(jq -cn --arg request_url "$request_url" \
+        '{request_url: $request_url, access_method: "direct curl GET"}')"
+      emit "$dataset_id" "$source_url" "unreachable" "curl request failed" "$details"
+      return 0
+    fi
+  fi
+
   if [[ ! "$http_status" =~ ^2[0-9][0-9]$ ]]; then
     emit_http_failure "$dataset_id" "$source_url" "$request_url" "$http_status"
     return 0
+  fi
+
+  last_modified="$(awk 'BEGIN { IGNORECASE=1 } /^last-modified:/ { sub(/^[^:]+:[[:space:]]*/, ""); value=$0 } END { gsub("\\r", "", value); print value }' "$headers_file")"
+  if [[ -n "$last_modified" ]]; then
+    last_modified="$(date -u -d "$last_modified" +'%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || true)"
   fi
 
   content_length="$(wc -c < "$body_file" | tr -d '[:space:]')"
@@ -354,6 +437,16 @@ check_direct_dataset() {
     jq -r 'if type == "array" then .[0] else . end
       | .timestamp // .date // .publish_date // empty' "$body_file" 2>/dev/null || true
   )"
+  content_freshness_date=""
+  if [[ -n "$content_request_url" ]] && curl --location --silent --show-error --fail \
+    --max-time "$curl_timeout" --output "$content_body_file" "$content_request_url" 2>/dev/null; then
+    content_freshness_date="$(extract_max_date "$content_body_file" "$date_field")"
+  elif [[ -n "$date_field" ]] && jq -e . "$body_file" >/dev/null 2>&1; then
+    content_freshness_date="$(extract_max_date "$body_file" "$date_field")"
+  fi
+  if [[ -n "$content_freshness_date" ]]; then
+    [[ "$content_freshness_date" != "null" ]] || content_freshness_date=""
+  fi
   details="$(jq -cn \
     --arg request_url "$request_url" \
     --argjson http_status "$http_status" \
@@ -362,6 +455,8 @@ check_direct_dataset() {
     --argjson column_count "$column_count" \
     --arg first_row_hash "$first_row_hash" \
     --arg first_record_timestamp "$first_record_timestamp" \
+    --arg last_modified "$last_modified" \
+    --arg content_freshness_date "$content_freshness_date" \
     '{
       request_url: $request_url,
       access_method: "direct curl GET",
@@ -369,6 +464,10 @@ check_direct_dataset() {
       content_length: $content_length,
       record_count: $record_count,
       column_count: $column_count,
+      last_modified: (if $last_modified == "" then null else $last_modified end),
+      content_freshness_date: (
+        if $content_freshness_date == "" then null else $content_freshness_date end
+      ),
       first_row_hash: (if $first_row_hash == "" then null else $first_row_hash end),
       first_record_timestamp: (
         if $first_record_timestamp == "" then null else $first_record_timestamp end
@@ -532,12 +631,12 @@ jq -s \
           staleness_days: $staleness_days,
           staleness_status: $staleness_status,
           access_dependency: (if ($probe.access_method // "" | ascii_downcase) == "camofox" then "browser" else "direct" end),
-          freshness_signal: (if ($probe.access_method // "" | ascii_downcase) == "camofox" then "browser-only"
-                             elif $last_modified != null then "last-modified-header"
+          freshness_signal: (if $last_modified != null then "last-modified-header"
                              elif $content_freshness_date != null then "content-date-parse"
+                             elif ($probe.access_method // "" | ascii_downcase) == "camofox" then "browser-only"
                              else "no-header" end),
-          freshness_signal_source: (if $last_modified != null then "last_modified"
-                                    elif $content_freshness_date != null then "content_parse"
+          freshness_signal_source: (if $last_modified != null then "last_modified_header"
+                                    elif $content_freshness_date != null then "content_date_parse"
                                     else "none" end)
         }
     ) as $datasets
@@ -551,8 +650,8 @@ jq -s \
         datasets_total: ($datasets | length),
         by_status: $by_status,
         datasets_health_signal_source: {
-          last_modified_header: ([$datasets[] | select(.freshness_signal_source == "last_modified")] | length),
-          content_date_parse: ([$datasets[] | select(.freshness_signal_source == "content_parse")] | length),
+          last_modified_header: ([$datasets[] | select(.freshness_signal_source == "last_modified_header")] | length),
+          content_date_parse: ([$datasets[] | select(.freshness_signal_source == "content_date_parse")] | length),
           neither: ([$datasets[] | select(.freshness_signal_source == "none")] | length)
         },
         datasets_with_no_last_modified_header: ([$datasets[] | select(.last_modified == null)] | length),
