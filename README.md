@@ -4,7 +4,8 @@
 
 > **🤖 AI-agent-ready** — DataPulse MY is built for AI. An agent fetches one file
 > ([`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt)) and can use all
-> **92 official Malaysian datasets** immediately — no integration, no scraping,
+> **122 official Malaysian datasets** immediately — including **+ 30 GTFS transit
+> feeds (KTMB, Prasarana, BAS.MY)** — no integration, no scraping,
 > licences declared, with an honest eight-status trust taxonomy instead of a
 > blanket green checkmark.
 
@@ -83,7 +84,7 @@ RAG systems, and internal knowledge tools to consume.
 - **RAG and knowledge-base ready:** drop the envelopes into a retrieval pipeline
   to ground chatbots and AI tools in current Malaysian public data.
 
-**92 datasets, 80 under CC BY 4.0, 12 under OGL, each assessed with the honest
+**122 datasets, 110 under CC BY 4.0, 12 under OGL, each assessed with the honest
 eight-status trust taxonomy.**
 
 ### MCP server (read-only)
@@ -96,7 +97,7 @@ the catalogue natively:
 - 3 resources: `datapulse://index`, `datapulse://licences`, `datapulse://{dataset_id}`
 
 The public endpoint is live and serves all 5 read-only tools over the
-92-dataset catalogue.
+122-dataset catalogue.
 
 Connect from Claude Desktop:
 
@@ -339,7 +340,14 @@ publication times:
 - [OpenDOSM Annual Maternal Deaths, Malaysia](data/dosm_death_maternal.md) —
   [Sample JSON](samples/dosm_death_maternal.json)
 
-DataPulse MY currently tracks 92 datasets in total.
+### GTFS transit feeds
+
+The transport namespace adds 16 GTFS Static schedule ZIPs and 14 GTFS Realtime
+vehicle-position protobuf feeds for KTMB, Prasarana, and BAS.MY services. Static
+samples are under [`samples/gtfs-static/`](samples/gtfs-static/) and realtime
+snapshots are under [`samples/gtfs-realtime/`](samples/gtfs-realtime/).
+
+DataPulse MY currently tracks 122 datasets in total.
 
 ## Current coverage
 

@@ -33,7 +33,7 @@ LICENCE_URLS = {
 }
 
 SEARCH_DESCRIPTION = (
-    "Search DataPulse MY's 92 Malaysian public datasets by natural-language query. "
+    "Search DataPulse MY's 122 Malaysian public datasets by natural-language query. "
     "Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or "
     "source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked "
     "matches: id, title, source, licence, status, score. Use when an agent needs to "
@@ -150,7 +150,14 @@ async def search_datasets(
             }
         )
 
-    matches.sort(key=lambda item: (-item["score"], item["title"], item["id"]))
+    matches.sort(
+        key=lambda item: (
+            -item["score"],
+            0 if item["id"].startswith("gtfs_static_") else 1,
+            item["title"],
+            item["id"],
+        )
+    )
     return matches[:limit]
 
 
@@ -325,7 +332,7 @@ async def find_by_licence(licence: str) -> dict[str, Any]:
     "datapulse://index",
     description=(
         "Read first; lightweight list of all DataPulse MY dataset ids with current "
-        "status, title, source, and licence."
+        "status, title, source, licence, and namespace."
     ),
     mime_type="application/json",
 )
@@ -340,6 +347,7 @@ async def dataset_index() -> str:
             "title": entry["name"],
             "source": entry["source"],
             "licence": entry["licence"],
+            "namespace": entry.get("namespace", "other"),
         }
         for entry in manifest.get("datasets", [])
     ]

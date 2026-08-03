@@ -14,7 +14,7 @@ Three workflows in `.github/workflows/` drive the project.
 Runs on a weekly cron (`0 0 * * 0`, every Sunday 00:00 UTC) and on
 `workflow_dispatch`. It is the heartbeat of the project:
 
-1. Runs `bash scripts/check.sh > health/latest.json` — probes all 92 datasets.
+1. Runs `bash scripts/check.sh > health/latest.json` — probes all 122 datasets.
 2. Runs `bash scripts/gen_badges.sh` — regenerates `badges/<id>.svg`.
 3. Runs `bash scripts/gen_rss.sh` — regenerates `feed.xml`.
 4. If any of `health/`, `badges/`, or `feed.xml` changed, commits them as
@@ -112,7 +112,7 @@ A self-test for AI agent consumers. Fetches `llms.txt` from the published site
 (overridable via `DATAPULSE_AGENT_BASE_URL`), validates it with an inline Python
 script (one H1, a blockquote summary, ≥1 H2 section, absolute HTTPS links,
 exactly one `datapulse.json` and one `health/latest.json` link), then follows
-the discovered URLs and asserts: manifest and health both have 92 entries, unique
+the discovered URLs and asserts: manifest and health both have 122 entries, unique
 IDs, non-empty required fields, and matching ID sets. Prints a status/licence
 summary. Requires `curl`, `jq`, `python3`. Exits non-zero on any failure.
 
