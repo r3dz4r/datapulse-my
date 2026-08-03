@@ -42,21 +42,13 @@ nor a parseable content date proves when the data was updated. The public
 [`_trust_summary`](health/latest.json) shows the distribution and explicitly
 counts missing freshness and row-count signals.
 
-![fuelprice](badges/fuelprice.svg)
-![eperolehan-diklankan](badges/eperolehan-diklankan.svg)
-![pricecatcher](badges/pricecatcher.svg)
-![exchangerates_daily_0900](badges/exchangerates_daily_0900.svg)
-![exchangerates_daily_1130](badges/exchangerates_daily_1130.svg)
-![exchangerates_daily_1200](badges/exchangerates_daily_1200.svg)
-![exchangerates_daily_1700](badges/exchangerates_daily_1700.svg)
-![met_weather](badges/met_weather.svg)
-![doe_apims](badges/doe_apims.svg)
-![doe_rqims](badges/doe_rqims.svg)
-![doe_mqims](badges/doe_mqims.svg)
-![kkm_idengue](badges/kkm_idengue.svg)
-![dosm_crime_district](badges/dosm_crime_district.svg)
-![dosm_cpi_state](badges/dosm_cpi_state.svg)
-![dosm_gdp_state_real_supply](badges/dosm_gdp_state_real_supply.svg)
+Current distribution (`_trust_summary`): [80 fresh](badges/status-fresh.svg) · [25 aging](badges/status-aging.svg) · [11 stale](badges/status-stale.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg)
+
+<!--
+Statuses with zero count are omitted. Full per-dataset health is in
+[health/latest.json](health/latest.json) and per-dataset badges live in
+[badges/](badges/).
+-->
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
 

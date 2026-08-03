@@ -79,3 +79,5 @@ while IFS=$'\t' read -r dataset_id raw_status; do
     '  </g>' \
     '</svg>' > "$badge_file"
 done < <(jq -r '.datasets[] | [(.dataset_id // ""), (.status // "unknown")] | @tsv' "$health_file")
+
+scripts/gen_status_legend.sh "$health_file"
