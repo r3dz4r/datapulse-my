@@ -423,6 +423,7 @@
       "use strict";
 
       const assets = 'https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/';
+      const SAMPLE_BASE = 'https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/samples/';
       const REPO = "https://github.com/r3dz4r/datapulse-my/blob/main/";
       const DATA = window.__DATAPULSE_DATA__ || { health: null, manifest: null };
       const health = DATA.health;
@@ -462,22 +463,22 @@
 
       function sampleFiles(id) {
         if (id.startsWith("gtfs_static_")) {
-          return [["Sample ZIP", `samples/gtfs-static/${id}.zip`]];
+          return [["Sample ZIP", SAMPLE_BASE + `gtfs-static/${id}.zip`]];
         }
         if (id.startsWith("gtfs_realtime_")) {
-          return [["Sample protobuf", `samples/gtfs-realtime/${id}.pb`]];
+          return [["Sample protobuf", SAMPLE_BASE + `gtfs-realtime/${id}.pb`]];
         }
         if (id === "pricecatcher") return [
-          ["Sample CSV", "samples/pricecatcher.csv"],
-          ["Items", "samples/pricecatcher_lookup_item.csv"],
-          ["Premises", "samples/pricecatcher_lookup_premise.csv"]
+          ["Sample CSV", SAMPLE_BASE + "pricecatcher.csv"],
+          ["Items", SAMPLE_BASE + "pricecatcher_lookup_item.csv"],
+          ["Premises", SAMPLE_BASE + "pricecatcher_lookup_premise.csv"]
         ];
         if (id === "eperolehan-diklankan" || id.startsWith("exchangerates_")) {
-          return [["Sample JSON", `samples/${id}.json`]];
+          return [["Sample JSON", SAMPLE_BASE + `${id}.json`]];
         }
         return [
-          ["Sample CSV", `samples/${id}.csv`],
-          ["Sample JSON", `samples/${id}.json`]
+          ["Sample CSV", SAMPLE_BASE + `${id}.csv`],
+          ["Sample JSON", SAMPLE_BASE + `${id}.json`]
         ];
       }
 
