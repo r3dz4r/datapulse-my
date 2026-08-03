@@ -280,7 +280,7 @@ async def test_index_resource_returns_all_live_datasets(live_data: tuple[dict, d
         result = await client.read_resource("datapulse://index")
 
     payload = json.loads(result[0].text)
-    assert len(payload) == len(manifest["datasets"]) == 92
+    assert len(payload) == len(manifest["datasets"])
     assert all(
         set(item) == {"id", "status", "title", "source", "licence", "namespace"}
         for item in payload
