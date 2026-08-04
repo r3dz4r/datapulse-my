@@ -338,7 +338,738 @@
       .dataset-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
   </style>
-</head>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Dataset",
+      "@id": "https://data-pulse.my/#catalog",
+      "name": "DataPulse MY Dataset Catalog",
+      "description": "Open trust layer for Malaysian public data. 122 official datasets from data.gov.my, BNM, DOSM, DOE, KKM, KPDN, and MET Malaysia, with continuous health monitoring and licence/attribution metadata.",
+      "url": "https://data-pulse.my/",
+      "sameAs": "https://github.com/r3dz4r/datapulse-my",
+      "identifier": "datapulse-my-catalog-v1",
+      "keywords": [
+        "Malaysia",
+        "open data",
+        "data.gov.my",
+        "BNM",
+        "DOSM",
+        "DOE",
+        "KKM",
+        "KPDN",
+        "MET",
+        "trust layer",
+        "civic technology"
+      ],
+      "spatialCoverage": {
+        "@type": "Place",
+        "name": "Malaysia"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "@id": "https://github.com/r3dz4r#org",
+        "name": "DataPulse MY (open source)",
+        "url": "https://github.com/r3dz4r/datapulse-my"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "Multiple Malaysian government agencies",
+        "url": "https://data.gov.my"
+      },
+      "license": "https://github.com/r3dz4r/datapulse-my/blob/main/LICENSE",
+      "isAccessibleForFree": true,
+      "distribution": [
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "application/json",
+          "contentUrl": "https://data-pulse.my/datapulse.json",
+          "name": "Machine-readable dataset manifest"
+        },
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "application/json",
+          "contentUrl": "https://data-pulse.my/health/latest.json",
+          "name": "Current health signals for all tracked datasets"
+        },
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "text/markdown",
+          "contentUrl": "https://data-pulse.my/llms.txt",
+          "name": "LLM agent index"
+        }
+      ],
+      "hasPart": [
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/fuelprice",
+          "name": "Malaysian Fuel Prices",
+          "url": "https://data-pulse.my/data/fuelprice",
+          "creator": {
+            "@type": "Organization",
+            "name": "Ministry of Finance Malaysia"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "fuelprice"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/eperolehan-diklankan",
+          "name": "ePerolehan Tender Notices (DIIKLANKAN)",
+          "url": "https://data-pulse.my/data/eperolehan-diklankan",
+          "creator": {
+            "@type": "Organization",
+            "name": "Ministry of Finance Malaysia"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "eperolehan-diklankan"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/pricecatcher",
+          "name": "PriceCatcher (Daily Grocery Prices)",
+          "url": "https://data-pulse.my/data/pricecatcher",
+          "creator": {
+            "@type": "Organization",
+            "name": "KPDN"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "pricecatcher"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/exchangerates_daily_0900",
+          "name": "BNM Daily Exchange Rates (0900)",
+          "url": "https://data-pulse.my/data/exchangerates_daily_0900",
+          "creator": {
+            "@type": "Organization",
+            "name": "BNM"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "exchangerates_daily_0900"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/exchangerates_daily_1130",
+          "name": "BNM Daily Exchange Rates (1130)",
+          "url": "https://data-pulse.my/data/exchangerates_daily_1130",
+          "creator": {
+            "@type": "Organization",
+            "name": "BNM"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "exchangerates_daily_1130"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/exchangerates_daily_1200",
+          "name": "BNM Daily Exchange Rates (1200)",
+          "url": "https://data-pulse.my/data/exchangerates_daily_1200",
+          "creator": {
+            "@type": "Organization",
+            "name": "BNM"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "exchangerates_daily_1200"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/exchangerates_daily_1700",
+          "name": "BNM Daily Exchange Rates (1700)",
+          "url": "https://data-pulse.my/data/exchangerates_daily_1700",
+          "creator": {
+            "@type": "Organization",
+            "name": "BNM"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "exchangerates_daily_1700"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/met_weather",
+          "name": "MET Malaysia Weather Forecast",
+          "url": "https://data-pulse.my/data/met_weather",
+          "creator": {
+            "@type": "Organization",
+            "name": "MET Malaysia"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "met_weather"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/doe_apims",
+          "name": "DOE APIMS Air Quality (Hourly API)",
+          "url": "https://data-pulse.my/data/doe_apims",
+          "creator": {
+            "@type": "Organization",
+            "name": "Department of Environment Malaysia"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "doe_apims"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/doe_rqims",
+          "name": "DOE RQIMS River Water Quality (Continuous)",
+          "url": "https://data-pulse.my/data/doe_rqims",
+          "creator": {
+            "@type": "Organization",
+            "name": "Department of Environment Malaysia"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "doe_rqims"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/doe_mqims",
+          "name": "DOE MQIMS Marine Water Quality (Manual)",
+          "url": "https://data-pulse.my/data/doe_mqims",
+          "creator": {
+            "@type": "Organization",
+            "name": "Department of Environment Malaysia"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "doe_mqims"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/kkm_idengue",
+          "name": "KKM iDengue Weekly Dengue Cases",
+          "url": "https://data-pulse.my/data/kkm_idengue",
+          "creator": {
+            "@type": "Organization",
+            "name": "KKM (Bahagian Kawalan Penyakit) + MYSA"
+          },
+          "license": "Open Government Licence (Malaysia)",
+          "identifier": "kkm_idengue"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_crime_district",
+          "name": "OpenDOSM Crime by District & Type (Annual)",
+          "url": "https://data-pulse.my/data/dosm_crime_district",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia (data sourced from PDRM)"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_crime_district"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_cpi_state",
+          "name": "OpenDOSM Monthly CPI by State & Division",
+          "url": "https://data-pulse.my/data/dosm_cpi_state",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_cpi_state"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_gdp_state_real_supply",
+          "name": "OpenDOSM Annual Real GDP by State & Sector",
+          "url": "https://data-pulse.my/data/dosm_gdp_state_real_supply",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_gdp_state_real_supply"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_gdp_qtr_real",
+          "name": "OpenDOSM Quarterly Real GDP",
+          "url": "https://data-pulse.my/data/dosm_gdp_qtr_real",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_gdp_qtr_real"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_gdp_annual_real_supply",
+          "name": "OpenDOSM Annual Real GDP by Supply Sector",
+          "url": "https://data-pulse.my/data/dosm_gdp_annual_real_supply",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_gdp_annual_real_supply"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_trade_headline",
+          "name": "OpenDOSM Monthly Trade Headline",
+          "url": "https://data-pulse.my/data/dosm_trade_headline",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_trade_headline"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_cpi_inflation",
+          "name": "OpenDOSM Monthly CPI Inflation by Division",
+          "url": "https://data-pulse.my/data/dosm_cpi_inflation",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_cpi_inflation"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_trade_enduse_bec",
+          "name": "OpenDOSM Monthly Trade by End Use (BEC)",
+          "url": "https://data-pulse.my/data/dosm_trade_enduse_bec",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_trade_enduse_bec"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_lfs_qtr",
+          "name": "OpenDOSM Quarterly Labour Force Statistics",
+          "url": "https://data-pulse.my/data/dosm_lfs_qtr",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_lfs_qtr"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_lfs_qtr_state",
+          "name": "OpenDOSM Quarterly Labour Force Statistics by State",
+          "url": "https://data-pulse.my/data/dosm_lfs_qtr_state",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_lfs_qtr_state"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_employment_sector",
+          "name": "OpenDOSM Annual Employment by Sector and Sex",
+          "url": "https://data-pulse.my/data/dosm_employment_sector",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_employment_sector"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_population_state",
+          "name": "OpenDOSM Annual Population by State",
+          "url": "https://data-pulse.my/data/dosm_population_state",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_population_state"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_gdp_annual_nominal_supply",
+          "name": "OpenDOSM Annual Nominal GDP by Supply Sector",
+          "url": "https://data-pulse.my/data/dosm_gdp_annual_nominal_supply",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_gdp_annual_nominal_supply"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_gdp_qtr_nominal",
+          "name": "OpenDOSM Quarterly Nominal GDP",
+          "url": "https://data-pulse.my/data/dosm_gdp_qtr_nominal",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_gdp_qtr_nominal"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_gdp_qtr_real_sa",
+          "name": "OpenDOSM Quarterly Real GDP (Seasonally Adjusted)",
+          "url": "https://data-pulse.my/data/dosm_gdp_qtr_real_sa",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_gdp_qtr_real_sa"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_gdp_gni_annual_nominal",
+          "name": "OpenDOSM Annual Nominal GDP and GNI",
+          "url": "https://data-pulse.my/data/dosm_gdp_gni_annual_nominal",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_gdp_gni_annual_nominal"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_cpi_core_inflation",
+          "name": "OpenDOSM Monthly Core CPI Inflation by Division",
+          "url": "https://data-pulse.my/data/dosm_cpi_core_inflation",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_cpi_core_inflation"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_cpi_state_inflation",
+          "name": "OpenDOSM Monthly CPI Inflation by State and Division",
+          "url": "https://data-pulse.my/data/dosm_cpi_state_inflation",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_cpi_state_inflation"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_ppi",
+          "name": "OpenDOSM Monthly Producer Price Index",
+          "url": "https://data-pulse.my/data/dosm_ppi",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_ppi"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_lfs_year",
+          "name": "OpenDOSM Annual Labour Force Statistics",
+          "url": "https://data-pulse.my/data/dosm_lfs_year",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_lfs_year"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_lfs_month",
+          "name": "OpenDOSM Monthly Labour Force Statistics",
+          "url": "https://data-pulse.my/data/dosm_lfs_month",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_lfs_month"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_trade_sitc_1d",
+          "name": "OpenDOSM Monthly Trade by SITC Section",
+          "url": "https://data-pulse.my/data/dosm_trade_sitc_1d",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_trade_sitc_1d"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_ipi_export",
+          "name": "OpenDOSM IPI for Export-Oriented Divisions",
+          "url": "https://data-pulse.my/data/dosm_ipi_export",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_ipi_export"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_ipi_domestic",
+          "name": "OpenDOSM IPI for Domestic-Oriented Divisions",
+          "url": "https://data-pulse.my/data/dosm_ipi_domestic",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_ipi_domestic"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_interest_rates",
+          "name": "data.gov.my Monthly Interest Rates",
+          "url": "https://data-pulse.my/data/dgm_interest_rates",
+          "creator": {
+            "@type": "Organization",
+            "name": "Bank Negara Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_interest_rates"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_federal_finance_qtr_revenue",
+          "name": "data.gov.my Quarterly Federal Government Revenue",
+          "url": "https://data-pulse.my/data/dgm_federal_finance_qtr_revenue",
+          "creator": {
+            "@type": "Organization",
+            "name": "Accountant General's Department of Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_federal_finance_qtr_revenue"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_federal_finance_qtr_oe",
+          "name": "data.gov.my Quarterly Federal Operating Expenditure",
+          "url": "https://data-pulse.my/data/dgm_federal_finance_qtr_oe",
+          "creator": {
+            "@type": "Organization",
+            "name": "Accountant General's Department of Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_federal_finance_qtr_oe"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_state_finance_expenditure",
+          "name": "data.gov.my State Government Expenditure",
+          "url": "https://data-pulse.my/data/dgm_state_finance_expenditure",
+          "creator": {
+            "@type": "Organization",
+            "name": "National Audit Department and Malaysian state governments"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_state_finance_expenditure"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_money_aggregates",
+          "name": "data.gov.my Monthly Money Aggregates",
+          "url": "https://data-pulse.my/data/dgm_money_aggregates",
+          "creator": {
+            "@type": "Organization",
+            "name": "Bank Negara Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_money_aggregates"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_currency_in_circulation",
+          "name": "data.gov.my Monthly Currency in Circulation",
+          "url": "https://data-pulse.my/data/dgm_currency_in_circulation",
+          "creator": {
+            "@type": "Organization",
+            "name": "Bank Negara Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_currency_in_circulation"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_payments_systems",
+          "name": "data.gov.my Monthly Payment Systems",
+          "url": "https://data-pulse.my/data/dgm_payments_systems",
+          "creator": {
+            "@type": "Organization",
+            "name": "Bank Negara Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_payments_systems"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_payments_instruments",
+          "name": "data.gov.my Monthly Payment Instruments",
+          "url": "https://data-pulse.my/data/dgm_payments_instruments",
+          "creator": {
+            "@type": "Organization",
+            "name": "Bank Negara Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_payments_instruments"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_payments_channels",
+          "name": "data.gov.my Monthly Payment Channels",
+          "url": "https://data-pulse.my/data/dgm_payments_channels",
+          "creator": {
+            "@type": "Organization",
+            "name": "Bank Negara Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_payments_channels"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_interest_rates_annual",
+          "name": "data.gov.my Annual Interest Rates",
+          "url": "https://data-pulse.my/data/dgm_interest_rates_annual",
+          "creator": {
+            "@type": "Organization",
+            "name": "Bank Negara Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_interest_rates_annual"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_epf_dividend",
+          "name": "data.gov.my Annual EPF Dividend Rates",
+          "url": "https://data-pulse.my/data/dgm_epf_dividend",
+          "creator": {
+            "@type": "Organization",
+            "name": "Employees Provident Fund"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_epf_dividend"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_vehicle_registrations_type_fuel",
+          "name": "data.gov.my Monthly Vehicle Registrations by Type and Fuel",
+          "url": "https://data-pulse.my/data/dgm_vehicle_registrations_type_fuel",
+          "creator": {
+            "@type": "Organization",
+            "name": "Road Transport Department Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_vehicle_registrations_type_fuel"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dgm_payments_transactions_fpx",
+          "name": "data.gov.my Daily FPX Transactions",
+          "url": "https://data-pulse.my/data/dgm_payments_transactions_fpx",
+          "creator": {
+            "@type": "Organization",
+            "name": "Bank Negara Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dgm_payments_transactions_fpx"
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://data-pulse.my/dosm_birth_state",
+          "name": "OpenDOSM Annual Births by State",
+          "url": "https://data-pulse.my/data/dosm_birth_state",
+          "creator": {
+            "@type": "Organization",
+            "name": "DOSM Malaysia"
+          },
+          "license": "Creative Commons Attribution 4.0",
+          "identifier": "dosm_birth_state"
+        }
+      ],
+      "temporalCoverage": "2017-03-30/..",
+      "dateModified": "2026-08-04"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://data-pulse.my/#org",
+      "name": "DataPulse MY",
+      "alternateName": "DataPulse Malaysia",
+      "url": "https://data-pulse.my/",
+      "logo": "https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/docs/images/ce/logo_dark.svg",
+      "description": "Open-source trust layer for Malaysian public data.",
+      "foundingDate": "2026",
+      "areaServed": {
+        "@type": "Country",
+        "name": "Malaysia"
+      },
+      "knowsAbout": [
+        "Malaysian public data",
+        "data.gov.my",
+        "Open Government Licence (Malaysia)",
+        "DOSM",
+        "BNM",
+        "DOE",
+        "KKM",
+        "KPDN",
+        "MET Malaysia",
+        "data quality monitoring"
+      ],
+      "sameAs": [
+        "https://github.com/r3dz4r/datapulse-my"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://data-pulse.my/#site",
+      "name": "DataPulse MY",
+      "url": "https://data-pulse.my/",
+      "inLanguage": [
+        "en",
+        "ms"
+      ],
+      "publisher": {
+        "@id": "https://data-pulse.my/#org"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://mcp.data-pulse.my/mcp"
+        },
+        "query-input": "required name=query"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "DataPulse MY",
+          "item": "https://data-pulse.my/"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+  </head>
 <body>
   <a class="skip-link" href="#datasets">Skip to datasets</a>
   <header>
