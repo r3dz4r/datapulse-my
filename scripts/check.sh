@@ -1,7 +1,56 @@
 #!/usr/bin/env bash
 # Dataset failures are data: record them and continue so the summary is complete.
 
-manifest="${1:-datapulse.json}"
+due_mode=false
+tier_filter=""
+cadence_override=""
+manifest="datapulse.json"
+
+usage() {
+  printf 'Usage: %s [--due [--tier <name>] [--cadence-minutes <n>]] [manifest]\n' "$0" >&2
+}
+
+while (( $# > 0 )); do
+  case "$1" in
+    --due)
+      due_mode=true
+      shift
+      ;;
+    --tier)
+      [[ $# -ge 2 ]] || { usage; exit 2; }
+      tier_filter="$2"
+      shift 2
+      ;;
+    --cadence-minutes)
+      [[ $# -ge 2 ]] || { usage; exit 2; }
+      cadence_override="$2"
+      shift 2
+      ;;
+    -*)
+      usage
+      exit 2
+      ;;
+    *)
+      [[ "$manifest" == "datapulse.json" ]] || { usage; exit 2; }
+      manifest="$1"
+      shift
+      ;;
+  esac
+done
+
+if [[ -n "$tier_filter" && ! "$tier_filter" =~ ^(realtime|daily|weekly-monthly|slow)$ ]]; then
+  printf 'Invalid tier: %s\n' "$tier_filter" >&2
+  exit 2
+fi
+if [[ -n "$cadence_override" && ! "$cadence_override" =~ ^[1-9][0-9]*$ ]]; then
+  printf 'Invalid cadence minutes: %s\n' "$cadence_override" >&2
+  exit 2
+fi
+if ! $due_mode && [[ -n "$tier_filter" || -n "$cadence_override" ]]; then
+  printf '%s requires --due\n' "--tier/--cadence-minutes" >&2
+  exit 2
+fi
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if ! command -v jq >/dev/null 2>&1; then
@@ -25,13 +74,46 @@ body_file="$(mktemp)"
 content_body_file="$(mktemp)"
 headers_file="$(mktemp)"
 previous_file="$(mktemp)"
+selected_manifest_file="$(mktemp)"
 probe_results_dir="$(mktemp -d)"
-trap 'rm -f "$results_file" "$body_file" "$content_body_file" "$headers_file" "$previous_file"; rm -rf "$probe_results_dir"' EXIT
+trap 'rm -f "$results_file" "$body_file" "$content_body_file" "$headers_file" "$previous_file" "$selected_manifest_file"; rm -rf "$probe_results_dir"' EXIT
 
 if [[ -s health/latest.json ]]; then
   cp health/latest.json "$previous_file"
 elif command -v git >/dev/null 2>&1; then
   git show HEAD:health/latest.json > "$previous_file" 2>/dev/null || true
+fi
+
+if $due_mode; then
+  now_epoch="$(date -u +%s)"
+  jq \
+    --slurpfile previous "$previous_file" \
+    --arg tier_filter "$tier_filter" \
+    --arg cadence_override "$cadence_override" \
+    --argjson now_epoch "$now_epoch" \
+    '
+    def tier_and_cadence($frequency):
+      ($frequency // "" | ascii_downcase) as $frequency
+      | if $frequency == "30 seconds" or $frequency == "hourly" then ["realtime", 15]
+        elif $frequency == "daily" or ($frequency | startswith("daily (weekdays,")) then ["daily", 1440]
+        elif $frequency == "weekly" or $frequency == "monthly" or $frequency == "quarterly" then ["weekly-monthly", 10080]
+        elif $frequency == "annual" or $frequency == "biennial to triennial (survey years)" or $frequency == "as-required" then ["slow", 43200]
+        else error("Unsupported refresh_frequency: \($frequency)")
+        end;
+
+    ((($previous[0] // {}).datasets) // []) as $previous_rows
+    | .datasets |= map(
+        . as $entry
+        | tier_and_cadence($entry.refresh_frequency) as $schedule
+        | (first($previous_rows[] | select(.dataset_id == $entry.id)) // {}) as $old
+        | (if $cadence_override == "" then $schedule[1] else ($cadence_override | tonumber) end) as $cadence_minutes
+        | (try ($old.last_checked | fromdateiso8601) catch null) as $last_checked_epoch
+        | select(($tier_filter == "" or $schedule[0] == $tier_filter)
+            and ($last_checked_epoch == null or ($now_epoch - $last_checked_epoch) >= ($cadence_minutes * 60)))
+      )
+    ' "$manifest" > "$selected_manifest_file"
+else
+  cp "$manifest" "$selected_manifest_file"
 fi
 
 curl_timeout="${DATAPULSE_CURL_TIMEOUT:-30}"
@@ -562,7 +644,10 @@ dispatch_dataset() {
   esac
 }
 
-warm_camofox_browser
+if jq -e '[.datasets[].id] | any(. == "doe_apims" or . == "doe_rqims" or . == "doe_mqims" or . == "kkm_idengue" or . == "eperolehan-diklankan")' \
+  "$selected_manifest_file" >/dev/null; then
+  warm_camofox_browser
+fi
 
 max_parallel="${DATAPULSE_MAX_PARALLEL:-16}"
 active_jobs=0
@@ -576,19 +661,26 @@ while IFS=$'\t' read -r dataset_id source_url; do
     wait -n
     ((active_jobs -= 1))
   fi
-done < <(jq -r '.datasets[] | [.id, .url] | @tsv' "$manifest")
+done < <(jq -r '.datasets[] | [.id, .url] | @tsv' "$selected_manifest_file")
 wait
 
 : > "$results_file"
-for result_path in "$probe_results_dir"/*.json; do
-  cat "$result_path" >> "$results_file"
-done
+if (( dataset_index > 0 )); then
+  for result_path in "$probe_results_dir"/*.json; do
+    cat "$result_path" >> "$results_file"
+  done
+fi
 
-expected_count="$(jq '.datasets | length' "$manifest")"
+expected_count="$(jq '.datasets | length' "$selected_manifest_file")"
 actual_count="$(wc -l < "$results_file" | tr -d '[:space:]')"
 if [[ "$actual_count" != "$expected_count" ]]; then
   printf 'Internal error: expected %s results, wrote %s\n' "$expected_count" "$actual_count" >&2
   exit 1
+fi
+
+if $due_mode && (( expected_count == 0 )) && [[ -s "$previous_file" ]]; then
+  cat "$previous_file"
+  exit 0
 fi
 
 checked_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
@@ -599,6 +691,7 @@ jq -s \
   --arg schema "datapulse/v0.3/dataset-health" \
   --arg checked_at "$checked_at" \
   --argjson checked_epoch "$checked_epoch" \
+  --argjson due_mode "$due_mode" \
   '
   def cadence_days($frequency):
     ($frequency // "" | ascii_downcase) as $frequency
@@ -677,6 +770,7 @@ jq -s \
          end) as $status
       | {
           dataset_id: ($probe.dataset_id // null),
+          last_checked: $checked_at,
           namespace: ($entry.namespace // null),
           url: ($probe.url // null),
           status: $status,
@@ -722,7 +816,12 @@ jq -s \
                                     elif $content_freshness_date != null then "content_date_parse"
                                     else "none" end)
         }
-    ) as $datasets
+    ) as $updated_datasets
+  | (if $due_mode then
+       ([ $previous_rows[] | select(.dataset_id as $id | all($updated_datasets[]; .dataset_id != $id)) ] + $updated_datasets) as $merged
+       | [ $manifest_rows[].id as $id | $merged[] | select(.dataset_id == $id) ]
+     else $updated_datasets
+     end) as $datasets
   | (reduce ["fresh", "aging", "stale", "degraded", "browser-dependent", "unreachable", "unknown", "unknown-freshness"][] as $status
       ({}; .[status_key($status)] = ([$datasets[] | select(.status == $status)] | length))) as $by_status
   | {
