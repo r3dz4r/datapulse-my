@@ -1,6 +1,77 @@
+# DataPulse MY — robots.txt
+# Open trust layer for Malaysian public data. AI crawlers are welcome.
+# Last updated 2026-08-04.
+
 User-agent: *
 Allow: /
 
+# === AI training crawlers (explicitly allowed; we want to be in their training data) ===
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Cohere-AI
+Allow: /
+
+User-agent: DeepSeekBot
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
+User-agent: img2dataset
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+# === Discoverability pointers ===
+
 # LLM agent index
-# llms.txt: https://r3dz4r.github.io/datapulse-my/llms.txt
-Sitemap: https://r3dz4r.github.io/datapulse-my/sitemap.xml
+# llms.txt: https://data-pulse.my/llms.txt
+# Agent capability manifest: https://data-pulse.my/agent.json
+# MCP server advertisement: https://data-pulse.my/mcp.json
+
+Sitemap: https://data-pulse.my/sitemap.xml
