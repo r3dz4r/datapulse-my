@@ -52,6 +52,10 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
 
+      - name: Capture deployed source SHA
+        id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
@@ -101,3 +105,73 @@ jobs:
       - name: Deploy dashboard
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Post-deploy release invariants
+        env:
+          DEPLOYED_SHA: ${{ steps.source.outputs.sha }}
+          DATAPULSE_AGENT_BASE_URL: https://data-pulse.my
+        run: |
+          set -Eeuo pipefail
+
+          fail() {
+            echo "::error title=Post-deploy release invariant failed::$1"
+            exit 1
+          }
+
+          fetch() {
+            local surface="$1"
+            local url="$2"
+            local output="$3"
+            curl --fail --location --silent --show-error \
+              --connect-timeout 10 --max-time 20 \
+              "$url" --output "$output" || fail "$surface could not be fetched from $url"
+          }
+
+          [[ "$(git rev-parse HEAD)" == "$DEPLOYED_SHA" ]] || \
+            fail "checked-out SHA does not match deployed SHA $DEPLOYED_SHA"
+
+          sleep 30
+          smoke_dir="$(mktemp -d)"
+          trap 'rm -rf "$smoke_dir"' EXIT
+
+          fetch "dashboard" "https://data-pulse.my/" "$smoke_dir/index.html"
+          grep -q "122" "$smoke_dir/index.html" || \
+            fail "dashboard does not mention 122 datasets"
+          card_count="$(grep -o '"health_report":' "$smoke_dir/index.html" | wc -l || true)"
+          [[ "$card_count" -eq 122 ]] || \
+            fail "dashboard embeds $card_count dataset cards; expected 122"
+
+          fetch "llms.txt" "https://data-pulse.my/llms.txt" "$smoke_dir/llms.txt"
+          grep -Fq "122 datasets" "$smoke_dir/llms.txt" || \
+            fail "llms.txt does not contain '122 datasets'"
+          grep -Fq "MCP" "$smoke_dir/llms.txt" || \
+            fail "llms.txt does not mention MCP"
+          for tool in search_datasets get_dataset find_stale get_provenance find_by_licence; do
+            grep -Fq "$tool" "$smoke_dir/llms.txt" || \
+              fail "llms.txt is missing MCP tool $tool"
+          done
+
+          fetch "JSON-LD catalog" "https://data-pulse.my/data/jsonld/catalog.json" "$smoke_dir/catalog.json"
+          jq -e '.dataset | type == "array" and length == 122' \
+            "$smoke_dir/catalog.json" >/dev/null || \
+            fail "JSON-LD catalog is invalid or does not contain 122 datasets"
+
+          fetch "MCP advertisement" "https://data-pulse.my/mcp.json" "$smoke_dir/mcp.json"
+          jq -e '
+            [.tools[].name] == [
+              "search_datasets",
+              "get_dataset",
+              "find_stale",
+              "get_provenance",
+              "find_by_licence"
+            ]
+          ' "$smoke_dir/mcp.json" >/dev/null || \
+            fail "mcp.json is invalid or does not advertise the expected 5 tools"
+
+          fetch "health snapshot" "https://data-pulse.my/health/latest.json" "$smoke_dir/health.json"
+          jq -e '.datasets | type == "array" and length == 122' \
+            "$smoke_dir/health.json" >/dev/null || \
+            fail "health/latest.json is invalid or does not contain 122 datasets"
+
+          bash scripts/verify_agent_ready.sh || \
+            fail "verify_agent_ready.sh rejected the deployed agent surfaces"
