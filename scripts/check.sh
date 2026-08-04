@@ -152,6 +152,56 @@ extract_max_date() {
   ' "$body_path"
 }
 
+extract_json_metrics() {
+  local body_path="$1"
+
+  jq -c '
+    def wrapped_rows:
+      if type == "array" then .
+      elif type == "object" then
+        [.data, .result, .results, .records, .items, .rows]
+        | map(select(. != null and type == "array"))
+        | first
+      else null
+      end;
+
+    . as $document
+    | wrapped_rows as $rows
+    | ($rows[0] // null) as $first_row
+    | {
+        record_count: (
+          if ($rows | type) == "array" then ($rows | length)
+          elif ($document | type) == "object" then ($document | length)
+          else null
+          end
+        ),
+        column_count: (
+          if ($first_row | type) == "object" then ($first_row | keys | length)
+          else null
+          end
+        ),
+        first_row: $first_row,
+        first_record_timestamp: (
+          if ($first_row | type) == "object" then
+            ($first_row.timestamp // $first_row.date // $first_row.publish_date // null)
+          else null
+          end
+        )
+      }
+  ' "$body_path" 2>/dev/null \
+    || printf '{"record_count":null,"column_count":null,"first_row":null,"first_record_timestamp":null}\n'
+}
+
+estimate_parquet_rows() {
+  local content_length="$1"
+
+  if [[ "$content_length" =~ ^[0-9]+$ ]] && (( content_length > 16 )); then
+    jq -n --argjson bytes "$content_length" '(($bytes - 16) / 120 | ceil)'
+  else
+    printf 'null\n'
+  fi
+}
+
 extract_browser_dates() {
   local snapshot_file="$1"
   local date_regex="$2"
@@ -353,7 +403,9 @@ check_browser_dataset() {
 check_head_dataset() {
   local dataset_id="$1"
   local source_url="$2"
-  local http_status status content_length last_modified details
+  local request_url catalogue_id http_status status content_length last_modified details
+  local api_http_status metrics record_count column_count first_row first_row_hash
+  local first_record_timestamp estimated_record_count record_count_estimated incomplete
 
   : > "$headers_file"
   if ! http_status="$(curl --location --silent --show-error --head \
@@ -381,15 +433,76 @@ check_head_dataset() {
     last_modified="$(date -u -d "$last_modified" +'%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || true)"
   fi
 
+  catalogue_id="${source_url%%\?*}"
+  catalogue_id="${catalogue_id##*/}"
+  catalogue_id="${catalogue_id%.csv}"
+  catalogue_id="${catalogue_id%.parquet}"
+  if [[ "$dataset_id" == dosm_* ]]; then
+    request_url="https://api.data.gov.my/opendosm?id=${catalogue_id}&limit=10000"
+  else
+    request_url="https://api.data.gov.my/data-catalogue?id=${catalogue_id}&limit=10000"
+  fi
+  record_count="null"
+  column_count="null"
+  first_row_hash=""
+  first_record_timestamp=""
+  estimated_record_count="null"
+  record_count_estimated="false"
+  incomplete="false"
+
+  if api_http_status="$(curl --location --silent --show-error \
+    --max-time "$curl_timeout" --output "$body_file" --write-out '%{http_code}' \
+    "$request_url" 2>/dev/null)" && [[ "$api_http_status" =~ ^2[0-9][0-9]$ ]]; then
+    metrics="$(extract_json_metrics "$body_file")"
+    record_count="$(jq '.record_count' <<< "$metrics")"
+    column_count="$(jq '.column_count' <<< "$metrics")"
+    first_row="$(jq -cS '.first_row' <<< "$metrics")"
+    first_record_timestamp="$(jq -r '.first_record_timestamp // empty' <<< "$metrics")"
+    if [[ "$first_row" != "null" ]]; then
+      first_row_hash="$(printf '%s' "$first_row" | sha256sum | awk '{print $1}')"
+    fi
+    if [[ "$record_count" =~ ^[0-9]+$ ]] && (( record_count >= 10000 )); then
+      incomplete="true"
+    fi
+  fi
+
+  if { [[ "$record_count" == "null" ]] || [[ "$record_count" == "0" ]]; } \
+    && [[ "${source_url%%\?*}" == *.parquet ]]; then
+    estimated_record_count="$(estimate_parquet_rows "$content_length")"
+    if [[ "$estimated_record_count" != "null" ]]; then
+      record_count="$estimated_record_count"
+      record_count_estimated="true"
+      incomplete="true"
+    fi
+  fi
+
   details="$(jq -cn \
-    --arg access_method 'direct curl HEAD' \
+    --arg access_method 'direct curl HEAD + API GET' \
+    --arg request_url "$request_url" \
     --argjson http_status "$http_status" \
     --argjson content_length "$content_length" \
+    --argjson record_count "$record_count" \
+    --argjson column_count "$column_count" \
+    --arg first_row_hash "$first_row_hash" \
+    --arg first_record_timestamp "$first_record_timestamp" \
+    --argjson estimated_record_count "$estimated_record_count" \
+    --argjson record_count_estimated "$record_count_estimated" \
+    --argjson incomplete "$incomplete" \
     --arg last_modified "$last_modified" \
     '{
       access_method: $access_method,
+      request_url: $request_url,
       http_status: $http_status,
       content_length: $content_length,
+      record_count: $record_count,
+      column_count: $column_count,
+      first_row_hash: (if $first_row_hash == "" then null else $first_row_hash end),
+      first_record_timestamp: (
+        if $first_record_timestamp == "" then null else $first_record_timestamp end
+      ),
+      estimated_record_count: $estimated_record_count,
+      record_count_estimated: $record_count_estimated,
+      incomplete: $incomplete,
       last_modified: (if $last_modified == "" then null else $last_modified end)
     }')"
   emit "$dataset_id" "$source_url" "fresh" "HTTP ${http_status}" "$details"
@@ -465,7 +578,8 @@ check_direct_dataset() {
   local request_url="$source_url"
   local http_status content_length first_record_timestamp details last_modified
   local content_freshness_date content_request_url date_field
-  local record_count column_count first_row_hash first_row
+  local metrics record_count column_count first_row_hash first_row
+  local estimated_record_count record_count_estimated incomplete
 
   date_field="${DATASET_CONTENT_DATE_FIELDS[$dataset_id]:-}"
   if [[ -n "$date_field" ]]; then
@@ -513,18 +627,27 @@ check_direct_dataset() {
   fi
 
   content_length="$(wc -c < "$body_file" | tr -d '[:space:]')"
-  record_count="$(jq 'if type == "array" then length else null end' "$body_file" 2>/dev/null || printf 'null')"
-  column_count="$(jq 'if type == "array" then .[0] else . end | if type == "object" then (keys | length) else null end' "$body_file" 2>/dev/null || printf 'null')"
-  first_row="$(jq -cS 'if type == "array" then .[0] else . end' "$body_file" 2>/dev/null || true)"
-  if [[ -n "$first_row" ]]; then
+  metrics="$(extract_json_metrics "$body_file")"
+  record_count="$(jq '.record_count' <<< "$metrics")"
+  column_count="$(jq '.column_count' <<< "$metrics")"
+  first_row="$(jq -cS '.first_row' <<< "$metrics")"
+  estimated_record_count="null"
+  record_count_estimated="false"
+  incomplete="false"
+  if [[ "$record_count" == "null" && "${request_url%%\?*}" == *.parquet ]]; then
+    estimated_record_count="$(estimate_parquet_rows "$content_length")"
+    if [[ "$estimated_record_count" != "null" ]]; then
+      record_count="$estimated_record_count"
+      record_count_estimated="true"
+      incomplete="true"
+    fi
+  fi
+  if [[ "$first_row" != "null" ]]; then
     first_row_hash="$(printf '%s' "$first_row" | sha256sum | awk '{print $1}')"
   else
     first_row_hash=""
   fi
-  first_record_timestamp="$(
-    jq -r 'if type == "array" then .[0] else . end
-      | .timestamp // .date // .publish_date // empty' "$body_file" 2>/dev/null || true
-  )"
+  first_record_timestamp="$(jq -r '.first_record_timestamp // empty' <<< "$metrics")"
   content_freshness_date=""
   if [[ -n "$content_request_url" ]] && curl --location --silent --show-error --fail \
     --max-time "$curl_timeout" --output "$content_body_file" "$content_request_url" 2>/dev/null; then
@@ -543,6 +666,9 @@ check_direct_dataset() {
     --argjson column_count "$column_count" \
     --arg first_row_hash "$first_row_hash" \
     --arg first_record_timestamp "$first_record_timestamp" \
+    --argjson estimated_record_count "$estimated_record_count" \
+    --argjson record_count_estimated "$record_count_estimated" \
+    --argjson incomplete "$incomplete" \
     --arg last_modified "$last_modified" \
     --arg content_freshness_date "$content_freshness_date" \
     '{
@@ -551,6 +677,9 @@ check_direct_dataset() {
       http_status: $http_status,
       content_length: $content_length,
       record_count: $record_count,
+      estimated_record_count: $estimated_record_count,
+      record_count_estimated: $record_count_estimated,
+      incomplete: $incomplete,
       column_count: $column_count,
       last_modified: (if $last_modified == "" then null else $last_modified end),
       content_freshness_date: (
@@ -567,7 +696,7 @@ check_direct_dataset() {
 check_gtfs_dataset() {
   local dataset_id="$1"
   local source_url="$2"
-  local sample_path
+  local sample_path gtfs_result_file
 
   if [[ "$dataset_id" == gtfs_static_* ]]; then
     sample_path="samples/gtfs-static/${dataset_id}.zip"
@@ -575,11 +704,27 @@ check_gtfs_dataset() {
     sample_path="samples/gtfs-realtime/${dataset_id}.pb"
   fi
 
+  gtfs_result_file="${results_file}.gtfs"
   if ! python3 "$script_dir/probe_gtfs.py" \
     "$dataset_id" "$source_url" --sample "$sample_path" --timeout "$gtfs_timeout" \
-    >> "$results_file"; then
+    > "$gtfs_result_file"; then
     emit "$dataset_id" "$source_url" "unreachable" "GTFS probe helper failed" \
       '{"access_method":"direct curl"}'
+  elif [[ "$dataset_id" == gtfs_realtime_* ]]; then
+    jq -c '
+      if (.content_length | type) == "number" then
+        .estimated_record_count = (.content_length / 120)
+        | if (.record_count | type) == "number" then
+            .record_count_estimated = false
+          else
+            .record_count = .estimated_record_count
+            | .record_count_estimated = true
+          end
+      else .
+      end
+    ' "$gtfs_result_file" >> "$results_file"
+  else
+    cat "$gtfs_result_file" >> "$results_file"
   fi
 }
 
@@ -745,6 +890,10 @@ jq -s \
             and ($probe.first_row_hash | type) == "string"
             and $old.first_row_hash != $probe.first_row_hash))) as $shape_changed
       | ($entry.expected_record_count // null) as $expected_record_count
+      | (($probe.incomplete // false)
+          or (($expected_record_count | type) == "number"
+            and ($probe.record_count | type) == "number"
+            and $probe.record_count < $expected_record_count)) as $incomplete
       | (($expected_record_count | type) == "number"
           and ($probe.record_count | type) == "number"
           and $probe.record_count >= ($expected_record_count * 0.5)) as $within_tolerance
@@ -795,6 +944,9 @@ jq -s \
           timestamp: ($probe.timestamp // null),
           snapshot_chars: ($probe.snapshot_chars // null),
           record_count: ($probe.record_count // null),
+          estimated_record_count: ($probe.estimated_record_count // null),
+          record_count_estimated: ($probe.record_count_estimated // false),
+          incomplete: $incomplete,
           column_count: ($probe.column_count // null),
           first_row_hash: ($probe.first_row_hash // null),
           content_shape_changed: $shape_changed,
