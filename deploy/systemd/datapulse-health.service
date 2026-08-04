@@ -1,0 +1,17 @@
+[Unit]
+Description=Run due DataPulse dataset health checks and publish changed artifacts
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=redza
+Group=redza
+Environment=HOME=/home/redza
+Environment=PATH=/home/redza/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+WorkingDirectory=/home/redza/datapulse-my
+ExecStartPre=/bin/bash -c 'set -e; if [[ ! -d /home/redza/datapulse-my/.git ]]; then echo "datapulse-health: repository missing: /home/redza/datapulse-my" >&2; exit 1; fi; git -C /home/redza/datapulse-my pull --rebase'
+ExecStart=/bin/bash -c 'set -Eeuo pipefail; health_tmp=$$(mktemp health/.latest.XXXXXX.json); cleanup() { rm -f "$$health_tmp"; }; trap cleanup EXIT; trap '\''rc=$$?; echo "datapulse-health: failed (exit $$rc)" >&2'\'' ERR; bash scripts/check.sh --due > "$$health_tmp"; jq -e . "$$health_tmp" >/dev/null; mv "$$health_tmp" health/latest.json; bash scripts/gen_badges.sh; bash scripts/gen_rss.sh; bash scripts/gen_readme_summary.sh; if [[ -z "$$(git status --porcelain -- health/ badges/ feed.xml README.md)" ]]; then echo "datapulse-health: no artifact changes"; exit 0; fi; git add health/ badges/ feed.xml README.md; git -c user.name="Redza Halim" -c user.email="r3dz4r@gmail.com" commit -m "chore(health): update due dataset health"; git pull --rebase; git push origin HEAD:main'
+StandardOutput=append:/var/log/datapulse-health.err
+StandardError=append:/var/log/datapulse-health.err
+Nice=10
