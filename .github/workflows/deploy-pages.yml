@@ -76,7 +76,7 @@ jobs:
         run: |
           mkdir -p _site
           cp -R docs/. _site/
-          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json datapulse.schema.json _site/
+          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json datapulse.schema.json agent.json mcp.json _site/
           cp -R health badges samples data _site/
 
       - name: Upload Pages artifact

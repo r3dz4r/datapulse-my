@@ -1,0 +1,146 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/mcp-server-discoverable.json",
+  "mcp_version": "2025-06-18",
+  "server": {
+    "name": "DataPulse MY",
+    "version": "3.4.5",
+    "description": "Read-only access to DataPulse MY's Malaysian public dataset catalogue (122 datasets, 8-status health taxonomy, licence/attribution metadata).",
+    "vendor": "DataPulse MY (open source)",
+    "homepage": "https://data-pulse.my/",
+    "repository": "https://github.com/r3dz4r/datapulse-my"
+  },
+  "endpoints": {
+    "primary": {
+      "url": "https://mcp.data-pulse.my/mcp",
+      "transport": "streamable-http",
+      "method": "POST",
+      "content_type": "application/json",
+      "accept": "application/json, text/event-stream",
+      "auth": {
+        "required": false,
+        "schemes": [],
+        "note": "All tools are read-only; no auth needed. Rate limiting via Cloudflare Tunnel free tier."
+      }
+    }
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": true,
+    "logging": true,
+    "experimental": {}
+  },
+  "tools": [
+    {
+      "name": "search_datasets",
+      "description": "Find datasets by topic, agency, or licence.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Free-text topic (e.g. 'fuel price', 'dengue')"
+          },
+          "licence": {
+            "type": "string",
+            "description": "Filter by licence (e.g. 'CC BY 4.0', 'OGL')"
+          },
+          "source": {
+            "type": "string",
+            "description": "Filter by steward (e.g. 'DOSM', 'BNM')"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Max results (default 20)"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_dataset",
+      "description": "Full detail + current health for one dataset.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "description": "Dataset namespace, e.g. 'dgm_fuelprice'"
+          }
+        },
+        "required": [
+          "dataset_id"
+        ]
+      }
+    },
+    {
+      "name": "find_stale",
+      "description": "Find datasets whose health is not green (stale, unreachable, unknown-freshness, etc.).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "max_age_hours": {
+            "type": "integer",
+            "description": "Max staleness in hours (default 24)"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_provenance",
+      "description": "Citation-ready metadata for one or many datasets (publisher, licence, attribution, source URL).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "dataset_ids"
+        ]
+      }
+    },
+    {
+      "name": "find_by_licence",
+      "description": "Enumerate what is available under a given licence (e.g. all CC BY 4.0 datasets).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "licence": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "licence"
+        ]
+      }
+    }
+  ],
+  "resources": [
+    {
+      "uri": "datapulse://index",
+      "name": "Dataset index",
+      "description": "Lightweight list of all 122 datasets with namespace. Read this first.",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "datapulse://licences",
+      "name": "Licence summary",
+      "description": "Counts of datasets by licence (e.g. 110 CC BY 4.0 + 12 OGL).",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "datapulse://{dataset_id}",
+      "name": "Full manifest entry",
+      "description": "Full schema, source URL, attribution, and current health for one dataset.",
+      "mimeType": "application/json"
+    }
+  ],
+  "rate_limits": {
+    "note": "Cloudflare Tunnel free tier; no per-IP limit published. Be a good citizen."
+  },
+  "last_updated": "2026-08-04"
+}

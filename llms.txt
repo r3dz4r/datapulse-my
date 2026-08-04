@@ -21,6 +21,22 @@ DataPulse MY exposes a **read-only MCP server** so AI agents (Claude Desktop, Cu
 - **Auth:** none required (all 5 tools are read-only)
 - **Source:** reads the same `datapulse.json` + `health/latest.json` served from this repository; no separate API
 
+### Agent discovery endpoints
+
+For AI agents that look up canonical discovery paths before fetching:
+
+- **`https://data-pulse.my/llms.txt`** — this file
+- **`https://data-pulse.my/agent.json`** — machine-readable agent capability manifest (name, capabilities, MCP endpoint, machine-readable resources)
+- **`https://data-pulse.my/mcp.json`** — MCP server advertisement (endpoint, transport, tool list with input schemas, resources)
+
+> Note on path: we use the root (`/llms.txt`, `/agent.json`, `/mcp.json`)
+> rather than `/.well-known/...` because (a) the llmstxt.org spec and the
+> proposed MCP-discovery convention both use the root, (b) RFC 8615 reserves
+> `/.well-known/` for IETF-mandated endpoints (security.txt, etc.), and
+> (c) GitHub Pages' default deploy pipeline strips dotfile-prefixed
+> paths from the artifact, so `/.well-known/` would silently not deploy
+> without a workflow change.
+
 ### Tools
 
 | Tool | Use when |
