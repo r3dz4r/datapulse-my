@@ -1,0 +1,1831 @@
+{
+  "$schema": "https://data-pulse.my/schemas/changelog-v1.json",
+  "version": "1.1.0",
+  "generated_at": "2026-08-04T19:35:00+08:00",
+  "site": {
+    "url": "https://data-pulse.my/",
+    "repository": "https://github.com/r3dz4r/datapulse-my",
+    "latest_commit": "8830d6da5c0c",
+    "latest_commit_timestamp": "2026-08-04 19:24:00 +0800",
+    "agent_haven": {
+      "phase_1_deployed": "2026-08-04",
+      "endpoints": {
+        "llms_txt": "https://data-pulse.my/llms.txt",
+        "agent_json": "https://data-pulse.my/agent.json",
+        "mcp_json": "https://data-pulse.my/mcp.json",
+        "robots_txt": "https://data-pulse.my/robots.txt",
+        "changelog": "https://data-pulse.my/changelog.json",
+        "jsonld_catalog": "https://data-pulse.my/data/jsonld/catalog.json"
+      },
+      "phase_2_deployed": "2026-08-04"
+    }
+  },
+  "site_changes": [
+    {
+      "commit": "8830d6da5c0c",
+      "timestamp": "2026-08-04 19:24:00 +0800",
+      "type": "site",
+      "description": "feat(agent-haven): add /llms.txt agent-discovery endpoints"
+    },
+    {
+      "commit": "0d979dbc106f",
+      "timestamp": "2026-08-04 17:25:38 +0800",
+      "type": "site",
+      "description": "feat(analytics): add Plausible tracking to public pages"
+    },
+    {
+      "commit": "808d3e309752",
+      "timestamp": "2026-08-04 04:07:09 +0800",
+      "type": "site",
+      "description": "fix(dashboard): sample download links 404 (relative paths break on Pages)"
+    },
+    {
+      "commit": "2c2238a2f41e",
+      "timestamp": "2026-08-04 03:57:47 +0800",
+      "type": "site",
+      "description": "fix(tests): remove hardcoded 92-dataset baseline from index resource test"
+    },
+    {
+      "commit": "f2437544915e",
+      "timestamp": "2026-08-04 03:54:45 +0800",
+      "type": "site",
+      "description": "docs(readme): replace 15 hardcoded dataset badges with status legend"
+    },
+    {
+      "commit": "0bcc507c82e5",
+      "timestamp": "2026-08-04 03:42:22 +0800",
+      "type": "site",
+      "description": "fix(badges): regenerate status badges after browser-dependent status restore"
+    },
+    {
+      "commit": "22feb26623e6",
+      "timestamp": "2026-08-04 03:07:06 +0800",
+      "type": "site",
+      "description": "fix(trust): copy namespace from manifest into per-dataset health records"
+    },
+    {
+      "commit": "d24c1de10d80",
+      "timestamp": "2026-08-04 02:52:38 +0800",
+      "type": "site",
+      "description": "fix(transport): backfill namespace, restore browser-dependent status, document kuantan 404"
+    },
+    {
+      "commit": "1eb668fe90c5",
+      "timestamp": "2026-08-04 02:43:57 +0800",
+      "type": "site",
+      "description": "feat(transport): add 30 GTFS datasets (16 static + 14 realtime)"
+    },
+    {
+      "commit": "d0e94db274e9",
+      "timestamp": "2026-08-04 01:51:57 +0800",
+      "type": "site",
+      "description": "fix(trust): add freshness extractors for 11 gap datasets"
+    },
+    {
+      "commit": "8f54a627eb58",
+      "timestamp": "2026-08-04 01:21:49 +0800",
+      "type": "site",
+      "description": "fix(trust): distinguish unknown-freshness from stale (Last-Modified-only bug)"
+    },
+    {
+      "commit": "065922090a55",
+      "timestamp": "2026-08-03 19:16:20 +0800",
+      "type": "site",
+      "description": "feat(trust): replace misleading \"all healthy\" with honest status taxonomy"
+    },
+    {
+      "commit": "c9ac7a5dd0ca",
+      "timestamp": "2026-08-03 11:37:20 +0000",
+      "type": "site",
+      "description": "docs: openwiki weekly refresh (2026-08-03)"
+    },
+    {
+      "commit": "29aac3edc273",
+      "timestamp": "2026-08-03 16:26:31 +0800",
+      "type": "site",
+      "description": "feat(adoption): add issue + PR templates for adopt-a-dataset flow"
+    },
+    {
+      "commit": "bbe8f09b4bb4",
+      "timestamp": "2026-08-03 07:18:26 +0800",
+      "type": "site",
+      "description": "docs(mcp): update endpoint to live mcp.data-pulse.my (was placeholder mcp.datapulse-my.my)"
+    },
+    {
+      "commit": "fa7484ae6e15",
+      "timestamp": "2026-08-03 04:14:25 +0800",
+      "type": "site",
+      "description": "docs(dashboard): link to MCP endpoint"
+    },
+    {
+      "commit": "71586d3bc9f4",
+      "timestamp": "2026-08-03 04:14:04 +0800",
+      "type": "site",
+      "description": "docs(readme): add MCP server callout + Claude Desktop config"
+    },
+    {
+      "commit": "fa85e67eea98",
+      "timestamp": "2026-08-03 04:12:42 +0800",
+      "type": "site",
+      "description": "docs(llms.txt): advertise MCP server (endpoint, tools, resources, Claude Desktop)"
+    },
+    {
+      "commit": "c7698a2ecef8",
+      "timestamp": "2026-08-03 04:00:16 +0800",
+      "type": "site",
+      "description": "docs(mcp): document deploy and verification"
+    },
+    {
+      "commit": "1e7d3191fce5",
+      "timestamp": "2026-08-03 03:59:26 +0800",
+      "type": "site",
+      "description": "deploy(mcp): add cloudflare tunnel ingress template"
+    }
+  ],
+  "dataset_state": [
+    {
+      "dataset_id": "fuelprice",
+      "name": "Malaysian Fuel Prices",
+      "steward": "Ministry of Finance Malaysia",
+      "source": "data.gov.my",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "other",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "eperolehan-diklankan",
+      "name": "ePerolehan Tender Notices (DIIKLANKAN)",
+      "steward": "Ministry of Finance Malaysia",
+      "source": "ePerolehan",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "other",
+      "current_status": "browser-dependent",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "pricecatcher",
+      "name": "PriceCatcher (Daily Grocery Prices)",
+      "steward": "KPDN",
+      "source": "data.gov.my (KPDN)",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "other",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "exchangerates_daily_0900",
+      "name": "BNM Daily Exchange Rates (0900)",
+      "steward": "BNM",
+      "source": "data.gov.my (BNM)",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "other",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "exchangerates_daily_1130",
+      "name": "BNM Daily Exchange Rates (1130)",
+      "steward": "BNM",
+      "source": "data.gov.my (BNM)",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "other",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "exchangerates_daily_1200",
+      "name": "BNM Daily Exchange Rates (1200)",
+      "steward": "BNM",
+      "source": "data.gov.my (BNM)",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "other",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "exchangerates_daily_1700",
+      "name": "BNM Daily Exchange Rates (1700)",
+      "steward": "BNM",
+      "source": "data.gov.my (BNM)",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "other",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "met_weather",
+      "name": "MET Malaysia Weather Forecast",
+      "steward": "MET Malaysia",
+      "source": "data.gov.my (MET Malaysia)",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "weather",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "doe_apims",
+      "name": "DOE APIMS Air Quality (Hourly API)",
+      "steward": "Department of Environment Malaysia",
+      "source": "DOE MyEQMS portal (Camofox-rendered)",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "environment",
+      "current_status": "browser-dependent",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "doe_rqims",
+      "name": "DOE RQIMS River Water Quality (Continuous)",
+      "steward": "Department of Environment Malaysia",
+      "source": "DOE MyEQMS portal (Camofox-rendered)",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "environment",
+      "current_status": "browser-dependent",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "doe_mqims",
+      "name": "DOE MQIMS Marine Water Quality (Manual)",
+      "steward": "Department of Environment Malaysia",
+      "source": "DOE MyEQMS portal (Camofox-rendered)",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "environment",
+      "current_status": "browser-dependent",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "kkm_idengue",
+      "name": "KKM iDengue Weekly Dengue Cases",
+      "steward": "KKM (Bahagian Kawalan Penyakit) + MYSA",
+      "source": "KKM iDengue portal (Camofox-rendered)",
+      "licence": "Open Government Licence (Malaysia)",
+      "namespace": "healthcare",
+      "current_status": "browser-dependent",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_crime_district",
+      "name": "OpenDOSM Crime by District & Type (Annual)",
+      "steward": "DOSM Malaysia (data sourced from PDRM)",
+      "source": "OpenDOSM (data.gov.my storage)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_cpi_state",
+      "name": "OpenDOSM Monthly CPI by State & Division",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_gdp_state_real_supply",
+      "name": "OpenDOSM Annual Real GDP by State & Sector",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_gdp_qtr_real",
+      "name": "OpenDOSM Quarterly Real GDP",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_gdp_annual_real_supply",
+      "name": "OpenDOSM Annual Real GDP by Supply Sector",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_trade_headline",
+      "name": "OpenDOSM Monthly Trade Headline",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_cpi_inflation",
+      "name": "OpenDOSM Monthly CPI Inflation by Division",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_trade_enduse_bec",
+      "name": "OpenDOSM Monthly Trade by End Use (BEC)",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_lfs_qtr",
+      "name": "OpenDOSM Quarterly Labour Force Statistics",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_lfs_qtr_state",
+      "name": "OpenDOSM Quarterly Labour Force Statistics by State",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_employment_sector",
+      "name": "OpenDOSM Annual Employment by Sector and Sex",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_population_state",
+      "name": "OpenDOSM Annual Population by State",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_gdp_annual_nominal_supply",
+      "name": "OpenDOSM Annual Nominal GDP by Supply Sector",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_gdp_qtr_nominal",
+      "name": "OpenDOSM Quarterly Nominal GDP",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_gdp_qtr_real_sa",
+      "name": "OpenDOSM Quarterly Real GDP (Seasonally Adjusted)",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_gdp_gni_annual_nominal",
+      "name": "OpenDOSM Annual Nominal GDP and GNI",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_cpi_core_inflation",
+      "name": "OpenDOSM Monthly Core CPI Inflation by Division",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_cpi_state_inflation",
+      "name": "OpenDOSM Monthly CPI Inflation by State and Division",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_ppi",
+      "name": "OpenDOSM Monthly Producer Price Index",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_lfs_year",
+      "name": "OpenDOSM Annual Labour Force Statistics",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_lfs_month",
+      "name": "OpenDOSM Monthly Labour Force Statistics",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_trade_sitc_1d",
+      "name": "OpenDOSM Monthly Trade by SITC Section",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_ipi_export",
+      "name": "OpenDOSM IPI for Export-Oriented Divisions",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_ipi_domestic",
+      "name": "OpenDOSM IPI for Domestic-Oriented Divisions",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_interest_rates",
+      "name": "data.gov.my Monthly Interest Rates",
+      "steward": "Bank Negara Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_federal_finance_qtr_revenue",
+      "name": "data.gov.my Quarterly Federal Government Revenue",
+      "steward": "Accountant General's Department of Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_federal_finance_qtr_oe",
+      "name": "data.gov.my Quarterly Federal Operating Expenditure",
+      "steward": "Accountant General's Department of Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_state_finance_expenditure",
+      "name": "data.gov.my State Government Expenditure",
+      "steward": "National Audit Department and Malaysian state governments",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_money_aggregates",
+      "name": "data.gov.my Monthly Money Aggregates",
+      "steward": "Bank Negara Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_currency_in_circulation",
+      "name": "data.gov.my Monthly Currency in Circulation",
+      "steward": "Bank Negara Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_payments_systems",
+      "name": "data.gov.my Monthly Payment Systems",
+      "steward": "Bank Negara Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_payments_instruments",
+      "name": "data.gov.my Monthly Payment Instruments",
+      "steward": "Bank Negara Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_payments_channels",
+      "name": "data.gov.my Monthly Payment Channels",
+      "steward": "Bank Negara Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_interest_rates_annual",
+      "name": "data.gov.my Annual Interest Rates",
+      "steward": "Bank Negara Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_epf_dividend",
+      "name": "data.gov.my Annual EPF Dividend Rates",
+      "steward": "Employees Provident Fund",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_vehicle_registrations_type_fuel",
+      "name": "data.gov.my Monthly Vehicle Registrations by Type and Fuel",
+      "steward": "Road Transport Department Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_payments_transactions_fpx",
+      "name": "data.gov.my Daily FPX Transactions",
+      "steward": "Bank Negara Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_birth_state",
+      "name": "OpenDOSM Annual Births by State",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_death_state",
+      "name": "OpenDOSM Annual Deaths by State",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_death_maternal_state",
+      "name": "OpenDOSM Annual Maternal Deaths by State",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_marriages_state",
+      "name": "OpenDOSM Annual Marriages by State and Sex",
+      "steward": "DOSM Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_hospital_beds",
+      "name": "data.gov.my Hospital Beds by State and Hospital Type",
+      "steward": "Ministry of Health Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_healthcare_staff",
+      "name": "data.gov.my Healthcare Staff by State and Staff Type",
+      "steward": "Ministry of Health Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_blood_donations_state",
+      "name": "data.gov.my Daily Blood Donations by Blood Group & State",
+      "steward": "National Blood Centre and Ministry of Health Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_infant_immunisation",
+      "name": "data.gov.my Infant Immunisation Coverage",
+      "steward": "Ministry of Health Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_std_state",
+      "name": "data.gov.my Sexually Transmitted Diseases (STDs) by State",
+      "steward": "Ministry of Health Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_pekab40_screenings_state",
+      "name": "data.gov.my Daily PeKaB40 Health Screenings by State",
+      "steward": "ProtectHealth Corporation and Ministry of Health Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_mnha",
+      "name": "data.gov.my MNHA: Total (TEH) and Current (CHE) Expenditure on Health",
+      "steward": "Ministry of Health Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_electricity_consumption",
+      "name": "data.gov.my Monthly Electricity Consumption",
+      "steward": "Energy Commission and electricity utilities",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_electricity_supply",
+      "name": "data.gov.my Electricity Supply",
+      "steward": "Energy Commission and electricity utilities",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_water_consumption",
+      "name": "data.gov.my Water Consumption by State and Sector",
+      "steward": "National Water Services Commission",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_water_production",
+      "name": "data.gov.my Water Production by State",
+      "steward": "National Water Services Commission",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_water_access",
+      "name": "data.gov.my Access to Treated Water by State & Strata",
+      "steward": "National Water Services Commission",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_ridership_headline",
+      "name": "data.gov.my Daily Public Transport Ridership",
+      "steward": "Ministry of Transport Malaysia and public transport operators",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_ktmb_ridership_monthly",
+      "name": "data.gov.my Monthly KTMB Ridership",
+      "steward": "Keretapi Tanah Melayu Berhad",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_cellular_subscribers",
+      "name": "data.gov.my Cellular Subscribers by Plan Type",
+      "steward": "Malaysian Communications and Multimedia Commission",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_prisoners_state",
+      "name": "data.gov.my Prisoners by State and Sex",
+      "steward": "Malaysian Prison Department",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_drug_addicts_age",
+      "name": "data.gov.my Drug Addicts by State & Age Group",
+      "steward": "National Anti-Drugs Agency",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_local_authority_sex",
+      "name": "data.gov.my Female Representation in Local Authorities",
+      "steward": "Ministry of Housing and Local Government",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_parliament_sex",
+      "name": "data.gov.my Female Representation in Parliament",
+      "steward": "Parliament of Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_fish_landings",
+      "name": "data.gov.my Monthly Landings of Marine Fish by State",
+      "steward": "Department of Fisheries Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "stale",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_crops_state",
+      "name": "data.gov.my Crop Area and Production by State",
+      "steward": "Department of Agriculture Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dgm_schools_district",
+      "name": "data.gov.my Public Education Institutions by District",
+      "steward": "Ministry of Education Malaysia",
+      "source": "data.gov.my (storage.data.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "government_open_data",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_income",
+      "name": "OpenDOSM Household Income, Malaysia",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_income_state",
+      "name": "OpenDOSM Household Income by State",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_income_district",
+      "name": "OpenDOSM Household Income by District",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_poverty",
+      "name": "OpenDOSM Poverty, Malaysia",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_poverty_state",
+      "name": "OpenDOSM Poverty by State",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_poverty_district",
+      "name": "OpenDOSM Poverty by District",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_inequality",
+      "name": "OpenDOSM Income Inequality, Malaysia",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_inequality_state",
+      "name": "OpenDOSM Income Inequality by State",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_inequality_district",
+      "name": "OpenDOSM Income Inequality by District",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_expenditure_dun",
+      "name": "OpenDOSM Household Expenditure by DUN",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_hh_expenditure_parlimen",
+      "name": "OpenDOSM Household Expenditure by Parliamentary Constituency",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_population_malaysia",
+      "name": "OpenDOSM Annual Population, Malaysia",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_population_parlimen",
+      "name": "OpenDOSM Annual Population by Parliamentary Constituency",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_death_district_sex",
+      "name": "OpenDOSM Annual Deaths by District and Sex",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_marriages_state_age",
+      "name": "OpenDOSM Annual Marriages by State, Age, and Sex",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "aging",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_fertility",
+      "name": "OpenDOSM Annual Fertility",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "dosm_death_maternal",
+      "name": "OpenDOSM Annual Maternal Deaths, Malaysia",
+      "steward": "Department of Statistics Malaysia",
+      "source": "OpenDOSM (storage.dosm.gov.my)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "economy",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_ktmb",
+      "name": "GTFS Static — KTMB Rail Schedule",
+      "steward": "Keretapi Tanah Melayu Berhad (KTMB)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_prasarana_rail_kl",
+      "name": "GTFS Static — Rapid KL Rail Schedule",
+      "steward": "Prasarana Malaysia Berhad",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_prasarana_bus_kl",
+      "name": "GTFS Static — Rapid KL Bus Schedule",
+      "steward": "Prasarana Malaysia Berhad",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_prasarana_bus_penang",
+      "name": "GTFS Static — Rapid Penang Bus Schedule",
+      "steward": "Prasarana Malaysia Berhad",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_prasarana_bus_kuantan",
+      "name": "GTFS Static — Rapid Kuantan Bus Schedule",
+      "steward": "Prasarana Malaysia Berhad",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "unreachable",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_prasarana_bus_mrtfeeder",
+      "name": "GTFS Static — MRT Feeder Bus Schedule",
+      "steward": "Prasarana Malaysia Berhad",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_mybas_kangar",
+      "name": "GTFS Static — BAS.MY Kangar Bus Schedule",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_mybas_alor_setar",
+      "name": "GTFS Static — BAS.MY Alor Setar Bus Schedule",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_mybas_kota_bharu",
+      "name": "GTFS Static — BAS.MY Kota Bharu Bus Schedule",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_mybas_kuala_terengganu",
+      "name": "GTFS Static — BAS.MY Kuala Terengganu Bus Schedule",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_mybas_ipoh",
+      "name": "GTFS Static — BAS.MY Ipoh Bus Schedule",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_mybas_seremban_a",
+      "name": "GTFS Static — BAS.MY Seremban A Bus Schedule",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_mybas_seremban_b",
+      "name": "GTFS Static — BAS.MY Seremban B Bus Schedule",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_mybas_melaka",
+      "name": "GTFS Static — BAS.MY Melaka Bus Schedule",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_mybas_johor",
+      "name": "GTFS Static — BAS.MY Johor Bus Schedule",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_static_mybas_kuching",
+      "name": "GTFS Static — BAS.MY Kuching Bus Schedule",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_ktmb",
+      "name": "GTFS Realtime — KTMB Vehicle Positions",
+      "steward": "Keretapi Tanah Melayu Berhad (KTMB)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_prasarana_bus_kl",
+      "name": "GTFS Realtime — Rapid KL Bus Vehicle Positions",
+      "steward": "Prasarana Malaysia Berhad",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_prasarana_bus_penang",
+      "name": "GTFS Realtime — Rapid Penang Bus Vehicle Positions",
+      "steward": "Prasarana Malaysia Berhad",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_prasarana_bus_mrtfeeder",
+      "name": "GTFS Realtime — MRT Feeder Bus Vehicle Positions",
+      "steward": "Prasarana Malaysia Berhad",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_mybas_kangar",
+      "name": "GTFS Realtime — BAS.MY Kangar Vehicle Positions",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_mybas_alor_setar",
+      "name": "GTFS Realtime — BAS.MY Alor Setar Vehicle Positions",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_mybas_kota_bharu",
+      "name": "GTFS Realtime — BAS.MY Kota Bharu Vehicle Positions",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_mybas_kuala_terengganu",
+      "name": "GTFS Realtime — BAS.MY Kuala Terengganu Vehicle Positions",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_mybas_ipoh",
+      "name": "GTFS Realtime — BAS.MY Ipoh Vehicle Positions",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_mybas_seremban_a",
+      "name": "GTFS Realtime — BAS.MY Seremban A Vehicle Positions",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_mybas_seremban_b",
+      "name": "GTFS Realtime — BAS.MY Seremban B Vehicle Positions",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_mybas_melaka",
+      "name": "GTFS Realtime — BAS.MY Melaka Vehicle Positions",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_mybas_johor",
+      "name": "GTFS Realtime — BAS.MY Johor Vehicle Positions",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    },
+    {
+      "dataset_id": "gtfs_realtime_mybas_kuching",
+      "name": "GTFS Realtime — BAS.MY Kuching Vehicle Positions",
+      "steward": "Agensi Pengangkutan Awam Darat (APAD)",
+      "source": "data.gov.my (GTFS API)",
+      "licence": "Creative Commons Attribution 4.0",
+      "namespace": "transport",
+      "current_status": "fresh",
+      "last_checked": null
+    }
+  ],
+  "health_alerts": [
+    {
+      "dataset_id": "eperolehan-diklankan",
+      "status": "browser-dependent",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "exchangerates_daily_1130",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "doe_apims",
+      "status": "browser-dependent",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "doe_rqims",
+      "status": "browser-dependent",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "doe_mqims",
+      "status": "browser-dependent",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "kkm_idengue",
+      "status": "browser-dependent",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dosm_crime_district",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dosm_trade_headline",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dosm_trade_enduse_bec",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dosm_lfs_qtr",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dosm_lfs_qtr_state",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dosm_employment_sector",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dosm_lfs_year",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_interest_rates",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_federal_finance_qtr_revenue",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_federal_finance_qtr_oe",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_state_finance_expenditure",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_money_aggregates",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_currency_in_circulation",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_payments_systems",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_payments_instruments",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_payments_channels",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dosm_marriages_state",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_hospital_beds",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_healthcare_staff",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_infant_immunisation",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_std_state",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_mnha",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_electricity_consumption",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_electricity_supply",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_water_consumption",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_water_production",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_water_access",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_ridership_headline",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_cellular_subscribers",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_prisoners_state",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_local_authority_sex",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_parliament_sex",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_fish_landings",
+      "status": "stale",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dgm_crops_state",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "dosm_marriages_state_age",
+      "status": "aging",
+      "last_checked": null,
+      "freshness_delta": null
+    },
+    {
+      "dataset_id": "gtfs_static_prasarana_bus_kuantan",
+      "status": "unreachable",
+      "last_checked": null,
+      "freshness_delta": null
+    }
+  ],
+  "stewards": {
+    "Ministry of Finance Malaysia": {
+      "datasets": 2,
+      "fresh": 1,
+      "not_fresh": 1
+    },
+    "KPDN": {
+      "datasets": 1,
+      "fresh": 1,
+      "not_fresh": 0
+    },
+    "BNM": {
+      "datasets": 4,
+      "fresh": 3,
+      "not_fresh": 1
+    },
+    "MET Malaysia": {
+      "datasets": 1,
+      "fresh": 1,
+      "not_fresh": 0
+    },
+    "Department of Environment Malaysia": {
+      "datasets": 3,
+      "fresh": 0,
+      "not_fresh": 3
+    },
+    "KKM (Bahagian Kawalan Penyakit) + MYSA": {
+      "datasets": 1,
+      "fresh": 0,
+      "not_fresh": 1
+    },
+    "DOSM Malaysia (data sourced from PDRM)": {
+      "datasets": 1,
+      "fresh": 0,
+      "not_fresh": 1
+    },
+    "DOSM Malaysia": {
+      "datasets": 27,
+      "fresh": 20,
+      "not_fresh": 7
+    },
+    "Bank Negara Malaysia": {
+      "datasets": 8,
+      "fresh": 2,
+      "not_fresh": 6
+    },
+    "Accountant General's Department of Malaysia": {
+      "datasets": 2,
+      "fresh": 0,
+      "not_fresh": 2
+    },
+    "National Audit Department and Malaysian state governments": {
+      "datasets": 1,
+      "fresh": 0,
+      "not_fresh": 1
+    },
+    "Employees Provident Fund": {
+      "datasets": 1,
+      "fresh": 1,
+      "not_fresh": 0
+    },
+    "Road Transport Department Malaysia": {
+      "datasets": 1,
+      "fresh": 1,
+      "not_fresh": 0
+    },
+    "Ministry of Health Malaysia": {
+      "datasets": 5,
+      "fresh": 0,
+      "not_fresh": 5
+    },
+    "National Blood Centre and Ministry of Health Malaysia": {
+      "datasets": 1,
+      "fresh": 1,
+      "not_fresh": 0
+    },
+    "ProtectHealth Corporation and Ministry of Health Malaysia": {
+      "datasets": 1,
+      "fresh": 1,
+      "not_fresh": 0
+    },
+    "Energy Commission and electricity utilities": {
+      "datasets": 2,
+      "fresh": 0,
+      "not_fresh": 2
+    },
+    "National Water Services Commission": {
+      "datasets": 3,
+      "fresh": 0,
+      "not_fresh": 3
+    },
+    "Ministry of Transport Malaysia and public transport operators": {
+      "datasets": 1,
+      "fresh": 0,
+      "not_fresh": 1
+    },
+    "Keretapi Tanah Melayu Berhad": {
+      "datasets": 1,
+      "fresh": 1,
+      "not_fresh": 0
+    },
+    "Malaysian Communications and Multimedia Commission": {
+      "datasets": 1,
+      "fresh": 0,
+      "not_fresh": 1
+    },
+    "Malaysian Prison Department": {
+      "datasets": 1,
+      "fresh": 0,
+      "not_fresh": 1
+    },
+    "National Anti-Drugs Agency": {
+      "datasets": 1,
+      "fresh": 1,
+      "not_fresh": 0
+    },
+    "Ministry of Housing and Local Government": {
+      "datasets": 1,
+      "fresh": 0,
+      "not_fresh": 1
+    },
+    "Parliament of Malaysia": {
+      "datasets": 1,
+      "fresh": 0,
+      "not_fresh": 1
+    },
+    "Department of Fisheries Malaysia": {
+      "datasets": 1,
+      "fresh": 0,
+      "not_fresh": 1
+    },
+    "Department of Agriculture Malaysia": {
+      "datasets": 1,
+      "fresh": 0,
+      "not_fresh": 1
+    },
+    "Ministry of Education Malaysia": {
+      "datasets": 1,
+      "fresh": 1,
+      "not_fresh": 0
+    },
+    "Department of Statistics Malaysia": {
+      "datasets": 17,
+      "fresh": 16,
+      "not_fresh": 1
+    },
+    "Keretapi Tanah Melayu Berhad (KTMB)": {
+      "datasets": 2,
+      "fresh": 2,
+      "not_fresh": 0
+    },
+    "Prasarana Malaysia Berhad": {
+      "datasets": 8,
+      "fresh": 7,
+      "not_fresh": 1
+    },
+    "Agensi Pengangkutan Awam Darat (APAD)": {
+      "datasets": 20,
+      "fresh": 20,
+      "not_fresh": 0
+    }
+  },
+  "metrics": {
+    "total_datasets": 122,
+    "datasets_by_steward": {
+      "Ministry of Finance Malaysia": 2,
+      "KPDN": 1,
+      "BNM": 4,
+      "MET Malaysia": 1,
+      "Department of Environment Malaysia": 3,
+      "KKM (Bahagian Kawalan Penyakit) + MYSA": 1,
+      "DOSM Malaysia (data sourced from PDRM)": 1,
+      "DOSM Malaysia": 27,
+      "Bank Negara Malaysia": 8,
+      "Accountant General's Department of Malaysia": 2,
+      "National Audit Department and Malaysian state governments": 1,
+      "Employees Provident Fund": 1,
+      "Road Transport Department Malaysia": 1,
+      "Ministry of Health Malaysia": 5,
+      "National Blood Centre and Ministry of Health Malaysia": 1,
+      "ProtectHealth Corporation and Ministry of Health Malaysia": 1,
+      "Energy Commission and electricity utilities": 2,
+      "National Water Services Commission": 3,
+      "Ministry of Transport Malaysia and public transport operators": 1,
+      "Keretapi Tanah Melayu Berhad": 1,
+      "Malaysian Communications and Multimedia Commission": 1,
+      "Malaysian Prison Department": 1,
+      "National Anti-Drugs Agency": 1,
+      "Ministry of Housing and Local Government": 1,
+      "Parliament of Malaysia": 1,
+      "Department of Fisheries Malaysia": 1,
+      "Department of Agriculture Malaysia": 1,
+      "Ministry of Education Malaysia": 1,
+      "Department of Statistics Malaysia": 17,
+      "Keretapi Tanah Melayu Berhad (KTMB)": 2,
+      "Prasarana Malaysia Berhad": 8,
+      "Agensi Pengangkutan Awam Darat (APAD)": 20
+    },
+    "datasets_by_licence": {
+      "Open Government Licence (Malaysia)": 12,
+      "Creative Commons Attribution 4.0": 110
+    },
+    "datasets_by_status": {
+      "fresh": 80,
+      "browser-dependent": 5,
+      "aging": 25,
+      "stale": 11,
+      "unreachable": 1
+    }
+  }
+}
