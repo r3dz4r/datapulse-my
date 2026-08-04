@@ -595,6 +595,10 @@ dispatch_dataset() {
   : > "$results_file"
 
   case "$dataset_id" in
+    pricecatcher)
+      source_url="https://storage.data.gov.my/pricecatcher/pricecatcher_$(date -u +%Y-%m).parquet"
+      check_direct_dataset "$dataset_id" "$source_url"
+      ;;
     gtfs_*)
       check_gtfs_dataset "$dataset_id" "$source_url"
       ;;
@@ -744,6 +748,10 @@ jq -s \
       | (($expected_record_count | type) == "number"
           and ($probe.record_count | type) == "number"
           and $probe.record_count >= ($expected_record_count * 0.5)) as $within_tolerance
+      | ([$probe.http_status, $probe.last_modified, $probe.content_freshness_date,
+          $probe.first_record_timestamp, $probe.snapshot_chars, $probe.record_count,
+          $probe.timestamp, $probe.header_timestamp, $probe.newest_vehicle_timestamp]
+          | any(. != null)) as $probe_measured
       | (if $staleness_days != null and $cadence != null then
            if $staleness_days <= ($cadence * 1.5) then "fresh"
            elif $staleness_days <= ($cadence * 3) then "aging"
@@ -770,7 +778,7 @@ jq -s \
          end) as $status
       | {
           dataset_id: ($probe.dataset_id // null),
-          last_checked: $checked_at,
+          last_checked: (if $probe_measured then $checked_at else null end),
           namespace: ($entry.namespace // null),
           url: ($probe.url // null),
           status: $status,
@@ -816,6 +824,14 @@ jq -s \
                                     elif $content_freshness_date != null then "content_date_parse"
                                     else "none" end)
         }
+    )
+  | map(
+      . as $updated
+      | (first($previous_rows[] | select(.dataset_id == $updated.dataset_id)) // {}) as $old
+      | if $updated.last_checked == null and $old.last_checked != null then
+          $updated + {last_checked: $old.last_checked}
+        else $updated
+        end
     ) as $updated_datasets
   | (if $due_mode then
        ([ $previous_rows[] | select(.dataset_id as $id | all($updated_datasets[]; .dataset_id != $id)) ] + $updated_datasets) as $merged

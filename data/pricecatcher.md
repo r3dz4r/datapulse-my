@@ -14,7 +14,7 @@ licence: Open Government Licence (Malaysia)
 attribution: KPDN Malaysia via data.gov.my
 ---
 
-# PriceCatcher (Daily Grocery Prices)
+# PriceCatcher (Grocery Prices)
 
 ## Status
 
