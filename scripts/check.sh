@@ -73,7 +73,10 @@ extract_max_date() {
 extract_browser_dates() {
   local snapshot_file="$1"
   local date_regex="$2"
-  local matched_date year month day iso_date
+  local matched_date year month day iso_date parsed_date
+  local today
+
+  today="$(date -u +'%Y-%m-%d')"
 
   while IFS= read -r matched_date; do
     if [[ "$matched_date" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})$ ]]; then
@@ -89,7 +92,8 @@ extract_browser_dates() {
     fi
 
     printf -v iso_date '%04d-%02d-%02d' "$((10#$year))" "$((10#$month))" "$((10#$day))"
-    date -u -d "$iso_date" +'%Y-%m-%d' 2>/dev/null || true
+    parsed_date="$(date -u -d "$iso_date" +'%Y-%m-%d' 2>/dev/null)" || continue
+    [[ "$parsed_date" > "$today" ]] || printf '%s\n' "$parsed_date"
   done < <(grep -oE "$date_regex" "$snapshot_file" || true) | sort -u | tail -1
 }
 
@@ -616,11 +620,18 @@ jq -s \
       | (first($previous_rows[] | select(.dataset_id == $probe.dataset_id)) // {}) as $old
       | cadence_days($entry.refresh_frequency) as $cadence
       | ($probe.last_modified // null) as $last_modified
-      | ($probe.content_freshness_date //
-          (if ($probe.access_method // "" | ascii_downcase) == "camofox"
-           then ($old.content_freshness_date // null)
-           else null
-           end)) as $content_freshness_date
+      | (if ($probe | has("content_freshness_date")) then
+           $probe.content_freshness_date
+         elif ($probe.access_method // "" | ascii_downcase) == "camofox" then
+           ($old.content_freshness_date // null)
+         else null
+         end) as $content_freshness_candidate
+      | (if $content_freshness_candidate == null then null
+         else (try (
+           (($content_freshness_candidate + "T00:00:00Z") | fromdateiso8601) as $content_epoch
+           | if $content_epoch <= $checked_epoch then $content_freshness_candidate else null end
+         ) catch null)
+         end) as $content_freshness_date
       | (if $last_modified == null then null
          else (($last_modified | fromdateiso8601) as $modified
            | ([0, (($checked_epoch - $modified) / 86400 | floor)] | max))
