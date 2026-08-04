@@ -155,6 +155,39 @@ extract_max_date() {
 extract_json_metrics() {
   local body_path="$1"
 
+  # CSV body fallback: jq can't parse CSV directly, but `wc -l` counts rows
+  # (including a partial last line). If the body isn't JSON, treat it as
+  # text and count newlines. We need this because the dgm_/dosm_ manifests
+  # point at .csv direct-download files on storage.dosm.gov.my and
+  # storage.data.gov.my. Estimated true row count = newlines - 1 (header).
+  # Note: redirect stderr to /dev/null because parquet / binary bodies
+  # cause bash to emit "ignored null byte" warnings that otherwise leak
+  # into our stdout JSON envelope.
+  if ! jq -e . "$body_path" >/dev/null 2>&1; then
+    local line_count column_count header_line
+    line_count="$(wc -l < "$body_path" 2>/dev/null | tr -d '[:space:]')"
+    header_line="$(head -n 1 "$body_path" 2>/dev/null | tr -d '\0' | head -c 4000 || true)"
+    if [[ "$line_count" =~ ^[0-9]+$ ]] && (( line_count > 0 )); then
+      # heuristic: any line without a comma is probably not CSV; refuse to
+      # report a count for it. most CSV files have comma-delimited headers.
+      if [[ "$header_line" == *,* ]]; then
+        column_count="$(printf '%s' "$header_line" | awk -F',' '{print NF}')"
+        [[ -z "$column_count" || ! "$column_count" =~ ^[0-9]+$ ]] && column_count="null"
+        jq -c -n \
+          --argjson rc "$(( line_count - 1 ))" \
+          --argjson cc "$column_count" \
+          '{
+            record_count: (if $rc >= 0 then $rc else null end),
+            column_count: $cc,
+            first_row: null,
+            first_record_timestamp: null,
+            body_format: "csv"
+          }' 2>/dev/null
+        return 0
+      fi
+    fi
+  fi
+
   jq -c '
     def wrapped_rows:
       if type == "array" then .
@@ -186,10 +219,11 @@ extract_json_metrics() {
             ($first_row.timestamp // $first_row.date // $first_row.publish_date // null)
           else null
           end
-        )
+        ),
+        body_format: "json"
       }
   ' "$body_path" 2>/dev/null \
-    || printf '{"record_count":null,"column_count":null,"first_row":null,"first_record_timestamp":null}\n'
+    || printf '{"record_count":null,"column_count":null,"first_row":null,"first_record_timestamp":null,"body_format":"unknown"}\n'
 }
 
 estimate_parquet_rows() {
@@ -582,12 +616,10 @@ check_direct_dataset() {
   local estimated_record_count record_count_estimated incomplete
 
   date_field="${DATASET_CONTENT_DATE_FIELDS[$dataset_id]:-}"
-  if [[ -n "$date_field" ]]; then
-    request_url="https://api.data.gov.my/data-catalogue?id=${dataset_id}&limit=2000"
-    if [[ "$dataset_id" == exchangerates_daily_* ]]; then
-      content_request_url="${request_url}&date_start=$(date -u -d '1 year ago' +'%Y-%m-%d')@date"
-    fi
-  fi
+  # date_field is used later to parse the body's freshness date column.
+  # We do NOT override the manifest URL here — direct-storage URLs in
+  # the manifest are now the canonical source (the legacy data-catalogue
+  # API was decommissioned).
 
   : > "$headers_file"
   if ! http_status="$(curl --location --silent --show-error \
@@ -782,7 +814,7 @@ dispatch_dataset() {
     dosm_marriages_state_age|dosm_fertility|dosm_death_maternal|\
     dosm_birth_state|dosm_death_state|\
     dosm_death_maternal_state|dosm_marriages_state)
-      check_head_dataset "$dataset_id" "$source_url"
+      check_direct_dataset "$dataset_id" "$source_url"
       ;;
     met_weather)
       check_weather_dataset "$dataset_id" "$source_url"
