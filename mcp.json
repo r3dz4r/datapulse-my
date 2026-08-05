@@ -1,5 +1,4 @@
 {
-  "$schema": "https://modelcontextprotocol.io/schemas/mcp-server-discoverable.json",
   "mcp_version": "2025-06-18",
   "server": {
     "name": "DataPulse MY",
@@ -39,6 +38,7 @@
         "properties": {
           "query": {
             "type": "string",
+            "minLength": 1,
             "description": "Free-text topic (e.g. 'fuel price', 'dengue')"
           },
           "licence": {
@@ -51,9 +51,15 @@
           },
           "limit": {
             "type": "integer",
-            "description": "Max results (default 20)"
+            "minimum": 1,
+            "maximum": 50,
+            "default": 10,
+            "description": "Max results (default 10)"
           }
-        }
+        },
+        "required": [
+          "query"
+        ]
       }
     },
     {

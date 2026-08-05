@@ -111,6 +111,29 @@
             "transport",
             "other"
           ]
+        },
+        "real_status": {
+          "description": "Observed upstream lifecycle state, independent of probe health.",
+          "type": "string",
+          "enum": [
+            "live",
+            "discontinued"
+          ]
+        },
+        "verified_at": {
+          "description": "Date the upstream lifecycle state was last verified.",
+          "type": "string",
+          "format": "date"
+        },
+        "probe_note": {
+          "description": "Operator note explaining a probe result or limitation.",
+          "type": "string",
+          "minLength": 1
+        },
+        "discontinued_reason": {
+          "description": "Evidence for marking an upstream dataset discontinued.",
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false
