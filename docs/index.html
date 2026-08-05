@@ -1170,6 +1170,12 @@
       const dateFormat = new Intl.DateTimeFormat("en-MY", {
         dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kuala_Lumpur"
       });
+      const calendarDateFormat = new Intl.DateTimeFormat("en-MY", {
+        dateStyle: "medium", timeZone: "Asia/Kuala_Lumpur"
+      });
+      const publishTimeFormat = new Intl.DateTimeFormat("en-MY", {
+        hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Kuala_Lumpur"
+      });
       const numberFormat = new Intl.NumberFormat("en-MY");
 
       function make(tag, className, text) {
@@ -1189,6 +1195,21 @@
         if (!value) return "Not reported by source";
         const date = new Date(value);
         return Number.isNaN(date.valueOf()) ? String(value) : dateFormat.format(date);
+      }
+
+      function formatContentFreshness(value, refreshFrequency) {
+        if (!value) return "Not reported by source";
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return formatDate(value);
+
+        const date = new Date(`${value}T00:00:00+08:00`);
+        if (Number.isNaN(date.valueOf())) return String(value);
+
+        const publishTime = refreshFrequency?.match(/\b([01]\d|2[0-3])([0-5]\d) MYT\b/i);
+        const displayDate = calendarDateFormat.format(date);
+        if (!publishTime) return displayDate;
+
+        const publishedAt = new Date(`${value}T${publishTime[1]}:${publishTime[2]}:00+08:00`);
+        return `${displayDate}, ${publishTimeFormat.format(publishedAt)} MYT`;
       }
 
       function formatBytes(value) {
@@ -1255,7 +1276,8 @@
         source.setAttribute("aria-label", `Official source for ${dataset.name}`);
         const facts = make("dl", "facts");
         addFact(facts, "Last modified", formatDate(health.last_modified));
-        addFact(facts, "Content freshness", formatDate(health.content_freshness_date));
+        addFact(facts, "Content freshness",
+          formatContentFreshness(health.content_freshness_date, dataset.refresh_frequency));
         addFact(facts, "Freshness signal", health.freshness_signal_source || "none");
         addFact(facts, "Freshness", health.staleness_status || "Unknown");
         addFact(facts, "Next expected update",

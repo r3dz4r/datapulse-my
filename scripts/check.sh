@@ -95,7 +95,8 @@ if $due_mode; then
     def tier_and_cadence($frequency):
       ($frequency // "" | ascii_downcase) as $frequency
       | if $frequency == "30 seconds" or $frequency == "hourly" then ["realtime", 15]
-        elif $frequency == "daily" or ($frequency | startswith("daily (weekdays,")) then ["daily", 1440]
+        elif $frequency | startswith("daily (weekdays,") then ["daily", 60]
+        elif $frequency == "daily" then ["daily", 1440]
         elif $frequency == "weekly" or $frequency == "monthly" or $frequency == "quarterly" then ["weekly-monthly", 10080]
         elif $frequency == "annual" or $frequency == "biennial to triennial (survey years)" or $frequency == "as-required" then ["slow", 43200]
         else error("Unsupported refresh_frequency: \($frequency)")
