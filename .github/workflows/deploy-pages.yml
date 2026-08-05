@@ -101,6 +101,9 @@ jobs:
               output.write(html)
           PY
 
+      - name: Regenerate changelog
+        run: python3 scripts/gen_changelog.py
+
       - name: Assemble Pages artifact
         run: |
           mkdir -p _site
