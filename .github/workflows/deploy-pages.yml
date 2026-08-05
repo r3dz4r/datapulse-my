@@ -7,15 +7,23 @@ on:
     paths:
       - "docs/**"
       - "llms.txt"
+      - "README.md"
       - "robots.txt"
       - "sitemap.xml"
       - "feed.xml"
       - "datapulse.json"
       - "datapulse.schema.json"
+      - "agent.json"
+      - "mcp.json"
+      - "changelog.json"
       - "health/latest.json"
       - "badges/**"
       - "samples/**"
       - "data/**"
+      - "mcp/server.py"
+      - "mcp/requirements.txt"
+      - "scripts/verify_agent_ready.sh"
+      - "scripts/verify_release_invariants.sh"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
   workflow_run:
@@ -58,6 +66,9 @@ jobs:
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+
+      - name: Install release verification dependencies
+        run: python -m pip install jsonschema --requirement mcp/requirements.txt
 
       - name: Inject embedded data
         run: |
@@ -175,3 +186,7 @@ jobs:
 
           bash scripts/verify_agent_ready.sh || \
             fail "verify_agent_ready.sh rejected the deployed agent surfaces"
+
+          DATAPULSE_RELEASE_BASE_URL="https://data-pulse.my" \
+            bash scripts/verify_release_invariants.sh || \
+            fail "verify_release_invariants.sh rejected the deployed release"
