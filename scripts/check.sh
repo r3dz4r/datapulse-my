@@ -118,7 +118,7 @@ fi
 
 curl_timeout="${DATAPULSE_CURL_TIMEOUT:-30}"
 gtfs_timeout="${DATAPULSE_GTFS_TIMEOUT:-45}"
-camofox_timeout="${CAMOFOX_TIMEOUT:-12}"
+camofox_timeout="${CAMOFOX_TIMEOUT:-45}"
 camofox_base_url="${CAMOFOX_BASE_URL:-http://100.74.84.121:9377}"
 
 declare -A DATASET_CONTENT_DATE_FIELDS=(
@@ -136,6 +136,14 @@ declare -A DATASET_BROWSER_DATE_REGEX=(
   [doe_mqims]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
   [kkm_idengue]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
   [eperolehan-diklankan]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}|[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}'
+)
+
+declare -A BROWSER_DATASET_WAIT=(
+  [doe_apims]=30
+  [doe_rqims]=30
+  [doe_mqims]=30
+  [kkm_idengue]=30
+  [eperolehan-diklankan]=30
 )
 
 extract_max_date() {
@@ -780,10 +788,10 @@ dispatch_dataset() {
       check_gtfs_dataset "$dataset_id" "$source_url"
       ;;
     doe_apims)
-      check_browser_dataset "$dataset_id" "$source_url" 12
+      check_browser_dataset "$dataset_id" "$source_url" "${BROWSER_DATASET_WAIT[$dataset_id]:-15}"
       ;;
     doe_rqims|doe_mqims|kkm_idengue|eperolehan-diklankan)
-      check_browser_dataset "$dataset_id" "$source_url" 12
+      check_browser_dataset "$dataset_id" "$source_url" "${BROWSER_DATASET_WAIT[$dataset_id]:-15}"
       ;;
     dosm_crime_district|dosm_cpi_state|dosm_gdp_state_real_supply|\
     dosm_gdp_qtr_real|dosm_gdp_annual_real_supply|dosm_trade_headline|\
@@ -824,6 +832,10 @@ dispatch_dataset() {
       ;;
   esac
 }
+
+if [[ "${DATAPULSE_CHECK_SOURCE_ONLY:-false}" == true ]]; then
+  return 0
+fi
 
 if jq -e '[.datasets[].id] | any(. == "doe_apims" or . == "doe_rqims" or . == "doe_mqims" or . == "kkm_idengue" or . == "eperolehan-diklankan")' \
   "$selected_manifest_file" >/dev/null; then
