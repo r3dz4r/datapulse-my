@@ -1,100 +1,99 @@
 # Contributing to DataPulse MY
 
-Thank you for helping make Malaysian public data easier to trust and reuse.
+Thank you for helping make Malaysian public data easier to assess and reuse.
 
-## Adopt a dataset
+## Adopt or update a dataset
 
-Every dataset contribution has three parts:
+Each manifest dataset has these published artifacts:
 
-1. Add an entry to `datapulse.json`.
-2. Add a Markdown health report at `data/<dataset-id>.md`.
-3. Add a machine-readable JSON envelope at
-   `data/json/<dataset-id>.json`.
+1. `data/<id>.md` — human-readable health and provenance report.
+2. `data/jsonld/<id>.json` — schema.org JSON-LD metadata.
+3. `data/json/<id>.json` — machine-readable report envelope for the 92
+   non-GTFS datasets.
 
-Use a short, lowercase, hyphen-separated dataset ID. The same ID must appear in
-all three places.
+The 30 GTFS datasets are the current exception to the third artifact: they
+have Markdown reports, JSON-LD, and files under `samples/gtfs-static/` or
+`samples/gtfs-realtime/`, but no `data/json/<id>.json` envelope. Do not invent
+an envelope only to satisfy a filename convention.
 
-### Manifest entry
+Use a stable lowercase ID made from letters, numbers, hyphens, or underscores.
+It must match the manifest `id`, report filename, JSON-LD filename, and any
+non-GTFS JSON-envelope filename.
 
-Every entry in `datapulse.json` must contain:
+## Manifest contract
 
-- `id`
-- `name`
-- `source`
-- `steward`
-- `url`
-- `licence`
-- `attribution`
-- `refresh_frequency`
-- `geo_coverage`
-- `health_report`
+Every `datapulse.json` row requires:
 
-### Health report
+- `id`, `name`, `source`, `steward`, and official `url`;
+- `licence` and `attribution`;
+- `refresh_frequency`, `expected_record_count`, and `geo_coverage`;
+- `health_report` and `namespace`.
 
-Describe the dataset's status, freshness, coverage, fields, expected refresh
-frequency, collection method, and known quirks. Include a clear licence and
-attribution section. State observed facts without implying that DataPulse MY
-is the official publisher.
+The lifecycle fields are `real_status` (`live` or `discontinued`),
+`verified_at`, optional `probe_note`, and optional `discontinued_reason`.
+Use one of the namespaces declared in `datapulse.schema.json`. Keep
+`expected_record_count` as a non-negative integer or `null` when no defensible
+expectation exists.
 
-### JSON envelope
+## Health reports and status
 
-Provide the same core facts in valid JSON. At minimum, include the dataset ID,
-status, freshness in days, field definitions, known quirks, licence, and
-attribution. Add relevant coverage facts such as row count or date range when
-they are known.
+Reports should distinguish source reachability, content freshness, record
+count, schema/shape observations, access method, licence, attribution, and
+known collection quirks. DataPulse MY is an observer, not the authoritative
+publisher.
 
-## Validation rules
+The eight health statuses are:
 
-Before submitting:
+- `fresh` — reachable, structurally usable, and within its freshness window;
+- `aging` — beyond 1.5× cadence but no more than 3× cadence;
+- `stale` — beyond 3× cadence;
+- `degraded` — reachable but content, count, or schema checks failed;
+- `browser-dependent` — reliable assessment requires a rendered browser;
+- `unreachable` — the source request failed or returned a terminal HTTP error;
+- `unknown` — no usable health classification is available;
+- `unknown-freshness` — reachable and structurally usable, but without a
+  Last-Modified header or parseable content date.
 
-- Confirm `datapulse.json` and the envelope parse as JSON.
-- Ensure the dataset ID is unique and matches both report filenames.
-- Use ISO 8601 dates in `YYYY-MM-DD` format.
-- Represent freshness and row counts as non-negative numbers.
-- Use `healthy`, `degraded`, or `unavailable` for status.
-- Ensure every manifest `health_report` path exists.
-- Keep the Markdown report and JSON envelope factually consistent.
-- Do not include credentials, cookies, personal data, or copied source records.
-- Check links and reproduce the observations against the official source.
+## Generated artifacts
 
-You can validate JSON in PowerShell:
+Do not hand-edit `health/latest.json`, badges, `feed.xml`, the README trust
+summary, `changelog.json`, or the JSON-LD catalog/dashboard graph. Run their
+generators after source changes:
 
-```powershell
-Get-Content -Raw datapulse.json | ConvertFrom-Json | Out-Null
-Get-Content -Raw data/json/<dataset-id>.json | ConvertFrom-Json | Out-Null
+```sh
+bash scripts/check.sh > health/latest.json
+bash scripts/gen_badges.sh
+bash scripts/gen_rss.sh
+bash scripts/gen_readme_summary.sh
+python3 scripts/gen_changelog.py
+python3 scripts/gen_jsonld_catalog.py
 ```
 
-## Check the licence
+Individual JSON-LD files are published artifacts; maintainers regenerate them
+when adding a dataset. The catalog and dashboard graph are generated from the
+manifest and current health state.
 
-Find the licence statement on the official dataset or publisher site. Record
-its exact name and preserve the required attribution. If no licence is stated,
-do not assume the data is open: note the uncertainty in the proposed issue or
-pull request and ask for review before adding the dataset.
+## Validate before submitting
 
-DataPulse MY's MIT licence covers this repository's original work, not the
-underlying public datasets.
+```sh
+python3 -m jsonschema -i datapulse.json datapulse.schema.json
+python3 -m json.tool data/json/<id>.json >/dev/null  # non-GTFS only
+python3 -m json.tool data/jsonld/<id>.json >/dev/null
+bash scripts/verify_agent_ready.sh
+```
+
+Also confirm that IDs are unique, referenced files exist, dates use ISO 8601,
+URLs resolve, licence evidence comes from the official publisher, and no
+credentials, cookies, personal data, or copied source records are committed.
 
 ## Submit a pull request
 
-1. Open an issue describing the dataset and its official source.
-2. Fork the repository and create a focused branch.
-3. Add the manifest entry, report, and envelope.
-4. Run the validation checks and review the rendered Markdown.
-5. Commit the three-file contribution with a clear message.
-6. Open a pull request that links the issue and explains when and how the
-   dataset was checked.
+1. Open an issue describing the dataset, official source, licence, and expected
+   cadence.
+2. Create a focused branch and update the manifest plus applicable artifacts.
+3. Run the generators and validation commands above.
+4. Open a pull request that links the issue and states when and how the source
+   was checked.
 
-Include evidence for freshness, schema, and licence claims in the pull request
-description. Reviewers may ask for a repeat observation when a source is
-dynamic or JavaScript-rendered.
-
-## Beginner-friendly issues
-
-Good first contributions include:
-
-- Checking whether a dataset URL still resolves.
-- Re-running a freshness observation.
-- Correcting typos or broken links in a health report.
-- Comparing a JSON envelope with its Markdown report.
-- Documenting one reproducible API or browser collection quirk.
-- Researching the official licence and attribution for a proposed dataset.
+Reviewers may request a repeat observation for dynamic, intermittent, or
+JavaScript-rendered sources.
