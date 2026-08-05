@@ -381,20 +381,38 @@ check_browser_dataset() {
     return 0
   fi
 
-  sleep "$wait_seconds"
+  sleep 5
 
-  if ! snapshot_response="$(curl --location --silent --show-error --fail \
-    --max-time "$camofox_timeout" \
-    "${camofox_base_url}/tabs/${tab_id}/snapshot?userId=${user_id}" 2>/dev/null)"; then
-    sleep 2
-    if ! snapshot_response="$(curl --location --silent --show-error --fail \
-      --max-time "$camofox_timeout" \
-      "${camofox_base_url}/tabs/${tab_id}/snapshot?userId=${user_id}" 2>/dev/null)"; then
-      close_camofox_tab "$tab_id" "$user_id" || true
-      details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
-      emit "$dataset_id" "$source_url" "browser-dependent" "Camofox snapshot failed" "$details"
-      return 0
+  # Poll for a non-empty snapshot until wait_seconds elapses, then have
+  # camofox_timeout more seconds to land on a real snapshot. This is more
+  # reliable than a single-shot wait-then-fetch for slow JSF sites where
+  # the snapshot endpoint timing is jittery.
+  local hard_deadline elapsed requested_snapshot snapshot_response current_at
+  local attempt_at curl_timeout
+  hard_deadline=$(( $(date +%s) + wait_seconds + camofox_timeout ))
+  snapshot_response=""
+  while (( $(date +%s) < hard_deadline )); do
+    current_at=$(date +%s)
+    elapsed=$((hard_deadline - current_at))
+    if (( elapsed < 8 )); then
+      curl_timeout=$elapsed
+    else
+      curl_timeout=$camofox_timeout
     fi
+    if snapshot_response="$(curl --location --silent --show-error --fail \
+      --max-time "$curl_timeout" \
+      "${camofox_base_url}/tabs/${tab_id}/snapshot?userId=${user_id}" 2>/dev/null)"; then
+      if jq -e 'has("snapshot") and (.snapshot | type == "string") and (.snapshot | length) > 100' <<< "$snapshot_response" >/dev/null 2>&1; then
+        break
+      fi
+    fi
+    sleep 2
+  done
+  if [[ -z "$snapshot_response" ]] || ! jq -e 'has("snapshot") and (.snapshot | type == "string") and (.snapshot | length) > 100' <<< "$snapshot_response" >/dev/null 2>&1; then
+    close_camofox_tab "$tab_id" "$user_id" || true
+    details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
+    emit "$dataset_id" "$source_url" "browser-dependent" "Camofox snapshot failed" "$details"
+    return 0
   fi
 
   snapshot="$(jq -r '.snapshot // empty' <<< "$snapshot_response" 2>/dev/null)"
