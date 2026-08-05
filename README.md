@@ -148,12 +148,14 @@ is the agent-consumer self-test.
   [item lookup](samples/pricecatcher_lookup_item.csv),
   [premise lookup](samples/pricecatcher_lookup_premise.csv)
 
-### Daily Reference Data (Bank Negara Malaysia)
+### Daily reference data
 
-These four BNM reference-rate datasets are updated on weekdays at fixed MYT
-publication times. The dashboard combines each date-only source value with the
-publication time declared in `refresh_frequency`; it does not infer a time from
-midnight or UTC conversion.
+Daily-published reference datasets from official Malaysian sources. Each
+agency publishes on its own schedule, declared in `refresh_frequency`; the
+dashboard combines the date-only source value with the publication time and
+does not infer a time from midnight or UTC conversion.
+
+#### Bank Negara Malaysia (BNM)
 
 - [BNM Daily Exchange Rates (0900)](data/exchangerates_daily_0900.md) —
   [Sample JSON](samples/exchangerates_daily_0900.json)
@@ -164,16 +166,27 @@ midnight or UTC conversion.
 - [BNM Daily Exchange Rates (1700)](data/exchangerates_daily_1700.md) —
   [Sample JSON](samples/exchangerates_daily_1700.json)
 
+#### MET Malaysia
+
 - [MET Malaysia Weather Forecast](data/met_weather.md) — Samples:
   [CSV](samples/met_weather.csv), [JSON](samples/met_weather.json)
+
+#### Department of Environment (DOE)
+
 - [DOE APIMS Air Quality (Hourly)](data/doe_apims.md) —
   [Sample JSON](samples/doe_apims.json)
 - [DOE RQIMS River Water Quality (Continuous)](data/doe_rqims.md) —
   [Sample JSON](samples/doe_rqims.json)
 - [DOE MQIMS Marine Water Quality (Monthly)](data/doe_mqims.md) —
   [Sample JSON](samples/doe_mqims.json)
+
+#### KKM (Ministry of Health)
+
 - [KKM iDengue Weekly Dengue Cases](data/kkm_idengue.md) —
   [Sample JSON](samples/kkm_idengue.json)
+
+#### OpenDOSM (DOSM open data portal)
+
 - [OpenDOSM Crime by District (Annual)](data/dosm_crime_district.md) —
   [Sample JSON](samples/dosm_crime_district.json)
 - [OpenDOSM Monthly CPI by State](data/dosm_cpi_state.md) —
@@ -222,6 +235,51 @@ midnight or UTC conversion.
   [Sample JSON](samples/dosm_ipi_export.json)
 - [OpenDOSM IPI for Domestic-Oriented Divisions](data/dosm_ipi_domestic.md) —
   [Sample JSON](samples/dosm_ipi_domestic.json)
+- [OpenDOSM Annual Births by State](data/dosm_birth_state.md) —
+  [Sample JSON](samples/dosm_birth_state.json)
+- [OpenDOSM Annual Deaths by State](data/dosm_death_state.md) —
+  [Sample JSON](samples/dosm_death_state.json)
+- [OpenDOSM Annual Maternal Deaths by State](data/dosm_death_maternal_state.md) —
+  [Sample JSON](samples/dosm_death_maternal_state.json)
+- [OpenDOSM Annual Marriages by State and Sex](data/dosm_marriages_state.md) —
+  [Sample JSON](samples/dosm_marriages_state.json)
+- [OpenDOSM Household Income, Malaysia](data/dosm_hh_income.md) —
+  [Sample JSON](samples/dosm_hh_income.json)
+- [OpenDOSM Household Income by State](data/dosm_hh_income_state.md) —
+  [Sample JSON](samples/dosm_hh_income_state.json)
+- [OpenDOSM Household Income by District](data/dosm_hh_income_district.md) —
+  [Sample JSON](samples/dosm_hh_income_district.json)
+- [OpenDOSM Poverty, Malaysia](data/dosm_hh_poverty.md) —
+  [Sample JSON](samples/dosm_hh_poverty.json)
+- [OpenDOSM Poverty by State](data/dosm_hh_poverty_state.md) —
+  [Sample JSON](samples/dosm_hh_poverty_state.json)
+- [OpenDOSM Poverty by District](data/dosm_hh_poverty_district.md) —
+  [Sample JSON](samples/dosm_hh_poverty_district.json)
+- [OpenDOSM Income Inequality, Malaysia](data/dosm_hh_inequality.md) —
+  [Sample JSON](samples/dosm_hh_inequality.json)
+- [OpenDOSM Income Inequality by State](data/dosm_hh_inequality_state.md) —
+  [Sample JSON](samples/dosm_hh_inequality_state.json)
+- [OpenDOSM Income Inequality by District](data/dosm_hh_inequality_district.md) —
+  [Sample JSON](samples/dosm_hh_inequality_district.json)
+- [OpenDOSM Household Expenditure by DUN](data/dosm_hh_expenditure_dun.md) —
+  [Sample JSON](samples/dosm_hh_expenditure_dun.json)
+- [OpenDOSM Household Expenditure by Parliamentary Constituency](data/dosm_hh_expenditure_parlimen.md) —
+  [Sample JSON](samples/dosm_hh_expenditure_parlimen.json)
+- [OpenDOSM Annual Population, Malaysia](data/dosm_population_malaysia.md) —
+  [Sample JSON](samples/dosm_population_malaysia.json)
+- [OpenDOSM Annual Population by Parliamentary Constituency](data/dosm_population_parlimen.md) —
+  [Sample JSON](samples/dosm_population_parlimen.json)
+- [OpenDOSM Annual Deaths by District and Sex](data/dosm_death_district_sex.md) —
+  [Sample JSON](samples/dosm_death_district_sex.json)
+- [OpenDOSM Annual Marriages by State, Age, and Sex](data/dosm_marriages_state_age.md) —
+  [Sample JSON](samples/dosm_marriages_state_age.json)
+- [OpenDOSM Annual Fertility](data/dosm_fertility.md) —
+  [Sample JSON](samples/dosm_fertility.json)
+- [OpenDOSM Annual Maternal Deaths, Malaysia](data/dosm_death_maternal.md) —
+  [Sample JSON](samples/dosm_death_maternal.json)
+
+#### data.gov.my
+
 - [data.gov.my Monthly Interest Rates](data/dgm_interest_rates.md) —
   [Sample JSON](samples/dgm_interest_rates.json)
 - [data.gov.my Quarterly Federal Government Revenue](data/dgm_federal_finance_qtr_revenue.md) —
@@ -248,14 +306,6 @@ midnight or UTC conversion.
   [Sample JSON](samples/dgm_vehicle_registrations_type_fuel.json)
 - [data.gov.my Daily FPX Transactions](data/dgm_payments_transactions_fpx.md) —
   [Sample JSON](samples/dgm_payments_transactions_fpx.json)
-- [OpenDOSM Annual Births by State](data/dosm_birth_state.md) —
-  [Sample JSON](samples/dosm_birth_state.json)
-- [OpenDOSM Annual Deaths by State](data/dosm_death_state.md) —
-  [Sample JSON](samples/dosm_death_state.json)
-- [OpenDOSM Annual Maternal Deaths by State](data/dosm_death_maternal_state.md) —
-  [Sample JSON](samples/dosm_death_maternal_state.json)
-- [OpenDOSM Annual Marriages by State and Sex](data/dosm_marriages_state.md) —
-  [Sample JSON](samples/dosm_marriages_state.json)
 - [data.gov.my Hospital Beds by State and Hospital Type](data/dgm_hospital_beds.md) —
   [Sample JSON](samples/dgm_hospital_beds.json)
 - [data.gov.my Healthcare Staff by State and Staff Type](data/dgm_healthcare_staff.md) —
@@ -300,41 +350,6 @@ midnight or UTC conversion.
   [Sample JSON](samples/dgm_crops_state.json)
 - [data.gov.my Public Education Institutions by District](data/dgm_schools_district.md) —
   [Sample JSON](samples/dgm_schools_district.json)
-- [OpenDOSM Household Income, Malaysia](data/dosm_hh_income.md) —
-  [Sample JSON](samples/dosm_hh_income.json)
-- [OpenDOSM Household Income by State](data/dosm_hh_income_state.md) —
-  [Sample JSON](samples/dosm_hh_income_state.json)
-- [OpenDOSM Household Income by District](data/dosm_hh_income_district.md) —
-  [Sample JSON](samples/dosm_hh_income_district.json)
-- [OpenDOSM Poverty, Malaysia](data/dosm_hh_poverty.md) —
-  [Sample JSON](samples/dosm_hh_poverty.json)
-- [OpenDOSM Poverty by State](data/dosm_hh_poverty_state.md) —
-  [Sample JSON](samples/dosm_hh_poverty_state.json)
-- [OpenDOSM Poverty by District](data/dosm_hh_poverty_district.md) —
-  [Sample JSON](samples/dosm_hh_poverty_district.json)
-- [OpenDOSM Income Inequality, Malaysia](data/dosm_hh_inequality.md) —
-  [Sample JSON](samples/dosm_hh_inequality.json)
-- [OpenDOSM Income Inequality by State](data/dosm_hh_inequality_state.md) —
-  [Sample JSON](samples/dosm_hh_inequality_state.json)
-- [OpenDOSM Income Inequality by District](data/dosm_hh_inequality_district.md) —
-  [Sample JSON](samples/dosm_hh_inequality_district.json)
-- [OpenDOSM Household Expenditure by DUN](data/dosm_hh_expenditure_dun.md) —
-  [Sample JSON](samples/dosm_hh_expenditure_dun.json)
-- [OpenDOSM Household Expenditure by Parliamentary Constituency](data/dosm_hh_expenditure_parlimen.md) —
-  [Sample JSON](samples/dosm_hh_expenditure_parlimen.json)
-- [OpenDOSM Annual Population, Malaysia](data/dosm_population_malaysia.md) —
-  [Sample JSON](samples/dosm_population_malaysia.json)
-- [OpenDOSM Annual Population by Parliamentary Constituency](data/dosm_population_parlimen.md) —
-  [Sample JSON](samples/dosm_population_parlimen.json)
-- [OpenDOSM Annual Deaths by District and Sex](data/dosm_death_district_sex.md) —
-  [Sample JSON](samples/dosm_death_district_sex.json)
-- [OpenDOSM Annual Marriages by State, Age, and Sex](data/dosm_marriages_state_age.md) —
-  [Sample JSON](samples/dosm_marriages_state_age.json)
-- [OpenDOSM Annual Fertility](data/dosm_fertility.md) —
-  [Sample JSON](samples/dosm_fertility.json)
-- [OpenDOSM Annual Maternal Deaths, Malaysia](data/dosm_death_maternal.md) —
-  [Sample JSON](samples/dosm_death_maternal.json)
-
 ### GTFS transit feeds
 
 The transport namespace adds 16 GTFS Static schedule ZIPs and 14 GTFS Realtime
