@@ -65,7 +65,8 @@ RAG systems, and internal knowledge tools to consume.
   [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) and can use the
   entire portfolio immediately — no scraping, API-key setup, or data-format
   reverse-engineering.
-- **Honest freshness signals:** automatic weekly monitoring separates HTTP
+- **Honest freshness signals:** a 15-minute timer probes datasets when their
+  cadence tier is due, separating HTTP
   reachability, browser dependency, schema validity, and source freshness so
   missing evidence is visible instead of being labelled healthy.
 - **Machine-readable and licence-clear:** every dataset has a JSON envelope with
@@ -142,7 +143,7 @@ is the agent-consumer self-test.
   [CSV](samples/fuelprice.csv), [JSON](samples/fuelprice.json)
 - [ePerolehan Tender Notices (DIIKLANKAN)](data/eperolehan-diklankan.md) —
   [Sample JSON](samples/eperolehan-diklankan.json)
-- [PriceCatcher (Daily Grocery Prices)](data/pricecatcher.md) — Samples:
+- [PriceCatcher (Grocery Prices)](data/pricecatcher.md) — Samples:
   [main CSV](samples/pricecatcher.csv),
   [item lookup](samples/pricecatcher_lookup_item.csv),
   [premise lookup](samples/pricecatcher_lookup_premise.csv)
@@ -150,7 +151,9 @@ is the agent-consumer self-test.
 ### Daily Reference Data (Bank Negara Malaysia)
 
 These four BNM reference-rate datasets are updated on weekdays at fixed MYT
-publication times:
+publication times. The dashboard combines each date-only source value with the
+publication time declared in `refresh_frequency`; it does not infer a time from
+midnight or UTC conversion.
 
 - [BNM Daily Exchange Rates (0900)](data/exchangerates_daily_0900.md) —
   [Sample JSON](samples/exchangerates_daily_0900.json)
@@ -348,7 +351,7 @@ DataPulse MY currently tracks 122 datasets in total.
 | Dataset | Refresh cadence |
 | --- | --- |
 | Malaysian Fuel Prices (`fuelprice`) | Weekly |
-| ePerolehan Tender Notices (`eperolehan-diklankan`) | Daily |
+| ePerolehan Tender Notices (`eperolehan-diklankan`) | Hourly |
 | PriceCatcher (`pricecatcher`) | Monthly |
 | BNM Daily Exchange Rates (`exchangerates_daily_0900`) | Daily on weekdays at 0900 MYT |
 | BNM Daily Exchange Rates (`exchangerates_daily_1130`) | Daily on weekdays at 1130 MYT |
@@ -451,9 +454,12 @@ For example, a data pipeline can inspect `status`, `content_freshness_date`, and
 `freshness_signal_source` before processing a source, while a researcher can
 review the known quirks before designing a collection method.
 
-## Roadmap
+## Monitoring
 
-- Scheduled health checks — weekly.
+- The VPS `datapulse-health.timer` wakes every 15 minutes and runs only the
+  datasets whose cadence tier is due.
+- GitHub Actions performs a full weekly probe as a fallback and republishes the
+  generated health, badge, feed, README, and changelog artifacts.
 - RSS feed — available.
 - Status badges — available.
 - More datasets — planned.
