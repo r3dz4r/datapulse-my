@@ -32,88 +32,106 @@
   "tools": [
     {
       "name": "search_datasets",
-      "description": "Find datasets by topic, agency, or licence.",
+      "description": "Search DataPulse MY's 122 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence.",
       "inputSchema": {
-        "type": "object",
+        "additionalProperties": false,
         "properties": {
           "query": {
-            "type": "string",
             "minLength": 1,
-            "description": "Free-text topic (e.g. 'fuel price', 'dengue')"
+            "type": "string"
           },
           "licence": {
-            "type": "string",
-            "description": "Filter by licence (e.g. 'CC BY 4.0', 'OGL')"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           },
           "source": {
-            "type": "string",
-            "description": "Filter by steward (e.g. 'DOSM', 'BNM')"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           },
           "limit": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 50,
             "default": 10,
-            "description": "Max results (default 10)"
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
           }
         },
         "required": [
           "query"
-        ]
+        ],
+        "type": "object"
       }
     },
     {
       "name": "get_dataset",
-      "description": "Full detail + current health for one dataset.",
+      "description": "Return full detail for one dataset id, including its latest health status and last-verified timestamp, content_freshness_date, and freshness_signal_source (last_modified, content_parse, or none). Use to fetch the provenance/citation metadata for a dataset found via search_datasets and distinguish unknown-freshness from proven stale data.",
       "inputSchema": {
-        "type": "object",
+        "additionalProperties": false,
         "properties": {
           "dataset_id": {
-            "type": "string",
-            "description": "Dataset namespace, e.g. 'dgm_fuelprice'"
+            "type": "string"
           }
         },
         "required": [
           "dataset_id"
-        ]
+        ],
+        "type": "object"
       }
     },
     {
       "name": "find_stale",
-      "description": "Find datasets whose health is not green (stale, unreachable, unknown-freshness, etc.).",
+      "description": "Return datasets whose status is aging, stale, or degraded, plus datasets missing from the latest health snapshot. Use when an agent needs to know which data has a freshness or schema-validity risk.",
       "inputSchema": {
-        "type": "object",
+        "additionalProperties": false,
         "properties": {
           "max_age_hours": {
-            "type": "integer",
-            "description": "Max staleness in hours (default 24)"
+            "default": 24,
+            "minimum": 0,
+            "type": "integer"
           }
-        }
+        },
+        "type": "object"
       }
     },
     {
       "name": "get_provenance",
-      "description": "Citation-ready metadata for one or many datasets (publisher, licence, attribution, source URL).",
+      "description": "Return citation-ready provenance metadata for the listed dataset ids: source steward, licence (with URL), source URL, access method (curl/Camofox), last-verified timestamp. Use when an agent needs to cite DataPulse MY data in a response and must include proper attribution and licence.",
       "inputSchema": {
-        "type": "object",
+        "additionalProperties": false,
         "properties": {
           "dataset_ids": {
-            "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "type": "array"
           }
         },
         "required": [
           "dataset_ids"
-        ]
+        ],
+        "type": "object"
       }
     },
     {
       "name": "find_by_licence",
-      "description": "Enumerate what is available under a given licence (e.g. all CC BY 4.0 datasets).",
+      "description": "Return all datasets with the given licence, summarised. Use to enumerate what's available under a specific licence for compliance/reuse scoping.",
       "inputSchema": {
-        "type": "object",
+        "additionalProperties": false,
         "properties": {
           "licence": {
             "type": "string"
@@ -121,7 +139,8 @@
         },
         "required": [
           "licence"
-        ]
+        ],
+        "type": "object"
       }
     }
   ],
