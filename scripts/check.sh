@@ -806,9 +806,11 @@ dispatch_dataset() {
       check_gtfs_dataset "$dataset_id" "$source_url"
       ;;
     doe_apims)
+      # Browser datasets run serially via the post-loop browser pass.
       check_browser_dataset "$dataset_id" "$source_url" "${BROWSER_DATASET_WAIT[$dataset_id]:-15}"
       ;;
     doe_rqims|doe_mqims|kkm_idengue|eperolehan-diklankan)
+      # Browser datasets run serially via the post-loop browser pass.
       check_browser_dataset "$dataset_id" "$source_url" "${BROWSER_DATASET_WAIT[$dataset_id]:-15}"
       ;;
     dosm_crime_district|dosm_cpi_state|dosm_gdp_state_real_supply|\
@@ -872,13 +874,42 @@ while IFS=$'\t' read -r dataset_id source_url; do
     wait -n
     ((active_jobs -= 1))
   fi
-done < <(jq -r '.datasets[] | [.id, .url] | @tsv' "$selected_manifest_file")
+done < <(jq -r '
+  .datasets[]
+  | select(
+      .id != "doe_apims"
+      and .id != "doe_rqims"
+      and .id != "doe_mqims"
+      and .id != "kkm_idengue"
+      and .id != "eperolehan-diklankan"
+    )
+  | [.id, .url]
+  | @tsv
+' "$selected_manifest_file")
 wait
 
 : > "$results_file"
 if (( dataset_index > 0 )); then
   for result_path in "$probe_results_dir"/*.json; do
     cat "$result_path" >> "$results_file"
+  done
+fi
+
+# Serial browser probe pass: Camofox serializes tab opens, and parallel opens
+# can exhaust the curl time budget on slow JSF sites such as ePerolehan.
+if jq -e '[.datasets[].id] | any(. == "doe_apims" or . == "doe_rqims" or . == "doe_mqims" or . == "kkm_idengue" or . == "eperolehan-diklankan")' \
+  "$selected_manifest_file" >/dev/null; then
+  for browser_id in doe_apims doe_rqims doe_mqims kkm_idengue eperolehan-diklankan; do
+    if ! jq -e --arg id "$browser_id" \
+      '.datasets[] | select(.id == $id)' "$selected_manifest_file" >/dev/null; then
+      continue
+    fi
+    source_url="$(jq -r --arg id "$browser_id" \
+      '.datasets[] | select(.id == $id) | .url' "$selected_manifest_file")"
+    [[ -n "$source_url" ]] || continue
+    printf -v browser_result '%s/browser-%s.json' "$probe_results_dir" "$browser_id"
+    (dispatch_dataset "$browser_id" "$source_url" "$browser_result")
+    cat "$browser_result" >> "$results_file"
   done
 fi
 
