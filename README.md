@@ -498,3 +498,5 @@ or propose a dataset through the GitHub issue forms. Maintainers use
 DataPulse MY is released under the [MIT License](LICENSE). Source datasets
 remain subject to the licences and attribution requirements stated in their
 individual health reports.
+
+<!-- Last deploy verification: 2026-08-06 15:18 MYT, post-nginx-fix -->
