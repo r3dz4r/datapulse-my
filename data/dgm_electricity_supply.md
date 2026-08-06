@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_electricity_supply
-last_checked: 2026-08-03T02:00:00Z
+last_checked: 2026-08-05T14:31:11Z
 status: stale
-freshness_delta: 690 days since file update
+freshness_delta: 692 days
 next_expected_update: overdue
 record_count: 468
 date_range: 2018-01-01 to 2024-06-01
@@ -16,6 +16,22 @@ attribution: Energy Commission, DOSM, and Malaysian electricity utilities via da
 
 # data.gov.my Electricity Supply
 
+## Status
+
+**Status:** Stale
+
+**Freshness:** 692 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 17,345 bytes.
+
 ## Provenance
 
 Energy Commission and electricity utilities publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/energy/electricity_supply.parquet`
 
 Catalogue description: [Monthly electricity supply by sector.](https://data.gov.my/data-catalogue/electricity_supply).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-09-12; observations end on 2024-06-01
-
-**Refresh frequency:** Monthly
-
-The CSV endpoint returned HTTP 200 and its expected 17,345-byte file. It
-contains 468 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

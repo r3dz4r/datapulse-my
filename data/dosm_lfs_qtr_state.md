@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_lfs_qtr_state
-last_checked: 2026-08-02T16:01:47Z
-status: stale
-freshness_delta: 195 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 198 days
 next_expected_update: overdue
 record_count: 560
 date_range: 2017-01-01 to 2025-07-01
@@ -16,6 +16,22 @@ attribution: DOSM via OpenDOSM
 
 # OpenDOSM Quarterly Labour Force Statistics by State
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 198 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 29,704 bytes.
+
 ## Provenance
 
 DOSM publishes this dataset through OpenDOSM as direct CSV and Parquet
@@ -23,22 +39,6 @@ downloads:
 
 - `https://storage.dosm.gov.my/labour/lfs_qtr_state.csv`
 - `https://storage.dosm.gov.my/labour/lfs_qtr_state.parquet`
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2026-01-19; observations end in 2025 Q3
-
-**Refresh frequency:** Quarterly
-
-The CSV endpoint returned HTTP 200 and its expected 29,704-byte file. It
-contains 560 data rows, but the latest observation is beyond the expected
-quarterly update cycle.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

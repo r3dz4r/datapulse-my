@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_crops_state
-last_checked: 2026-08-03T02:00:00Z
-status: stale
-freshness_delta: 681 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 682 days
 next_expected_update: overdue
 record_count: 864
 date_range: 2017-01-01 to 2022-01-01
@@ -16,6 +16,22 @@ attribution: MAFS, Department of Agriculture, and DOSM via data.gov.my
 
 # data.gov.my Crop Area and Production by State
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 682 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 37,398 bytes.
+
 ## Provenance
 
 Department of Agriculture Malaysia publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/agriculture/crops_state.parquet`
 
 Catalogue description: [Production and planted area of crops by state from 2017 to 2022, broken down by crop type.](https://data.gov.my/data-catalogue/crops_state).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-09-21; observations end on 2022-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 37,398-byte file. It
-contains 864 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

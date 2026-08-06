@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_gdp_state_real_supply
-last_checked: 2026-08-02T08:36:45Z
-status: current
-freshness_delta: 11 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 13 days
 next_expected_update: annual
 record_count: 2163
 date_range: 2015-01-01 to 2025-01-01
@@ -16,6 +16,22 @@ attribution: DOSM via OpenDOSM
 
 # OpenDOSM Annual Real GDP by State and Sector
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 13 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 79,740 bytes.
+
 ## Provenance
 
 DOSM publishes this dataset through OpenDOSM as direct CSV and Parquet
@@ -25,21 +41,6 @@ downloads:
 - `https://storage.dosm.gov.my/gdp/gdp_state_real_supply.parquet`
 
 Both files use the `storage.dosm.gov.my` subdomain.
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-07-22; observations end in 2025
-
-**Refresh frequency:** Annual
-
-The CSV endpoint is reachable and returned its expected 79,740-byte file. It
-contains 2,163 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request.
 
 ## Coverage
 

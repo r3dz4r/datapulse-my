@@ -1,7 +1,8 @@
 ---
 dataset_id: gtfs_static_prasarana_rail_kl
-last_checked: 2026-08-04
+last_checked: 2026-08-05T14:31:11Z
 status: fresh
+freshness_delta: 0 days
 record_count: 1122
 content_freshness_date: 2026-12-31
 schema_version: GTFS
@@ -14,7 +15,21 @@ attribution: Prasarana Malaysia Berhad via data.gov.my GTFS API
 
 # GTFS Static — Rapid KL Rail Schedule
 
-GTFS Static — Rapid KL Rail Schedule is monitored as a validated GTFS schedule ZIP.
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 0 days
+
+HTTP 200; valid GTFS static ZIP
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 80,595 bytes.
 
 ## Provenance
 
@@ -23,16 +38,6 @@ Source URL: `https://api.data.gov.my/gtfs-static/prasarana?category=rapid-rail-k
 Licence: Creative Commons Attribution 4.0
 
 Attribution: Prasarana Malaysia Berhad via data.gov.my GTFS API.
-
-## Status
-
-**Status:** Fresh
-
-**Refresh cadence:** as-required
-
-**Calendar service range:** 2020-04-01 to 2026-12-31
-
-**Content freshness date:** 2026-12-31
 
 ## Coverage
 
@@ -44,10 +49,6 @@ Geographic coverage: Klang Valley.
 
 - Calendar end dates describe the published service horizon, not the last day on which the ZIP changed.
 - The probe requires agency.txt, stops.txt, routes.txt, trips.txt, stop_times.txt, and calendar.txt.
-
-## Last checked
-
-2026-08-04 by the DataPulse MY automated GTFS probe using curl, zipfile/csv, and google.transit.gtfs_realtime_pb2 as applicable.
 
 ## Licence
 

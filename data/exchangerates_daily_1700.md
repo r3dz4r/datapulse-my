@@ -1,7 +1,7 @@
 ---
 dataset_id: exchangerates_daily_1700
-last_checked: 2026-07-31T08:00:00Z
-status: healthy
+last_checked: 2026-08-06T16:01:15Z
+status: fresh
 freshness_delta: 0 days
 next_expected_update: 2026-08-03
 record_count: ~7000
@@ -18,16 +18,19 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Healthy  
-**Freshness:** 0 days  
-**Refresh frequency:** Daily on weekdays at 1700 MYT
+**Status:** Fresh
 
-The API is reachable and the latest observed record is dated 2026-07-31. This
-endpoint captures BNM's end-of-day exchange rates.
+**Freshness:** 0 days
+
+HTTP 200
 
 ## Last checked
 
-2026-07-31 at 08:00:00 UTC.
+2026-08-06 at 16:01:15 UTC.
+
+## File size
+
+The checked resource is 8,034,847 bytes.
 
 ## Coverage
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: kkm_idengue
-last_checked: 2026-08-02T14:30:00Z
-status: healthy
-freshness_delta: 1 day
+last_checked: 2026-08-06T14:46:29Z
+status: browser-dependent
+freshness_delta: unknown
 next_expected_update: 2026-08-02
 record_count: 16
 date_range: 2026-08-01
@@ -18,19 +18,19 @@ attribution: KKM via iDengue portal (MYSA hosted)
 
 ## Status
 
-**Status:** Healthy
+**Status:** Browser dependent
 
-**Freshness:** 1 day
+**Freshness:** unknown
 
-**Refresh frequency:** Daily
-
-The JavaScript-rendered iDengue portal is reachable through Camofox. Its
-state table reported daily and year-to-date cumulative dengue cases as of
-1 August 2026.
+Browser check succeeded
 
 ## Last checked
 
-2026-08-02 using Camofox with a 12-second rendering wait.
+2026-08-06 at 14:46:29 UTC.
+
+## File size
+
+The health snapshot did not report a file size.
 
 ## Coverage
 

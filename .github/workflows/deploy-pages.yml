@@ -26,6 +26,7 @@ on:
       - "scripts/verify_release_invariants.sh"
       - "scripts/gen_badges.sh"
       - "scripts/gen_changelog.py"
+      - "scripts/gen_data_reports.sh"
       - "scripts/gen_jsonld_catalog.py"
       - "scripts/gen_mcp_reference.py"
       - "scripts/gen_readme_summary.sh"
@@ -76,6 +77,9 @@ jobs:
 
       - name: Install release verification dependencies
         run: python -m pip install jsonschema --requirement mcp/requirements.txt
+
+      - name: Regenerate dataset reports
+        run: bash scripts/gen_data_reports.sh
 
       - name: Regenerate derived release artifacts
         run: |

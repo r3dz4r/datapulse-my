@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_payments_transactions_fpx
-last_checked: 2026-08-02T17:18:27Z
-status: current
-freshness_delta: 1 day since file update
+last_checked: 2026-08-06T14:46:29Z
+status: fresh
+freshness_delta: 0 days
 next_expected_update: daily
 record_count: 7206
 date_range: 2020-01-01 to 2026-08-01
@@ -16,6 +16,22 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 # data.gov.my Daily FPX Transactions
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 0 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-06 at 14:46:29 UTC.
+
+## File size
+
+The checked resource is 271,569 bytes.
+
 ## Provenance
 
 Bank Negara Malaysia publishes this dataset through data.gov.my as direct CSV
@@ -23,21 +39,6 @@ and Parquet downloads:
 
 - `https://storage.data.gov.my/finsector/payments/trnsc_daily_fpx.csv`
 - `https://storage.data.gov.my/finsector/payments/trnsc_daily_fpx.parquet`
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-08-01; observations extend through 2026-08-01
-
-**Refresh frequency:** Daily
-
-The CSV endpoint returned HTTP 200 and its expected 271,127-byte file. It
-contains 7,206 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

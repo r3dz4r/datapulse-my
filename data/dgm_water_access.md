@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_water_access
-last_checked: 2026-08-03T02:00:00Z
-status: stale
-freshness_delta: 675 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 677 days
 next_expected_update: overdue
 record_count: 1035
 date_range: 2000-01-01 to 2022-01-01
@@ -16,6 +16,22 @@ attribution: SPAN and NRES via data.gov.my
 
 # data.gov.my Access to Treated Water by State & Strata
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 677 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 32,915 bytes.
+
 ## Provenance
 
 National Water Services Commission publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/water/water_access.parquet`
 
 Catalogue description: [Annual access of households to treated piped water by state and strata.](https://data.gov.my/data-catalogue/water_access).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-09-27; observations end on 2022-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 32,915-byte file. It
-contains 1,035 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_infant_immunisation
-last_checked: 2026-08-03T02:00:00Z
-status: stale
-freshness_delta: 614 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 616 days
 next_expected_update: overdue
 record_count: 120
 date_range: 2000-01-01 to 2023-01-01
@@ -16,6 +16,22 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 # data.gov.my Infant Immunisation Coverage
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 616 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 2,683 bytes.
+
 ## Provenance
 
 Ministry of Health Malaysia publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/healthcare/infant_immunisation.parquet`
 
 Catalogue description: [Annual infant immunisation coverage rates at national level.](https://data.gov.my/data-catalogue/infant_immunisation).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-11-27; observations end on 2023-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 2,683-byte file. It
-contains 120 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

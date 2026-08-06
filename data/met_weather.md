@@ -1,8 +1,8 @@
 ---
 dataset_id: met_weather
-last_checked: 2026-08-02T14:00:00Z
-status: healthy
-freshness_delta: 0 days
+last_checked: 2026-08-06T14:46:29Z
+status: degraded
+freshness_delta: unknown
 next_expected_update: 2026-08-03
 record_count: 2520
 date_range: 2026-08-02 to 2026-08-08
@@ -18,16 +18,19 @@ attribution: MET Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Healthy  
-**Freshness:** 0 days  
-**Refresh frequency:** Daily
+**Status:** Degraded
 
-The API is reachable and returned 2,520 forecast records for 360 locations.
-No schema drift or breaking changes were observed.
+**Freshness:** unknown
+
+HTTP 200
 
 ## Last checked
 
-2026-08-02 at 14:00:00 UTC.
+2026-08-06 at 14:46:29 UTC.
+
+## File size
+
+The checked resource is 718,197 bytes.
 
 ## Coverage
 

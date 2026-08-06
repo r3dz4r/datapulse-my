@@ -1,10 +1,10 @@
 ---
 dataset_id: pricecatcher
-last_checked: 2026-07-31T08:00:00Z
-status: healthy
+last_checked: 2026-08-05T14:31:11Z
+status: degraded
 freshness_delta: 0 days
 next_expected_update: 2026-08-31
-file_size_bytes: 2286215
+file_size_bytes: 569609
 file_count: 3 (main + 2 lookups)
 schema_version: 1.0
 schema_drift: none
@@ -18,22 +18,19 @@ attribution: KPDN Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Healthy  
-**Freshness:** 0 days  
-**Refresh frequency:** Monthly
+**Status:** Degraded
 
-The July 2026 main file and both lookup tables are reachable. No schema drift
-or breaking changes were observed.
+**Freshness:** 0 days
+
+HTTP 200
 
 ## Last checked
 
-2026-07-31 at 08:00:00 UTC.
+2026-08-05 at 14:31:11 UTC.
 
 ## File size
 
-The main `pricecatcher_2026-07.parquet` file is 2,286,215 bytes. The dataset
-also depends on two lookup files: `lookup_item.parquet` (16,398 bytes) and
-`lookup_premise.parquet` (140,582 bytes).
+The checked resource is 569,609 bytes.
 
 ## Schema
 

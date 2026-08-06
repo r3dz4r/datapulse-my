@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_gdp_gni_annual_nominal
-last_checked: 2026-08-02T16:47:48Z
-status: current
-freshness_delta: 11 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 13 days
 next_expected_update: annual
 record_count: 157
 date_range: 1947-01-01 to 2025-01-01
@@ -16,6 +16,22 @@ attribution: DOSM via OpenDOSM
 
 # OpenDOSM Annual Nominal GDP and GNI
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 13 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 6,921 bytes.
+
 ## Provenance
 
 Department of Statistics Malaysia publishes this dataset through OpenDOSM as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.dosm.gov.my/gdp/gdp_gni_annual_nominal.parquet`
 
 Catalogue description: [a long annual series of nominal GDP, GNI, and per-capita values](https://open.dosm.gov.my/data-catalogue/gdp_gni_annual_nominal).
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-07-22; observations end on 2025-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 6,921-byte file. It
-contains 157 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

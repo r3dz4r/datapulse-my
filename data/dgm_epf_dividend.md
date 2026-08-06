@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_epf_dividend
-last_checked: 2026-08-02T17:18:27Z
-status: current
-freshness_delta: 155 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 158 days
 next_expected_update: annual
 record_count: 74
 date_range: 1952-01-01 to 2025-01-01
@@ -16,6 +16,22 @@ attribution: Employees Provident Fund via data.gov.my
 
 # data.gov.my Annual EPF Dividend Rates
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 158 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 1,259 bytes.
+
 ## Provenance
 
 The Employees Provident Fund publishes this dataset through data.gov.my as
@@ -23,21 +39,6 @@ direct CSV and Parquet downloads:
 
 - `https://storage.data.gov.my/welfare/epf_dividend.csv`
 - `https://storage.data.gov.my/welfare/epf_dividend.parquet`
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-02-28; observations extend through 2025
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 1,259-byte file. It
-contains 74 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

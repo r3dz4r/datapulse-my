@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_prisoners_state
-last_checked: 2026-08-03T02:00:00Z
-status: stale
-freshness_delta: 677 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 679 days
 next_expected_update: overdue
 record_count: 234
 date_range: 2017-01-01 to 2022-01-01
@@ -16,6 +16,22 @@ attribution: Malaysian Prison Department via data.gov.my
 
 # data.gov.my Prisoners by State and Sex
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 679 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 7,097 bytes.
+
 ## Provenance
 
 Malaysian Prison Department publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/publicsafety/prisoners_state.parquet`
 
 Catalogue description: [Number of prisoners in Malaysia by state and sex from 2017 to 2022.](https://data.gov.my/data-catalogue/prisoners_state).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-09-25; observations end on 2022-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 7,097-byte file. It
-contains 234 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

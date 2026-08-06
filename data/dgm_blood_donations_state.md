@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_blood_donations_state
-last_checked: 2026-08-03T02:00:00Z
-status: current
-freshness_delta: 1 days since file update
+last_checked: 2026-08-06T14:46:29Z
+status: fresh
+freshness_delta: 0 days
 next_expected_update: daily
 record_count: 488670
 date_range: 2006-01-01 to 2026-08-01
@@ -16,6 +16,22 @@ attribution: National Blood Centre and Ministry of Health Malaysia via data.gov.
 
 # data.gov.my Daily Blood Donations by Blood Group & State
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 0 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-06 at 14:46:29 UTC.
+
+## File size
+
+The checked resource is 12,552,059 bytes.
+
 ## Provenance
 
 National Blood Centre and Ministry of Health Malaysia publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/healthcare/blood_donations_state.parquet`
 
 Catalogue description: [Daily blood donations at state level for each of the 4 major blood groups. The table provides a preview of the dataset using the most recent year of data.](https://data.gov.my/data-catalogue/blood_donations_state).
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-08-02; observations extend through 2026-08-01
-
-**Refresh frequency:** Daily
-
-The CSV endpoint returned HTTP 200 and its expected 12,545,337-byte file. It
-contains 488,670 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

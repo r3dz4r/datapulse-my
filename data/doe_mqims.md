@@ -1,8 +1,8 @@
 ---
 dataset_id: doe_mqims
-last_checked: 2026-08-02T14:00:00Z
-status: healthy
-freshness_delta: within monthly cadence
+last_checked: 2026-08-05T14:31:11Z
+status: browser-dependent
+freshness_delta: 0 days
 next_expected_update: 2026-09-01
 record_count: 368
 date_range: latest monthly sampling view
@@ -18,16 +18,19 @@ attribution: DOE Malaysia via MyEQMS
 
 ## Status
 
-**Status:** Healthy  
-**Freshness:** Within monthly cadence  
-**Refresh frequency:** Monthly
+**Status:** Browser dependent
 
-The Camofox-rendered MyEQMS view is reachable and reports 368 stations: 214
-Excellent, 46 Good, 95 Moderate, and 13 Poor.
+**Freshness:** 0 days
+
+Browser check succeeded
 
 ## Last checked
 
-2026-08-02 at 14:00:00 UTC using Camofox.
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The health snapshot did not report a file size.
 
 ## Coverage
 

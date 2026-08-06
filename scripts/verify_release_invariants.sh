@@ -54,6 +54,12 @@ assert len(health_ids) == len(set(health_ids)) == 122
 assert len(catalog_ids) == len(set(catalog_ids)) == 122
 assert set(manifest_ids) == set(health_ids) == set(catalog_ids)
 
+missing_reports = [
+    dataset_id for dataset_id in health_ids
+    if not (Path("data") / f"{dataset_id}.md").is_file()
+]
+assert not missing_reports, f"missing dataset reports: {', '.join(missing_reports)}"
+
 for row in catalog["dataset"]:
     report_url = f"{base}/data/{row['identifier']}.md"
     assert row["url"] == report_url

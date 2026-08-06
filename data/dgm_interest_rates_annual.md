@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_interest_rates_annual
-last_checked: 2026-08-02T17:18:27Z
-status: current
-freshness_delta: 119 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 121 days
 next_expected_update: annual
 record_count: 707
 date_range: 1980-01-01 to 2025-01-01
@@ -16,6 +16,22 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 # data.gov.my Annual Interest Rates
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 121 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 31,371 bytes.
+
 ## Provenance
 
 Bank Negara Malaysia publishes this dataset through data.gov.my as direct CSV
@@ -23,21 +39,6 @@ and Parquet downloads:
 
 - `https://storage.data.gov.my/finsector/interest_rates_annual.csv`
 - `https://storage.data.gov.my/finsector/interest_rates_annual.parquet`
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-04-05; observations extend through 2025
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 31,371-byte file. It
-contains 707 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

@@ -1,7 +1,8 @@
 ---
 dataset_id: gtfs_realtime_mybas_kota_bharu
-last_checked: 2026-08-04
-status: fresh
+last_checked: 2026-08-06T16:31:19Z
+status: degraded
+freshness_delta: unknown
 record_count: 1
 content_freshness_date: 2026-08-03
 schema_version: GTFS
@@ -14,7 +15,21 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 # GTFS Realtime — BAS.MY Kota Bharu Vehicle Positions
 
-GTFS Realtime — BAS.MY Kota Bharu Vehicle Positions is monitored as a GTFS Realtime vehicle-position protobuf feed.
+## Status
+
+**Status:** Degraded
+
+**Freshness:** unknown
+
+Invalid GTFS realtime protobuf: No module named 'google'
+
+## Last checked
+
+2026-08-06 at 16:31:19 UTC.
+
+## File size
+
+The checked resource is 80 bytes.
 
 ## Provenance
 
@@ -23,18 +38,6 @@ Source URL: `https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kota-b
 Licence: Creative Commons Attribution 4.0
 
 Attribution: BAS.MY via data.gov.my GTFS API.
-
-## Status
-
-**Status:** Fresh
-
-**Refresh cadence:** 30 seconds
-
-**Header timestamp:** 1785781232
-
-**Newest vehicle timestamp:** 1785780174
-
-**Content freshness date:** 2026-08-03
 
 ## Coverage
 
@@ -46,10 +49,6 @@ Geographic coverage: Kota Bharu, Kelantan.
 
 - Zero vehicles is a valid off-peak response and does not indicate an unavailable feed.
 - Vehicle positions are transient; the committed protobuf is a single reference snapshot.
-
-## Last checked
-
-2026-08-04 by the DataPulse MY automated GTFS probe using curl, zipfile/csv, and google.transit.gtfs_realtime_pb2 as applicable.
 
 ## Licence
 

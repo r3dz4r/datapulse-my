@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_cpi_core_inflation
-last_checked: 2026-08-02T16:47:48Z
-status: current
-freshness_delta: 16 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 19 days
 next_expected_update: monthly
 record_count: 1414
 date_range: 2018-02-01 to 2026-06-01
@@ -16,6 +16,22 @@ attribution: DOSM via OpenDOSM
 
 # OpenDOSM Monthly Core CPI Inflation by Division
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 19 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 30,978 bytes.
+
 ## Provenance
 
 Department of Statistics Malaysia publishes this dataset through OpenDOSM as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.dosm.gov.my/cpi/cpi_2d_core_inflation.parquet`
 
 Catalogue description: [national core CPI inflation for the main groups of goods and services](https://open.dosm.gov.my/data-catalogue/cpi_core_inflation).
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-07-17; observations end on 2026-06-01
-
-**Refresh frequency:** Monthly
-
-The CSV endpoint returned HTTP 200 and its expected 30,978-byte file. It
-contains 1,414 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 
