@@ -42,23 +42,26 @@ Runs on push to `main` when published artifacts change (`docs/**`, `llms.txt`,
 Uses `concurrency: group: pages, cancel-in-progress: true` to prevent overlapping
 deploys.
 
-### `openwiki-update.yml` — weekly OpenWiki refresh
+### `openwiki-update.yml` — daily OpenWiki refresh
 
-Runs on a weekly cron (`0 8 * * 1`, every Monday 08:00 UTC) and on
-`workflow_dispatch`. The workflow checks out the repo, sets up Node.js 20,
+Runs on a daily cron (`0 8 * * *`, every day 08:00 UTC) and on
+`workflow_dispatch`. The workflow checks out the repo, sets up Node.js 22,
 installs the `openwiki` npm package globally, and runs
 `openwiki code --update --print` with the OpenRouter provider and the
-`z-ai/glm-5.2` model (LangSmith telemetry disabled). It then commits and
-pushes any regenerated files directly to `main` via inline `git add && git
-commit && git push` (no PR bot, no separate branch).
+`z-ai/glm-5.2` model. Provider credentials and tracing config are passed
+directly via the step's `env:` (`OPENWIKI_PROVIDER`, `OPENROUTER_API_KEY`,
+`OPENWIKI_MODEL_ID`, plus `LANGSMITH_API_KEY` / `LANGCHAIN_PROJECT` /
+`LANGCHAIN_TRACING_V2` for LangSmith tracing) — no `~/.openwiki/.env` file
+is written. Requires `secrets.OPENROUTER_API_KEY` and
+`secrets.LANGSMITH_API_KEY`.
 
-The auto-commit whitelists `openwiki/` and `datapulse.json` only — workflow
-self-rewrites of `.github/workflows/openwiki-update.yml` and any emitted
-`AGENTS.md` / `CLAUDE.md` markers are staged-against but ignored from the
-push (the `git status --porcelain` check scopes to `openwiki/` and
-`datapulse.json` so a successful OpenWiki run with no content diff exits
-cleanly without pushing an empty commit). Requires
-`secrets.OPENROUTER_API_KEY`. Telemetry is explicitly disabled in this repo.
+Instead of committing directly to `main`, the workflow uses
+`peter-evans/create-pull-request@v7` to open an `openwiki/update` branch PR
+titled "docs: update OpenWiki". The PR's `add-paths` whitelists `openwiki`,
+`AGENTS.md`, `CLAUDE.md`, and `.github/workflows/openwiki-update.yml`, so
+regenerated pages, the agent marker files, and any workflow self-rewrite are
+all carried on the same PR. When OpenWiki produced no content diff, the
+action exits cleanly with no PR.
 
 Because OpenWiki writes only under `openwiki/`, the workflow's job is purely
 documentation refresh. Dataset health reports and envelopes under `data/` are
