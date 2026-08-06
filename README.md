@@ -52,6 +52,13 @@ Statuses with zero count are omitted. Full per-dataset health is in
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
 
+> **⚠️ Status: active development.** Dashboards and health snapshots update as
+> probes complete. Per-dataset reports under `data/{id}.md` may briefly lag
+> behind the live health snapshot in `health/latest.json` (a regeneration gap
+> that is being closed). Coverage and quality improve with each tagged release;
+> expect rough edges. Track progress via the [GitHub Releases](../../releases)
+> page — `v0.4.0` is the current milestone.
+
 ## AI-agent-ready — what it means for you
 
 Give your organisation's AI tools current, licensed, and verified Malaysian
