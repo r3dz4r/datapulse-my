@@ -2161,7 +2161,13 @@
         links.setAttribute("aria-label", `Resources for ${dataset.name}`);
         links.append(makeLink("Health report", `${REPO}${dataset.health_report}`));
         for (const [label, path] of sampleFiles(dataset.id)) {
-          links.append(makeLink(label, `${REPO}${path}`));
+          // Bug fix 2026-08-06: sampleFiles() returns full raw.githubusercontent.com URLs,
+          // but the caller was prepending REPO (a github.com blob URL). Result: href
+          // like 'https://github.com/.../blob/main/https://raw.githubusercontent.com/...'
+          // — a doubled URL that 404s. Detect absolute http(s) URLs and pass them
+          // through unchanged; only prepend REPO for relative paths.
+          const href = /^https?:\/\//.test(path) ? path : `${REPO}${path}`;
+          links.append(makeLink(label, href));
         }
 
         card.append(heading, make("p", "dataset-id", dataset.id), source, facts);
