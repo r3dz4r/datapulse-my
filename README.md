@@ -1,6 +1,6 @@
 # DataPulse MY
 
-**Live dashboard:** https://r3dz4r.github.io/datapulse-my/
+**Live dashboard:** https://www.data-pulse.my
 
 > **🤖 AI-agent-ready** — DataPulse MY is built for AI. An agent fetches one file
 > ([`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt)) and can use all
