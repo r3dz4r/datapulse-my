@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_state_finance_expenditure
-last_checked: 2026-08-02T16:47:48Z
-status: stale
-freshness_delta: 688 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 691 days
 next_expected_update: overdue
 record_count: 104
 date_range: 2020-01-01 to 2022-01-01
@@ -16,6 +16,22 @@ attribution: National Audit Department and Malaysian state governments via data.
 
 # data.gov.my State Government Expenditure
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 691 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 3,946 bytes.
+
 ## Provenance
 
 National Audit Department and Malaysian state governments publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/publicadmin/state_finance_expenditure.parquet`
 
 Catalogue description: [annual actual state-government expenditure by category](https://data.gov.my/data-catalogue/state_finance_expenditure).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-09-13; observations end on 2022-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 3,946-byte file. It
-contains 104 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

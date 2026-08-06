@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_trade_headline
-last_checked: 2026-08-02T16:01:47Z
-status: stale
-freshness_delta: 74 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 77 days
 next_expected_update: overdue
 record_count: 743
 date_range: 2000-01-01 to 2026-04-01
@@ -16,6 +16,22 @@ attribution: DOSM via OpenDOSM
 
 # OpenDOSM Monthly Trade Headline
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 77 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 56,287 bytes.
+
 ## Provenance
 
 DOSM publishes this national dataset through OpenDOSM as direct CSV and
@@ -23,22 +39,6 @@ Parquet downloads:
 
 - `https://storage.dosm.gov.my/trade/trade_headline.csv`
 - `https://storage.dosm.gov.my/trade/trade_headline.parquet`
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2026-05-20; observations end in April 2026
-
-**Refresh frequency:** Monthly
-
-The CSV endpoint returned HTTP 200 and its expected 56,287-byte file. It
-contains 743 data rows, but the latest observation is more than one monthly
-cycle behind the check date.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

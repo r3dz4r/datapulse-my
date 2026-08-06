@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_cpi_state
-last_checked: 2026-08-02T07:29:25Z
-status: current
-freshness_delta: 16 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 19 days
 next_expected_update: monthly
 record_count: 44352
 date_range: 2010-01-01 to 2026-06-01
@@ -16,6 +16,22 @@ attribution: DOSM via OpenDOSM
 
 # OpenDOSM Monthly CPI by State and Division
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 19 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 1,328,705 bytes.
+
 ## Provenance
 
 DOSM publishes this dataset through OpenDOSM as direct CSV and Parquet
@@ -26,21 +42,6 @@ downloads:
 
 These files use the `storage.dosm.gov.my` subdomain, which differs from the
 `storage.data.gov.my` host used by the crime district dataset.
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-07-17; observations end in June 2026
-
-**Refresh frequency:** Monthly
-
-The CSV endpoint is reachable and returned its expected 1,328,705-byte file.
-It contains 44,352 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP request and CSV download.
 
 ## Coverage
 

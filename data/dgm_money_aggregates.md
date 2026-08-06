@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_money_aggregates
-last_checked: 2026-08-02T17:18:27Z
+last_checked: 2026-08-05T14:31:11Z
 status: stale
-freshness_delta: 119 days since file update
+freshness_delta: 121 days
 next_expected_update: overdue
 record_count: 1896
 date_range: 2013-01-01 to 2026-02-01
@@ -16,6 +16,22 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 # data.gov.my Monthly Money Aggregates
 
+## Status
+
+**Status:** Stale
+
+**Freshness:** 121 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 75,535 bytes.
+
 ## Provenance
 
 Bank Negara Malaysia publishes this dataset through data.gov.my as direct CSV
@@ -23,21 +39,6 @@ and Parquet downloads:
 
 - `https://storage.data.gov.my/finsector/money_aggregates.csv`
 - `https://storage.data.gov.my/finsector/money_aggregates.parquet`
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2026-04-05; observations end on 2026-02-01
-
-**Refresh frequency:** Monthly
-
-The CSV endpoint returned HTTP 200 and its expected 75,535-byte file. It
-contains 1,896 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

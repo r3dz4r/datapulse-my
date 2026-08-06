@@ -1,7 +1,8 @@
 ---
 dataset_id: gtfs_static_ktmb
-last_checked: 2026-08-04
+last_checked: 2026-08-06T14:46:29Z
 status: fresh
+freshness_delta: 0 days
 record_count: 2881
 content_freshness_date: 2026-08-04
 schema_version: GTFS
@@ -14,7 +15,21 @@ attribution: KTMB via data.gov.my GTFS API
 
 # GTFS Static — KTMB Rail Schedule
 
-GTFS Static — KTMB Rail Schedule is monitored as a validated GTFS schedule ZIP.
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 0 days
+
+HTTP 200; valid GTFS static ZIP
+
+## Last checked
+
+2026-08-06 at 14:46:29 UTC.
+
+## File size
+
+The checked resource is 30,028 bytes.
 
 ## Provenance
 
@@ -23,16 +38,6 @@ Source URL: `https://api.data.gov.my/gtfs-static/ktmb`
 Licence: Creative Commons Attribution 4.0
 
 Attribution: KTMB via data.gov.my GTFS API.
-
-## Status
-
-**Status:** Fresh
-
-**Refresh cadence:** daily
-
-**Calendar service range:** 2025-02-08 to 2026-08-04
-
-**Content freshness date:** 2026-08-04
 
 ## Coverage
 
@@ -44,10 +49,6 @@ Geographic coverage: national.
 
 - Calendar end dates describe the published service horizon, not the last day on which the ZIP changed.
 - The probe requires agency.txt, stops.txt, routes.txt, trips.txt, stop_times.txt, and calendar.txt.
-
-## Last checked
-
-2026-08-04 by the DataPulse MY automated GTFS probe using curl, zipfile/csv, and google.transit.gtfs_realtime_pb2 as applicable.
 
 ## Licence
 

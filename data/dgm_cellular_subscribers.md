@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_cellular_subscribers
-last_checked: 2026-08-03T02:00:00Z
-status: stale
-freshness_delta: 614 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 616 days
 next_expected_update: overdue
 record_count: 66
 date_range: 2000-01-01 to 2021-01-01
@@ -16,6 +16,22 @@ attribution: MCMC via data.gov.my
 
 # data.gov.my Cellular Subscribers by Plan Type
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 616 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 1,770 bytes.
+
 ## Provenance
 
 Malaysian Communications and Multimedia Commission publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/communications/cellular_subscribers.parquet`
 
 Catalogue description: [Annual data on the number of postpaid and prepaid cellular subscribers in Malaysia.](https://data.gov.my/data-catalogue/cellular_subscribers).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-11-27; observations end on 2021-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 1,770-byte file. It
-contains 66 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

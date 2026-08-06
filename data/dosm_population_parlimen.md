@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_population_parlimen
-last_checked: 2026-08-02T19:11:50Z
-status: current
-freshness_delta: 28 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 30 days
 next_expected_update: annual
 record_count: 5550
 date_range: 2020-01-01 to 2024-01-01
@@ -16,26 +16,28 @@ attribution: DOSM via OpenDOSM
 
 # OpenDOSM Annual Population by Parliamentary Constituency
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 30 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 346,540 bytes.
+
 ## Provenance
 
 The Department of Statistics Malaysia publishes this dataset through OpenDOSM as direct CSV and Parquet downloads:
 
 - `https://storage.dosm.gov.my/population/population_parlimen.csv`
 - `https://storage.dosm.gov.my/population/population_parlimen.parquet`
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-07-05; observations extend through 2024-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 346,540-byte file. It contains 5,550 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

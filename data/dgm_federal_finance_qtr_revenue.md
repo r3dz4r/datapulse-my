@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_federal_finance_qtr_revenue
-last_checked: 2026-08-02T16:47:48Z
+last_checked: 2026-08-05T14:31:11Z
 status: stale
-freshness_delta: 788 days since file update
+freshness_delta: 791 days
 next_expected_update: overdue
 record_count: 2373
 date_range: 1996-01-01 to 2024-01-01
@@ -16,6 +16,22 @@ attribution: Accountant General's Department of Malaysia via data.gov.my
 
 # data.gov.my Quarterly Federal Government Revenue
 
+## Status
+
+**Status:** Stale
+
+**Freshness:** 791 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 78,055 bytes.
+
 ## Provenance
 
 Accountant General's Department of Malaysia publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/publicadmin/federal_finance_qtr_revenue.parquet`
 
 Catalogue description: [quarterly federal revenue by category and variable](https://data.gov.my/data-catalogue/federal_finance_qtr_revenue).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-06-05; observations end on 2024-01-01
-
-**Refresh frequency:** Quarterly
-
-The CSV endpoint returned HTTP 200 and its expected 78,055-byte file. It
-contains 2,373 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

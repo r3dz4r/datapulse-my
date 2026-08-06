@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_lfs_year
-last_checked: 2026-08-02T16:47:48Z
-status: stale
-freshness_delta: 663 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 666 days
 next_expected_update: overdue
 record_count: 40
 date_range: 1982-01-01 to 2023-01-01
@@ -16,6 +16,22 @@ attribution: DOSM via OpenDOSM
 
 # OpenDOSM Annual Labour Force Statistics
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 666 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 2,188 bytes.
+
 ## Provenance
 
 Department of Statistics Malaysia publishes this dataset through OpenDOSM as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.dosm.gov.my/labour/lfs_year.parquet`
 
 Catalogue description: [annual principal labour-force counts and rates](https://open.dosm.gov.my/data-catalogue/lfs_year).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-10-08; observations end on 2023-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 2,188-byte file. It
-contains 40 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

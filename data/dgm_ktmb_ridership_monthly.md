@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_ktmb_ridership_monthly
-last_checked: 2026-08-03T02:00:00Z
-status: current
-freshness_delta: 2 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 0 days
 next_expected_update: monthly
 record_count: 290
 date_range: 2020-11-01 to 2026-07-01
@@ -16,6 +16,22 @@ attribution: KTMB and Ministry of Transport Malaysia via data.gov.my
 
 # data.gov.my Monthly KTMB Ridership
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 0 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 8,136 bytes.
+
 ## Provenance
 
 Keretapi Tanah Melayu Berhad publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_monthly.parquet`
 
 Catalogue description: [Monthly-frequency ridership data for the 5 main KTMB services, namely Komuter, Komuter Utara, Intercity, ETS and Shuttle Tebrau.](https://data.gov.my/data-catalogue/ridership_ktmb_monthly).
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-08-01; observations extend through 2026-07-01
-
-**Refresh frequency:** Monthly
-
-The CSV endpoint returned HTTP 200 and its expected 8,136-byte file. It
-contains 290 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

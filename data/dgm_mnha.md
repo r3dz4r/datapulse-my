@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_mnha
-last_checked: 2026-08-03T02:00:00Z
-status: stale
-freshness_delta: 630 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 631 days
 next_expected_update: overdue
 record_count: 60
 date_range: 2013-01-01 to 2022-01-01
@@ -16,6 +16,22 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 # data.gov.my MNHA: Total (TEH) and Current (CHE) Expenditure on Health
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 631 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 2,450 bytes.
+
 ## Provenance
 
 Ministry of Health Malaysia publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/healthcare/mnha.parquet`
 
 Catalogue description: [Total and current expenditure on health in Malaysia, with a breakdown into public and private sectors.](https://data.gov.my/data-catalogue/mnha).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-11-11; observations end on 2022-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 2,450-byte file. It
-contains 60 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

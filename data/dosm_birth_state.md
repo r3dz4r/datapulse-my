@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_birth_state
-last_checked: 2026-08-02T17:18:27Z
-status: current
-freshness_delta: 26 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 28 days
 next_expected_update: annual
 record_count: 390
 date_range: 2000-01-01 to 2024-01-01
@@ -16,6 +16,22 @@ attribution: DOSM via OpenDOSM
 
 # OpenDOSM Annual Births by State
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 28 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 12,308 bytes.
+
 ## Provenance
 
 The Department of Statistics Malaysia publishes this dataset through OpenDOSM
@@ -23,21 +39,6 @@ as direct CSV and Parquet downloads:
 
 - `https://storage.dosm.gov.my/demography/birth_state.csv`
 - `https://storage.dosm.gov.my/demography/birth_state.parquet`
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-07-07; observations extend through 2024
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 12,308-byte file. It
-contains 390 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

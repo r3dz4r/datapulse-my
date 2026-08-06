@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_lfs_month
-last_checked: 2026-08-02T16:47:48Z
-status: current
-freshness_delta: 16 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 19 days
 next_expected_update: monthly
 record_count: 197
 date_range: 2010-01-01 to 2026-05-01
@@ -16,6 +16,22 @@ attribution: DOSM via OpenDOSM
 
 # OpenDOSM Monthly Labour Force Statistics
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 19 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 10,706 bytes.
+
 ## Provenance
 
 Department of Statistics Malaysia publishes this dataset through OpenDOSM as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.dosm.gov.my/labour/lfs_month.parquet`
 
 Catalogue description: [monthly principal labour-force counts and rates](https://open.dosm.gov.my/data-catalogue/lfs_month).
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-07-17; observations end on 2026-05-01
-
-**Refresh frequency:** Monthly
-
-The CSV endpoint returned HTTP 200 and its expected 10,706-byte file. It
-contains 197 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

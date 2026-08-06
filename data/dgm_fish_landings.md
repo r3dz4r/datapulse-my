@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_fish_landings
-last_checked: 2026-08-03T02:00:00Z
+last_checked: 2026-08-05T14:31:11Z
 status: stale
-freshness_delta: 680 days since file update
+freshness_delta: 681 days
 next_expected_update: overdue
 record_count: 1368
 date_range: 2018-01-01 to 2023-12-01
@@ -16,6 +16,22 @@ attribution: Department of Fisheries Malaysia via data.gov.my
 
 # data.gov.my Monthly Landings of Marine Fish by State
 
+## Status
+
+**Status:** Stale
+
+**Freshness:** 681 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 42,011 bytes.
+
 ## Provenance
 
 Department of Fisheries Malaysia publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/agriculture/fish_landings.parquet`
 
 Catalogue description: [Monthly landings of marine fish by state and coast from 2018 to 2023.](https://data.gov.my/data-catalogue/fish_landings).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-09-22; observations end on 2023-12-01
-
-**Refresh frequency:** Monthly
-
-The CSV endpoint returned HTTP 200 and its expected 42,011-byte file. It
-contains 1,368 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

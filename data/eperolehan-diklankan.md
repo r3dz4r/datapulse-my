@@ -1,11 +1,36 @@
+---
+dataset_id: eperolehan-diklankan
+last_checked: 2026-08-06T16:31:19Z
+status: browser-dependent
+freshness_delta: 0 days
+next_expected_update: unknown
+file_size_bytes: null
+file_count: null
+schema_version: unknown
+schema_drift: none
+known_quirks: []
+breaking_changes: []
+licence: Open Government Licence (Malaysia)
+attribution: MOF ePerolehan
+---
+
 # ePerolehan Tender Notices (DIIKLANKAN)
 
-**Dataset ID:** `eperolehan-diklankan`  
-**Status:** Healthy  
-**Freshness:** 0 days  
-**Access method:** JavaScript-rendered via Camofox
+## Status
 
-**Source URL:** <https://www.eperolehan.gov.my/quotation-tender-notice>
+**Status:** Browser dependent
+
+**Freshness:** 0 days
+
+Browser check succeeded
+
+## Last checked
+
+2026-08-06 at 16:31:19 UTC.
+
+## File size
+
+The health snapshot did not report a file size.
 
 ## Coverage
 

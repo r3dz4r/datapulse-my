@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_healthcare_staff
-last_checked: 2026-08-03T02:00:00Z
-status: stale
-freshness_delta: 675 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 677 days
 next_expected_update: overdue
 record_count: 765
 date_range: 2014-01-01 to 2022-01-01
@@ -16,6 +16,22 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 # data.gov.my Healthcare Staff by State and Staff Type
 
+## Status
+
+**Status:** Aging
+
+**Freshness:** 677 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 25,802 bytes.
+
 ## Provenance
 
 Ministry of Health Malaysia publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/healthcare/healthcare_staff.parquet`
 
 Catalogue description: [Number of public sector healthcare staff at national and state level, with a breakdown by staff type.](https://data.gov.my/data-catalogue/healthcare_staff).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-09-27; observations end on 2022-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 25,802-byte file. It
-contains 765 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

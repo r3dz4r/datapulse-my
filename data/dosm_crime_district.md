@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_crime_district
-last_checked: 2026-08-02T14:30:00Z
-status: stale
-freshness_delta: 655 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: aging
+freshness_delta: 658 days
 next_expected_update: overdue
 record_count: 19152
 date_range: 2016-01-01 to 2023-01-01
@@ -15,6 +15,22 @@ attribution: DOSM via OpenDOSM, data from PDRM
 ---
 
 # OpenDOSM Crime by District and Type (Annual)
+
+## Status
+
+**Status:** Aging
+
+**Freshness:** 658 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 1,038,732 bytes.
 
 ## Provenance
 
@@ -30,21 +46,6 @@ source endpoint. DOSM publishes the files at:
 - `https://storage.data.gov.my/publicsafety/crime_district.parquet`
 
 The underlying crime data is sourced from PDRM and republished by DOSM.
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-10-16; observations end in 2023
-
-**Refresh frequency:** Annual
-
-The CSV endpoint is reachable and returned its expected 1,038,732-byte file.
-The data contains 19,152 rows, but no annual observation after 2023.
-
-## Last checked
-
-2026-08-02 by direct HTTP request and CSV download.
 
 ## Coverage
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_ridership_headline
-last_checked: 2026-08-03T02:00:00Z
-status: current
-freshness_delta: 3 days since file update
+last_checked: 2026-08-06T14:46:29Z
+status: stale
+freshness_delta: 6 days
 next_expected_update: daily
 record_count: 2738
 date_range: 2019-01-01 to 2026-06-30
@@ -16,6 +16,22 @@ attribution: Prasarana, KTMB, and Ministry of Transport Malaysia via data.gov.my
 
 # data.gov.my Daily Public Transport Ridership
 
+## Status
+
+**Status:** Stale
+
+**Freshness:** 6 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-06 at 14:46:29 UTC.
+
+## File size
+
+The checked resource is 196,709 bytes.
+
 ## Provenance
 
 Ministry of Transport Malaysia and public transport operators publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/transportation/ridership_headline.parquet`
 
 Catalogue description: [Daily-frequency ridership data for various public transport services across the country.](https://data.gov.my/data-catalogue/ridership_headline).
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-07-31; observations extend through 2026-06-30
-
-**Refresh frequency:** Daily
-
-The CSV endpoint returned HTTP 200 and its expected 196,709-byte file. It
-contains 2,738 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

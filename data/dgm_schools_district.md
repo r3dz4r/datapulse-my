@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_schools_district
-last_checked: 2026-08-03T02:00:00Z
-status: stale
-freshness_delta: 675 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 2 days
 next_expected_update: overdue
 record_count: 2993
 date_range: 2017-01-01 to 2022-01-01
@@ -16,6 +16,22 @@ attribution: Ministry of Education Malaysia via data.gov.my
 
 # data.gov.my Public Education Institutions by District
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 2 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 241,044 bytes.
+
 ## Provenance
 
 Ministry of Education Malaysia publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/education/schools_district.parquet`
 
 Catalogue description: [Number of primary, secondary, and tertiary public education institutions at national, state, and district level.](https://data.gov.my/data-catalogue/schools_district).
-
-## Status
-
-**Status:** Stale
-
-**Freshness:** File last updated 2024-09-27; observations end on 2022-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 175,959-byte file. It
-contains 2,993 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

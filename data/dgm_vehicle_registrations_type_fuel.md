@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_vehicle_registrations_type_fuel
-last_checked: 2026-08-02T17:18:27Z
-status: current
-freshness_delta: 23 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 26 days
 next_expected_update: monthly
 record_count: 10763
 date_range: 2000-01-01 to 2026-06-01
@@ -16,6 +16,22 @@ attribution: Road Transport Department Malaysia via data.gov.my
 
 # data.gov.my Monthly Vehicle Registrations by Type and Fuel
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 26 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 324,291 bytes.
+
 ## Provenance
 
 The Road Transport Department Malaysia publishes this dataset through
@@ -23,21 +39,6 @@ data.gov.my as direct CSV and Parquet downloads:
 
 - `https://storage.data.gov.my/transportation/registrations_type_fuel.csv`
 - `https://storage.data.gov.my/transportation/registrations_type_fuel.parquet`
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-07-10; observations extend through 2026-06-01
-
-**Refresh frequency:** Monthly
-
-The CSV endpoint returned HTTP 200 and its expected 324,291-byte file. It
-contains 10,763 data rows.
-
-## Last checked
-
-2026-08-02 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 

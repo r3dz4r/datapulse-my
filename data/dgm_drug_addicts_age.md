@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_drug_addicts_age
-last_checked: 2026-08-03T02:00:00Z
-status: current
-freshness_delta: 200 days since file update
+last_checked: 2026-08-05T14:31:11Z
+status: fresh
+freshness_delta: 202 days
 next_expected_update: annual
 record_count: 783
 date_range: 2015-01-01 to 2023-01-01
@@ -16,6 +16,22 @@ attribution: National Anti-Drugs Agency and Ministry of Home Affairs via data.go
 
 # data.gov.my Drug Addicts by State & Age Group
 
+## Status
+
+**Status:** Fresh
+
+**Freshness:** 202 days
+
+HTTP 200
+
+## Last checked
+
+2026-08-05 at 14:31:11 UTC.
+
+## File size
+
+The checked resource is 24,028 bytes.
+
 ## Provenance
 
 National Anti-Drugs Agency publishes this dataset through data.gov.my as direct CSV and
@@ -25,21 +41,6 @@ Parquet downloads:
 - `https://storage.data.gov.my/publicsafety/drug_addicts_age.parquet`
 
 Catalogue description: [This dataset provides yearly statistics on the number of drug addicts in Malaysia, broken down by state and age group. It offers insights into the demographic distribution of drug addiction across different regions and age categories in the country.](https://data.gov.my/data-catalogue/drug_addicts_age).
-
-## Status
-
-**Status:** Current
-
-**Freshness:** File last updated 2026-01-15; observations extend through 2023-01-01
-
-**Refresh frequency:** Annual
-
-The CSV endpoint returned HTTP 200 and its expected 24,028-byte file. It
-contains 783 data rows.
-
-## Last checked
-
-2026-08-03 by direct HTTP HEAD request and CSV download.
 
 ## Coverage
 
