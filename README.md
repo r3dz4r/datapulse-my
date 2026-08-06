@@ -2,12 +2,13 @@
 
 **Live dashboard:** https://www.data-pulse.my
 
-> **🤖 AI-agent-ready** — DataPulse MY is built for AI. An agent fetches one file
-> ([`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt)) and can use all
-> **122 official Malaysian datasets** immediately — including **+ 30 GTFS transit
-> feeds (KTMB, Prasarana, BAS.MY)** — no integration, no scraping,
-> licences declared, with an honest eight-status trust taxonomy instead of a
-> blanket green checkmark.
+> **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
+> any MCP-compatible client with one config block. Your agent gets **122 official
+> Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
+> BAS.MY)** — with declared licences and an honest eight-status trust taxonomy
+> instead of a blanket green checkmark.
+>
+> → [Connect your AI agent in 30 seconds](#ai-agent-ready--what-it-means-for-you)
 
 DataPulse MY is an open-source trust layer for Malaysian public data. It makes
 official datasets easier to assess and reuse by publishing a small manifest,
@@ -143,6 +144,10 @@ To consume the portfolio:
 [`robots.txt`](https://r3dz4r.github.io/datapulse-my/robots.txt) allows all agents;
 [`scripts/verify_agent_ready.sh`](https://github.com/r3dz4r/datapulse-my/blob/main/scripts/verify_agent_ready.sh)
 is the agent-consumer self-test.
+
+**For humans wiring their own agents:** see the [MCP server](#mcp-server-read-only)
+section below for the Claude Desktop / Cursor / Cline config block, or the full
+integration guide at [`docs/mcp-deploy.md`](./docs/mcp-deploy.md).
 
 ## Included datasets
 
