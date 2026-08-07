@@ -1,6 +1,6 @@
 ---
 dataset_id: dosm_crime_district
-last_checked: 2026-08-07T06:32:21Z
+last_checked: 2026-08-07T07:25:52Z
 status: stale
 freshness_delta: 1314 days
 next_expected_update: overdue
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-07 at 06:32:21 UTC.
+2026-08-07 at 07:25:52 UTC.
 
 ## File size
 

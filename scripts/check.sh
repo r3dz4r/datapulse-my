@@ -131,6 +131,43 @@ declare -A DATASET_CONTENT_DATE_FIELDS=(
   [exchangerates_daily_1700]=date
   [met_weather]=date
   [dosm_crime_district]=date
+  # CSV datasets with a date column — content-based staleness beats the
+  # HTTP Last-Modified header, which can mask real gaps (header newer than
+  # content, or vice-versa). Swept 2026-08-07.
+  [dosm_trade_headline]=date
+  [dosm_trade_enduse_bec]=date
+  [dosm_lfs_qtr]=date
+  [dosm_lfs_qtr_state]=date
+  [dosm_employment_sector]=date
+  [dosm_lfs_year]=date
+  [dgm_state_finance_expenditure]=date
+  [dosm_marriages_state]=date
+  [dgm_hospital_beds]=date
+  [dgm_healthcare_staff]=date
+  [dgm_infant_immunisation]=date
+  [dgm_std_state]=date
+  [dgm_mnha]=date
+  [dgm_water_consumption]=date
+  [dgm_water_production]=date
+  [dgm_water_access]=date
+  [dgm_cellular_subscribers]=date
+  [dgm_prisoners_state]=date
+  [dgm_local_authority_sex]=date
+  [dgm_parliament_sex]=date
+  [dgm_crops_state]=date
+  [dosm_marriages_state_age]=date
+  [dgm_interest_rates]=date
+  [dgm_federal_finance_qtr_revenue]=date
+  [dgm_federal_finance_qtr_oe]=date
+  [dgm_money_aggregates]=date
+  [dgm_currency_in_circulation]=date
+  [dgm_payments_systems]=date
+  [dgm_payments_instruments]=date
+  [dgm_payments_channels]=date
+  [dgm_electricity_consumption]=date
+  [dgm_electricity_supply]=date
+  [dgm_ridership_headline]=date
+  [dgm_fish_landings]=date
 )
 
 # Rolling forecast datasets: freshness = MIN date (forecast start), not MAX

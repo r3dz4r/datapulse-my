@@ -1,6 +1,6 @@
 ---
 dataset_id: pricecatcher
-last_checked: 2026-08-07T04:42:29Z
+last_checked: 2026-08-07T07:25:52Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: 2026-08-31
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-07 at 04:42:29 UTC.
+2026-08-07 at 07:25:52 UTC.
 
 ## File size
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_currency_in_circulation
-last_checked: 2026-08-05T14:31:11Z
+last_checked: 2026-08-07T07:25:52Z
 status: stale
-freshness_delta: 121 days
+freshness_delta: 187 days
 next_expected_update: overdue
 record_count: 5966
 date_range: 2000-01-01 to 2026-02-01
@@ -20,13 +20,13 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 121 days
+**Freshness:** 187 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-05 at 14:31:11 UTC.
+2026-08-07 at 07:25:52 UTC.
 
 ## File size
 

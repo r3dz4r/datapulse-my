@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_lfs_qtr_state
-last_checked: 2026-08-05T14:31:11Z
-status: aging
-freshness_delta: 198 days
+last_checked: 2026-08-07T07:25:52Z
+status: stale
+freshness_delta: 402 days
 next_expected_update: overdue
 record_count: 560
 date_range: 2017-01-01 to 2025-07-01
@@ -18,15 +18,15 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Aging
+**Status:** Stale
 
-**Freshness:** 198 days
+**Freshness:** 402 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-05 at 14:31:11 UTC.
+2026-08-07 at 07:25:52 UTC.
 
 ## File size
 

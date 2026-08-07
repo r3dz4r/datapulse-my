@@ -1,6 +1,6 @@
 ---
 dataset_id: dgm_blood_donations_state
-last_checked: 2026-08-06T14:46:29Z
+last_checked: 2026-08-07T07:25:52Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: daily
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-08-06 at 14:46:29 UTC.
+2026-08-07 at 07:25:52 UTC.
 
 ## File size
 
-The checked resource is 12,552,059 bytes.
+The checked resource is 12,553,740 bytes.
 
 ## Provenance
 
