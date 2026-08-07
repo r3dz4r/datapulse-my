@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_static_mybas_kota_bharu
-last_checked: 2026-08-05T14:31:11Z
+last_checked: 2026-08-07T07:25:52Z
 status: fresh
 freshness_delta: 0 days
 record_count: 47556
@@ -25,7 +25,7 @@ HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-08-05 at 14:31:11 UTC.
+2026-08-07 at 07:25:52 UTC.
 
 ## File size
 

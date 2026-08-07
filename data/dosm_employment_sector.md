@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_employment_sector
-last_checked: 2026-08-05T14:31:11Z
-status: aging
-freshness_delta: 616 days
+last_checked: 2026-08-07T07:25:52Z
+status: stale
+freshness_delta: 1679 days
 next_expected_update: overdue
 record_count: 198
 date_range: 2001-01-01 to 2022-01-01
@@ -18,15 +18,15 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Aging
+**Status:** Stale
 
-**Freshness:** 616 days
+**Freshness:** 1679 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-05 at 14:31:11 UTC.
+2026-08-07 at 07:25:52 UTC.
 
 ## File size
 

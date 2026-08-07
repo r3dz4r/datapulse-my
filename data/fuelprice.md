@@ -1,6 +1,6 @@
 ---
 dataset_id: fuelprice
-last_checked: 2026-08-07T04:27:06Z
+last_checked: 2026-08-07T07:25:52Z
 status: fresh
 freshness_delta: 1 days
 next_expected_update: 2026-08-06
@@ -31,7 +31,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-07 at 04:27:06 UTC.
+2026-08-07 at 07:25:52 UTC.
 
 ## File size
 

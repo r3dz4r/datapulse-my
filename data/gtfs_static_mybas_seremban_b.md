@@ -1,8 +1,8 @@
 ---
 dataset_id: gtfs_static_mybas_seremban_b
-last_checked: 2026-08-05T14:31:11Z
+last_checked: 2026-08-07T07:25:52Z
 status: fresh
-freshness_delta: 0 days
+freshness_delta: 1 days
 record_count: 24467
 content_freshness_date: 2026-08-03
 schema_version: GTFS
@@ -19,17 +19,17 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 0 days
+**Freshness:** 1 days
 
 HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-08-05 at 14:31:11 UTC.
+2026-08-07 at 07:25:52 UTC.
 
 ## File size
 
-The checked resource is 192,162 bytes.
+The checked resource is 197,012 bytes.
 
 ## Provenance
 

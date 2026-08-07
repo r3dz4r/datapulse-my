@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_realtime_mybas_alor_setar
-last_checked: 2026-08-07T06:16:35Z
+last_checked: 2026-08-07T07:25:52Z
 status: fresh
 freshness_delta: 0 days
 record_count: 8
@@ -25,11 +25,11 @@ HTTP 200; valid GTFS realtime protobuf (41 vehicles)
 
 ## Last checked
 
-2026-08-07 at 06:16:35 UTC.
+2026-08-07 at 07:25:52 UTC.
 
 ## File size
 
-The checked resource is 3,266 bytes.
+The checked resource is 3,282 bytes.
 
 ## Provenance
 
