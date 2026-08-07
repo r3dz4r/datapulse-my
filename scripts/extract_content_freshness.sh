@@ -87,5 +87,7 @@ for match in month_first.finditer(text):
         pass
 
 if dates:
-    print(max(dates).isoformat())
+    # Rolling forecast: freshness = the forecast START (min date), not the
+    # horizon (max date is always ~7 days out and would falsely read fresh).
+    print(min(dates).isoformat())
 PY

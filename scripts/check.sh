@@ -129,6 +129,20 @@ declare -A DATASET_CONTENT_DATE_FIELDS=(
   [exchangerates_daily_1130]=date
   [exchangerates_daily_1200]=date
   [exchangerates_daily_1700]=date
+  [met_weather]=date
+)
+
+# Rolling forecast datasets: freshness = MIN date (forecast start), not MAX
+# (the 7-day horizon is always in the future and would falsely read as fresh).
+declare -A DATASET_FRESHNESS_MIN_DATE_FIELDS=(
+  [met_weather]=date
+)
+
+# Rolling datasets: the first row changes on every probe as the window rolls,
+# so first_row_hash comparison would falsely flag shape_changed every time.
+# For these, only column_count (schema stability) is compared.
+declare -A DATASET_ROLLING=(
+  [met_weather]=1
 )
 
 declare -A DATASET_BROWSER_DATE_REGEX=(
@@ -156,6 +170,20 @@ extract_max_date() {
       [.[].[$f]] | map(select(. != null)) | max
     elif type == "object" then
       [.[$f]] | map(select(. != null)) | max
+    else null
+    end
+  ' "$body_path"
+}
+
+extract_min_date() {
+  local body_path="$1"
+  local date_field="$2"
+
+  jq -r --arg f "$date_field" '
+    if type == "array" then
+      [.[].[$f]] | map(select(. != null)) | min
+    elif type == "object" then
+      [.[$f]] | map(select(. != null)) | min
     else null
     end
   ' "$body_path"
@@ -727,9 +755,17 @@ check_direct_dataset() {
   content_freshness_date=""
   if [[ -n "$content_request_url" ]] && curl --location --silent --show-error --fail \
     --max-time "$curl_timeout" --output "$content_body_file" "$content_request_url" 2>/dev/null; then
-    content_freshness_date="$(extract_max_date "$content_body_file" "$date_field")"
+    if [[ -n "${DATASET_FRESHNESS_MIN_DATE_FIELDS[$dataset_id]:-}" ]]; then
+      content_freshness_date="$(extract_min_date "$content_body_file" "$date_field")"
+    else
+      content_freshness_date="$(extract_max_date "$content_body_file" "$date_field")"
+    fi
   elif [[ -n "$date_field" ]] && jq -e . "$body_file" >/dev/null 2>&1; then
-    content_freshness_date="$(extract_max_date "$body_file" "$date_field")"
+    if [[ -n "${DATASET_FRESHNESS_MIN_DATE_FIELDS[$dataset_id]:-}" ]]; then
+      content_freshness_date="$(extract_min_date "$body_file" "$date_field")"
+    else
+      content_freshness_date="$(extract_max_date "$body_file" "$date_field")"
+    fi
   fi
   if [[ -n "$content_freshness_date" ]]; then
     [[ "$content_freshness_date" != "null" ]] || content_freshness_date=""
@@ -945,6 +981,9 @@ fi
 
 checked_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 checked_epoch="$(date -u -d "$checked_at" +%s)"
+# Build a JSON array of rolling dataset ids (first_row_hash exempt from
+# shape comparison because the window rolls on every probe).
+rolling_ids_json="[$(for id in "${!DATASET_ROLLING[@]}"; do printf '%s' "\"$id\","; done | sed 's/,$//')]"
 jq -s \
   --slurpfile manifest "$manifest" \
   --slurpfile previous "$previous_file" \
@@ -952,6 +991,7 @@ jq -s \
   --arg checked_at "$checked_at" \
   --argjson checked_epoch "$checked_epoch" \
   --argjson due_mode "$due_mode" \
+  --argjson rolling_ids "$rolling_ids_json" \
   '
   def cadence_days($frequency):
     ($frequency // "" | ascii_downcase) as $frequency
@@ -994,10 +1034,12 @@ jq -s \
            | ([0, (($checked_epoch - $content_date) / 86400 | floor)] | max))
          end) as $content_freshness_age
       | ([$last_modified_age, $content_freshness_age] | map(select(. != null)) | min // null) as $staleness_days
+      | (($rolling_ids | index($probe.dataset_id)) != null) as $is_rolling
       | (((($old.column_count | type) == "number"
             and ($probe.column_count | type) == "number"
             and $old.column_count != $probe.column_count)
-          or (($old.first_row_hash | type) == "string"
+          or (($is_rolling | not)
+            and ($old.first_row_hash | type) == "string"
             and ($probe.first_row_hash | type) == "string"
             and $old.first_row_hash != $probe.first_row_hash))) as $shape_changed
       | ($entry.expected_record_count // null) as $expected_record_count
