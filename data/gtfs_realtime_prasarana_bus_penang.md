@@ -1,8 +1,8 @@
 ---
 dataset_id: gtfs_realtime_prasarana_bus_penang
-last_checked: 2026-08-06T16:31:19Z
-status: degraded
-freshness_delta: unknown
+last_checked: 2026-08-07T06:16:35Z
+status: fresh
+freshness_delta: 0 days
 record_count: 0
 content_freshness_date: 2026-08-03
 schema_version: GTFS
@@ -17,19 +17,19 @@ attribution: Prasarana Malaysia Berhad via data.gov.my GTFS API
 
 ## Status
 
-**Status:** Degraded
+**Status:** Fresh
 
-**Freshness:** unknown
+**Freshness:** 0 days
 
-Invalid GTFS realtime protobuf: No module named 'google'
+HTTP 200; valid GTFS realtime protobuf (159 vehicles)
 
 ## Last checked
 
-2026-08-06 at 16:31:19 UTC.
+2026-08-07 at 06:16:35 UTC.
 
 ## File size
 
-The checked resource is 406 bytes.
+The checked resource is 12,777 bytes.
 
 ## Provenance
 

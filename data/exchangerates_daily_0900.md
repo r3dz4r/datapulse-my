@@ -1,6 +1,6 @@
 ---
 dataset_id: exchangerates_daily_0900
-last_checked: 2026-08-06T16:01:15Z
+last_checked: 2026-08-07T05:31:03Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: 2026-08-03
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-08-06 at 16:01:15 UTC.
+2026-08-07 at 05:31:03 UTC.
 
 ## File size
 
-The checked resource is 7,937,045 bytes.
+The checked resource is 7,938,481 bytes.
 
 ## Coverage
 
