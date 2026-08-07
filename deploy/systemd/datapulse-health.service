@@ -12,9 +12,9 @@ Environment=PATH=/home/redza/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin
 WorkingDirectory=/home/redza/datapulse-my
 # Fix (2026-08-05): --autostash so a dirty worktree (uncommitted edits in
 # /home/redza/datapulse-my/) doesn't silently abort the timer before the
-# probe runs. Two-tree drift between /home/redza/datapulse-my and
-# /tmp/datapulse-my-vps is the documented root cause; this buys us
-# resilience while we have two trees.
+# probe runs. /home/redza/datapulse-my is the SINGLE canonical checkout;
+# Codex dispatches and hand-edits land here and the pull --autostash
+# absorbs them before each probe.
 ExecStartPre=/bin/bash -c 'set -e; if [[ ! -d /home/redza/datapulse-my/.git ]]; then echo "datapulse-health: repository missing: /home/redza/datapulse-my" >&2; exit 1; fi; cd /home/redza/datapulse-my; git pull --rebase --autostash'
 # Fix (2026-08-05): added probe-start and probe-finish log lines so the
 # timer is observable whether or not it produces artifacts. Both stdout
