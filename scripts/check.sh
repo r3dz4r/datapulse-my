@@ -141,8 +141,14 @@ declare -A DATASET_FRESHNESS_MIN_DATE_FIELDS=(
 # Rolling datasets: the first row changes on every probe as the window rolls,
 # so first_row_hash comparison would falsely flag shape_changed every time.
 # For these, only column_count (schema stability) is compared.
+# Includes: rolling forecast (met_weather) + mutable daily rate tables
+# (exchangerates_daily_* — FX values change every weekday, schema is stable).
 declare -A DATASET_ROLLING=(
   [met_weather]=1
+  [exchangerates_daily_0900]=1
+  [exchangerates_daily_1130]=1
+  [exchangerates_daily_1200]=1
+  [exchangerates_daily_1700]=1
 )
 
 declare -A DATASET_BROWSER_DATE_REGEX=(
