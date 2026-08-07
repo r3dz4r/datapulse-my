@@ -130,6 +130,7 @@ declare -A DATASET_CONTENT_DATE_FIELDS=(
   [exchangerates_daily_1200]=date
   [exchangerates_daily_1700]=date
   [met_weather]=date
+  [dosm_crime_district]=date
 )
 
 # Rolling forecast datasets: freshness = MIN date (forecast start), not MAX
@@ -772,6 +773,27 @@ check_direct_dataset() {
     else
       content_freshness_date="$(extract_max_date "$body_file" "$date_field")"
     fi
+  elif [[ -n "$date_field" ]]; then
+    # CSV body: jq can't parse it, so extract the date column via awk.
+    # Find the header row, locate the date column, then take max/min of the
+    # ISO dates in that column. Only YYYY-MM-DD values are considered.
+    if [[ -n "${DATASET_FRESHNESS_MIN_DATE_FIELDS[$dataset_id]:-}" ]]; then
+      content_freshness_date="$(awk -F, -v f="$date_field" '
+        NR == 1 { for (i = 1; i <= NF; i++) if ($i == f) col = i; next }
+        col && $col ~ /^[0-9]{4}-[0-9]{2}-[0-9]{2}/ {
+          if (min == "" || $col < min) min = $col
+        }
+        END { print min }
+      ' "$body_file" 2>/dev/null)"
+    else
+      content_freshness_date="$(awk -F, -v f="$date_field" '
+        NR == 1 { for (i = 1; i <= NF; i++) if ($i == f) col = i; next }
+        col && $col ~ /^[0-9]{4}-[0-9]{2}-[0-9]{2}/ {
+          if (max == "" || $col > max) max = $col
+        }
+        END { print max }
+      ' "$body_file" 2>/dev/null)"
+    fi
   fi
   if [[ -n "$content_freshness_date" ]]; then
     [[ "$content_freshness_date" != "null" ]] || content_freshness_date=""
@@ -1039,7 +1061,7 @@ jq -s \
          else ((($content_freshness_date + "T00:00:00Z") | fromdateiso8601) as $content_date
            | ([0, (($checked_epoch - $content_date) / 86400 | floor)] | max))
          end) as $content_freshness_age
-      | ([$last_modified_age, $content_freshness_age] | map(select(. != null)) | min // null) as $staleness_days
+      | ([$last_modified_age, $content_freshness_age] | map(select(. != null)) | max // null) as $staleness_days
       | (($rolling_ids | index($probe.dataset_id)) != null) as $is_rolling
       | (((($old.column_count | type) == "number"
             and ($probe.column_count | type) == "number"

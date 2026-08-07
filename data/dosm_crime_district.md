@@ -1,14 +1,14 @@
 ---
 dataset_id: dosm_crime_district
-last_checked: 2026-08-05T14:31:11Z
-status: aging
-freshness_delta: 658 days
+last_checked: 2026-08-07T06:32:21Z
+status: stale
+freshness_delta: 1314 days
 next_expected_update: overdue
 record_count: 19152
 date_range: 2016-01-01 to 2023-01-01
 schema_version: 1.0
 schema_drift: none
-known_quirks: ["annual observations use January 1 as the date", "includes Malaysia aggregate rows", "no Labuan state rows"]
+known_quirks: ["annual observations use January 1 as the date", "includes Malaysia aggregate rows", "no Labuan state rows", "upstream API not refreshed since 2024-10-16; DOSM publishes newer crime data via portal releases (latest: Crime Statistics, Malaysia, 2025 on 16 Oct 2025) but not to this open-data dataset"]
 breaking_changes: []
 licence: Creative Commons Attribution 4.0
 attribution: DOSM via OpenDOSM, data from PDRM
@@ -18,15 +18,15 @@ attribution: DOSM via OpenDOSM, data from PDRM
 
 ## Status
 
-**Status:** Aging
+**Status:** Stale
 
-**Freshness:** 658 days
+**Freshness:** 1314 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-05 at 14:31:11 UTC.
+2026-08-07 at 06:32:21 UTC.
 
 ## File size
 
@@ -85,6 +85,12 @@ and `property`) and 13 type values:
 - Aggregate rows coexist with district-level and specific-type rows.
 - The state coverage includes W.P. Kuala Lumpur and Malaysia totals but not
   Labuan.
+- **Upstream staleness:** the open-data endpoint has not been refreshed since
+  2024-10-16 — the latest year in the data is 2023. DOSM publishes newer crime
+  statistics via its portal releases (latest: *Crime Statistics, Malaysia,
+  2025*, released 16 Oct 2025, covering 2024) but has **not** mirrored them to
+  this open-data dataset. Data consumers should treat 2024+ figures as
+  available only from DOSM's portal PDFs, not from this API.
 
 ## Breaking changes
 
