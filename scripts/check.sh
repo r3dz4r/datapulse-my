@@ -173,6 +173,23 @@ extract_json_metrics() {
   # cause bash to emit "ignored null byte" warnings that otherwise leak
   # into our stdout JSON envelope.
   if ! jq -e . "$body_path" >/dev/null 2>&1; then
+    # Parquet magic-byte guard: parquet files start with "PAR1" (and end
+    # with "PAR1"). They are binary — the CSV fallback below would
+    # misinterpret random \n and comma bytes inside the compressed data
+    # as row/column counts (pricecatcher reported garbage 2491 rows /
+    # 4 cols from a binary file). Return null metrics so the caller's
+    # estimate_parquet_rows path handles it instead.
+    if head -c 4 "$body_path" 2>/dev/null | grep -q '^PAR1'; then
+      jq -c -n \
+        '{
+          record_count: null,
+          column_count: null,
+          first_row: null,
+          first_record_timestamp: null,
+          body_format: "parquet"
+        }'
+      return 0
+    fi
     local line_count column_count header_line
     line_count="$(wc -l < "$body_path" 2>/dev/null | tr -d '[:space:]')"
     header_line="$(head -n 1 "$body_path" 2>/dev/null | tr -d '\0' | head -c 4000 || true)"
