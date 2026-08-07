@@ -132,20 +132,33 @@ PY
 
 check_url_file() {
   local label="$1" url_file="$2"
-  if ! xargs -r -n1 -P12 bash -c '
-    url="$1"
-    code="$(curl --location --silent --show-error --retry 2 \
-      --connect-timeout 10 --max-time 30 --output /dev/null \
-      --write-out "%{http_code}" "$url")" || exit 1
-    case "$code" in
-      2??|3??|400|401|403|405|406|415) ;;
-      *) printf "%s %s\n" "$code" "$url" >&2; exit 1 ;;
-    esac
-  ' _ < "$url_file"; then
-    printf '%s URL validation failed\n' "$label" >&2
-    exit 1
-  fi
-  printf '%s URLs: PASS (%s checked)\n' "$label" "$(wc -l < "$url_file")"
+  local attempt=0 failures=""
+  # Retry the whole batch up to 3 times with backoff. GH Pages CDN
+  # propagation can momentarily 5xx right after a deploy; a transient
+  # 502/503 on any URL should not fail the release.
+  while (( attempt < 3 )); do
+    if failures="$(xargs -r -n1 -P12 bash -c '
+      url="$1"
+      code="$(curl --location --silent --show-error --retry 2 \
+        --connect-timeout 10 --max-time 30 --output /dev/null \
+        --write-out "%{http_code}" "$url")" || exit 1
+      case "$code" in
+        2??|3??|400|401|403|405|406|415) ;;
+        *) printf "%s %s\n" "$code" "$url" >&2; exit 1 ;;
+      esac
+    ' _ < "$url_file")"; then
+      printf '%s URLs: PASS (%s checked)\n' "$label" "$(wc -l < "$url_file")"
+      return 0
+    fi
+    attempt=$((attempt + 1))
+    if (( attempt < 3 )); then
+      printf '%s URL validation transient failure (attempt %s/3), retrying...\n' "$label" "$attempt" >&2
+      sleep 5
+    fi
+  done
+  printf '%s URL validation failed\n' "$label" >&2
+  printf '%s\n' "$failures" >&2
+  exit 1
 }
 
 check_url_file "JSON-LD/report" "$work_dir/artifact-urls.txt"
