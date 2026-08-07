@@ -2167,7 +2167,12 @@
         const source = makeLink(dataset.url, dataset.url, "source-link");
         source.setAttribute("aria-label", `Official source for ${dataset.name}`);
         const facts = make("dl", "facts");
-        addFact(facts, "Last modified", formatDate(health.last_modified));
+        addFact(facts, "Last modified",
+          health.last_modified
+            ? formatDate(health.last_modified)
+            : (health.content_freshness_date
+                ? `${formatContentFreshness(health.content_freshness_date, dataset.refresh_frequency)} (from data)`
+                : "Not reported by source"));
         addFact(facts, "Content freshness",
           formatContentFreshness(health.content_freshness_date, dataset.refresh_frequency));
         addFact(facts, "Freshness signal", health.freshness_signal_source || "none");
