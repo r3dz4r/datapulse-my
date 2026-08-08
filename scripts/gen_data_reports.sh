@@ -2,8 +2,9 @@
 set -u
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+health_file="${1:-$repo_root/health/latest.json}"
 
-python3 - "$repo_root" <<'PY'
+python3 - "$repo_root" "$health_file" <<'PY'
 import json
 import re
 import sys
@@ -11,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(sys.argv[1])
-HEALTH_PATH = ROOT / "health" / "latest.json"
+HEALTH_PATH = Path(sys.argv[2])
 DATA_DIR = ROOT / "data"
 AUTO_SECTIONS = {"Status", "Last checked", "File size"}
 
@@ -74,6 +75,16 @@ def update_frontmatter(frontmatter, row):
         "freshness_delta": freshness_delta(row),
         "file_count": row.get("file_count"),
         "file_size_bytes": health_file_size(row),
+        "last_observed": row.get("content_freshness_date"),
+        "last_modified": row.get("last_modified"),
+        "record_count": row.get("record_count"),
+        "column_count": row.get("column_count"),
+    }
+    nullable_measurements = {
+        "last_observed",
+        "last_modified",
+        "record_count",
+        "column_count",
     }
     lines = frontmatter.splitlines()
     seen = set()
@@ -82,7 +93,9 @@ def update_frontmatter(frontmatter, row):
         if not match:
             continue
         key = match.group(1)
-        if key in replacements and replacements[key] is not None:
+        if key in replacements and (
+            replacements[key] is not None or key in nullable_measurements
+        ):
             lines[index] = f"{key}: {yaml_scalar(replacements[key])}"
             seen.add(key)
 

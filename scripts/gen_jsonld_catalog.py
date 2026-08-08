@@ -92,6 +92,14 @@ def main() -> None:
         for entry in manifest["datasets"]
     ]
 
+    CATALOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    for dataset in datasets:
+        dataset_path = CATALOG_PATH.parent / f"{dataset['identifier']}.json"
+        dataset_path.write_text(
+            json.dumps(dataset, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
     catalog = {
         "@context": "https://schema.org",
         "@type": "DatasetCatalog",
@@ -115,7 +123,9 @@ def main() -> None:
         dashboard[:start] + replacement + dashboard[end:], encoding="utf-8"
     )
 
-    print(f"Generated {len(datasets)} catalog and dashboard JSON-LD dataset objects")
+    print(
+        f"Generated {len(datasets)} per-dataset, catalog, and dashboard JSON-LD objects"
+    )
 
 
 if __name__ == "__main__":

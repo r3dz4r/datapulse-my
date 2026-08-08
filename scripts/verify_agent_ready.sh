@@ -75,7 +75,7 @@ printf 'Following health link: %s\n' "$health_url"
 curl --fail --location --silent --show-error "$health_url" --output "$health_file"
 
 if ! jq -e '
-  (.datasets | type == "array" and length == 122) and
+  (.datasets | type == "array" and length == 166) and
   ([.datasets[].id] | length == (unique | length)) and
   all(.datasets[];
     (.id | type == "string" and length > 0) and
@@ -83,23 +83,23 @@ if ! jq -e '
     (.licence | type == "string" and length > 0)
   )
 ' "$manifest_file" >/dev/null; then
-  printf 'Manifest is invalid or does not contain 122 uniquely identified datasets\n' >&2
+  printf 'Manifest is invalid or does not contain 166 uniquely identified datasets\n' >&2
   exit 1
 fi
 
 if ! jq -e '
   (.checked_at | type == "string" and length > 0) and
-  (._trust_summary.datasets_total == 122) and
+  (._trust_summary.datasets_total == 166) and
   (._trust_summary.by_status | type == "object") and
-  ([._trust_summary.by_status[]] | add == 122) and
-  (.datasets | type == "array" and length == 122) and
+  ([._trust_summary.by_status[]] | add == 166) and
+  (.datasets | type == "array" and length == 166) and
   ([.datasets[].dataset_id] | length == (unique | length)) and
   all(.datasets[];
     (.dataset_id | type == "string" and length > 0) and
     (.status | type == "string" and length > 0)
   )
 ' "$health_file" >/dev/null; then
-  printf 'Health snapshot is invalid or does not contain 122 uniquely identified datasets\n' >&2
+  printf 'Health snapshot is invalid or does not contain 166 uniquely identified datasets\n' >&2
   exit 1
 fi
 
@@ -113,9 +113,9 @@ fi
 checked_at="$(jq -r '.checked_at' "$health_file")"
 fresh_count="$(jq '[.datasets[] | select(.status == "fresh")] | length' "$health_file")"
 
-printf '\nAgent-ready verification passed: 122 manifest datasets match 122 health records.\n'
+printf '\nAgent-ready verification passed: 166 manifest datasets match 166 health records.\n'
 printf 'Health snapshot checked at: %s\n' "$checked_at"
-printf 'Fresh datasets (status=fresh): %s/122\n' "$fresh_count"
+printf 'Fresh datasets (status=fresh): %s/166\n' "$fresh_count"
 jq -r --slurpfile health "$health_file" '
   ($health[0].datasets | map({key: .dataset_id, value: .status}) | from_entries) as $statuses
   | .datasets[]
@@ -123,7 +123,7 @@ jq -r --slurpfile health "$health_file" '
   | "- \(.name) [\(.id)] — \(.licence)"
 ' "$manifest_file"
 
-if (( fresh_count < 122 )); then
+if (( fresh_count < 166 )); then
   printf '\nOther dataset statuses:\n'
   jq -r --slurpfile health "$health_file" '
     ($health[0].datasets | map({key: .dataset_id, value: .status}) | from_entries) as $statuses
@@ -133,7 +133,7 @@ if (( fresh_count < 122 )); then
   ' "$manifest_file"
 fi
 
-printf '\nLicence summary (all 122 datasets):\n'
+printf '\nLicence summary (all 166 datasets):\n'
 jq -r '
   [.datasets[] | .licence]
   | group_by(.)

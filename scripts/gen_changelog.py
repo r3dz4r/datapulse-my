@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -31,7 +32,8 @@ def sorted_counts(values: list[str]) -> dict[str, int]:
 
 def main() -> None:
     manifest = read_json("datapulse.json")
-    health = read_json("health/latest.json")
+    health_path = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "health/latest.json"
+    health = json.loads(health_path.read_text(encoding="utf-8"))
     entries = manifest["datasets"]
     health_rows = health["datasets"]
     health_by_id = {row["dataset_id"]: row for row in health_rows}

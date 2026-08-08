@@ -1,10 +1,10 @@
 {
   "@context": "https://schema.org",
   "@type": "Dataset",
-  "@id": "https://data-pulse.my/data/pricecatcher",
-  "name": "PriceCatcher (Daily Grocery Prices)",
-  "description": "Malaysian public dataset: PriceCatcher (Daily Grocery Prices). Steward: KPDN. Source: data.gov.my (KPDN).",
-  "url": "https://data-pulse.my/data/pricecatcher",
+  "@id": "https://data-pulse.my/data/pricecatcher.md",
+  "name": "PriceCatcher (Grocery Prices)",
+  "description": "Malaysian public dataset: PriceCatcher (Grocery Prices). Steward: KPDN. Source: data.gov.my (KPDN).",
+  "url": "https://data-pulse.my/data/pricecatcher.md",
   "sameAs": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-07.parquet",
   "identifier": "pricecatcher",
   "keywords": [
@@ -31,9 +31,9 @@
   "distribution": [
     {
       "@type": "DataDownload",
-      "encodingFormat": "text/html",
-      "contentUrl": "https://data-pulse.my/data/pricecatcher",
-      "name": "DataPulse MY health record for PriceCatcher (Daily Grocery Prices)"
+      "encodingFormat": "text/markdown",
+      "contentUrl": "https://data-pulse.my/data/pricecatcher.md",
+      "name": "DataPulse MY health record for PriceCatcher (Grocery Prices)"
     }
   ],
   "measurementTechnique": "Continuous HTTP + content-shape probing by DataPulse MY",
@@ -42,12 +42,12 @@
     {
       "@type": "PropertyValue",
       "name": "freshness",
-      "value": "unknown"
+      "value": "fresh"
     },
     {
       "@type": "PropertyValue",
       "name": "record_count",
-      "value": null
+      "value": 5151
     }
   ]
 }

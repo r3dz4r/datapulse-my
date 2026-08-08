@@ -29,10 +29,10 @@ with GitHub Pages, then runs post-deploy invariants against the public host.
 
 ## Release invariants
 
-- The schema accepts all 122 unique manifest rows.
-- Health and manifest IDs match and status totals equal 122.
+- The schema accepts all 166 unique manifest rows.
+- Health and manifest IDs match and status totals equal 166.
 - README and `changelog.json` match `_trust_summary` and its timestamp.
-- The JSON-LD catalog/dashboard cover all 122 IDs and health-report URLs resolve.
+- The JSON-LD catalog/dashboard cover all 166 IDs and health-report URLs resolve.
 - `mcp.json` input schemas equal runtime schemas from `mcp/server.py`.
 - All absolute URLs in `llms.txt` resolve.
 
