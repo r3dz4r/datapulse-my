@@ -2,8 +2,9 @@
 
 ## Sources and generated files
 
-`datapulse.json`, `datapulse.schema.json`, probe code, and hand-maintained
-dataset reports are sources. Generation order after a health run is:
+`datapulse.json`, `datapulse.schema.json`, `health.schema.json`, probe code, and
+hand-maintained dataset reports are sources. Generation order after a health
+run is:
 
 1. `scripts/check.sh` → `health/latest.json`
 2. `scripts/gen_badges.sh` → `badges/`
@@ -29,12 +30,35 @@ with GitHub Pages, then runs post-deploy invariants against the public host.
 
 ## Release invariants
 
-- The schema accepts all 166 unique manifest rows.
-- Health and manifest IDs match and status totals equal 166.
+- The manifest and health schemas accept their respective documents.
+- Manifest IDs are unique, health and manifest IDs match, and status totals
+  equal the live health-row count.
 - README and `changelog.json` match `_trust_summary` and its timestamp.
-- The JSON-LD catalog/dashboard cover all 166 IDs and health-report URLs resolve.
+- The JSON-LD catalog/dashboard cover every manifest ID and health-report URLs
+  resolve.
 - `mcp.json` input schemas equal runtime schemas from `mcp/server.py`.
 - All absolute URLs in `llms.txt` resolve.
+
+## Pull-request CI
+
+`.github/workflows/ci.yml` runs a deterministic, read-only safety net for every
+pull request. It installs `requirements-dev.txt`, checks every shell script with
+`bash -n`, validates `datapulse.json` and `health/latest.json` against their
+schemas, runs `scripts/tests/`, verifies the repository contract, and runs the
+release invariants in local mode. The workflow has only `contents: read`
+permission, uses no secrets, and performs no upstream dataset probes.
+
+Run the same gates locally, in workflow order:
+
+```sh
+find . -type f -name '*.sh' -not -path './.git/*' -print0 | xargs -0 -n1 bash -n
+python3 -m jsonschema -i datapulse.json datapulse.schema.json
+python3 -m jsonschema -i health/latest.json health.schema.json
+python3 -m pytest -q scripts/tests/
+bash scripts/tests/test_verify_agent_ready.sh
+python3 scripts/verify_repository_contract.py
+bash scripts/verify_release_invariants.sh --local
+```
 
 Commit generated changes with their source change. Never push from a manual
 regeneration session; the operator reviews and pushes explicitly.
