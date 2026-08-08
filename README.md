@@ -85,8 +85,8 @@ RAG systems, and internal knowledge tools to consume.
 - **RAG and knowledge-base ready:** drop the envelopes into a retrieval pipeline
   to ground chatbots and AI tools in current Malaysian public data.
 
-**166 datasets, 154 under CC BY 4.0, 12 under OGL, each assessed with the honest
-eight-status trust taxonomy.**
+**Every manifest dataset declares either CC BY 4.0 or OGL licensing and is
+assessed with the honest eight-status trust taxonomy.**
 
 ### MCP server (read-only)
 
@@ -369,7 +369,7 @@ vehicle-position protobuf feeds for KTMB, Prasarana, and BAS.MY services. Static
 samples are under [`samples/gtfs-static/`](samples/gtfs-static/) and realtime
 snapshots are under [`samples/gtfs-realtime/`](samples/gtfs-realtime/).
 
-DataPulse MY currently tracks 166 datasets in total.
+DataPulse MY currently tracks the portfolio declared in `datapulse.json`.
 
 ## Current coverage
 

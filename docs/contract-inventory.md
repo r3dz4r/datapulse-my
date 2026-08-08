@@ -17,12 +17,16 @@ This inventory documents every count, every ID, and every preserved/redirected/m
 | Metric | Count | Derivation |
 |---|---|---|
 | **Public registry rows** | **166** | `jq -r '.datasets[].id' datapulse.json \| wc -l` |
-| **Manifest report files** (`data/*.md`) | 171 | `ls data/*.md \| wc -l` |
+| **Manifest report files** (`data/*.md`) | 169 | `ls data/*.md \| wc -l` |
 | Per-dataset JSON envelopes (legacy) | 92 | `ls data/json/*.json \| wc -l` |
-| Per-dataset JSON-LD files | 167 | `ls data/jsonld/*.jsonld \| wc -l` (= 166 + 1 catalog) |
+| Per-dataset JSON-LD files | 167 | `ls data/jsonld/*.json \| wc -l` (= 166 + 1 catalog) |
 | Health rows in latest snapshot | 166 | `jq -r '.datasets[].dataset_id' health/latest.json \| wc -l` |
 | Badge SVGs | 173 | `ls badges/*.svg \| wc -l` (= 166 + 6 status + 1 index) |
 | Probe samples | 182 | `ls samples/ \| wc -l` |
+
+The earlier figure of 171 reports counted the 169 `data/*.md` files plus the
+`data/json/` and `data/jsonld/` directories. Those two entries are directories,
+not orphan report IDs.
 
 ### Alignment verification (manifest vs health)
 
@@ -72,7 +76,7 @@ comm -13 <(jq -r '.datasets[].id' datapulse.json | sort) \
 | Public registry rows | 166 | 166 | ✅ matches |
 | `data/<id>.md` for each registry ID | 166 | 166 | ✅ matches |
 | `data/json/<id>.json` for each registry ID | 166 (after G2 migration) | 92 | ❌ gap: 74 missing (legacy state) |
-| `data/jsonld/<id>.jsonld` for each registry ID | 166 | 166 | ✅ matches |
+| `data/jsonld/<id>.json` for each registry ID | 166 | 166 | ✅ matches |
 | Health rows in latest snapshot | 166 | 166 | ✅ matches |
 
 ### The 74 `data/json/<id>.json` missing files
@@ -128,9 +132,9 @@ These are **engine-side provenance** (per G1 + Q4). The compatibility paths reco
 ```bash
 # Total counts
 jq -r '.datasets[].id' datapulse.json | wc -l                       # 166
-ls data/*.md | wc -l                                                # 171
+ls data/*.md | wc -l                                                # 169
 ls data/json/*.json | wc -l                                        # 92
-ls data/jsonld/*.jsonld | wc -l                                    # 167
+ls data/jsonld/*.json | wc -l                                      # 167
 jq -r '.datasets[].dataset_id' health/latest.json | wc -l          # 166
 ls badges/*.svg | wc -l                                            # 173
 ls samples/ | wc -l                                                # 182
@@ -148,7 +152,7 @@ jq -r '.datasets[].refresh_frequency' datapulse.json | sort | uniq -c | sort -rn
 # NPRA inventory
 ls data/npra_*.md
 ls data/json/npra_*.json 2>/dev/null || echo "  (correctly absent)"
-ls data/jsonld/npra_*.jsonld 2>/dev/null || echo "  (correctly absent)"
+ls data/jsonld/npra_*.json 2>/dev/null || echo "  (correctly absent)"
 
 # Orphan detection (manual IDs)
 comm -13 <(jq -r '.datasets[].id' datapulse.json | sort) \

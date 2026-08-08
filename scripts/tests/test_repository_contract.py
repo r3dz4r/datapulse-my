@@ -58,3 +58,42 @@ def test_extra_health_id_reports_the_id(repository: Path) -> None:
     errors = verify_repository_contract(repository)
 
     assert any("health/latest.json" in error and "extra IDs" in error and "gamma" in error for error in errors)
+
+
+def test_approved_json_envelope_subset_passes(repository: Path) -> None:
+    errors = verify_repository_contract(repository)
+
+    assert not [error for error in errors if "data/json" in error]
+
+
+def test_unapproved_report_orphan_fails_with_path(repository: Path) -> None:
+    (repository / "data/rogue.md").write_text("# Rogue\n", encoding="utf-8")
+
+    errors = verify_repository_contract(repository)
+
+    assert any("data/rogue.md" in error and "orphan" in error for error in errors)
+
+
+def test_portfolio_total_literal_fails_with_path_and_line(repository: Path) -> None:
+    (repository / "README.md").write_text("# Fixture\n\nWe publish 2 datasets.\n", encoding="utf-8")
+
+    errors = verify_repository_contract(repository)
+
+    assert any("README.md:3" in error and "2 datasets" in error for error in errors)
+
+
+def test_approved_literal_exclusion_passes(repository: Path) -> None:
+    readme = repository / "README.md"
+    readme.write_text("# Fixture\n\nHistorical snapshot: 2 datasets.\n", encoding="utf-8")
+    scope_path = repository / "scripts/contract-scope.json"
+    scope = json.loads(scope_path.read_text(encoding="utf-8"))
+    scope["literal_detection"]["exclusions"] = [
+        {
+            "path": "README.md",
+            "line_pattern": "^Historical snapshot: 2 datasets\\.$",
+            "reason": "Historical fixture, not a live portfolio total"
+        }
+    ]
+    write_json(scope_path, scope)
+
+    assert verify_repository_contract(repository) == []
