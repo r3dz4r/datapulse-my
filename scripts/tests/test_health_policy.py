@@ -7,9 +7,11 @@ import pytest
 from scripts.health_policy import (
     age_in_days,
     classify_status,
+    derive_trust_summary,
     due_interval,
     frequency_to_tier,
     is_due,
+    merge_due_updates,
     select_freshness_signal,
 )
 
@@ -107,3 +109,151 @@ def test_invalid_observation_dates_cannot_create_fresh(last_checked: str, reason
     }
 
     assert classify_status(row, NOW) == ("degraded", reason)
+
+
+MERGE_CASES = [
+    pytest.param(
+        [
+            {
+                "dataset_id": "alpha",
+                "status": "fresh",
+                "freshness_signal_source": "last_modified_header",
+                "last_modified": "2026-08-01T00:00:00Z",
+                "record_count": 10,
+                "staleness_days": 7,
+            },
+            {
+                "dataset_id": "beta",
+                "status": "stale",
+                "freshness_signal_source": "none",
+                "last_modified": None,
+                "record_count": None,
+                "staleness_days": 40,
+            },
+        ],
+        [],
+        ["alpha", "beta"],
+        {"fresh": 1, "stale": 1},
+        id="zero-selection",
+    ),
+    pytest.param(
+        [
+            {
+                "dataset_id": "alpha",
+                "status": "aging",
+                "freshness_signal_source": "last_modified_header",
+                "last_modified": "2026-07-01T00:00:00Z",
+                "record_count": 10,
+                "staleness_days": 38,
+            },
+            {
+                "dataset_id": "beta",
+                "status": "stale",
+                "freshness_signal_source": "none",
+                "last_modified": None,
+                "record_count": None,
+                "staleness_days": 40,
+            },
+            {
+                "dataset_id": "gamma",
+                "status": "fresh",
+                "freshness_signal_source": "content_date_parse",
+                "last_modified": "2026-08-02T00:00:00Z",
+                "record_count": 30,
+                "staleness_days": 6,
+            },
+        ],
+        [
+            {
+                "dataset_id": "beta",
+                "status": "fresh",
+                "freshness_signal_source": "content_date_parse",
+                "last_modified": "2026-08-03T00:00:00Z",
+                "record_count": 20,
+                "staleness_days": 5,
+            }
+        ],
+        ["gamma", "beta", "alpha"],
+        {"fresh": 2, "aging": 1},
+        id="partial-selection",
+    ),
+    pytest.param(
+        [
+            {"dataset_id": "alpha", "status": "stale"},
+            {"dataset_id": "beta", "status": "stale"},
+        ],
+        [
+            {
+                "dataset_id": "beta",
+                "status": "browser-dependent",
+                "freshness_signal_source": "none",
+                "last_modified": None,
+                "record_count": None,
+                "staleness_days": None,
+            },
+            {
+                "dataset_id": "alpha",
+                "status": "unreachable",
+                "freshness_signal_source": "none",
+                "last_modified": None,
+                "record_count": None,
+                "staleness_days": None,
+            },
+        ],
+        ["alpha", "beta"],
+        {"browser_dependent": 1, "unreachable": 1},
+        id="full-selection",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("prior_rows", "updates", "manifest_ids", "nonzero_statuses"),
+    MERGE_CASES,
+)
+def test_due_merge_and_summary(
+    prior_rows: list[dict[str, object]],
+    updates: list[dict[str, object]],
+    manifest_ids: list[str],
+    nonzero_statuses: dict[str, int],
+) -> None:
+    merged = merge_due_updates(prior_rows, updates, manifest_ids)
+    summary = derive_trust_summary(merged)
+
+    assert [row["dataset_id"] for row in merged] == manifest_ids
+    assert set(row["dataset_id"] for row in merged) == set(manifest_ids)
+    assert summary["datasets_total"] == len(manifest_ids)
+    assert sum(summary["by_status"].values()) == len(manifest_ids)
+    assert {key: value for key, value in summary["by_status"].items() if value} == nonzero_statuses
+    assert [row["dataset_id"] for row in summary["stale_datasets"]] == [
+        row["dataset_id"] for row in merged if row.get("status") == "stale"
+    ]
+
+
+def test_due_merge_preserves_unprobed_row_objects() -> None:
+    alpha = {"dataset_id": "alpha", "status": "fresh", "evidence": {"approved": True}}
+    beta = {"dataset_id": "beta", "status": "stale"}
+    beta_update = {"dataset_id": "beta", "status": "fresh"}
+
+    merged = merge_due_updates([alpha, beta], [beta_update], ["alpha", "beta"])
+
+    assert merged[0] is alpha
+    assert merged[1] is beta_update
+
+
+@pytest.mark.parametrize(
+    ("prior_rows", "updates", "manifest_ids", "message"),
+    [
+        ([{"dataset_id": "alpha"}], [], ["alpha", "beta"], "missing"),
+        ([{"dataset_id": "alpha"}], [{"dataset_id": "beta"}], ["alpha"], "unknown"),
+        ([{"dataset_id": "alpha"}], [{"dataset_id": "alpha"}, {"dataset_id": "alpha"}], ["alpha"], "duplicate"),
+    ],
+)
+def test_due_merge_rejects_id_loss_or_duplication(
+    prior_rows: list[dict[str, object]],
+    updates: list[dict[str, object]],
+    manifest_ids: list[str],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        merge_due_updates(prior_rows, updates, manifest_ids)
