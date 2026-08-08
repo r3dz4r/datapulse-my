@@ -4,13 +4,13 @@ set -euo pipefail
 
 url="${1:?usage: extract_content_freshness.sh <url> <dataset_id>}"
 dataset_id="${2:?usage: extract_content_freshness.sh <url> <dataset_id>}"
-
-# Per-dataset overrides (rare): some sources need a rolling forecast start
-# (e.g. met_weather) instead of the max date in the body. Add cases here.
-case "$dataset_id" in
-  met_weather) min_instead_of_max=1 ;;
-  *) min_instead_of_max=0 ;;
-esac
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+probe_policy="${DATAPULSE_PROBE_POLICY:-$script_dir/probe-policy.json}"
+extraction_mode="$(jq -er --arg id "$dataset_id" \
+  '.datasets[$id].freshness["extraction-mode"] // empty' "$probe_policy")" || {
+  printf 'Probe policy error: %s requires a freshness extraction mode\n' "$dataset_id" >&2
+  exit 1
+}
 
 content_file="${DATAPULSE_CONTENT_FILE:-}"
 temporary_file=""
@@ -22,7 +22,7 @@ if [[ -z "$content_file" ]]; then
     --output "$content_file" "$url"
 fi
 
-python3 - "$content_file" "$min_instead_of_max" <<'PY'
+python3 - "$content_file" "$extraction_mode" <<'PY'
 import json
 import os
 import re
@@ -31,8 +31,7 @@ from datetime import date
 from pathlib import Path
 
 text = Path(sys.argv[1]).read_text(encoding="utf-8", errors="replace")
-# 1 = use min date (rolling forecast like met_weather), 0 = max date
-min_instead_of_max = sys.argv[2] == "1"
+extraction_mode = sys.argv[2]
 dates: set[date] = set()
 
 try:
@@ -92,10 +91,9 @@ for match in month_first.finditer(text):
         pass
 
 if dates:
-    # Rolling forecast (met_weather): freshness = the forecast START (min date),
-    # not the horizon (max date is always ~7 days out and would falsely read fresh).
+    # Rolling forecasts use the configured start (min date), not a future horizon.
     # Default: max date in the body IS the publication-freshness signal.
-    if min_instead_of_max:
+    if extraction_mode == "min":
         print(min(dates).isoformat())
     else:
         print(max(dates).isoformat())
