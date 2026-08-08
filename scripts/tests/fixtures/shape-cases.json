@@ -1,0 +1,64 @@
+{
+  "stable_values": [
+    {
+      "name": "ordinary-value-change",
+      "left": "[{\"id\":1,\"name\":\"alpha\",\"active\":true}]",
+      "right": "[{\"id\":99,\"name\":\"beta\",\"active\":false}]"
+    }
+  ],
+  "nested_wrappers": [
+    {
+      "name": "nested-wrapper-values",
+      "left": "{\"meta\":{\"page\":1},\"data\":[{\"id\":1,\"place\":{\"code\":\"MY\"}}]}",
+      "right": "{\"meta\":{\"page\":9},\"data\":[{\"id\":2,\"place\":{\"code\":\"SG\"}}]}"
+    }
+  ],
+  "field_drift": [
+    {
+      "name": "added-field",
+      "left": "[{\"id\":1,\"name\":\"alpha\"}]",
+      "right": "[{\"id\":1,\"name\":\"alpha\",\"state\":\"Johor\"}]"
+    },
+    {
+      "name": "removed-field",
+      "left": "[{\"id\":1,\"name\":\"alpha\"}]",
+      "right": "[{\"id\":1}]"
+    },
+    {
+      "name": "renamed-field",
+      "left": "[{\"dataset_id\":1}]",
+      "right": "[{\"id\":1}]"
+    },
+    {
+      "name": "nested-field-added",
+      "left": "{\"data\":[{\"place\":{\"code\":\"MY\"}}]}",
+      "right": "{\"data\":[{\"place\":{\"code\":\"MY\",\"name\":\"Malaysia\"}}]}"
+    }
+  ],
+  "type_drift": [
+    {
+      "name": "integer-to-string",
+      "left": "[{\"count\":1}]",
+      "right": "[{\"count\":\"1\"}]"
+    },
+    {
+      "name": "integer-to-number",
+      "left": "[{\"count\":1}]",
+      "right": "[{\"count\":1.5}]"
+    }
+  ],
+  "quoted_csv_headers": [
+    {
+      "name": "quoted-header-values-change",
+      "left": "id,\"full,name\",state\n1,\"Alpha, One\",Johor\n",
+      "right": "id,\"full,name\",state\n2,\"Beta, Two\",Sabah\n"
+    }
+  ],
+  "rolling_feeds": [
+    {
+      "name": "rolling-window-values",
+      "left": "[{\"date\":\"2026-08-08\",\"temperature\":31.5},{\"date\":\"2026-08-09\",\"temperature\":32.0}]",
+      "right": "[{\"date\":\"2026-08-09\",\"temperature\":29.0},{\"date\":\"2026-08-10\",\"temperature\":30.5}]"
+    }
+  ]
+}

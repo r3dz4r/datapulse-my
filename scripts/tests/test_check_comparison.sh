@@ -66,6 +66,70 @@ jq -e '
   and .differences[0].fields.status_reason.new == "freshness-within-window"
 ' "$fixture_dir/comparison-report.json" >/dev/null
 
+mkdir "$fixture_dir/bin" "$fixture_dir/full"
+cat > "$fixture_dir/bin/curl" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+output_path=""
+headers_path=""
+while (( $# > 0 )); do
+  case "$1" in
+    --output)
+      output_path="$2"
+      shift 2
+      ;;
+    --dump-header)
+      headers_path="$2"
+      shift 2
+      ;;
+    --max-time|--write-out)
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+[[ -z "$output_path" || "$output_path" == "/dev/null" ]] \
+  || printf '[{"id":1,"name":"alpha"}]\n' > "$output_path"
+[[ -z "$headers_path" ]] \
+  || printf 'HTTP/1.1 200 OK\r\nLast-Modified: Sat, 08 Aug 2026 12:00:00 GMT\r\n\r\n' > "$headers_path"
+printf '200'
+SH
+chmod +x "$fixture_dir/bin/curl"
+cat > "$fixture_dir/full/manifest.json" <<'JSON'
+{
+  "datasets": [
+    {
+      "id": "captured-json",
+      "url": "https://example.invalid/captured.json",
+      "refresh_frequency": "daily",
+      "namespace": "test"
+    }
+  ]
+}
+JSON
+(
+  cd "$fixture_dir/full"
+  PATH="$fixture_dir/bin:$PATH" bash "$repo_root/scripts/check.sh" manifest.json
+) > "$fixture_dir/full-output.json"
+jq -e '
+  (.datasets | length) == 1
+  and (.datasets[0].first_row_hash | startswith("shape-v1:"))
+  and .datasets[0].content_shape_changed == false
+' "$fixture_dir/full-output.json" >/dev/null
+
+mkdir "$fixture_dir/full-comparison"
+cp "$fixture_dir/full/manifest.json" "$fixture_dir/full-comparison/manifest.json"
+(
+  cd "$fixture_dir/full-comparison"
+  PATH="$fixture_dir/bin:$PATH" bash "$repo_root/scripts/check.sh" \
+    --compare-health manifest.json
+) > "$fixture_dir/full-comparison-output.json" \
+  2> "$fixture_dir/full-comparison-report.json"
+jq -e '.datasets_compared == 1 and (.differences | length) == 1' \
+  "$fixture_dir/full-comparison-report.json" >/dev/null
+
 cat > "$fixture_dir/bad-manifest.json" <<'JSON'
 {"datasets":[{"id":"captured-daily","refresh_frequency":"fortnightly"}]}
 JSON

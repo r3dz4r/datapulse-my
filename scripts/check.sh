@@ -714,7 +714,7 @@ check_head_dataset() {
   local dataset_id="$1"
   local source_url="$2"
   local request_url catalogue_id http_status status content_length last_modified details
-  local api_http_status metrics record_count column_count first_row first_row_hash
+  local api_http_status metrics record_count column_count first_row first_row_hash body_format
   local first_record_timestamp estimated_record_count record_count_estimated incomplete
 
   : > "$headers_file"
@@ -767,9 +767,12 @@ check_head_dataset() {
     record_count="$(jq '.record_count' <<< "$metrics")"
     column_count="$(jq '.column_count' <<< "$metrics")"
     first_row="$(jq -cS '.first_row' <<< "$metrics")"
+    body_format="$(jq -r '.body_format' <<< "$metrics")"
     first_record_timestamp="$(jq -r '.first_record_timestamp // empty' <<< "$metrics")"
     if [[ "$first_row" != "null" ]]; then
-      first_row_hash="$(printf '%s' "$first_row" | sha256sum | awk '{print $1}')"
+      first_row_hash="$(printf '%s' "$first_row" | python3 "$script_dir/shape_fingerprint.py" --json)"
+    elif [[ "$body_format" == "csv" ]]; then
+      first_row_hash="$(python3 "$script_dir/shape_fingerprint.py" --csv-headers < "$body_file")"
     fi
     if [[ "$record_count" =~ ^[0-9]+$ ]] && (( record_count >= 10000 )); then
       incomplete="true"
@@ -848,7 +851,7 @@ check_weather_dataset() {
   content_length="$(wc -c < "$body_file" | tr -d '[:space:]')"
   record_count="$(jq 'length' "$body_file")"
   column_count="$(jq 'if length > 0 and (.[0] | type) == "object" then (.[0] | keys | length) else null end' "$body_file")"
-  first_row_hash="$(jq -cS '.[0] // null' "$body_file" | sha256sum | awk '{print $1}')"
+  first_row_hash="$(jq -cS '.[0] // null' "$body_file" | python3 "$script_dir/shape_fingerprint.py" --json)"
   locations="$(jq '[.[].location.location_id] | unique | length' "$body_file")"
   date_start="$(jq -r '[.[].date] | min // empty' "$body_file")"
   date_end="$(jq -r '[.[].date] | max // empty' "$body_file")"
@@ -888,7 +891,7 @@ check_direct_dataset() {
   local request_url="$source_url"
   local http_status content_length first_record_timestamp details last_modified
   local content_freshness_date content_request_url date_field
-  local metrics record_count column_count first_row_hash first_row
+  local metrics record_count column_count first_row_hash first_row body_format
   local estimated_record_count record_count_estimated incomplete
   local probe_status probe_message registration_metrics
   local registration_format_compatible legacy_registration_count
@@ -942,6 +945,7 @@ check_direct_dataset() {
   record_count="$(jq '.record_count' <<< "$metrics")"
   column_count="$(jq '.column_count' <<< "$metrics")"
   first_row="$(jq -cS '.first_row' <<< "$metrics")"
+  body_format="$(jq -r '.body_format' <<< "$metrics")"
   estimated_record_count="null"
   record_count_estimated="false"
   incomplete="false"
@@ -960,7 +964,9 @@ check_direct_dataset() {
     fi
   fi
   if [[ "$first_row" != "null" ]]; then
-    first_row_hash="$(printf '%s' "$first_row" | sha256sum | awk '{print $1}')"
+    first_row_hash="$(printf '%s' "$first_row" | python3 "$script_dir/shape_fingerprint.py" --json)"
+  elif [[ "$body_format" == "csv" ]]; then
+    first_row_hash="$(python3 "$script_dir/shape_fingerprint.py" --csv-headers < "$body_file")"
   else
     first_row_hash=""
   fi
@@ -1318,9 +1324,6 @@ fi
 
 checked_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 checked_epoch="$(date -u -d "$checked_at" +%s)"
-# Build a JSON array of rolling dataset ids (first_row_hash exempt from
-# shape comparison because the window rolls on every probe).
-rolling_ids_json="[$(for id in "${!DATASET_ROLLING[@]}"; do printf '%s' "\"$id\","; done | sed 's/,$//')]"
 build_health_snapshot() {
   jq -s \
   --slurpfile manifest "$manifest" \
@@ -1329,7 +1332,6 @@ build_health_snapshot() {
   --arg checked_at "$checked_at" \
   --argjson checked_epoch "$checked_epoch" \
   --argjson due_mode "$due_mode" \
-  --argjson rolling_ids "$rolling_ids_json" \
   '
   def cadence_days($frequency):
     ($frequency // "" | ascii_downcase) as $frequency
@@ -1372,14 +1374,14 @@ build_health_snapshot() {
            | ([0, (($checked_epoch - $content_date) / 86400 | floor)] | max))
          end) as $content_freshness_age
       | ([$last_modified_age, $content_freshness_age] | map(select(. != null)) | max // null) as $staleness_days
-      | (($rolling_ids | index($probe.dataset_id)) != null) as $is_rolling
-      | (((($old.column_count | type) == "number"
+      | ((($old.column_count | type) == "number"
             and ($probe.column_count | type) == "number"
             and $old.column_count != $probe.column_count)
-          or (($is_rolling | not)
-            and ($old.first_row_hash | type) == "string"
+          or (($old.first_row_hash | type) == "string"
             and ($probe.first_row_hash | type) == "string"
-            and $old.first_row_hash != $probe.first_row_hash))) as $shape_changed
+            and ($old.first_row_hash | startswith("shape-v1:"))
+            and ($probe.first_row_hash | startswith("shape-v1:"))
+            and $old.first_row_hash != $probe.first_row_hash)) as $shape_changed
       | ($entry.expected_record_count // null) as $expected_record_count
       | (($probe.incomplete // false)
           or (($expected_record_count | type) == "number"
