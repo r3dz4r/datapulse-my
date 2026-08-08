@@ -7,11 +7,13 @@ import re
 import json
 from asyncio import gather
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import httpx
 from fastmcp import FastMCP
 from pydantic import Field
+from fastmcp.tools import FunctionTool
 from typing_extensions import Annotated
 
 
@@ -32,8 +34,33 @@ LICENCE_URLS = {
     OGL_MY: "https://www.data.gov.my/pages/terms-of-use",
 }
 
+
+def _manifest_dataset_count(manifest_path: Path | None = None) -> int:
+    """Read the published dataset total for use in agent-facing metadata."""
+    if manifest_path is None:
+        manifest_path = Path(__file__).resolve().parents[1] / "datapulse.json"
+
+    if manifest_path.is_file():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    else:
+        response = httpx.get(
+            f"{DATA_BASE}/datapulse.json",
+            timeout=REQUEST_TIMEOUT_SECONDS,
+            follow_redirects=True,
+        )
+        response.raise_for_status()
+        manifest = response.json()
+
+    datasets = manifest.get("datasets")
+    if not isinstance(datasets, list):
+        raise ValueError("datapulse.json must contain a datasets array")
+    return len(datasets)
+
+
+DATASET_COUNT = _manifest_dataset_count()
 SEARCH_DESCRIPTION = (
-    "Search DataPulse MY's 166 Malaysian public datasets by natural-language query. "
+    f"Search DataPulse MY's {DATASET_COUNT} Malaysian public datasets by "
+    "natural-language query. "
     "Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or "
     "source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked "
     "matches: id, title, source, licence, status, score. Use when an agent needs to "
@@ -114,10 +141,40 @@ def _search_score(entry: dict[str, Any], query: str) -> int:
 
 @mcp.tool(description=SEARCH_DESCRIPTION)
 async def search_datasets(
-    query: Annotated[str, Field(min_length=1)],
-    licence: str | None = None,
-    source: str | None = None,
-    limit: Annotated[int, Field(ge=1, le=50)] = 10,
+    query: Annotated[
+        str,
+        Field(
+            min_length=1,
+            description=(
+                "Free-text search terms; natural language is allowed, e.g. "
+                "'inflation cpi'."
+            ),
+        ),
+    ],
+    licence: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Optional exact licence name or supported alias, e.g. 'CC BY 4.0'."
+            )
+        ),
+    ] = None,
+    source: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Optional case-insensitive source-name substring, e.g. 'OpenDOSM'."
+            )
+        ),
+    ] = None,
+    limit: Annotated[
+        int,
+        Field(
+            ge=1,
+            le=50,
+            description="Maximum ranked matches to return; integer from 1 to 50, e.g. 10.",
+        ),
+    ] = 10,
 ) -> list[dict[str, Any]]:
     """Rank live manifest matches.
 
@@ -162,7 +219,18 @@ async def search_datasets(
 
 
 @mcp.tool(description=GET_DATASET_DESCRIPTION)
-async def get_dataset(dataset_id: str) -> dict[str, Any]:
+async def get_dataset(
+    dataset_id: Annotated[
+        str,
+        Field(
+            min_length=1,
+            description=(
+                "Canonical dataset identifier, e.g. 'dosm_cpi_state'. See the "
+                "registry catalogue for valid IDs."
+            ),
+        ),
+    ],
+) -> dict[str, Any]:
     """Merge one exact manifest entry with its current health record."""
     manifest, health = await _load_catalogue()
     entry = next(
@@ -228,9 +296,17 @@ def _snapshot_age_seconds(checked_at: str | None) -> int | None:
     return max(0, int((datetime.now(timezone.utc) - checked).total_seconds()))
 
 
-@mcp.tool(description=FIND_STALE_DESCRIPTION)
 async def find_stale(
-    max_age_hours: Annotated[int, Field(ge=0)] = 24,
+    max_age_hours: Annotated[
+        int,
+        Field(
+            ge=0,
+            description=(
+                "Maximum acceptable age of the latest health check in whole hours; "
+                "non-negative integer, e.g. 72."
+            ),
+        ),
+    ] = 24,
 ) -> list[dict[str, Any]]:
     """Return datasets with explicit freshness or schema-validity risks."""
     manifest, health = await _load_catalogue()
@@ -273,9 +349,27 @@ async def find_stale(
     return stale
 
 
+_find_stale_tool = FunctionTool.from_function(
+    find_stale, description=FIND_STALE_DESCRIPTION
+)
+_find_stale_tool.parameters.setdefault("required", [])
+mcp.add_tool(_find_stale_tool)
+
+
 @mcp.tool(description=GET_PROVENANCE_DESCRIPTION)
 async def get_provenance(
-    dataset_ids: Annotated[list[str], Field(min_length=1, max_length=50)],
+    dataset_ids: Annotated[
+        list[str],
+        Field(
+            min_length=1,
+            max_length=50,
+            description=(
+                "JSON array of 1 to 50 canonical dataset IDs, e.g. "
+                "['fuelprice', 'pricecatcher']."
+            ),
+            examples=[["fuelprice", "pricecatcher"]],
+        ),
+    ],
 ) -> list[dict[str, Any]]:
     """Build provenance from manifest and health fields without inference."""
     manifest, health = await _load_catalogue()
@@ -306,7 +400,18 @@ async def get_provenance(
 
 
 @mcp.tool(description=FIND_BY_LICENCE_DESCRIPTION)
-async def find_by_licence(licence: str) -> dict[str, Any]:
+async def find_by_licence(
+    licence: Annotated[
+        str,
+        Field(
+            min_length=1,
+            description=(
+                "Exact licence name or supported alias, e.g. "
+                "'Creative Commons Attribution 4.0'."
+            ),
+        ),
+    ],
+) -> dict[str, Any]:
     """Return a canonical licence label, count, and dataset summaries."""
     manifest, health = await _load_catalogue()
     canonical_licence = _canonical_licence(licence)

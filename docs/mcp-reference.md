@@ -21,6 +21,7 @@ Input schema:
   "additionalProperties": false,
   "properties": {
     "query": {
+      "description": "Free-text search terms; natural language is allowed, e.g. 'inflation cpi'.",
       "minLength": 1,
       "type": "string"
     },
@@ -33,7 +34,8 @@ Input schema:
           "type": "null"
         }
       ],
-      "default": null
+      "default": null,
+      "description": "Optional exact licence name or supported alias, e.g. 'CC BY 4.0'."
     },
     "source": {
       "anyOf": [
@@ -44,10 +46,12 @@ Input schema:
           "type": "null"
         }
       ],
-      "default": null
+      "default": null,
+      "description": "Optional case-insensitive source-name substring, e.g. 'OpenDOSM'."
     },
     "limit": {
       "default": 10,
+      "description": "Maximum ranked matches to return; integer from 1 to 50, e.g. 10.",
       "maximum": 50,
       "minimum": 1,
       "type": "integer"
@@ -71,6 +75,8 @@ Input schema:
   "additionalProperties": false,
   "properties": {
     "dataset_id": {
+      "description": "Canonical dataset identifier, e.g. 'dosm_cpi_state'. See the registry catalogue for valid IDs.",
+      "minLength": 1,
       "type": "string"
     }
   },
@@ -93,11 +99,13 @@ Input schema:
   "properties": {
     "max_age_hours": {
       "default": 24,
+      "description": "Maximum acceptable age of the latest health check in whole hours; non-negative integer, e.g. 72.",
       "minimum": 0,
       "type": "integer"
     }
   },
-  "type": "object"
+  "type": "object",
+  "required": []
 }
 ```
 
@@ -112,6 +120,13 @@ Input schema:
   "additionalProperties": false,
   "properties": {
     "dataset_ids": {
+      "description": "JSON array of 1 to 50 canonical dataset IDs, e.g. ['fuelprice', 'pricecatcher'].",
+      "examples": [
+        [
+          "fuelprice",
+          "pricecatcher"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -138,6 +153,8 @@ Input schema:
   "additionalProperties": false,
   "properties": {
     "licence": {
+      "description": "Exact licence name or supported alias, e.g. 'Creative Commons Attribution 4.0'.",
+      "minLength": 1,
       "type": "string"
     }
   },

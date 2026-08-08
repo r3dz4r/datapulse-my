@@ -21,6 +21,15 @@ import server  # noqa: E402
 pytestmark = pytest.mark.anyio
 
 
+TOOL_PARAMETERS = {
+    "search_datasets": {"query", "licence", "source", "limit"},
+    "get_dataset": {"dataset_id"},
+    "find_stale": {"max_age_hours"},
+    "get_provenance": {"dataset_ids"},
+    "find_by_licence": {"licence"},
+}
+
+
 @pytest.fixture(scope="module")
 def anyio_backend() -> str:
     return "asyncio"
@@ -51,6 +60,59 @@ def local_catalogue(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
     monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
     monkeypatch.setattr(server, "_load_health", fake_load_health)
+
+
+async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> None:
+    manifest, _ = live_data
+    tools = {tool.name: tool for tool in await server.mcp.list_tools()}
+
+    assert set(tools) == set(TOOL_PARAMETERS)
+    for tool_name, parameter_names in TOOL_PARAMETERS.items():
+        schema = tools[tool_name].parameters
+        assert "required" in schema
+        assert set(schema["properties"]) == parameter_names
+        for parameter in schema["properties"].values():
+            assert parameter["description"]
+            assert "e.g." in parameter["description"]
+
+    assert tools["find_stale"].parameters["required"] == []
+    assert tools["get_provenance"].parameters["properties"]["dataset_ids"][
+        "examples"
+    ] == [["fuelprice", "pricecatcher"]]
+    assert f"{len(manifest['datasets'])} Malaysian public datasets" in tools[
+        "search_datasets"
+    ].description
+
+
+def test_dataset_count_is_derived_from_manifest(tmp_path: Path) -> None:
+    manifest_path = tmp_path / "datapulse.json"
+    manifest_path.write_text(
+        json.dumps({"datasets": [{"id": "one"}, {"id": "two"}]}),
+        encoding="utf-8",
+    )
+
+    assert server._manifest_dataset_count(manifest_path) == 2
+
+
+def test_dataset_count_follows_published_manifest_redirect(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    class RedirectedManifestResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {"datasets": [{"id": "redirected"}]}
+
+    def fake_get(url: str, *, timeout: float, follow_redirects: bool):
+        assert url == f"{server.DATA_BASE}/datapulse.json"
+        assert timeout == server.REQUEST_TIMEOUT_SECONDS
+        assert follow_redirects is True
+        return RedirectedManifestResponse()
+
+    monkeypatch.setattr(server.httpx, "get", fake_get)
+
+    assert server._manifest_dataset_count(tmp_path / "missing.json") == 1
 
 
 async def test_search_datasets_returns_ranked_live_results() -> None:
