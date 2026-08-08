@@ -95,6 +95,7 @@ jobs:
 
       - name: Inject embedded data
         run: |
+          python3 scripts/gen_dashboard_filters.py
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -104,12 +105,13 @@ jobs:
           try:
               manifest = json.dumps(json.load(open("datapulse.json", encoding="utf-8")))
               health = json.dumps(json.load(open("health/latest.json", encoding="utf-8")))
+              dashboard_filters = json.dumps(json.load(open("docs/.dashboard_filters.json", encoding="utf-8")))
           except FileNotFoundError:
-              manifest, health = "null", "null"
+              manifest, health, dashboard_filters = "null", "null", "null"
 
           data = (
               '<script id="embedded-data">\n'
-              f'    window.__DATAPULSE_DATA__ = {{health: {health}, manifest: {manifest}}};\n'
+              f'    window.__DATAPULSE_DATA__ = {{health: {health}, manifest: {manifest}, dashboardFilters: {dashboard_filters}}};\n'
               '  </script>'
           )
           marker = '<script id="embedded-data">'
