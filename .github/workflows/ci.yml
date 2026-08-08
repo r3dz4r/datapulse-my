@@ -46,3 +46,6 @@ jobs:
 
       - name: Verify local release invariants
         run: bash scripts/verify_release_invariants.sh --local
+
+      - name: Lint current documentation facts
+        run: python3 scripts/fact_lint.py
