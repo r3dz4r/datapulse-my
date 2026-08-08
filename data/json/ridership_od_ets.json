@@ -1,0 +1,65 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "ridership_od_ets",
+  "status": "fresh",
+  "last_checked": "2026-08-08T05:49:42Z",
+  "freshness_days": 1,
+  "next_expected_update": null,
+  "refresh_frequency": "daily",
+  "record_count": 507504,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "time",
+      "type": "string"
+    },
+    {
+      "name": "origin",
+      "type": "string"
+    },
+    {
+      "name": "destination",
+      "type": "string"
+    },
+    {
+      "name": "ridership",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 507504 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 5 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "The serving filename rotates by UTC year; the health probe resolves it at runtime."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/transportation/ktmb/ets_2026.csv",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "data.gov.my (transport)"
+}

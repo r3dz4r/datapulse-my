@@ -1,0 +1,161 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "exchangerates",
+  "status": "stale",
+  "last_checked": "2026-08-08T05:49:42Z",
+  "freshness_days": 160,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 1755,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "indicator",
+      "type": "string"
+    },
+    {
+      "name": "USD",
+      "type": "number"
+    },
+    {
+      "name": "EUR",
+      "type": "string"
+    },
+    {
+      "name": "JPY",
+      "type": "number"
+    },
+    {
+      "name": "GBP",
+      "type": "number"
+    },
+    {
+      "name": "SGD",
+      "type": "number"
+    },
+    {
+      "name": "AUD",
+      "type": "number"
+    },
+    {
+      "name": "CAD",
+      "type": "number"
+    },
+    {
+      "name": "CNY",
+      "type": "string"
+    },
+    {
+      "name": "CHF",
+      "type": "number"
+    },
+    {
+      "name": "THB",
+      "type": "number"
+    },
+    {
+      "name": "IDR",
+      "type": "number"
+    },
+    {
+      "name": "VND",
+      "type": "string"
+    },
+    {
+      "name": "KHR",
+      "type": "string"
+    },
+    {
+      "name": "MMK",
+      "type": "string"
+    },
+    {
+      "name": "PHP",
+      "type": "number"
+    },
+    {
+      "name": "BND",
+      "type": "string"
+    },
+    {
+      "name": "KRW",
+      "type": "number"
+    },
+    {
+      "name": "HKD",
+      "type": "number"
+    },
+    {
+      "name": "TWD",
+      "type": "number"
+    },
+    {
+      "name": "INR",
+      "type": "string"
+    },
+    {
+      "name": "PKR",
+      "type": "string"
+    },
+    {
+      "name": "NPR",
+      "type": "string"
+    },
+    {
+      "name": "SAR",
+      "type": "string"
+    },
+    {
+      "name": "AED",
+      "type": "string"
+    },
+    {
+      "name": "EGP",
+      "type": "string"
+    },
+    {
+      "name": "NZD",
+      "type": "string"
+    },
+    {
+      "name": "XDR",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 1755 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 29 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "No additional source-specific quirks were established during reachability verification."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/finsector/exr/monthly.csv",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "data.gov.my (economy)"
+}

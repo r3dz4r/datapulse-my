@@ -1,0 +1,105 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "covid_deaths_linelist",
+  "status": "aging",
+  "last_checked": "2026-08-08T05:49:42Z",
+  "freshness_days": 812,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 37351,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "date_announced",
+      "type": "date"
+    },
+    {
+      "name": "date_positive",
+      "type": "date"
+    },
+    {
+      "name": "date_dose1",
+      "type": "string"
+    },
+    {
+      "name": "date_dose2",
+      "type": "string"
+    },
+    {
+      "name": "date_dose3",
+      "type": "string"
+    },
+    {
+      "name": "brand1",
+      "type": "string"
+    },
+    {
+      "name": "brand2",
+      "type": "string"
+    },
+    {
+      "name": "brand3",
+      "type": "string"
+    },
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "age",
+      "type": "integer"
+    },
+    {
+      "name": "male",
+      "type": "integer"
+    },
+    {
+      "name": "bid",
+      "type": "integer"
+    },
+    {
+      "name": "malaysian",
+      "type": "integer"
+    },
+    {
+      "name": "comorb",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 37351 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as aging"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 15 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "No additional source-specific quirks were established during reachability verification."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/healthcare/covid_deaths_linelist.csv",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "data.gov.my (healthcare)"
+}
