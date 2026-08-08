@@ -46,6 +46,9 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -163,20 +166,25 @@ jobs:
           [[ "$(git rev-parse HEAD)" == "$DEPLOYED_SHA" ]] || \
             fail "checked-out SHA does not match deployed SHA $DEPLOYED_SHA"
 
+          expected_dataset_count="$(
+            jq -er '.datasets | select(type == "array" and length > 0) | length' \
+              health/latest.json
+          )" || fail "checked-out health/latest.json has no dataset array"
+
           sleep 30
           smoke_dir="$(mktemp -d)"
           trap 'rm -rf "$smoke_dir"' EXIT
 
           fetch "dashboard" "https://data-pulse.my/" "$smoke_dir/index.html"
-          grep -q "122" "$smoke_dir/index.html" || \
-            fail "dashboard does not mention 122 datasets"
+          grep -Fq "$expected_dataset_count" "$smoke_dir/index.html" || \
+            fail "dashboard does not mention $expected_dataset_count datasets"
           card_count="$(grep -o '"health_report":' "$smoke_dir/index.html" | wc -l || true)"
-          [[ "$card_count" -eq 122 ]] || \
-            fail "dashboard embeds $card_count dataset cards; expected 122"
+          [[ "$card_count" -eq "$expected_dataset_count" ]] || \
+            fail "dashboard embeds $card_count dataset cards; expected $expected_dataset_count"
 
           fetch "llms.txt" "https://data-pulse.my/llms.txt" "$smoke_dir/llms.txt"
-          grep -Fq "122 datasets" "$smoke_dir/llms.txt" || \
-            fail "llms.txt does not contain '122 datasets'"
+          grep -Fq "$expected_dataset_count datasets" "$smoke_dir/llms.txt" || \
+            fail "llms.txt does not contain '$expected_dataset_count datasets'"
           grep -Fq "MCP" "$smoke_dir/llms.txt" || \
             fail "llms.txt does not mention MCP"
           for tool in search_datasets get_dataset find_stale get_provenance find_by_licence; do
@@ -185,9 +193,10 @@ jobs:
           done
 
           fetch "JSON-LD catalog" "https://data-pulse.my/data/jsonld/catalog.json" "$smoke_dir/catalog.json"
-          jq -e '.dataset | type == "array" and length == 122' \
+          jq -e --argjson expected "$expected_dataset_count" \
+            '.dataset | type == "array" and length == $expected' \
             "$smoke_dir/catalog.json" >/dev/null || \
-            fail "JSON-LD catalog is invalid or does not contain 122 datasets"
+            fail "JSON-LD catalog is invalid or does not contain $expected_dataset_count datasets"
 
           fetch "MCP advertisement" "https://data-pulse.my/mcp.json" "$smoke_dir/mcp.json"
           jq -e '
@@ -202,9 +211,10 @@ jobs:
             fail "mcp.json is invalid or does not advertise the expected 5 tools"
 
           fetch "health snapshot" "https://data-pulse.my/health/latest.json" "$smoke_dir/health.json"
-          jq -e '.datasets | type == "array" and length == 122' \
+          jq -e --argjson expected "$expected_dataset_count" \
+            '.datasets | type == "array" and length == $expected' \
             "$smoke_dir/health.json" >/dev/null || \
-            fail "health/latest.json is invalid or does not contain 122 datasets"
+            fail "health/latest.json is invalid or does not contain $expected_dataset_count datasets"
 
           bash scripts/verify_agent_ready.sh || \
             fail "verify_agent_ready.sh rejected the deployed agent surfaces"

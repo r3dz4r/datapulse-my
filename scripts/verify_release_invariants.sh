@@ -48,6 +48,11 @@ fetch changelog.json changelog.json
 fetch mcp.json mcp.json
 fetch llms.txt llms.txt
 
+dataset_count="$(
+  jq -er '.datasets | select(type == "array" and length > 0) | length' \
+    "$work_dir/health.json"
+)"
+
 python3 -m jsonschema -i "$work_dir/manifest.json" datapulse.schema.json
 
 python3 - "$work_dir" "$canonical_base_url" <<'PY'
@@ -67,9 +72,11 @@ changelog = json.loads((work / "changelog.json").read_text())
 manifest_ids = [row["id"] for row in manifest["datasets"]]
 health_ids = [row["dataset_id"] for row in health["datasets"]]
 catalog_ids = [row["identifier"] for row in catalog["dataset"]]
-assert len(manifest_ids) == len(set(manifest_ids)) == 166
-assert len(health_ids) == len(set(health_ids)) == 166
-assert len(catalog_ids) == len(set(catalog_ids)) == 166
+expected_count = len(health_ids)
+assert expected_count > 0
+assert len(manifest_ids) == len(set(manifest_ids)) == expected_count
+assert len(health_ids) == len(set(health_ids)) == expected_count
+assert len(catalog_ids) == len(set(catalog_ids)) == expected_count
 assert set(manifest_ids) == set(health_ids) == set(catalog_ids)
 
 missing_reports = [
@@ -94,7 +101,7 @@ actual_statuses = Counter(row["status"] for row in health["datasets"])
 summary_statuses = {
     key.replace("_", "-"): value for key, value in summary["by_status"].items()
 }
-assert sum(summary_statuses.values()) == 166
+assert sum(summary_statuses.values()) == expected_count
 assert summary_statuses == {status: actual_statuses[status] for status in summary_statuses}
 
 readme = Path("README.md").read_text(encoding="utf-8")
@@ -111,10 +118,10 @@ assert readme_statuses == {
 
 assert changelog["generated_at"] == health["checked_at"]
 assert changelog["health"]["checked_at"] == health["checked_at"]
-assert changelog["manifest"]["datasets_total"] == 166
-assert changelog["health"]["datasets_total"] == 166
+assert changelog["manifest"]["datasets_total"] == expected_count
+assert changelog["health"]["datasets_total"] == expected_count
 assert changelog["health"]["by_status"] == summary_statuses
-assert len(changelog["datasets"]) == 166
+assert len(changelog["datasets"]) == expected_count
 
 with (work / "artifact-urls.txt").open("w", encoding="utf-8") as output:
     for dataset_id in manifest_ids:
@@ -129,7 +136,7 @@ if not urls:
 with (work / "llms-urls.txt").open("w", encoding="utf-8") as output:
     output.write("\n".join(url.rstrip(".,;:") for url in urls) + "\n")
 
-print("release metadata assertions: PASS (166 datasets)")
+print(f"release metadata assertions: PASS ({expected_count} datasets)")
 PY
 
 PYTHONPATH=mcp python3 - "$work_dir/mcp.json" <<'PY'
@@ -186,7 +193,7 @@ check_url_file() {
 }
 
 if $local_mode; then
-  printf 'Local JSON-LD/report files: PASS (166 checked)\n'
+  printf 'Local JSON-LD/report files: PASS (%s checked)\n' "$dataset_count"
   printf 'Local llms.txt format: PASS\n'
 else
   check_url_file "JSON-LD/report" "$work_dir/artifact-urls.txt"
