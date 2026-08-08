@@ -2539,14 +2539,7 @@
         <p class="section-note">Live from the latest committed health envelope</p>
       </div>
       <nav class="category-filters" aria-label="Filter datasets by category">
-        <button class="category-filter" type="button" data-namespace="all" aria-pressed="true">All (166)</button>
-        <button class="category-filter" type="button" data-namespace="economy" aria-pressed="false">Economy (45)</button>
-        <button class="category-filter" type="button" data-namespace="government_open_data" aria-pressed="false">Government open data (35)</button>
-        <button class="category-filter" type="button" data-namespace="transport" aria-pressed="false">Transport (30)</button>
-        <button class="category-filter" type="button" data-namespace="environment" aria-pressed="false">Environment (3)</button>
-        <button class="category-filter" type="button" data-namespace="weather" aria-pressed="false">Weather (1)</button>
-        <button class="category-filter" type="button" data-namespace="healthcare" aria-pressed="false">Healthcare (1)</button>
-        <button class="category-filter" type="button" data-namespace="other" aria-pressed="false">Other (7)</button>
+        <!-- Populated at runtime from the embedded manifest -->
       </nav>
       <div id="dataset-grid" class="dataset-grid" aria-live="polite" aria-busy="true">
         <p class="loading" role="status">Loading live dataset health…</p>
@@ -2573,7 +2566,7 @@
   </footer>
 
   <script id="embedded-data">
-    window.__DATAPULSE_DATA__ = { health: null, manifest: null };
+    window.__DATAPULSE_DATA__ = { health: null, manifest: null, dashboardFilters: null };
   </script>
   <script>
     (() => {
@@ -2583,10 +2576,20 @@
       const SAMPLE_BASE = 'https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/samples/';
       const REPO = "https://github.com/r3dz4r/datapulse-my/blob/main/";
       const DATA = window.__DATAPULSE_DATA__ || { health: null, manifest: null };
+      const NAMESPACE_LABELS = {
+        economy: "Economy",
+        environment: "Environment",
+        government_open_data: "Government open data",
+        healthcare: "Healthcare",
+        other: "Other",
+        transport: "Transport",
+        weather: "Weather",
+      };
       const health = DATA.health;
       const manifest = DATA.manifest;
       const grid = document.querySelector("#dataset-grid");
-      const categoryFilters = document.querySelectorAll(".category-filter");
+      const categoryFilterContainer = document.querySelector(".category-filters");
+      let categoryFilters = [];
       const dateFormat = new Intl.DateTimeFormat("en-MY", {
         dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kuala_Lumpur"
       });
@@ -2746,8 +2749,35 @@
         }
       }
 
-      for (const button of categoryFilters) {
-        button.addEventListener("click", () => filterCards(button.dataset.namespace));
+      function renderCategoryFilters(dashboardFilters) {
+        categoryFilterContainer.replaceChildren();
+        if (!Array.isArray(dashboardFilters?.namespaces)) {
+          console.warn("Dashboard filters are unavailable; leaving the filter list empty");
+          categoryFilters = [];
+          return;
+        }
+
+        const counts = Object.fromEntries(
+          dashboardFilters.namespaces.map(({ key, count }) => [key, count])
+        );
+        const entries = Object.entries(counts).sort(([left], [right]) => {
+          if (left === "all") return -1;
+          if (right === "all") return 1;
+          return left.localeCompare(right);
+        });
+        const buttons = entries.map(([namespace, count]) => {
+          const label = namespace === "all"
+            ? "All"
+            : (NAMESPACE_LABELS[namespace] || namespace);
+          const button = make("button", "category-filter", `${label} (${count})`);
+          button.type = "button";
+          button.dataset.namespace = namespace;
+          button.setAttribute("aria-pressed", String(namespace === "all"));
+          button.addEventListener("click", () => filterCards(namespace));
+          return button;
+        });
+        categoryFilterContainer.append(...buttons);
+        categoryFilters = categoryFilterContainer.querySelectorAll(".category-filter");
       }
 
       function renderDashboard() {
@@ -2801,6 +2831,7 @@
       }
 
       renderDashboard();
+      renderCategoryFilters(DATA.dashboardFilters);
     })();
   </script>
 </body>
