@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://r3dz4r.github.io/datapulse-my/health.schema.json",
+  "title": "DataPulse MY dataset health snapshot",
+  "type": "object",
+  "required": ["schema", "checked_at", "_trust_summary", "datasets"],
+  "properties": {
+    "schema": {
+      "const": "datapulse/v0.3/dataset-health"
+    },
+    "checked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "_trust_summary": {
+      "type": "object",
+      "required": ["checked_at", "datasets_total", "by_status"],
+      "properties": {
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "datasets_total": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "by_status": {
+          "type": "object",
+          "required": [
+            "fresh",
+            "aging",
+            "stale",
+            "degraded",
+            "browser_dependent",
+            "unreachable",
+            "unknown",
+            "unknown_freshness"
+          ],
+          "properties": {
+            "fresh": {"type": "integer", "minimum": 0},
+            "aging": {"type": "integer", "minimum": 0},
+            "stale": {"type": "integer", "minimum": 0},
+            "degraded": {"type": "integer", "minimum": 0},
+            "browser_dependent": {"type": "integer", "minimum": 0},
+            "unreachable": {"type": "integer", "minimum": 0},
+            "unknown": {"type": "integer", "minimum": 0},
+            "unknown_freshness": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "datasets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["dataset_id", "last_checked", "url", "status"],
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "last_checked": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "fresh",
+              "aging",
+              "stale",
+              "degraded",
+              "browser-dependent",
+              "unreachable",
+              "unknown",
+              "unknown-freshness"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}
