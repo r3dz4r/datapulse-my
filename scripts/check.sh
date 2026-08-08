@@ -57,9 +57,19 @@ if ! $due_mode && [[ -n "$tier_filter" || -n "$cadence_override" ]]; then
 fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+probe_policy="${DATAPULSE_PROBE_POLICY:-$script_dir/probe-policy.json}"
 
 if ! command -v jq >/dev/null 2>&1; then
   printf 'jq is required\n' >&2
+  exit 1
+fi
+
+if [[ ! -r "$probe_policy" ]] || ! jq -e '
+  .version == 1
+  and (.defaults.adapter | type == "string")
+  and (.datasets | type == "object")
+' "$probe_policy" >/dev/null 2>&1; then
+  printf 'Invalid probe policy: %s\n' "$probe_policy" >&2
   exit 1
 fi
 
@@ -128,167 +138,43 @@ gtfs_timeout="${DATAPULSE_GTFS_TIMEOUT:-45}"
 camofox_timeout="${CAMOFOX_TIMEOUT:-45}"
 camofox_base_url="${CAMOFOX_BASE_URL:-http://100.74.84.121:9377}"
 
-declare -A DATASET_CONTENT_DATE_FIELDS=(
-  [fuelprice]=date
-  [pricecatcher]=date
-  [exchangerates_daily_0900]=date
-  [exchangerates_daily_1130]=date
-  [exchangerates_daily_1200]=date
-  [exchangerates_daily_1700]=date
-  [met_weather]=date
-  [dosm_crime_district]=date
-  # CSV datasets with a date column — content-based staleness beats the
-  # HTTP Last-Modified header, which can mask real gaps (header newer than
-  # content, or vice-versa). Swept 2026-08-07.
-  [dosm_birth_state]=date
-  [dosm_cpi_core_inflation]=date
-  [dosm_cpi_inflation]=date
-  [dosm_cpi_state]=date
-  [dosm_cpi_state_inflation]=date
-  [dosm_death_district_sex]=date
-  [dosm_death_maternal]=date
-  [dosm_death_maternal_state]=date
-  [dosm_death_state]=date
-  [dosm_fertility]=date
-  [dosm_gdp_annual_nominal_supply]=date
-  [dosm_gdp_annual_real_supply]=date
-  [dosm_gdp_gni_annual_nominal]=date
-  [dosm_gdp_qtr_nominal]=date
-  [dosm_gdp_qtr_real]=date
-  [dosm_gdp_qtr_real_sa]=date
-  [dosm_gdp_state_real_supply]=date
-  [dosm_hh_expenditure_dun]=date
-  [dosm_hh_expenditure_parlimen]=date
-  [dosm_hh_inequality]=date
-  [dosm_hh_inequality_district]=date
-  [dosm_hh_inequality_state]=date
-  [dosm_hh_income]=date
-  [dosm_hh_income_district]=date
-  [dosm_hh_income_state]=date
-  [dosm_hh_poverty]=date
-  [dosm_hh_poverty_district]=date
-  [dosm_hh_poverty_state]=date
-  [dosm_ipi_domestic]=date
-  [dosm_ipi_export]=date
-  [dosm_lfs_month]=date
-  [dosm_population_malaysia]=date
-  [dosm_population_parlimen]=date
-  [dosm_population_state]=date
-  [dosm_ppi]=date
-  [dosm_trade_sitc_1d]=date
-  [dosm_trade_headline]=date
-  [dosm_trade_enduse_bec]=date
-  [dosm_lfs_qtr]=date
-  [dosm_lfs_qtr_state]=date
-  [dosm_employment_sector]=date
-  [dosm_lfs_year]=date
-  [dgm_state_finance_expenditure]=date
-  [dosm_marriages_state]=date
-  [dgm_hospital_beds]=date
-  [dgm_healthcare_staff]=date
-  [dgm_infant_immunisation]=date
-  [dgm_std_state]=date
-  [dgm_mnha]=date
-  [dgm_water_consumption]=date
-  [dgm_water_production]=date
-  [dgm_water_access]=date
-  [dgm_cellular_subscribers]=date
-  [dgm_prisoners_state]=date
-  [dgm_local_authority_sex]=date
-  [dgm_parliament_sex]=date
-  [dgm_crops_state]=date
-  [dosm_marriages_state_age]=date
-  [dgm_interest_rates]=date
-  [dgm_federal_finance_qtr_revenue]=date
-  [dgm_federal_finance_qtr_oe]=date
-  [dgm_money_aggregates]=date
-  [dgm_currency_in_circulation]=date
-  [dgm_payments_systems]=date
-  [dgm_payments_instruments]=date
-  [dgm_payments_channels]=date
-  [dgm_electricity_consumption]=date
-  [dgm_electricity_supply]=date
-  [dgm_ridership_headline]=date
-  [dgm_fish_landings]=date
-  # Tier-1 expansion: direct CSV sources use content dates when available.
-  [bop_balance]=date
-  [fdi_flows]=date
-  [interestrates]=date
-  [monetary_aggregates]=date
-  [exchangerates]=date
-  [federal_finance_qtr_de]=date
-  [federal_finance_year_revenue]=date
-  [ghg_emissions]=date
-  [cpi_core]=date
-  [cpi_core_inflation]=date
-  [hospital_beds]=date
-  [air_pollution]=date
-  [payment_channels]=date
-  [payment_instruments]=date
-  [payment_systems]=date
-  [ridership_ktmb_daily]=date
-  [ridership_ktmb_monthly]=date
-  [cpi_3d]=date
-  [cpi_4d]=date
-  [cpi_5d]=date
-  [ipi_2d]=date
-  [ipi_3d]=date
-  [ipi_5d]=date
-  [ipi_domestic]=date
-  [ipi_export]=date
-  [ppi_2d]=date
-  [ppi_3d]=date
-  [sppi_3d]=date
-  [pharmaceutical_products]=date_reg
-  [pharmaceutical_products_cancelled]=date_reg
-  [cosmetic_notifications]=date_notif
-  [npra_products_registered]=date_reg
-  [npra_cosmetic_notifications]=date_notif
-  [ridership_od_komuter]=date
-  [ridership_od_ets]=date
-  [ridership_od_intercity]=date
-  [ridership_od_komuter_utara]=date
-  [ridership_od_shuttle_tebrau]=date
-  [covid_deaths_linelist]=date
-  [vaxreg_covid_demog]=date
-  [population_dun]=date
-  [population_parlimen]=date
-)
+probe_policy_value() {
+  local dataset_id="$1"
+  local filter="$2"
 
-# Rolling forecast datasets: freshness = MIN date (forecast start), not MAX
-# (the 7-day horizon is always in the future and would falsely read as fresh).
-declare -A DATASET_FRESHNESS_MIN_DATE_FIELDS=(
-  [met_weather]=date
-)
+  jq -er --arg id "$dataset_id" ".datasets[\$id]${filter} // empty" "$probe_policy"
+}
 
-# Rolling datasets: the first row changes on every probe as the window rolls,
-# so first_row_hash comparison would falsely flag shape_changed every time.
-# For these, only column_count (schema stability) is compared.
-# Includes: rolling forecast (met_weather) + mutable daily rate tables
-# (exchangerates_daily_* — FX values change every weekday, schema is stable).
-declare -A DATASET_ROLLING=(
-  [met_weather]=1
-  [exchangerates_daily_0900]=1
-  [exchangerates_daily_1130]=1
-  [exchangerates_daily_1200]=1
-  [exchangerates_daily_1700]=1
-)
+probe_adapter() {
+  local dataset_id="$1"
 
-declare -A DATASET_BROWSER_DATE_REGEX=(
-  [doe_apims]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
-  [doe_rqims]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
-  [doe_mqims]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
-  [kkm_idengue]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
-  [eperolehan-diklankan]='[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}|[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}'
-)
+  jq -er --arg id "$dataset_id" \
+    '.datasets[$id].adapter // .defaults.adapter' "$probe_policy"
+}
 
-declare -A BROWSER_DATASET_WAIT=(
-  [doe_apims]=30
-  [doe_rqims]=30
-  [doe_mqims]=30
-  [kkm_idengue]=30
-  [eperolehan-diklankan]=30
-)
+validate_adapter_config() {
+  local dataset_id="$1"
+  local adapter="$2"
+
+  case "$adapter" in
+    direct|gtfs-static|gtfs-realtime)
+      ;;
+    weather)
+      probe_policy_value "$dataset_id" '.freshness["content-date-field"]' >/dev/null \
+        && probe_policy_value "$dataset_id" '.freshness["extraction-mode"]' >/dev/null \
+        || { printf 'Probe policy error: %s weather adapter requires freshness configuration\n' "$dataset_id" >&2; return 1; }
+      ;;
+    browser)
+      probe_policy_value "$dataset_id" '.browser["date-pattern"]' >/dev/null \
+        && probe_policy_value "$dataset_id" '.browser["wait-seconds"]' >/dev/null \
+        || { printf 'Probe policy error: %s browser adapter requires date-pattern and wait-seconds\n' "$dataset_id" >&2; return 1; }
+      ;;
+    *)
+      printf 'Probe policy error: %s has unsupported adapter %s\n' "$dataset_id" "$adapter" >&2
+      return 1
+      ;;
+  esac
+}
 
 extract_max_date() {
   local body_path="$1"
@@ -678,7 +564,7 @@ check_browser_dataset() {
     <<< "$snapshot" | head -n 1 || true)"
   snapshot_chars="${#snapshot}"
   printf '%s' "$snapshot" > "$body_file"
-  date_regex="${DATASET_BROWSER_DATE_REGEX[$dataset_id]:-}"
+  date_regex="$(probe_policy_value "$dataset_id" '.browser["date-pattern"]')" || return 1
   content_freshness_date="$(extract_browser_dates "$body_file" "$date_regex")"
 
   if ! close_camofox_tab "$tab_id" "$user_id"; then
@@ -856,6 +742,7 @@ check_weather_dataset() {
   date_start="$(jq -r '[.[].date] | min // empty' "$body_file")"
   date_end="$(jq -r '[.[].date] | max // empty' "$body_file")"
   content_freshness_date="$(DATAPULSE_CONTENT_FILE="$body_file" \
+    DATAPULSE_PROBE_POLICY="$probe_policy" \
     "$script_dir/extract_content_freshness.sh" "$source_url" "$dataset_id" || true)"
   details="$(jq -cn \
     --arg request_url "$source_url" \
@@ -890,14 +777,19 @@ check_direct_dataset() {
   local source_url="$2"
   local request_url="$source_url"
   local http_status content_length first_record_timestamp details last_modified
-  local content_freshness_date content_request_url date_field
+  local content_freshness_date content_request_url date_field extraction_mode
   local metrics record_count column_count first_row_hash first_row body_format
   local estimated_record_count record_count_estimated incomplete
   local probe_status probe_message registration_metrics
   local registration_format_compatible legacy_registration_count
   local transition_registration_count invalid_registration_count
 
-  date_field="${DATASET_CONTENT_DATE_FIELDS[$dataset_id]:-}"
+  date_field="$(probe_policy_value "$dataset_id" '.freshness["content-date-field"]' 2>/dev/null || true)"
+  extraction_mode="$(probe_policy_value "$dataset_id" '.freshness["extraction-mode"]' 2>/dev/null || true)"
+  if [[ -n "$date_field" && -z "$extraction_mode" ]]; then
+    printf 'Probe policy error: %s content date field requires extraction-mode\n' "$dataset_id" >&2
+    return 1
+  fi
   # date_field is used later to parse the body's freshness date column.
   # We do NOT override the manifest URL here — direct-storage URLs in
   # the manifest are now the canonical source (the legacy data-catalogue
@@ -974,13 +866,13 @@ check_direct_dataset() {
   content_freshness_date=""
   if [[ -n "$content_request_url" ]] && curl --location --silent --show-error --fail \
     --max-time "$curl_timeout" --output "$content_body_file" "$content_request_url" 2>/dev/null; then
-    if [[ -n "${DATASET_FRESHNESS_MIN_DATE_FIELDS[$dataset_id]:-}" ]]; then
+    if [[ "$extraction_mode" == "min" ]]; then
       content_freshness_date="$(extract_min_date "$content_body_file" "$date_field")"
     else
       content_freshness_date="$(extract_max_date "$content_body_file" "$date_field")"
     fi
   elif [[ -n "$date_field" ]] && jq -e . "$body_file" >/dev/null 2>&1; then
-    if [[ -n "${DATASET_FRESHNESS_MIN_DATE_FIELDS[$dataset_id]:-}" ]]; then
+    if [[ "$extraction_mode" == "min" ]]; then
       content_freshness_date="$(extract_min_date "$body_file" "$date_field")"
     else
       content_freshness_date="$(extract_max_date "$body_file" "$date_field")"
@@ -989,7 +881,7 @@ check_direct_dataset() {
     # CSV body: jq can't parse it, so extract the date column via awk.
     # Find the header row, locate the date column, then take max/min of the
     # ISO dates in that column. Only YYYY-MM-DD values are considered.
-    if [[ -n "${DATASET_FRESHNESS_MIN_DATE_FIELDS[$dataset_id]:-}" ]]; then
+    if [[ "$extraction_mode" == "min" ]]; then
       content_freshness_date="$(awk -F, -v f="$date_field" '
         NR == 1 { for (i = 1; i <= NF; i++) if ($i == f) col = i; next }
         col && $col ~ /^[0-9]{4}-[0-9]{2}-[0-9]{2}/ {
@@ -1157,6 +1049,30 @@ check_gtfs_dataset() {
   fi
 }
 
+dispatch_policy_adapter() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local adapter wait_seconds
+
+  adapter="$(probe_adapter "$dataset_id")" || return 1
+  validate_adapter_config "$dataset_id" "$adapter" || return 1
+  case "$adapter" in
+    direct)
+      check_direct_dataset "$dataset_id" "$source_url"
+      ;;
+    weather)
+      check_weather_dataset "$dataset_id" "$source_url"
+      ;;
+    browser)
+      wait_seconds="$(probe_policy_value "$dataset_id" '.browser["wait-seconds"]')" || return 1
+      check_browser_dataset "$dataset_id" "$source_url" "$wait_seconds"
+      ;;
+    gtfs-static|gtfs-realtime)
+      check_gtfs_dataset "$dataset_id" "$source_url"
+      ;;
+  esac
+}
+
 dispatch_dataset() {
   local dataset_id="$1"
   local source_url="$2"
@@ -1196,53 +1112,8 @@ dispatch_dataset() {
       source_url="https://storage.data.gov.my/transportation/ktmb/shuttle_tebrau_$(date -u +%Y).csv"
       check_direct_dataset "$dataset_id" "$source_url"
       ;;
-    gtfs_*)
-      check_gtfs_dataset "$dataset_id" "$source_url"
-      ;;
-    doe_apims)
-      # Browser datasets run serially via the post-loop browser pass.
-      check_browser_dataset "$dataset_id" "$source_url" "${BROWSER_DATASET_WAIT[$dataset_id]:-15}"
-      ;;
-    doe_rqims|doe_mqims|kkm_idengue|eperolehan-diklankan)
-      # Browser datasets run serially via the post-loop browser pass.
-      check_browser_dataset "$dataset_id" "$source_url" "${BROWSER_DATASET_WAIT[$dataset_id]:-15}"
-      ;;
-    dosm_crime_district|dosm_cpi_state|dosm_gdp_state_real_supply|\
-    dosm_gdp_qtr_real|dosm_gdp_annual_real_supply|dosm_trade_headline|\
-    dosm_cpi_inflation|dosm_trade_enduse_bec|dosm_lfs_qtr|\
-    dosm_lfs_qtr_state|dosm_employment_sector|dosm_population_state|\
-    dosm_gdp_annual_nominal_supply|dosm_gdp_qtr_nominal|\
-    dosm_gdp_qtr_real_sa|dosm_gdp_gni_annual_nominal|\
-    dosm_cpi_core_inflation|dosm_cpi_state_inflation|dosm_ppi|\
-    dosm_lfs_year|dosm_lfs_month|dosm_trade_sitc_1d|dosm_ipi_export|\
-    dosm_ipi_domestic|dgm_interest_rates|dgm_federal_finance_qtr_revenue|\
-    dgm_federal_finance_qtr_oe|dgm_state_finance_expenditure|\
-    dgm_money_aggregates|dgm_currency_in_circulation|dgm_payments_systems|\
-    dgm_payments_instruments|dgm_payments_channels|dgm_interest_rates_annual|\
-    dgm_epf_dividend|dgm_vehicle_registrations_type_fuel|\
-    dgm_payments_transactions_fpx|dgm_hospital_beds|dgm_healthcare_staff|\
-    dgm_blood_donations_state|dgm_infant_immunisation|dgm_std_state|\
-    dgm_pekab40_screenings_state|dgm_mnha|dgm_electricity_consumption|\
-    dgm_electricity_supply|dgm_water_consumption|dgm_water_production|\
-    dgm_water_access|dgm_ridership_headline|dgm_ktmb_ridership_monthly|\
-    dgm_cellular_subscribers|dgm_prisoners_state|dgm_drug_addicts_age|\
-    dgm_local_authority_sex|dgm_parliament_sex|dgm_fish_landings|\
-    dgm_crops_state|dgm_schools_district|dosm_hh_income|dosm_hh_income_state|\
-    dosm_hh_income_district|dosm_hh_poverty|dosm_hh_poverty_state|\
-    dosm_hh_poverty_district|dosm_hh_inequality|dosm_hh_inequality_state|\
-    dosm_hh_inequality_district|dosm_hh_expenditure_dun|\
-    dosm_hh_expenditure_parlimen|dosm_population_malaysia|\
-    dosm_population_parlimen|dosm_death_district_sex|\
-    dosm_marriages_state_age|dosm_fertility|dosm_death_maternal|\
-    dosm_birth_state|dosm_death_state|\
-    dosm_death_maternal_state|dosm_marriages_state)
-      check_direct_dataset "$dataset_id" "$source_url"
-      ;;
-    met_weather)
-      check_weather_dataset "$dataset_id" "$source_url"
-      ;;
     *)
-      check_direct_dataset "$dataset_id" "$source_url"
+      dispatch_policy_adapter "$dataset_id" "$source_url"
       ;;
   esac
 }
@@ -1251,7 +1122,8 @@ if [[ "${DATAPULSE_CHECK_SOURCE_ONLY:-false}" == true ]]; then
   return 0
 fi
 
-if jq -e '[.datasets[].id] | any(. == "doe_apims" or . == "doe_rqims" or . == "doe_mqims" or . == "kkm_idengue" or . == "eperolehan-diklankan")' \
+if jq -e --slurpfile policy "$probe_policy" \
+  'any(.datasets[]; (($policy[0].datasets[.id].adapter // $policy[0].defaults.adapter) == "browser"))' \
   "$selected_manifest_file" >/dev/null; then
   warm_camofox_browser
 fi
@@ -1268,15 +1140,9 @@ while IFS=$'\t' read -r dataset_id source_url; do
     wait -n
     ((active_jobs -= 1))
   fi
-done < <(jq -r '
+done < <(jq -r --slurpfile policy "$probe_policy" '
   .datasets[]
-  | select(
-      .id != "doe_apims"
-      and .id != "doe_rqims"
-      and .id != "doe_mqims"
-      and .id != "kkm_idengue"
-      and .id != "eperolehan-diklankan"
-    )
+  | select(($policy[0].datasets[.id].adapter // $policy[0].defaults.adapter) != "browser")
   | [.id, .url]
   | @tsv
 ' "$selected_manifest_file")
@@ -1291,9 +1157,10 @@ fi
 
 # Serial browser probe pass: Camofox serializes tab opens, and parallel opens
 # can exhaust the curl time budget on slow JSF sites such as ePerolehan.
-if jq -e '[.datasets[].id] | any(. == "doe_apims" or . == "doe_rqims" or . == "doe_mqims" or . == "kkm_idengue" or . == "eperolehan-diklankan")' \
+if jq -e --slurpfile policy "$probe_policy" \
+  'any(.datasets[]; (($policy[0].datasets[.id].adapter // $policy[0].defaults.adapter) == "browser"))' \
   "$selected_manifest_file" >/dev/null; then
-  for browser_id in doe_apims doe_rqims doe_mqims kkm_idengue eperolehan-diklankan; do
+  while IFS= read -r browser_id; do
     if ! jq -e --arg id "$browser_id" \
       '.datasets[] | select(.id == $id)' "$selected_manifest_file" >/dev/null; then
       continue
@@ -1304,7 +1171,7 @@ if jq -e '[.datasets[].id] | any(. == "doe_apims" or . == "doe_rqims" or . == "d
     printf -v browser_result '%s/browser-%s.json' "$probe_results_dir" "$browser_id"
     (dispatch_dataset "$browser_id" "$source_url" "$browser_result")
     cat "$browser_result" >> "$results_file"
-  done
+  done < <(jq -r '.datasets | to_entries[] | select(.value.adapter == "browser") | .key' "$probe_policy")
 fi
 
 expected_count="$(jq '.datasets | length' "$selected_manifest_file")"

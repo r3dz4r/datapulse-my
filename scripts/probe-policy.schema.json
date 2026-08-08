@@ -98,6 +98,10 @@
         {
           "if": {"properties": {"adapter": {"const": "browser"}}, "required": ["adapter"]},
           "then": {"required": ["browser"]}
+        },
+        {
+          "if": {"properties": {"adapter": {"const": "weather"}}, "required": ["adapter"]},
+          "then": {"required": ["freshness"]}
         }
       ]
     }
