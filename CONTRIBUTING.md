@@ -75,8 +75,22 @@ manifest and current health state.
 
 ## Validate before submitting
 
+Create an isolated development environment and install the runtime plus test
+dependencies from the repository root:
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python3 -m pip install -r requirements-dev.txt
+```
+
+The runtime dependency files remain `requirements.txt` for repository scripts
+and `mcp/requirements.txt` for the MCP service. `requirements-dev.txt` composes
+those files with the packages used only by tests and local invariant checks.
+
 ```sh
 python3 -m jsonschema -i datapulse.json datapulse.schema.json
+python3 -m pytest -q mcp/tests
 python3 -m json.tool data/json/<id>.json >/dev/null  # non-GTFS only
 python3 -m json.tool data/jsonld/<id>.json >/dev/null
 bash scripts/verify_agent_ready.sh

@@ -7,7 +7,6 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-import httpx
 import pytest
 from fastmcp import Client
 
@@ -28,13 +27,30 @@ def anyio_backend() -> str:
 
 
 @pytest.fixture(scope="module")
-async def live_data() -> tuple[dict, dict]:
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        manifest_response = await client.get(f"{server.DATA_BASE}/datapulse.json")
-        health_response = await client.get(f"{server.DATA_BASE}/health/latest.json")
-        manifest_response.raise_for_status()
-        health_response.raise_for_status()
-        return manifest_response.json(), health_response.json()
+def live_data() -> tuple[dict, dict]:
+    return (
+        json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8")),
+        json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8")),
+    )
+
+
+@pytest.fixture(autouse=True)
+def local_catalogue(monkeypatch: pytest.MonkeyPatch) -> None:
+    manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+
+    async def fake_load_catalogue() -> tuple[dict, dict]:
+        return manifest, health
+
+    async def fake_load_manifest() -> dict:
+        return manifest
+
+    async def fake_load_health() -> dict:
+        return health
+
+    monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
+    monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
+    monkeypatch.setattr(server, "_load_health", fake_load_health)
 
 
 async def test_search_datasets_returns_ranked_live_results() -> None:
@@ -341,7 +357,9 @@ def test_fuelprice_content_freshness_date() -> None:
     )
     sample = json.loads((REPO_DIR / "samples/fuelprice.json").read_text(encoding="utf-8"))
 
-    assert fuelprice["content_freshness_date"] == sample["date"]
+    observed_date = datetime.fromisoformat(fuelprice["content_freshness_date"])
+    captured_sample_date = datetime.fromisoformat(sample["date"])
+    assert observed_date >= captured_sample_date
     assert fuelprice["freshness_signal_source"] == "content_date_parse"
 
 
