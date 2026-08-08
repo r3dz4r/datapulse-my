@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataPulse MY health policy decision cases",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "now",
+    "frequency_cases",
+    "due_cases",
+    "freshness_cases",
+    "signal_cases",
+    "status_cases"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "now": {"type": "string", "format": "date-time"},
+    "frequency_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/frequencyCase"}
+    },
+    "due_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/dueCase"}
+    },
+    "freshness_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/policyCase"}
+    },
+    "signal_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/policyCase"}
+    },
+    "status_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/policyCase"}
+    }
+  },
+  "$defs": {
+    "name": {"type": "string", "minLength": 1, "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "tier": {"enum": ["realtime", "daily", "weekly-monthly", "slow"]},
+    "status": {
+      "enum": [
+        "fresh",
+        "aging",
+        "stale",
+        "degraded",
+        "browser-dependent",
+        "unreachable",
+        "unknown",
+        "unknown-freshness"
+      ]
+    },
+    "frequencyCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "frequency", "expected"],
+      "properties": {
+        "name": {"$ref": "#/$defs/name"},
+        "frequency": {"type": "string", "minLength": 1},
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tier", "due_interval_seconds", "freshness_mode"],
+          "properties": {
+            "tier": {"$ref": "#/$defs/tier"},
+            "due_interval_seconds": {"type": "integer", "minimum": 1},
+            "freshness_mode": {"enum": ["cadence", "survey-verification", "as-required"]},
+            "freshness_baseline_seconds": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    },
+    "dueCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "row", "expected"],
+      "properties": {
+        "name": {"$ref": "#/$defs/name"},
+        "row": {"$ref": "#/$defs/row"},
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["is_due"],
+          "properties": {"is_due": {"type": "boolean"}}
+        }
+      }
+    },
+    "policyCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "row", "expected"],
+      "properties": {
+        "name": {"$ref": "#/$defs/name"},
+        "row": {"$ref": "#/$defs/row"},
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "signal": {"type": ["string", "null"]},
+            "signal_reason": {"type": "string", "minLength": 1},
+            "age_days": {"type": ["number", "null"], "minimum": 0},
+            "status": {"$ref": "#/$defs/status"},
+            "status_reason": {"type": "string", "minLength": 1}
+          },
+          "anyOf": [
+            {"required": ["signal", "signal_reason", "age_days"]},
+            {"required": ["status", "status_reason"]}
+          ]
+        }
+      }
+    },
+    "freshnessPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content_date_field", "mode", "fallback"],
+      "properties": {
+        "content_date_field": {"type": "string", "minLength": 1},
+        "mode": {"enum": ["max", "min", "first-row", "structural-hash"]},
+        "fallback": {"enum": ["last-modified", "none"]}
+      }
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dataset_id", "refresh_frequency"],
+      "properties": {
+        "dataset_id": {"type": "string", "minLength": 1},
+        "refresh_frequency": {"type": "string", "minLength": 1},
+        "last_checked": {"type": ["string", "null"]},
+        "unknown_since": {"type": "string"},
+        "http_status": {"type": ["integer", "null"]},
+        "probe_status": {"type": "string"},
+        "access_method": {"type": "string"},
+        "content_freshness_date": {"type": ["string", "null"]},
+        "last_modified": {"type": ["string", "null"]},
+        "freshness_policy": {"$ref": "#/$defs/freshnessPolicy"}
+      }
+    }
+  }
+}
