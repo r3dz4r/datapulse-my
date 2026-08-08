@@ -56,9 +56,9 @@ The eight health statuses are:
 
 ## Generated artifacts
 
-Do not hand-edit `health/latest.json`, badges, `feed.xml`, the README trust
-summary, `changelog.json`, or the JSON-LD catalog/dashboard graph. Run their
-generators after source changes:
+Do not hand-edit `health/latest.json`, files under `badges/` or `data/jsonld/`,
+`feed.xml`, the README trust summary, `changelog.json`, or the dashboard graph.
+Run their generators after source changes:
 
 ```sh
 bash scripts/check.sh > health/latest.json
@@ -69,9 +69,9 @@ python3 scripts/gen_changelog.py
 python3 scripts/gen_jsonld_catalog.py
 ```
 
-Individual JSON-LD files are published artifacts; maintainers regenerate them
-when adding a dataset. The catalog and dashboard graph are generated from the
-manifest and current health state.
+Individual JSON-LD files, the catalog, and the dashboard graph are generated
+from the manifest and current health state. Regenerate them when adding a
+dataset; never patch their output by hand.
 
 ## Validate before submitting
 

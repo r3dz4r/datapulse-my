@@ -1,0 +1,29 @@
+{
+  "json_envelope": {
+    "approved_ids": ["alpha"],
+    "excluded_ids": ["beta"],
+    "exclusion_reason": "Fixture legacy gap"
+  },
+  "report_exclusions": [],
+  "literal_detection": {
+    "paths": ["README.md", "llms.txt", "docs/mcp-reference.md"],
+    "pattern": "\\b[0-9]+\\s+(?:datasets?|healthy)\\b",
+    "exclusions": []
+  },
+  "generated_artifacts": [
+    {
+      "directory": "data/jsonld",
+      "glob": "*.json",
+      "generator": "scripts/gen_jsonld_catalog.py",
+      "editing": "generator-only",
+      "allowed_auxiliary_globs": ["catalog.json"]
+    },
+    {
+      "directory": "badges",
+      "glob": "*.svg",
+      "generator": "scripts/gen_badges.sh",
+      "editing": "generator-only",
+      "allowed_auxiliary_globs": ["index.svg", "status-*.svg"]
+    }
+  ]
+}
