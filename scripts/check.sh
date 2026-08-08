@@ -176,6 +176,43 @@ validate_adapter_config() {
   esac
 }
 
+render_dynamic_url() {
+  local dataset_id="$1"
+  local injected_date="$2"
+  local template normalized_date year year_month rendered
+
+  template="$(probe_policy_value "$dataset_id" '.["dynamic-url"].template')" || {
+    printf 'Probe policy error: %s requires a dynamic URL template\n' "$dataset_id" >&2
+    return 1
+  }
+  case "$template" in
+    "https://storage.data.gov.my/pricecatcher/pricecatcher_{YYYY-MM}.parquet"|\
+    "https://storage.data.gov.my/transportation/ktmb/komuter_{YYYY}.csv"|\
+    "https://storage.data.gov.my/transportation/ktmb/ets_{YYYY}.csv"|\
+    "https://storage.data.gov.my/transportation/ktmb/intercity_{YYYY}.csv"|\
+    "https://storage.data.gov.my/transportation/ktmb/komuter_utara_{YYYY}.csv"|\
+    "https://storage.data.gov.my/transportation/ktmb/shuttle_tebrau_{YYYY}.csv")
+      ;;
+    *)
+      printf 'Probe policy error: %s has unsafe dynamic URL template\n' "$dataset_id" >&2
+      return 1
+      ;;
+  esac
+  if [[ ! "$injected_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    printf 'Invalid injected probe date: %s\n' "$injected_date" >&2
+    return 1
+  fi
+  normalized_date="$(date -u -d "$injected_date" +'%Y-%m-%d' 2>/dev/null)" || return 1
+  if [[ "$normalized_date" != "$injected_date" ]]; then
+    printf 'Invalid injected probe date: %s\n' "$injected_date" >&2
+    return 1
+  fi
+  year="${injected_date:0:4}"
+  year_month="${injected_date:0:7}"
+  rendered="${template//\{YYYY-MM\}/$year_month}"
+  printf '%s\n' "${rendered//\{YYYY\}/$year}"
+}
+
 extract_max_date() {
   local body_path="$1"
   local date_field="$2"
@@ -596,117 +633,6 @@ check_browser_dataset() {
   emit "$dataset_id" "$source_url" "browser-dependent" "Browser check succeeded" "$details"
 }
 
-check_head_dataset() {
-  local dataset_id="$1"
-  local source_url="$2"
-  local request_url catalogue_id http_status status content_length last_modified details
-  local api_http_status metrics record_count column_count first_row first_row_hash body_format
-  local first_record_timestamp estimated_record_count record_count_estimated incomplete
-
-  : > "$headers_file"
-  if ! http_status="$(curl --location --silent --show-error --head \
-    --max-time "$curl_timeout" \
-    --dump-header "$headers_file" --output /dev/null --write-out '%{http_code}' \
-    "$source_url" 2>/dev/null)"; then
-    details="$(jq -cn --arg access_method 'direct curl HEAD' \
-      '{access_method: $access_method}')"
-    emit "$dataset_id" "$source_url" "unreachable" "curl HEAD request failed" "$details"
-    return 0
-  fi
-
-  status="$(http_status_name "$http_status")"
-  if [[ "$status" != "fresh" ]]; then
-    emit_http_failure "$dataset_id" "$source_url" "$source_url" "$http_status" \
-      "direct curl HEAD"
-    return 0
-  fi
-
-  content_length="$(awk 'BEGIN { IGNORECASE=1 } /^content-length:/ { value=$2 } END { gsub("\\r", "", value); print value }' "$headers_file")"
-  last_modified="$(awk 'BEGIN { IGNORECASE=1 } /^last-modified:/ { sub(/^[^:]+:[[:space:]]*/, ""); value=$0 } END { gsub("\\r", "", value); print value }' "$headers_file")"
-
-  [[ "$content_length" =~ ^[0-9]+$ ]] || content_length="null"
-  if [[ -n "$last_modified" ]]; then
-    last_modified="$(date -u -d "$last_modified" +'%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || true)"
-  fi
-
-  catalogue_id="${source_url%%\?*}"
-  catalogue_id="${catalogue_id##*/}"
-  catalogue_id="${catalogue_id%.csv}"
-  catalogue_id="${catalogue_id%.parquet}"
-  if [[ "$dataset_id" == dosm_* ]]; then
-    request_url="https://api.data.gov.my/opendosm?id=${catalogue_id}&limit=10000"
-  else
-    request_url="https://api.data.gov.my/data-catalogue?id=${catalogue_id}&limit=10000"
-  fi
-  record_count="null"
-  column_count="null"
-  first_row_hash=""
-  first_record_timestamp=""
-  estimated_record_count="null"
-  record_count_estimated="false"
-  incomplete="false"
-
-  if api_http_status="$(curl --location --silent --show-error \
-    --max-time "$curl_timeout" --output "$body_file" --write-out '%{http_code}' \
-    "$request_url" 2>/dev/null)" && [[ "$api_http_status" =~ ^2[0-9][0-9]$ ]]; then
-    metrics="$(extract_json_metrics "$body_file")"
-    record_count="$(jq '.record_count' <<< "$metrics")"
-    column_count="$(jq '.column_count' <<< "$metrics")"
-    first_row="$(jq -cS '.first_row' <<< "$metrics")"
-    body_format="$(jq -r '.body_format' <<< "$metrics")"
-    first_record_timestamp="$(jq -r '.first_record_timestamp // empty' <<< "$metrics")"
-    if [[ "$first_row" != "null" ]]; then
-      first_row_hash="$(printf '%s' "$first_row" | python3 "$script_dir/shape_fingerprint.py" --json)"
-    elif [[ "$body_format" == "csv" ]]; then
-      first_row_hash="$(python3 "$script_dir/shape_fingerprint.py" --csv-headers < "$body_file")"
-    fi
-    if [[ "$record_count" =~ ^[0-9]+$ ]] && (( record_count >= 10000 )); then
-      incomplete="true"
-    fi
-  fi
-
-  if { [[ "$record_count" == "null" ]] || [[ "$record_count" == "0" ]]; } \
-    && [[ "${source_url%%\?*}" == *.parquet ]]; then
-    estimated_record_count="$(estimate_parquet_rows "$content_length")"
-    if [[ "$estimated_record_count" != "null" ]]; then
-      record_count="$estimated_record_count"
-      record_count_estimated="true"
-      incomplete="true"
-    fi
-  fi
-
-  details="$(jq -cn \
-    --arg access_method 'direct curl HEAD + API GET' \
-    --arg request_url "$request_url" \
-    --argjson http_status "$http_status" \
-    --argjson content_length "$content_length" \
-    --argjson record_count "$record_count" \
-    --argjson column_count "$column_count" \
-    --arg first_row_hash "$first_row_hash" \
-    --arg first_record_timestamp "$first_record_timestamp" \
-    --argjson estimated_record_count "$estimated_record_count" \
-    --argjson record_count_estimated "$record_count_estimated" \
-    --argjson incomplete "$incomplete" \
-    --arg last_modified "$last_modified" \
-    '{
-      access_method: $access_method,
-      request_url: $request_url,
-      http_status: $http_status,
-      content_length: $content_length,
-      record_count: $record_count,
-      column_count: $column_count,
-      first_row_hash: (if $first_row_hash == "" then null else $first_row_hash end),
-      first_record_timestamp: (
-        if $first_record_timestamp == "" then null else $first_record_timestamp end
-      ),
-      estimated_record_count: $estimated_record_count,
-      record_count_estimated: $record_count_estimated,
-      incomplete: $incomplete,
-      last_modified: (if $last_modified == "" then null else $last_modified end)
-    }')"
-  emit "$dataset_id" "$source_url" "fresh" "HTTP ${http_status}" "$details"
-}
-
 check_weather_dataset() {
   local dataset_id="$1"
   local source_url="$2"
@@ -782,7 +708,7 @@ check_direct_dataset() {
   local estimated_record_count record_count_estimated incomplete
   local probe_status probe_message registration_metrics
   local registration_format_compatible legacy_registration_count
-  local transition_registration_count invalid_registration_count
+  local transition_registration_count invalid_registration_count special_validator
 
   date_field="$(probe_policy_value "$dataset_id" '.freshness["content-date-field"]' 2>/dev/null || true)"
   extraction_mode="$(probe_policy_value "$dataset_id" '.freshness["extraction-mode"]' 2>/dev/null || true)"
@@ -902,17 +828,27 @@ check_direct_dataset() {
   if [[ -n "$content_freshness_date" ]]; then
     [[ "$content_freshness_date" != "null" ]] || content_freshness_date=""
   fi
-  if [[ "$dataset_id" == "npra_products_registered" ]]; then
-    registration_metrics="$(extract_npra_registration_format_metrics "$body_file")"
-    registration_format_compatible="$(jq '.registration_format_compatible' <<< "$registration_metrics")"
-    legacy_registration_count="$(jq '.legacy_registration_count' <<< "$registration_metrics")"
-    transition_registration_count="$(jq '.transition_registration_count' <<< "$registration_metrics")"
-    invalid_registration_count="$(jq '.invalid_registration_count' <<< "$registration_metrics")"
-    if [[ "$registration_format_compatible" != "true" ]]; then
-      probe_status="degraded"
-      probe_message="HTTP ${http_status}; incompatible NPRA registration number format"
-    fi
-  fi
+  special_validator="$(probe_policy_value "$dataset_id" '.["special-validator"]' 2>/dev/null || true)"
+  case "$special_validator" in
+    "")
+      ;;
+    npra-registration-format)
+      registration_metrics="$(extract_npra_registration_format_metrics "$body_file")"
+      registration_format_compatible="$(jq '.registration_format_compatible' <<< "$registration_metrics")"
+      legacy_registration_count="$(jq '.legacy_registration_count' <<< "$registration_metrics")"
+      transition_registration_count="$(jq '.transition_registration_count' <<< "$registration_metrics")"
+      invalid_registration_count="$(jq '.invalid_registration_count' <<< "$registration_metrics")"
+      if [[ "$registration_format_compatible" != "true" ]]; then
+        probe_status="degraded"
+        probe_message="HTTP ${http_status}; incompatible NPRA registration number format"
+      fi
+      ;;
+    *)
+      printf 'Probe policy error: %s validator %s is not valid for the direct adapter\n' \
+        "$dataset_id" "$special_validator" >&2
+      return 1
+      ;;
+  esac
   details="$(jq -cn \
     --arg request_url "$request_url" \
     --argjson http_status "$http_status" \
@@ -1077,6 +1013,7 @@ dispatch_dataset() {
   local dataset_id="$1"
   local source_url="$2"
   local dataset_result_file="$3"
+  local dynamic_template special_validator injected_date
 
   results_file="$dataset_result_file"
   body_file="${dataset_result_file}.body"
@@ -1084,36 +1021,24 @@ dispatch_dataset() {
   headers_file="${dataset_result_file}.headers"
   : > "$results_file"
 
-  case "$dataset_id" in
-    npra_drug_registration_guidance)
+  dynamic_template="$(probe_policy_value "$dataset_id" '.["dynamic-url"].template' 2>/dev/null || true)"
+  if [[ -n "$dynamic_template" ]]; then
+    injected_date="${DATAPULSE_PROBE_DATE:-$(date -u +'%Y-%m-%d')}"
+    source_url="$(render_dynamic_url "$dataset_id" "$injected_date")" || return 1
+  fi
+
+  special_validator="$(probe_policy_value "$dataset_id" '.["special-validator"]' 2>/dev/null || true)"
+  case "$special_validator" in
+    npra-guidance-appendices)
       check_npra_guidance_dataset "$dataset_id" "$source_url"
       ;;
-    pricecatcher)
-      source_url="https://storage.data.gov.my/pricecatcher/pricecatcher_$(date -u +%Y-%m).parquet"
-      check_direct_dataset "$dataset_id" "$source_url"
-      ;;
-    ridership_od_komuter)
-      source_url="https://storage.data.gov.my/transportation/ktmb/komuter_$(date -u +%Y).csv"
-      check_direct_dataset "$dataset_id" "$source_url"
-      ;;
-    ridership_od_ets)
-      source_url="https://storage.data.gov.my/transportation/ktmb/ets_$(date -u +%Y).csv"
-      check_direct_dataset "$dataset_id" "$source_url"
-      ;;
-    ridership_od_intercity)
-      source_url="https://storage.data.gov.my/transportation/ktmb/intercity_$(date -u +%Y).csv"
-      check_direct_dataset "$dataset_id" "$source_url"
-      ;;
-    ridership_od_komuter_utara)
-      source_url="https://storage.data.gov.my/transportation/ktmb/komuter_utara_$(date -u +%Y).csv"
-      check_direct_dataset "$dataset_id" "$source_url"
-      ;;
-    ridership_od_shuttle_tebrau)
-      source_url="https://storage.data.gov.my/transportation/ktmb/shuttle_tebrau_$(date -u +%Y).csv"
-      check_direct_dataset "$dataset_id" "$source_url"
+    ""|npra-registration-format)
+      dispatch_policy_adapter "$dataset_id" "$source_url"
       ;;
     *)
-      dispatch_policy_adapter "$dataset_id" "$source_url"
+      printf 'Probe policy error: %s has unsupported special validator %s\n' \
+        "$dataset_id" "$special_validator" >&2
+      return 1
       ;;
   esac
 }

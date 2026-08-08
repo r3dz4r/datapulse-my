@@ -43,4 +43,28 @@ check_gtfs_dataset() { printf 'gtfs:%s\n' "$1"; }
 [[ "$(dispatch_policy_adapter doe_apims https://example.invalid)" == "browser:doe_apims:30" ]]
 [[ "$(dispatch_policy_adapter gtfs_realtime_ktmb https://example.invalid)" == "gtfs:gtfs_realtime_ktmb" ]]
 
+[[ "$(render_dynamic_url pricecatcher 2025-12-31)" == "https://storage.data.gov.my/pricecatcher/pricecatcher_2025-12.parquet" ]]
+[[ "$(render_dynamic_url pricecatcher 2026-01-01)" == "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-01.parquet" ]]
+[[ "$(render_dynamic_url ridership_od_komuter 2025-12-31)" == "https://storage.data.gov.my/transportation/ktmb/komuter_2025.csv" ]]
+[[ "$(render_dynamic_url ridership_od_komuter 2026-01-01)" == "https://storage.data.gov.my/transportation/ktmb/komuter_2026.csv" ]]
+
+printf '%s\n' '{"version":1,"defaults":{"adapter":"direct","freshness-fallback":"last-modified"},"datasets":{"pricecatcher":{"dynamic-url":{"template":"http://example.invalid/{YYYY-MM}"}}}}' > "$invalid_policy"
+probe_policy="$invalid_policy"
+if render_dynamic_url pricecatcher 2026-01-01 >/dev/null 2>&1; then
+  printf 'unsafe dynamic URL template unexpectedly rendered\n' >&2
+  exit 1
+fi
+probe_policy="$repo_root/scripts/probe-policy.json"
+
+check_npra_guidance_dataset() { printf 'guidance:%s\n' "$1"; }
+[[ "$(dispatch_dataset npra_drug_registration_guidance https://example.invalid "$fixture")" == "guidance:npra_drug_registration_guidance" ]]
+[[ "$(dispatch_dataset npra_products_registered https://example.invalid "$fixture")" == "direct:npra_products_registered" ]]
+[[ "$(probe_policy_value npra_products_registered '.["special-validator"]')" == "npra-registration-format" ]]
+[[ "$(probe_policy_value npra_drug_registration_guidance '.["special-validator"]')" == "npra-guidance-appendices" ]]
+
+if declare -F check_head_dataset >/dev/null; then
+  printf 'dead check_head_dataset helper still exists\n' >&2
+  exit 1
+fi
+
 printf 'Probe adapter tests passed.\n'
