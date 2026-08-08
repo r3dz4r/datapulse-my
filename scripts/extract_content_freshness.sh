@@ -5,9 +5,11 @@ set -euo pipefail
 url="${1:?usage: extract_content_freshness.sh <url> <dataset_id>}"
 dataset_id="${2:?usage: extract_content_freshness.sh <url> <dataset_id>}"
 
+# Per-dataset overrides (rare): some sources need a rolling forecast start
+# (e.g. met_weather) instead of the max date in the body. Add cases here.
 case "$dataset_id" in
-  met_weather) ;;
-  *) exit 0 ;;
+  met_weather) min_instead_of_max=1 ;;
+  *) min_instead_of_max=0 ;;
 esac
 
 content_file="${DATAPULSE_CONTENT_FILE:-}"
@@ -20,14 +22,17 @@ if [[ -z "$content_file" ]]; then
     --output "$content_file" "$url"
 fi
 
-python3 - "$content_file" <<'PY'
+python3 - "$content_file" "$min_instead_of_max" <<'PY'
 import json
+import os
 import re
 import sys
 from datetime import date
 from pathlib import Path
 
 text = Path(sys.argv[1]).read_text(encoding="utf-8", errors="replace")
+# 1 = use min date (rolling forecast like met_weather), 0 = max date
+min_instead_of_max = sys.argv[2] == "1"
 dates: set[date] = set()
 
 try:
@@ -87,7 +92,11 @@ for match in month_first.finditer(text):
         pass
 
 if dates:
-    # Rolling forecast: freshness = the forecast START (min date), not the
-    # horizon (max date is always ~7 days out and would falsely read fresh).
-    print(min(dates).isoformat())
+    # Rolling forecast (met_weather): freshness = the forecast START (min date),
+    # not the horizon (max date is always ~7 days out and would falsely read fresh).
+    # Default: max date in the body IS the publication-freshness signal.
+    if min_instead_of_max:
+        print(min(dates).isoformat())
+    else:
+        print(max(dates).isoformat())
 PY
