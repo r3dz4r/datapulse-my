@@ -2,18 +2,23 @@
 # Dataset failures are data: record them and continue so the summary is complete.
 
 due_mode=false
+compare_health=false
 tier_filter=""
 cadence_override=""
 manifest="datapulse.json"
 
 usage() {
-  printf 'Usage: %s [--due [--tier <name>] [--cadence-minutes <n>]] [manifest]\n' "$0" >&2
+  printf 'Usage: %s [--compare-health] [--due [--tier <name>] [--cadence-minutes <n>]] [manifest]\n' "$0" >&2
 }
 
 while (( $# > 0 )); do
   case "$1" in
     --due)
       due_mode=true
+      shift
+      ;;
+    --compare-health)
+      compare_health=true
       shift
       ;;
     --tier)
@@ -75,8 +80,9 @@ content_body_file="$(mktemp)"
 headers_file="$(mktemp)"
 previous_file="$(mktemp)"
 selected_manifest_file="$(mktemp)"
+comparison_output_file="$(mktemp)"
 probe_results_dir="$(mktemp -d)"
-trap 'rm -f "$results_file" "$body_file" "$content_body_file" "$headers_file" "$previous_file" "$selected_manifest_file"; rm -rf "$probe_results_dir"' EXIT
+trap 'rm -f "$results_file" "$body_file" "$content_body_file" "$headers_file" "$previous_file" "$selected_manifest_file" "$comparison_output_file"; rm -rf "$probe_results_dir"' EXIT
 
 if [[ -s health/latest.json ]]; then
   cp health/latest.json "$previous_file"
@@ -1304,6 +1310,9 @@ fi
 
 if $due_mode && (( expected_count == 0 )) && [[ -s "$previous_file" ]]; then
   cat "$previous_file"
+  if $compare_health; then
+    python3 "$script_dir/compare_health.py" "$previous_file" "$manifest" >&2
+  fi
   exit 0
 fi
 
@@ -1312,7 +1321,8 @@ checked_epoch="$(date -u -d "$checked_at" +%s)"
 # Build a JSON array of rolling dataset ids (first_row_hash exempt from
 # shape comparison because the window rolls on every probe).
 rolling_ids_json="[$(for id in "${!DATASET_ROLLING[@]}"; do printf '%s' "\"$id\","; done | sed 's/,$//')]"
-jq -s \
+build_health_snapshot() {
+  jq -s \
   --slurpfile manifest "$manifest" \
   --slurpfile previous "$previous_file" \
   --arg schema "datapulse/v0.3/dataset-health" \
@@ -1504,3 +1514,12 @@ jq -s \
       datasets: $datasets
     }
   ' "$results_file"
+}
+
+if $compare_health; then
+  build_health_snapshot > "$comparison_output_file"
+  cat "$comparison_output_file"
+  python3 "$script_dir/compare_health.py" "$comparison_output_file" "$manifest" >&2
+else
+  build_health_snapshot
+fi
