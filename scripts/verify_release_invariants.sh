@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+local_mode=false
+if [[ "${1:-}" == "--local" ]]; then
+  local_mode=true
+  shift
+fi
+if (( $# > 0 )); then
+  printf 'Usage: %s [--local]\n' "$0" >&2
+  exit 2
+fi
+
 base_url="${DATAPULSE_RELEASE_BASE_URL:-https://data-pulse.my}"
 base_url="${base_url%/}"
 canonical_base_url="${DATAPULSE_CANONICAL_BASE_URL:-https://data-pulse.my}"
@@ -18,6 +28,14 @@ trap 'rm -rf "$work_dir"' EXIT
 
 fetch() {
   local name="$1" path="$2"
+  if $local_mode; then
+    if [[ "$path" == "health/latest.json" && -n "${DATAPULSE_LOCAL_HEALTH_FILE:-}" ]]; then
+      cp "$DATAPULSE_LOCAL_HEALTH_FILE" "$work_dir/$name"
+    else
+      cp "$path" "$work_dir/$name"
+    fi
+    return
+  fi
   curl --fail --location --silent --show-error --retry 2 \
     --connect-timeout 10 --max-time 30 \
     "$base_url/$path" --output "$work_dir/$name"
@@ -49,9 +67,9 @@ changelog = json.loads((work / "changelog.json").read_text())
 manifest_ids = [row["id"] for row in manifest["datasets"]]
 health_ids = [row["dataset_id"] for row in health["datasets"]]
 catalog_ids = [row["identifier"] for row in catalog["dataset"]]
-assert len(manifest_ids) == len(set(manifest_ids)) == 122
-assert len(health_ids) == len(set(health_ids)) == 122
-assert len(catalog_ids) == len(set(catalog_ids)) == 122
+assert len(manifest_ids) == len(set(manifest_ids)) == 166
+assert len(health_ids) == len(set(health_ids)) == 166
+assert len(catalog_ids) == len(set(catalog_ids)) == 166
 assert set(manifest_ids) == set(health_ids) == set(catalog_ids)
 
 missing_reports = [
@@ -59,6 +77,12 @@ missing_reports = [
     if not (Path("data") / f"{dataset_id}.md").is_file()
 ]
 assert not missing_reports, f"missing dataset reports: {', '.join(missing_reports)}"
+
+missing_jsonld = [
+    dataset_id for dataset_id in manifest_ids
+    if not (Path("data/jsonld") / f"{dataset_id}.json").is_file()
+]
+assert not missing_jsonld, f"missing per-dataset JSON-LD: {', '.join(missing_jsonld)}"
 
 for row in catalog["dataset"]:
     report_url = f"{base}/data/{row['identifier']}.md"
@@ -70,7 +94,7 @@ actual_statuses = Counter(row["status"] for row in health["datasets"])
 summary_statuses = {
     key.replace("_", "-"): value for key, value in summary["by_status"].items()
 }
-assert sum(summary_statuses.values()) == 122
+assert sum(summary_statuses.values()) == 166
 assert summary_statuses == {status: actual_statuses[status] for status in summary_statuses}
 
 readme = Path("README.md").read_text(encoding="utf-8")
@@ -87,10 +111,10 @@ assert readme_statuses == {
 
 assert changelog["generated_at"] == health["checked_at"]
 assert changelog["health"]["checked_at"] == health["checked_at"]
-assert changelog["manifest"]["datasets_total"] == 122
-assert changelog["health"]["datasets_total"] == 122
+assert changelog["manifest"]["datasets_total"] == 166
+assert changelog["health"]["datasets_total"] == 166
 assert changelog["health"]["by_status"] == summary_statuses
-assert len(changelog["datasets"]) == 122
+assert len(changelog["datasets"]) == 166
 
 with (work / "artifact-urls.txt").open("w", encoding="utf-8") as output:
     for dataset_id in manifest_ids:
@@ -105,7 +129,7 @@ if not urls:
 with (work / "llms-urls.txt").open("w", encoding="utf-8") as output:
     output.write("\n".join(url.rstrip(".,;:") for url in urls) + "\n")
 
-print("release metadata assertions: PASS (122 datasets)")
+print("release metadata assertions: PASS (166 datasets)")
 PY
 
 PYTHONPATH=mcp python3 - "$work_dir/mcp.json" <<'PY'
@@ -161,7 +185,12 @@ check_url_file() {
   exit 1
 }
 
-check_url_file "JSON-LD/report" "$work_dir/artifact-urls.txt"
-check_url_file "llms.txt" "$work_dir/llms-urls.txt"
+if $local_mode; then
+  printf 'Local JSON-LD/report files: PASS (166 checked)\n'
+  printf 'Local llms.txt format: PASS\n'
+else
+  check_url_file "JSON-LD/report" "$work_dir/artifact-urls.txt"
+  check_url_file "llms.txt" "$work_dir/llms-urls.txt"
+fi
 
 printf 'Post-deploy release invariants: PASS\n'

@@ -204,6 +204,47 @@ declare -A DATASET_CONTENT_DATE_FIELDS=(
   [dgm_electricity_supply]=date
   [dgm_ridership_headline]=date
   [dgm_fish_landings]=date
+  # Tier-1 expansion: direct CSV sources use content dates when available.
+  [bop_balance]=date
+  [fdi_flows]=date
+  [interestrates]=date
+  [monetary_aggregates]=date
+  [exchangerates]=date
+  [federal_finance_qtr_de]=date
+  [federal_finance_year_revenue]=date
+  [ghg_emissions]=date
+  [cpi_core]=date
+  [cpi_core_inflation]=date
+  [hospital_beds]=date
+  [air_pollution]=date
+  [payment_channels]=date
+  [payment_instruments]=date
+  [payment_systems]=date
+  [ridership_ktmb_daily]=date
+  [ridership_ktmb_monthly]=date
+  [cpi_3d]=date
+  [cpi_4d]=date
+  [cpi_5d]=date
+  [ipi_2d]=date
+  [ipi_3d]=date
+  [ipi_5d]=date
+  [ipi_domestic]=date
+  [ipi_export]=date
+  [ppi_2d]=date
+  [ppi_3d]=date
+  [sppi_3d]=date
+  [pharmaceutical_products]=date_reg
+  [pharmaceutical_products_cancelled]=date_reg
+  [cosmetic_notifications]=date_notif
+  [ridership_od_komuter]=date
+  [ridership_od_ets]=date
+  [ridership_od_intercity]=date
+  [ridership_od_komuter_utara]=date
+  [ridership_od_shuttle_tebrau]=date
+  [covid_deaths_linelist]=date
+  [vaxreg_covid_demog]=date
+  [population_dun]=date
+  [population_parlimen]=date
 )
 
 # Rolling forecast datasets: freshness = MIN date (forecast start), not MAX
@@ -955,6 +996,26 @@ dispatch_dataset() {
   case "$dataset_id" in
     pricecatcher)
       source_url="https://storage.data.gov.my/pricecatcher/pricecatcher_$(date -u +%Y-%m).parquet"
+      check_direct_dataset "$dataset_id" "$source_url"
+      ;;
+    ridership_od_komuter)
+      source_url="https://storage.data.gov.my/transportation/ktmb/komuter_$(date -u +%Y).csv"
+      check_direct_dataset "$dataset_id" "$source_url"
+      ;;
+    ridership_od_ets)
+      source_url="https://storage.data.gov.my/transportation/ktmb/ets_$(date -u +%Y).csv"
+      check_direct_dataset "$dataset_id" "$source_url"
+      ;;
+    ridership_od_intercity)
+      source_url="https://storage.data.gov.my/transportation/ktmb/intercity_$(date -u +%Y).csv"
+      check_direct_dataset "$dataset_id" "$source_url"
+      ;;
+    ridership_od_komuter_utara)
+      source_url="https://storage.data.gov.my/transportation/ktmb/komuter_utara_$(date -u +%Y).csv"
+      check_direct_dataset "$dataset_id" "$source_url"
+      ;;
+    ridership_od_shuttle_tebrau)
+      source_url="https://storage.data.gov.my/transportation/ktmb/shuttle_tebrau_$(date -u +%Y).csv"
       check_direct_dataset "$dataset_id" "$source_url"
       ;;
     gtfs_*)

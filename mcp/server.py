@@ -33,7 +33,7 @@ LICENCE_URLS = {
 }
 
 SEARCH_DESCRIPTION = (
-    "Search DataPulse MY's 122 Malaysian public datasets by natural-language query. "
+    "Search DataPulse MY's 166 Malaysian public datasets by natural-language query. "
     "Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or "
     "source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked "
     "matches: id, title, source, licence, status, score. Use when an agent needs to "
