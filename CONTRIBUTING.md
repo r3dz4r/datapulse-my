@@ -8,13 +8,15 @@ Each manifest dataset has these published artifacts:
 
 1. `data/<id>.md` — human-readable health and provenance report.
 2. `data/jsonld/<id>.json` — schema.org JSON-LD metadata.
-3. `data/json/<id>.json` — machine-readable report envelope for the 92
-   non-GTFS datasets.
+3. `data/json/<id>.json` — machine-readable report envelope for the 136
+   non-GTFS datasets (every non-GTFS manifest ID).
 
 The 30 GTFS datasets are the current exception to the third artifact: they
 have Markdown reports, JSON-LD, and files under `samples/gtfs-static/` or
 `samples/gtfs-realtime/`, but no `data/json/<id>.json` envelope. Do not invent
-an envelope only to satisfy a filename convention.
+an envelope only to satisfy a filename convention. GTFS datasets remain
+excluded by `scripts/contract-scope.json:json_envelope.excluded_ids` (the 30
+GTFS IDs).
 
 Use a stable lowercase ID made from letters, numbers, hyphens, or underscores.
 It must match the manifest `id`, report filename, JSON-LD filename, and any
