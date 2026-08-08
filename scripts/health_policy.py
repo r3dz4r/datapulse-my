@@ -37,6 +37,16 @@ FRESHNESS_BASELINE_SECONDS = {
 }
 
 SURVEY_FREQUENCY = "biennial to triennial (survey years)"
+HEALTH_STATUSES = (
+    "fresh",
+    "aging",
+    "stale",
+    "degraded",
+    "browser-dependent",
+    "unreachable",
+    "unknown",
+    "unknown-freshness",
+)
 
 
 def _normalized_frequency(frequency: object, manifest_id: str | None = None) -> str:
@@ -260,3 +270,89 @@ def classify_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
     if age_seconds <= baseline_seconds * 3:
         return "aging", "freshness-aging"
     return "stale", "freshness-stale"
+
+
+def _rows_by_id(rows: list[dict], source: str) -> dict[str, dict]:
+    indexed = {}
+    for row in rows:
+        dataset_id = row.get("dataset_id")
+        if not isinstance(dataset_id, str) or not dataset_id:
+            raise ValueError(f"{source} row has invalid dataset_id {dataset_id!r}")
+        if dataset_id in indexed:
+            raise ValueError(f"duplicate dataset ID {dataset_id!r} in {source}")
+        indexed[dataset_id] = row
+    return indexed
+
+
+def merge_due_updates(
+    prior_rows: list[dict],
+    updates: list[dict],
+    manifest_ids: list[str],
+) -> list[dict]:
+    """Replace selected prior rows and return the exact manifest ID order."""
+    if len(set(manifest_ids)) != len(manifest_ids):
+        raise ValueError("duplicate dataset ID in manifest_ids")
+
+    prior_by_id = _rows_by_id(prior_rows, "prior_rows")
+    updates_by_id = _rows_by_id(updates, "updates")
+    manifest_id_set = set(manifest_ids)
+    unknown_ids = (set(prior_by_id) | set(updates_by_id)) - manifest_id_set
+    if unknown_ids:
+        raise ValueError(f"unknown dataset IDs outside manifest: {sorted(unknown_ids)!r}")
+
+    merged_by_id = prior_by_id | updates_by_id
+    missing_ids = manifest_id_set - set(merged_by_id)
+    if missing_ids:
+        raise ValueError(f"missing dataset IDs after due merge: {sorted(missing_ids)!r}")
+    return [merged_by_id[dataset_id] for dataset_id in manifest_ids]
+
+
+def derive_trust_summary(rows: list[dict]) -> dict:
+    """Derive health arithmetic and stale evidence solely from final rows."""
+    by_status = {
+        status.replace("-", "_"): sum(row.get("status") == status for row in rows)
+        for status in HEALTH_STATUSES
+    }
+    signal_sources = {
+        "last_modified_header": sum(
+            row.get("freshness_signal_source") == "last_modified_header" for row in rows
+        ),
+        "content_date_parse": sum(
+            row.get("freshness_signal_source") == "content_date_parse" for row in rows
+        ),
+        "neither": sum(row.get("freshness_signal_source") == "none" for row in rows),
+    }
+    last_modified_values = [
+        value
+        for row in rows
+        if isinstance((value := row.get("last_modified")), str)
+    ]
+    stale_datasets = sorted(
+        (
+            {
+                "dataset_id": row.get("dataset_id"),
+                "days_since_modified": row.get("staleness_days"),
+            }
+            for row in rows
+            if row.get("status") == "stale"
+        ),
+        key=lambda row: (
+            isinstance(row["days_since_modified"], (int, float)),
+            row["days_since_modified"] if isinstance(row["days_since_modified"], (int, float)) else -1,
+        ),
+        reverse=True,
+    )
+    return {
+        "datasets_total": len(rows),
+        "by_status": by_status,
+        "datasets_health_signal_source": signal_sources,
+        "datasets_with_no_last_modified_header": sum(
+            row.get("last_modified") is None for row in rows
+        ),
+        "datasets_with_no_record_count_extracted": sum(
+            row.get("record_count") is None for row in rows
+        ),
+        "oldest_last_modified": min(last_modified_values, default=None),
+        "newest_last_modified": max(last_modified_values, default=None),
+        "stale_datasets": stale_datasets,
+    }
