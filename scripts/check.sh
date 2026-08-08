@@ -236,6 +236,8 @@ declare -A DATASET_CONTENT_DATE_FIELDS=(
   [pharmaceutical_products]=date_reg
   [pharmaceutical_products_cancelled]=date_reg
   [cosmetic_notifications]=date_notif
+  [npra_products_registered]=date_reg
+  [npra_cosmetic_notifications]=date_notif
   [ridership_od_komuter]=date
   [ridership_od_ets]=date
   [ridership_od_intercity]=date
@@ -399,6 +401,81 @@ extract_json_metrics() {
       }
   ' "$body_path" 2>/dev/null \
     || printf '{"record_count":null,"column_count":null,"first_row":null,"first_record_timestamp":null,"body_format":"unknown"}\n'
+}
+
+extract_npra_registration_format_metrics() {
+  local body_path="$1"
+  local counts legacy_count transition_count invalid_count total_count compatible
+
+  counts="$(awk -F, '
+    NR == 1 {
+      header = $1
+      gsub(/^"|"$/, "", header)
+      gsub(/\r$/, "", header)
+      if (header != "reg_no") exit 2
+      next
+    }
+    {
+      value = $1
+      gsub(/^"|"$/, "", value)
+      gsub(/\r$/, "", value)
+      if (value == "") next
+      total++
+      upper = toupper(value)
+      if (upper ~ /^MAL[0-9]{8}[A-Z]+$/) {
+        legacy++
+      } else if (upper ~ /^MAL[[:space:]]*(\+[[:space:]]*)?[0-9]{8}[[:space:]]*(\+[[:space:]]*)?[A-Z]+$/) {
+        transition++
+      } else {
+        invalid++
+      }
+    }
+    END { printf "%d\t%d\t%d\t%d\n", legacy, transition, invalid, total }
+  ' "$body_path" 2>/dev/null)" || counts=$'0\t0\t1\t0'
+
+  IFS=$'\t' read -r legacy_count transition_count invalid_count total_count <<< "$counts"
+  compatible=false
+  if (( total_count > 0 && invalid_count == 0 )); then
+    compatible=true
+  fi
+
+  jq -cn \
+    --argjson compatible "$compatible" \
+    --argjson legacy "$legacy_count" \
+    --argjson transition "$transition_count" \
+    --argjson invalid "$invalid_count" \
+    '{
+      registration_format_compatible: $compatible,
+      legacy_registration_count: $legacy,
+      transition_registration_count: $transition,
+      invalid_registration_count: $invalid
+    }'
+}
+
+extract_npra_guidance_metrics() {
+  local body_path="$1"
+  local appendix_resource_count compatible
+
+  appendix_resource_count="$(
+    grep -oE '>Appendix[[:space:]]+[0-9]+[A-Z]?<' "$body_path" 2>/dev/null \
+      | sed -E 's/^>Appendix[[:space:]]+//; s/<$//' \
+      | sort -u \
+      | wc -l \
+      | tr -d '[:space:]'
+  )"
+  [[ "$appendix_resource_count" =~ ^[0-9]+$ ]] || appendix_resource_count=0
+  compatible=false
+  if (( appendix_resource_count >= 12 )); then
+    compatible=true
+  fi
+
+  jq -cn \
+    --argjson compatible "$compatible" \
+    --argjson appendix_resource_count "$appendix_resource_count" \
+    '{
+      guidance_structure_compatible: $compatible,
+      appendix_resource_count: $appendix_resource_count
+    }'
 }
 
 estimate_parquet_rows() {
@@ -807,6 +884,9 @@ check_direct_dataset() {
   local content_freshness_date content_request_url date_field
   local metrics record_count column_count first_row_hash first_row
   local estimated_record_count record_count_estimated incomplete
+  local probe_status probe_message registration_metrics
+  local registration_format_compatible legacy_registration_count
+  local transition_registration_count invalid_registration_count
 
   date_field="${DATASET_CONTENT_DATE_FIELDS[$dataset_id]:-}"
   # date_field is used later to parse the body's freshness date column.
@@ -859,6 +939,12 @@ check_direct_dataset() {
   estimated_record_count="null"
   record_count_estimated="false"
   incomplete="false"
+  probe_status="fresh"
+  probe_message="HTTP ${http_status}"
+  registration_format_compatible="null"
+  legacy_registration_count="null"
+  transition_registration_count="null"
+  invalid_registration_count="null"
   if [[ "$record_count" == "null" && "${request_url%%\?*}" == *.parquet ]]; then
     estimated_record_count="$(estimate_parquet_rows "$content_length")"
     if [[ "$estimated_record_count" != "null" ]]; then
@@ -912,6 +998,17 @@ check_direct_dataset() {
   if [[ -n "$content_freshness_date" ]]; then
     [[ "$content_freshness_date" != "null" ]] || content_freshness_date=""
   fi
+  if [[ "$dataset_id" == "npra_products_registered" ]]; then
+    registration_metrics="$(extract_npra_registration_format_metrics "$body_file")"
+    registration_format_compatible="$(jq '.registration_format_compatible' <<< "$registration_metrics")"
+    legacy_registration_count="$(jq '.legacy_registration_count' <<< "$registration_metrics")"
+    transition_registration_count="$(jq '.transition_registration_count' <<< "$registration_metrics")"
+    invalid_registration_count="$(jq '.invalid_registration_count' <<< "$registration_metrics")"
+    if [[ "$registration_format_compatible" != "true" ]]; then
+      probe_status="degraded"
+      probe_message="HTTP ${http_status}; incompatible NPRA registration number format"
+    fi
+  fi
   details="$(jq -cn \
     --arg request_url "$request_url" \
     --argjson http_status "$http_status" \
@@ -925,6 +1022,10 @@ check_direct_dataset() {
     --argjson incomplete "$incomplete" \
     --arg last_modified "$last_modified" \
     --arg content_freshness_date "$content_freshness_date" \
+    --argjson registration_format_compatible "$registration_format_compatible" \
+    --argjson legacy_registration_count "$legacy_registration_count" \
+    --argjson transition_registration_count "$transition_registration_count" \
+    --argjson invalid_registration_count "$invalid_registration_count" \
     '{
       request_url: $request_url,
       access_method: "direct curl GET",
@@ -939,12 +1040,74 @@ check_direct_dataset() {
       content_freshness_date: (
         if $content_freshness_date == "" then null else $content_freshness_date end
       ),
+      registration_format_compatible: $registration_format_compatible,
+      legacy_registration_count: $legacy_registration_count,
+      transition_registration_count: $transition_registration_count,
+      invalid_registration_count: $invalid_registration_count,
       first_row_hash: (if $first_row_hash == "" then null else $first_row_hash end),
       first_record_timestamp: (
         if $first_record_timestamp == "" then null else $first_record_timestamp end
       )
     }')"
-  emit "$dataset_id" "$source_url" "fresh" "HTTP ${http_status}" "$details"
+  emit "$dataset_id" "$source_url" "$probe_status" "$probe_message" "$details"
+}
+
+check_npra_guidance_dataset() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local http_status content_length last_modified guidance_metrics
+  local guidance_structure_compatible appendix_resource_count status message details
+
+  : > "$headers_file"
+  if ! http_status="$(curl --location --silent --show-error \
+    --max-time "$curl_timeout" \
+    --dump-header "$headers_file" \
+    --output "$body_file" --write-out '%{http_code}' "$source_url" 2>/dev/null)"; then
+    details="$(jq -cn --arg request_url "$source_url" \
+      '{request_url: $request_url, access_method: "direct curl GET"}')"
+    emit "$dataset_id" "$source_url" "unreachable" "curl request failed" "$details"
+    return 0
+  fi
+  if [[ ! "$http_status" =~ ^2[0-9][0-9]$ ]]; then
+    emit_http_failure "$dataset_id" "$source_url" "$source_url" "$http_status"
+    return 0
+  fi
+
+  content_length="$(wc -c < "$body_file" | tr -d '[:space:]')"
+  last_modified="$(awk 'BEGIN { IGNORECASE=1 } /^last-modified:/ { sub(/^[^:]+:[[:space:]]*/, ""); value=$0 } END { gsub("\\r", "", value); print value }' "$headers_file")"
+  if [[ -n "$last_modified" ]]; then
+    last_modified="$(date -u -d "$last_modified" +'%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || true)"
+  fi
+
+  guidance_metrics="$(extract_npra_guidance_metrics "$body_file")"
+  guidance_structure_compatible="$(jq '.guidance_structure_compatible' <<< "$guidance_metrics")"
+  appendix_resource_count="$(jq '.appendix_resource_count' <<< "$guidance_metrics")"
+  status="fresh"
+  message="HTTP ${http_status}"
+  if [[ "$guidance_structure_compatible" != "true" ]]; then
+    status="degraded"
+    message="HTTP ${http_status}; fewer than 12 NPRA DRGD appendix resources"
+  fi
+
+  details="$(jq -cn \
+    --arg request_url "$source_url" \
+    --argjson http_status "$http_status" \
+    --argjson content_length "$content_length" \
+    --arg last_modified "$last_modified" \
+    --argjson guidance_structure_compatible "$guidance_structure_compatible" \
+    --argjson appendix_resource_count "$appendix_resource_count" \
+    '{
+      request_url: $request_url,
+      access_method: "direct curl GET",
+      http_status: $http_status,
+      content_length: $content_length,
+      last_modified: (if $last_modified == "" then null else $last_modified end),
+      record_count: $appendix_resource_count,
+      column_count: null,
+      guidance_structure_compatible: $guidance_structure_compatible,
+      appendix_resource_count: $appendix_resource_count
+    }')"
+  emit "$dataset_id" "$source_url" "$status" "$message" "$details"
 }
 
 check_gtfs_dataset() {
@@ -994,6 +1157,9 @@ dispatch_dataset() {
   : > "$results_file"
 
   case "$dataset_id" in
+    npra_drug_registration_guidance)
+      check_npra_guidance_dataset "$dataset_id" "$source_url"
+      ;;
     pricecatcher)
       source_url="https://storage.data.gov.my/pricecatcher/pricecatcher_$(date -u +%Y-%m).parquet"
       check_direct_dataset "$dataset_id" "$source_url"
@@ -1254,6 +1420,12 @@ jq -s \
           last_modified: $last_modified,
           content_freshness_date: $content_freshness_date,
           first_record_timestamp: ($probe.first_record_timestamp // null),
+          registration_format_compatible: ($probe.registration_format_compatible // null),
+          legacy_registration_count: ($probe.legacy_registration_count // null),
+          transition_registration_count: ($probe.transition_registration_count // null),
+          invalid_registration_count: ($probe.invalid_registration_count // null),
+          guidance_structure_compatible: ($probe.guidance_structure_compatible // null),
+          appendix_resource_count: ($probe.appendix_resource_count // null),
           wait_seconds: ($probe.wait_seconds // null),
           stations: ($probe.stations // null),
           timestamp: ($probe.timestamp // null),
