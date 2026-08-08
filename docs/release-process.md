@@ -13,10 +13,12 @@ run is:
 5. `scripts/gen_changelog.py` → `changelog.json`
 6. `scripts/gen_jsonld_catalog.py` → JSON-LD catalog and dashboard graph
 7. `scripts/gen_mcp_reference.py` → `docs/mcp-reference.md` and `mcp.json` schemas
+8. `scripts/gen_json_envelope.py` → `data/json/<id>.json` for each non-GTFS registry ID
+9. `scripts/gen_dashboard_filters.py` → `docs/.dashboard_filters.json` (namespace counts derived from manifest)
 
 The 15-minute systemd service owns steps 1–5 for due datasets. The weekly
 GitHub Actions fallback also owns steps 1–5 after a full probe. Maintainers run
-steps 6–7 when manifest, health metadata, or MCP interfaces change.
+steps 6, 8, and 9 when manifest shape, probe policy, or dashboard filters change. Step 9 (dashboard filters) re-runs on every deploy since counts may change with any manifest addition.
 
 ## Pages deployment
 
@@ -38,6 +40,12 @@ with GitHub Pages, then runs post-deploy invariants against the public host.
   resolve.
 - `mcp.json` input schemas equal runtime schemas from `mcp/server.py`.
 - All absolute URLs in `llms.txt` resolve.
+
+## Envelope policy
+
+- `data/json/<id>.json` is generated for every non-GTFS registry ID by `scripts/gen_json_envelope.py`. The 30 GTFS datasets are excluded by `scripts/contract-scope.json:json_envelope.excluded_ids`.
+- The 11 non-canonical legacy envelopes (8 missing `schema` field + 3 browser-shaped: `eperolehan-diklankan`, `fuelprice`, `pricecatcher`) are not yet normalized. This is tracked as a follow-up, not a blocker; the contract verifier treats them as compliant because they're in `approved_ids`.
+- `docs/.dashboard_filters.json` is regenerated on every deploy. Hardcoded namespace counts in `docs/index.html` would be a regression; the file must NOT contain any literal `Economy (N)`, `Transport (N)`, etc. counts.
 
 ## Pull-request CI
 

@@ -29,8 +29,8 @@ need to handle.
 
 - **Journalist fact-check:** before citing a fuel price figure, check fuelprice
   freshness to make sure it's current.
-- **Pipeline health gate:** fail the build if data.gov.my has been down for
-  more than 24 hours.
+- **Pipeline health gate:** fail the build when a required dataset probe has
+  remained unavailable for more than 24 hours.
 - **RAG knowledge base:** consume the JSON envelopes as structured context for
   a chatbot answering "what's the latest BNM rate?"
 
