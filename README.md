@@ -3,7 +3,7 @@
 **Live dashboard:** https://www.data-pulse.my
 
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
-> any MCP-compatible client with one config block. Your agent gets **122 official
+> any MCP-compatible client with one config block. Your agent gets **166 official
 > Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
 > BAS.MY)** — with declared licences and an honest eight-status trust taxonomy
 > instead of a blanket green checkmark.
@@ -43,7 +43,7 @@ nor a parseable content date proves when the data was updated. The public
 [`_trust_summary`](health/latest.json) shows the distribution and explicitly
 counts missing freshness and row-count signals.
 
-Current distribution (`_trust_summary`): [80 fresh](badges/status-fresh.svg) · [34 stale](badges/status-stale.svg) · [1 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [1 unknown-freshness](badges/status-unknown-freshness.svg)
+Current distribution (`_trust_summary`): [93 fresh](badges/status-fresh.svg) · [11 aging](badges/status-aging.svg) · [54 stale](badges/status-stale.svg) · [1 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [1 unknown-freshness](badges/status-unknown-freshness.svg)
 
 <!--
 Statuses with zero count are omitted. Full per-dataset health is in
@@ -85,7 +85,7 @@ RAG systems, and internal knowledge tools to consume.
 - **RAG and knowledge-base ready:** drop the envelopes into a retrieval pipeline
   to ground chatbots and AI tools in current Malaysian public data.
 
-**122 datasets, 110 under CC BY 4.0, 12 under OGL, each assessed with the honest
+**166 datasets, 154 under CC BY 4.0, 12 under OGL, each assessed with the honest
 eight-status trust taxonomy.**
 
 ### MCP server (read-only)
@@ -98,7 +98,7 @@ the catalogue natively:
 - 3 resources: `datapulse://index`, `datapulse://licences`, `datapulse://{dataset_id}`
 
 The public endpoint is live and serves all 5 read-only tools over the
-122-dataset catalogue.
+166-dataset catalogue.
 
 Connect from Claude Desktop:
 
@@ -369,7 +369,7 @@ vehicle-position protobuf feeds for KTMB, Prasarana, and BAS.MY services. Static
 samples are under [`samples/gtfs-static/`](samples/gtfs-static/) and realtime
 snapshots are under [`samples/gtfs-realtime/`](samples/gtfs-realtime/).
 
-DataPulse MY currently tracks 122 datasets in total.
+DataPulse MY currently tracks 166 datasets in total.
 
 ## Current coverage
 
