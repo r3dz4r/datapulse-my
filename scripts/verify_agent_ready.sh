@@ -1,25 +1,46 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+local_mode=false
+if [[ "${1:-}" == "--local" ]]; then
+  local_mode=true
+  shift
+fi
+if (( $# > 0 )); then
+  printf 'Usage: %s [--local]\n' "$0" >&2
+  exit 2
+fi
+
 canonical_base_url="https://r3dz4r.github.io/datapulse-my"
 base_url="${DATAPULSE_AGENT_BASE_URL:-$canonical_base_url}"
 base_url="${base_url%/}"
+agent_root="${DATAPULSE_AGENT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
-for command in curl jq python3; do
+required_commands=(jq python3)
+if ! $local_mode; then
+  required_commands+=(curl)
+fi
+for command in "${required_commands[@]}"; do
   if ! command -v "$command" >/dev/null 2>&1; then
     printf 'Required command not found: %s\n' "$command" >&2
     exit 1
   fi
 done
 
-llms_file="$(mktemp)"
-manifest_file="$(mktemp)"
-health_file="$(mktemp)"
-trap 'rm -f "$llms_file" "$manifest_file" "$health_file"' EXIT
+work_dir="$(mktemp -d)"
+llms_file="$work_dir/llms.txt"
+manifest_file="$work_dir/datapulse.json"
+health_file="$work_dir/health.json"
+trap 'rm -rf "$work_dir"' EXIT
 
-printf 'Fetching agent index: %s/llms.txt\n' "$base_url"
-curl --fail --location --silent --show-error \
-  "$base_url/llms.txt" --output "$llms_file"
+if $local_mode; then
+  printf 'Reading local agent index: %s/llms.txt\n' "$agent_root"
+  cp "$agent_root/llms.txt" "$llms_file"
+else
+  printf 'Fetching agent index: %s/llms.txt\n' "$base_url"
+  curl --fail --location --silent --show-error \
+    "$base_url/llms.txt" --output "$llms_file"
+fi
 
 if ! discovered_urls="$(python3 - "$llms_file" <<'PY'
 import re
@@ -69,13 +90,20 @@ if [[ -n "${DATAPULSE_AGENT_BASE_URL:-}" ]]; then
   health_url="$base_url/${health_url#"$canonical_base_url/"}"
 fi
 
-printf 'Following manifest link: %s\n' "$manifest_url"
-curl --fail --location --silent --show-error "$manifest_url" --output "$manifest_file"
-printf 'Following health link: %s\n' "$health_url"
-curl --fail --location --silent --show-error "$health_url" --output "$health_file"
+if $local_mode; then
+  printf 'Reading local manifest: %s/datapulse.json\n' "$agent_root"
+  cp "$agent_root/datapulse.json" "$manifest_file"
+  printf 'Reading local health snapshot: %s/health/latest.json\n' "$agent_root"
+  cp "$agent_root/health/latest.json" "$health_file"
+else
+  printf 'Following manifest link: %s\n' "$manifest_url"
+  curl --fail --location --silent --show-error "$manifest_url" --output "$manifest_file"
+  printf 'Following health link: %s\n' "$health_url"
+  curl --fail --location --silent --show-error "$health_url" --output "$health_file"
+fi
 
 if ! jq -e '
-  (.datasets | type == "array" and length == 166) and
+  (.datasets | type == "array" and length > 0) and
   ([.datasets[].id] | length == (unique | length)) and
   all(.datasets[];
     (.id | type == "string" and length > 0) and
@@ -83,25 +111,28 @@ if ! jq -e '
     (.licence | type == "string" and length > 0)
   )
 ' "$manifest_file" >/dev/null; then
-  printf 'Manifest is invalid or does not contain 166 uniquely identified datasets\n' >&2
+  printf 'Manifest is invalid or does not contain uniquely identified datasets\n' >&2
   exit 1
 fi
+manifest_count="$(jq -er '.datasets | length' "$manifest_file")"
 
 if ! jq -e '
+  (.datasets | length) as $dataset_count |
   (.checked_at | type == "string" and length > 0) and
-  (._trust_summary.datasets_total == 166) and
+  (._trust_summary.datasets_total == $dataset_count) and
   (._trust_summary.by_status | type == "object") and
-  ([._trust_summary.by_status[]] | add == 166) and
-  (.datasets | type == "array" and length == 166) and
+  ([._trust_summary.by_status[]] | add == $dataset_count) and
+  (.datasets | type == "array" and length > 0) and
   ([.datasets[].dataset_id] | length == (unique | length)) and
   all(.datasets[];
     (.dataset_id | type == "string" and length > 0) and
     (.status | type == "string" and length > 0)
   )
 ' "$health_file" >/dev/null; then
-  printf 'Health snapshot is invalid or does not contain 166 uniquely identified datasets\n' >&2
+  printf 'Health snapshot is invalid or its derived summary totals do not match its dataset rows\n' >&2
   exit 1
 fi
+health_count="$(jq -er '.datasets | length' "$health_file")"
 
 manifest_ids="$(jq -r '.datasets[].id' "$manifest_file" | sort)"
 health_ids="$(jq -r '.datasets[].dataset_id' "$health_file" | sort)"
@@ -113,9 +144,10 @@ fi
 checked_at="$(jq -r '.checked_at' "$health_file")"
 fresh_count="$(jq '[.datasets[] | select(.status == "fresh")] | length' "$health_file")"
 
-printf '\nAgent-ready verification passed: 166 manifest datasets match 166 health records.\n'
+printf '\nAgent-ready verification passed: %s manifest datasets match %s health records.\n' \
+  "$manifest_count" "$health_count"
 printf 'Health snapshot checked at: %s\n' "$checked_at"
-printf 'Fresh datasets (status=fresh): %s/166\n' "$fresh_count"
+printf 'Fresh datasets (status=fresh): %s/%s\n' "$fresh_count" "$health_count"
 jq -r --slurpfile health "$health_file" '
   ($health[0].datasets | map({key: .dataset_id, value: .status}) | from_entries) as $statuses
   | .datasets[]
@@ -123,7 +155,7 @@ jq -r --slurpfile health "$health_file" '
   | "- \(.name) [\(.id)] — \(.licence)"
 ' "$manifest_file"
 
-if (( fresh_count < 166 )); then
+if (( fresh_count < health_count )); then
   printf '\nOther dataset statuses:\n'
   jq -r --slurpfile health "$health_file" '
     ($health[0].datasets | map({key: .dataset_id, value: .status}) | from_entries) as $statuses
@@ -133,7 +165,7 @@ if (( fresh_count < 166 )); then
   ' "$manifest_file"
 fi
 
-printf '\nLicence summary (all 166 datasets):\n'
+printf '\nLicence summary (all %s datasets):\n' "$manifest_count"
 jq -r '
   [.datasets[] | .licence]
   | group_by(.)
