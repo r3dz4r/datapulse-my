@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["version", "defaults", "datasets"],
+  "properties": {
+    "version": {"const": 1},
+    "defaults": {"type": "object"},
+    "datasets": {"type": "object"}
+  }
+}
