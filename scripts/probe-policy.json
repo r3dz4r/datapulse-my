@@ -1,0 +1,1012 @@
+{
+  "version": 1,
+  "defaults": {
+    "adapter": "direct",
+    "freshness-fallback": "last-modified"
+  },
+  "datasets": {
+    "air_pollution": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "bop_balance": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "cosmetic_notifications": {
+      "freshness": {
+        "content-date-field": "date_notif",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "covid_deaths_linelist": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "cpi_3d": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "cpi_4d": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "cpi_5d": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "cpi_core": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "cpi_core_inflation": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_cellular_subscribers": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_crops_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_currency_in_circulation": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_electricity_consumption": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_electricity_supply": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_federal_finance_qtr_oe": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_federal_finance_qtr_revenue": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_fish_landings": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_healthcare_staff": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_hospital_beds": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_infant_immunisation": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_interest_rates": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_local_authority_sex": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_mnha": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_money_aggregates": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_parliament_sex": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_payments_channels": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_payments_instruments": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_payments_systems": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_prisoners_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_ridership_headline": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_state_finance_expenditure": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_std_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_water_access": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_water_consumption": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_water_production": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "doe_apims": {
+      "adapter": "browser",
+      "browser": {
+        "date-pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+        "wait-seconds": 30
+      }
+    },
+    "doe_mqims": {
+      "adapter": "browser",
+      "browser": {
+        "date-pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+        "wait-seconds": 30
+      }
+    },
+    "doe_rqims": {
+      "adapter": "browser",
+      "browser": {
+        "date-pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+        "wait-seconds": 30
+      }
+    },
+    "dosm_birth_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_cpi_core_inflation": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_cpi_inflation": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_cpi_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_cpi_state_inflation": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_crime_district": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_death_district_sex": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_death_maternal": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_death_maternal_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_death_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_employment_sector": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_fertility": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_gdp_annual_nominal_supply": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_gdp_annual_real_supply": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_gdp_gni_annual_nominal": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_gdp_qtr_nominal": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_gdp_qtr_real": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_gdp_qtr_real_sa": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_gdp_state_real_supply": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_expenditure_dun": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_expenditure_parlimen": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_income": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_income_district": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_income_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_inequality": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_inequality_district": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_inequality_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_poverty": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_poverty_district": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_hh_poverty_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_ipi_domestic": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_ipi_export": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_lfs_month": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_lfs_qtr": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_lfs_qtr_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_lfs_year": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_marriages_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_marriages_state_age": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_population_malaysia": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_population_parlimen": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_population_state": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_ppi": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_trade_enduse_bec": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_trade_headline": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_trade_sitc_1d": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "eperolehan-diklankan": {
+      "adapter": "browser",
+      "browser": {
+        "date-pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}|[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
+        "wait-seconds": 30
+      }
+    },
+    "exchangerates": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "exchangerates_daily_0900": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "rolling": {
+        "fingerprint-mode": "columns-only"
+      }
+    },
+    "exchangerates_daily_1130": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "rolling": {
+        "fingerprint-mode": "columns-only"
+      }
+    },
+    "exchangerates_daily_1200": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "rolling": {
+        "fingerprint-mode": "columns-only"
+      }
+    },
+    "exchangerates_daily_1700": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "rolling": {
+        "fingerprint-mode": "columns-only"
+      }
+    },
+    "fdi_flows": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "federal_finance_qtr_de": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "federal_finance_year_revenue": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "fuelprice": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "ghg_emissions": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "gtfs_realtime_ktmb": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_mybas_alor_setar": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_mybas_ipoh": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_mybas_johor": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_mybas_kangar": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_mybas_kota_bharu": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_mybas_kuala_terengganu": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_mybas_kuching": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_mybas_melaka": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_mybas_seremban_a": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_mybas_seremban_b": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_prasarana_bus_kl": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_prasarana_bus_mrtfeeder": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_realtime_prasarana_bus_penang": {
+      "adapter": "gtfs-realtime"
+    },
+    "gtfs_static_ktmb": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_mybas_alor_setar": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_mybas_ipoh": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_mybas_johor": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_mybas_kangar": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_mybas_kota_bharu": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_mybas_kuala_terengganu": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_mybas_kuching": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_mybas_melaka": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_mybas_seremban_a": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_mybas_seremban_b": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_prasarana_bus_kl": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_prasarana_bus_kuantan": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_prasarana_bus_mrtfeeder": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_prasarana_bus_penang": {
+      "adapter": "gtfs-static"
+    },
+    "gtfs_static_prasarana_rail_kl": {
+      "adapter": "gtfs-static"
+    },
+    "hospital_beds": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "interestrates": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "ipi_2d": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "ipi_3d": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "ipi_5d": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "ipi_domestic": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "ipi_export": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "kkm_idengue": {
+      "adapter": "browser",
+      "browser": {
+        "date-pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+        "wait-seconds": 30
+      }
+    },
+    "met_weather": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "min",
+        "fallback": "last-modified"
+      },
+      "adapter": "weather",
+      "rolling": {
+        "fingerprint-mode": "columns-only"
+      }
+    },
+    "monetary_aggregates": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "npra_cosmetic_notifications": {
+      "freshness": {
+        "content-date-field": "date_notif",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "npra_drug_registration_guidance": {
+      "special-validator": "npra-guidance-appendices"
+    },
+    "npra_products_registered": {
+      "freshness": {
+        "content-date-field": "date_reg",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "special-validator": "npra-registration-format"
+    },
+    "payment_channels": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "payment_instruments": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "payment_systems": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "pharmaceutical_products": {
+      "freshness": {
+        "content-date-field": "date_reg",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "pharmaceutical_products_cancelled": {
+      "freshness": {
+        "content-date-field": "date_reg",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "population_dun": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "population_parlimen": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "ppi_2d": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "ppi_3d": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "pricecatcher": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/pricecatcher/pricecatcher_{YYYY-MM}.parquet"
+      }
+    },
+    "ridership_ktmb_daily": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "ridership_ktmb_monthly": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "ridership_od_ets": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/transportation/ktmb/ets_{YYYY}.csv"
+      }
+    },
+    "ridership_od_intercity": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/transportation/ktmb/intercity_{YYYY}.csv"
+      }
+    },
+    "ridership_od_komuter": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/transportation/ktmb/komuter_{YYYY}.csv"
+      }
+    },
+    "ridership_od_komuter_utara": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/transportation/ktmb/komuter_utara_{YYYY}.csv"
+      }
+    },
+    "ridership_od_shuttle_tebrau": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/transportation/ktmb/shuttle_tebrau_{YYYY}.csv"
+      }
+    },
+    "sppi_3d": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "vaxreg_covid_demog": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    }
+  }
+}

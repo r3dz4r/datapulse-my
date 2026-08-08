@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://data-pulse.my/schemas/internal/probe-policy.schema.json",
+  "title": "DataPulse internal probe policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "defaults", "datasets"],
+  "properties": {
+    "version": {"const": 1},
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "freshness-fallback"],
+      "properties": {
+        "adapter": {"const": "direct"},
+        "freshness-fallback": {"const": "last-modified"}
+      }
+    },
+    "datasets": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z0-9][a-z0-9_-]*$"},
+      "additionalProperties": {"$ref": "#/$defs/dataset-policy"}
+    }
+  },
+  "$defs": {
+    "adapter": {
+      "enum": ["direct", "browser", "weather", "gtfs-static", "gtfs-realtime"]
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["extraction-mode", "fallback"],
+      "properties": {
+        "content-date-field": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "extraction-mode": {
+          "enum": ["max", "min", "first-row", "structural-hash"]
+        },
+        "fallback": {"enum": ["last-modified", "unknown-freshness"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"extraction-mode": {"const": "structural-hash"}}},
+          "then": {"not": {"required": ["content-date-field"]}},
+          "else": {"required": ["content-date-field"]}
+        }
+      ]
+    },
+    "rolling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprint-mode"],
+      "properties": {
+        "fingerprint-mode": {"const": "columns-only"}
+      }
+    },
+    "browser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date-pattern", "wait-seconds"],
+      "properties": {
+        "date-pattern": {"type": "string", "minLength": 1, "maxLength": 500},
+        "wait-seconds": {"type": "integer", "minimum": 1, "maximum": 120}
+      }
+    },
+    "dynamic-url": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["template"],
+      "properties": {
+        "template": {
+          "type": "string",
+          "pattern": "^https://storage\\.data\\.gov\\.my/(?:pricecatcher/pricecatcher_\\{YYYY-MM\\}\\.parquet|transportation/ktmb/(?:komuter|ets|intercity|komuter_utara|shuttle_tebrau)_\\{YYYY\\}\\.csv)$"
+        }
+      }
+    },
+    "dataset-policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "adapter": {"$ref": "#/$defs/adapter"},
+        "freshness": {"$ref": "#/$defs/freshness"},
+        "rolling": {"$ref": "#/$defs/rolling"},
+        "browser": {"$ref": "#/$defs/browser"},
+        "dynamic-url": {"$ref": "#/$defs/dynamic-url"},
+        "special-validator": {
+          "enum": ["npra-registration-format", "npra-guidance-appendices"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"required": ["browser"]},
+          "then": {"required": ["adapter"], "properties": {"adapter": {"const": "browser"}}}
+        },
+        {
+          "if": {"properties": {"adapter": {"const": "browser"}}, "required": ["adapter"]},
+          "then": {"required": ["browser"]}
+        }
+      ]
+    }
+  }
+}

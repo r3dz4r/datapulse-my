@@ -97,3 +97,14 @@ def test_approved_literal_exclusion_passes(repository: Path) -> None:
     write_json(scope_path, scope)
 
     assert verify_repository_contract(repository) == []
+
+
+def test_unknown_probe_policy_id_reports_the_id(repository: Path) -> None:
+    policy_path = repository / "scripts/probe-policy.json"
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    policy["datasets"]["rogue_probe"] = {"adapter": "direct"}
+    write_json(policy_path, policy)
+
+    errors = verify_repository_contract(repository)
+
+    assert any("probe-policy.json" in error and "rogue_probe" in error for error in errors)

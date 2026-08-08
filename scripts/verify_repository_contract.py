@@ -204,7 +204,12 @@ def verify_repository_contract(root: Path) -> list[str]:
     manifest = _load_json(root, "datapulse.json", errors)
     health = _load_json(root, "health/latest.json", errors)
     scope = _load_json(root, "scripts/contract-scope.json", errors)
-    if schema is None or manifest is None or health is None or scope is None:
+    probe_policy = _load_json(root, "scripts/probe-policy.json", errors)
+    probe_policy_schema = _load_json(root, "scripts/probe-policy.schema.json", errors)
+    if any(
+        document is None
+        for document in (schema, manifest, health, scope, probe_policy, probe_policy_schema)
+    ):
         return errors
 
     try:
@@ -235,6 +240,45 @@ def verify_repository_contract(root: Path) -> list[str]:
 
     manifest_id_set = set(manifest_ids)
     health_id_set = set(health_ids)
+
+    try:
+        policy_validator = Draft202012Validator(
+            probe_policy_schema, format_checker=FormatChecker()
+        )
+        for failure in sorted(
+            policy_validator.iter_errors(probe_policy), key=lambda item: list(item.path)
+        ):
+            location = ".".join(str(part) for part in failure.absolute_path) or "<root>"
+            errors.append(
+                f"scripts/probe-policy.json:{location}: schema violation: {failure.message}"
+            )
+    except Exception as exc:
+        errors.append(f"scripts/probe-policy.schema.json: invalid schema: {exc}")
+
+    private_npra_ids = {
+        "npra_products_registered",
+        "npra_cosmetic_notifications",
+        "npra_drug_registration_guidance",
+    }
+    policy_rows = probe_policy.get("datasets", {}) if isinstance(probe_policy, dict) else {}
+    policy_ids = set(policy_rows) if isinstance(policy_rows, dict) else set()
+    missing_private_manifests = {
+        dataset_id
+        for dataset_id in policy_ids & private_npra_ids
+        if not (root / "data" / f"{dataset_id}.md").is_file()
+    }
+    if missing_private_manifests:
+        errors.append(
+            "scripts/probe-policy.json: approved private NPRA manifests are missing: "
+            + _format_ids(missing_private_manifests)
+        )
+    unknown_policy_ids = policy_ids - manifest_id_set - private_npra_ids
+    if unknown_policy_ids:
+        errors.append(
+            "scripts/probe-policy.json: dataset keys absent from canonical manifests: "
+            + _format_ids(unknown_policy_ids)
+        )
+
     missing_health_ids = manifest_id_set - health_id_set
     extra_health_ids = health_id_set - manifest_id_set
     if missing_health_ids:
