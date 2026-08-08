@@ -18,7 +18,7 @@ This inventory documents every count, every ID, and every preserved/redirected/m
 |---|---|---|
 | **Public registry rows** | **166** | `jq -r '.datasets[].id' datapulse.json \| wc -l` |
 | **Manifest report files** (`data/*.md`) | 169 | `ls data/*.md \| wc -l` |
-| Per-dataset JSON envelopes (legacy) | 92 | `ls data/json/*.json \| wc -l` |
+| Per-dataset JSON envelopes | 136 | `ls data/json/*.json \| wc -l` (every non-GTFS manifest ID) |
 | Per-dataset JSON-LD files | 167 | `ls data/jsonld/*.json \| wc -l` (= 166 + 1 catalog) |
 | Health rows in latest snapshot | 166 | `jq -r '.datasets[].dataset_id' health/latest.json \| wc -l` |
 | Badge SVGs | 173 | `ls badges/*.svg \| wc -l` (= 166 + 6 status + 1 index) |
@@ -94,7 +94,7 @@ physically present in every file. Those legacy shapes are preserved.
 
 ## 5. Public URL disposition (per G7 + Q1)
 
-### Canonical URLs (after G2 expand ships)
+### Canonical URLs (G2 expanded 2026-08-09)
 
 ```text
 https://data-pulse.my/data/json/<id>.json
@@ -168,7 +168,7 @@ comm -23 <(jq -r '.datasets[].id' datapulse.json | sort) \
 
 ## 8. Open follow-ups (for Task 22)
 
-1. **The data/jsonld/<id>.json URLs that the new G2 expands away from** need to be removed from any pre-generated `llms.txt` or `mcp.json` discovery file (Task 22 scope).
+1. The 11 non-canonical legacy envelopes (8 missing `schema` field + 3 browser-shaped: eperolehan-diklankan, fuelprice, pricecatcher) need normalization to canonical 16-key shape. Track separately as cleanup; not blocking the public contract.
 2. **README/llms.txt counts** (currently hardcoded) need to be derived from this inventory at build time (Task 22).
 
 ---
