@@ -2,6 +2,8 @@
 
 **Live dashboard:** https://www.data-pulse.my
 
+**Open in Google Colab:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb)
+
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
 > any MCP-compatible client with one config block. Your agent gets **335 official
 > Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
