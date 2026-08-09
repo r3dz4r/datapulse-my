@@ -90,18 +90,26 @@
     }
 
     header {
-      padding-block: 3rem 2rem;
+      padding-block: 1.25rem;
       border-bottom: 1px solid var(--border);
     }
 
-    .eyebrow {
-      margin: 0 0 0.5rem;
-      color: var(--fresh);
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+    .site-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 2rem;
+      align-items: center;
+      justify-content: space-between;
     }
+
+    .site-name {
+      color: var(--text);
+      font: 750 1.1rem/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+      letter-spacing: -0.025em;
+      text-decoration: none;
+    }
+
+    .site-name:hover { color: var(--link); }
 
     h1, h2, h3 {
       margin: 0;
@@ -114,45 +122,192 @@
       line-height: 0.95;
     }
 
-    .tagline {
-      max-width: 50rem;
-      margin: 1.25rem 0 0;
-      color: var(--muted);
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      font-size: clamp(1rem, 2vw, 1.2rem);
+    .hero {
+      padding-block: clamp(3.5rem, 9vw, 7rem) 2rem;
     }
 
-    .ai-ready {
+    .hero-kicker {
+      margin: 0 0 0.75rem;
+      color: var(--fresh);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .hero-copy {
+      max-width: 66rem;
+    }
+
+    .hero-subhead {
+      max-width: 54rem;
+      margin: 1.5rem 0 0;
+      color: var(--muted);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: clamp(1.05rem, 2vw, 1.3rem);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 2rem;
+    }
+
+    .button-link {
       display: inline-flex;
-      max-width: 100%;
       align-items: center;
-      gap: 0.65rem;
-      margin-top: 1.25rem;
-      padding: 0.65rem 0.85rem;
-      border: 1px solid var(--browser);
+      justify-content: center;
+      min-height: 2.75rem;
+      padding: 0.7rem 1rem;
+      border: 1px solid var(--link);
       border-radius: 0.5rem;
-      color: var(--text);
-      background: var(--surface);
+      color: var(--bg);
+      background: var(--link);
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       font-size: 0.9rem;
-      font-weight: 650;
+      font-weight: 700;
       text-decoration: none;
     }
 
-    .ai-ready:hover { border-color: var(--link); color: var(--text); background: var(--raised); }
+    .button-link:hover { color: var(--bg); background: #b5e2ff; }
 
-    .ai-ready-glyph {
-      display: inline-grid;
-      width: 1.5rem;
-      height: 1.5rem;
-      flex: none;
-      place-items: center;
-      border-radius: 0.25rem;
-      color: var(--bg);
-      background: var(--link);
+    .button-link-secondary {
+      color: var(--text);
+      border-color: var(--border);
+      background: transparent;
     }
 
-    .ai-ready strong { color: var(--link); }
+    .button-link-secondary:hover {
+      color: var(--text);
+      border-color: var(--link);
+      background: var(--surface);
+    }
+
+    .hero-trust-band {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 0;
+      margin: 1.25rem 0 0;
+      padding: 0;
+      color: var(--muted);
+      font-size: 0.75rem;
+      list-style: none;
+    }
+
+    .hero-trust-band li:not(:last-child)::after {
+      margin-inline: 0.6rem;
+      color: var(--border);
+      content: "·";
+    }
+
+    .hero-trust-band a { color: inherit; }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      margin-top: 3rem;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      background: var(--border);
+    }
+
+    .hero-stat {
+      min-width: 0;
+      padding: 1rem;
+      background: var(--surface);
+    }
+
+    .hero-stat strong {
+      display: block;
+      font: 750 clamp(1.45rem, 4vw, 2rem)/1.1 system-ui, sans-serif;
+      overflow-wrap: anywhere;
+    }
+
+    .hero-stat span {
+      display: block;
+      margin-top: 0.3rem;
+      color: var(--muted);
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .connect {
+      margin-block: 2rem 3rem;
+      padding: clamp(1.25rem, 4vw, 2rem);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      background: var(--surface);
+    }
+
+    .connect-heading { max-width: 52rem; }
+    .connect-heading p { margin: 0.75rem 0 0; color: var(--muted); }
+
+    .terminal {
+      margin-top: 1.5rem;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      background: #080d12;
+    }
+
+    .terminal-bar {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 2.75rem;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+
+    .copy-button {
+      padding: 0.4rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 0.25rem;
+      color: var(--text);
+      background: var(--raised);
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .copy-button:hover { border-color: var(--link); }
+    .copy-button:focus-visible { outline: 0.18rem solid var(--degraded); outline-offset: 0.2rem; }
+
+    .terminal pre {
+      margin: 0;
+      padding: 1.25rem;
+      overflow-x: auto;
+      color: var(--text);
+      font: 0.82rem/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .tool-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tool-chip {
+      padding: 0.35rem 0.55rem;
+      border: 1px solid var(--border);
+      border-radius: 0.25rem;
+      color: var(--link);
+      background: var(--raised);
+      font-size: 0.72rem;
+    }
+
+    .query-demo { margin-top: 1rem; }
+    .query-demo code { color: var(--muted); }
+    .query-demo .command { color: var(--text); }
 
     .header-meta, .card-links, .metrics {
       display: flex;
@@ -164,6 +319,15 @@
       margin-top: 1.5rem;
       color: var(--muted);
       font-size: 0.8rem;
+    }
+
+    .site-header .header-meta { margin-top: 0; }
+
+    .clipboard-fallback {
+      position: fixed;
+      inset: 0 auto auto -10000px;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .summary {
@@ -345,10 +509,9 @@
     }
 
     footer p { margin: 0; }
-    .agent-access { margin-bottom: 0.65rem; }
-
     @media (min-width: 40rem) {
       .shell { width: min(88rem, calc(100% - 3rem)); }
+      .hero-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .summary { grid-template-columns: repeat(4, 1fr); }
       .dataset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -4520,14 +4683,8 @@
     current milestone: <a href="https://github.com/r3dz4r/datapulse-my/releases/tag/v0.4.0">v0.4.0</a>.
   </div>
   <header>
-    <div class="shell">
-      <p class="eyebrow">Open data observatory / Malaysia</p>
-      <h1>DataPulse MY</h1>
-      <p class="tagline">A live trust layer for Malaysian public data: provenance, freshness signals, and reusable samples.</p>
-      <a class="ai-ready" href="https://github.com/r3dz4r/datapulse-my#ai-agent-ready--what-it-means-for-you">
-        <span class="ai-ready-glyph" aria-hidden="true">✦</span>
-        <span><strong>AI-agent-ready</strong> · wire Claude Desktop, Cursor, or Cline in 30 seconds → get 335 official Malaysian datasets with declared licences</span>
-      </a>
+    <div class="shell site-header">
+      <a class="site-name" href="/">DataPulse MY</a>
       <div class="header-meta">
         <span id="last-updated">Last checked: loading…</span>
         <a href="https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/feed.xml">RSS health feed</a>
@@ -4536,8 +4693,73 @@
     </div>
   </header>
 
-  <main id="datasets" class="shell">
-    <section class="trust-posture" aria-labelledby="trust-heading">
+  <main id="main-content" class="shell">
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="hero-copy">
+        <p class="hero-kicker">The trust layer for Malaysian open data</p>
+        <h1 id="hero-heading">Verified health for Malaysian public data</h1>
+        <p class="hero-subhead">335 official datasets probed every 15 minutes. Eight honest statuses. Licence-clear, machine-readable, MCP-ready.</p>
+        <div class="hero-actions">
+          <a class="button-link" href="#connect">Connect your agent</a>
+          <a class="button-link button-link-secondary" href="#live-status">View live status</a>
+        </div>
+        <ul class="hero-trust-band" aria-label="DataPulse trust signals">
+          <li><a href="#live-status">335 datasets verified</a></li>
+          <li><a href="/health-methodology.html">15-min cadence</a></li>
+          <li><a href="#connect">Read-only MCP</a></li>
+          <li><a href="https://github.com/r3dz4r/datapulse-my">Open source</a></li>
+        </ul>
+      </div>
+
+      <!-- STATS: update on dataset-count change (currently 335 / 98 / 17 / 59) -->
+      <div class="hero-stats" aria-label="Latest dataset health snapshot, probed 9 August 2026">
+        <div class="hero-stat"><strong>335</strong><span>Datasets tracked</span></div>
+        <div class="hero-stat"><strong>98</strong><span>Fresh</span></div>
+        <div class="hero-stat"><strong>17</strong><span>Aging</span></div>
+        <div class="hero-stat"><strong>59</strong><span>Stale</span></div>
+        <div class="hero-stat"><strong>5</strong><span>Browser-dependent</span></div>
+        <div class="hero-stat"><strong>1</strong><span>Unreachable</span></div>
+        <div class="hero-stat"><strong>155</strong><span>Unknown-freshness</span></div>
+        <div class="hero-stat"><strong><time datetime="2026-08-09">9 Aug 2026</time></strong><span>Last probed</span></div>
+      </div>
+    </section>
+
+    <section id="connect" class="connect" aria-labelledby="connect-heading">
+      <div class="connect-heading">
+        <h2 id="connect-heading">Connect your AI agent in 30 seconds</h2>
+        <p>No API key. Read-only. Works with Claude Desktop, Cursor, Cline, and any MCP client.</p>
+      </div>
+
+      <div class="terminal" aria-label="MCP client configuration">
+        <div class="terminal-bar">
+          <span>mcp.json</span>
+          <button class="copy-button" id="copy-mcp-config" type="button" aria-live="polite">Copy config</button>
+        </div>
+        <pre><code id="mcp-config">{
+  "mcpServers": {
+    "datapulse-my": {
+      "transport": "streamable-http",
+      "url": "https://mcp.data-pulse.my/mcp"
+    }
+  }
+}</code></pre>
+      </div>
+
+      <ul class="tool-list" aria-label="Available read-only MCP tools">
+        <li class="tool-chip"><code>search_datasets</code></li>
+        <li class="tool-chip"><code>get_dataset</code></li>
+        <li class="tool-chip"><code>find_stale</code></li>
+        <li class="tool-chip"><code>get_provenance</code></li>
+        <li class="tool-chip"><code>find_by_licence</code></li>
+      </ul>
+
+      <div class="terminal query-demo" aria-label="MCP query example">
+        <pre><code><span class="command">$ curl -s https://mcp.data-pulse.my/mcp ...</span>
+# → 5 read-only tools over 335 licence-declared datasets</code></pre>
+      </div>
+    </section>
+
+    <section id="live-status" class="trust-posture" aria-labelledby="trust-heading">
       <h2 id="trust-heading">Honest trust posture</h2>
       <p id="trust-distribution" class="trust-distribution">Loading status distribution…</p>
       <p id="trust-gaps" class="trust-gaps">Loading signal gaps…</p>
@@ -4561,7 +4783,7 @@
       <div><strong id="summary-stale">—</strong><span>Stale</span></div>
     </section>
 
-    <section aria-labelledby="dataset-heading">
+    <section id="datasets" aria-labelledby="dataset-heading">
       <div class="section-heading">
         <h2 id="dataset-heading">Dataset health</h2>
         <p class="section-note">Live from the latest committed health envelope</p>
@@ -4577,13 +4799,6 @@
 
   <footer>
     <div class="shell">
-      <section class="agent-access" aria-label="For AI agent operators">
-        <p><strong>AI-agent-ready:</strong>
-          Wire our <a href="https://github.com/r3dz4r/datapulse-my#ai-agent-ready--what-it-means-for-you">read-only MCP server</a>
-          into your client to give your agent query access to 335 current, licence-declared Malaysian public datasets.
-          Copy the config block into Claude Desktop, Cursor, or Cline — no API key required.
-        </p>
-      </section>
       <p>DataPulse MY documents official sources; it does not replace them.
         <a href="https://github.com/r3dz4r/datapulse-my/blob/main/LICENSE">Licence</a> ·
         <a href="https://github.com/r3dz4r/datapulse-my/blob/main/datapulse.json">Manifest</a> ·
@@ -4640,6 +4855,50 @@
         const node = make("a", className, text);
         node.href = href;
         return node;
+      }
+
+      function copyTextFallback(text) {
+        const textarea = make("textarea", "clipboard-fallback");
+        textarea.value = text;
+        textarea.setAttribute("aria-hidden", "true");
+        textarea.setAttribute("readonly", "");
+        textarea.tabIndex = -1;
+        document.body.append(textarea);
+        textarea.select();
+        const copied = document.execCommand("copy");
+        textarea.remove();
+        if (!copied) throw new Error("Browser rejected the clipboard fallback");
+      }
+
+      async function writeClipboardText(text) {
+        if (navigator.clipboard?.writeText && window.isSecureContext) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return;
+          } catch (error) {
+            console.warn("Clipboard API unavailable; trying the browser fallback", error);
+          }
+        }
+        copyTextFallback(text);
+      }
+
+      async function copyMcpConfiguration() {
+        const button = document.querySelector("#copy-mcp-config");
+        const config = document.querySelector("#mcp-config").textContent;
+        button.disabled = true;
+        try {
+          await writeClipboardText(config);
+          button.focus();
+          button.textContent = "Copied ✓";
+        } catch (error) {
+          console.error("MCP config copy failed", error);
+          button.textContent = "Copy failed";
+        } finally {
+          window.setTimeout(() => {
+            button.textContent = "Copy config";
+            button.disabled = false;
+          }, 1800);
+        }
       }
 
       function formatDate(value) {
@@ -4858,6 +5117,7 @@
         }
       }
 
+      document.querySelector("#copy-mcp-config").addEventListener("click", copyMcpConfiguration);
       renderDashboard();
       renderCategoryFilters(DATA.dashboardFilters);
     })();
