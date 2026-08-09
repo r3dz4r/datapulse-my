@@ -4926,16 +4926,16 @@
         </ul>
       </div>
 
-      <!-- STATS: update on dataset-count change (currently 335 / 98 / 17 / 59) -->
-      <div class="hero-stats" aria-label="Latest dataset health snapshot, probed 9 August 2026">
-        <div class="hero-stat"><strong>335</strong><span>Datasets tracked</span></div>
-        <div class="hero-stat"><strong>98</strong><span>Fresh</span></div>
-        <div class="hero-stat"><strong>17</strong><span>Aging</span></div>
-        <div class="hero-stat"><strong>59</strong><span>Stale</span></div>
-        <div class="hero-stat"><strong>5</strong><span>Browser-dependent</span></div>
-        <div class="hero-stat"><strong>1</strong><span>Unreachable</span></div>
-        <div class="hero-stat"><strong>155</strong><span>Unknown-freshness</span></div>
-        <div class="hero-stat"><strong><time datetime="2026-08-09">9 Aug 2026</time></strong><span>Last probed</span></div>
+      <!-- STATS: rendered from __DATAPULSE_DATA__.health._trust_summary.by_status on page load. No more manual updates. -->
+      <div class="hero-stats" aria-label="Latest dataset health snapshot">
+        <div class="hero-stat" data-stat="datasets_total"><strong>—</strong><span>Datasets tracked</span></div>
+        <div class="hero-stat" data-stat="fresh"><strong>—</strong><span>Fresh</span></div>
+        <div class="hero-stat" data-stat="aging"><strong>—</strong><span>Aging</span></div>
+        <div class="hero-stat" data-stat="stale"><strong>—</strong><span>Stale</span></div>
+        <div class="hero-stat" data-stat="browser_dependent"><strong>—</strong><span>Browser-dependent</span></div>
+        <div class="hero-stat" data-stat="unreachable"><strong>—</strong><span>Unreachable</span></div>
+        <div class="hero-stat" data-stat="unknown_freshness"><strong>—</strong><span>Unknown-freshness</span></div>
+        <div class="hero-stat"><strong><time id="hero-last-probed" datetime="">—</time></strong><span>Last probed</span></div>
       </div>
     </section>
 
@@ -5471,6 +5471,36 @@
 
       document.querySelector("#copy-mcp-config").addEventListener("click", copyMcpConfiguration);
       renderDashboard();
+
+      function formatTimestampShort(iso) {
+        // e.g. "2026-08-09T06:00:10Z" → "9 Aug 2026"
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+        if (!m) return iso;
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return parseInt(m[3], 10) + ' ' + months[parseInt(m[2], 10) - 1] + ' ' + m[1];
+      }
+
+      // Render hero stat strip from the embedded data
+      (function () {
+        var ds = window.__DATAPULSE_DATA__;
+        if (!ds || !ds.health || !ds.health._trust_summary) return;
+        var ts = ds.health._trust_summary;
+        var stats = document.querySelectorAll('.hero-stats .hero-stat[data-stat]');
+        stats.forEach(function (el) {
+          var key = el.getAttribute('data-stat');
+          var val = ts.by_status[key] !== undefined ? ts.by_status[key] : (ts[key] !== undefined ? ts[key] : null);
+          if (val === null) return;
+          var strong = el.querySelector('strong');
+          if (strong) strong.textContent = String(val);
+        });
+        // Render the last-probed timestamp
+        var lp = document.getElementById('hero-last-probed');
+        if (lp && ts.checked_at) {
+          lp.textContent = formatTimestampShort(ts.checked_at);
+          lp.setAttribute('datetime', ts.checked_at);
+        }
+      })();
+
       renderCategoryFilters(DATA.dashboardFilters);
     })();
   </script>
