@@ -3,6 +3,16 @@
 Start with `/var/log/datapulse-health.err`, `health/latest.json`, and the exact
 `message`, `access_method`, `request_url`, and `http_status` for the dataset.
 
+## Profile / ownership failures
+
+| Symptom | Owner check | Action |
+|---|---|---|
+| `health/latest.json` stale or missing | `datapulse-health.timer` | `systemctl status datapulse-health.timer`; `tail -n 100 /var/log/datapulse-health.err` |
+| Badges / RSS / changelog not updated after probe | `health-cycle` profile | `bash scripts/generate.sh health-cycle --list`; if a step fails, profile stops on first failure — check that step |
+| Pages deploy fails post-deploy invariant | `deploy-pages.yml` workflow | Check workflow run; compare deployed SHA to repo HEAD |
+| `verify_mcp_deployment.py` reports `MISMATCH` | MCP service | Redeploy per `docs/mcp-deploy.md` |
+| `verify_mcp_deployment.py` reports `UNREACHABLE` | Network / Cloudflare / nginx | `curl https://mcp.data-pulse.my/mcp` from VPS; check nginx + cloudflared status |
+
 | Symptom or message | Likely cause | Action |
 | --- | --- | --- |
 | `Camofox unavailable; browser check required` | Browser service cold, unreachable, or timed out | Check Camofox health/network, retry one browser smoke test, then wait for the next due cycle. |
