@@ -3,18 +3,20 @@
 ## Sources and generated files
 
 `datapulse.json`, `datapulse.schema.json`, `health.schema.json`, probe code, and
-hand-maintained dataset reports are sources. Generation order after a health
-run is:
+extractor configuration are sources. `scripts/check.sh` writes
+`health/latest.json`; the two generation profiles own everything derived from
+that snapshot and the manifest:
 
-1. `scripts/check.sh` → `health/latest.json`
-2. `scripts/gen_badges.sh` → `badges/`
-3. `scripts/gen_rss.sh` → `feed.xml`
-4. `scripts/gen_readme_summary.sh` → README trust distribution
-5. `scripts/gen_changelog.py` → `changelog.json`
-6. `scripts/gen_jsonld_catalog.py` → JSON-LD catalog and dashboard graph
-7. `scripts/gen_mcp_reference.py` → `docs/mcp-reference.md` and `mcp.json` schemas
-8. `scripts/gen_json_envelope.py` → `data/json/<id>.json` for each non-GTFS registry ID
-9. `scripts/gen_dashboard_filters.py` → `docs/.dashboard_filters.json` (namespace counts derived from manifest)
+- `health-cycle` owns `data/<id>.md`, `badges/`, the README trust-summary block,
+  `feed.xml`, and `changelog.json`. The 15-minute timer and weekly health
+  workflow invoke it after a successful probe.
+- `release-build` owns the `health-cycle` paths plus
+  `data/json/<id>.json`, `data/jsonld/`, `docs/mcp-reference.md`, `mcp.json`,
+  and `docs/.dashboard_filters.json`. The Pages deploy workflow invokes it
+  before embedding and assembling the public artifact.
+
+Treat generated paths as profile outputs: change their source or generator,
+then run the owning profile instead of patching an output directly.
 
 ## Generation profiles
 
@@ -23,13 +25,11 @@ Two named profiles in `scripts/generate.sh` orchestrate the generators in review
 - `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `changelog.json`.
 - `release-build` — invoked by the Pages deploy workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), and dashboard filters (`docs/.dashboard_filters.json`).
 
-Both profiles support `--list` for dry-run enumeration of steps + owned paths. Both refuse to push or deploy — that's the workflow's job, not the profile's.
-
-T28 will rewire the systemd source unit, weekly workflow, and Pages workflow to call these profiles instead of inlining generator lists.
-
-The 15-minute systemd service owns steps 1–5 for due datasets. The weekly
-GitHub Actions fallback also owns steps 1–5 after a full probe. Maintainers run
-steps 6, 8, and 9 when manifest shape, probe policy, or dashboard filters change. Step 9 (dashboard filters) re-runs on every deploy since counts may change with any manifest addition.
+`release-build` numbers the source stamp as Step 0, followed by the five
+`health-cycle` generators as Steps 1–5 and the four public-discovery generators
+as Steps 6–9. Both profiles support `--list` for dry-run enumeration of steps +
+owned paths. Both refuse to push or deploy — those actions remain with their
+operational owner.
 
 ## Pages deployment
 
@@ -43,14 +43,47 @@ with GitHub Pages, then runs post-deploy invariants against the public host.
 
 ## Release invariants
 
-- The manifest and health schemas accept their respective documents.
-- Manifest IDs are unique, health and manifest IDs match, and status totals
-  equal the live health-row count.
-- README and `changelog.json` match `_trust_summary` and its timestamp.
-- The JSON-LD catalog/dashboard cover every manifest ID and health-report URLs
-  resolve.
-- `mcp.json` input schemas equal runtime schemas from `mcp/server.py`.
-- All absolute URLs in `llms.txt` resolve.
+The post-deploy block in `.github/workflows/deploy-pages.yml` is the canonical
+7-gate check. Keep its executable checks byte-identical unless a workflow
+change is reviewed separately:
+
+1. The checked-out repository SHA equals the SHA captured for deployment.
+2. The deployed dashboard mentions the live health-row count and embeds one
+   dataset card per health row.
+3. The deployed `llms.txt` reports the live count, mentions MCP, and lists all
+   advertised MCP tools.
+4. The deployed JSON-LD catalog is valid and contains one entry per health row.
+5. The deployed `mcp.json` is valid and advertises the reviewed runtime tool
+   list in order.
+6. The deployed `health/latest.json` is valid and contains the expected live
+   health rows.
+7. `scripts/verify_agent_ready.sh` and
+   `scripts/verify_release_invariants.sh` accept the public surfaces.
+
+A failure blocks the workflow after deployment and identifies the rejected
+surface. Resolve the source or generation issue, rerun the same
+`release-build` → embed → deploy sequence, and do not waive the failing gate.
+
+## MCP source synchronization
+
+Each `release-build` invocation starts with `python3 scripts/bump_mcp_source_version.py`,
+which stamps the current commit SHA into:
+
+- `mcp/server.py` — exposed in JSON-RPC `initialize.serverInfo.source_commit_sha`
+- `mcp.json` — discovery doc field `server.source_commit_sha`
+
+`python3 scripts/verify_mcp_deployment.py` reads the deployed MCP service's
+`source_commit_sha` and compares against the repo HEAD. Exit codes:
+
+- `0` — deployed matches HEAD
+- `1` — mismatch (deployed service lags)
+- `2` — endpoint unreachable (not a sync failure, transient network)
+
+Run this after any MCP code change. If it reports `MISMATCH`, the
+deployed service needs a redeploy (copy `mcp/server.py` +
+`requirements.txt` to `/home/redza/.local/share/datapulse-mcp/` +
+`systemctl --user restart datapulse-mcp.service`). The verify script
+is read-only — it doesn't write to the deployed service.
 
 ## Envelope policy
 

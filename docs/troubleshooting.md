@@ -7,11 +7,11 @@ Start with `/var/log/datapulse-health.err`, `health/latest.json`, and the exact
 
 | Symptom | Owner check | Action |
 |---|---|---|
-| `health/latest.json` stale or missing | `datapulse-health.timer` | `systemctl status datapulse-health.timer`; `tail -n 100 /var/log/datapulse-health.err` |
-| Badges / RSS / changelog not updated after probe | `health-cycle` profile | `bash scripts/generate.sh health-cycle --list`; if a step fails, profile stops on first failure — check that step |
-| Pages deploy fails post-deploy invariant | `deploy-pages.yml` workflow | Check workflow run; compare deployed SHA to repo HEAD |
-| `verify_mcp_deployment.py` reports `MISMATCH` | MCP service | Redeploy per `docs/mcp-deploy.md` |
-| `verify_mcp_deployment.py` reports `UNREACHABLE` | Network / Cloudflare / nginx | `curl https://mcp.data-pulse.my/mcp` from VPS; check nginx + cloudflared status |
+| `health/latest.json` stale or missing | `datapulse-health.timer` | `systemctl status datapulse-health.timer`, `tail -n 100 /var/log/datapulse-health.err` |
+| Badges / RSS / changelog not updated after a probe | `health-cycle` profile | Run `bash scripts/generate.sh health-cycle --list`, then `bash scripts/generate.sh health-cycle`. If a step fails, the profile stops on first failure — check that step's error. |
+| Pages deploy fails post-deploy invariant | `deploy-pages.yml` workflow | Check the workflow run, compare deployed SHA to repo HEAD, see "Pages still shows old state" below. |
+| `verify_mcp_deployment.py` reports `MISMATCH` | MCP service | Redeploy per `docs/mcp-deploy.md`. |
+| `verify_mcp_deployment.py` reports `UNREACHABLE` | Network / Cloudflare / nginx | Verify `curl https://mcp.data-pulse.my/mcp` from VPS, check nginx + cloudflared status. |
 
 | Symptom or message | Likely cause | Action |
 | --- | --- | --- |
@@ -37,5 +37,5 @@ For service state:
 ```sh
 systemctl status datapulse-health.timer datapulse-health.service
 tail -n 100 /var/log/datapulse-health.err
-journalctl -u datapulse-mcp -n 100 --no-pager
+journalctl --user -u datapulse-mcp.service -n 100 --no-pager
 ```
