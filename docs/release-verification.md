@@ -92,3 +92,16 @@ Two consecutive 15-minute timer ticks are observed, including one that probes a 
 - Observation window: `<start-time>` → `<end-time>`
 - Operator fill-in: see cycle table above.
 - Final status: ROLLOUT COMPLETE (or BLOCKED on <reason>)
+
+## Rollout observation (T35, 2026-08-09)
+
+- Observation window: 2026-08-09T11:31:56+08:00 → 2026-08-09T11:45:24+08:00
+- Cycles observed: 2 (the first cycle probed browser-dependent datasets)
+- First cycle commit: `ef364c5` — `chore(health): update due dataset health`
+- Second cycle commit: none — all 166 datasets were probed with no artifact changes, so the scoped commit guard correctly skipped creating a commit (the latest health commit remained `ef364c5`)
+- Browser-dependent datasets probed: `eperolehan-diklankan`, `doe_apims`, `doe_rqims`
+- Scoped commits: `health/` `badges/` `feed.xml` `README.md` `changelog.json` (verified via `git show --stat`; the first cycle changed only `health/latest.json`, `feed.xml`, and `changelog.json`, and the second changed no artifacts)
+- Lock file: not actively held between ticks (confirmed by successfully acquiring the `flock -n /tmp/datapulse-health.lock` single-instance guard)
+- Health log tail: `datapulse-health: pushed chore(health)`; `datapulse-health: probe started at 2026-08-09T11:45:02+08:00`; `Generated changelog.json for 166 datasets at 2026-08-09T03:31:09Z`; `datapulse-health: probe finished at 2026-08-09T11:45:24+08:00; 166 datasets probed; no artifact changes`
+- Final state: **ROLLOUT COMPLETE** — all 35 tasks shipped or formally closed. All 7 gates green: contract verifier (166 datasets), JSON Schema, MCP pytest (25/25), scripts/tests (225/225), NPRA format tests, fact lint (0 findings), agent-ready live (166/166). Live isolated build OK. Live canary OK. Public surfaces consistent.
+- Reproduction: timer fires every 15 min; verify with `systemctl list-timers datapulse-health.timer`
