@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_prasarana_bus_mrtfeeder
-last_checked: 2026-08-07T07:25:52Z
+last_checked: 2026-08-09T05:15:50Z
 status: unknown-freshness
 freshness_delta: unknown
-record_count: 1
+record_count: 103
 content_freshness_date: 2029-10-06
 schema_version: GTFS
 schema_drift: none
@@ -21,15 +21,15 @@ attribution: Prasarana Malaysia Berhad via data.gov.my GTFS API
 
 **Freshness:** unknown
 
-HTTP 200; valid GTFS realtime protobuf (108 vehicles)
+HTTP 200; valid GTFS realtime protobuf (103 vehicles)
 
 ## Last checked
 
-2026-08-07 at 07:25:52 UTC.
+2026-08-09 at 05:15:50 UTC.
 
 ## File size
 
-The checked resource is 8,602 bytes.
+The checked resource is 8,180 bytes.
 
 ## Provenance
 

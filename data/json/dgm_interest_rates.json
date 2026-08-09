@@ -2,30 +2,24 @@
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dgm_interest_rates",
   "status": "stale",
-  "last_checked": "2026-08-02T16:47:48Z",
-  "freshness_days": 118,
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 187,
   "next_expected_update": null,
   "refresh_frequency": "monthly",
   "record_count": 5712,
-  "date_range": {
-    "start": "1997-01-01",
-    "end": "2026-02-01"
-  },
+  "date_range": null,
   "fields": [
     {
       "name": "date",
-      "type": "date",
-      "format": "YYYY-MM-DD"
+      "type": "date"
     },
     {
       "name": "bank",
-      "type": "string",
-      "distinct_values": 2
+      "type": "string"
     },
     {
       "name": "rate",
-      "type": "string",
-      "distinct_values": 18
+      "type": "string"
     },
     {
       "name": "value",
@@ -36,22 +30,22 @@
     {
       "name": "file_reachable",
       "status": "pass",
-      "method": "HEAD request returned 200 with a 228401-byte CSV payload"
+      "method": "Probe received HTTP 200 via direct curl GET"
     },
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Downloaded CSV contained 5712 data rows"
+      "method": "Probe measured 5712 record(s)"
     },
     {
       "name": "freshness",
-      "status": "warn",
-      "method": "The latest observation is 2026-02-01 and the file has not been refreshed on its monthly cadence"
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
     },
     {
       "name": "schema_stable",
       "status": "pass",
-      "method": "4 CSV columns matched schema version 1.0"
+      "method": "Probe observed 4 column(s) with no content-shape change"
     }
   ],
   "known_quirks": [
@@ -62,11 +56,9 @@
   ],
   "breaking_changes": [],
   "reproducibility": {
-    "catalogue_url": "https://data.gov.my/data-catalogue/interestrates",
     "url": "https://storage.data.gov.my/finsector/interest_rates.csv",
-    "alternate_format": "https://storage.data.gov.my/finsector/interest_rates.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "Bank Negara Malaysia via data.gov.my"
+  "attribution": "data.gov.my (storage.data.gov.my) (government_open_data)"
 }

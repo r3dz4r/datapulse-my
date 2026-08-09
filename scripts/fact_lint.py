@@ -36,13 +36,20 @@ HISTORICAL_DOCS = (
 )
 
 PROHIBITED_LITERALS = (
-    ("92 envelopes", "136 envelopes"),
-    ("122 dataset", "166 datasets"),
-    ("122-dataset", "166-dataset"),
-    ("Economy (45)", "Economy (70)"),
-    ("Transport (30)", "Transport (37)"),
-    ("Environment (3)", "Environment (5)"),
-    ("Healthcare (1)", "Healthcare (11)"),
+    ("92 envelopes", "305 envelopes"),
+    ("136 envelopes", "305 envelopes"),
+    ("122 dataset", "335 datasets"),
+    ("122-dataset", "335-dataset"),
+    ("166 datasets", "335 datasets"),
+    ("166-dataset", "335-dataset"),
+    ("Economy (45)", "Economy (126)"),
+    ("Economy (70)", "Economy (126)"),
+    ("Transport (30)", "Transport (47)"),
+    ("Transport (37)", "Transport (47)"),
+    ("Environment (3)", "Environment (12)"),
+    ("Environment (5)", "Environment (12)"),
+    ("Healthcare (1)", "Healthcare (28)"),
+    ("Healthcare (11)", "Healthcare (28)"),
     ("74 missing", "0 missing"),
     ("74-file gap", "0-file gap"),
     (

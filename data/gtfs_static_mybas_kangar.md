@@ -3,7 +3,7 @@ dataset_id: gtfs_static_mybas_kangar
 last_checked: 2026-08-07T07:25:52Z
 status: fresh
 freshness_delta: 0 days
-record_count: 0
+record_count: 16160
 content_freshness_date: 2026-12-31
 schema_version: GTFS
 schema_drift: none

@@ -2,38 +2,59 @@
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dgm_money_aggregates",
   "status": "stale",
-  "last_checked": "2026-08-02T17:18:27Z",
-  "freshness_days": 119,
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 187,
   "next_expected_update": null,
   "refresh_frequency": "monthly",
   "record_count": 1896,
-  "date_range": {
-    "start": "2013-01-01",
-    "end": "2026-02-01"
-  },
+  "date_range": null,
   "fields": [
-    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
-    { "name": "measure", "type": "string", "distinct_values": 12 },
-    { "name": "value", "type": "number" }
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "measure",
+      "type": "string"
+    },
+    {
+      "name": "value",
+      "type": "number"
+    }
   ],
   "checks": [
-    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 75535-byte CSV payload" },
-    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 1896 data rows" },
-    { "name": "freshness", "status": "warn", "method": "Latest observation is 2026-02-01 and the file has not been refreshed on its monthly cadence" },
-    { "name": "schema_stable", "status": "pass", "method": "3 CSV columns matched schema version 1.0" }
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 1896 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 3 column(s) with no content-shape change"
+    }
   ],
   "known_quirks": [
     "Monthly dates use the first day of the month.",
-    "Values are reported in RM millions.",
-    "Aggregate M1, M2, and M3 rows coexist with component rows.",
-    "Measure codes require the official money-supply definitions."
+    "Aggregate M1, M2, and M3 series coexist with their components; summing all",
+    "Measure codes such as `m1_total` and `m2_deposit_fixed` require the official",
+    "Values are reported in RM millions and retain source precision."
   ],
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://storage.data.gov.my/finsector/money_aggregates.csv",
-    "alternate_format": "https://storage.data.gov.my/finsector/money_aggregates.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "Bank Negara Malaysia via data.gov.my"
+  "attribution": "data.gov.my (storage.data.gov.my) (government_open_data)"
 }

@@ -1,36 +1,29 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dgm_ridership_headline",
-  "status": "current",
-  "last_checked": "2026-08-03T02:00:00Z",
-  "freshness_days": 3,
-  "next_expected_update": "daily",
+  "status": "stale",
+  "last_checked": "2026-08-08T07:30:47Z",
+  "freshness_days": 39,
+  "next_expected_update": null,
   "refresh_frequency": "daily",
   "record_count": 2738,
-  "date_range": {
-    "start": "2019-01-01",
-    "end": "2026-06-30"
-  },
+  "date_range": null,
   "fields": [
     {
       "name": "date",
-      "type": "date",
-      "format": "YYYY-MM-DD"
+      "type": "date"
     },
     {
       "name": "bus_rkl",
-      "type": "integer",
-      "nullable": true
+      "type": "string"
     },
     {
       "name": "bus_rkn",
-      "type": "integer",
-      "nullable": true
+      "type": "string"
     },
     {
       "name": "bus_rpn",
-      "type": "integer",
-      "nullable": true
+      "type": "string"
     },
     {
       "name": "rail_lrt_ampang",
@@ -50,55 +43,53 @@
     },
     {
       "name": "rail_mrt_pjy",
-      "type": "integer",
-      "nullable": true
+      "type": "string"
+    },
+    {
+      "name": "rail_lrt_shah_alam",
+      "type": "string"
     },
     {
       "name": "rail_ets",
-      "type": "integer",
-      "nullable": true
+      "type": "string"
     },
     {
       "name": "rail_intercity",
-      "type": "integer",
-      "nullable": true
+      "type": "string"
     },
     {
       "name": "rail_komuter_utara",
-      "type": "integer",
-      "nullable": true
+      "type": "string"
     },
     {
       "name": "rail_tebrau",
-      "type": "integer",
-      "nullable": true
+      "type": "string"
     },
     {
       "name": "rail_komuter",
-      "type": "integer",
-      "nullable": true
+      "type": "string"
     }
   ],
   "checks": [
     {
       "name": "file_reachable",
       "status": "pass",
-      "method": "HEAD request returned 200 with a 196709-byte CSV payload"
+      "method": "Probe received HTTP 200 via direct curl GET"
     },
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Downloaded CSV contained 2738 data rows"
+      "method": "Probe measured 2738 record(s)"
     },
     {
       "name": "freshness",
-      "status": "pass",
-      "method": "The latest observation is 2026-06-30 and the file is within its daily cadence"
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
     },
     {
       "name": "schema_stable",
       "status": "pass",
-      "method": "14 CSV columns matched schema version 1.0"
+      "method": "Probe observed 15 column(s) with no content-shape change"
     }
   ],
   "known_quirks": [
@@ -109,11 +100,9 @@
   ],
   "breaking_changes": [],
   "reproducibility": {
-    "catalogue_url": "https://data.gov.my/data-catalogue/ridership_headline",
     "url": "https://storage.data.gov.my/transportation/ridership_headline.csv",
-    "alternate_format": "https://storage.data.gov.my/transportation/ridership_headline.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "Prasarana, KTMB, and Ministry of Transport Malaysia via data.gov.my"
+  "attribution": "data.gov.my (storage.data.gov.my) (government_open_data)"
 }

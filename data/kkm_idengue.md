@@ -1,10 +1,10 @@
 ---
 dataset_id: kkm_idengue
-last_checked: 2026-08-07T07:25:52Z
+last_checked: 2026-08-08T07:30:47Z
 status: browser-dependent
 freshness_delta: unknown
 next_expected_update: 2026-08-02
-record_count: 16
+record_count: null
 date_range: 2026-08-01
 schema_version: 1.0
 schema_drift: none
@@ -26,7 +26,7 @@ Browser check succeeded
 
 ## Last checked
 
-2026-08-07 at 07:25:52 UTC.
+2026-08-08 at 07:30:47 UTC.
 
 ## File size
 

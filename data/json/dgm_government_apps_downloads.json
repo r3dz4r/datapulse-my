@@ -1,0 +1,73 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_government_apps_downloads",
+  "status": "unknown-freshness",
+  "last_checked": "2026-08-09T05:30:41Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 573,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "ios",
+      "type": "integer"
+    },
+    {
+      "name": "null",
+      "type": "integer"
+    },
+    {
+      "name": "total",
+      "type": "integer"
+    },
+    {
+      "name": "app_id",
+      "type": "integer"
+    },
+    {
+      "name": "huawei",
+      "type": "integer"
+    },
+    {
+      "name": "android",
+      "type": "integer"
+    },
+    {
+      "name": "app_name",
+      "type": "string"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 573 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 7 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Official catalogue caveat: The data represents download statistics for applications published via GAMMA only. As a result, the number of applications with tracked download statistics is smaller than the [total number of applications](https://data.gov.my/data-catalogue/government_apps)."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://api.data.gov.my/data-catalogue?id=government_apps_downloads",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "data.gov.my (OpenAPI) (government_open_data)"
+}

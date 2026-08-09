@@ -4,7 +4,7 @@ last_checked: 2026-08-07T07:25:52Z
 status: fresh
 freshness_delta: 1 days
 next_expected_update: 2026-08-06
-record_count: 472
+record_count: 945
 date_range: 2017-03-30 to 2026-07-30
 schema_version: 1.1
 schema_drift: none

@@ -1,58 +1,83 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
-  "dataset_id": "fuelprice",
-  "last_checked": "2026-07-31T08:00:00Z",
-  "status": "healthy",
-  "checks": {
-    "freshness": {
-      "status": "pass",
-      "delta_days": 0,
-      "latest_date": "2026-07-30",
-      "next_expected": "2026-08-06"
+  "id": "fuelprice",
+  "status": "fresh",
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 1,
+  "next_expected_update": null,
+  "refresh_frequency": "weekly",
+  "record_count": 945,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
     },
-    "schema": {
-      "status": "pass",
-      "version": "1.1",
-      "drift": "none",
-      "field_count": 14
+    {
+      "name": "ron95",
+      "type": "number"
     },
-    "record_count": {
-      "status": "pass",
-      "count": 472,
-      "trend": "stable"
+    {
+      "name": "ron97",
+      "type": "number"
+    },
+    {
+      "name": "diesel",
+      "type": "number"
+    },
+    {
+      "name": "ron95_skps",
+      "type": "string"
+    },
+    {
+      "name": "diesel_budi",
+      "type": "string"
+    },
+    {
+      "name": "diesel_skds",
+      "type": "string"
+    },
+    {
+      "name": "series_type",
+      "type": "string"
+    },
+    {
+      "name": "ron95_budi95",
+      "type": "string"
+    },
+    {
+      "name": "diesel_eastmsia",
+      "type": "number"
     }
-  },
-  "schema_fields": [
-    {"name": "date", "type": "string", "format": "YYYY-MM-DD", "nullable": false},
-    {"name": "ron95", "type": "float", "unit": "RM/litre", "nullable": false},
-    {"name": "ron97", "type": "float", "unit": "RM/litre", "nullable": false},
-    {"name": "diesel", "type": "float", "unit": "RM/litre", "nullable": false},
-    {"name": "diesel_eastmsia", "type": "float", "unit": "RM/litre", "nullable": false},
-    {"name": "ron95_skps", "type": "float", "unit": "RM/litre", "nullable": true},
-    {"name": "diesel_budi", "type": "float", "unit": "RM/litre", "nullable": true},
-    {"name": "diesel_skds", "type": "float", "unit": "RM/litre", "nullable": true},
-    {"name": "ron95_budi95", "type": "float", "unit": "RM/litre", "nullable": true},
-    {"name": "series_type", "type": "string", "nullable": false, "constant": "level"},
-    {"name": "title", "type": "string", "nullable": false},
-    {"name": "agency", "type": "string", "nullable": false, "constant": "MOF"},
-    {"name": "dataset_id", "type": "string", "nullable": false, "constant": "fuelprice"},
-    {"name": "url", "type": "string", "nullable": false}
   ],
-  "known_quirks": [
-    "offset parameter silently ignored",
-    "date filter silently ignored",
-    "default sort ascending",
-    "client-side dedup by date required",
-    "subsidy fields nullable for older dates"
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 945 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 10 column(s) with no content-shape change"
+    }
   ],
+  "known_quirks": [],
   "breaking_changes": [],
-  "licence": {
-    "name": "Open Government Licence (Malaysia)",
-    "url": "https://www.data.gov.my/pages/terms-of-use"
-  },
-  "attribution": "Ministry of Finance Malaysia via data.gov.my",
   "reproducibility": {
-    "command": "curl \"https://api.data.gov.my/data-catalogue?id=fuelprice&limit=500\" | jq '. | length'",
-    "expected_result": "~500 raw rows, 472 unique after deduplication by date"
-  }
+    "url": "https://api.data.gov.my/data-catalogue?id=fuelprice",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "data.gov.my (other)"
 }

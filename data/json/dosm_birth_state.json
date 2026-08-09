@@ -1,37 +1,64 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dosm_birth_state",
-  "status": "current",
-  "last_checked": "2026-08-02T17:18:27Z",
-  "freshness_days": 26,
-  "next_expected_update": "annual",
+  "status": "fresh",
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 30,
+  "next_expected_update": null,
   "refresh_frequency": "annual",
   "record_count": 390,
-  "date_range": { "start": "2000-01-01", "end": "2024-01-01" },
+  "date_range": null,
   "fields": [
-    { "name": "state", "type": "string", "distinct_values": 16 },
-    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
-    { "name": "abs", "type": "integer" },
-    { "name": "rate", "type": "number" }
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "abs",
+      "type": "integer"
+    },
+    {
+      "name": "rate",
+      "type": "number"
+    }
   ],
   "checks": [
-    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 12308-byte CSV payload" },
-    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 390 data rows" },
-    { "name": "freshness", "status": "pass", "method": "Latest observation is 2024-01-01 and file Last-Modified is 2026-07-07" },
-    { "name": "schema_stable", "status": "pass", "method": "4 CSV columns matched schema version 1.0" }
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 390 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 4 column(s) with no content-shape change"
+    }
   ],
   "known_quirks": [
     "Annual dates use 1 January.",
-    "The file has no Malaysia aggregate.",
-    "W.P. Putrajaya observations begin in 2010.",
-    "Absolute counts and crude birth rates use different units."
+    "There is no Malaysia aggregate row.",
+    "W.P. Putrajaya has 15 observations beginning in 2010; the other areas have",
+    "`abs` is a count while `rate` is a crude birth rate and cannot be summed."
   ],
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://storage.dosm.gov.my/demography/birth_state.csv",
-    "alternate_format": "https://storage.dosm.gov.my/demography/birth_state.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "DOSM via OpenDOSM"
+  "attribution": "OpenDOSM (storage.dosm.gov.my) (economy)"
 }

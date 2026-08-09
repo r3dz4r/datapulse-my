@@ -1,46 +1,37 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dosm_population_parlimen",
-  "status": "current",
-  "last_checked": "2026-08-02T19:11:50Z",
-  "freshness_days": 28,
+  "status": "fresh",
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 32,
   "next_expected_update": null,
   "refresh_frequency": "annual",
   "record_count": 5550,
-  "date_range": {
-    "start": "2020-01-01",
-    "end": "2024-01-01"
-  },
+  "date_range": null,
   "fields": [
     {
       "name": "date",
-      "type": "date",
-      "format": "YYYY-MM-DD"
+      "type": "date"
     },
     {
       "name": "state",
-      "type": "string",
-      "distinct_values": 16
+      "type": "string"
     },
     {
       "name": "parlimen",
-      "type": "string",
-      "distinct_values": 222
+      "type": "string"
     },
     {
       "name": "sex",
-      "type": "string",
-      "distinct_values": 3
+      "type": "string"
     },
     {
       "name": "age",
-      "type": "string",
-      "distinct_values": 3
+      "type": "string"
     },
     {
       "name": "ethnicity",
-      "type": "string",
-      "distinct_values": 3
+      "type": "string"
     },
     {
       "name": "population",
@@ -51,22 +42,22 @@
     {
       "name": "file_reachable",
       "status": "pass",
-      "method": "HEAD request returned 200 with a 346540-byte CSV payload"
+      "method": "Probe received HTTP 200 via direct curl GET"
     },
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Downloaded CSV contained 5550 data rows"
+      "method": "Probe measured 5550 record(s)"
     },
     {
       "name": "freshness",
       "status": "pass",
-      "method": "File last modified 2026-07-05; latest observation is 2024-01-01 on its annual cadence"
+      "method": "Health snapshot classifies the dataset as fresh"
     },
     {
       "name": "schema_stable",
-      "status": "warn",
-      "method": "7 CSV columns matched schema version 1.0; citizenship categories move from ethnicity in 2020 to age from 2021"
+      "status": "pass",
+      "method": "Probe observed 7 column(s) with no content-shape change"
     }
   ],
   "known_quirks": [
@@ -78,9 +69,8 @@
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://storage.dosm.gov.my/population/population_parlimen.csv",
-    "alternate_format": "https://storage.dosm.gov.my/population/population_parlimen.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "DOSM via OpenDOSM"
+  "attribution": "OpenDOSM (storage.dosm.gov.my) (economy)"
 }

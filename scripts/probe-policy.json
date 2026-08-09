@@ -944,6 +944,46 @@
         "fallback": "last-modified"
       }
     },
+    "registration_transactions_all": {
+      "freshness": {
+        "content-date-field": "date_reg",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/transportation/vehicles_{YYYY}.csv"
+      }
+    },
+    "registration_transactions_car": {
+      "freshness": {
+        "content-date-field": "date_reg",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/transportation/cars_{YYYY}.csv"
+      }
+    },
+    "registration_transactions_motorcycle": {
+      "freshness": {
+        "content-date-field": "date_reg",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/transportation/motorcycles_{YYYY}.csv"
+      }
+    },
+    "ridership_od_brt_daily": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/transportation/bus/brt_{YYYY}_daily.csv"
+      }
+    },
     "ridership_od_ets": {
       "freshness": {
         "content-date-field": "date",
@@ -982,6 +1022,16 @@
       },
       "dynamic-url": {
         "template": "https://storage.data.gov.my/transportation/ktmb/komuter_utara_{YYYY}.csv"
+      }
+    },
+    "ridership_od_rapidrail_daily": {
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      },
+      "dynamic-url": {
+        "template": "https://storage.data.gov.my/transportation/rail/rapidrail_{YYYY}_daily.csv"
       }
     },
     "ridership_od_shuttle_tebrau": {

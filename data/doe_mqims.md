@@ -4,7 +4,7 @@ last_checked: 2026-08-07T07:25:52Z
 status: browser-dependent
 freshness_delta: 0 days
 next_expected_update: 2026-09-01
-record_count: 368
+record_count: null
 date_range: latest monthly sampling view
 schema_version: 1.0
 schema_drift: none

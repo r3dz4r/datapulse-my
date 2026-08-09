@@ -1,31 +1,25 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dosm_ipi_export",
-  "status": "current",
-  "last_checked": "2026-08-02T16:47:48Z",
-  "freshness_days": 13,
-  "next_expected_update": "monthly",
+  "status": "fresh",
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 17,
+  "next_expected_update": null,
   "refresh_frequency": "monthly",
   "record_count": 5174,
-  "date_range": {
-    "start": "2015-01-01",
-    "end": "2026-05-01"
-  },
+  "date_range": null,
   "fields": [
     {
       "name": "series",
-      "type": "string",
-      "distinct_values": 3
+      "type": "string"
     },
     {
       "name": "date",
-      "type": "date",
-      "format": "YYYY-MM-DD"
+      "type": "date"
     },
     {
       "name": "division",
-      "type": "string",
-      "distinct_values": 13
+      "type": "string"
     },
     {
       "name": "index",
@@ -36,22 +30,22 @@
     {
       "name": "file_reachable",
       "status": "pass",
-      "method": "HEAD request returned 200 with a 155817-byte CSV payload"
+      "method": "Probe received HTTP 200 via direct curl GET"
     },
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Downloaded CSV contained 5174 data rows"
+      "method": "Probe measured 5174 record(s)"
     },
     {
       "name": "freshness",
       "status": "pass",
-      "method": "Latest observation is 2026-05-01 and file Last-Modified is 2026-07-20"
+      "method": "Health snapshot classifies the dataset as fresh"
     },
     {
       "name": "schema_stable",
       "status": "pass",
-      "method": "4 CSV columns matched schema version 1.0"
+      "method": "Probe observed 4 column(s) with no content-shape change"
     }
   ],
   "known_quirks": [
@@ -62,11 +56,9 @@
   ],
   "breaking_changes": [],
   "reproducibility": {
-    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/ipi_export",
     "url": "https://storage.dosm.gov.my/ipi/ipi_export.csv",
-    "alternate_format": "https://storage.dosm.gov.my/ipi/ipi_export.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "DOSM via OpenDOSM"
+  "attribution": "OpenDOSM (storage.dosm.gov.my) (economy)"
 }

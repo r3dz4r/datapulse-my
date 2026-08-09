@@ -1,0 +1,62 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "ridership_od_rapidrail_daily",
+  "status": "aging",
+  "last_checked": "2026-08-09T05:24:39Z",
+  "freshness_days": 2,
+  "next_expected_update": null,
+  "refresh_frequency": "daily",
+  "record_count": 3656037,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "origin",
+      "type": "string"
+    },
+    {
+      "name": "destination",
+      "type": "string"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "ridership",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 3656037 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as aging"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 4 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Official catalogue caveat: Because the size of the complete dataset for each year since 2023 exceeds the row limit of Microsoft Excel (1,048,576), we recommend working with the data programatically, preferably using the parquet files provided.",
+    "The serving filename rotates by UTC year; the health probe resolves it at runtime."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/transportation/rail/rapidrail_2026_daily.csv",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "data.gov.my (storage) (transport)"
+}

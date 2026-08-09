@@ -27,7 +27,7 @@ def test_current_doc_with_stale_economy_count_is_flagged(tmp_path: Path) -> None
 
     assert errors == [
         "current.md:1: prohibited literal 'Economy (45)' in current doc "
-        "(current: 'Economy (70)')"
+        "(current: 'Economy (126)')"
     ]
 
 
@@ -57,7 +57,16 @@ def test_historical_doc_with_date_stamp_in_first_five_lines_passes(
     assert errors == []
 
 
-def test_clean_current_doc_passes(tmp_path: Path) -> None:
+def test_stale_166_dataset_count_is_flagged(tmp_path: Path) -> None:
     errors = lint_fixture(tmp_path, current_text="The registry contains 166 datasets.\n")
+
+    assert errors == [
+        "current.md:1: prohibited literal '166 datasets' in current doc "
+        "(current: '335 datasets')"
+    ]
+
+
+def test_clean_current_doc_passes(tmp_path: Path) -> None:
+    errors = lint_fixture(tmp_path, current_text="The registry contains 335 datasets.\n")
 
     assert errors == []
