@@ -50,3 +50,13 @@ result = run_generator(
 assert result.returncode == 0
 assert result.outputs["docs/.dashboard_filters.json"] is not None
 ```
+
+## Shell generators
+
+The `shell` fixture is shared by the badge, status-legend, README-summary, and RSS
+tests. It contains the repository-contract fixture's `alpha` and `beta` manifest
+rows, matching health rows and `_trust_summary`, a minimal README with the exact
+trust-summary replacement marker used by the generator, and an otherwise empty
+`badges/` directory. Tests stage a private copy and add the real
+`gen_status_legend.sh` dependency when exercising `gen_badges.sh`, so every write
+stays outside the tracked checkout.
