@@ -27,6 +27,7 @@ GENERATORS = (
     "gen_badges.sh",
     "gen_status_legend.sh",
     "gen_readme_summary.sh",
+    "gen_llms_summary.py",
     "gen_rss.sh",
     "gen_changelog.py",
     "gen_json_envelope.py",
@@ -41,7 +42,13 @@ HEALTH_STEPS = (
     "gen_rss.sh",
     "gen_changelog.py",
 )
-RELEASE_STEPS = HEALTH_STEPS + (
+RELEASE_STEPS = (
+    "gen_data_reports.sh",
+    "gen_badges.sh",
+    "gen_readme_summary.sh",
+    "gen_llms_summary.py",
+    "gen_rss.sh",
+    "gen_changelog.py",
     "gen_json_envelope.py",
     "gen_jsonld_catalog.py",
     "gen_mcp_reference.py",
@@ -55,6 +62,7 @@ HEALTH_OUTPUTS = (
     "changelog.json",
 )
 RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
+    "llms.txt",
     "data/json/alpha.json",
     "data/jsonld/alpha.json",
     "data/jsonld/catalog.json",
@@ -67,6 +75,7 @@ PROFILE_INPUTS = (
     "datapulse.json",
     "health",
     "README.md",
+    "llms.txt",
     "docs",
     "mcp.json",
     "mcp",
@@ -115,6 +124,12 @@ def _stage_source(tmp_path: Path) -> Path:
     _write_json(source / "health/latest.json", health)
 
     shutil.copy2(SHELL_FIXTURE / "README.md", source / "README.md")
+    (source / "llms.txt").write_text(
+        "> a machine-readable manifest of 42 official datasets\n"
+        "Agents can query the 42-dataset catalogue natively.\n"
+        "The endpoint serves tools over the 42-dataset catalogue.\n",
+        encoding="utf-8",
+    )
     (source / "docs").mkdir()
     shutil.copy2(RELEASE_FIXTURE / "docs/index.html", source / "docs/index.html")
     shutil.copy2(RELEASE_FIXTURE / "mcp.json", source / "mcp.json")
@@ -181,7 +196,7 @@ def test_health_cycle_lists_five_steps(tmp_path: Path) -> None:
         assert step in result.stdout
 
 
-def test_release_build_lists_all_nine_steps(tmp_path: Path) -> None:
+def test_release_build_lists_all_ten_steps(tmp_path: Path) -> None:
     result = _run_profile(tmp_path, "release-build", list_mode=True)
 
     assert result.returncode == 0, result.stderr

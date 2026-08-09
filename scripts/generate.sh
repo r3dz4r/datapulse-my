@@ -3,7 +3,7 @@
 # DataPulse MY generation profiles.
 #
 # health-cycle: 5 steps for artifacts derived from the live health snapshot.
-# release-build: source stamp plus 9 steps for the complete public-site artifact set.
+# release-build: source stamp plus 10 steps for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
 # It never commits, pushes, deploys, or performs the dashboard HTML embed step.
@@ -95,6 +95,7 @@ case "$profile" in
       "gen_data_reports.sh"
       "gen_badges.sh"
       "gen_readme_summary.sh"
+      "gen_llms_summary.py"
       "gen_rss.sh"
       "gen_changelog.py"
       "gen_json_envelope.py"
@@ -107,6 +108,7 @@ case "$profile" in
       "data/<id>.md"
       "badges/<id>.svg; badges/status-*.svg; badges/index.svg"
       "README.md (trust-summary block only)"
+      "llms.txt (dataset-count references only)"
       "feed.xml"
       "changelog.json"
       "data/json/<id>.json"
