@@ -1,0 +1,35 @@
+{
+  "checked_at": "2026-08-08T00:00:00Z",
+  "_trust_summary": {
+    "datasets_total": 2,
+    "by_status": {"fresh": 1, "stale": 1}
+  },
+  "datasets": [
+    {
+      "dataset_id": "alpha",
+      "status": "fresh",
+      "last_checked": "2026-08-08T01:02:03Z",
+      "freshness_delta": "2 hours",
+      "content_freshness_date": "2026-08-08",
+      "last_modified": "2026-08-08T00:30:00Z",
+      "file_size_bytes": 12345,
+      "file_count": 2,
+      "record_count": 101,
+      "column_count": 7,
+      "message": "Fixture alpha health is current."
+    },
+    {
+      "dataset_id": "beta",
+      "status": "stale",
+      "last_checked": "2026-08-08T04:05:06Z",
+      "freshness_delta": "9 days",
+      "content_freshness_date": "2026-07-30",
+      "last_modified": null,
+      "file_size_bytes": 67890,
+      "file_count": 1,
+      "record_count": 202,
+      "column_count": 9,
+      "message": "Fixture beta is behind its expected cadence."
+    }
+  ]
+}
