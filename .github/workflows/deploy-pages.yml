@@ -25,14 +25,7 @@ on:
       - "mcp/requirements.txt"
       - "scripts/verify_agent_ready.sh"
       - "scripts/verify_release_invariants.sh"
-      - "scripts/gen_badges.sh"
-      - "scripts/gen_changelog.py"
-      - "scripts/gen_data_reports.sh"
-      - "scripts/gen_jsonld_catalog.py"
-      - "scripts/gen_mcp_reference.py"
-      - "scripts/gen_readme_summary.sh"
-      - "scripts/gen_rss.sh"
-      - "scripts/gen_status_legend.sh"
+      - "scripts/generate.sh"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
   workflow_run:
@@ -82,20 +75,12 @@ jobs:
       - name: Install release verification dependencies
         run: python -m pip install jsonschema --requirement mcp/requirements.txt
 
-      - name: Regenerate dataset reports
-        run: bash scripts/gen_data_reports.sh
-
-      - name: Regenerate derived release artifacts
-        run: |
-          bash scripts/gen_badges.sh
-          bash scripts/gen_readme_summary.sh
-          bash scripts/gen_rss.sh
-          python3 scripts/gen_jsonld_catalog.py
-          python3 scripts/gen_mcp_reference.py
+      - name: Run release-build generation profile
+        run: bash scripts/generate.sh release-build
 
       - name: Inject embedded data
         run: |
-          python3 scripts/gen_dashboard_filters.py
+          # release-build already ran python3 scripts/gen_dashboard_filters.py.
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -125,9 +110,6 @@ jobs:
           with html_path.open("w", encoding="utf-8", newline="\n") as output:
               output.write(html)
           PY
-
-      - name: Regenerate changelog
-        run: python3 scripts/gen_changelog.py
 
       - name: Assemble Pages artifact
         run: |

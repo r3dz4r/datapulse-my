@@ -27,16 +27,8 @@ jobs:
           mkdir -p health
           bash scripts/check.sh > health/latest.json
 
-      - name: Generate dataset badges
-        run: bash scripts/gen_badges.sh
-
-      - name: Generate RSS feed
-        run: bash scripts/gen_rss.sh
-
-      - name: Generate README and changelog summaries
-        run: |
-          bash scripts/gen_readme_summary.sh
-          python3 scripts/gen_changelog.py
+      - name: Run health-cycle generation profile
+        run: bash scripts/generate.sh health-cycle
 
       - name: Commit changed health summary
         run: |
