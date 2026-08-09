@@ -78,30 +78,33 @@ Two consecutive 15-minute timer ticks are observed, including one that probes a 
 
 | Cycle | Trigger time | Commit SHA | Scoped paths OK? | Lock released? | Browser-dependent probed? |
 |---|---|---|---|---|---|
-| 1 (first observed) | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| 2 (second observed) | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| 1 (first observed) | 2026-08-09 11:45:13 +08 | `(none — no artifact changes)` | ✅ n/a (correct no-op: health identical to 11:31 baseline) | ✅ | ✅ `eperolehan-diklankan` fresh at 03:31:09Z |
+| 2 (second observed) | 2026-08-09 12:02:24 +08 | `86f2223` | ✅ only `changelog.json`, `feed.xml`, `health/latest.json` | ✅ | ✅ `eperolehan-diklankan` fresh at 04:02:08Z |
+
+Observation notes:
+- Cycle 1 (11:45): probe completed with "no artifact changes" — the 11:31 baseline and 11:45 result were identical, so the timer correctly made **no commit**. This is the desired idempotent behavior (not a missed commit).
+- Cycle 2 (12:00): probe detected artifact changes, committed `86f2223` (scoped to `changelog.json` + `feed.xml` + `health/latest.json`), and pushed. Matches the documented `health-cycle` profile ownership exactly.
+- Lock: `/tmp/datapulse-health.lock` present but not held between ticks (verified via `flock -n` probe returning "not held"). No overlap or partial health file observed.
+- No unexpected staged paths in either observed commit.
 
 ### Final state
 
-- ROLLOUT STATUS: _pending observation_
+- ROLLOUT STATUS: **ROLLOUT COMPLETE** — two consecutive timer cycles observed cleanly (2026-08-09 11:45 + 12:00), one with a browser-dependent probe (`eperolehan-diklankan` refreshed during cycle 2). No overlap, no partial health file, no unexpected staged paths.
 - All 7 gates green: contract verifier (166 datasets), JSON Schema, MCP pytest (25/25), scripts/tests (225/225), NPRA format tests, fact lint (0 findings), agent-ready live (166/166)
 - Reproduction: `bash scripts/check.sh --due` runs every 15 minutes via systemd timer. `bash scripts/generate.sh release-build` runs on Pages workflow dispatch. `bash scripts/verify_release_invariants.sh --local` is the local regression gate.
 
 ### Observation completed
 
-- Observation window: `<start-time>` → `<end-time>`
+- Observation window: `2026-08-09 11:31:56 +08` → `2026-08-09 12:02:25 +08`
 - Operator fill-in: see cycle table above.
-- Final status: ROLLOUT COMPLETE (or BLOCKED on <reason>)
+- Final status: **ROLLOUT COMPLETE**
 
-## Rollout observation (T35, 2026-08-09)
-
-- Observation window: 2026-08-09T11:31:56+08:00 → 2026-08-09T11:45:24+08:00
-- Cycles observed: 2 (the first cycle probed browser-dependent datasets)
-- First cycle commit: `ef364c5` — `chore(health): update due dataset health`
-- Second cycle commit: none — all 166 datasets were probed with no artifact changes, so the scoped commit guard correctly skipped creating a commit (the latest health commit remained `ef364c5`)
-- Browser-dependent datasets probed: `eperolehan-diklankan`, `doe_apims`, `doe_rqims`
-- Scoped commits: `health/` `badges/` `feed.xml` `README.md` `changelog.json` (verified via `git show --stat`; the first cycle changed only `health/latest.json`, `feed.xml`, and `changelog.json`, and the second changed no artifacts)
-- Lock file: not actively held between ticks (confirmed by successfully acquiring the `flock -n /tmp/datapulse-health.lock` single-instance guard)
-- Health log tail: `datapulse-health: pushed chore(health)`; `datapulse-health: probe started at 2026-08-09T11:45:02+08:00`; `Generated changelog.json for 166 datasets at 2026-08-09T03:31:09Z`; `datapulse-health: probe finished at 2026-08-09T11:45:24+08:00; 166 datasets probed; no artifact changes`
+Timeline (consolidated from observer + health log):
+- 11:31:29 — `ef364c5` timer commit (baseline)
+- 11:45:02–24 — timer probe: 166 datasets probed, **no artifact changes** → no commit (correct idempotent no-op)
+- 12:00:03–12:02:29 — timer probe: artifacts changed → committed + pushed `86f2223` (scoped to `changelog.json` + `feed.xml` + `health/latest.json`)
+- Browser-dependent datasets confirmed probed across the window: `eperolehan-diklankan` (fresh 03:31:09Z → 04:02:08Z), `doe_apims`, `doe_rqims`
+- Lock: not held between ticks (verified via `flock -n` acquisition)
+- No overlap, no partial health file, no unexpected staged paths in either observed cycle
 - Final state: **ROLLOUT COMPLETE** — all 35 tasks shipped or formally closed. All 7 gates green: contract verifier (166 datasets), JSON Schema, MCP pytest (25/25), scripts/tests (225/225), NPRA format tests, fact lint (0 findings), agent-ready live (166/166). Live isolated build OK. Live canary OK. Public surfaces consistent.
 - Reproduction: timer fires every 15 min; verify with `systemctl list-timers datapulse-health.timer`
