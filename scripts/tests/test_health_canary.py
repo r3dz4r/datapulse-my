@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -168,3 +169,87 @@ def test_canary_report_includes_reproduction_command(
     _, report = _run_mocked_canary(monkeypatch, tmp_path, copy.deepcopy(LIVE_HEALTH))
 
     assert "```bash\npython3 scripts/run_health_canary.py\n```" in report
+
+
+def test_check_compare_health_runs_against_existing_health(tmp_path: Path) -> None:
+    manifest = {
+        "datasets": [
+            {
+                "id": "fixture_daily",
+                "url": "https://example.invalid/fixture.json",
+                "refresh_frequency": "daily",
+                "namespace": "test",
+            }
+        ]
+    }
+    prior_health = {
+        "schema": "datapulse/v0.3/dataset-health",
+        "checked_at": "2026-08-08T00:00:00Z",
+        "_trust_summary": {"datasets_total": 1, "by_status": {"fresh": 1}},
+        "datasets": [
+            {
+                "dataset_id": "fixture_daily",
+                "last_checked": "2026-08-08T00:00:00Z",
+                "status": "fresh",
+                "http_status": 200,
+                "last_modified": "2026-08-08T00:00:00Z",
+                "record_count": 1,
+            }
+        ],
+    }
+    (tmp_path / "datapulse.json").write_text(
+        json.dumps(manifest) + "\n", encoding="utf-8"
+    )
+    health_path = tmp_path / "health/latest.json"
+    health_path.parent.mkdir()
+    health_path.write_text(json.dumps(prior_health) + "\n", encoding="utf-8")
+    health_before = health_path.read_bytes()
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_curl = fake_bin / "curl"
+    fake_curl.write_text(
+        """#!/usr/bin/env bash
+set -euo pipefail
+output_path=""
+headers_path=""
+while (( $# > 0 )); do
+  case "$1" in
+    --output) output_path="$2"; shift 2 ;;
+    --dump-header) headers_path="$2"; shift 2 ;;
+    --max-time|--write-out) shift 2 ;;
+    *) shift ;;
+  esac
+done
+printf '[{"id":1,"name":"fixture"}]\\n' > "$output_path"
+printf '%s\\r\\n' 'HTTP/1.1 200 OK' \\
+  'Last-Modified: Sat, 08 Aug 2026 00:00:00 GMT' '' > "$headers_path"
+printf '200'
+""",
+        encoding="utf-8",
+    )
+    fake_curl.chmod(0o755)
+    environment = os.environ.copy()
+    environment["PATH"] = f"{fake_bin}:{environment['PATH']}"
+
+    completed = subprocess.run(
+        [
+            "bash",
+            str(ROOT / "scripts/check.sh"),
+            "--compare-health",
+            "datapulse.json",
+        ],
+        cwd=tmp_path,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    report = json.loads(completed.stderr)
+    assert report["datasets_compared"] == 1
+    assert report["differences"]
+    assert report["differences"][0]["dataset_id"] == "fixture_daily"
+    assert health_path.read_bytes() == health_before
