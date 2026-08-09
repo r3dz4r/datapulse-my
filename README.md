@@ -149,6 +149,24 @@ is the agent-consumer self-test.
 section below for the Claude Desktop / Cursor / Cline config block, or the full
 integration guide at [`docs/mcp-deploy.md`](./docs/mcp-deploy.md).
 
+**Wire it into Claude Desktop** via `claude_desktop_config.json` (30 seconds, no
+API key):
+
+```json
+{
+  "mcpServers": {
+    "datapulse-my": {
+      "transport": "streamable-http",
+      "url": "https://mcp.data-pulse.my/mcp"
+    }
+  }
+}
+```
+
+Restart Claude Desktop, confirm the hammer icon shows "datapulse-my" with 5
+tools: `search_datasets`, `get_dataset`, `find_stale`, `get_provenance`,
+`find_by_licence`. Cursor / Cline use the same JSON in their MCP config panel.
+
 ## Included datasets
 
 - [Malaysian Fuel Prices](data/fuelprice.md) — Samples:
