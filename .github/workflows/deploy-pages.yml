@@ -114,6 +114,11 @@ jobs:
       - name: Assemble Pages artifact
         run: |
           mkdir -p _site
+          # All files inside docs/ are copied to the site ROOT (the `docs/`
+          # prefix is stripped by `cp -R docs/. _site/`). So docs/index.html
+          # becomes https://data-pulse.my/index.html, docs/foo.md becomes
+          # https://data-pulse.my/foo.md, etc. URLs in the landing page and
+          # README should NOT include the `docs/` prefix.
           cp -R docs/. _site/
           cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json datapulse.schema.json health.schema.json agent.json mcp.json changelog.json _site/
           cp -R health badges samples data _site/
