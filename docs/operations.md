@@ -98,6 +98,7 @@ stops the unit and must be resolved in the operational clone.
 | `data/jsonld/<id>.json`, `data/jsonld/catalog.json` | `scripts/gen_jsonld_catalog.py` | `deploy-pages.yml` (release-build Step 7) | On every Pages deploy |
 | `docs/mcp-reference.md`, `mcp.json` | `scripts/gen_mcp_reference.py` | `deploy-pages.yml` (release-build Step 8) | On every Pages deploy |
 | `docs/.dashboard_filters.json` | `scripts/gen_dashboard_filters.py` | `deploy-pages.yml` (release-build Step 9) | On every Pages deploy |
+| `docs/trust-snapshot-<date>.{md,json}` | `scripts/gen_trust_snapshot.py` | `deploy-pages.yml` (release-build Step 11) | On the weekly release build |
 | `mcp/server.py` `SOURCE_COMMIT_SHA` constant | `scripts/bump_mcp_source_version.py` | `deploy-pages.yml` (release-build Step 0) | On every Pages deploy |
 | Deployed `/home/redza/.local/share/datapulse-mcp/server.py` | Manual redeploy | `datapulse-mcp.service` | After any MCP code change |
 | `/etc/systemd/system/datapulse-health.{service,timer}` | Manual install | Root | When timer source changes |

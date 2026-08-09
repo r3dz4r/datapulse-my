@@ -50,11 +50,14 @@ reviewed order, with explicit path ownership:
   `gen_changelog.py`). Owns `data/<id>.md`, `badges/`, README trust
   summary, `feed.xml`, `changelog.json`. Invoked by the timer and the
   weekly fallback after a successful probe.
-- `release-build` — runs `health-cycle` then 4 more steps
-  (`gen_json_envelope.py --force` → `gen_jsonld_catalog.py` →
-  `gen_mcp_reference.py` → `gen_dashboard_filters.py`). Owns all
+- `release-build` — includes the `health-cycle` generators plus 6
+  release-only steps (`gen_llms_summary.py` →
+  `gen_json_envelope.py --force` → `gen_jsonld_catalog.py` →
+  `gen_mcp_reference.py` → `gen_dashboard_filters.py` →
+  `gen_trust_snapshot.py`). Owns all
   health-cycle paths plus `data/json/<id>.json`, `data/jsonld/`,
-  `docs/mcp-reference.md`, `mcp.json`, `docs/.dashboard_filters.json`.
+  `docs/mcp-reference.md`, `mcp.json`, `docs/.dashboard_filters.json`, and
+  `docs/trust-snapshot-<date>.{md,json}`.
   Invoked by the Pages deploy.
 
 ## MCP source-to-deployment sync

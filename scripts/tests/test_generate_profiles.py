@@ -30,6 +30,7 @@ GENERATORS = (
     "gen_llms_summary.py",
     "gen_rss.sh",
     "gen_changelog.py",
+    "gen_trust_snapshot.py",
     "gen_json_envelope.py",
     "gen_jsonld_catalog.py",
     "gen_mcp_reference.py",
@@ -53,6 +54,7 @@ RELEASE_STEPS = (
     "gen_jsonld_catalog.py",
     "gen_mcp_reference.py",
     "gen_dashboard_filters.py",
+    "gen_trust_snapshot.py",
 )
 HEALTH_OUTPUTS = (
     "README.md",
@@ -196,7 +198,7 @@ def test_health_cycle_lists_five_steps(tmp_path: Path) -> None:
         assert step in result.stdout
 
 
-def test_release_build_lists_all_ten_steps(tmp_path: Path) -> None:
+def test_release_build_lists_all_eleven_steps(tmp_path: Path) -> None:
     result = _run_profile(tmp_path, "release-build", list_mode=True)
 
     assert result.returncode == 0, result.stderr
