@@ -12,8 +12,9 @@ that snapshot and the manifest:
   workflow invoke it after a successful probe.
 - `release-build` owns the `health-cycle` paths plus
   `data/json/<id>.json`, `data/jsonld/`, `docs/mcp-reference.md`, `mcp.json`,
-  and `docs/.dashboard_filters.json`. The Pages deploy workflow invokes it
-  before embedding and assembling the public artifact.
+  `docs/.dashboard_filters.json`, and the weekly
+  `docs/trust-snapshot-<date>.{md,json}` roundup. The Pages deploy workflow
+  invokes it before embedding and assembling the public artifact.
 
 Treat generated paths as profile outputs: change their source or generator,
 then run the owning profile instead of patching an output directly.
@@ -23,13 +24,12 @@ then run the owning profile instead of patching an output directly.
 Two named profiles in `scripts/generate.sh` orchestrate the generators in reviewed order:
 
 - `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `changelog.json`.
-- `release-build` — invoked by the Pages deploy workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), and dashboard filters (`docs/.dashboard_filters.json`).
+- `release-build` — invoked by the Pages deploy workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), dashboard filters (`docs/.dashboard_filters.json`), and the date-stamped trust snapshot (`docs/trust-snapshot-<date>.{md,json}`).
 
-`release-build` numbers the source stamp as Step 0, followed by the five
-`health-cycle` generators as Steps 1–5 and the four public-discovery generators
-as Steps 6–9. Both profiles support `--list` for dry-run enumeration of steps +
-owned paths. Both refuse to push or deploy — those actions remain with their
-operational owner.
+`release-build` numbers the source stamp as Step 0, followed by eleven artifact
+generators as Steps 1–11. Both profiles support `--list` for dry-run enumeration
+of steps + owned paths. Both refuse to push or deploy — those actions remain
+with their operational owner.
 
 ## Pages deployment
 
