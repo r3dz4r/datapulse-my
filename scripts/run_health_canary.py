@@ -156,11 +156,17 @@ def _classification(
     field: str,
     before: object,
     after: object,
+    manifest_row: dict,
     live_row: dict,
     canary_row: dict,
 ) -> tuple[str, str]:
     if field == "status":
         transition = (before, after)
+        if (
+            manifest_row.get("real_status") == "discontinued"
+            and after in {"degraded", "unreachable"}
+        ):
+            return "Approved", "failed probe is expected for a discontinued upstream feed"
         if transition in {("fresh", "aging"), ("aging", "fresh")}:
             return "Approved", "freshness-window transition consistent with policy"
         if before in {"stale", "degraded", "unreachable", "unknown-freshness"} and after in NORMAL_FRESHNESS_STATUSES:
@@ -213,6 +219,8 @@ def _classification(
         return "Pending", "freshness evidence change needs review"
 
     if field == "record_count":
+        if after in {0, None} and manifest_row.get("real_status") == "discontinued":
+            return "Approved", "no records are expected for a discontinued upstream feed"
         if isinstance(before, (int, float)) and not isinstance(before, bool) and isinstance(after, (int, float)) and not isinstance(after, bool):
             denominator = abs(before)
             change = float("inf") if denominator == 0 else abs(after - before) / denominator
@@ -277,7 +285,14 @@ def _compare(manifest: dict, live: dict, canary: dict) -> list[Finding]:
             after = canary_row.get(field)
             if before == after:
                 continue
-            classification, reason = _classification(field, before, after, live_row, canary_row)
+            classification, reason = _classification(
+                field,
+                before,
+                after,
+                manifest_by_id[dataset_id],
+                live_row,
+                canary_row,
+            )
             category = {
                 "status": "Status flip",
                 "record_count": "Record count",

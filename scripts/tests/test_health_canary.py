@@ -109,6 +109,37 @@ def test_canary_detects_record_count_change(
     assert "more than 10%" in report
 
 
+def test_discontinued_feed_records_zero_count_not_blocker(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    manifest = json.loads(
+        (ROOT / "datapulse.json").read_text(encoding="utf-8")
+    )
+    canary = copy.deepcopy(LIVE_HEALTH)
+    row = next(
+        row
+        for row in canary["datasets"]
+        if isinstance(row.get("record_count"), (int, float))
+        and row["record_count"] > 0
+    )
+    dataset_id = row["dataset_id"]
+    manifest_row = next(row for row in manifest["datasets"] if row["id"] == dataset_id)
+    manifest_row["real_status"] = "discontinued"
+    row["record_count"] = 0
+    manifest_path = tmp_path / "datapulse.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(run_health_canary, "MANIFEST_PATH", manifest_path)
+
+    exit_code, report = _run_mocked_canary(monkeypatch, tmp_path, canary)
+
+    approved_section = report.split("## Approved", 1)[1].split("## Blockers", 1)[0]
+    blocker_section = report.split("## Blockers", 1)[1].split("## Pending", 1)[0]
+    assert exit_code == 0
+    assert dataset_id in approved_section
+    assert dataset_id not in blocker_section
+
+
 def test_canary_does_not_modify_tracked_workspace(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
