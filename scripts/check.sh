@@ -145,6 +145,58 @@ probe_policy_value() {
   jq -er --arg id "$dataset_id" ".datasets[\$id]${filter} // empty" "$probe_policy"
 }
 
+respect_robots_txt() {
+  local dataset_id="$1"
+  local url="$2"
+  local ua="${DATAPULSE_USER_AGENT:-DataPulseMY/1.0 (+https://data-pulse.my/about)}"
+  local origin robots_url robots_body
+
+  origin="$(printf '%s' "$url" | awk -F/ '{print $1"//"$3}')"
+  if [[ ! "$origin" =~ ^[A-Za-z][A-Za-z0-9+.-]*://[^/]+$ ]]; then
+    printf 'robots.txt check skipped: %s has malformed URL %s\n' \
+      "$dataset_id" "$url" >&2
+    return 0
+  fi
+
+  robots_url="${origin}/robots.txt"
+  robots_body="$(curl --location --silent --show-error --max-time 5 \
+    --output - "$robots_url" 2>/dev/null)" || return 0
+  [[ -n "$robots_body" ]] || return 0
+
+  if printf '%s' "$robots_body" | awk -v ua="$ua" '
+    BEGIN {
+      blocked=0
+      ua_token=tolower(ua)
+      sub(/[[:space:]].*/, "", ua_token)
+      ua_product=ua_token
+      sub(/\/.*/, "", ua_product)
+      matching=0
+    }
+    {
+      sub(/\r$/, "")
+      sub(/[[:space:]]*#.*/, "")
+    }
+    tolower($0) ~ /^[[:space:]]*user-agent[[:space:]]*:/ {
+      value=$0
+      sub(/^[^:]*:[[:space:]]*/, "", value)
+      sub(/[[:space:]]*$/, "", value)
+      value=tolower(value)
+      matching=(value == "*" || value == ua_product || value == ua_token || value == tolower(ua))
+      next
+    }
+    tolower($0) ~ /^[[:space:]]*disallow[[:space:]]*:/ {
+      path=$0
+      sub(/^[^:]*:[[:space:]]*/, "", path)
+      sub(/[[:space:]]*$/, "", path)
+      if (matching && path == "/") blocked=1
+    }
+    END { exit blocked ? 0 : 1 }
+  ' >/dev/null 2>&1; then
+    return 1
+  fi
+  return 0
+}
+
 probe_adapter() {
   local dataset_id="$1"
 
@@ -466,6 +518,20 @@ emit() {
     >> "$results_file"
 }
 
+emit_robots_blocked() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local origin details
+
+  origin="$(printf '%s' "$source_url" | awk -F/ '{print $1"//"$3}')"
+  printf 'Probe skipped: %s blocked by robots.txt at %s\n' \
+    "$dataset_id" "$origin" >&2
+  details="$(jq -cn --arg request_url "$source_url" \
+    '{request_url: $request_url, access_method: "robots.txt compliance check"}')"
+  emit "$dataset_id" "$source_url" "unreachable" \
+    "Probe skipped: blocked by robots.txt" "$details"
+}
+
 http_status_name() {
   local http_status="$1"
 
@@ -725,6 +791,11 @@ check_direct_dataset() {
   # We do NOT override the manifest URL here — direct-storage URLs in
   # the manifest are now the canonical source (the legacy data-catalogue
   # API was decommissioned).
+
+  if ! respect_robots_txt "$dataset_id" "$request_url"; then
+    emit_robots_blocked "$dataset_id" "$source_url"
+    return 0
+  fi
 
   : > "$headers_file"
   if ! http_status="$(curl --location --silent --show-error \
@@ -1052,12 +1123,6 @@ if [[ "${DATAPULSE_CHECK_SOURCE_ONLY:-false}" == true ]]; then
   return 0
 fi
 
-if jq -e --slurpfile policy "$probe_policy" \
-  'any(.datasets[]; (($policy[0].datasets[.id].adapter // $policy[0].defaults.adapter) == "browser"))' \
-  "$selected_manifest_file" >/dev/null; then
-  warm_camofox_browser
-fi
-
 max_parallel="${DATAPULSE_MAX_PARALLEL:-16}"
 active_jobs=0
 dataset_index=0
@@ -1090,6 +1155,7 @@ fi
 if jq -e --slurpfile policy "$probe_policy" \
   'any(.datasets[]; (($policy[0].datasets[.id].adapter // $policy[0].defaults.adapter) == "browser"))' \
   "$selected_manifest_file" >/dev/null; then
+  camofox_warmed=false
   while IFS= read -r browser_id; do
     if ! jq -e --arg id "$browser_id" \
       '.datasets[] | select(.id == $id)' "$selected_manifest_file" >/dev/null; then
@@ -1099,7 +1165,19 @@ if jq -e --slurpfile policy "$probe_policy" \
       '.datasets[] | select(.id == $id) | .url' "$selected_manifest_file")"
     [[ -n "$source_url" ]] || continue
     printf -v browser_result '%s/browser-%s.json' "$probe_results_dir" "$browser_id"
-    (dispatch_dataset "$browser_id" "$source_url" "$browser_result")
+    if ! respect_robots_txt "$browser_id" "$source_url"; then
+      (
+        results_file="$browser_result"
+        : > "$results_file"
+        emit_robots_blocked "$browser_id" "$source_url"
+      )
+    else
+      if ! $camofox_warmed; then
+        warm_camofox_browser
+        camofox_warmed=true
+      fi
+      (dispatch_dataset "$browser_id" "$source_url" "$browser_result")
+    fi
     cat "$browser_result" >> "$results_file"
   done < <(jq -r '.datasets | to_entries[] | select(.value.adapter == "browser") | .key' "$probe_policy")
 fi
