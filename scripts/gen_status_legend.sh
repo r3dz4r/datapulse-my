@@ -31,16 +31,16 @@ while IFS=$'\t' read -r status count color; do
 
   label="${status}: ${count}"
   escaped_label="$(jq -rn --arg value "$label" '$value | @html')"
+  stroke_dasharray=""
+  if [[ "$status" == "unknown-freshness" ]]; then
+    stroke_dasharray=' stroke-dasharray="2,2"'
+  fi
 
   printf '%s\n' \
     '<svg xmlns="http://www.w3.org/2000/svg" width="110" height="20" role="img" aria-label="health: '"$escaped_label"'">' \
     '  <title>health: '"$escaped_label"'</title>' \
-    '  <clipPath id="r"><rect width="110" height="20" rx="3" fill="#fff"/></clipPath>' \
-    '  <g clip-path="url(#r)">' \
-    '    <rect width="35" height="20" fill="#555"/>' \
-    '    <rect x="35" width="75" height="20" fill="'"$color"'"/>' \
-    '  </g>' \
-    '  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="9">' \
+    '  <rect x="0.5" y="0.5" width="109" height="19" rx="3" fill="#0d1117" stroke="'"$color"'" stroke-width="1"'"$stroke_dasharray"'/>' \
+    '  <g fill="'"$color"'" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="500">' \
     '    <text x="17.5" y="14">health</text>' \
     '    <text x="72.5" y="14" textLength="68" lengthAdjust="spacingAndGlyphs">'"$escaped_label"'</text>' \
     '  </g>' \
@@ -48,14 +48,14 @@ while IFS=$'\t' read -r status count color; do
 done < <(jq -r '
   ._trust_summary.by_status as $counts
   | [
-      ["fresh", ($counts.fresh // 0), "#4c1"],
-      ["aging", ($counts.aging // 0), "#dfb317"],
-      ["stale", ($counts.stale // 0), "#fe7d37"],
-      ["degraded", ($counts.degraded // 0), "#e05d44"],
-      ["browser-dependent", ($counts.browser_dependent // 0), "#007ec6"],
-      ["unreachable", ($counts.unreachable // 0), "#e05d44"],
-      ["unknown", ($counts.unknown // 0), "#9f9f9f"],
-      ["unknown-freshness", ($counts.unknown_freshness // 0), "#9f7aea"]
+      ["fresh", ($counts.fresh // 0), "#3fb950"],
+      ["aging", ($counts.aging // 0), "#d29922"],
+      ["stale", ($counts.stale // 0), "#f85149"],
+      ["degraded", ($counts.degraded // 0), "#a371f7"],
+      ["browser-dependent", ($counts.browser_dependent // 0), "#58a6ff"],
+      ["unreachable", ($counts.unreachable // 0), "#f85149"],
+      ["unknown", ($counts.unknown // 0), "#6e7681"],
+      ["unknown-freshness", ($counts.unknown_freshness // 0), "#6e7681"]
     ][]
   | select(.[1] | type == "number" and . >= 0 and floor == .)
   | @tsv
