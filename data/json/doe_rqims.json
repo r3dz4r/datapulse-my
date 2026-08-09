@@ -1,4 +1,5 @@
 {
+  "schema": "datapulse/v0.1/dataset-health",
   "id": "doe_rqims",
   "status": "healthy",
   "last_checked": "2026-08-02T14:00:00Z",
@@ -8,18 +9,52 @@
   "record_count": 30,
   "date_range": null,
   "fields": [
-    { "name": "NO", "type": "integer" },
-    { "name": "STATE", "type": "string" },
-    { "name": "RIVER", "type": "string" },
-    { "name": "WATER_INTAKE", "type": "string" },
-    { "name": "STATION_ID", "type": "string" },
-    { "name": "hr_00 through hr_19", "type": "integer or null", "description": "Twenty hourly WQI columns" },
-    { "name": "REMARKS", "type": "string or null" }
+    {
+      "name": "NO",
+      "type": "integer"
+    },
+    {
+      "name": "STATE",
+      "type": "string"
+    },
+    {
+      "name": "RIVER",
+      "type": "string"
+    },
+    {
+      "name": "WATER_INTAKE",
+      "type": "string"
+    },
+    {
+      "name": "STATION_ID",
+      "type": "string"
+    },
+    {
+      "name": "hr_00 through hr_19",
+      "type": "integer or null",
+      "description": "Twenty hourly WQI columns"
+    },
+    {
+      "name": "REMARKS",
+      "type": "string or null"
+    }
   ],
   "checks": [
-    { "name": "page_rendered", "status": "pass", "method": "Camofox snapshot contained the Continuous River station table" },
-    { "name": "station_count", "status": "pass", "method": "Portal summary reported 30 stations" },
-    { "name": "schema_stable", "status": "pass", "method": "Station metadata, 20 hourly WQI columns, and remarks matched schema version 1.0" }
+    {
+      "name": "page_rendered",
+      "status": "pass",
+      "method": "Camofox snapshot contained the Continuous River station table"
+    },
+    {
+      "name": "station_count",
+      "status": "pass",
+      "method": "Portal summary reported 30 stations"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Station metadata, 20 hourly WQI columns, and remarks matched schema version 1.0"
+    }
   ],
   "known_quirks": [
     "The source is JavaScript-rendered and requires Camofox.",
@@ -27,7 +62,10 @@
     "The Manual River path /RQIMS/manual_river returns 404; only the Continuous River view is documented."
   ],
   "breaking_changes": [],
-  "reproducibility": { "url": "https://eqms.doe.gov.my/RQIMS/conti_river", "access_method": "Camofox; wait 12 seconds before snapshot" },
+  "reproducibility": {
+    "url": "https://eqms.doe.gov.my/RQIMS/conti_river",
+    "access_method": "Camofox; wait 12 seconds before snapshot"
+  },
   "licence": "Open Government Licence (Malaysia)",
   "attribution": "DOE Malaysia via MyEQMS"
 }

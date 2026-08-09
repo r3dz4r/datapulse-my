@@ -1,4 +1,5 @@
 {
+  "schema": "datapulse/v0.1/dataset-health",
   "id": "doe_apims",
   "status": "healthy",
   "last_checked": "2026-08-02T14:00:00Z",
@@ -8,15 +9,40 @@
   "record_count": 68,
   "date_range": null,
   "fields": [
-    { "name": "NO", "type": "integer" },
-    { "name": "STATE", "type": "string" },
-    { "name": "LOCATION", "type": "string" },
-    { "name": "hr_22, hr_23, hr_00, hr_01, hr_02, hr_03, hr_04, hr_05, hr_06, hr_07, hr_08, hr_09, hr_10, hr_11, hr_12, hr_13", "type": "integer or null", "description": "Sixteen hourly API columns" }
+    {
+      "name": "NO",
+      "type": "integer"
+    },
+    {
+      "name": "STATE",
+      "type": "string"
+    },
+    {
+      "name": "LOCATION",
+      "type": "string"
+    },
+    {
+      "name": "hr_22, hr_23, hr_00, hr_01, hr_02, hr_03, hr_04, hr_05, hr_06, hr_07, hr_08, hr_09, hr_10, hr_11, hr_12, hr_13",
+      "type": "integer or null",
+      "description": "Sixteen hourly API columns"
+    }
   ],
   "checks": [
-    { "name": "page_rendered", "status": "pass", "method": "Camofox snapshot contained the APIMS station table" },
-    { "name": "station_count", "status": "pass", "method": "Portal summary reported 68 stations" },
-    { "name": "schema_stable", "status": "pass", "method": "Station identity and 16 hourly API columns matched schema version 1.0" }
+    {
+      "name": "page_rendered",
+      "status": "pass",
+      "method": "Camofox snapshot contained the APIMS station table"
+    },
+    {
+      "name": "station_count",
+      "status": "pass",
+      "method": "Portal summary reported 68 stations"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Station identity and 16 hourly API columns matched schema version 1.0"
+    }
   ],
   "known_quirks": [
     "The source is JavaScript-rendered and requires Camofox.",
@@ -24,7 +50,10 @@
     "The legacy apims.doe.gov.my host returns 403; use eqms.doe.gov.my."
   ],
   "breaking_changes": [],
-  "reproducibility": { "url": "https://eqms.doe.gov.my/APIMS/main", "access_method": "Camofox; wait 10 seconds before snapshot" },
+  "reproducibility": {
+    "url": "https://eqms.doe.gov.my/APIMS/main",
+    "access_method": "Camofox; wait 10 seconds before snapshot"
+  },
   "licence": "Open Government Licence (Malaysia)",
   "attribution": "DOE Malaysia via MyEQMS"
 }
