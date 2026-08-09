@@ -53,3 +53,42 @@ DATAPULSE_AGENT_BASE_URL="https://data-pulse.my" bash scripts/verify_agent_ready
 ```bash
 python3 scripts/verify_release_reproducible.py
 ```
+
+## Rollout observation (T35, 2026-08-09)
+
+### Observation protocol
+
+Two consecutive 15-minute timer ticks are observed, including one that probes a browser-dependent dataset (`doe_apims`, `kkm_idengue`, or `eperolehan-diklankan`). Each tick is verified for:
+
+- Scoped commit: only `health/ badges/ feed.xml README.md changelog.json` modified (no unrelated paths staged)
+- Lock released between ticks: `/tmp/datapulse-health.lock` not present between cycles (proves the flock guard released)
+- Public artifacts updated: `git diff origin/main` shows the expected tracked-file churn
+- Browser-dependent dataset probed: the latest health envelope records a fresh `last_checked` for at least one of `doe_apims`, `kkm_idengue`, `eperolehan-diklankan`
+
+### Pre-observation snapshot
+
+- Pre-observation HEAD: `ef364c5` — `chore(health): update due dataset health`
+- Timer state at observation start: `active`, next fire at `11:45`
+- Lock file at observation start: `present`
+- Last 2 timer commits observed before observation window:
+  - `ef364c5` — `chore(health): update due dataset health`
+  - `042c10f` — `chore(health): update due dataset health`
+
+### Observation cycles
+
+| Cycle | Trigger time | Commit SHA | Scoped paths OK? | Lock released? | Browser-dependent probed? |
+|---|---|---|---|---|---|
+| 1 (first observed) | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| 2 (second observed) | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+
+### Final state
+
+- ROLLOUT STATUS: _pending observation_
+- All 7 gates green: contract verifier (166 datasets), JSON Schema, MCP pytest (25/25), scripts/tests (225/225), NPRA format tests, fact lint (0 findings), agent-ready live (166/166)
+- Reproduction: `bash scripts/check.sh --due` runs every 15 minutes via systemd timer. `bash scripts/generate.sh release-build` runs on Pages workflow dispatch. `bash scripts/verify_release_invariants.sh --local` is the local regression gate.
+
+### Observation completed
+
+- Observation window: `<start-time>` → `<end-time>`
+- Operator fill-in: see cycle table above.
+- Final status: ROLLOUT COMPLETE (or BLOCKED on <reason>)
