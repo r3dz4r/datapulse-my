@@ -85,6 +85,22 @@ so rather than failing silently. See
 [`scripts/smoke_browser_probes.sh`](scripts/smoke_browser_probes.sh) for
 isolated smoke tests.
 
+### Legal
+
+DataPulse probes publicly-published open-data sources. We do not bypass
+authentication, CAPTCHAs, or terms-of-service restrictions. Every source we
+probe is publicly available without login; the data is aggregate/non-personal;
+and the probe respects each dataset's declared refresh frequency.
+
+All scraping is rate-limited (15-minute cadence, dataset-tier cadence applied)
+and identifies itself via User-Agent. Sources we cannot probe without
+authentication, CAPTCHA bypass, or ToS violation are marked `unreachable` or
+`browser-dependent` — never silently scraped through a workaround.
+
+If you are a data source maintainer and would like DataPulse to adjust its probe
+cadence, exclude a dataset, or remove it from the manifest, please open a GitHub
+issue or contact the maintainers.
+
 ## AI-agent-ready — what it means for you
 
 Give your organisation's AI tools current, licensed, and verified Malaysian
