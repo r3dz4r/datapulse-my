@@ -16,6 +16,17 @@ run is:
 8. `scripts/gen_json_envelope.py` → `data/json/<id>.json` for each non-GTFS registry ID
 9. `scripts/gen_dashboard_filters.py` → `docs/.dashboard_filters.json` (namespace counts derived from manifest)
 
+## Generation profiles
+
+Two named profiles in `scripts/generate.sh` orchestrate the generators in reviewed order:
+
+- `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `changelog.json`.
+- `release-build` — invoked by the Pages deploy workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), and dashboard filters (`docs/.dashboard_filters.json`).
+
+Both profiles support `--list` for dry-run enumeration of steps + owned paths. Both refuse to push or deploy — that's the workflow's job, not the profile's.
+
+T28 will rewire the systemd source unit, weekly workflow, and Pages workflow to call these profiles instead of inlining generator lists.
+
 The 15-minute systemd service owns steps 1–5 for due datasets. The weekly
 GitHub Actions fallback also owns steps 1–5 after a full probe. Maintainers run
 steps 6, 8, and 9 when manifest shape, probe policy, or dashboard filters change. Step 9 (dashboard filters) re-runs on every deploy since counts may change with any manifest addition.
