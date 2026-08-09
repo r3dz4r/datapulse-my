@@ -30,50 +30,50 @@ while IFS=$'\t' read -r dataset_id raw_status; do
   case "$raw_status" in
     fresh)
       status="fresh"
-      color="#4c1"
+      color="#3fb950"
       ;;
     aging)
       status="aging"
-      color="#dfb317"
+      color="#d29922"
       ;;
     stale)
       status="stale"
-      color="#fe7d37"
+      color="#f85149"
       ;;
     degraded)
       status="degraded"
-      color="#e05d44"
+      color="#a371f7"
       ;;
     unreachable)
       status="unreachable"
-      color="#e05d44"
+      color="#f85149"
       ;;
     browser-dependent)
       status="browser-dependent"
-      color="#007ec6"
+      color="#58a6ff"
       ;;
     unknown-freshness)
       status="unknown-freshness"
-      color="#9f7aea"
+      color="#6e7681"
       ;;
     *)
       status="unknown"
-      color="#9f9f9f"
+      color="#6e7681"
       ;;
   esac
 
   escaped_status="$(jq -rn --arg value "$status" '$value | @html')"
   badge_file="${output_dir}/${dataset_id}.svg"
+  stroke_dasharray=""
+  if [[ "$status" == "unknown-freshness" ]]; then
+    stroke_dasharray=' stroke-dasharray="2,2"'
+  fi
 
   printf '%s\n' \
     '<svg xmlns="http://www.w3.org/2000/svg" width="110" height="20" role="img" aria-label="health: '"$escaped_status"'">' \
     '  <title>health: '"$escaped_status"'</title>' \
-    '  <clipPath id="r"><rect width="110" height="20" rx="3" fill="#fff"/></clipPath>' \
-    '  <g clip-path="url(#r)">' \
-    '    <rect width="35" height="20" fill="#555"/>' \
-    '    <rect x="35" width="75" height="20" fill="'"$color"'"/>' \
-    '  </g>' \
-    '  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="9">' \
+    '  <rect x="0.5" y="0.5" width="109" height="19" rx="3" fill="#0d1117" stroke="'"$color"'" stroke-width="1"'"$stroke_dasharray"'/>' \
+    '  <g fill="'"$color"'" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="500">' \
     '    <text x="17.5" y="14">health</text>' \
     '    <text x="72.5" y="14" textLength="68" lengthAdjust="spacingAndGlyphs">'"$escaped_status"'</text>' \
     '  </g>' \
