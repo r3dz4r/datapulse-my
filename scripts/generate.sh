@@ -3,7 +3,7 @@
 # DataPulse MY generation profiles.
 #
 # health-cycle: 5 steps for artifacts derived from the live health snapshot.
-# release-build: 9 steps for the complete public-site artifact set.
+# release-build: source stamp plus 9 steps for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
 # It never commits, pushes, deploys, or performs the dashboard HTML embed step.
@@ -91,6 +91,7 @@ case "$profile" in
   release-build)
     description="Regenerate health-cycle plus public discovery, JSON-LD, MCP, envelope, and filter artifacts."
     generators=(
+      "bump_mcp_source_version.py"
       "gen_data_reports.sh"
       "gen_badges.sh"
       "gen_readme_summary.sh"
@@ -102,6 +103,7 @@ case "$profile" in
       "gen_dashboard_filters.py"
     )
     outputs=(
+      "mcp/server.py (SOURCE_COMMIT_SHA/SOURCE_COMMIT_DATE constants); mcp.json (source_commit_sha/source_commit_date fields)"
       "data/<id>.md"
       "badges/<id>.svg; badges/status-*.svg; badges/index.svg"
       "README.md (trust-summary block only)"
@@ -135,7 +137,12 @@ command_for() {
 
 if [[ "$list_only" == true ]]; then
   for index in "${!generators[@]}"; do
-    printf '%d. ' "$((index + 1))"
+    if [[ "$profile" == "release-build" ]]; then
+      step_number="$index"
+    else
+      step_number="$((index + 1))"
+    fi
+    printf '%d. ' "$step_number"
     command_for "${generators[$index]}"
     printf '\n   owns: %s\n' "${outputs[$index]}"
   done
@@ -144,7 +151,14 @@ fi
 
 for index in "${!generators[@]}"; do
   generator="${generators[$index]}"
-  printf 'Step %d/%d: ' "$((index + 1))" "${#generators[@]}"
+  if [[ "$profile" == "release-build" ]]; then
+    step_number="$index"
+    final_step="$((${#generators[@]} - 1))"
+  else
+    step_number="$((index + 1))"
+    final_step="${#generators[@]}"
+  fi
+  printf 'Step %d/%d: ' "$step_number" "$final_step"
   command_for "$generator"
   printf '\n'
 

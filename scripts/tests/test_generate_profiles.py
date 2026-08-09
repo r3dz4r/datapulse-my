@@ -22,6 +22,7 @@ HEALTH_FIXTURE = (
 RELEASE_FIXTURE = ROOT / "scripts/tests/fixtures/generator/python_release"
 SHELL_FIXTURE = ROOT / "scripts/tests/fixtures/generator/shell"
 GENERATORS = (
+    "bump_mcp_source_version.py",
     "gen_data_reports.sh",
     "gen_badges.sh",
     "gen_status_legend.sh",
@@ -62,6 +63,7 @@ RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "docs/.dashboard_filters.json",
 )
 PROFILE_INPUTS = (
+    ".git",
     "datapulse.json",
     "health",
     "README.md",
@@ -123,6 +125,19 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(ROOT / "scripts/generate.sh", scripts / "generate.sh")
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
+    subprocess.run(["git", "init", "-q"], cwd=source, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.invalid"],
+        cwd=source,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test"], cwd=source, check=True
+    )
+    subprocess.run(["git", "add", "."], cwd=source, check=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", "fixture"], cwd=source, check=True
+    )
     return source
 
 
