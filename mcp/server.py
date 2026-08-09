@@ -11,11 +11,26 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import mcp.types as mcp_types
 from fastmcp import FastMCP
+from mcp.types import Implementation as MCPImplementation
 from pydantic import Field
 from fastmcp.tools import FunctionTool
 from typing_extensions import Annotated
 
+
+# T29 (2026-08-09): source version marker. Set by `scripts/bump_mcp_source_version.py`
+# at the start of each release build. The deployed service exposes this via the
+# JSON-RPC `initialize` response's `serverInfo.version` field, alongside (or
+# replacing) the legacy "v3.4.5" hand-maintained version. The verify script
+# reads this field and compares to the current repo HEAD to detect drift.
+SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "dev")
+SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "unreleased")
+SOURCE_VERSION_STRING = (
+    f"v3.4.5+{SOURCE_COMMIT_SHA[:7]}"
+    if SOURCE_COMMIT_SHA != "dev"
+    else "v3.4.5-dev"
+)
 
 DATA_BASE = os.getenv("DATA_BASE", "https://r3dz4r.github.io/datapulse-my").rstrip("/")
 MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
@@ -89,8 +104,24 @@ FIND_BY_LICENCE_DESCRIPTION = (
     "available under a specific licence for compliance/reuse scoping."
 )
 
+class SourceImplementation(MCPImplementation):
+    """Factory type for protocol server information with source markers."""
+
+    def __new__(cls, **values: Any) -> MCPImplementation:
+        return MCPImplementation(
+            source_commit_sha=SOURCE_COMMIT_SHA,
+            source_commit_date=SOURCE_COMMIT_DATE,
+            **values,
+        )
+
+
+# The MCP SDK constructs serverInfo internally, so extend the protocol model it uses.
+mcp_types.Implementation = SourceImplementation
+
+
 mcp = FastMCP(
     "DataPulse MY",
+    version=SOURCE_VERSION_STRING,
     instructions="Read-only access to DataPulse MY's Malaysian public dataset catalogue.",
 )
 

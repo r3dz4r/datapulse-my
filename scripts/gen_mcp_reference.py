@@ -26,6 +26,8 @@ async def generate() -> None:
 
     discovery_path = ROOT / "mcp.json"
     discovery = json.loads(discovery_path.read_text(encoding="utf-8"))
+    discovery["server"]["source_commit_sha"] = server.SOURCE_COMMIT_SHA
+    discovery["server"]["source_commit_date"] = server.SOURCE_COMMIT_DATE
     discovery["tools"] = [
         {
             "name": tool.name,

@@ -89,6 +89,32 @@ curl -sS "$endpoint" \
 
 The expected output is `5`.
 
+## Source-to-deployment sync
+
+Each release-build invocation stamps the current commit SHA into the
+MCP source so the deployed service can introspect its source-of-truth:
+
+- `mcp/server.py` exposes `SOURCE_COMMIT_SHA` and `SOURCE_COMMIT_DATE` module
+  constants, returned in the JSON-RPC `initialize` response's
+  `serverInfo.source_commit_sha` and `serverInfo.source_commit_date` fields.
+- `mcp.json` discovery doc has `server.source_commit_sha` and
+  `server.source_commit_date` fields, kept in sync by the same bump.
+- `scripts/bump_mcp_source_version.py` is the first step of the
+  `release-build` profile; it reads `git rev-parse HEAD` and stamps both
+  files.
+- `scripts/verify_mcp_deployment.py` compares the deployed service's
+  `source_commit_sha` to the current repo HEAD. Exit 0 if they match,
+  exit 1 on mismatch, exit 2 if the endpoint is unreachable.
+
+Run the verify check after any MCP change:
+
+```bash
+python3 scripts/verify_mcp_deployment.py
+```
+
+This is read-only — it doesn't write to the deployed service. The check
+uses the JSON-RPC handshake already documented above.
+
 ## Named Cloudflare Tunnel
 
 Cloudflared 2026.7.3 is installed. The named tunnel routes
