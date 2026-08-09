@@ -2,38 +2,67 @@
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dosm_trade_enduse_bec",
   "status": "stale",
-  "last_checked": "2026-08-02T16:01:47Z",
-  "freshness_days": 74,
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 128,
   "next_expected_update": null,
   "refresh_frequency": "monthly",
   "record_count": 14332,
-  "date_range": { "start": "2010-01-01", "end": "2026-04-01" },
+  "date_range": null,
   "fields": [
-    { "name": "series", "type": "string", "values": ["abs", "growth_yoy", "growth_mom"] },
-    { "name": "end_use", "type": "string", "distinct_values": 7 },
-    { "name": "bec", "type": "string", "distinct_values": 19 },
-    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
-    { "name": "imports", "type": "number" }
+    {
+      "name": "series",
+      "type": "string"
+    },
+    {
+      "name": "end_use",
+      "type": "string"
+    },
+    {
+      "name": "bec",
+      "type": "integer"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "imports",
+      "type": "number"
+    }
   ],
   "checks": [
-    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 611406-byte payload" },
-    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 14332 data rows" },
-    { "name": "freshness", "status": "warn", "method": "Latest observation is 2026-04-01 and file Last-Modified is 2026-05-20 for a monthly dataset" },
-    { "name": "schema_stable", "status": "pass", "method": "Five CSV columns matched schema version 1.0" }
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 14332 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 5 column(s) with no content-shape change"
+    }
   ],
   "known_quirks": [
     "Monthly dates use the first day of each month.",
     "BEC codes must remain strings so leading zeroes are preserved.",
-    "BEC 000 aggregate rows coexist with detailed codes.",
-    "Absolute values and percentage growth rates share the imports column."
+    "BEC `000` is an aggregate and coexists with detailed codes.",
+    "Absolute import values and percentage growth rates share `imports`."
   ],
   "breaking_changes": [],
   "reproducibility": {
-    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/trade_enduse_bec",
     "url": "https://storage.dosm.gov.my/trade/trade_enduse_bec.csv",
-    "alternate_format": "https://storage.dosm.gov.my/trade/trade_enduse_bec.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "DOSM via OpenDOSM"
+  "attribution": "OpenDOSM (storage.dosm.gov.my) (economy)"
 }

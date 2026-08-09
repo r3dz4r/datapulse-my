@@ -20,7 +20,6 @@ from typing import Iterable
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "datapulse.json"
 LIVE_HEALTH_PATH = ROOT / "health/latest.json"
-EXPECTED_DATASETS = 166
 COMPARED_FIELDS = (
     "status",
     "last_checked",
@@ -92,6 +91,9 @@ def _decode(value: object) -> str:
 
 
 def _run_probe(probe_timeout: int) -> tuple[dict, str, float]:
+    expected_datasets = len(
+        _rows(_load_object(MANIFEST_PATH), "manifest")
+    )
     started = time.monotonic()
     try:
         completed = subprocess.run(
@@ -120,10 +122,10 @@ def _run_probe(probe_timeout: int) -> tuple[dict, str, float]:
         if not isinstance(canary, dict):
             raise SetupError("full probe JSON must be an object")
         summary = _trust_summary(canary, "canary output")
-        if summary.get("datasets_total") != EXPECTED_DATASETS:
+        if summary.get("datasets_total") != expected_datasets:
             raise SetupError(
                 "canary _trust_summary.datasets_total is "
-                f"{summary.get('datasets_total')!r}, expected {EXPECTED_DATASETS}"
+                f"{summary.get('datasets_total')!r}, expected {expected_datasets}"
             )
         canary_sha = hashlib.sha256(stdout).hexdigest()
     return canary, canary_sha, duration
@@ -258,8 +260,6 @@ def _compare(manifest: dict, live: dict, canary: dict) -> list[Finding]:
     canary_by_id = _index(canary_rows, "dataset_id", "canary output")
     findings: list[Finding] = []
 
-    if len(manifest_by_id) != EXPECTED_DATASETS:
-        findings.append(_finding("Blocker", "Shape", "(manifest)", "datasets_total", EXPECTED_DATASETS, len(manifest_by_id), "manifest count is not the expected canonical count"))
     canary_total = _trust_summary(canary, "canary output").get("datasets_total")
     if canary_total != len(manifest_by_id):
         findings.append(_finding("Blocker", "Shape", "(canary)", "datasets_total", len(manifest_by_id), canary_total, "canary summary count does not equal manifest count"))

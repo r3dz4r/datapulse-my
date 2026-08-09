@@ -1,0 +1,69 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_hh_income_dun",
+  "status": "unknown-freshness",
+  "last_checked": "2026-08-09T05:30:41Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 1800,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "dun",
+      "type": "string"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "parlimen",
+      "type": "string"
+    },
+    {
+      "name": "income_mean",
+      "type": "integer"
+    },
+    {
+      "name": "income_median",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 1800 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 6 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Official catalogue caveat: This data presents nominal values, i.e. they have not been adjusted for inflation. Furthermore, DUN-level data is only published from 2019 (relative to [state-level data](https://open.dosm.gov.my/data-catalogue/hh_income_state) which is available from 1970) as prior HIES samples were not sufficient to support DUN-level granularity."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://api.data.gov.my/data-catalogue?id=hh_income_dun",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via data.gov.my (other)"
+}

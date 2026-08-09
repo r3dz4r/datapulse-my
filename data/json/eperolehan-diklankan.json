@@ -1,77 +1,47 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "eperolehan-diklankan",
-  "source_url": "https://www.eperolehan.gov.my/quotation-tender-notice",
-  "status": "healthy",
+  "status": "browser-dependent",
+  "last_checked": "2026-08-09T05:15:50Z",
   "freshness_days": 0,
-  "row_count": 834,
-  "observed_rows": 29,
-  "page_count": 42,
-  "access": {
-    "rendering": "javascript",
-    "browser": "Camofox"
-  },
-  "listing_fields": [
+  "next_expected_update": null,
+  "refresh_frequency": "hourly",
+  "record_count": null,
+  "date_range": null,
+  "fields": [],
+  "checks": [
     {
-      "name": "title",
-      "type": "string"
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Browser check succeeded"
     },
     {
-      "name": "agency",
-      "type": "string"
+      "name": "row_count",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
     },
     {
-      "name": "publish_date",
-      "type": "date"
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as browser-dependent"
     },
     {
-      "name": "close_date",
-      "type": "date"
-    },
-    {
-      "name": "days_remaining",
-      "type": "number"
-    },
-    {
-      "name": "briefing_flag",
-      "type": "boolean"
-    }
-  ],
-  "detail_fields": [
-    {
-      "name": "ministry",
-      "type": "string"
-    },
-    {
-      "name": "estimated_value_rm",
-      "type": "number"
-    },
-    {
-      "name": "kod_bidang",
-      "type": "array"
-    },
-    {
-      "name": "supplier_status",
-      "type": "string"
-    },
-    {
-      "name": "coverage_area",
-      "type": "string"
-    },
-    {
-      "name": "validity_days",
-      "type": "number"
-    },
-    {
-      "name": "procurement_method",
-      "type": "string"
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
     }
   ],
   "known_quirks": [
-    "href-dash links require a click-flow.",
-    "Detail pages render 8-12 seconds after a click.",
-    "Gridcell indexes are offset by 1."
+    "`href-dash` links require a click-flow rather than direct navigation.",
+    "Detail pages render 8–12 seconds after a click.",
+    "Gridcell indexes are offset by 1.",
+    "Fields are inferred at the next probe run."
   ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://www.eperolehan.gov.my/quotation-tender-notice",
+    "access_method": "Camofox; 30s before snapshot"
+  },
   "licence": "Open Government Licence (Malaysia)",
-  "attribution": "MOF ePerolehan"
+  "attribution": "ePerolehan (other)"
 }

@@ -1,71 +1,47 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "doe_rqims",
-  "status": "healthy",
-  "last_checked": "2026-08-02T14:00:00Z",
-  "freshness_days": 0,
-  "next_expected_update": "2026-08-02T15:00:00Z",
+  "status": "browser-dependent",
+  "last_checked": "2026-08-09T05:15:50Z",
+  "freshness_days": 1,
+  "next_expected_update": null,
   "refresh_frequency": "hourly",
-  "record_count": 30,
+  "record_count": null,
   "date_range": null,
-  "fields": [
-    {
-      "name": "NO",
-      "type": "integer"
-    },
-    {
-      "name": "STATE",
-      "type": "string"
-    },
-    {
-      "name": "RIVER",
-      "type": "string"
-    },
-    {
-      "name": "WATER_INTAKE",
-      "type": "string"
-    },
-    {
-      "name": "STATION_ID",
-      "type": "string"
-    },
-    {
-      "name": "hr_00 through hr_19",
-      "type": "integer or null",
-      "description": "Twenty hourly WQI columns"
-    },
-    {
-      "name": "REMARKS",
-      "type": "string or null"
-    }
-  ],
+  "fields": [],
   "checks": [
     {
-      "name": "page_rendered",
-      "status": "pass",
-      "method": "Camofox snapshot contained the Continuous River station table"
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Browser check succeeded"
     },
     {
-      "name": "station_count",
-      "status": "pass",
-      "method": "Portal summary reported 30 stations"
+      "name": "row_count",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as browser-dependent"
     },
     {
       "name": "schema_stable",
-      "status": "pass",
-      "method": "Station metadata, 20 hourly WQI columns, and remarks matched schema version 1.0"
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
     }
   ],
   "known_quirks": [
-    "The source is JavaScript-rendered and requires Camofox.",
-    "Later hourly columns may be N/A and are normalized to null.",
-    "The Manual River path /RQIMS/manual_river returns 404; only the Continuous River view is documented."
+    "The table is JavaScript-rendered and collection requires Camofox.",
+    "The first approximately 10 hourly columns may be populated while later",
+    "Only the Continuous River view is available. The Manual River URL",
+    "Fields are inferred at the next probe run."
   ],
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://eqms.doe.gov.my/RQIMS/conti_river",
-    "access_method": "Camofox; wait 12 seconds before snapshot"
+    "access_method": "Camofox; 30s before snapshot"
   },
   "licence": "Open Government Licence (Malaysia)",
-  "attribution": "DOE Malaysia via MyEQMS"
+  "attribution": "DOE MyEQMS portal (Camofox-rendered) (environment)"
 }

@@ -1,72 +1,47 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "doe_mqims",
-  "status": "healthy",
-  "last_checked": "2026-08-02T14:00:00Z",
+  "status": "browser-dependent",
+  "last_checked": "2026-08-07T07:25:52Z",
   "freshness_days": 0,
-  "next_expected_update": "2026-09-01",
+  "next_expected_update": null,
   "refresh_frequency": "monthly",
-  "record_count": 368,
+  "record_count": null,
   "date_range": null,
-  "fields": [
-    {
-      "name": "NO",
-      "type": "integer"
-    },
-    {
-      "name": "STATE",
-      "type": "string"
-    },
-    {
-      "name": "LOCATION",
-      "type": "string"
-    },
-    {
-      "name": "CATEGORY",
-      "type": "string",
-      "values": [
-        "Coastal",
-        "Estuary",
-        "Island"
-      ]
-    },
-    {
-      "name": "STATION_ID",
-      "type": "string"
-    },
-    {
-      "name": "MMWQI_SAMPLING_MONTH",
-      "type": "number or null",
-      "description": "Manual Marine Water Quality Index for the displayed sampling month"
-    }
-  ],
+  "fields": [],
   "checks": [
     {
-      "name": "page_rendered",
-      "status": "pass",
-      "method": "Camofox snapshot contained the MQIMS station table"
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Browser check succeeded"
     },
     {
-      "name": "station_count",
-      "status": "pass",
-      "method": "Portal summary reported 368 stations"
+      "name": "row_count",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as browser-dependent"
     },
     {
       "name": "schema_stable",
-      "status": "pass",
-      "method": "Station metadata and monthly MMWQI column matched schema version 1.0"
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
     }
   ],
   "known_quirks": [
-    "The source is JavaScript-rendered and requires Camofox.",
-    "The index is based on monthly manual sampling.",
-    "MMWQI cells may be empty in the accessibility tree while asynchronous data loads."
+    "The table is JavaScript-rendered and collection requires Camofox.",
+    "Measurements come from monthly manual sampling rather than continuous",
+    "MMWQI cells may be empty in the accessibility tree while their asynchronous",
+    "Fields are inferred at the next probe run."
   ],
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://eqms.doe.gov.my/MQIMS/main",
-    "access_method": "Camofox; wait 12 seconds before snapshot"
+    "access_method": "Camofox; 30s before snapshot"
   },
   "licence": "Open Government Licence (Malaysia)",
-  "attribution": "DOE Malaysia via MyEQMS"
+  "attribution": "DOE MyEQMS portal (Camofox-rendered) (environment)"
 }

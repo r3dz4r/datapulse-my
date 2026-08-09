@@ -1,35 +1,58 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dosm_gdp_qtr_real",
-  "status": "current",
-  "last_checked": "2026-08-02T16:01:47Z",
-  "freshness_days": 11,
-  "next_expected_update": "quarterly",
+  "status": "fresh",
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 15,
+  "next_expected_update": null,
   "refresh_frequency": "quarterly",
   "record_count": 130,
-  "date_range": { "start": "2015-01-01", "end": "2026-01-01" },
+  "date_range": null,
   "fields": [
-    { "name": "series", "type": "string", "values": ["abs", "growth_yoy", "growth_qoq"] },
-    { "name": "date", "type": "date", "format": "YYYY-MM-DD" },
-    { "name": "value", "type": "number" }
+    {
+      "name": "series",
+      "type": "string"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "value",
+      "type": "number"
+    }
   ],
   "checks": [
-    { "name": "file_reachable", "status": "pass", "method": "HEAD request returned 200 with a 3374-byte payload" },
-    { "name": "row_count", "status": "pass", "method": "Downloaded CSV contained 130 data rows" },
-    { "name": "freshness", "status": "pass", "method": "Latest observation is 2026-01-01 and file Last-Modified is 2026-07-22" },
-    { "name": "schema_stable", "status": "pass", "method": "Three CSV columns matched schema version 1.0" }
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 130 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 3 column(s) with no content-shape change"
+    }
   ],
   "known_quirks": [
-    "Quarterly dates use the first day of each quarter.",
-    "Absolute GDP values and percentage growth rates share the value column."
+    "Quarterly dates use the first day of January, April, July, or October.",
+    "Absolute GDP values and percentage growth rates share the `value` column;"
   ],
   "breaking_changes": [],
   "reproducibility": {
-    "catalogue_url": "https://open.dosm.gov.my/data-catalogue/gdp_qtr_real",
     "url": "https://storage.dosm.gov.my/gdp/gdp_qtr_real.csv",
-    "alternate_format": "https://storage.dosm.gov.my/gdp/gdp_qtr_real.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "DOSM via OpenDOSM"
+  "attribution": "OpenDOSM (storage.dosm.gov.my) (economy)"
 }

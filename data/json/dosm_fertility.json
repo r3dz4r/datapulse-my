@@ -1,26 +1,21 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dosm_fertility",
-  "status": "current",
-  "last_checked": "2026-08-02T19:11:50Z",
-  "freshness_days": 26,
+  "status": "fresh",
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 30,
   "next_expected_update": null,
   "refresh_frequency": "annual",
   "record_count": 536,
-  "date_range": {
-    "start": "1958-01-01",
-    "end": "2024-01-01"
-  },
+  "date_range": null,
   "fields": [
     {
       "name": "date",
-      "type": "date",
-      "format": "YYYY-MM-DD"
+      "type": "date"
     },
     {
       "name": "age_group",
-      "type": "string",
-      "distinct_values": 8
+      "type": "string"
     },
     {
       "name": "fertility_rate",
@@ -31,22 +26,22 @@
     {
       "name": "file_reachable",
       "status": "pass",
-      "method": "HEAD request returned 200 with a 11860-byte CSV payload"
+      "method": "Probe received HTTP 200 via direct curl GET"
     },
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Downloaded CSV contained 536 data rows"
+      "method": "Probe measured 536 record(s)"
     },
     {
       "name": "freshness",
       "status": "pass",
-      "method": "File last modified 2026-07-07; latest observation is 2024-01-01 on its annual cadence"
+      "method": "Health snapshot classifies the dataset as fresh"
     },
     {
       "name": "schema_stable",
       "status": "pass",
-      "method": "3 CSV columns matched schema version 1.0"
+      "method": "Probe observed 3 column(s) with no content-shape change"
     }
   ],
   "known_quirks": [
@@ -57,9 +52,8 @@
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://storage.dosm.gov.my/demography/fertility.csv",
-    "alternate_format": "https://storage.dosm.gov.my/demography/fertility.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "DOSM via OpenDOSM"
+  "attribution": "OpenDOSM (storage.dosm.gov.my) (economy)"
 }

@@ -191,7 +191,12 @@ render_dynamic_url() {
     "https://storage.data.gov.my/transportation/ktmb/ets_{YYYY}.csv"|\
     "https://storage.data.gov.my/transportation/ktmb/intercity_{YYYY}.csv"|\
     "https://storage.data.gov.my/transportation/ktmb/komuter_utara_{YYYY}.csv"|\
-    "https://storage.data.gov.my/transportation/ktmb/shuttle_tebrau_{YYYY}.csv")
+    "https://storage.data.gov.my/transportation/ktmb/shuttle_tebrau_{YYYY}.csv"|\
+    "https://storage.data.gov.my/transportation/vehicles_{YYYY}.csv"|\
+    "https://storage.data.gov.my/transportation/cars_{YYYY}.csv"|\
+    "https://storage.data.gov.my/transportation/motorcycles_{YYYY}.csv"|\
+    "https://storage.data.gov.my/transportation/bus/brt_{YYYY}_daily.csv"|\
+    "https://storage.data.gov.my/transportation/rail/rapidrail_{YYYY}_daily.csv")
       ;;
     *)
       printf 'Probe policy error: %s has unsafe dynamic URL template\n' "$dataset_id" >&2

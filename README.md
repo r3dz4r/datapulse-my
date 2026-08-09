@@ -3,7 +3,7 @@
 **Live dashboard:** https://www.data-pulse.my
 
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
-> any MCP-compatible client with one config block. Your agent gets **166 official
+> any MCP-compatible client with one config block. Your agent gets **335 official
 > Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
 > BAS.MY)** — with declared licences and an honest eight-status trust taxonomy
 > instead of a blanket green checkmark.
@@ -98,7 +98,7 @@ the catalogue natively:
 - 3 resources: `datapulse://index`, `datapulse://licences`, `datapulse://{dataset_id}`
 
 The public endpoint is live and serves all 5 read-only tools over the
-166-dataset catalogue.
+335-dataset catalogue.
 
 Connect from Claude Desktop:
 

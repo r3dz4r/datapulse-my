@@ -1,0 +1,69 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_arrivals_soe",
+  "status": "stale",
+  "last_checked": "2026-08-09T05:30:41Z",
+  "freshness_days": 612,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 92674,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "country",
+      "type": "string"
+    },
+    {
+      "name": "soe",
+      "type": "string"
+    },
+    {
+      "name": "arrivals",
+      "type": "integer"
+    },
+    {
+      "name": "arrivals_male",
+      "type": "integer"
+    },
+    {
+      "name": "arrivals_female",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 92674 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 6 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Official catalogue caveat: This data is based solely on records in MyIMMS. Furthermore, it should be noted that approximately 0.01% of arrivals do not have a nationality specified, including stateless individuals and refugees."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/demography/arrivals_soe.csv",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "data.gov.my (storage) (other)"
+}

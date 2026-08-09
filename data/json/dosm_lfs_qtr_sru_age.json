@@ -1,0 +1,61 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_lfs_qtr_sru_age",
+  "status": "unknown-freshness",
+  "last_checked": "2026-08-09T05:30:41Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "quarterly",
+  "record_count": 350,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "age",
+      "type": "string"
+    },
+    {
+      "name": "sru",
+      "type": "number"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "variable",
+      "type": "string"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 350 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 4 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Official catalogue caveat: The sum of each category may not always equal to the totals shown in related tables because of independent rounding to one decimal place. However, the differences are not obvious."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://api.data.gov.my/data-catalogue?id=lfs_qtr_sru_age",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via data.gov.my (economy)"
+}

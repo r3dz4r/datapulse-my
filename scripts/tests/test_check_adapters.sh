@@ -47,6 +47,11 @@ check_gtfs_dataset() { printf 'gtfs:%s\n' "$1"; }
 [[ "$(render_dynamic_url pricecatcher 2026-01-01)" == "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-01.parquet" ]]
 [[ "$(render_dynamic_url ridership_od_komuter 2025-12-31)" == "https://storage.data.gov.my/transportation/ktmb/komuter_2025.csv" ]]
 [[ "$(render_dynamic_url ridership_od_komuter 2026-01-01)" == "https://storage.data.gov.my/transportation/ktmb/komuter_2026.csv" ]]
+[[ "$(render_dynamic_url registration_transactions_all 2027-01-01)" == "https://storage.data.gov.my/transportation/vehicles_2027.csv" ]]
+[[ "$(render_dynamic_url registration_transactions_car 2027-01-01)" == "https://storage.data.gov.my/transportation/cars_2027.csv" ]]
+[[ "$(render_dynamic_url registration_transactions_motorcycle 2027-01-01)" == "https://storage.data.gov.my/transportation/motorcycles_2027.csv" ]]
+[[ "$(render_dynamic_url ridership_od_brt_daily 2027-01-01)" == "https://storage.data.gov.my/transportation/bus/brt_2027_daily.csv" ]]
+[[ "$(render_dynamic_url ridership_od_rapidrail_daily 2027-01-01)" == "https://storage.data.gov.my/transportation/rail/rapidrail_2027_daily.csv" ]]
 
 printf '%s\n' '{"version":1,"defaults":{"adapter":"direct","freshness-fallback":"last-modified"},"datasets":{"pricecatcher":{"dynamic-url":{"template":"http://example.invalid/{YYYY-MM}"}}}}' > "$invalid_policy"
 probe_policy="$invalid_policy"

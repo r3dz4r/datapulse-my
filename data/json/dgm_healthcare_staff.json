@@ -2,30 +2,24 @@
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dgm_healthcare_staff",
   "status": "stale",
-  "last_checked": "2026-08-03T02:00:00Z",
-  "freshness_days": 675,
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 1679,
   "next_expected_update": null,
   "refresh_frequency": "annual",
   "record_count": 765,
-  "date_range": {
-    "start": "2014-01-01",
-    "end": "2022-01-01"
-  },
+  "date_range": null,
   "fields": [
     {
       "name": "state",
-      "type": "string",
-      "distinct_values": 17
+      "type": "string"
     },
     {
       "name": "type",
-      "type": "string",
-      "distinct_values": 5
+      "type": "string"
     },
     {
       "name": "date",
-      "type": "date",
-      "format": "YYYY-MM-DD"
+      "type": "date"
     },
     {
       "name": "staff",
@@ -36,22 +30,22 @@
     {
       "name": "file_reachable",
       "status": "pass",
-      "method": "HEAD request returned 200 with a 25802-byte CSV payload"
+      "method": "Probe received HTTP 200 via direct curl GET"
     },
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Downloaded CSV contained 765 data rows"
+      "method": "Probe measured 765 record(s)"
     },
     {
       "name": "freshness",
-      "status": "warn",
-      "method": "The latest observation is 2022-01-01 and the file has not been refreshed on its annual cadence"
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
     },
     {
       "name": "schema_stable",
       "status": "pass",
-      "method": "4 CSV columns matched schema version 1.0"
+      "method": "Probe observed 4 column(s) with no content-shape change"
     }
   ],
   "known_quirks": [
@@ -61,11 +55,9 @@
   ],
   "breaking_changes": [],
   "reproducibility": {
-    "catalogue_url": "https://data.gov.my/data-catalogue/healthcare_staff",
     "url": "https://storage.data.gov.my/healthcare/healthcare_staff.csv",
-    "alternate_format": "https://storage.data.gov.my/healthcare/healthcare_staff.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "Ministry of Health Malaysia via data.gov.my"
+  "attribution": "data.gov.my (storage.data.gov.my) (government_open_data)"
 }

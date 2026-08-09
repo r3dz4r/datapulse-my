@@ -5,7 +5,7 @@
     "version": "3.4.5",
     "source_commit_sha": "1bafe75560282c1560f3e78181a7301ceef6f6ea",
     "source_commit_date": "2026-08-09",
-    "description": "Read-only access to DataPulse MY's Malaysian public dataset catalogue (166 datasets, 8-status health taxonomy, licence/attribution metadata).",
+    "description": "Read-only access to DataPulse MY's Malaysian public dataset catalogue (335 datasets, 8-status health taxonomy, licence/attribution metadata).",
     "vendor": "DataPulse MY (open source)",
     "homepage": "https://data-pulse.my/",
     "repository": "https://github.com/r3dz4r/datapulse-my"
@@ -34,7 +34,7 @@
   "tools": [
     {
       "name": "search_datasets",
-      "description": "Search DataPulse MY's 166 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence.",
+      "description": "Search DataPulse MY's 335 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -167,13 +167,13 @@
     {
       "uri": "datapulse://index",
       "name": "Dataset index",
-      "description": "Lightweight list of all 166 datasets with namespace. Read this first.",
+      "description": "Lightweight list of all 335 datasets with namespace. Read this first.",
       "mimeType": "application/json"
     },
     {
       "uri": "datapulse://licences",
       "name": "Licence summary",
-      "description": "Counts of datasets by licence (e.g. 154 CC BY 4.0 + 12 OGL).",
+      "description": "Counts of datasets by licence, computed from the current manifest.",
       "mimeType": "application/json"
     },
     {

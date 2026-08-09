@@ -1,0 +1,65 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_iowrt_3d",
+  "status": "fresh",
+  "last_checked": "2026-08-09T05:24:39Z",
+  "freshness_days": 22,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 5800,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "series",
+      "type": "string"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "group",
+      "type": "integer"
+    },
+    {
+      "name": "sales",
+      "type": "number"
+    },
+    {
+      "name": "volume",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 5800 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 5 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Official catalogue caveat: In cases where proper financial statements for an establishment are incomplete or unavailable, the data is reported based on the best available estimates. Furthermore, note that seasonally adjusted volume index data is not provided at group (3 digit) level."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/iowrt/iowrt_3d.csv",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "data.gov.my (storage) (transport)"
+}

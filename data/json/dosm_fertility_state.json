@@ -1,0 +1,45 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_fertility_state",
+  "status": "unknown-freshness",
+  "last_checked": "2026-08-09T05:30:41Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 3000,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 3000 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 4 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Official catalogue caveat: ASFR values are based on the actual number of live births per 1000 women in each 5-year age group. However, when interpreting TFR values, it is important to note that the TFR is based on a hypothetical woman who goes through her child-bearing years experiencing the ASFR of each age group. This is not equivalent to the actual average number of children born to currently-living female citizens aged 15-49, as this number would be a reflection of past rather than current ASFR values.",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://api.data.gov.my/data-catalogue?id=fertility_state",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via data.gov.my (other)"
+}

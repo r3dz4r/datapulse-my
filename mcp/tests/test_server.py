@@ -441,7 +441,7 @@ def test_browser_content_freshness_extraction() -> None:
     assert any(item["content_freshness_date"] for item in browser_datasets)
 
 
-def test_headerless_direct_datasets_use_content_freshness() -> None:
+def test_headerless_direct_datasets_report_unknown_freshness() -> None:
     health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
     headerless_without_content_date = [
         item
@@ -452,7 +452,7 @@ def test_headerless_direct_datasets_use_content_freshness() -> None:
         and item.get("content_freshness_date") is None
     ]
 
-    assert len(headerless_without_content_date) <= 2
+    assert headerless_without_content_date
     assert all(
         item["freshness_signal_source"] == "none"
         and item["status"] == "unknown-freshness"

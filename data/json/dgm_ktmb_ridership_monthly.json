@@ -1,26 +1,21 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dgm_ktmb_ridership_monthly",
-  "status": "current",
-  "last_checked": "2026-08-03T02:00:00Z",
-  "freshness_days": 2,
-  "next_expected_update": "monthly",
+  "status": "fresh",
+  "last_checked": "2026-08-07T07:25:52Z",
+  "freshness_days": 0,
+  "next_expected_update": null,
   "refresh_frequency": "monthly",
   "record_count": 290,
-  "date_range": {
-    "start": "2020-11-01",
-    "end": "2026-07-01"
-  },
+  "date_range": null,
   "fields": [
     {
       "name": "date",
-      "type": "date",
-      "format": "YYYY-MM-DD"
+      "type": "date"
     },
     {
       "name": "service",
-      "type": "string",
-      "distinct_values": 5
+      "type": "string"
     },
     {
       "name": "ridership",
@@ -31,22 +26,22 @@
     {
       "name": "file_reachable",
       "status": "pass",
-      "method": "HEAD request returned 200 with a 8136-byte CSV payload"
+      "method": "Probe received HTTP 200 via direct curl GET"
     },
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Downloaded CSV contained 290 data rows"
+      "method": "Probe measured 290 record(s)"
     },
     {
       "name": "freshness",
       "status": "pass",
-      "method": "The latest observation is 2026-07-01 and the file is within its monthly cadence"
+      "method": "Health snapshot classifies the dataset as fresh"
     },
     {
       "name": "schema_stable",
       "status": "pass",
-      "method": "3 CSV columns matched schema version 1.0"
+      "method": "Probe observed 3 column(s) with no content-shape change"
     }
   ],
   "known_quirks": [
@@ -56,11 +51,9 @@
   ],
   "breaking_changes": [],
   "reproducibility": {
-    "catalogue_url": "https://data.gov.my/data-catalogue/ridership_ktmb_monthly",
     "url": "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_monthly.csv",
-    "alternate_format": "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_monthly.parquet",
-    "access_method": "direct CSV or Parquet download"
+    "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",
-  "attribution": "KTMB and Ministry of Transport Malaysia via data.gov.my"
+  "attribution": "data.gov.my (storage.data.gov.my) (government_open_data)"
 }

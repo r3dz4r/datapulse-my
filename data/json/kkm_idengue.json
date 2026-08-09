@@ -1,34 +1,47 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "kkm_idengue",
-  "status": "healthy",
-  "last_checked": "2026-08-02T14:30:00Z",
-  "freshness_days": 1,
-  "next_expected_update": "2026-08-02",
+  "status": "browser-dependent",
+  "last_checked": "2026-08-08T07:30:47Z",
+  "freshness_days": null,
+  "next_expected_update": null,
   "refresh_frequency": "daily",
-  "record_count": 16,
-  "date_range": { "start": "2026-08-01", "end": "2026-08-01" },
-  "fields": [
-    { "name": "state", "type": "string", "language": "ms" },
-    { "name": "daily_cases", "type": "integer" },
-    { "name": "cumulative_cases", "type": "integer" },
-    { "name": "as_of_date", "type": "date", "format": "YYYY-MM-DD" }
-  ],
+  "record_count": null,
+  "date_range": null,
+  "fields": [],
   "checks": [
-    { "name": "page_rendered", "status": "pass", "method": "Camofox snapshot contained the 16-row state table" },
-    { "name": "freshness", "status": "pass", "method": "Table represented 2026-08-01" },
-    { "name": "schema_stable", "status": "pass", "method": "State, daily cases, and cumulative cases matched schema version 1.0" }
+    {
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Browser check succeeded"
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as browser-dependent"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    }
   ],
   "known_quirks": [
-    "The source is JavaScript-rendered and requires Camofox.",
-    "State names are published in Bahasa Malaysia and should be preserved.",
-    "The 36-death year-to-date figure as of 2026-07-26 is supplementary iframe content, not a state-table field."
+    "The portal is JavaScript-rendered; direct HTTP requests return only the SPA",
+    "The site and state labels are in Bahasa Malaysia.",
+    "The supplementary death count appears in an iframe chart rather than the",
+    "Fields are inferred at the next probe run."
   ],
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://idengue.mysa.gov.my/",
-    "access_method": "Camofox; wait 12 seconds before snapshot"
+    "access_method": "Camofox; 30s before snapshot"
   },
   "licence": "Open Government Licence (Malaysia)",
-  "attribution": "KKM via iDengue portal (MYSA hosted)"
+  "attribution": "KKM iDengue portal (Camofox-rendered) (healthcare)"
 }

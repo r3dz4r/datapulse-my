@@ -1,0 +1,69 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_iowrt_2d",
+  "status": "unknown-freshness",
+  "last_checked": "2026-08-09T05:30:41Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 870,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "sales",
+      "type": "number"
+    },
+    {
+      "name": "series",
+      "type": "string"
+    },
+    {
+      "name": "volume",
+      "type": "number"
+    },
+    {
+      "name": "division",
+      "type": "integer"
+    },
+    {
+      "name": "volume_sa",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 870 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 6 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Official catalogue caveat: In cases where proper financial statements for an establishment are incomplete or unavailable, the data is reported based on the best available estimates."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://api.data.gov.my/data-catalogue?id=iowrt_2d",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "DOSM via data.gov.my (transport)"
+}
