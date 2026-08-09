@@ -108,3 +108,21 @@ Timeline (consolidated from observer + health log):
 - No overlap, no partial health file, no unexpected staged paths in either observed cycle
 - Final state: **ROLLOUT COMPLETE** — all 35 tasks shipped or formally closed. All 7 gates green: contract verifier (166 datasets), JSON Schema, MCP pytest (25/25), scripts/tests (225/225), NPRA format tests, fact lint (0 findings), agent-ready live (166/166). Live isolated build OK. Live canary OK. Public surfaces consistent.
 - Reproduction: timer fires every 15 min; verify with `systemctl list-timers datapulse-health.timer`
+
+### Final rollout record
+
+- Observation window start: `2026-08-09T11:45:02+08:00`
+- Observation window end: `2026-08-09T12:02:29+08:00`
+- Cycles observed: 2 (one must be browser-dependent; confirmed: `yes`)
+- Systemd state: `datapulse-mcp.service` active; `datapulse-health.timer` active; `datapulse-health.service` inactive after both cycles; lock released between cycles
+- Last 2 timer commits:
+  - `86f22231154a4bc14942483945ab876a20405210` — `chore(health): update due dataset health`
+  - `ef364c5278de345a65fc960c341288b34f88c622` — `chore(health): update due dataset health`
+- Browser-dependent dataset confirmed probed: `eperolehan-diklankan` (`last_checked=2026-08-09T04:02:08Z`), `doe_rqims` (`last_checked=2026-08-09T04:02:08Z`)
+- Lock file state: released between ticks (no overlap detected)
+- Health log: both observed ticks completed cleanly with no `datapulse-health: failed (exit N)` lines; cycle 1 finished at `2026-08-09T11:45:24+08:00` with no artifact changes, and cycle 2 finished at `2026-08-09T12:02:29+08:00` before pushing `chore(health)`
+- Public artifacts updated: `badges/`, `feed.xml`, and `changelog.json` per documented profile ownership; observed changed paths were scoped to `health/latest.json`, `feed.xml`, and `changelog.json`
+- Local regression gate: `bash scripts/verify_release_invariants.sh --local` passed (release metadata 166 datasets, MCP runtime schema 5 tools, JSON-LD/report files 166, `llms.txt`, post-deploy invariants)
+- Rollback commit (if any): `none`
+- Final state: ROLLOUT COMPLETE — all 5 Phase 5 tasks shipped, all gates green, public surfaces consistent
+- Reproduction: `bash scripts/check.sh --due` runs every 15 minutes via systemd timer; `bash scripts/generate.sh release-build` runs on Pages workflow dispatch; `bash scripts/verify_release_invariants.sh --local` is the local regression gate
