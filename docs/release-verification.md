@@ -18,6 +18,36 @@
 | mcp.json | 1 | `81ea9bb64cbfae60ab21b87aa5f048d065b10f26811f04db7c5785e12543ab94` | `81ea9bb64cbfae60ab21b87aa5f048d065b10f26811f04db7c5785e12543ab94` | Yes |
 | docs/.dashboard_filters.json | 1 | `ef1356b4ab8f2f1f98aecb02550da5803242d64207994d98f1cee86a20f5a301` | `ef1356b4ab8f2f1f98aecb02550da5803242d64207994d98f1cee86a20f5a301` | Yes |
 
+## Deployment verification (T34, 2026-08-09)
+
+- Date: `2026-08-09T11:16:15+08:00`
+- Reviewed source SHA: `18ae5aea7369d505deca82935584e4962ce97c66` (`git rev-parse HEAD`)
+- Deployed SHA at `https://data-pulse.my/`: `042c10f0869a5505e2018d01d1509efd2ef90240` (fetched from GitHub API)
+- SHA check: ❌ mismatch
+- Surface fetches:
+  - dashboard: OK
+  - llms.txt: OK
+  - datapulse.json: OK
+  - health/latest.json: OK
+  - data/jsonld/catalog.json: OK
+  - mcp.json: OK
+  - feed.xml: OK
+- `scripts/verify_release_invariants.sh`: OK
+- `scripts/verify_agent_ready.sh`: OK
+- MCP tools count: 5 (search_datasets, get_dataset, find_stale, get_provenance, find_by_licence)
+- `python3 scripts/verify_mcp_deployment.py`: `MISMATCH`
+- Known exceptions: live MCP service predates the T29 source-commit markers; `verify_mcp_deployment.py` reports `deployed=<missing>` until redeploy.
+- Reproduction:
+
+```bash
+# Trigger deploy (waits for timer)
+git push origin HEAD:main  # only if local is ahead
+
+# Re-run post-deploy invariants
+DATAPULSE_RELEASE_BASE_URL="https://data-pulse.my" bash scripts/verify_release_invariants.sh
+DATAPULSE_AGENT_BASE_URL="https://data-pulse.my" bash scripts/verify_agent_ready.sh
+```
+
 ## Reproduction
 
 ```bash
