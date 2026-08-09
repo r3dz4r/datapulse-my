@@ -142,7 +142,7 @@ def test_gen_rss_produces_valid_xml(tmp_path: Path) -> None:
     assert "beta" in item_text
 
 
-def test_zero_count_status_cleanup(tmp_path: Path) -> None:
+def test_zero_count_status_badge_is_refreshed(tmp_path: Path) -> None:
     source = _stage_fixture(tmp_path)
     health_path = source / "health/latest.json"
     health = json.loads(health_path.read_text(encoding="utf-8"))
@@ -165,8 +165,9 @@ def test_zero_count_status_cleanup(tmp_path: Path) -> None:
     )
 
     assert result.returncode == 0, result.stderr
-    # The generator omits zero-count statuses and removes their previous badge.
-    assert result.outputs["badges/status-aging.svg"] is None
+    aging_badge = result.outputs["badges/status-aging.svg"]
+    assert aging_badge is not None
+    assert b"aging: 0" in aging_badge
     assert result.outputs["badges/status-fresh.svg"] is not None
     assert result.outputs["badges/status-stale.svg"] is not None
 

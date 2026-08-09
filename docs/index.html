@@ -567,7 +567,6 @@
     }
 
     .trust-posture h2 { font-size: 1rem; }
-    .trust-distribution { margin: 0.5rem 0 0; font-weight: 700; }
     .trust-gaps { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.78rem; }
     .status-legend {
       display: grid;
@@ -578,6 +577,16 @@
     .status-legend div { min-width: 0; }
     .status-legend dt { color: var(--text); font-weight: 700; }
     .status-legend dd { margin: 0.1rem 0 0; color: var(--muted); font-size: 0.72rem; }
+    .legend-status { color: var(--legend-color, var(--text)); }
+    .legend-status.fresh { --legend-color: var(--fresh); }
+    .legend-status.aging { --legend-color: var(--aging); }
+    .legend-status.stale { --legend-color: var(--stale); }
+    .legend-status.degraded { --legend-color: var(--degraded); }
+    .legend-status.browser-dependent { --legend-color: var(--browser); }
+    .legend-status.unreachable { --legend-color: var(--unreachable); }
+    .legend-status.unknown { --legend-color: var(--unknown); }
+    .legend-status.unknown-freshness { --legend-color: var(--unknown-freshness); }
+    .legend-count { margin-left: 0.25rem; color: var(--muted); font-variant-numeric: tabular-nums; }
     .trust-link { display: inline-block; margin-top: 0.65rem; font-size: 0.78rem; }
 
     main { padding-bottom: 4rem; }
@@ -5063,19 +5072,49 @@
       <p class="tradeoff">You can’t get data we don’t track; we document gaps, not fill them.</p>
     </section>
 
+    <section class="landing-section" id="camofox" aria-labelledby="camofox-heading">
+      <h2 id="camofox-heading">Browser-dependent datasets</h2>
+      <p>Five of 335 datasets (1.5%) require a real browser to probe because their
+      source pages render client-side JavaScript: <code>eperolehan-diklankan</code>,
+      <code>doe_apims</code>, <code>doe_rqims</code>, <code>doe_mqims</code>, and <code>kkm_idengue</code>.</p>
+      <p>DataPulse uses <a href="https://github.com/jo-inc/camofox-browser">Camofox</a>,
+      a self-hosted patched headless-Chromium sidecar, to probe these. The probe path
+      is <code>check.sh</code> → Camofox sidecar → DOM snapshot → content-date extraction.</p>
+      <p><strong>To enable browser probing:</strong> set <code>CAMOFOX_BASE_URL</code> and restart the timer.
+      Without Camofox, those 5 datasets sit at <code>browser-dependent</code> — the honest status
+      when no browser is available.</p>
+    </section>
+
+    <section class="landing-section" id="legal" aria-labelledby="legal-heading">
+      <h2 id="legal-heading">Legal</h2>
+      <p>DataPulse probes publicly-published open-data sources. We do not bypass
+      authentication, CAPTCHAs, or terms-of-service restrictions. Every source we probe
+      is publicly available without login; the data is aggregate/non-personal; and the
+      probe respects each dataset's declared refresh frequency.</p>
+      <p>All scraping is rate-limited (15-minute cadence, dataset-tier cadence applied)
+      and identifies itself via User-Agent. Sources we cannot probe without authentication,
+      CAPTCHA bypass, or ToS violation are marked <code>unreachable</code> or
+      <code>browser-dependent</code> — never silently scraped through a workaround.</p>
+      <p>We also respect each source's <code>robots.txt</code> via <code>respect_robots_txt()</code>
+      in <code>scripts/check.sh</code> — sources that explicitly disallow automated
+      access are not probed.</p>
+      <p>If you are a data source maintainer and would like DataPulse to adjust its probe
+      cadence, exclude a dataset, or remove it from the manifest, please open a
+      <a href="https://github.com/r3dz4r/datapulse-my/issues">GitHub issue</a>.</p>
+    </section>
+
     <section id="live-status" class="trust-posture" aria-labelledby="trust-heading">
       <h2 id="trust-heading">Honest trust posture</h2>
-      <p id="trust-distribution" class="trust-distribution">Loading status distribution…</p>
       <p id="trust-gaps" class="trust-gaps">Loading signal gaps…</p>
       <dl class="status-legend" aria-label="Health status legend">
-        <div><dt>Fresh</dt><dd>Freshness evidence is within cadence.</dd></div>
-        <div><dt>Aging</dt><dd>Evidence is 1.5–3× beyond cadence.</dd></div>
-        <div><dt>Stale</dt><dd>Evidence is more than 3× beyond cadence.</dd></div>
-        <div><dt>Degraded</dt><dd>Too few records or content shape changed.</dd></div>
-        <div><dt>Browser-dependent</dt><dd>A browser is required to reach the page.</dd></div>
-        <div><dt>Unreachable</dt><dd>The latest HTTP or browser probe failed.</dd></div>
-        <div><dt>Unknown</dt><dd>No successful probe in the last seven days.</dd></div>
-        <div><dt>Unknown-freshness</dt><dd>URL works, but no freshness signal is available.</dd></div>
+        <div><dt><span class="legend-status fresh">fresh</span> <span class="legend-count" data-status-count="fresh">—</span></dt><dd>Freshness evidence is within cadence.</dd></div>
+        <div><dt><span class="legend-status aging">aging</span> <span class="legend-count" data-status-count="aging">—</span></dt><dd>Evidence is 1.5–3× beyond cadence.</dd></div>
+        <div><dt><span class="legend-status stale">stale</span> <span class="legend-count" data-status-count="stale">—</span></dt><dd>Evidence is more than 3× beyond cadence.</dd></div>
+        <div><dt><span class="legend-status degraded">degraded</span> <span class="legend-count" data-status-count="degraded">—</span></dt><dd>Too few records or content shape changed.</dd></div>
+        <div><dt><span class="legend-status browser-dependent">browser-dependent</span> <span class="legend-count" data-status-count="browser_dependent">—</span></dt><dd>A browser is required to reach the page.</dd></div>
+        <div><dt><span class="legend-status unreachable">unreachable</span> <span class="legend-count" data-status-count="unreachable">—</span></dt><dd>The latest HTTP or browser probe failed.</dd></div>
+        <div><dt><span class="legend-status unknown">unknown</span> <span class="legend-count" data-status-count="unknown">—</span></dt><dd>No successful probe in the last seven days.</dd></div>
+        <div><dt><span class="legend-status unknown-freshness">unknown-freshness</span> <span class="legend-count" data-status-count="unknown_freshness">—</span></dt><dd>URL works, but no freshness signal is available.</dd></div>
       </dl>
       <a class="trust-link" href="/health/latest.json">View detailed health →</a>
     </section>
@@ -5134,6 +5173,8 @@
       <a href="/trust-snapshot-2026-08-09.md">Latest trust snapshot →</a>
       <a href="/release-verification.md">Reproducible build proof</a>
       <a class="chip" href="/trust-layer-notebook.ipynb" title="Open the canonical Colab notebook: verify before you use">Trust Layer notebook</a>
+      <a class="chip" href="#camofox">Browser-dependent</a>
+      <a class="chip" href="#legal">Legal</a>
     </aside>
 
     <section id="datasets" aria-labelledby="dataset-heading">
@@ -5430,17 +5471,6 @@
           const summary = health._trust_summary || {};
           const byStatus = summary.by_status || {};
           const statusCount = status => Number(byStatus[status] || 0);
-          const distribution = [
-            ["fresh", statusCount("fresh")],
-            ["aging", statusCount("aging")],
-            ["stale", statusCount("stale")],
-            ["degraded", statusCount("degraded")],
-            ["browser-dependent", statusCount("browser_dependent")],
-            ["unreachable", statusCount("unreachable")],
-            ["unknown", statusCount("unknown")],
-            ["unknown-freshness", statusCount("unknown_freshness")]
-          ].map(([label, count]) => `${numberFormat.format(count)} ${label}`).join(" · ");
-
           grid.replaceChildren(...cards);
           grid.setAttribute("aria-busy", "false");
           document.querySelector("#last-updated").textContent =
@@ -5449,7 +5479,9 @@
           document.querySelector("#summary-fresh").textContent = numberFormat.format(statusCount("fresh"));
           document.querySelector("#summary-aging").textContent = numberFormat.format(statusCount("aging"));
           document.querySelector("#summary-stale").textContent = numberFormat.format(statusCount("stale"));
-          document.querySelector("#trust-distribution").textContent = distribution;
+          document.querySelectorAll("[data-status-count]").forEach(node => {
+            node.textContent = numberFormat.format(statusCount(node.dataset.statusCount));
+          });
           const sources = summary.datasets_health_signal_source || {};
           document.querySelector("#trust-gaps").textContent =
             `${numberFormat.format(sources.last_modified_header || 0)} via Last-Modified · ` +

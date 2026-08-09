@@ -173,6 +173,47 @@ Input schema:
 
 - `datapulse://{dataset_id}` — Full published manifest entry for one exact DataPulse MY dataset id.
 
+## Live verification
+
+Run before merging any change that touches the manifest, probe policy, or MCP
+source. The live `datapulse://index` resource is the catalogue returned by the
+MCP server, so its array length must equal the current manifest length.
+
+```bash
+verify_dir=$(mktemp -d /tmp/datapulse-mcp-live.XXXXXX)
+endpoint=https://mcp.data-pulse.my/mcp
+
+curl -sS -D "$verify_dir/headers" -o "$verify_dir/initialize" \
+  "$endpoint" \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"live-count-gate","version":"1"}}}'
+
+session_id=$(awk 'tolower($1)=="mcp-session-id:" {gsub("\\r", "", $2); print $2}' \
+  "$verify_dir/headers")
+
+curl -sS "$endpoint" \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'Content-Type: application/json' \
+  -H "Mcp-Session-Id: $session_id" \
+  -d '{"jsonrpc":"2.0","method":"notifications/initialized"}' >/dev/null
+
+live_count=$(curl -sS "$endpoint" \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'Content-Type: application/json' \
+  -H "Mcp-Session-Id: $session_id" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"resources/read","params":{"uri":"datapulse://index"}}' \
+  | sed -n 's/^data: //p' \
+  | jq -r '.result.contents[0].text | fromjson | length')
+head_count=$(jq '.datasets | length' datapulse.json)
+
+printf 'live=%s head=%s\n' "$live_count" "$head_count"
+test "$live_count" -eq "$head_count"
+```
+
+The expected count at this revision is `335`. If the assertion fails, do not
+merge: the MCP server is stale and the manifest-count claim is false.
+
 ## Regenerate
 
 Install `mcp/requirements.txt`, then run:

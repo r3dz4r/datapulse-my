@@ -31,6 +31,7 @@ CATEGORY_ORDER = (
     "mcp.json",
     "docs/.dashboard_filters.json",
 )
+STATUS_BADGE_COUNT = 8
 
 
 class SetupFailure(RuntimeError):
@@ -129,11 +130,6 @@ def _expected_badge_count(source: Path, identifiers: tuple[str, ...]) -> int:
     )
     if not isinstance(counts, dict):
         raise VerificationFailure("health/latest.json: invalid _trust_summary.by_status")
-    positive_statuses = sum(
-        1
-        for value in counts.values()
-        if isinstance(value, int) and not isinstance(value, bool) and value > 0
-    )
     identifiers_set = set(identifiers)
     auxiliary = 0
     badges = source / "badges"
@@ -145,7 +141,7 @@ def _expected_badge_count(source: Path, identifiers: tuple[str, ...]) -> int:
                 if path.stem in identifiers_set or path.name.startswith("status-"):
                     continue
             auxiliary += 1
-    return len(identifiers) + positive_statuses + auxiliary
+    return len(identifiers) + STATUS_BADGE_COUNT + auxiliary
 
 
 def _readme_summary(path: Path) -> bytes:

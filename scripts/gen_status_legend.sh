@@ -24,11 +24,6 @@ mkdir -p "$output_dir"
 while IFS=$'\t' read -r status count color; do
   badge_file="${output_dir}/status-${status}.svg"
 
-  if (( count == 0 )); then
-    rm -f "$badge_file"
-    continue
-  fi
-
   label="${status}: ${count}"
   escaped_label="$(jq -rn --arg value "$label" '$value | @html')"
   stroke_dasharray=""
