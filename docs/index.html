@@ -309,6 +309,196 @@
     .query-demo code { color: var(--muted); }
     .query-demo .command { color: var(--text); }
 
+    .landing-section {
+      padding-block: clamp(2.5rem, 7vw, 5rem);
+      border-top: 1px solid var(--border);
+    }
+
+    .landing-heading { max-width: 52rem; }
+    .landing-heading p { margin: 0.75rem 0 0; color: var(--muted); }
+    .section-kicker {
+      margin: 0 0 0.5rem;
+      color: var(--fresh);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .pain-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .pain-card {
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      background: var(--surface);
+    }
+
+    .pain-icon {
+      display: inline-grid;
+      width: 2rem;
+      height: 2rem;
+      margin-bottom: 1rem;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 0.25rem;
+      color: var(--aging);
+      background: var(--raised);
+    }
+
+    .pain-icon svg { width: 1rem; height: 1rem; }
+    .pain-card p { margin: 0.6rem 0 0; color: var(--muted); font-size: 0.85rem; }
+
+    .workflow {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+      margin: 2rem 0 0.5rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    .workflow-step {
+      position: relative;
+      padding: 0 0 1.75rem 3.25rem;
+    }
+
+    .workflow-step:not(:last-child)::after {
+      position: absolute;
+      top: 2.1rem;
+      bottom: 0;
+      left: 1rem;
+      width: 1px;
+      background: var(--border);
+      content: "";
+    }
+
+    .step-number {
+      position: absolute;
+      z-index: 1;
+      top: 0;
+      left: 0;
+      display: grid;
+      width: 2rem;
+      height: 2rem;
+      place-items: center;
+      border: 1px solid var(--link);
+      border-radius: 50%;
+      color: var(--link);
+      background: var(--bg);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .workflow-step h3 { padding-top: 0.25rem; }
+    .workflow-step p { margin: 0.55rem 0 0; color: var(--muted); font-size: 0.82rem; }
+
+    .taxonomy-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin: 1rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .taxonomy-chips li {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--status-color, var(--border));
+      border-radius: 0.25rem;
+      color: var(--text);
+      background: var(--surface);
+      font-size: 0.68rem;
+    }
+
+    .taxonomy-chips .fresh { --status-color: var(--fresh); }
+    .taxonomy-chips .aging { --status-color: var(--aging); }
+    .taxonomy-chips .stale { --status-color: var(--stale); }
+    .taxonomy-chips .degraded, .taxonomy-chips .unreachable { --status-color: var(--degraded); }
+    .taxonomy-chips .browser-dependent { --status-color: var(--browser); }
+    .taxonomy-chips .unknown { --status-color: var(--unknown); }
+    .taxonomy-chips .unknown-freshness { --status-color: var(--unknown-freshness); }
+
+    .comparison-wrap {
+      margin-top: 1.5rem;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+    }
+
+    .comparison-table {
+      width: 100%;
+      min-width: 46rem;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      text-align: left;
+    }
+
+    .comparison-table th, .comparison-table td {
+      padding: 0.8rem;
+      border-bottom: 1px solid var(--border);
+      border-left: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .comparison-table th:first-child, .comparison-table td:first-child { border-left: 0; }
+    .comparison-table thead th { color: var(--text); background: var(--raised); }
+    .comparison-table tbody th { color: var(--text); background: var(--surface); }
+    .comparison-table td { color: var(--muted); background: var(--bg); }
+    .comparison-table td:nth-child(2) { color: var(--text); background: var(--surface); }
+    .comparison-table tbody tr:last-child > * { border-bottom: 0; }
+    .tradeoff { margin: 0.85rem 0 0; color: var(--muted); font-size: 0.75rem; }
+
+    .faq-list { margin-top: 1.5rem; border-top: 1px solid var(--border); }
+    .faq-list details { border-bottom: 1px solid var(--border); }
+    .faq-list summary {
+      padding: 1rem 2rem 1rem 0;
+      color: var(--text);
+      cursor: pointer;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-weight: 700;
+    }
+    .faq-list summary:focus-visible { outline: 0.18rem solid var(--degraded); outline-offset: 0.2rem; }
+    .faq-list p { max-width: 58rem; margin: -0.25rem 0 1rem; color: var(--muted); font-size: 0.85rem; }
+
+    .adoption-band {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      align-items: center;
+      justify-content: space-between;
+      margin-block: 2rem;
+      padding: clamp(1.5rem, 5vw, 3rem);
+      border: 1px solid var(--link);
+      border-radius: 0.5rem;
+      background: var(--raised);
+    }
+
+    .adoption-band p { margin: 0.5rem 0 0; color: var(--muted); }
+    .adoption-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+    .changelog-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1.25rem;
+      align-items: center;
+      margin-bottom: 3rem;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--border);
+      border-left: 0.25rem solid var(--fresh);
+      border-radius: 0.25rem;
+      color: var(--muted);
+      background: var(--surface);
+      font-size: 0.72rem;
+    }
+
+    .changelog-strip strong { color: var(--text); }
+
     .header-meta, .card-links, .metrics {
       display: flex;
       flex-wrap: wrap;
@@ -512,12 +702,23 @@
     @media (min-width: 40rem) {
       .shell { width: min(88rem, calc(100% - 3rem)); }
       .hero-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .pain-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .summary { grid-template-columns: repeat(4, 1fr); }
       .dataset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (min-width: 70rem) {
+      .workflow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .workflow-step { padding: 3.25rem 1.5rem 0 0; }
+      .workflow-step:not(:last-child)::after {
+        top: 1rem;
+        right: 0;
+        bottom: auto;
+        left: 2rem;
+        width: auto;
+        height: 1px;
+      }
       .dataset-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
   </style>
@@ -4759,6 +4960,95 @@
       </div>
     </section>
 
+    <section class="landing-section" aria-labelledby="problem-heading">
+      <div class="landing-heading">
+        <p class="section-kicker">The problem</p>
+        <h2 id="problem-heading">Malaysian open data is silently breaking</h2>
+        <p>An endpoint can return a file and still fail the people and agents relying on it. Availability alone is not evidence of trustworthy data.</p>
+      </div>
+      <div class="pain-grid">
+        <article class="pain-card">
+          <span class="pain-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/></svg></span>
+          <h3>Stale by default</h3>
+          <p>Many official datasets are published once and never updated. Without verification, “available” looks like “fresh”.</p>
+        </article>
+        <article class="pain-card">
+          <span class="pain-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M18 15v6m-3-3h6"/></svg></span>
+          <h3>No freshness signal</h3>
+          <p>Most endpoints don’t send Last-Modified headers. You can’t tell a 2-day-old file from a 2-year-old one.</p>
+        </article>
+        <article class="pain-card">
+          <span class="pain-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v5h5M10 13h6M10 17h4"/></svg></span>
+          <h3>Licences unclear</h3>
+          <p>Reuse rules are scattered across catalogue pages. Agents can’t cite what they can’t licence.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="landing-section" aria-labelledby="mechanism-heading">
+      <div class="landing-heading">
+        <p class="section-kicker">The mechanism</p>
+        <h2 id="mechanism-heading">How one dataset gets its status</h2>
+        <p>Probing is the mechanism; an honest status is the outcome. Every cycle follows the same inspectable path.</p>
+      </div>
+      <ol class="workflow">
+        <li class="workflow-step">
+          <span class="step-number" aria-hidden="true">01</span>
+          <h3>Probe</h3>
+          <p>A 15-minute timer fetches each dataset: HTTP headers, content dates, record counts, schema shape.</p>
+        </li>
+        <li class="workflow-step">
+          <span class="step-number" aria-hidden="true">02</span>
+          <h3>Measure</h3>
+          <p>Three freshness signals: Last-Modified header, content-date parse, browser extraction when needed.</p>
+        </li>
+        <li class="workflow-step">
+          <span class="step-number" aria-hidden="true">03</span>
+          <h3>Classify</h3>
+          <p>One of eight honest statuses — never a blanket “healthy”. If we can’t prove freshness, we say so.</p>
+        </li>
+        <li class="workflow-step">
+          <span class="step-number" aria-hidden="true">04</span>
+          <h3>Publish</h3>
+          <p>Health JSON, badge, report, RSS, and MCP tools update atomically — all machine-readable.</p>
+        </li>
+      </ol>
+      <ul class="taxonomy-chips" aria-label="Eight dataset health statuses">
+        <li class="fresh">Fresh</li>
+        <li class="aging">Aging</li>
+        <li class="stale">Stale</li>
+        <li class="degraded">Degraded</li>
+        <li class="browser-dependent">Browser-dependent</li>
+        <li class="unreachable">Unreachable</li>
+        <li class="unknown">Unknown</li>
+        <li class="unknown-freshness">Unknown-freshness</li>
+      </ul>
+    </section>
+
+    <section class="landing-section" aria-labelledby="comparison-heading">
+      <div class="landing-heading">
+        <p class="section-kicker">The comparison</p>
+        <h2 id="comparison-heading">The honest difference</h2>
+        <p>DataPulse adds verification and machine-readable context while keeping official publishers as the source of record.</p>
+      </div>
+      <div class="comparison-wrap">
+        <table class="comparison-table">
+          <thead>
+            <tr><th scope="col">Capability</th><th scope="col">DataPulse MY</th><th scope="col">data.gov.my direct</th><th scope="col">Wrapped-data resellers</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Freshness</th><td>Verified every 15 min</td><td>Declared, not verified</td><td>Opaque</td></tr>
+            <tr><th scope="row">Status honesty</th><td>8-status, never false-green</td><td>n/a</td><td>n/a</td></tr>
+            <tr><th scope="row">Licence clarity</th><td>Per-dataset, machine-readable</td><td>Present, scattered</td><td>Often unclear</td></tr>
+            <tr><th scope="row">Agent access</th><td>Read-only MCP, no key</td><td>Scraping required</td><td>Paid API</td></tr>
+            <tr><th scope="row">Schema drift detection</th><td>Yes</td><td>No</td><td>Rarely</td></tr>
+            <tr><th scope="row">History / changelog</th><td>Machine-readable</td><td>No</td><td>No</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tradeoff">You can’t get data we don’t track; we document gaps, not fill them.</p>
+    </section>
+
     <section id="live-status" class="trust-posture" aria-labelledby="trust-heading">
       <h2 id="trust-heading">Honest trust posture</h2>
       <p id="trust-distribution" class="trust-distribution">Loading status distribution…</p>
@@ -4782,6 +5072,53 @@
       <div><strong id="summary-aging">—</strong><span>Aging</span></div>
       <div><strong id="summary-stale">—</strong><span>Stale</span></div>
     </section>
+
+    <section class="landing-section" aria-labelledby="faq-heading">
+      <div class="landing-heading">
+        <p class="section-kicker">FAQ</p>
+        <h2 id="faq-heading">Questions before you connect</h2>
+      </div>
+      <div class="faq-list">
+        <details>
+          <summary>Is this live right now?</summary>
+          <p>Yes — 335 datasets probed every 15 minutes. See the <a href="#live-status">live status above</a>.</p>
+        </details>
+        <details>
+          <summary>Does DataPulse replace data.gov.my?</summary>
+          <p>No — it verifies and documents official sources. We never resell the data.</p>
+        </details>
+        <details>
+          <summary>How fresh is “fresh”?</summary>
+          <p>Within 1.5× the dataset’s declared cadence, verified by Last-Modified header or content-date.</p>
+        </details>
+        <details>
+          <summary>Can I use it without an API key?</summary>
+          <p>Yes — the MCP server is read-only and key-free.</p>
+        </details>
+        <details>
+          <summary>Is it open source?</summary>
+          <p>Yes — MIT, on <a href="https://github.com/r3dz4r/datapulse-my">GitHub</a>, with a public changelog and reproducible build proof.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="adoption-band" aria-labelledby="adoption-heading">
+      <div>
+        <h2 id="adoption-heading">Free. Open source. No API key.</h2>
+        <p>Give your agent verified Malaysian public-data context in one connection.</p>
+      </div>
+      <div class="adoption-actions">
+        <a class="button-link" href="#connect">Connect your agent</a>
+        <a class="button-link button-link-secondary" href="https://github.com/r3dz4r/datapulse-my">View on GitHub</a>
+      </div>
+    </section>
+
+    <aside class="changelog-strip" aria-label="Recently shipped">
+      <strong>Recently shipped</strong>
+      <span><time datetime="2026-08-09">2026-08-09</time> · 335 datasets added</span>
+      <a href="/changelog.json">Machine-readable changelog</a>
+      <a href="/release-verification.md">Reproducible build proof</a>
+    </aside>
 
     <section id="datasets" aria-labelledby="dataset-heading">
       <div class="section-heading">
