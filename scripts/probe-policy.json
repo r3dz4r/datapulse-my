@@ -712,7 +712,11 @@
       "adapter": "gtfs-realtime"
     },
     "gtfs_realtime_prasarana_bus_mrtfeeder": {
-      "adapter": "gtfs-realtime"
+      "adapter": "gtfs-realtime",
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
     },
     "gtfs_realtime_prasarana_bus_penang": {
       "adapter": "gtfs-realtime"
@@ -2007,6 +2011,114 @@
       "freshness": {
         "content-date-field": "date",
         "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_almanak_astronomi": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_currency_codes": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_government_apps": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_government_apps_downloads": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_government_apps_reviews": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_lookup_federal_finance": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_lookup_money_banking": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_metrics_dataset_cumul": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_poskod": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dgm_usage_metrics_openapi_cumul": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_arc_dosm": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_bec": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_gdp_lookup": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_mcoicop": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_msic": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_productivity_lookup": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_sitc": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
+        "fallback": "last-modified"
+      }
+    },
+    "dosm_sitc_sop": {
+      "freshness": {
+        "extraction-mode": "structural-hash",
         "fallback": "last-modified"
       }
     }
