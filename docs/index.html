@@ -203,6 +203,16 @@
 
     .hero-trust-band a { color: inherit; }
 
+    .hero-trust-anchor {
+      padding: 0.2rem 0.4rem;
+      border: 1px solid var(--fresh);
+      border-radius: 0.25rem;
+      color: var(--bg);
+      background: var(--fresh);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
     .hero-stats {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4899,12 +4909,13 @@
       <div class="hero-copy">
         <p class="hero-kicker">The trust layer for Malaysian open data</p>
         <h1 id="hero-heading">Verified health for Malaysian public data</h1>
-        <p class="hero-subhead">335 official datasets probed every 15 minutes. Eight honest statuses. Licence-clear, machine-readable, MCP-ready.</p>
+        <p class="hero-subhead">Malaysia ranks #1 in the world for open data — and none of it is verified. We probe 335 official datasets every 15 minutes, classify each into one of eight honest statuses, and expose it read-only over MCP.</p>
         <div class="hero-actions">
           <a class="button-link" href="#connect">Connect your agent</a>
           <a class="button-link button-link-secondary" href="#live-status">View live status</a>
         </div>
         <ul class="hero-trust-band" aria-label="DataPulse trust signals">
+          <li><span class="hero-trust-anchor">#1 open data, verified</span></li>
           <li><a href="#live-status">335 datasets verified</a></li>
           <li><a href="/health-methodology.html">15-min cadence</a></li>
           <li><a href="#connect">Read-only MCP</a></li>
@@ -4964,7 +4975,7 @@
       <div class="landing-heading">
         <p class="section-kicker">The problem</p>
         <h2 id="problem-heading">Malaysian open data is silently breaking</h2>
-        <p>An endpoint can return a file and still fail the people and agents relying on it. Availability alone is not evidence of trustworthy data.</p>
+        <p>Malaysia just topped the global Open Data Inventory — 99/100 for openness, #1 of 198 countries. World-class supply. But the ranking measures availability, not truth. Here’s what “published” actually hides:</p>
       </div>
       <div class="pain-grid">
         <article class="pain-card">
