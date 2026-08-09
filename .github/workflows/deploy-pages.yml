@@ -168,7 +168,7 @@ jobs:
             fail "dashboard embeds $card_count dataset cards; expected $expected_dataset_count"
 
           fetch "llms.txt" "https://data-pulse.my/llms.txt" "$smoke_dir/llms.txt"
-          grep -Fq "$expected_dataset_count datasets" "$smoke_dir/llms.txt" || \
+          grep -Eq "$expected_dataset_count (official )?datasets|$expected_dataset_count-dataset" "$smoke_dir/llms.txt" || \
             fail "llms.txt does not contain '$expected_dataset_count datasets'"
           grep -Fq "MCP" "$smoke_dir/llms.txt" || \
             fail "llms.txt does not mention MCP"
