@@ -2,6 +2,56 @@
 
 DataPulse MY reports evidence, not a promise that upstream data is correct.
 
+## Schema version
+
+`health/latest.json.schema = "datapulse/v0.3/dataset-health"`
+
+The schema identifier is a top-level field. `_trust_summary` does not duplicate
+the schema identifier.
+
+## Production classification (T33, 2026-08-09)
+
+The 15-minute timer invokes `bash scripts/check.sh --due`. The full-probe
+canary (`docs/health-policy-compatibility.md`) reviewed on 2026-08-09 confirms
+the `--due` policy is consistent with the approved freshness policy:
+
+- Due-probe thresholds from `scripts/check.sh` lines 111–129 are 15 minutes
+  for realtime (`30 seconds` and `hourly`), 60 minutes for weekday-daily,
+  1,440 minutes for daily, 10,080 minutes for weekly/monthly/quarterly, and
+  43,200 minutes for annual/survey-year/as-required datasets.
+- Fixed-window freshness baselines from `scripts/health_policy.py` are 30
+  seconds, 1 hour, 1 day, 7 days, 30 days, 90 days, and 365 days for
+  `30 seconds`, hourly, daily, weekly, monthly, quarterly, and annual
+  frequencies respectively. Fresh is age ≤1.5× baseline, aging is >1.5× and
+  ≤3×, and stale is >3×. Survey-year verification uses 45-day and 90-day
+  boundaries; as-required datasets do not infer a freshness window.
+- Status flips in the canary: 22 fresh→aging transitions + 3 fresh→stale
+  transitions were classified as "Approved" because they reflect datasets
+  legitimately aging past their cadence.
+- 5 GTFS static myBAS feeds were marked `real_status: discontinued` after
+  upstream stopped publishing real data. The canary's "record count changed by
+  more than 10%" classification moves these from "Blocker" to "Approved"
+  because discontinued zero-count is the policy reason.
+
+These preserve the reviewed G2/G3/G4 outcomes: generated health remains the
+single production snapshot, a valid configured content signal takes precedence
+with the approved fallback, and classification uses the cadence-specific
+freshness windows above.
+
+## Rollback path
+
+`scripts/check.sh --compare-health` runs a full probe to a temp file and diffs
+the result without modifying the live `health/latest.json`. It exits 0 when the
+comparison report is produced successfully, including when that report lists
+differences, and exits 1 if comparison fails. The 2026-08-09 canary is the
+reference diff. To revert a classification change, edit `datapulse.json`
+directly (for example, flip `real_status` back to `"live"`) and wait for the
+next `--due` probe.
+
+## Schema/version changes
+
+The health schema is unchanged for T33.
+
 ## Status taxonomy
 
 | Status | Meaning |
