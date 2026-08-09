@@ -60,6 +60,31 @@ Statuses with zero count are omitted. Full per-dataset health is in
 > expect rough edges. Track progress via the [GitHub Releases](../../releases)
 > page — `v0.4.0` is the current milestone.
 
+### Browser-dependent datasets
+
+Five of 335 datasets (1.5%) require a real browser to probe because their
+source pages render client-side JavaScript: `eperolehan-diklankan`,
+`doe_apims`, `doe_rqims`, `doe_mqims`, and `kkm_idengue`.
+
+DataPulse uses **[Camofox](https://github.com/jo-inc/camofox-browser)**, a
+self-hosted patched headless-Chromium sidecar, to probe these. The probe path
+is [`check.sh`](scripts/check.sh) → Camofox sidecar → DOM snapshot →
+content-date extraction.
+
+**To enable browser probing:**
+
+1. Run the Camofox Docker sidecar on a reachable address (default
+   `http://localhost:9377`; on this VPS, Tailscale-only at
+   `100.74.84.121:9377`).
+2. Set `CAMOFOX_BASE_URL` to that address.
+3. Restart the timer with `systemctl restart datapulse-health.timer`.
+
+Without Camofox, those five datasets will sit at `browser-dependent` — the
+**honest** status: DataPulse cannot probe them without a browser, so it says
+so rather than failing silently. See
+[`scripts/smoke_browser_probes.sh`](scripts/smoke_browser_probes.sh) for
+isolated smoke tests.
+
 ## AI-agent-ready — what it means for you
 
 Give your organisation's AI tools current, licensed, and verified Malaysian
