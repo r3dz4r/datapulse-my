@@ -20,6 +20,7 @@ from typing import Iterable
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "datapulse.json"
 LIVE_HEALTH_PATH = ROOT / "health/latest.json"
+PROBE_POLICY_PATH = ROOT / "scripts/probe-policy.json"
 COMPARED_FIELDS = (
     "status",
     "last_checked",
@@ -29,6 +30,14 @@ COMPARED_FIELDS = (
     "column_count",
 )
 NORMAL_FRESHNESS_STATUSES = {"fresh", "aging", "stale"}
+CANARY_DELTA_THRESHOLDS = {
+    "direct": 0.10,        # Time-series data (CPI, GDP, etc.)
+    "gtfs-static": 0.10,   # Full schedules rarely change substantially
+    "gtfs-realtime": 0.50, # Vehicles come and go every 30 seconds
+    "weather": 0.15,       # Observation counts are stable
+    "browser": 0.25,       # Browser scraping adds operational variability
+}
+GTFS_REALTIME_VOLATILE_THRESHOLD = 0.10
 
 
 class SetupError(RuntimeError):
@@ -154,6 +163,50 @@ def _output_path(value: Path) -> Path:
     return output
 
 
+def _adapter_for_dataset(probe_policy: dict, dataset_id: str) -> str:
+    defaults = probe_policy.get("defaults", {})
+    datasets = probe_policy.get("datasets", {})
+    default_adapter = defaults.get("adapter", "direct") if isinstance(defaults, dict) else "direct"
+    dataset_policy = datasets.get(dataset_id, {}) if isinstance(datasets, dict) else {}
+    adapter = dataset_policy.get("adapter", default_adapter) if isinstance(dataset_policy, dict) else default_adapter
+    return adapter if isinstance(adapter, str) and adapter else "direct"
+
+
+def classify_record_count(before: float, after: float, adapter: str) -> tuple[str, str, str]:
+    """Classify a comparable record-count delta for one probe adapter."""
+    denominator = abs(before)
+    change = float("inf") if denominator == 0 else abs(after - before) / denominator
+    threshold = CANARY_DELTA_THRESHOLDS.get(adapter, CANARY_DELTA_THRESHOLDS["direct"])
+    threshold_percent = round(threshold * 100)
+
+    if change >= threshold:
+        comparison = "more than" if change > threshold else "reached"
+        if adapter == "gtfs-realtime":
+            detail = "; possible upstream stall" if after == 0 else ""
+            return (
+                "Blocker",
+                "Operational",
+                f"record count changed by {comparison} {threshold_percent}%{detail}",
+            )
+        return (
+            "Blocker",
+            "Structural",
+            f"record count changed by {comparison} {threshold_percent}%",
+        )
+    if adapter == "gtfs-realtime" and change >= GTFS_REALTIME_VOLATILE_THRESHOLD:
+        return (
+            "Volatile",
+            "Volatile",
+            "GTFS-realtime record count changed by at least 10% but less than 50%; expected operational noise",
+        )
+    category = "Operational" if adapter == "gtfs-realtime" else "Structural"
+    return (
+        "Approved",
+        category,
+        f"record count changed within the {threshold_percent}% {adapter} tolerance",
+    )
+
+
 def _classification(
     field: str,
     before: object,
@@ -161,6 +214,7 @@ def _classification(
     manifest_row: dict,
     live_row: dict,
     canary_row: dict,
+    adapter: str,
 ) -> tuple[str, str]:
     if field == "status":
         transition = (before, after)
@@ -224,11 +278,8 @@ def _classification(
         if after in {0, None} and manifest_row.get("real_status") == "discontinued":
             return "Approved", "no records are expected for a discontinued upstream feed"
         if isinstance(before, (int, float)) and not isinstance(before, bool) and isinstance(after, (int, float)) and not isinstance(after, bool):
-            denominator = abs(before)
-            change = float("inf") if denominator == 0 else abs(after - before) / denominator
-            if change > 0.10:
-                return "Blocker", "record count changed by more than 10%"
-            return "Approved", "record count changed within the 10% tolerance"
+            classification, _, reason = classify_record_count(before, after, adapter)
+            return classification, reason
         if before is None and isinstance(after, (int, float)) and not isinstance(after, bool):
             return "Approved", "full probe extracted a record count"
         return "Pending", "record-count comparability needs review"
@@ -251,7 +302,7 @@ def _finding(
     return Finding(classification, category, dataset_id, field, before, after, reason)
 
 
-def _compare(manifest: dict, live: dict, canary: dict) -> list[Finding]:
+def _compare(manifest: dict, live: dict, canary: dict, probe_policy: dict) -> list[Finding]:
     manifest_rows = _rows(manifest, "manifest")
     live_rows = _rows(live, "live health")
     canary_rows = _rows(canary, "canary output")
@@ -280,6 +331,7 @@ def _compare(manifest: dict, live: dict, canary: dict) -> list[Finding]:
     for dataset_id in sorted(live_ids & canary_ids):
         live_row = live_by_id[dataset_id]
         canary_row = canary_by_id[dataset_id]
+        adapter = _adapter_for_dataset(probe_policy, dataset_id)
         for field in COMPARED_FIELDS:
             before = live_row.get(field)
             after = canary_row.get(field)
@@ -292,12 +344,15 @@ def _compare(manifest: dict, live: dict, canary: dict) -> list[Finding]:
                 manifest_by_id[dataset_id],
                 live_row,
                 canary_row,
+                adapter,
             )
-            category = {
-                "status": "Status flip",
-                "record_count": "Record count",
-                "column_count": "Schema",
-            }.get(field, "Field")
+            if field == "record_count" and classification in {"Blocker", "Approved", "Volatile"}:
+                _, category, _ = classify_record_count(before, after, adapter)
+            else:
+                category = {
+                    "status": "Status flip",
+                    "column_count": "Schema",
+                }.get(field, "Field")
             findings.append(_finding(classification, category, dataset_id, field, before, after, reason))
 
     summary = _trust_summary(canary, "canary output")
@@ -329,13 +384,13 @@ def _table(findings: list[Finding]) -> list[str]:
     if not findings:
         return ["_None._", ""]
     lines = [
-        "| Classification | Dataset ID | Field | Before | After | Reason |",
-        "|---|---|---|---|---|---|",
+        "| Classification | Category | Dataset ID | Field | Before | After | Reason |",
+        "|---|---|---|---|---|---|---|",
     ]
     for item in findings:
         reason = item.reason.replace("|", "\\|")
         lines.append(
-            f"| {item.classification} | `{item.dataset_id}` | `{item.field}` | "
+            f"| {item.classification} | {item.category} | `{item.dataset_id}` | `{item.field}` | "
             f"{_display(item.before)} | {_display(item.after)} | {reason} |"
         )
     lines.append("")
@@ -375,6 +430,7 @@ def _render_report(
         f"- Total datasets: **{manifest_count}**",
         f"- Approved changes: **{counts['Approved']}**",
         f"- Blockers: **{counts['Blocker']}**",
+        f"- Volatile notes: **{counts['Volatile']}**",
         f"- Pending review: **{counts['Pending']}**",
         "",
         "## Per-status distribution",
@@ -390,15 +446,22 @@ def _render_report(
 
     for heading, category in (
         ("Status flips", "Status flip"),
-        ("Record-count changes", "Record count"),
         ("Schema changes", "Schema"),
     ):
         lines.extend([f"## {heading}", ""])
         lines.extend(_table([item for item in findings if item.category == category]))
 
-    for heading in ("Approved", "Blockers", "Pending"):
+    lines.extend(["## Record-count changes", ""])
+    lines.extend(_table([item for item in findings if item.field == "record_count"]))
+
+    for heading, classification in (
+        ("Approved", "Approved"),
+        ("Volatile (gtfs-realtime)", "Volatile"),
+        ("Blockers", "Blocker"),
+        ("Pending", "Pending"),
+    ):
         lines.extend([f"## {heading}", ""])
-        lines.extend(_table([item for item in findings if item.classification == heading.rstrip("s")]))
+        lines.extend(_table([item for item in findings if item.classification == classification]))
 
     lines.extend(
         [
@@ -431,8 +494,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         manifest = _load_object(MANIFEST_PATH)
         live = _load_object(LIVE_HEALTH_PATH)
+        probe_policy = _load_object(PROBE_POLICY_PATH)
         canary, canary_sha, duration = _run_probe(args.probe_timeout)
-        findings = _compare(manifest, live, canary)
+        findings = _compare(manifest, live, canary, probe_policy)
         report = _render_report(manifest, live, canary, findings, canary_sha, duration)
         output = _output_path(args.output)
         output.parent.mkdir(parents=True, exist_ok=True)
