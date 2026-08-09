@@ -35,13 +35,36 @@ HEAD or GET probes; GTFS feeds use `scripts/probe_gtfs.py`; JavaScript-rendered
 DOE, iDengue, and ePerolehan pages use Camofox. Content-date extractors provide
 freshness evidence when HTTP headers do not.
 
-## Health merge and artifacts
+The 15-minute timer calls `scripts/check.sh --due`. Only due rows are probed,
+then their results are merged with preserved rows from the prior snapshot
+in manifest order. A successful snapshot drives the `health-cycle`
+generation profile.
 
-The 15-minute service calls `scripts/check.sh --due`. Only due rows are probed,
-then their results are merged with preserved rows from the prior snapshot in
-manifest order. A successful snapshot drives badges, RSS, README counts, and
-the machine-readable changelog. JSON-LD is regenerated separately from the
-manifest plus health state.
+## Generation profiles
+
+Two profiles in `scripts/generate.sh` orchestrate the generators in
+reviewed order, with explicit path ownership:
+
+- `health-cycle` — 5 steps (`gen_data_reports.sh` →
+  `gen_badges.sh` → `gen_readme_summary.sh` → `gen_rss.sh` →
+  `gen_changelog.py`). Owns `data/<id>.md`, `badges/`, README trust
+  summary, `feed.xml`, `changelog.json`. Invoked by the timer and the
+  weekly fallback after a successful probe.
+- `release-build` — runs `health-cycle` then 4 more steps
+  (`gen_json_envelope.py --force` → `gen_jsonld_catalog.py` →
+  `gen_mcp_reference.py` → `gen_dashboard_filters.py`). Owns all
+  health-cycle paths plus `data/json/<id>.json`, `data/jsonld/`,
+  `docs/mcp-reference.md`, `mcp.json`, `docs/.dashboard_filters.json`.
+  Invoked by the Pages deploy.
+
+## MCP source-to-deployment sync
+
+`release-build` first step is `python3 scripts/bump_mcp_source_version.py`,
+which stamps the current commit SHA into `mcp/server.py` and `mcp.json`
+before any generator introspects them. The deployed MCP service exposes
+the SHA in the JSON-RPC `initialize.serverInfo.source_commit_sha` field;
+`python3 scripts/verify_mcp_deployment.py` compares it against the
+repo HEAD and exits 0 (match), 1 (mismatch), or 2 (unreachable).
 
 ## Machine-readable envelopes
 
@@ -62,10 +85,14 @@ files fail CI.
 
 ## Publication and MCP
 
-`.github/workflows/deploy-pages.yml` assembles the static Pages artifact and
-injects the current manifest and health snapshot into the dashboard. The MCP
-service runs independently on the VPS, but reads the published Pages manifest
-and health documents; it cannot write upstream data or repository state.
+`.github/workflows/deploy-pages.yml` invokes `release-build`, then the
+embed step injects manifest + health + dashboard filters into
+`docs/index.html`, then assembles the Pages artifact, deploys via
+`actions/deploy-pages@v4`, and runs post-deploy invariants.
+
+The MCP service runs independently on the VPS as `datapulse-mcp.service`
+(user unit). It reads the same published manifest + health that Pages
+serves; it cannot write upstream data or repository state.
 
 ### Dashboard filter generator
 

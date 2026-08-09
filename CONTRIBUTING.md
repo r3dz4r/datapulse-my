@@ -113,3 +113,14 @@ credentials, cookies, personal data, or copied source records are committed.
 
 Reviewers may request a repeat observation for dynamic, intermittent, or
 JavaScript-rendered sources.
+
+## Operational ownership
+
+This guide covers contributor-facing artifacts (`data/`, `datapulse.json`, `llms.txt`,
+`mcp.json` schema, etc.). For operational ownership, rollback procedures, and
+post-deploy verification, see:
+
+- `docs/operations.md` — three operational units and their responsibilities
+- `docs/release-process.md` — generation profiles, MCP source synchronization, post-deploy invariants
+- `docs/troubleshooting.md` — symptom → owner → action mapping
+- `docs/mcp-deploy.md` — redeploy steps for the MCP service
