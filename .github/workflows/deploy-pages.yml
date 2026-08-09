@@ -113,6 +113,11 @@ jobs:
 
       - name: Assemble Pages artifact
         run: |
+          # GitHub Pages CDN serves `Cache-Control: max-age=600` for all artifacts.
+          # Browsers honor the no-cache meta tags in <head>, which force re-validation
+          # on every page load. The CDN cache means a deploy takes up to 10 minutes
+          # to propagate globally; the browser cache (via meta tags) is bypassed.
+          # This is the standard GH Pages + CDN pattern.
           mkdir -p _site
           # All files inside docs/ are copied to the site ROOT (the `docs/`
           # prefix is stripped by `cp -R docs/. _site/`). So docs/index.html

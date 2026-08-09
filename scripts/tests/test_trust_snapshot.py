@@ -109,8 +109,15 @@ def test_generates_md_and_json_for_today(tmp_path: Path) -> None:
     markdown = markdown_path.read_text(encoding="utf-8")
     assert "Status distribution" in markdown
     assert "New breaks" in markdown
+    assert "Recovered" in markdown
+    assert "Newly probed datasets" in markdown
+    assert "Newly added datasets" in markdown
     assert "Schema and record-count changes" in markdown
-    assert json.loads(json_path.read_text(encoding="utf-8"))["week"] == FAKE_DATE
+    snapshot = json.loads(json_path.read_text(encoding="utf-8"))
+    assert snapshot["week"] == FAKE_DATE
+    assert [row["dataset_id"] for row in snapshot["changes"]["recovered"]] == ["beta"]
+    assert [row["dataset_id"] for row in snapshot["changes"]["newly_probed"]] == ["gamma"]
+    assert [row["dataset_id"] for row in snapshot["changes"]["added"]] == ["gamma"]
 
 
 def test_status_distribution_percentages_sum_to_100(tmp_path: Path) -> None:
@@ -130,11 +137,16 @@ def test_idempotent_second_run(tmp_path: Path) -> None:
 
 
 def test_handles_short_history(tmp_path: Path) -> None:
-    _, json_path = _run(_make_repo(tmp_path, short_history=True))
+    markdown_path, json_path = _run(_make_repo(tmp_path, short_history=True))
     snapshot = json.loads(json_path.read_text(encoding="utf-8"))
+    markdown = markdown_path.read_text(encoding="utf-8")
 
     assert snapshot["changes"] == {}
-    assert "Insufficient history" in snapshot["caveats"]["history"]
+    assert snapshot["caveats"]["history"] == "No comparable baseline available."
+    assert "## Recovered" in markdown
+    assert "## Newly probed datasets" in markdown
+    assert "## Newly added datasets" in markdown
+    assert markdown.count("_No comparable baseline available._") >= 3
 
 
 def test_reproducibility_footer_present(tmp_path: Path) -> None:

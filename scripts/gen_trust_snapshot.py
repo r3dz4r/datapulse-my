@@ -53,12 +53,19 @@ def git_json(root: Path, commit: str, path: str) -> dict[str, Any] | None:
         return None
 
 
-def baseline_document(
+def previous_week_document(
     root: Path, path: str, start: date
 ) -> tuple[str, dict[str, Any] | None]:
     cutoff = f"{start.isoformat()}T00:00:00Z"
-    before = git(root, "rev-list", "-1", f"--before={cutoff}", "HEAD", "--", path)
-    commits = ([before] if before else []) + git(
+    commit = git(root, "rev-list", "-1", f"--before={cutoff}", "HEAD", "--", path)
+    return commit, git_json(root, commit, path) if commit else None
+
+
+def manifest_baseline(
+    root: Path, start: date
+) -> tuple[str, dict[str, Any] | None]:
+    cutoff = f"{start.isoformat()}T00:00:00Z"
+    commits = git(
         root,
         "log",
         "--reverse",
@@ -66,26 +73,29 @@ def baseline_document(
         f"--since={cutoff}",
         "HEAD",
         "--",
-        path,
+        "datapulse.json",
     ).splitlines()
-    for commit in commits:
-        document = git_json(root, commit, path)
-        if document and document.get("datasets"):
-            return commit, document
-    return "", None
-
-
-def repository_has_week(root: Path, start: date) -> bool:
-    timestamps = git(root, "log", "--reverse", "--format=%cI", "HEAD").splitlines()
-    if not timestamps:
-        return False
-    first_commit = datetime.fromisoformat(timestamps[0].replace("Z", "+00:00"))
-    cutoff = datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc)
-    return first_commit <= cutoff
+    if commits:
+        commit = git(root, "rev-parse", f"{commits[0]}^", check=False)
+    else:
+        commit = git(
+            root,
+            "rev-list",
+            "-1",
+            f"--before={cutoff}",
+            "HEAD",
+            "--",
+            "datapulse.json",
+        )
+    return commit, git_json(root, commit, "datapulse.json") if commit else None
 
 
 def rows_by_id(document: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {row["dataset_id"]: row for row in document.get("datasets", [])}
+
+
+def manifest_rows_by_id(document: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {row["id"]: row for row in document.get("datasets", [])}
 
 
 def status_change(
@@ -105,36 +115,33 @@ def status_change(
 
 def change_summary(
     root: Path,
-    current_changelog: dict[str, Any],
     start: date,
-) -> tuple[dict[str, list[dict[str, Any]]], str]:
-    if not repository_has_week(root, start):
-        return {}, "Insufficient history (<7 days); change arrays were not inferred."
+) -> tuple[dict[str, Any], str]:
+    manifest_commit, old_manifest = manifest_baseline(root, start)
+    health_commit, old_health = previous_week_document(
+        root, "health/latest.json", start
+    )
+    if old_manifest is None or old_health is None:
+        return {}, "No comparable baseline available."
 
-    changelog_commit, old_changelog = baseline_document(root, "changelog.json", start)
-    health_commit, old_health = baseline_document(root, "health/latest.json", start)
-    if old_changelog is None or old_health is None:
-        return {}, "Insufficient history (<7 days); change arrays were not inferred."
-
-    old_rows = rows_by_id(old_changelog)
-    current_rows = rows_by_id(current_changelog)
-    changelog_source = f"changelog.json@{changelog_commit[:12]}..HEAD"
+    current_manifest = load_json(root / "datapulse.json")
+    current_health = load_json(root / "health/latest.json")
+    old_rows = rows_by_id(old_health)
+    current_rows = rows_by_id(current_health)
+    health_source = f"health/latest.json@{health_commit[:12]}..HEAD"
     new_breaks: list[dict[str, Any]] = []
     recovered: list[dict[str, Any]] = []
     for dataset_id in sorted(old_rows.keys() & current_rows.keys()):
         old, new = old_rows[dataset_id], current_rows[dataset_id]
         transition = (old.get("status"), new.get("status"))
         if transition in {("fresh", "stale"), ("stale", "unreachable")}:
-            new_breaks.append(status_change(dataset_id, old, new, changelog_source))
+            new_breaks.append(status_change(dataset_id, old, new, health_source))
         elif old.get("status") != "fresh" and new.get("status") == "fresh":
-            recovered.append(status_change(dataset_id, old, new, changelog_source))
+            recovered.append(status_change(dataset_id, old, new, health_source))
 
-    old_health_rows = rows_by_id(old_health)
-    current_health_rows = rows_by_id(load_json(root / "health/latest.json"))
-    health_source = f"health/latest.json@{health_commit[:12]}..HEAD"
     schema_changes: list[dict[str, Any]] = []
-    for dataset_id in sorted(old_health_rows.keys() & current_health_rows.keys()):
-        old, new = old_health_rows[dataset_id], current_health_rows[dataset_id]
+    for dataset_id in sorted(old_rows.keys() & current_rows.keys()):
+        old, new = old_rows[dataset_id], current_rows[dataset_id]
         record_changed = old.get("record_count") != new.get("record_count")
         shape_changed = (
             old.get("column_count") != new.get("column_count")
@@ -154,36 +161,43 @@ def change_summary(
                 }
             )
 
-    added_paths = git(
-        root,
-        "log",
-        f"--since={start.isoformat()}T00:00:00Z",
-        "--diff-filter=A",
-        "--name-only",
-        "--pretty=format:",
-        "--",
-        "data/*.md",
-    ).splitlines()
+    newly_probed = [
+        {
+            "dataset_id": dataset_id,
+            "status": current_rows[dataset_id].get("status"),
+            "last_checked": current_rows[dataset_id].get("last_checked"),
+            "source": health_source,
+        }
+        for dataset_id in sorted(current_rows.keys() - old_rows.keys())
+    ]
+
+    old_manifest_rows = manifest_rows_by_id(old_manifest)
+    current_manifest_rows = manifest_rows_by_id(current_manifest)
+    manifest_source = f"datapulse.json@{manifest_commit[:12]}..HEAD"
     added: list[dict[str, Any]] = []
-    for dataset_id in sorted({Path(path).stem for path in added_paths if path.strip()}):
+    for dataset_id in sorted(current_manifest_rows.keys() - old_manifest_rows.keys()):
         row = current_rows.get(dataset_id)
-        if row:
-            added.append(
-                {
-                    "dataset_id": dataset_id,
-                    "old_status": None,
-                    "new_status": row.get("status"),
-                    "last_checked": row.get("last_checked"),
-                    "source": f"git history for data/{dataset_id}.md",
-                }
-            )
+        added.append(
+            {
+                "dataset_id": dataset_id,
+                "old_status": None,
+                "new_status": row.get("status") if row else None,
+                "last_checked": row.get("last_checked") if row else None,
+                "source": manifest_source,
+            }
+        )
 
     return {
+        "baseline": {
+            "manifest_commit": manifest_commit,
+            "health_commit": health_commit,
+        },
         "new_breaks": new_breaks,
         "recovered": recovered,
         "schema_changes": schema_changes,
+        "newly_probed": newly_probed,
         "added": added,
-    }, f"Compared with the oldest available snapshots in the seven-day window ({changelog_commit[:12]} / {health_commit[:12]})."
+    }, f"Compared with manifest and health baselines {manifest_commit[:12]} / {health_commit[:12]}."
 
 
 def distribution(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -277,6 +291,14 @@ def render_markdown(snapshot: dict[str, Any]) -> str:
             ) + [""]
         else:
             lines += ["_None observed in the comparison window._", ""]
+        lines += ["## Newly probed datasets", ""]
+        if changes["newly_probed"]:
+            lines += [
+                f"- `{row['dataset_id']}` — {row['status']}"
+                for row in changes["newly_probed"]
+            ] + [""]
+        else:
+            lines += ["_None observed in the comparison window._", ""]
         lines += ["## Newly added datasets", ""]
         if changes["added"]:
             lines += [f"- `{row['dataset_id']}` — {row['new_status']}" for row in changes["added"]] + [""]
@@ -284,9 +306,25 @@ def render_markdown(snapshot: dict[str, Any]) -> str:
             lines += ["_None observed in the comparison window._", ""]
     else:
         lines += [
-            "## Changes",
+            "## New breaks",
             "",
-            "_Insufficient history (<7 days); new breaks, recoveries, schema changes, and additions were not inferred._",
+            "_No comparable baseline available._",
+            "",
+            "## Recovered",
+            "",
+            "_No comparable baseline available._",
+            "",
+            "## Schema and record-count changes",
+            "",
+            "_No comparable baseline available._",
+            "",
+            "## Newly probed datasets",
+            "",
+            "_No comparable baseline available._",
+            "",
+            "## Newly added datasets",
+            "",
+            "_No comparable baseline available._",
             "",
         ]
 
@@ -315,7 +353,7 @@ def main() -> None:
     changelog = load_json(root / "changelog.json")
     rows = changelog.get("datasets", [])
     status_distribution = distribution(rows)
-    changes, history_note = change_summary(root, changelog, start)
+    changes, history_note = change_summary(root, start)
     iso_year, iso_week, _ = snapshot_date.isocalendar()
     snapshot = {
         "week": snapshot_date.isoformat(),
