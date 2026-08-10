@@ -24,6 +24,14 @@ STATUSES = (
     "reference",
 )
 
+DIGITAL_SERVICES_DATASET_IDS = (
+    "dgm_government_apps_active",
+    "dgm_government_apps",
+    "dgm_government_apps_downloads",
+    "dgm_government_apps_reviews",
+)
+SOURCE_STALENESS_THRESHOLD_DAYS = 60
+
 
 def git(root: Path, *args: str, check: bool = True) -> str:
     result = subprocess.run(
@@ -229,6 +237,47 @@ def coverage(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def source_level_staleness(
+    manifest: dict[str, Any], health: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Return dynamic evidence for known source families whose entire feed is old."""
+    manifest_rows = manifest_rows_by_id(manifest)
+    health_rows = rows_by_id(health)
+    dataset_ids = list(DIGITAL_SERVICES_DATASET_IDS)
+    if not all(
+        dataset_id in manifest_rows and dataset_id in health_rows
+        for dataset_id in dataset_ids
+    ):
+        return []
+
+    stewards = {manifest_rows[dataset_id].get("steward") for dataset_id in dataset_ids}
+    ages = [health_rows[dataset_id].get("staleness_days") for dataset_id in dataset_ids]
+    if len(stewards) != 1 or not all(
+        isinstance(age, (int, float)) and age > SOURCE_STALENESS_THRESHOLD_DAYS
+        for age in ages
+    ):
+        return []
+
+    data_as_of_values = [
+        health_rows[dataset_id].get("content_freshness_date")
+        for dataset_id in dataset_ids
+        if isinstance(health_rows[dataset_id].get("content_freshness_date"), str)
+    ]
+    latest_data_as_of = max(data_as_of_values, default=None)
+    return [
+        {
+            "source": "Digital Services",
+            "steward": stewards.pop(),
+            "dataset_count": len(dataset_ids),
+            "dataset_ids": dataset_ids,
+            "threshold_days": SOURCE_STALENESS_THRESHOLD_DAYS,
+            "minimum_staleness_days": min(ages),
+            "latest_data_as_of": latest_data_as_of,
+            "finding": "The source appears to have stopped publishing across this dataset family.",
+        }
+    ]
+
+
 def markdown_table(headers: list[str], rows: list[list[Any]]) -> list[str]:
     lines = [
         "| " + " | ".join(headers) + " |",
@@ -253,6 +302,7 @@ def render_markdown(snapshot: dict[str, Any]) -> str:
     distribution_data = snapshot["status_distribution"]
     coverage_data = snapshot["coverage"]
     changes = snapshot["changes"]
+    source_findings = snapshot["source_level_staleness"]
     caveats = snapshot["caveats"]
     unreachable_verb = "is" if caveats["unreachable"] == 1 else "are"
     lines = [
@@ -329,6 +379,19 @@ def render_markdown(snapshot: dict[str, Any]) -> str:
             "",
         ]
 
+    lines += ["## Source-level staleness", ""]
+    if source_findings:
+        for finding in source_findings:
+            dataset_ids = ", ".join(
+                f"`{dataset_id}`" for dataset_id in finding["dataset_ids"]
+            )
+            lines += [
+                f"- **{finding['source']}** — all {finding['dataset_count']} datasets are more than {finding['threshold_days']} days old; the latest `data_as_of` is {finding['latest_data_as_of']}. The source appears to have stopped publishing across this dataset family: {dataset_ids}.",
+            ]
+        lines += [""]
+    else:
+        lines += ["_No source families met the staleness threshold._", ""]
+
     lines += ["## Coverage", "", f"- Total datasets: **{coverage_data['total_datasets']}**", "", "### By namespace", ""]
     lines += markdown_table(["Namespace", "Datasets"], [[f"`{key}`", value] for key, value in coverage_data["by_namespace"].items()]) + [""]
     lines += ["### By licence", ""]
@@ -353,6 +416,8 @@ def main() -> None:
     start = snapshot_date - timedelta(days=6)
     changelog = load_json(root / "changelog.json")
     rows = changelog.get("datasets", [])
+    manifest = load_json(root / "datapulse.json")
+    health = load_json(root / "health/latest.json")
     status_distribution = distribution(rows)
     changes, history_note = change_summary(root, start)
     iso_year, iso_week, _ = snapshot_date.isocalendar()
@@ -365,6 +430,7 @@ def main() -> None:
         "status_distribution": status_distribution,
         "coverage": coverage(rows),
         "changes": changes,
+        "source_level_staleness": source_level_staleness(manifest, health),
         "caveats": {
             "unknown_freshness": status_distribution["unknown-freshness"],
             "unreachable": status_distribution["unreachable"],
