@@ -5,6 +5,9 @@
     "freshness-fallback": "last-modified"
   },
   "templates": {
+    "hansard-script": {
+      "adapter": "hansard-script"
+    },
     "bnm-open-api": {
       "type": "http",
       "headers": {
@@ -2371,6 +2374,15 @@
     },
     "bnm_myor": {
       "template": "bnm-open-api"
+    },
+    "hansard_sittings": {
+      "template": "hansard-script"
+    },
+    "hansard_parliamentary_terms": {
+      "template": "hansard-script"
+    },
+    "hansard_mps": {
+      "template": "hansard-script"
     }
   }
 }

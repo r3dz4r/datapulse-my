@@ -1,6 +1,6 @@
 ---
 dataset_id: dosm_birth_state
-last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T10:07:26Z
 status: aging
 freshness_delta: 952 days
 next_expected_update: annual
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 04:08:14 UTC.
+2026-08-10 at 10:07:26 UTC.
 
 ## File size
 

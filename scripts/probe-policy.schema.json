@@ -19,7 +19,7 @@
     "templates": {
       "type": "object",
       "propertyNames": {"pattern": "^[a-z0-9][a-z0-9_-]*$"},
-      "additionalProperties": {"$ref": "#/$defs/http-template"}
+      "additionalProperties": {"$ref": "#/$defs/probe-template"}
     },
     "datasets": {
       "type": "object",
@@ -29,7 +29,7 @@
   },
   "$defs": {
     "adapter": {
-      "enum": ["direct", "browser", "weather", "gtfs-static", "gtfs-realtime"]
+      "enum": ["direct", "browser", "weather", "gtfs-static", "gtfs-realtime", "hansard-script"]
     },
     "freshness": {
       "type": "object",
@@ -101,6 +101,20 @@
         "headers": {"$ref": "#/$defs/headers"},
         "freshness": {"$ref": "#/$defs/freshness"}
       }
+    },
+    "hansard-template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter"],
+      "properties": {
+        "adapter": {"const": "hansard-script"}
+      }
+    },
+    "probe-template": {
+      "oneOf": [
+        {"$ref": "#/$defs/http-template"},
+        {"$ref": "#/$defs/hansard-template"}
+      ]
     },
     "dataset-policy": {
       "type": "object",

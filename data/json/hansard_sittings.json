@@ -1,0 +1,46 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "hansard_sittings",
+  "status": "stale",
+  "last_checked": "2026-08-10T10:07:26Z",
+  "freshness_days": 6,
+  "next_expected_update": null,
+  "refresh_frequency": "daily",
+  "record_count": 6192,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via Hansard probe script"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 6192 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [
+    "The health check combines the Dewan Rakyat, Dewan Negara, and Kamar Khas catalogues.",
+    "Sitting publication is sporadic during parliamentary recesses despite the declared daily check cadence.",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://hansard.parlimen.gov.my/_next/data/Zlu4qRDxrOCEM-7h59E5o/katalog/dewan-rakyat.json",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "Malaysian Parliament Digital Hansard (government_open_data)"
+}

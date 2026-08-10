@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/healthcare/vaxreg_covid_demog.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "annual"
-last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T10:07:26Z
 last_observed: 2022-02-22
 last_modified: 2024-01-02T01:00:56Z
 record_count: 198560
@@ -34,7 +34,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 04:08:14 UTC.
+2026-08-10 at 10:07:26 UTC.
 
 ## File size
 

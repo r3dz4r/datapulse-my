@@ -1,7 +1,7 @@
 ---
 dataset_id: dosm_sitc_sop
-last_checked: 2026-08-10T05:22:19Z
-last_checked: 2026-08-10T05:22:19Z
+last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-10T10:07:26Z
 status: reference
 freshness_delta: unknown
 next_expected_update: as-required
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 05:22:19 UTC.
+2026-08-10 at 10:07:26 UTC.
 
 ## File size
 

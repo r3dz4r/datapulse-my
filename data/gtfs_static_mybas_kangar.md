@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_static_mybas_kangar
-last_checked: 2026-08-10T04:08:14Z
-status: fresh
+last_checked: 2026-08-10T10:07:26Z
+status: degraded
 freshness_delta: 0 days
-record_count: 19468
+record_count: null
 content_freshness_date: 2026-12-31
 schema_version: GTFS
 schema_drift: none
@@ -17,19 +17,19 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 ## Status
 
-**Status:** Fresh
+**Status:** Degraded
 
 **Freshness:** 0 days
 
-HTTP 200; valid GTFS static ZIP
+Invalid GTFS ZIP: File is not a zip file
 
 ## Last checked
 
-2026-08-10 at 04:08:14 UTC.
+2026-08-10 at 10:07:26 UTC.
 
 ## File size
 
-The checked resource is 128,709 bytes.
+The checked resource is 0 bytes.
 
 ## Provenance
 
