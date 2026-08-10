@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_prisoners_state
-last_checked: 2026-08-07T07:25:52Z
+last_checked: 2026-08-09T08:37:11Z
 status: stale
-freshness_delta: 1679 days
+freshness_delta: 1681 days
 next_expected_update: overdue
 record_count: 234
 date_range: 2017-01-01 to 2022-01-01
@@ -20,13 +20,13 @@ attribution: Malaysian Prison Department via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1679 days
+**Freshness:** 1681 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-07 at 07:25:52 UTC.
+2026-08-09 at 08:37:11 UTC.
 
 ## File size
 

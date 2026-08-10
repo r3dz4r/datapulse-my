@@ -5,7 +5,7 @@ source_url: "https://storage.dosm.gov.my/bop/bop_balance.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "quarterly"
-last_checked: 2026-08-08T05:49:42Z
+last_checked: 2026-08-09T08:37:11Z
 last_observed: 2026-01-01
 last_modified: 2026-05-15T04:45:33Z
 record_count: 325
@@ -13,7 +13,7 @@ column_count: 3
 status: aging
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: bop_balance
-freshness_delta: 219 days
+freshness_delta: 220 days
 next_expected_update: "quarterly"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Aging
 
-**Freshness:** 219 days
+**Freshness:** 220 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-08 at 05:49:42 UTC.
+2026-08-09 at 08:37:11 UTC.
 
 ## File size
 

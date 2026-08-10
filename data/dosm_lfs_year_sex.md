@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_lfs_year_sex
-last_checked: 2026-08-09T05:30:41Z
-last_checked: 2026-08-09T05:30:41Z
-status: unknown-freshness
-freshness_delta: unknown
+last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-09T08:37:11Z
+status: stale
+freshness_delta: 1316 days
 next_expected_update: annual
 record_count: 120
 schema_version: unknown
@@ -18,15 +18,15 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Unknown freshness
+**Status:** Stale
 
-**Freshness:** unknown
+**Freshness:** 1316 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 05:30:41 UTC.
+2026-08-09 at 08:37:11 UTC.
 
 ## File size
 

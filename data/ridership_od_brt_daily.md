@@ -1,7 +1,7 @@
 ---
 dataset_id: ridership_od_brt_daily
-last_checked: 2026-08-09T05:30:41Z
-last_checked: 2026-08-09T05:30:41Z
+last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-09T08:37:11Z
 status: aging
 freshness_delta: 2 days
 next_expected_update: daily
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-09 at 05:30:41 UTC.
+2026-08-09 at 08:37:11 UTC.
 
 ## File size
 

@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/publicadmin/federal_finance_year_revenu
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "annual"
-last_checked: 2026-08-08T05:49:42Z
+last_checked: 2026-08-09T08:37:11Z
 last_observed: 2023-01-01
 last_modified: 2024-06-05T08:41:54Z
 record_count: 1134
@@ -13,7 +13,7 @@ column_count: 4
 status: stale
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: federal_finance_year_revenue
-freshness_delta: 1315 days
+freshness_delta: 1316 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Ministry of Finance Malaysia via data.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 1315 days
+**Freshness:** 1316 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-08 at 05:49:42 UTC.
+2026-08-09 at 08:37:11 UTC.
 
 ## File size
 
