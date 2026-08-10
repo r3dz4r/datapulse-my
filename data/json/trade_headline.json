@@ -1,0 +1,83 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "trade_headline",
+  "status": "stale",
+  "last_checked": "2026-08-10T00:26:32Z",
+  "freshness_days": 131,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 743,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "series",
+      "type": "string"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "exports",
+      "type": "number"
+    },
+    {
+      "name": "exports_domestic",
+      "type": "number"
+    },
+    {
+      "name": "re_exports",
+      "type": "number"
+    },
+    {
+      "name": "imports",
+      "type": "number"
+    },
+    {
+      "name": "imports_retained",
+      "type": "number"
+    },
+    {
+      "name": "total",
+      "type": "number"
+    },
+    {
+      "name": "balance",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 743 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 9 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Monthly dates use the first day of each month.",
+    "Absolute amounts and percentage growth rates share the measure columns.",
+    "`exports_domestic`, `re_exports`, and `imports_retained` each have 96 blank"
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/trade/trade_headline.csv",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "OpenDOSM (storage.dosm.gov.my) (economy)"
+}

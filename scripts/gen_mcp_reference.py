@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -53,9 +54,9 @@ printf 'live=%s head=%s\\n' "$live_count" "$head_count"
 test "$live_count" -eq "$head_count"
 ```
 
-The expected count at this revision is `335`. If the assertion fails, do not
+The expected count at this revision is `DATASET_COUNT`. If the assertion fails, do not
 merge: the MCP server is stale and the manifest-count claim is false.
-"""
+""".replace("DATASET_COUNT", str(server.DATASET_COUNT))
 
 
 def json_block(value: dict) -> str:
@@ -71,6 +72,18 @@ async def generate() -> None:
     discovery = json.loads(discovery_path.read_text(encoding="utf-8"))
     discovery["server"]["source_commit_sha"] = server.SOURCE_COMMIT_SHA
     discovery["server"]["source_commit_date"] = server.SOURCE_COMMIT_DATE
+    discovery["server"]["description"] = re.sub(
+        r"\(\d+ datasets,",
+        f"({server.DATASET_COUNT} datasets,",
+        discovery["server"]["description"],
+    )
+    for resource in discovery.get("resources", []):
+        if resource.get("uri") == "datapulse://index":
+            resource["description"] = re.sub(
+                r"all \d+ datasets",
+                f"all {server.DATASET_COUNT} datasets",
+                resource["description"],
+            )
     discovery["tools"] = [
         {
             "name": tool.name,

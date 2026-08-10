@@ -1,4 +1,12 @@
+#!/usr/bin/env python3
+
 from pathlib import Path
+import sys
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 
 from scripts.fact_lint import lint_documents
 
@@ -27,7 +35,7 @@ def test_current_doc_with_stale_economy_count_is_flagged(tmp_path: Path) -> None
 
     assert errors == [
         "current.md:1: prohibited literal 'Economy (45)' in current doc "
-        "(current: 'Economy (126)')"
+        "(current: 'Economy (134)')"
     ]
 
 
@@ -62,11 +70,15 @@ def test_stale_166_dataset_count_is_flagged(tmp_path: Path) -> None:
 
     assert errors == [
         "current.md:1: prohibited literal '166 datasets' in current doc "
-        "(current: '335 datasets')"
+        "(current: '345 datasets')"
     ]
 
 
 def test_clean_current_doc_passes(tmp_path: Path) -> None:
-    errors = lint_fixture(tmp_path, current_text="The registry contains 335 datasets.\n")
+    errors = lint_fixture(tmp_path, current_text="The registry contains 345 datasets.\n")
 
     assert errors == []
+
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__]))
