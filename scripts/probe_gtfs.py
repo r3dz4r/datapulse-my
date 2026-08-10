@@ -108,6 +108,27 @@ def _row_count(archive: zipfile.ZipFile, name: str) -> int:
         return max(0, sum(1 for _ in io.TextIOWrapper(raw, encoding="utf-8-sig", newline="")) - 1)
 
 
+def select_realtime_timestamp(
+    header_timestamp: int,
+    vehicle_timestamps: list[int],
+    *,
+    now: datetime | None = None,
+) -> int:
+    """Use the feed timestamp, falling back to the newest non-future vehicle."""
+    if header_timestamp:
+        return header_timestamp
+
+    current_timestamp = int((now or datetime.now(timezone.utc)).timestamp())
+    return max(
+        (
+            timestamp
+            for timestamp in vehicle_timestamps
+            if 0 < timestamp <= current_timestamp
+        ),
+        default=0,
+    )
+
+
 def check_gtfs_static_dataset(
     dataset_id: str, url: str, sample_path: Path, timeout: int
 ) -> dict[str, Any]:
@@ -224,7 +245,7 @@ def check_gtfs_realtime_dataset(
     vehicle_count = sum(entity.HasField("vehicle") for entity in feed.entity)
     header_timestamp = feed.header.timestamp if feed.header.HasField("timestamp") else 0
     newest_vehicle_timestamp = max(vehicle_timestamps, default=0)
-    newest_timestamp = max(header_timestamp, newest_vehicle_timestamp)
+    newest_timestamp = select_realtime_timestamp(header_timestamp, vehicle_timestamps)
     content_date = (
         datetime.fromtimestamp(newest_timestamp, tz=timezone.utc).date().isoformat()
         if newest_timestamp

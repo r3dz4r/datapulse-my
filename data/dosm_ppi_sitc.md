@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_ppi_sitc
-last_checked: 2026-08-09T08:37:11Z
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T04:08:14Z
 status: aging
-freshness_delta: 69 days
+freshness_delta: 70 days
 next_expected_update: monthly
 record_count: 5229
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 69 days
+**Freshness:** 70 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 

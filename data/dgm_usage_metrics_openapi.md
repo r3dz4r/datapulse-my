@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_usage_metrics_openapi
-last_checked: 2026-08-09T08:37:11Z
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T04:08:14Z
 status: fresh
-freshness_delta: 0 days
+freshness_delta: 1 days
 next_expected_update: daily
 record_count: 17640
 schema_version: unknown
@@ -20,17 +20,17 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 0 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 
-The checked resource is 1,226,218 bytes.
+The checked resource is 1,226,220 bytes.
 
 ## Provenance
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_marriages_state
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
 status: stale
-freshness_delta: 1681 days
+freshness_delta: 1682 days
 next_expected_update: overdue
 record_count: 192
 date_range: 2017-01-01 to 2022-01-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Stale
 
-**Freshness:** 1681 days
+**Freshness:** 1682 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 

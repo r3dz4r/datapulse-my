@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_crops_district_area
-last_checked: 2026-08-09T08:37:11Z
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T04:08:14Z
 status: stale
-freshness_delta: 3507 days
+freshness_delta: 3508 days
 next_expected_update: annual
 record_count: 10555
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Department of Agriculture and Department of Statistics Malaysia via
 
 **Status:** Stale
 
-**Freshness:** 3507 days
+**Freshness:** 3508 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 

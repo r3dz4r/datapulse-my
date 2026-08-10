@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_nutrition_children_sex
-last_checked: 2026-08-09T08:37:11Z
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T04:08:14Z
 status: stale
-freshness_delta: 2777 days
+freshness_delta: 2778 days
 next_expected_update: annual
 record_count: 30
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 2777 days
+**Freshness:** 2778 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 

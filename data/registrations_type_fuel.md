@@ -1,7 +1,7 @@
 ---
 dataset_id: registrations_type_fuel
-last_checked: 2026-08-10T00:26:32Z
-last_checked: 2026-08-10T00:26:32Z
+last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T04:08:14Z
 status: fresh
 freshness_delta: 40 days
 next_expected_update: monthly
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 00:26:32 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 

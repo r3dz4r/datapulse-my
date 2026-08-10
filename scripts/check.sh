@@ -303,8 +303,11 @@ render_dynamic_url() {
 extract_max_date() {
   local body_path="$1"
   local date_field="$2"
+  local today
 
-  jq -r --arg f "$date_field" '
+  today="$(date -u +'%Y-%m-%d')"
+
+  jq -r --arg f "$date_field" --arg today "$today" '
     ($f | split(".")) as $path
     |
     if type == "array" then
@@ -314,6 +317,7 @@ extract_max_date() {
     else []
     end
     | map(select(. != null) | if type == "string" then .[0:10] else . end)
+    | map(select((type != "string") or . <= $today))
     | max
   ' "$body_path"
 }

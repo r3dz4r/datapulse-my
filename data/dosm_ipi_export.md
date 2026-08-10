@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_ipi_export
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
 status: stale
-freshness_delta: 100 days
+freshness_delta: 101 days
 next_expected_update: monthly
 record_count: 5174
 date_range: 2015-01-01 to 2026-05-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Stale
 
-**Freshness:** 100 days
+**Freshness:** 101 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 

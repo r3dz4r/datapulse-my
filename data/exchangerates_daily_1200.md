@@ -1,6 +1,6 @@
 ---
 dataset_id: exchangerates_daily_1200
-last_checked: 2026-08-10T02:01:28Z
+last_checked: 2026-08-10T04:08:14Z
 status: aging
 freshness_delta: 3 days
 next_expected_update: 2026-08-03
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 02:01:28 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 
