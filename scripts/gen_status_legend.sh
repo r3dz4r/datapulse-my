@@ -50,7 +50,8 @@ done < <(jq -r '
       ["browser-dependent", ($counts.browser_dependent // 0), "#58a6ff"],
       ["unreachable", ($counts.unreachable // 0), "#f85149"],
       ["unknown", ($counts.unknown // 0), "#6e7681"],
-      ["unknown-freshness", ($counts.unknown_freshness // 0), "#6e7681"]
+      ["unknown-freshness", ($counts.unknown_freshness // 0), "#6e7681"],
+      ["reference", ($counts.reference // 0), "#0ea5e9"]
     ][]
   | select(.[1] | type == "number" and . >= 0 and floor == .)
   | @tsv

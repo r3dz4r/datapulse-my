@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_realtime_prasarana_bus_penang
-last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T05:01:24Z
 status: fresh
 freshness_delta: 0 days
 record_count: 158
@@ -25,11 +25,11 @@ HTTP 200; valid GTFS realtime protobuf (158 vehicles)
 
 ## Last checked
 
-2026-08-10 at 04:08:14 UTC.
+2026-08-10 at 05:01:24 UTC.
 
 ## File size
 
-The checked resource is 12,710 bytes.
+The checked resource is 12,722 bytes.
 
 ## Provenance
 

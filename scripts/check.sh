@@ -1332,6 +1332,9 @@ build_health_snapshot() {
            "browser-dependent"
          elif (($probe.http_status | type) != "number" or $probe.http_status < 200 or $probe.http_status >= 300) then
            "unreachable"
+         # Reference data is versioned rather than time-series, so no freshness clock applies.
+         elif ($entry.data_type // "") == "reference" then
+           "reference"
          elif $probe.status == "degraded" then
            "degraded"
          elif $staleness_status == "unknown-freshness" then "unknown-freshness"
@@ -1415,7 +1418,7 @@ build_health_snapshot() {
        | [ $manifest_rows[].id as $id | $merged[] | select(.dataset_id == $id) ]
      else $updated_datasets
      end) as $datasets
-  | (reduce ["fresh", "aging", "stale", "degraded", "browser-dependent", "unreachable", "unknown", "unknown-freshness"][] as $status
+  | (reduce ["fresh", "aging", "stale", "degraded", "browser-dependent", "unreachable", "unknown", "unknown-freshness", "reference"][] as $status
       ({}; .[status_key($status)] = ([$datasets[] | select(.status == $status)] | length))) as $by_status
   | {
       schema: $schema,

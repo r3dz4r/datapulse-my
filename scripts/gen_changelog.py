@@ -19,6 +19,7 @@ STATUSES = (
     "unreachable",
     "unknown",
     "unknown-freshness",
+    "reference",
 )
 
 

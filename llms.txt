@@ -96,9 +96,10 @@ DataPulse MY distinguishes between:
 - Schema validity (record count within expected tolerance)
 - Freshness (Last-Modified header or parsed content date within declared cadence)
 - Unknown freshness (`unknown-freshness`) when HTTP and content shape pass but neither freshness signal is available
+- Reference data (`reference`) when a versioned lookup table is reachable and countable but date-based freshness does not apply
 
-A dataset is marked `fresh` only when the applicable direct-access, schema, and
-freshness signals pass. See `health/latest.json` `_trust_summary` for the current
+A time-series dataset is marked `fresh` only when the applicable direct-access,
+schema, and freshness signals pass. See `health/latest.json` `_trust_summary` for the current
 distribution and the count of signals that could not be extracted.
 
 ## Datasets

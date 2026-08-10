@@ -34,14 +34,17 @@ def compare_health(snapshot: dict, manifest: dict) -> dict:
     if not isinstance(manifest_rows, list) or not isinstance(health_rows, list):
         raise ValueError("manifest and health snapshot must contain dataset arrays")
 
-    frequencies = {}
+    manifest_metadata = {}
     for row in manifest_rows:
         if not isinstance(row, dict) or not isinstance(row.get("id"), str):
             raise ValueError("manifest dataset row has invalid id")
         dataset_id = row["id"]
-        if dataset_id in frequencies:
+        if dataset_id in manifest_metadata:
             raise ValueError(f"duplicate manifest dataset ID {dataset_id!r}")
-        frequencies[dataset_id] = row.get("refresh_frequency")
+        manifest_metadata[dataset_id] = {
+            "refresh_frequency": row.get("refresh_frequency"),
+            "data_type": row.get("data_type"),
+        }
 
     differences = []
     seen_ids = set()
@@ -52,11 +55,11 @@ def compare_health(snapshot: dict, manifest: dict) -> dict:
         if dataset_id in seen_ids:
             raise ValueError(f"duplicate health dataset ID {dataset_id!r}")
         seen_ids.add(dataset_id)
-        if dataset_id not in frequencies:
+        if dataset_id not in manifest_metadata:
             raise ValueError(f"health dataset ID {dataset_id!r} is absent from manifest")
 
         candidate = dict(row)
-        candidate["refresh_frequency"] = frequencies[dataset_id]
+        candidate.update(manifest_metadata[dataset_id])
         if row.get("status") in {"degraded", "unreachable"}:
             candidate["probe_status"] = row["status"]
         new_status, new_reason = classify_status(candidate, now)
@@ -80,7 +83,7 @@ def compare_health(snapshot: dict, manifest: dict) -> dict:
             }
         )
 
-    missing_ids = set(frequencies) - seen_ids
+    missing_ids = set(manifest_metadata) - seen_ids
     if missing_ids:
         raise ValueError(f"health snapshot is missing dataset IDs {sorted(missing_ids)!r}")
     return {

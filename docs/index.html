@@ -32,6 +32,7 @@
       --browser: #007ec6;
       --unknown: #9f9f9f;
       --unknown-freshness: #9f7aea;
+      --reference: #0ea5e9;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 
@@ -436,6 +437,7 @@
     .taxonomy-chips .browser-dependent { --status-color: var(--browser); }
     .taxonomy-chips .unknown { --status-color: var(--unknown); }
     .taxonomy-chips .unknown-freshness { --status-color: var(--unknown-freshness); }
+    .taxonomy-chips .reference { --status-color: var(--reference); }
 
     .comparison-wrap {
       margin-top: 1.5rem;
@@ -586,6 +588,7 @@
     .legend-status.unreachable { --legend-color: var(--unreachable); }
     .legend-status.unknown { --legend-color: var(--unknown); }
     .legend-status.unknown-freshness { --legend-color: var(--unknown-freshness); }
+    .legend-status.reference { --legend-color: var(--reference); }
     .legend-count { margin-left: 0.25rem; color: var(--muted); font-variant-numeric: tabular-nums; }
     .trust-link { display: inline-block; margin-top: 0.65rem; font-size: 0.78rem; }
 
@@ -651,6 +654,7 @@
     .status-unreachable { --status: var(--unreachable); }
     .status-browser-dependent { --status: var(--browser); }
     .status-unknown-freshness { --status: var(--unknown-freshness); }
+    .status-reference { --status: var(--reference); }
 
     .card-heading {
       display: flex;
@@ -5388,6 +5392,7 @@
         <div class="hero-stat" data-stat="browser_dependent"><strong>—</strong><span>Browser-dependent</span></div>
         <div class="hero-stat" data-stat="unreachable"><strong>—</strong><span>Unreachable</span></div>
         <div class="hero-stat" data-stat="unknown_freshness"><strong>—</strong><span>Unknown-freshness</span></div>
+        <div class="hero-stat" data-stat="reference"><strong>—</strong><span>Reference</span></div>
         <div class="hero-stat"><strong><time id="hero-last-probed" datetime="">—</time></strong><span>Last probed</span></div>
       </div>
     </section>
@@ -5480,7 +5485,7 @@
           <p>Health JSON, badge, report, RSS, and MCP tools update atomically — all machine-readable.</p>
         </li>
       </ol>
-      <ul class="taxonomy-chips" aria-label="Eight dataset health statuses">
+      <ul class="taxonomy-chips" aria-label="Nine dataset health statuses">
         <li class="fresh">Fresh</li>
         <li class="aging">Aging</li>
         <li class="stale">Stale</li>
@@ -5489,6 +5494,7 @@
         <li class="unreachable">Unreachable</li>
         <li class="unknown">Unknown</li>
         <li class="unknown-freshness">Unknown-freshness</li>
+        <li class="reference">Reference</li>
       </ul>
     </section>
 
@@ -5505,7 +5511,7 @@
           </thead>
           <tbody>
             <tr><th scope="row">Freshness</th><td>Verified every 15 min</td><td>Declared, not verified</td><td>Opaque</td></tr>
-            <tr><th scope="row">Status honesty</th><td>8-status, never false-green</td><td>n/a</td><td>n/a</td></tr>
+            <tr><th scope="row">Status honesty</th><td>9-status, never false-green</td><td>n/a</td><td>n/a</td></tr>
             <tr><th scope="row">Licence clarity</th><td>Per-dataset, machine-readable</td><td>Present, scattered</td><td>Often unclear</td></tr>
             <tr><th scope="row">Agent access</th><td>Read-only MCP, no key</td><td>Scraping required</td><td>Paid API</td></tr>
             <tr><th scope="row">Schema drift detection</th><td>Yes</td><td>No</td><td>Rarely</td></tr>
@@ -5559,6 +5565,7 @@
         <div><dt><span class="legend-status unreachable">unreachable</span> <span class="legend-count" data-status-count="unreachable">—</span></dt><dd>The latest HTTP or browser probe failed.</dd></div>
         <div><dt><span class="legend-status unknown">unknown</span> <span class="legend-count" data-status-count="unknown">—</span></dt><dd>No successful probe in the last seven days.</dd></div>
         <div><dt><span class="legend-status unknown-freshness">unknown-freshness</span> <span class="legend-count" data-status-count="unknown_freshness">—</span></dt><dd>URL works, but no freshness signal is available.</dd></div>
+        <div><dt><span class="legend-status reference">reference</span> <span class="legend-count" data-status-count="reference">—</span></dt><dd>Versioned reference/lookup data; verified reachable, no freshness clock applies.</dd></div>
       </dl>
       <a class="trust-link" href="/health/latest.json">View detailed health →</a>
     </section>

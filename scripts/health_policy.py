@@ -46,6 +46,7 @@ HEALTH_STATUSES = (
     "unreachable",
     "unknown",
     "unknown-freshness",
+    "reference",
 )
 
 
@@ -237,6 +238,8 @@ def classify_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
         return "browser-dependent", "browser-access-required"
     if _is_transport_failure(row):
         return "unreachable", "transport-failure"
+    if row.get("data_type") == "reference":
+        return "reference", "versioned-reference-data"
     if _is_degraded(row):
         return "degraded", "probe-degraded"
 

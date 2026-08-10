@@ -1,7 +1,7 @@
 ---
 dataset_id: dgm_government_apps_downloads
-last_checked: 2026-08-10T04:08:14Z
-last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T05:22:19Z
+last_checked: 2026-08-10T05:22:19Z
 status: unknown-freshness
 freshness_delta: unknown
 next_expected_update: monthly
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 04:08:14 UTC.
+2026-08-10 at 05:22:19 UTC.
 
 ## File size
 
