@@ -2,21 +2,21 @@
 
 **Dates covered:** 2026-08-04 to 2026-08-10 (UTC)
 **Snapshot date:** 2026-08-10
-**Source commit:** `f116fe6e0f7b60eea9e002c2d6fdeca27c2507f6`
+**Source commit:** `fbc9cabd191236284aa43117807a1642a7b73819`
 
 ## Status distribution
 
 | Status | Count | Percent |
 | --- | --- | --- |
-| `fresh` | 88 | 24.2% |
-| `aging` | 105 | 28.8% |
-| `stale` | 144 | 39.5% |
-| `degraded` | 0 | 0.0% |
-| `browser-dependent` | 5 | 1.4% |
+| `fresh` | 89 | 23.9% |
+| `aging` | 104 | 28.0% |
+| `stale` | 145 | 39.0% |
+| `degraded` | 6 | 1.6% |
+| `browser-dependent` | 5 | 1.3% |
 | `unreachable` | 1 | 0.3% |
 | `unknown` | 0 | 0.0% |
-| `unknown-freshness` | 21 | 5.8% |
-| **Total** | **364** | **100.0%** |
+| `unknown-freshness` | 22 | 5.9% |
+| **Total** | **372** | **100.0%** |
 
 ## New breaks
 
@@ -114,24 +114,24 @@ _None observed in the comparison window._
 | `dosm_trade_enduse_bec` | None | 14332 | None | 5 | 2026-08-09T08:37:11Z |
 | `dosm_trade_headline` | None | 743 | None | 9 | 2026-08-09T08:37:11Z |
 | `dosm_trade_sitc_1d` | None | 3498 | None | 4 | 2026-08-09T08:37:11Z |
-| `exchangerates_daily_0900` | 2000 | 17117 | 29 | 29 | 2026-08-10T00:45:12Z |
-| `exchangerates_daily_1130` | 2000 | 11388 | 9 | 9 | 2026-08-10T00:45:12Z |
-| `exchangerates_daily_1200` | 2000 | 18682 | 29 | 29 | 2026-08-10T00:45:12Z |
-| `exchangerates_daily_1700` | 2000 | 17151 | 29 | 29 | 2026-08-10T00:45:12Z |
+| `exchangerates_daily_0900` | 2000 | 17120 | 29 | 29 | 2026-08-10T02:01:28Z |
+| `exchangerates_daily_1130` | 2000 | 11388 | 9 | 9 | 2026-08-10T02:01:28Z |
+| `exchangerates_daily_1200` | 2000 | 18682 | 29 | 29 | 2026-08-10T02:01:28Z |
+| `exchangerates_daily_1700` | 2000 | 17151 | 29 | 29 | 2026-08-10T02:01:28Z |
 | `fuelprice` | 943 | 945 | 10 | 10 | 2026-08-09T08:37:11Z |
-| `gtfs_realtime_ktmb` | 0 | 11 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_mybas_alor_setar` | 7 | 42 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_mybas_ipoh` | 0 | 23 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_mybas_johor` | 1 | 85 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_mybas_kangar` | 1 | 23 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_mybas_kota_bharu` | 1 | 57 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_mybas_kuala_terengganu` | 1 | 25 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_mybas_kuching` | 1 | 43 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_mybas_melaka` | 1 | 34 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_mybas_seremban_a` | 0 | 24 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_mybas_seremban_b` | 0 | 26 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_prasarana_bus_mrtfeeder` | 1 | 185 | None | None | 2026-08-10T00:31:37Z |
-| `gtfs_realtime_prasarana_bus_penang` | 0 | 193 | None | None | 2026-08-10T00:31:37Z |
+| `gtfs_realtime_ktmb` | 0 | 7 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_mybas_alor_setar` | 7 | 44 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_mybas_ipoh` | 0 | 20 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_mybas_johor` | 1 | 85 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_mybas_kangar` | 1 | 22 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_mybas_kota_bharu` | 1 | 59 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_mybas_kuala_terengganu` | 1 | 25 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_mybas_kuching` | 1 | 45 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_mybas_melaka` | 1 | 33 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_mybas_seremban_a` | 0 | 21 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_mybas_seremban_b` | 0 | 23 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_prasarana_bus_mrtfeeder` | 1 | 119 | None | None | 2026-08-10T02:31:30Z |
+| `gtfs_realtime_prasarana_bus_penang` | 0 | 154 | None | None | 2026-08-10T02:31:30Z |
 | `gtfs_static_ktmb` | 2881 | 2879 | None | None | 2026-08-09T08:37:11Z |
 | `gtfs_static_mybas_alor_setar` | 28188 | 0 | None | None | 2026-08-09T08:37:11Z |
 | `gtfs_static_mybas_ipoh` | 18788 | 18518 | None | None | 2026-08-09T08:37:11Z |
@@ -147,6 +147,14 @@ _None observed in the comparison window._
 
 - `air_pollution` — stale
 - `births` — stale
+- `bnm_base_rate` — stale
+- `bnm_interbank_swap` — degraded
+- `bnm_interest_rate` — degraded
+- `bnm_interest_volume` — degraded
+- `bnm_kijang_emas` — degraded
+- `bnm_kl_usd_myr` — unknown-freshness
+- `bnm_myor` — degraded
+- `bnm_opr` — fresh
 - `bop_balance` — aging
 - `cosmetic_notifications` — fresh
 - `cosmetic_notifications_cancelled` — fresh
@@ -392,6 +400,14 @@ _None observed in the comparison window._
 
 - `air_pollution` — stale
 - `births` — stale
+- `bnm_base_rate` — stale
+- `bnm_interbank_swap` — degraded
+- `bnm_interest_rate` — degraded
+- `bnm_interest_volume` — degraded
+- `bnm_kijang_emas` — degraded
+- `bnm_kl_usd_myr` — unknown-freshness
+- `bnm_myor` — degraded
+- `bnm_opr` — fresh
 - `bop_balance` — aging
 - `cosmetic_notifications` — fresh
 - `cosmetic_notifications_cancelled` — fresh
@@ -635,7 +651,7 @@ _None observed in the comparison window._
 
 ## Coverage
 
-- Total datasets: **364**
+- Total datasets: **372**
 
 ### By namespace
 
@@ -643,7 +659,7 @@ _None observed in the comparison window._
 | --- | --- |
 | `economy` | 135 |
 | `environment` | 14 |
-| `government_open_data` | 80 |
+| `government_open_data` | 88 |
 | `healthcare` | 28 |
 | `other` | 58 |
 | `transport` | 48 |
@@ -654,11 +670,11 @@ _None observed in the comparison window._
 | Licence | Datasets |
 | --- | --- |
 | Creative Commons Attribution 4.0 | 266 |
-| Open Government Licence (Malaysia) | 98 |
+| Open Government Licence (Malaysia) | 106 |
 
 ## Honest caveats
 
-- **21** datasets have unknown freshness and **1** is unreachable. These are explicit trust gaps, not silent green checks.
+- **22** datasets have unknown freshness and **1** is unreachable. These are explicit trust gaps, not silent green checks.
 - Compared with manifest and health baselines 501e4f418fb6 / 22feb26623e6.
 
 ## Reproducibility

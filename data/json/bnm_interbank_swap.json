@@ -1,0 +1,44 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "bnm_interbank_swap",
+  "status": "degraded",
+  "last_checked": "2026-08-10T02:15:05Z",
+  "freshness_days": 3,
+  "next_expected_update": null,
+  "refresh_frequency": "daily (weekdays)",
+  "record_count": 2,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 2 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as degraded"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://api.bnm.gov.my/public/interbank-swap",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "BNM Open API (apikijangportal.bnm.gov.my) (government_open_data)"
+}

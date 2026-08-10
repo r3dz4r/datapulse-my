@@ -16,6 +16,11 @@
         "freshness-fallback": {"const": "last-modified"}
       }
     },
+    "templates": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z0-9][a-z0-9_-]*$"},
+      "additionalProperties": {"$ref": "#/$defs/http-template"}
+    },
     "datasets": {
       "type": "object",
       "propertyNames": {"pattern": "^[a-z0-9][a-z0-9_-]*$"},
@@ -33,7 +38,7 @@
       "properties": {
         "content-date-field": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_]*$"
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$"
         },
         "extraction-mode": {
           "enum": ["max", "min", "first-row", "structural-hash"]
@@ -76,11 +81,32 @@
         }
       }
     },
+    "headers": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$"},
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+      }
+    },
+    "http-template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {"const": "http"},
+        "headers": {"$ref": "#/$defs/headers"},
+        "freshness": {"$ref": "#/$defs/freshness"}
+      }
+    },
     "dataset-policy": {
       "type": "object",
       "additionalProperties": false,
       "minProperties": 1,
       "properties": {
+        "template": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$"},
         "adapter": {"$ref": "#/$defs/adapter"},
         "freshness": {"$ref": "#/$defs/freshness"},
         "rolling": {"$ref": "#/$defs/rolling"},
