@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_cpi_inflation
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
 status: aging
-freshness_delta: 69 days
+freshness_delta: 70 days
 next_expected_update: monthly
 record_count: 7798
 date_range: 1980-02-01 to 2026-06-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 69 days
+**Freshness:** 70 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 

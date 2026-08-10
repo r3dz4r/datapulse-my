@@ -1,6 +1,6 @@
 ---
 dataset_id: state_finance_expenditure
-last_checked: 2026-08-10T00:45:12Z
+last_checked: 2026-08-10T04:08:14Z
 status: stale
 freshness_delta: 1682 days
 next_expected_update: annual
@@ -24,7 +24,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 00:45:12 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 

@@ -16,10 +16,14 @@ DATAPULSE_CHECK_SOURCE_ONLY=true source "$repo_root/scripts/check.sh"
 [[ "$(probe_policy_value exchangerates_daily_0900 '.rolling["fingerprint-mode"]')" == "columns-only" ]]
 [[ "$(probe_policy_value doe_apims '.browser["wait-seconds"]')" == "30" ]]
 
-printf '%s\n' '[{"date":"2026-08-08"},{"date":"2026-08-14"}]' > "$fixture"
-[[ "$(extract_max_date "$fixture" date)" == "2026-08-14" ]]
-[[ "$(extract_min_date "$fixture" date)" == "2026-08-08" ]]
-[[ "$(DATAPULSE_CONTENT_FILE="$fixture" "$repo_root/scripts/extract_content_freshness.sh" ignored met_weather)" == "2026-08-08" ]]
+today="$(date -u +'%Y-%m-%d')"
+yesterday="$(date -u -d 'yesterday' +'%Y-%m-%d')"
+tomorrow="$(date -u -d 'tomorrow' +'%Y-%m-%d')"
+jq -cn --arg yesterday "$yesterday" --arg today "$today" --arg tomorrow "$tomorrow" \
+  '[{date:$yesterday},{date:$today},{date:$tomorrow}]' > "$fixture"
+[[ "$(extract_max_date "$fixture" date)" == "$today" ]]
+[[ "$(extract_min_date "$fixture" date)" == "$yesterday" ]]
+[[ "$(DATAPULSE_CONTENT_FILE="$fixture" "$repo_root/scripts/extract_content_freshness.sh" ignored met_weather)" == "$yesterday" ]]
 
 printf '%s\n' 'Updated 2026-08-07; previous 01/08/2026' > "$fixture"
 browser_pattern="$(probe_policy_value doe_apims '.browser["date-pattern"]')"

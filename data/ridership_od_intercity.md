@@ -5,10 +5,10 @@ source_url: "https://storage.data.gov.my/transportation/ktmb/intercity_2026.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "daily"
-last_checked: 2026-08-09T08:37:11Z
-last_observed: 2026-08-08
-last_modified: 2026-08-08T20:31:20Z
-record_count: 121962
+last_checked: 2026-08-10T04:08:14Z
+last_observed: 2026-08-09
+last_modified: 2026-08-09T22:31:05Z
+record_count: 122522
 column_count: 5
 status: fresh
 notes: "Tier-1 wave F newly verified direct-storage source; HTTP 200 and CSV header verified."
@@ -34,11 +34,11 @@ HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 
-The checked resource is 4,639,020 bytes.
+The checked resource is 4,660,217 bytes.
 
 ## Provenance
 

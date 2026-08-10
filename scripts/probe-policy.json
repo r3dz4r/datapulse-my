@@ -726,11 +726,7 @@
       "adapter": "gtfs-realtime"
     },
     "gtfs_realtime_prasarana_bus_mrtfeeder": {
-      "adapter": "gtfs-realtime",
-      "freshness": {
-        "extraction-mode": "structural-hash",
-        "fallback": "last-modified"
-      }
+      "adapter": "gtfs-realtime"
     },
     "gtfs_realtime_prasarana_bus_penang": {
       "adapter": "gtfs-realtime"
@@ -2030,7 +2026,8 @@
     },
     "dgm_almanak_astronomi": {
       "freshness": {
-        "extraction-mode": "structural-hash",
+        "content-date-field": "timestamp",
+        "extraction-mode": "max",
         "fallback": "last-modified"
       }
     },
@@ -2042,7 +2039,8 @@
     },
     "dgm_government_apps": {
       "freshness": {
-        "extraction-mode": "structural-hash",
+        "content-date-field": "last_updated",
+        "extraction-mode": "max",
         "fallback": "last-modified"
       }
     },
@@ -2054,7 +2052,8 @@
     },
     "dgm_government_apps_reviews": {
       "freshness": {
-        "extraction-mode": "structural-hash",
+        "content-date-field": "created_date",
+        "extraction-mode": "max",
         "fallback": "last-modified"
       }
     },
@@ -2090,7 +2089,8 @@
     },
     "dosm_arc_dosm": {
       "freshness": {
-        "extraction-mode": "structural-hash",
+        "content-date-field": "release_date",
+        "extraction-mode": "max",
         "fallback": "last-modified"
       }
     },
@@ -2344,7 +2344,12 @@
       "template": "bnm-open-api"
     },
     "bnm_kl_usd_myr": {
-      "template": "bnm-open-api"
+      "template": "bnm-open-api",
+      "freshness": {
+        "content-date-field": "data.date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
     },
     "bnm_interest_rate": {
       "template": "bnm-open-api"

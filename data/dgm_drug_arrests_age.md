@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_drug_arrests_age
-last_checked: 2026-08-09T08:37:11Z
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T04:08:14Z
 status: stale
-freshness_delta: 1316 days
+freshness_delta: 1317 days
 next_expected_update: annual
 record_count: 540
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Royal Malaysia Police and Ministry of Home Affairs via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1316 days
+**Freshness:** 1317 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 

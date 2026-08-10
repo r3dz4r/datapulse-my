@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_static_mybas_kuala_terengganu
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
 status: fresh
 freshness_delta: 0 days
-record_count: 0
+record_count: 20866
 content_freshness_date: 2026-12-31
 schema_version: GTFS
 schema_drift: none
@@ -25,11 +25,11 @@ HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 
-The checked resource is 1,183 bytes.
+The checked resource is 133,130 bytes.
 
 ## Provenance
 

@@ -45,7 +45,7 @@ nor a parseable content date proves when the data was updated. The public
 [`_trust_summary`](health/latest.json) shows the distribution and explicitly
 counts missing freshness and row-count signals.
 
-Current distribution (`_trust_summary`): [90 fresh](badges/status-fresh.svg) · [104 aging](badges/status-aging.svg) · [145 stale](badges/status-stale.svg) · [5 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [22 unknown-freshness](badges/status-unknown-freshness.svg)
+Current distribution (`_trust_summary`): [96 fresh](badges/status-fresh.svg) · [106 aging](badges/status-aging.svg) · [147 stale](badges/status-stale.svg) · [1 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [16 unknown-freshness](badges/status-unknown-freshness.svg)
 
 <!--
 Statuses with zero count are omitted. Full per-dataset health is in

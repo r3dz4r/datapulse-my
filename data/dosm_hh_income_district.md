@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_hh_income_district
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
 status: fresh
-freshness_delta: 951 days
+freshness_delta: 952 days
 next_expected_update: biennial to triennial (survey years)
 record_count: 480
 date_range: 2019-01-01 to 2024-01-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 951 days
+**Freshness:** 952 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 

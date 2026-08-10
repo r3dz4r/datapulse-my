@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_death_maternal
-last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-10T04:08:14Z
 status: aging
-freshness_delta: 951 days
+freshness_delta: 952 days
 next_expected_update: annual
 record_count: 79
 date_range: 1946-01-01 to 2024-01-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 951 days
+**Freshness:** 952 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 08:37:11 UTC.
+2026-08-10 at 04:08:14 UTC.
 
 ## File size
 
