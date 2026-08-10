@@ -56,6 +56,12 @@
           "type": "string",
           "minLength": 1
         },
+        "canonical_id": {
+          "description": "Canonical data.gov.my dataset identifier for this entry.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
         "name": {
           "type": "string",
           "minLength": 1
