@@ -7,7 +7,7 @@
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
 > any MCP-compatible client with one config block. Your agent gets **372 official
 > Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
-> BAS.MY)** — with declared licences and an honest eight-status trust taxonomy
+> BAS.MY)** — with declared licences and an honest nine-status trust taxonomy
 > instead of a blanket green checkmark.
 >
 > → [Connect your AI agent in 30 seconds](#ai-agent-ready--what-it-means-for-you)
@@ -39,13 +39,15 @@ need to handle.
 ## Dataset health
 
 Health is reported as `fresh`, `aging`, `stale`, `degraded`,
-`browser-dependent`, `unreachable`, `unknown`, or `unknown-freshness`. The last
-value means the URL and content shape work, but neither a Last-Modified header
-nor a parseable content date proves when the data was updated. The public
+`browser-dependent`, `unreachable`, `unknown`, `unknown-freshness`, or
+`reference`. Unknown freshness means the URL and content shape work, but neither
+a Last-Modified header nor a parseable content date proves when the data was
+updated. Reference means versioned lookup data is reachable and its record count
+is measured, while date-based freshness does not apply. The public
 [`_trust_summary`](health/latest.json) shows the distribution and explicitly
 counts missing freshness and row-count signals.
 
-Current distribution (`_trust_summary`): [96 fresh](badges/status-fresh.svg) · [106 aging](badges/status-aging.svg) · [147 stale](badges/status-stale.svg) · [1 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [16 unknown-freshness](badges/status-unknown-freshness.svg)
+Current distribution (`_trust_summary`): [98 fresh](badges/status-fresh.svg) · [105 aging](badges/status-aging.svg) · [147 stale](badges/status-stale.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [16 unknown-freshness](badges/status-unknown-freshness.svg)
 
 <!--
 Statuses with zero count are omitted. Full per-dataset health is in
@@ -129,7 +131,7 @@ RAG systems, and internal knowledge tools to consume.
   to ground chatbots and AI tools in current Malaysian public data.
 
 **Every manifest dataset declares either CC BY 4.0 or OGL licensing and is
-assessed with the honest eight-status trust taxonomy.**
+assessed with the honest nine-status trust taxonomy.**
 
 ### MCP server (read-only)
 
