@@ -4,6 +4,20 @@
     "adapter": "direct",
     "freshness-fallback": "last-modified"
   },
+  "templates": {
+    "bnm-open-api": {
+      "type": "http",
+      "headers": {
+        "Accept": "application/vnd.BNM.API.v1+json",
+        "User-Agent": "Mozilla/5.0 (compatible; DataPulseMY/1.0; +https://data-pulse.my)"
+      },
+      "freshness": {
+        "content-date-field": "meta.last_updated",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
+    }
+  },
   "datasets": {
     "air_pollution": {
       "freshness": {
@@ -2322,6 +2336,30 @@
         "extraction-mode": "max",
         "fallback": "last-modified"
       }
+    },
+    "bnm_opr": {
+      "template": "bnm-open-api"
+    },
+    "bnm_base_rate": {
+      "template": "bnm-open-api"
+    },
+    "bnm_kl_usd_myr": {
+      "template": "bnm-open-api"
+    },
+    "bnm_interest_rate": {
+      "template": "bnm-open-api"
+    },
+    "bnm_interest_volume": {
+      "template": "bnm-open-api"
+    },
+    "bnm_interbank_swap": {
+      "template": "bnm-open-api"
+    },
+    "bnm_kijang_emas": {
+      "template": "bnm-open-api"
+    },
+    "bnm_myor": {
+      "template": "bnm-open-api"
     }
   }
 }

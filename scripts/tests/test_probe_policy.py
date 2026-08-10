@@ -65,3 +65,36 @@ def test_invalid_date_fields_fail(schema: dict, policy: dict, field: str) -> Non
     invalid["datasets"]["fuelprice"]["freshness"]["content-date-field"] = field
 
     assert errors_for(schema, invalid)
+
+
+def test_shared_http_template_with_headers_is_valid(schema: dict, policy: dict) -> None:
+    configured = copy.deepcopy(policy)
+    configured["templates"] = {
+        "bnm-open-api": {
+            "type": "http",
+            "headers": {
+                "Accept": "application/vnd.BNM.API.v1+json",
+                "User-Agent": "Mozilla/5.0 (compatible; DataPulseMY/1.0)",
+            },
+            "freshness": {
+                "content-date-field": "meta.last_updated",
+                "extraction-mode": "max",
+                "fallback": "last-modified",
+            },
+        }
+    }
+    configured["datasets"]["bnm_opr"] = {"template": "bnm-open-api"}
+
+    assert errors_for(schema, configured) == []
+
+
+def test_header_values_with_newlines_fail(schema: dict, policy: dict) -> None:
+    configured = copy.deepcopy(policy)
+    configured["templates"] = {
+        "bnm-open-api": {
+            "type": "http",
+            "headers": {"Accept": "application/json\r\nX-Injected: true"},
+        }
+    }
+
+    assert errors_for(schema, configured)

@@ -70,12 +70,12 @@ def test_stale_166_dataset_count_is_flagged(tmp_path: Path) -> None:
 
     assert errors == [
         "current.md:1: prohibited literal '166 datasets' in current doc "
-        "(current: '364 datasets')"
+        "(current: '372 datasets')"
     ]
 
 
 def test_clean_current_doc_passes(tmp_path: Path) -> None:
-    errors = lint_fixture(tmp_path, current_text="The registry contains 364 datasets.\n")
+    errors = lint_fixture(tmp_path, current_text="The registry contains 372 datasets.\n")
 
     assert errors == []
 

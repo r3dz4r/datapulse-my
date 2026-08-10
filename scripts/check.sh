@@ -68,6 +68,11 @@ if [[ ! -r "$probe_policy" ]] || ! jq -e '
   .version == 1
   and (.defaults.adapter | type == "string")
   and (.datasets | type == "object")
+  and ((.templates // {}) | type == "object")
+  and (. as $policy
+    | all(.datasets[];
+        (.template // "") as $template
+        | $template == "" or (($policy.templates // {}) | has($template))))
 ' "$probe_policy" >/dev/null 2>&1; then
   printf 'Invalid probe policy: %s\n' "$probe_policy" >&2
   exit 1
@@ -111,7 +116,7 @@ if $due_mode; then
     def tier_and_cadence($frequency):
       ($frequency // "" | ascii_downcase) as $frequency
       | if $frequency == "30 seconds" or $frequency == "hourly" then ["realtime", 15]
-        elif $frequency | startswith("daily (weekdays,") then ["daily", 60]
+        elif $frequency | startswith("daily (weekdays") then ["daily", 60]
         elif $frequency == "daily" then ["daily", 1440]
         elif $frequency == "weekly" or $frequency == "monthly" or $frequency == "quarterly" then ["weekly-monthly", 10080]
         elif $frequency == "annual" or $frequency == "biennial to triennial (survey years)" or $frequency == "as-required" then ["slow", 43200]
@@ -142,7 +147,27 @@ probe_policy_value() {
   local dataset_id="$1"
   local filter="$2"
 
-  jq -er --arg id "$dataset_id" ".datasets[\$id]${filter} // empty" "$probe_policy"
+  jq -er --arg id "$dataset_id" \
+    "(. as \$policy
+      | (\$policy.datasets[\$id] // {}) as \$dataset
+      | (\$dataset.template // \"\") as \$template
+      | (((\$policy.templates // {})[\$template] // {})
+        * \$dataset))${filter} // empty" \
+    "$probe_policy"
+}
+
+probe_policy_headers() {
+  local dataset_id="$1"
+
+  jq -r --arg id "$dataset_id" '
+    . as $policy
+    | ($policy.datasets[$id] // {}) as $dataset
+    | ($dataset.template // "") as $template
+    | (((($policy.templates // {})[$template] // {}) * $dataset).headers // {})
+    | to_entries[]
+    | [.key, .value]
+    | @tsv
+  ' "$probe_policy"
 }
 
 respect_robots_txt() {
@@ -200,8 +225,13 @@ respect_robots_txt() {
 probe_adapter() {
   local dataset_id="$1"
 
-  jq -er --arg id "$dataset_id" \
-    '.datasets[$id].adapter // .defaults.adapter' "$probe_policy"
+  jq -er --arg id "$dataset_id" '
+    . as $policy
+    | ($policy.datasets[$id] // {}) as $dataset
+    | ($dataset.template // "") as $template
+    | (((($policy.templates // {})[$template] // {}) * $dataset).adapter
+      // $policy.defaults.adapter)
+  ' "$probe_policy"
 }
 
 validate_adapter_config() {
@@ -275,12 +305,16 @@ extract_max_date() {
   local date_field="$2"
 
   jq -r --arg f "$date_field" '
+    ($f | split(".")) as $path
+    |
     if type == "array" then
-      [.[].[$f]] | map(select(. != null)) | max
+      [.[] | getpath($path)]
     elif type == "object" then
-      [.[$f]] | map(select(. != null)) | max
-    else null
+      [getpath($path)]
+    else []
     end
+    | map(select(. != null) | if type == "string" then .[0:10] else . end)
+    | max
   ' "$body_path"
 }
 
@@ -289,12 +323,16 @@ extract_min_date() {
   local date_field="$2"
 
   jq -r --arg f "$date_field" '
+    ($f | split(".")) as $path
+    |
     if type == "array" then
-      [.[].[$f]] | map(select(. != null)) | min
+      [.[] | getpath($path)]
     elif type == "object" then
-      [.[$f]] | map(select(. != null)) | min
-    else null
+      [getpath($path)]
+    else []
     end
+    | map(select(. != null) | if type == "string" then .[0:10] else . end)
+    | min
   ' "$body_path"
 }
 
@@ -780,6 +818,12 @@ check_direct_dataset() {
   local probe_status probe_message registration_metrics
   local registration_format_compatible legacy_registration_count
   local transition_registration_count invalid_registration_count special_validator
+  local header_name header_value
+  local -a request_header_args=()
+
+  while IFS=$'\t' read -r header_name header_value; do
+    request_header_args+=(--header "$header_name: $header_value")
+  done < <(probe_policy_headers "$dataset_id")
 
   date_field="$(probe_policy_value "$dataset_id" '.freshness["content-date-field"]' 2>/dev/null || true)"
   extraction_mode="$(probe_policy_value "$dataset_id" '.freshness["extraction-mode"]' 2>/dev/null || true)"
@@ -800,6 +844,7 @@ check_direct_dataset() {
   : > "$headers_file"
   if ! http_status="$(curl --location --silent --show-error \
     --max-time "$curl_timeout" \
+    "${request_header_args[@]}" \
     --dump-header "$headers_file" \
     --output "$body_file" --write-out '%{http_code}' "$request_url" 2>/dev/null)"; then
     details="$(jq -cn --arg request_url "$request_url" \
@@ -815,6 +860,7 @@ check_direct_dataset() {
     : > "$headers_file"
     if ! http_status="$(curl --location --silent --show-error \
       --max-time "$curl_timeout" \
+      "${request_header_args[@]}" \
       --dump-header "$headers_file" \
       --output "$body_file" --write-out '%{http_code}' "$request_url" 2>/dev/null)"; then
       details="$(jq -cn --arg request_url "$request_url" \
@@ -867,7 +913,8 @@ check_direct_dataset() {
   first_record_timestamp="$(jq -r '.first_record_timestamp // empty' <<< "$metrics")"
   content_freshness_date=""
   if [[ -n "$content_request_url" ]] && curl --location --silent --show-error --fail \
-    --max-time "$curl_timeout" --output "$content_body_file" "$content_request_url" 2>/dev/null; then
+    --max-time "$curl_timeout" "${request_header_args[@]}" \
+    --output "$content_body_file" "$content_request_url" 2>/dev/null; then
     if [[ "$extraction_mode" == "min" ]]; then
       content_freshness_date="$(extract_min_date "$content_body_file" "$date_field")"
     else
@@ -1283,6 +1330,7 @@ build_health_snapshot() {
            "unreachable"
          elif $probe.status == "degraded" then
            "degraded"
+         elif $staleness_status == "unknown-freshness" then "unknown-freshness"
          elif $shape_changed
            or (($expected_record_count | type) == "number"
              and ($probe.record_count | type) == "number"
@@ -1290,7 +1338,6 @@ build_health_snapshot() {
            "degraded"
          elif $staleness_status == "stale" then "stale"
          elif $staleness_status == "aging" then "aging"
-         elif $staleness_status == "unknown-freshness" then "unknown-freshness"
          else "fresh"
          end) as $status
       | {
