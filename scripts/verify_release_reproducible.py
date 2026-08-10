@@ -30,6 +30,8 @@ CATEGORY_ORDER = (
     "docs/mcp-reference.md",
     "mcp.json",
     "docs/.dashboard_filters.json",
+    "docs/.dashboard_sections.json",
+    "docs/index.html",
 )
 STATUS_BADGE_COUNT = 9
 
@@ -183,6 +185,8 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/mcp-reference.md": root / "docs/mcp-reference.md",
         "mcp.json": root / "mcp.json",
         "docs/.dashboard_filters.json": root / "docs/.dashboard_filters.json",
+        "docs/.dashboard_sections.json": root / "docs/.dashboard_sections.json",
+        "docs/index.html": root / "docs/index.html",
     }
 
     required = [
@@ -208,6 +212,8 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/mcp-reference.md": 1,
         "mcp.json": 1,
         "docs/.dashboard_filters.json": 1,
+        "docs/.dashboard_sections.json": 1,
+        "docs/index.html": 1,
     }
 
     category_paths: dict[str, tuple[Path, ...]] = {
@@ -222,6 +228,10 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/.dashboard_filters.json": (
             singleton_paths["docs/.dashboard_filters.json"],
         ),
+        "docs/.dashboard_sections.json": (
+            singleton_paths["docs/.dashboard_sections.json"],
+        ),
+        "docs/index.html": (singleton_paths["docs/index.html"],),
     }
     actual_counts = {
         category: len(paths) for category, paths in category_paths.items()

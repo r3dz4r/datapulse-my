@@ -98,11 +98,35 @@ def test_dashboard_filter_container_is_populated_only_at_runtime() -> None:
     assert "Dashboard filters are unavailable" in html
 
 
-def test_deploy_workflow_generates_and_embeds_dashboard_filters() -> None:
+def test_dashboard_renders_collapsible_sections_with_global_controls() -> None:
+    html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
+
+    assert 'class="dashboard-sections"' in html
+    assert 'id="toggle-all-sections"' in html
+    assert 'class="category-filters status-filters"' in html
+    assert 'class="dataset-grid"' not in html
+    assert "function buildSection(section, index" in html
+    assert 'make("button", "section-header")' in html
+    assert 'body.hidden = index !== 0' in html
+    assert "function applyFilters()" in html
+    assert "DATA.dashboardSections" in html
+    assert "Most-consumed on data.gov.my (views + downloads)" in html
+
+
+def test_embedded_data_contract_includes_dashboard_sections() -> None:
+    html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
+
+    assert "dashboardSections:" in html
+
+
+def test_release_build_generates_and_embeds_dashboard_data_before_deploy() -> None:
+    generate = (ROOT / "scripts/generate.sh").read_text(encoding="utf-8")
     workflow = (ROOT / ".github/workflows/deploy-pages.yml").read_text(encoding="utf-8")
 
-    generator = workflow.index("python3 scripts/gen_dashboard_filters.py")
-    injector = workflow.index("python3 - <<'PY'", generator)
-    assert generator < injector
-    assert "dashboardFilters" in workflow
-    assert 'open("docs/.dashboard_filters.json"' in workflow
+    sections = generate.index('"gen_dashboard_sections.py"')
+    filters = generate.index('"gen_dashboard_filters.py"')
+    injector = generate.index('"embed_dashboard_data.py"')
+    assert sections < injector
+    assert filters < injector
+    assert "bash scripts/generate.sh release-build" in workflow
+    assert "Inject embedded data" not in workflow
