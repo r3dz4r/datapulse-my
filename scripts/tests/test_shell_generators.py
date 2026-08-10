@@ -126,6 +126,9 @@ def test_gen_readme_summary_replaces_marker(tmp_path: Path) -> None:
     assert "Current distribution (`_trust_summary`):" in text
     assert "[1 fresh]" in text
     assert "[1 stale]" in text
+    assert "2 official datasets" in text
+    assert "2-dataset catalogue" in text
+    assert "42" not in text
 
 
 def test_gen_rss_produces_valid_xml(tmp_path: Path) -> None:

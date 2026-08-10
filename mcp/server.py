@@ -24,7 +24,7 @@ from typing_extensions import Annotated
 # JSON-RPC `initialize` response's `serverInfo.version` field, alongside (or
 # replacing) the legacy "v3.4.5" hand-maintained version. The verify script
 # reads this field and compares to the current repo HEAD to detect drift.
-SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "fbc9cabd191236284aa43117807a1642a7b73819")
+SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "d6407da1ea10ee66b2b3d4e31d99a82fce82896f")
 SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "2026-08-10")
 SOURCE_VERSION_STRING = (
     f"v3.4.5+{SOURCE_COMMIT_SHA[:7]}"

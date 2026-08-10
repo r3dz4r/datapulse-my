@@ -2,54 +2,13 @@
   "schema": "datapulse/v0.1/dataset-health",
   "id": "fuelprice",
   "status": "fresh",
-  "last_checked": "2026-08-09T08:37:11Z",
-  "freshness_days": 3,
+  "last_checked": "2026-08-10T10:07:26Z",
+  "freshness_days": 4,
   "next_expected_update": null,
   "refresh_frequency": "weekly",
   "record_count": 945,
   "date_range": null,
-  "fields": [
-    {
-      "name": "date",
-      "type": "date"
-    },
-    {
-      "name": "ron95",
-      "type": "number"
-    },
-    {
-      "name": "ron97",
-      "type": "number"
-    },
-    {
-      "name": "diesel",
-      "type": "number"
-    },
-    {
-      "name": "ron95_skps",
-      "type": "string"
-    },
-    {
-      "name": "diesel_budi",
-      "type": "string"
-    },
-    {
-      "name": "diesel_skds",
-      "type": "string"
-    },
-    {
-      "name": "series_type",
-      "type": "string"
-    },
-    {
-      "name": "ron95_budi95",
-      "type": "string"
-    },
-    {
-      "name": "diesel_eastmsia",
-      "type": "number"
-    }
-  ],
+  "fields": [],
   "checks": [
     {
       "name": "file_reachable",
@@ -72,7 +31,9 @@
       "method": "Probe observed 10 column(s) with no content-shape change"
     }
   ],
-  "known_quirks": [],
+  "known_quirks": [
+    "Fields are inferred at the next probe run."
+  ],
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://api.data.gov.my/data-catalogue?id=fuelprice",

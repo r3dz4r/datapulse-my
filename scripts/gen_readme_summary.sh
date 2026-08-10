@@ -50,11 +50,19 @@ if ! summary="$(jq -er '
   exit 1
 fi
 
+if ! dataset_total="$(jq -er '
+  ._trust_summary.datasets_total
+  | select(type == "number" and . >= 0 and floor == .)
+' "$health_file")"; then
+  printf 'Invalid dataset total: %s\n' "$health_file" >&2
+  exit 1
+fi
+
 tmp_file="$(mktemp "${readme_file}.tmp.XXXXXX")"
 trap 'rm -f "$tmp_file"' EXIT
 chmod --reference="$readme_file" "$tmp_file"
 
-if ! awk -v marker="$marker" -v summary="$summary" '
+if ! awk -v marker="$marker" -v summary="$summary" -v dataset_total="$dataset_total" '
   !replacing && index($0, marker) == 1 {
     print summary
     replacing = 1
@@ -68,7 +76,11 @@ if ! awk -v marker="$marker" -v summary="$summary" '
     }
     next
   }
-  { print }
+  {
+    gsub(/[0-9]+ official/, dataset_total " official")
+    gsub(/[0-9]+-dataset catalogue/, dataset_total "-dataset catalogue")
+    print
+  }
   END {
     if (!found || replacing) exit 1
   }
