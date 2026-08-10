@@ -119,6 +119,29 @@ def test_embedded_data_contract_includes_dashboard_sections() -> None:
     assert "dashboardSections:" in html
 
 
+def test_hero_uses_the_canonical_nine_status_taxonomy() -> None:
+    html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
+    hero_start = html.index('<div class="hero-stats"')
+    hero_end = html.index("</div>\n    </section>", hero_start)
+    hero = html[hero_start:hero_end]
+    expected = [
+        "datasets_total",
+        "fresh",
+        "aging",
+        "stale",
+        "degraded",
+        "browser_dependent",
+        "unreachable",
+        "unknown",
+        "unknown_freshness",
+        "reference",
+    ]
+
+    positions = [hero.index(f'data-stat="{status}"') for status in expected]
+    assert positions == sorted(positions)
+    assert hero.index('id="hero-last-probed"') > positions[-1]
+
+
 def test_release_build_generates_and_embeds_dashboard_data_before_deploy() -> None:
     generate = (ROOT / "scripts/generate.sh").read_text(encoding="utf-8")
     workflow = (ROOT / ".github/workflows/deploy-pages.yml").read_text(encoding="utf-8")

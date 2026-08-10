@@ -54,3 +54,36 @@ def test_embed_escapes_script_end_sequences(tmp_path: Path) -> None:
     html = html_path.read_text(encoding="utf-8")
     assert html.count("</script>") == 1
     assert "<\\/script>" in html
+
+
+def test_embed_derives_dashboard_dataset_counts_from_trust_summary(
+    tmp_path: Path,
+) -> None:
+    html_path = tmp_path / "index.html"
+    html_path.write_text(
+        "<body>"
+        "We probe 42 official datasets. "
+        "<a>42 datasets verified</a>. "
+        "Tools over the 42-dataset catalogue."
+        "</body>\n",
+        encoding="utf-8",
+    )
+    documents = [
+        {"datasets": [{"id": "alpha"}, {"id": "beta"}, {"id": "gamma"}]},
+        {"_trust_summary": {"datasets_total": 3, "by_status": {}}},
+        {"namespaces": []},
+        {"sections": []},
+    ]
+    paths = []
+    for index, document in enumerate(documents):
+        path = tmp_path / f"input-{index}.json"
+        path.write_text(json.dumps(document), encoding="utf-8")
+        paths.append(path)
+
+    embed_dashboard_data.embed(html_path, *paths)
+
+    html = html_path.read_text(encoding="utf-8")
+    assert "We probe 3 official datasets" in html
+    assert "3 datasets verified" in html
+    assert "the 3-dataset catalogue" in html
+    assert "42" not in html

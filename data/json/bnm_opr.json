@@ -1,11 +1,11 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "bnm_opr",
-  "status": "fresh",
-  "last_checked": "2026-08-10T02:15:05Z",
+  "status": "stale",
+  "last_checked": "2026-08-10T10:07:26Z",
   "freshness_days": 95,
   "next_expected_update": null,
-  "refresh_frequency": "as-required",
+  "refresh_frequency": "monthly",
   "record_count": 2,
   "date_range": null,
   "fields": [],
@@ -22,8 +22,8 @@
     },
     {
       "name": "freshness",
-      "status": "pass",
-      "method": "Health snapshot classifies the dataset as fresh"
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
     },
     {
       "name": "schema_stable",

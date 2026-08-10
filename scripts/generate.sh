@@ -83,7 +83,7 @@ case "$profile" in
     outputs=(
       "data/<id>.md"
       "badges/<id>.svg; badges/status-*.svg; badges/index.svg"
-      "README.md (trust-summary block only)"
+      "README.md (dataset counts and trust-summary block)"
       "feed.xml"
       "changelog.json"
     )
@@ -111,7 +111,7 @@ case "$profile" in
       "docs/.dashboard_sections.json"
       "data/<id>.md"
       "badges/<id>.svg; badges/status-*.svg; badges/index.svg"
-      "README.md (trust-summary block only)"
+      "README.md (dataset counts and trust-summary block)"
       "llms.txt (dataset-count references only)"
       "feed.xml"
       "changelog.json"

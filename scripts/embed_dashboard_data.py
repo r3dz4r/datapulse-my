@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -26,6 +27,31 @@ def _dump(document: object) -> str:
     )
 
 
+DATASET_COUNT_PATTERNS = (
+    r"\b\d+(?= Malaysian public datasets\b)",
+    r"\b\d+(?= official datasets\b)",
+    r"\b\d+(?= datasets verified\b)",
+    r"\b\d+(?= licence-declared datasets\b)",
+    r"\b\d+(?=-dataset catalogue\b)",
+    r"\b\d+(?= datasets probed\b)",
+    r"(?<=Five of )\d+(?= datasets\b)",
+)
+
+
+def _replace_dataset_counts(html: str, health: object) -> str:
+    if not isinstance(health, dict):
+        return html
+    summary = health.get("_trust_summary")
+    if not isinstance(summary, dict) or "datasets_total" not in summary:
+        return html
+    count = summary["datasets_total"]
+    if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+        raise EmbedError("health _trust_summary.datasets_total must be a non-negative integer")
+    for pattern in DATASET_COUNT_PATTERNS:
+        html = re.sub(pattern, str(count), html)
+    return html
+
+
 def embed(
     html_path: Path,
     manifest_path: Path,
@@ -38,10 +64,12 @@ def embed(
     except (OSError, UnicodeError) as error:
         raise EmbedError(f"cannot read {html_path}: {error}") from error
 
+    health = _load(health_path)
+    html = _replace_dataset_counts(html, health)
     data = (
         '<script id="embedded-data">\n'
         "    window.__DATAPULSE_DATA__ = {"
-        f"health: {_dump(_load(health_path))}, "
+        f"health: {_dump(health)}, "
         f"manifest: {_dump(_load(manifest_path))}, "
         f"dashboardFilters: {_dump(_load(filters_path))}, "
         f"dashboardSections: {_dump(_load(sections_path))}"
