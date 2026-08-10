@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_metrics_dataset_cumul
-last_checked: 2026-08-10T05:22:19Z
-last_checked: 2026-08-10T05:22:19Z
-status: unknown-freshness
-freshness_delta: unknown
+last_checked: 2026-08-10T06:06:00Z
+last_checked: 2026-08-10T06:06:00Z
+status: aging
+freshness_delta: 2 days
 next_expected_update: daily
 record_count: 281
 schema_version: unknown
@@ -18,15 +18,15 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 ## Status
 
-**Status:** Unknown freshness
+**Status:** Aging
 
-**Freshness:** unknown
+**Freshness:** 2 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-10 at 05:22:19 UTC.
+2026-08-10 at 06:06:00 UTC.
 
 ## File size
 

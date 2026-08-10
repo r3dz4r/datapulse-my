@@ -2046,8 +2046,10 @@
     },
     "dgm_government_apps_downloads": {
       "freshness": {
-        "extraction-mode": "structural-hash",
-        "fallback": "last-modified"
+        "content-date-field": "data_as_of",
+        "extraction-mode": "max",
+        "fallback": "last-modified",
+        "date-source": "data.gov.my-page"
       }
     },
     "dgm_government_apps_reviews": {
@@ -2071,8 +2073,10 @@
     },
     "dgm_metrics_dataset_cumul": {
       "freshness": {
-        "extraction-mode": "structural-hash",
-        "fallback": "last-modified"
+        "content-date-field": "data_as_of",
+        "extraction-mode": "max",
+        "fallback": "last-modified",
+        "date-source": "data.gov.my-page"
       }
     },
     "dgm_poskod": {
@@ -2083,8 +2087,10 @@
     },
     "dgm_usage_metrics_openapi_cumul": {
       "freshness": {
-        "extraction-mode": "structural-hash",
-        "fallback": "last-modified"
+        "content-date-field": "data_as_of",
+        "extraction-mode": "max",
+        "fallback": "last-modified",
+        "date-source": "data.gov.my-page"
       }
     },
     "dosm_arc_dosm": {

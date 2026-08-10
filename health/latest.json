@@ -1,24 +1,24 @@
 {
   "schema": "datapulse/v0.3/dataset-health",
-  "checked_at": "2026-08-10T06:01:29Z",
+  "checked_at": "2026-08-10T06:06:00Z",
   "_trust_summary": {
-    "checked_at": "2026-08-10T06:01:29Z",
+    "checked_at": "2026-08-10T06:06:00Z",
     "datasets_total": 372,
     "by_status": {
       "fresh": 98,
-      "aging": 105,
-      "stale": 147,
+      "aging": 107,
+      "stale": 148,
       "degraded": 0,
       "browser_dependent": 5,
       "unreachable": 1,
       "unknown": 0,
-      "unknown_freshness": 3,
+      "unknown_freshness": 0,
       "reference": 13
     },
     "datasets_health_signal_source": {
       "last_modified_header": 159,
-      "content_date_parse": 195,
-      "neither": 18
+      "content_date_parse": 198,
+      "neither": 15
     },
     "datasets_with_no_last_modified_header": 209,
     "datasets_with_no_record_count_extracted": 6,
@@ -507,6 +507,10 @@
       },
       {
         "dataset_id": "dgm_government_apps_reviews",
+        "days_since_modified": 111
+      },
+      {
+        "dataset_id": "dgm_government_apps_downloads",
         "days_since_modified": 111
       },
       {
@@ -16366,17 +16370,17 @@
     },
     {
       "dataset_id": "dgm_government_apps_downloads",
-      "last_checked": "2026-08-10T05:22:19Z",
+      "last_checked": "2026-08-10T06:06:00Z",
       "namespace": "government_open_data",
       "url": "https://api.data.gov.my/data-catalogue?id=government_apps_downloads",
-      "status": "unknown-freshness",
+      "status": "stale",
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=government_apps_downloads",
       "access_method": "direct curl GET",
       "http_status": 200,
       "content_length": 63078,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-04-21",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -16408,11 +16412,11 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 573,
       "record_count_within_tolerance": true,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 111,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "dgm_government_apps_reviews",
@@ -16766,17 +16770,17 @@
     },
     {
       "dataset_id": "dgm_metrics_dataset_cumul",
-      "last_checked": "2026-08-10T05:22:19Z",
+      "last_checked": "2026-08-10T06:06:00Z",
       "namespace": "government_open_data",
       "url": "https://api.data.gov.my/data-catalogue?id=metrics_dataset_cumul",
-      "status": "unknown-freshness",
+      "status": "aging",
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=metrics_dataset_cumul",
       "access_method": "direct curl GET",
       "http_status": 200,
       "content_length": 66933,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-08-08",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -16808,11 +16812,11 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 281,
       "record_count_within_tolerance": true,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 2,
+      "staleness_status": "aging",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "dosm_msic",
@@ -17366,17 +17370,17 @@
     },
     {
       "dataset_id": "dgm_usage_metrics_openapi_cumul",
-      "last_checked": "2026-08-10T05:22:19Z",
+      "last_checked": "2026-08-10T06:06:00Z",
       "namespace": "government_open_data",
       "url": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi_cumul",
-      "status": "unknown-freshness",
+      "status": "aging",
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi_cumul",
       "access_method": "direct curl GET",
       "http_status": 200,
       "content_length": 2575,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-08-08",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -17408,11 +17412,11 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 30,
       "record_count_within_tolerance": true,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 2,
+      "staleness_status": "aging",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none"
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse"
     },
     {
       "dataset_id": "population_malaysia",

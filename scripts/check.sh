@@ -340,6 +340,63 @@ extract_min_date() {
   ' "$body_path"
 }
 
+data_gov_catalogue_page_url() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local canonical_id
+
+  canonical_id="$(jq -er --arg id "$dataset_id" \
+    'first(.datasets[] | select(.id == $id) | .canonical_id) // empty' \
+    "$selected_manifest_file" 2>/dev/null || true)"
+  if [[ -z "$canonical_id" ]]; then
+    canonical_id="$(python3 - "$source_url" <<'PY'
+import sys
+from urllib.parse import parse_qs, urlparse
+
+values = parse_qs(urlparse(sys.argv[1]).query).get("id", [])
+if values:
+    print(values[0])
+PY
+)"
+  fi
+  if [[ ! "$canonical_id" =~ ^[A-Za-z0-9_-]+$ ]]; then
+    return 1
+  fi
+  printf 'https://data.gov.my/data-catalogue/%s\n' "$canonical_id"
+}
+
+extract_data_gov_page_date() {
+  local page_path="$1"
+
+  python3 - "$page_path" <<'PY'
+import json
+import re
+import sys
+from datetime import datetime
+from pathlib import Path
+
+try:
+    page = Path(sys.argv[1]).read_text(encoding="utf-8")
+    match = re.search(
+        r"<script\b[^>]*\bid=(?:\"__NEXT_DATA__\"|'__NEXT_DATA__')[^>]*>(.*?)</script\s*>",
+        page,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if match is None:
+        raise ValueError("missing __NEXT_DATA__")
+    value = json.loads(match.group(1))["props"]["pageProps"]["data_as_of"]
+    if not isinstance(value, str) or re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}", value
+    ) is None:
+        raise ValueError("invalid data_as_of")
+    datetime.strptime(value, "%Y-%m-%d %H:%M")
+except (OSError, UnicodeError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+    pass
+else:
+    print(value[:10])
+PY
+}
+
 extract_json_metrics() {
   local body_path="$1"
 
@@ -817,6 +874,7 @@ check_direct_dataset() {
   local request_url="$source_url"
   local http_status content_length first_record_timestamp details last_modified
   local content_freshness_date content_request_url date_field extraction_mode
+  local date_source metadata_page_url
   local metrics record_count column_count first_row_hash first_row body_format
   local estimated_record_count record_count_estimated incomplete
   local probe_status probe_message registration_metrics
@@ -831,6 +889,7 @@ check_direct_dataset() {
 
   date_field="$(probe_policy_value "$dataset_id" '.freshness["content-date-field"]' 2>/dev/null || true)"
   extraction_mode="$(probe_policy_value "$dataset_id" '.freshness["extraction-mode"]' 2>/dev/null || true)"
+  date_source="$(probe_policy_value "$dataset_id" '.freshness["date-source"]' 2>/dev/null || true)"
   if [[ -n "$date_field" && -z "$extraction_mode" ]]; then
     printf 'Probe policy error: %s content date field requires extraction-mode\n' "$dataset_id" >&2
     return 1
@@ -954,6 +1013,16 @@ check_direct_dataset() {
   fi
   if [[ -n "$content_freshness_date" ]]; then
     [[ "$content_freshness_date" != "null" ]] || content_freshness_date=""
+  fi
+  if [[ -z "$content_freshness_date" && "$date_source" == "data.gov.my-page" ]]; then
+    metadata_page_url="$(data_gov_catalogue_page_url "$dataset_id" "$source_url" || true)"
+    if [[ -n "$metadata_page_url" ]] \
+      && respect_robots_txt "$dataset_id" "$metadata_page_url" \
+      && curl --location --silent --show-error --fail \
+        --max-time "$curl_timeout" --output "$content_body_file" \
+        "$metadata_page_url" 2>/dev/null; then
+      content_freshness_date="$(extract_data_gov_page_date "$content_body_file")"
+    fi
   fi
   special_validator="$(probe_policy_value "$dataset_id" '.["special-validator"]' 2>/dev/null || true)"
   case "$special_validator" in
