@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 import subprocess
 
+from scripts.gen_trust_snapshot import source_level_staleness
+
 
 SCRIPT = Path(__file__).parents[1] / "gen_trust_snapshot.py"
 FAKE_DATE = "2026-08-09"
@@ -155,3 +157,71 @@ def test_reproducibility_footer_present(tmp_path: Path) -> None:
 
     assert "## Reproducibility" in markdown
     assert "https://data-pulse.my/trust-snapshot-2026-08-09.md" in markdown
+
+
+def test_surfaces_digital_services_source_level_staleness(tmp_path: Path) -> None:
+    repo = _make_repo(tmp_path)
+    manifest = json.loads((repo / "datapulse.json").read_text(encoding="utf-8"))
+    health = json.loads((repo / "health/latest.json").read_text(encoding="utf-8"))
+    steward = "National Digital Department and Ministry of Digital"
+    observations = {
+        "dgm_government_apps_active": ("2026-04-01", 131),
+        "dgm_government_apps": ("2026-04-21", 111),
+        "dgm_government_apps_downloads": ("2026-04-21", 111),
+        "dgm_government_apps_reviews": ("2026-04-21", 111),
+    }
+    manifest["datasets"].extend(
+        {"id": dataset_id, "namespace": "test", "licence": "MIT", "steward": steward}
+        for dataset_id in observations
+    )
+    health["datasets"].extend(
+        {
+            "dataset_id": dataset_id,
+            "status": "stale",
+            "content_freshness_date": data_as_of,
+            "staleness_days": staleness_days,
+        }
+        for dataset_id, (data_as_of, staleness_days) in observations.items()
+    )
+    (repo / "datapulse.json").write_text(json.dumps(manifest), encoding="utf-8")
+    (repo / "health/latest.json").write_text(json.dumps(health), encoding="utf-8")
+
+    markdown_path, json_path = _run(repo)
+    snapshot = json.loads(json_path.read_text(encoding="utf-8"))
+    findings = snapshot["source_level_staleness"]
+
+    assert len(findings) == 1
+    assert findings[0]["source"] == "Digital Services"
+    assert findings[0]["dataset_count"] == 4
+    assert findings[0]["latest_data_as_of"] == "2026-04-21"
+    assert findings[0]["minimum_staleness_days"] == 111
+    markdown = markdown_path.read_text(encoding="utf-8")
+    assert "## Source-level staleness" in markdown
+    assert "source appears to have stopped publishing" in markdown
+
+
+def test_source_level_finding_requires_every_dataset_to_be_old() -> None:
+    steward = "National Digital Department and Ministry of Digital"
+    dataset_ids = (
+        "dgm_government_apps_active",
+        "dgm_government_apps",
+        "dgm_government_apps_downloads",
+        "dgm_government_apps_reviews",
+    )
+    manifest = {
+        "datasets": [
+            {"id": dataset_id, "steward": steward} for dataset_id in dataset_ids
+        ]
+    }
+    health = {
+        "datasets": [
+            {
+                "dataset_id": dataset_id,
+                "staleness_days": 30 if dataset_id == dataset_ids[0] else 111,
+                "content_freshness_date": "2026-04-21",
+            }
+            for dataset_id in dataset_ids
+        ]
+    }
+
+    assert source_level_staleness(manifest, health) == []

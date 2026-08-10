@@ -2,159 +2,158 @@
 
 **Dates covered:** 2026-08-04 to 2026-08-10 (UTC)
 **Snapshot date:** 2026-08-10
-**Source commit:** `fbc9cabd191236284aa43117807a1642a7b73819`
+**Source commit:** `700324d02b3e1b70de4d0d2be2fe635bda2ff2b4`
 
 ## Status distribution
 
 | Status | Count | Percent |
 | --- | --- | --- |
-| `fresh` | 89 | 23.9% |
-| `aging` | 104 | 28.0% |
-| `stale` | 145 | 39.0% |
-| `degraded` | 6 | 1.6% |
+| `fresh` | 97 | 26.1% |
+| `aging` | 106 | 28.5% |
+| `stale` | 150 | 40.3% |
+| `degraded` | 0 | 0.0% |
 | `browser-dependent` | 5 | 1.3% |
 | `unreachable` | 1 | 0.3% |
 | `unknown` | 0 | 0.0% |
-| `unknown-freshness` | 22 | 5.9% |
+| `unknown-freshness` | 0 | 0.0% |
+| `reference` | 13 | 3.5% |
 | **Total** | **372** | **100.0%** |
 
 ## New breaks
 
 | Dataset | Old status | New status | Last checked |
 | --- | --- | --- | --- |
-| `dosm_ipi_domestic` | fresh | stale | 2026-08-09T08:37:11Z |
-| `dosm_ipi_export` | fresh | stale | 2026-08-09T08:37:11Z |
-| `dosm_lfs_month` | fresh | stale | 2026-08-09T08:37:11Z |
+| `dosm_ipi_domestic` | fresh | stale | 2026-08-10T08:12:00Z |
+| `dosm_ipi_export` | fresh | stale | 2026-08-10T08:12:00Z |
+| `dosm_lfs_month` | fresh | stale | 2026-08-10T08:12:00Z |
 
 ## Recovered
 
-_None observed in the comparison window._
+| Dataset | Old status | New status | Last checked |
+| --- | --- | --- | --- |
+| `exchangerates_daily_1130` | aging | fresh | 2026-08-10T08:12:00Z |
 
 ## Schema and record-count changes
 
 | Dataset | Old records | New records | Old columns | New columns | Last checked |
 | --- | --- | --- | --- | --- | --- |
-| `dgm_blood_donations_state` | None | 489125 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_cellular_subscribers` | None | 66 | None | 3 | 2026-08-09T08:37:11Z |
-| `dgm_crops_state` | None | 864 | None | 5 | 2026-08-09T08:37:11Z |
-| `dgm_currency_in_circulation` | None | 5966 | None | 3 | 2026-08-09T08:37:11Z |
-| `dgm_drug_addicts_age` | None | 783 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_electricity_consumption` | None | 468 | None | 3 | 2026-08-09T08:37:11Z |
-| `dgm_electricity_supply` | None | 468 | None | 3 | 2026-08-09T08:37:11Z |
-| `dgm_epf_dividend` | None | 74 | None | 3 | 2026-08-09T08:37:11Z |
-| `dgm_federal_finance_qtr_oe` | None | 1111 | None | 3 | 2026-08-09T08:37:11Z |
-| `dgm_federal_finance_qtr_revenue` | None | 2373 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_fish_landings` | None | 1368 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_healthcare_staff` | None | 765 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_hospital_beds` | None | 5468 | None | 5 | 2026-08-09T08:37:11Z |
-| `dgm_infant_immunisation` | None | 120 | None | 3 | 2026-08-09T08:37:11Z |
-| `dgm_interest_rates` | None | 5712 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_interest_rates_annual` | None | 707 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_ktmb_ridership_monthly` | None | 290 | None | 3 | 2026-08-09T08:37:11Z |
-| `dgm_local_authority_sex` | None | 322 | None | 5 | 2026-08-09T08:37:11Z |
-| `dgm_mnha` | None | 60 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_money_aggregates` | None | 1896 | None | 3 | 2026-08-09T08:37:11Z |
-| `dgm_parliament_sex` | None | 14 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_payments_channels` | None | 430 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_payments_instruments` | None | 688 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_payments_systems` | None | 516 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_payments_transactions_fpx` | None | 7227 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_pekab40_screenings_state` | None | 42768 | None | 3 | 2026-08-09T08:37:11Z |
-| `dgm_prisoners_state` | None | 234 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_ridership_headline` | None | 2738 | None | 15 | 2026-08-09T08:37:11Z |
-| `dgm_schools_district` | None | 3977 | None | 6 | 2026-08-09T08:37:11Z |
-| `dgm_state_finance_expenditure` | None | 104 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_std_state` | None | 480 | None | 5 | 2026-08-09T08:37:11Z |
-| `dgm_vehicle_registrations_type_fuel` | None | 10801 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_water_access` | None | 1035 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_water_consumption` | None | 600 | None | 4 | 2026-08-09T08:37:11Z |
-| `dgm_water_production` | None | 345 | None | 3 | 2026-08-09T08:37:11Z |
-| `dosm_birth_state` | None | 390 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_cpi_core_inflation` | None | 1414 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_cpi_inflation` | None | 7798 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_cpi_state` | None | 44352 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_cpi_state_inflation` | None | 44128 | None | 5 | 2026-08-09T08:37:11Z |
-| `dosm_crime_district` | None | 19152 | None | 6 | 2026-08-09T08:37:11Z |
-| `dosm_death_district_sex` | None | 2361 | None | 6 | 2026-08-09T08:37:11Z |
-| `dosm_death_maternal` | None | 79 | None | 3 | 2026-08-09T08:37:11Z |
-| `dosm_death_maternal_state` | None | 390 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_death_state` | None | 390 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_employment_sector` | None | 198 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_fertility` | None | 536 | None | 3 | 2026-08-09T08:37:11Z |
-| `dosm_gdp_annual_nominal_supply` | None | 147 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_gdp_annual_real_supply` | None | 147 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_gdp_gni_annual_nominal` | None | 157 | None | 6 | 2026-08-09T08:37:11Z |
-| `dosm_gdp_qtr_nominal` | None | 130 | None | 3 | 2026-08-09T08:37:11Z |
-| `dosm_gdp_qtr_real` | None | 130 | None | 3 | 2026-08-09T08:37:11Z |
-| `dosm_gdp_qtr_real_sa` | None | 45 | None | 3 | 2026-08-09T08:37:11Z |
-| `dosm_gdp_state_real_supply` | None | 2163 | None | 5 | 2026-08-09T08:37:11Z |
-| `dosm_hh_expenditure_dun` | None | 1800 | None | 5 | 2026-08-09T08:37:11Z |
-| `dosm_hh_expenditure_parlimen` | None | 666 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_hh_income` | None | 22 | None | 3 | 2026-08-09T08:37:11Z |
-| `dosm_hh_income_district` | None | 480 | None | 5 | 2026-08-09T08:37:11Z |
-| `dosm_hh_income_state` | None | 319 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_hh_inequality` | None | 21 | None | 2 | 2026-08-09T08:37:11Z |
-| `dosm_hh_inequality_district` | None | 480 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_hh_inequality_state` | None | 289 | None | 3 | 2026-08-09T08:37:11Z |
-| `dosm_hh_poverty` | None | 21 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_hh_poverty_district` | None | 480 | None | 5 | 2026-08-09T08:37:11Z |
-| `dosm_hh_poverty_state` | None | 310 | None | 5 | 2026-08-09T08:37:11Z |
-| `dosm_ipi_domestic` | None | 5970 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_ipi_export` | None | 5174 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_lfs_month` | None | 197 | None | 8 | 2026-08-09T08:37:11Z |
-| `dosm_lfs_qtr` | None | 63 | None | 8 | 2026-08-09T08:37:11Z |
-| `dosm_lfs_qtr_state` | None | 560 | None | 8 | 2026-08-09T08:37:11Z |
-| `dosm_lfs_year` | None | 40 | None | 8 | 2026-08-09T08:37:11Z |
-| `dosm_marriages_state` | None | 192 | None | 5 | 2026-08-09T08:37:11Z |
-| `dosm_marriages_state_age` | None | 2304 | None | 6 | 2026-08-09T08:37:11Z |
-| `dosm_population_malaysia` | None | 17814 | None | 5 | 2026-08-09T08:37:11Z |
-| `dosm_population_parlimen` | None | 5550 | None | 7 | 2026-08-09T08:37:11Z |
-| `dosm_population_state` | None | 270063 | None | 6 | 2026-08-09T08:37:11Z |
-| `dosm_ppi` | None | 581 | None | 4 | 2026-08-09T08:37:11Z |
-| `dosm_trade_enduse_bec` | None | 14332 | None | 5 | 2026-08-09T08:37:11Z |
-| `dosm_trade_headline` | None | 743 | None | 9 | 2026-08-09T08:37:11Z |
-| `dosm_trade_sitc_1d` | None | 3498 | None | 4 | 2026-08-09T08:37:11Z |
-| `exchangerates_daily_0900` | 2000 | 17120 | 29 | 29 | 2026-08-10T02:01:28Z |
-| `exchangerates_daily_1130` | 2000 | 11388 | 9 | 9 | 2026-08-10T02:01:28Z |
-| `exchangerates_daily_1200` | 2000 | 18682 | 29 | 29 | 2026-08-10T02:01:28Z |
-| `exchangerates_daily_1700` | 2000 | 17151 | 29 | 29 | 2026-08-10T02:01:28Z |
-| `fuelprice` | 943 | 945 | 10 | 10 | 2026-08-09T08:37:11Z |
-| `gtfs_realtime_ktmb` | 0 | 7 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_mybas_alor_setar` | 7 | 44 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_mybas_ipoh` | 0 | 20 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_mybas_johor` | 1 | 85 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_mybas_kangar` | 1 | 22 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_mybas_kota_bharu` | 1 | 59 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_mybas_kuala_terengganu` | 1 | 25 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_mybas_kuching` | 1 | 45 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_mybas_melaka` | 1 | 33 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_mybas_seremban_a` | 0 | 21 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_mybas_seremban_b` | 0 | 23 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_prasarana_bus_mrtfeeder` | 1 | 119 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_realtime_prasarana_bus_penang` | 0 | 154 | None | None | 2026-08-10T02:31:30Z |
-| `gtfs_static_ktmb` | 2881 | 2879 | None | None | 2026-08-09T08:37:11Z |
-| `gtfs_static_mybas_alor_setar` | 28188 | 0 | None | None | 2026-08-09T08:37:11Z |
-| `gtfs_static_mybas_ipoh` | 18788 | 18518 | None | None | 2026-08-09T08:37:11Z |
-| `gtfs_static_mybas_kangar` | 1512 | 0 | None | None | 2026-08-09T08:37:11Z |
-| `gtfs_static_mybas_kota_bharu` | 47556 | 0 | None | None | 2026-08-09T08:37:11Z |
-| `gtfs_static_mybas_kuala_terengganu` | 20866 | 0 | None | None | 2026-08-09T08:37:11Z |
-| `gtfs_static_mybas_kuching` | 17170 | 0 | None | None | 2026-08-09T08:37:11Z |
-| `gtfs_static_mybas_seremban_a` | 16517 | 16057 | None | None | 2026-08-09T08:37:11Z |
-| `gtfs_static_mybas_seremban_b` | 24467 | 23555 | None | None | 2026-08-09T08:37:11Z |
-| `pricecatcher` | None | 5061 | None | None | 2026-08-09T08:37:11Z |
+| `dgm_blood_donations_state` | None | 489190 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_cellular_subscribers` | None | 66 | None | 3 | 2026-08-10T08:12:00Z |
+| `dgm_crops_state` | None | 864 | None | 5 | 2026-08-10T08:12:00Z |
+| `dgm_currency_in_circulation` | None | 5966 | None | 3 | 2026-08-10T08:12:00Z |
+| `dgm_drug_addicts_age` | None | 783 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_electricity_consumption` | None | 468 | None | 3 | 2026-08-10T08:12:00Z |
+| `dgm_electricity_supply` | None | 468 | None | 3 | 2026-08-10T08:12:00Z |
+| `dgm_epf_dividend` | None | 74 | None | 3 | 2026-08-10T08:12:00Z |
+| `dgm_federal_finance_qtr_oe` | None | 1111 | None | 3 | 2026-08-10T08:12:00Z |
+| `dgm_federal_finance_qtr_revenue` | None | 2373 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_fish_landings` | None | 1368 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_healthcare_staff` | None | 765 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_hospital_beds` | None | 5468 | None | 5 | 2026-08-10T08:12:00Z |
+| `dgm_infant_immunisation` | None | 120 | None | 3 | 2026-08-10T08:12:00Z |
+| `dgm_interest_rates` | None | 5712 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_interest_rates_annual` | None | 707 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_ktmb_ridership_monthly` | None | 290 | None | 3 | 2026-08-10T08:12:00Z |
+| `dgm_local_authority_sex` | None | 322 | None | 5 | 2026-08-10T08:12:00Z |
+| `dgm_mnha` | None | 60 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_money_aggregates` | None | 1896 | None | 3 | 2026-08-10T08:12:00Z |
+| `dgm_parliament_sex` | None | 14 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_payments_channels` | None | 430 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_payments_instruments` | None | 688 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_payments_systems` | None | 516 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_payments_transactions_fpx` | None | 7236 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_pekab40_screenings_state` | None | 42768 | None | 3 | 2026-08-10T08:12:00Z |
+| `dgm_prisoners_state` | None | 234 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_ridership_headline` | None | 2738 | None | 15 | 2026-08-10T08:12:00Z |
+| `dgm_schools_district` | None | 3977 | None | 6 | 2026-08-10T08:12:00Z |
+| `dgm_state_finance_expenditure` | None | 104 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_std_state` | None | 480 | None | 5 | 2026-08-10T08:12:00Z |
+| `dgm_vehicle_registrations_type_fuel` | None | 10801 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_water_access` | None | 1035 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_water_consumption` | None | 600 | None | 4 | 2026-08-10T08:12:00Z |
+| `dgm_water_production` | None | 345 | None | 3 | 2026-08-10T08:12:00Z |
+| `dosm_birth_state` | None | 390 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_cpi_core_inflation` | None | 1414 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_cpi_inflation` | None | 7798 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_cpi_state` | None | 44352 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_cpi_state_inflation` | None | 44128 | None | 5 | 2026-08-10T08:12:00Z |
+| `dosm_crime_district` | None | 19152 | None | 6 | 2026-08-10T08:12:00Z |
+| `dosm_death_district_sex` | None | 2361 | None | 6 | 2026-08-10T08:12:00Z |
+| `dosm_death_maternal` | None | 79 | None | 3 | 2026-08-10T08:12:00Z |
+| `dosm_death_maternal_state` | None | 390 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_death_state` | None | 390 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_employment_sector` | None | 198 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_fertility` | None | 536 | None | 3 | 2026-08-10T08:12:00Z |
+| `dosm_gdp_annual_nominal_supply` | None | 147 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_gdp_annual_real_supply` | None | 147 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_gdp_gni_annual_nominal` | None | 157 | None | 6 | 2026-08-10T08:12:00Z |
+| `dosm_gdp_qtr_nominal` | None | 130 | None | 3 | 2026-08-10T08:12:00Z |
+| `dosm_gdp_qtr_real` | None | 130 | None | 3 | 2026-08-10T08:12:00Z |
+| `dosm_gdp_qtr_real_sa` | None | 45 | None | 3 | 2026-08-10T08:12:00Z |
+| `dosm_gdp_state_real_supply` | None | 2163 | None | 5 | 2026-08-10T08:12:00Z |
+| `dosm_hh_expenditure_dun` | None | 1800 | None | 5 | 2026-08-10T08:12:00Z |
+| `dosm_hh_expenditure_parlimen` | None | 666 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_hh_income` | None | 22 | None | 3 | 2026-08-10T08:12:00Z |
+| `dosm_hh_income_district` | None | 480 | None | 5 | 2026-08-10T08:12:00Z |
+| `dosm_hh_income_state` | None | 319 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_hh_inequality` | None | 21 | None | 2 | 2026-08-10T08:12:00Z |
+| `dosm_hh_inequality_district` | None | 480 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_hh_inequality_state` | None | 289 | None | 3 | 2026-08-10T08:12:00Z |
+| `dosm_hh_poverty` | None | 21 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_hh_poverty_district` | None | 480 | None | 5 | 2026-08-10T08:12:00Z |
+| `dosm_hh_poverty_state` | None | 310 | None | 5 | 2026-08-10T08:12:00Z |
+| `dosm_ipi_domestic` | None | 5970 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_ipi_export` | None | 5174 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_lfs_month` | None | 197 | None | 8 | 2026-08-10T08:12:00Z |
+| `dosm_lfs_qtr` | None | 63 | None | 8 | 2026-08-10T08:12:00Z |
+| `dosm_lfs_qtr_state` | None | 560 | None | 8 | 2026-08-10T08:12:00Z |
+| `dosm_lfs_year` | None | 40 | None | 8 | 2026-08-10T08:12:00Z |
+| `dosm_marriages_state` | None | 192 | None | 5 | 2026-08-10T08:12:00Z |
+| `dosm_marriages_state_age` | None | 2304 | None | 6 | 2026-08-10T08:12:00Z |
+| `dosm_population_malaysia` | None | 17814 | None | 5 | 2026-08-10T08:12:00Z |
+| `dosm_population_parlimen` | None | 5550 | None | 7 | 2026-08-10T08:12:00Z |
+| `dosm_population_state` | None | 270063 | None | 6 | 2026-08-10T08:12:00Z |
+| `dosm_ppi` | None | 581 | None | 4 | 2026-08-10T08:12:00Z |
+| `dosm_trade_enduse_bec` | None | 14332 | None | 5 | 2026-08-10T08:12:00Z |
+| `dosm_trade_headline` | None | 743 | None | 9 | 2026-08-10T08:12:00Z |
+| `dosm_trade_sitc_1d` | None | 3498 | None | 4 | 2026-08-10T08:12:00Z |
+| `exchangerates_daily_0900` | 2000 | 17120 | 29 | 29 | 2026-08-10T08:12:00Z |
+| `exchangerates_daily_1130` | 2000 | 11390 | 9 | 9 | 2026-08-10T08:12:00Z |
+| `exchangerates_daily_1200` | 2000 | 18685 | 29 | 29 | 2026-08-10T08:12:00Z |
+| `exchangerates_daily_1700` | 2000 | 17151 | 29 | 29 | 2026-08-10T08:12:00Z |
+| `fuelprice` | 943 | 945 | 10 | 10 | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_mybas_alor_setar` | 7 | 44 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_mybas_ipoh` | 0 | 24 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_mybas_johor` | 1 | 94 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_mybas_kangar` | 1 | 24 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_mybas_kota_bharu` | 1 | 59 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_mybas_kuala_terengganu` | 1 | 25 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_mybas_kuching` | 1 | 45 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_mybas_melaka` | 1 | 30 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_mybas_seremban_a` | 0 | 26 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_mybas_seremban_b` | 0 | 29 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_prasarana_bus_mrtfeeder` | 1 | 124 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_realtime_prasarana_bus_penang` | 0 | 167 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_static_ktmb` | 2881 | 2879 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_static_mybas_alor_setar` | 28188 | 35388 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_static_mybas_ipoh` | 18788 | 18518 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_static_mybas_kangar` | 1512 | 19468 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_static_mybas_seremban_a` | 16517 | 16057 | None | None | 2026-08-10T08:12:00Z |
+| `gtfs_static_mybas_seremban_b` | 24467 | 23555 | None | None | 2026-08-10T08:12:00Z |
+| `pricecatcher` | None | 5334 | None | None | 2026-08-10T08:12:00Z |
 
 ## Newly probed datasets
 
 - `air_pollution` — stale
 - `births` — stale
 - `bnm_base_rate` — stale
-- `bnm_interbank_swap` — degraded
-- `bnm_interest_rate` — degraded
-- `bnm_interest_volume` — degraded
-- `bnm_kijang_emas` — degraded
-- `bnm_kl_usd_myr` — unknown-freshness
-- `bnm_myor` — degraded
-- `bnm_opr` — fresh
+- `bnm_interbank_swap` — aging
+- `bnm_interest_rate` — fresh
+- `bnm_interest_volume` — fresh
+- `bnm_kijang_emas` — fresh
+- `bnm_kl_usd_myr` — fresh
+- `bnm_myor` — fresh
+- `bnm_opr` — stale
 - `bop_balance` — aging
 - `cosmetic_notifications` — fresh
 - `cosmetic_notifications_cancelled` — fresh
@@ -168,17 +167,17 @@ _None observed in the comparison window._
 - `currency_in_circulation` — stale
 - `currency_in_circulation_annual` — aging
 - `deaths` — aging
-- `dgm_almanak_astronomi` — unknown-freshness
+- `dgm_almanak_astronomi` — fresh
 - `dgm_arrivals` — stale
 - `dgm_arrivals_soe` — stale
 - `dgm_births` — stale
-- `dgm_blood_donations` — fresh
+- `dgm_blood_donations` — aging
 - `dgm_completion_school_state` — stale
 - `dgm_cosmetics_manufacturers` — fresh
 - `dgm_covid_cases` — stale
 - `dgm_covid_cases_age` — stale
 - `dgm_covid_cases_vaxstatus` — stale
-- `dgm_currency_codes` — unknown-freshness
+- `dgm_currency_codes` — reference
 - `dgm_currency_in_circulation_annual` — stale
 - `dgm_datasets` — stale
 - `dgm_domains` — stale
@@ -198,16 +197,16 @@ _None observed in the comparison window._
 - `dgm_federal_finance_year` — stale
 - `dgm_federal_finance_year_de` — stale
 - `dgm_federal_finance_year_oe` — stale
-- `dgm_government_apps` — unknown-freshness
+- `dgm_government_apps` — stale
 - `dgm_government_apps_active` — stale
-- `dgm_government_apps_downloads` — unknown-freshness
-- `dgm_government_apps_reviews` — unknown-freshness
+- `dgm_government_apps_downloads` — stale
+- `dgm_government_apps_reviews` — stale
 - `dgm_interestrates_annual` — aging
 - `dgm_lecturers_uni` — stale
-- `dgm_lookup_federal_finance` — unknown-freshness
-- `dgm_lookup_money_banking` — unknown-freshness
+- `dgm_lookup_federal_finance` — reference
+- `dgm_lookup_money_banking` — reference
 - `dgm_metrics_content` — fresh
-- `dgm_metrics_dataset_cumul` — unknown-freshness
+- `dgm_metrics_dataset_cumul` — aging
 - `dgm_mnha_moh` — stale
 - `dgm_nutrition_children_sex` — stale
 - `dgm_nutrition_children_strata` — stale
@@ -215,7 +214,7 @@ _None observed in the comparison window._
 - `dgm_organ_pledges_state` — stale
 - `dgm_passports` — stale
 - `dgm_pekab40_screenings` — stale
-- `dgm_poskod` — unknown-freshness
+- `dgm_poskod` — reference
 - `dgm_prisoners_prison` — stale
 - `dgm_registrations_type_fuel` — fresh
 - `dgm_sanitation_access` — stale
@@ -227,11 +226,11 @@ _None observed in the comparison window._
 - `dgm_trnsc_daily_san` — fresh
 - `dgm_usage_metrics` — fresh
 - `dgm_usage_metrics_openapi` — fresh
-- `dgm_usage_metrics_openapi_cumul` — unknown-freshness
+- `dgm_usage_metrics_openapi_cumul` — aging
 - `dgm_vaxreg_covid` — stale
 - `dgm_water_pollution_basin` — stale
-- `dosm_arc_dosm` — unknown-freshness
-- `dosm_bec` — unknown-freshness
+- `dosm_arc_dosm` — fresh
+- `dosm_bec` — reference
 - `dosm_births_annual` — aging
 - `dosm_births_annual_sex_ethnic` — aging
 - `dosm_births_annual_sex_ethnic_state` — aging
@@ -269,7 +268,7 @@ _None observed in the comparison window._
 - `dosm_gdp_annual_real_supply_granular` — stale
 - `dosm_gdp_district_real_supply` — stale
 - `dosm_gdp_gni_annual_real` — aging
-- `dosm_gdp_lookup` — unknown-freshness
+- `dosm_gdp_lookup` — reference
 - `dosm_gdp_qtr_nominal_demand` — aging
 - `dosm_gdp_qtr_nominal_demand_granular` — fresh
 - `dosm_gdp_qtr_nominal_supply` — aging
@@ -311,21 +310,21 @@ _None observed in the comparison window._
 - `dosm_lfs_qtr_tru_sex` — stale
 - `dosm_lfs_state_sex` — stale
 - `dosm_lfs_year_sex` — stale
-- `dosm_lookup_item` — fresh
+- `dosm_lookup_item` — stale
 - `dosm_lookup_premise` — fresh
 - `dosm_marriages` — stale
 - `dosm_marriages_age` — stale
-- `dosm_mcoicop` — unknown-freshness
+- `dosm_mcoicop` — reference
 - `dosm_mineral_extraction` — stale
-- `dosm_msic` — unknown-freshness
+- `dosm_msic` — reference
 - `dosm_ppi_1d` — aging
 - `dosm_ppi_sitc` — aging
 - `dosm_productivity_annual` — aging
 - `dosm_productivity_annual_priority` — aging
-- `dosm_productivity_lookup` — unknown-freshness
+- `dosm_productivity_lookup` — reference
 - `dosm_productivity_qtr` — stale
-- `dosm_sitc` — unknown-freshness
-- `dosm_sitc_sop` — unknown-freshness
+- `dosm_sitc` — reference
+- `dosm_sitc_sop` — reference
 - `dosm_sppi` — aging
 - `dosm_sppi_1d` — aging
 - `dosm_sppi_2d` — aging
@@ -353,8 +352,8 @@ _None observed in the comparison window._
 - `ipi_domestic` — stale
 - `ipi_export` — stale
 - `lfs_month` — stale
-- `lookup_federal_finance` — unknown-freshness
-- `lookup_money_banking` — unknown-freshness
+- `lookup_federal_finance` — reference
+- `lookup_money_banking` — reference
 - `monetary_aggregates` — stale
 - `payment_channels` — stale
 - `payment_instruments` — stale
@@ -401,13 +400,13 @@ _None observed in the comparison window._
 - `air_pollution` — stale
 - `births` — stale
 - `bnm_base_rate` — stale
-- `bnm_interbank_swap` — degraded
-- `bnm_interest_rate` — degraded
-- `bnm_interest_volume` — degraded
-- `bnm_kijang_emas` — degraded
-- `bnm_kl_usd_myr` — unknown-freshness
-- `bnm_myor` — degraded
-- `bnm_opr` — fresh
+- `bnm_interbank_swap` — aging
+- `bnm_interest_rate` — fresh
+- `bnm_interest_volume` — fresh
+- `bnm_kijang_emas` — fresh
+- `bnm_kl_usd_myr` — fresh
+- `bnm_myor` — fresh
+- `bnm_opr` — stale
 - `bop_balance` — aging
 - `cosmetic_notifications` — fresh
 - `cosmetic_notifications_cancelled` — fresh
@@ -421,17 +420,17 @@ _None observed in the comparison window._
 - `currency_in_circulation` — stale
 - `currency_in_circulation_annual` — aging
 - `deaths` — aging
-- `dgm_almanak_astronomi` — unknown-freshness
+- `dgm_almanak_astronomi` — fresh
 - `dgm_arrivals` — stale
 - `dgm_arrivals_soe` — stale
 - `dgm_births` — stale
-- `dgm_blood_donations` — fresh
+- `dgm_blood_donations` — aging
 - `dgm_completion_school_state` — stale
 - `dgm_cosmetics_manufacturers` — fresh
 - `dgm_covid_cases` — stale
 - `dgm_covid_cases_age` — stale
 - `dgm_covid_cases_vaxstatus` — stale
-- `dgm_currency_codes` — unknown-freshness
+- `dgm_currency_codes` — reference
 - `dgm_currency_in_circulation_annual` — stale
 - `dgm_datasets` — stale
 - `dgm_domains` — stale
@@ -451,16 +450,16 @@ _None observed in the comparison window._
 - `dgm_federal_finance_year` — stale
 - `dgm_federal_finance_year_de` — stale
 - `dgm_federal_finance_year_oe` — stale
-- `dgm_government_apps` — unknown-freshness
+- `dgm_government_apps` — stale
 - `dgm_government_apps_active` — stale
-- `dgm_government_apps_downloads` — unknown-freshness
-- `dgm_government_apps_reviews` — unknown-freshness
+- `dgm_government_apps_downloads` — stale
+- `dgm_government_apps_reviews` — stale
 - `dgm_interestrates_annual` — aging
 - `dgm_lecturers_uni` — stale
-- `dgm_lookup_federal_finance` — unknown-freshness
-- `dgm_lookup_money_banking` — unknown-freshness
+- `dgm_lookup_federal_finance` — reference
+- `dgm_lookup_money_banking` — reference
 - `dgm_metrics_content` — fresh
-- `dgm_metrics_dataset_cumul` — unknown-freshness
+- `dgm_metrics_dataset_cumul` — aging
 - `dgm_mnha_moh` — stale
 - `dgm_nutrition_children_sex` — stale
 - `dgm_nutrition_children_strata` — stale
@@ -468,7 +467,7 @@ _None observed in the comparison window._
 - `dgm_organ_pledges_state` — stale
 - `dgm_passports` — stale
 - `dgm_pekab40_screenings` — stale
-- `dgm_poskod` — unknown-freshness
+- `dgm_poskod` — reference
 - `dgm_prisoners_prison` — stale
 - `dgm_registrations_type_fuel` — fresh
 - `dgm_sanitation_access` — stale
@@ -480,11 +479,11 @@ _None observed in the comparison window._
 - `dgm_trnsc_daily_san` — fresh
 - `dgm_usage_metrics` — fresh
 - `dgm_usage_metrics_openapi` — fresh
-- `dgm_usage_metrics_openapi_cumul` — unknown-freshness
+- `dgm_usage_metrics_openapi_cumul` — aging
 - `dgm_vaxreg_covid` — stale
 - `dgm_water_pollution_basin` — stale
-- `dosm_arc_dosm` — unknown-freshness
-- `dosm_bec` — unknown-freshness
+- `dosm_arc_dosm` — fresh
+- `dosm_bec` — reference
 - `dosm_births_annual` — aging
 - `dosm_births_annual_sex_ethnic` — aging
 - `dosm_births_annual_sex_ethnic_state` — aging
@@ -522,7 +521,7 @@ _None observed in the comparison window._
 - `dosm_gdp_annual_real_supply_granular` — stale
 - `dosm_gdp_district_real_supply` — stale
 - `dosm_gdp_gni_annual_real` — aging
-- `dosm_gdp_lookup` — unknown-freshness
+- `dosm_gdp_lookup` — reference
 - `dosm_gdp_qtr_nominal_demand` — aging
 - `dosm_gdp_qtr_nominal_demand_granular` — fresh
 - `dosm_gdp_qtr_nominal_supply` — aging
@@ -564,21 +563,21 @@ _None observed in the comparison window._
 - `dosm_lfs_qtr_tru_sex` — stale
 - `dosm_lfs_state_sex` — stale
 - `dosm_lfs_year_sex` — stale
-- `dosm_lookup_item` — fresh
+- `dosm_lookup_item` — stale
 - `dosm_lookup_premise` — fresh
 - `dosm_marriages` — stale
 - `dosm_marriages_age` — stale
-- `dosm_mcoicop` — unknown-freshness
+- `dosm_mcoicop` — reference
 - `dosm_mineral_extraction` — stale
-- `dosm_msic` — unknown-freshness
+- `dosm_msic` — reference
 - `dosm_ppi_1d` — aging
 - `dosm_ppi_sitc` — aging
 - `dosm_productivity_annual` — aging
 - `dosm_productivity_annual_priority` — aging
-- `dosm_productivity_lookup` — unknown-freshness
+- `dosm_productivity_lookup` — reference
 - `dosm_productivity_qtr` — stale
-- `dosm_sitc` — unknown-freshness
-- `dosm_sitc_sop` — unknown-freshness
+- `dosm_sitc` — reference
+- `dosm_sitc_sop` — reference
 - `dosm_sppi` — aging
 - `dosm_sppi_1d` — aging
 - `dosm_sppi_2d` — aging
@@ -606,8 +605,8 @@ _None observed in the comparison window._
 - `ipi_domestic` — stale
 - `ipi_export` — stale
 - `lfs_month` — stale
-- `lookup_federal_finance` — unknown-freshness
-- `lookup_money_banking` — unknown-freshness
+- `lookup_federal_finance` — reference
+- `lookup_money_banking` — reference
 - `monetary_aggregates` — stale
 - `payment_channels` — stale
 - `payment_instruments` — stale
@@ -649,6 +648,10 @@ _None observed in the comparison window._
 - `vaxreg_covid_demog` — stale
 - `water_consumption` — stale
 
+## Source-level staleness
+
+- **Digital Services** — all 4 datasets are more than 60 days old; the latest `data_as_of` is 2026-04-21. The source appears to have stopped publishing across this dataset family: `dgm_government_apps_active`, `dgm_government_apps`, `dgm_government_apps_downloads`, `dgm_government_apps_reviews`.
+
 ## Coverage
 
 - Total datasets: **372**
@@ -674,7 +677,7 @@ _None observed in the comparison window._
 
 ## Honest caveats
 
-- **22** datasets have unknown freshness and **1** is unreachable. These are explicit trust gaps, not silent green checks.
+- **0** datasets have unknown freshness and **1** is unreachable. These are explicit trust gaps, not silent green checks.
 - Compared with manifest and health baselines 501e4f418fb6 / 22feb26623e6.
 
 ## Reproducibility

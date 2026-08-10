@@ -1335,6 +1335,10 @@ build_health_snapshot() {
       elif $frequency == "monthly" then 30
       elif $frequency == "quarterly" then 90
       elif $frequency == "annual" then 365
+      elif $frequency == "hourly" then 0.04
+      elif $frequency == "30 seconds" then 0.0003
+      elif $frequency | startswith("biennial") then 730
+      elif $frequency | startswith("as-required") then null
       else null
       end;
   def status_key($status):
@@ -1394,7 +1398,12 @@ build_health_snapshot() {
            elif $staleness_days <= ($cadence * 3) then "aging"
            else "stale"
            end
-         elif $staleness_days != null then "fresh"
+         elif $staleness_days != null then
+           # Null cadence (as-required or unmapped): use a conservative 90-day default.
+           if $staleness_days <= 135 then "fresh"
+           elif $staleness_days <= 270 then "aging"
+           else "stale"
+           end
          else "unknown-freshness"
          end) as $staleness_status
       | (if ($probe.access_method // "" | ascii_downcase) == "camofox" then
