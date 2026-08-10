@@ -67,7 +67,7 @@ def test_section_assembly_uses_canonical_order_and_assigns_every_dataset_once() 
         "MET Malaysia": ["met"],
     }
 
-    result = sections.build_sections(manifest, parsed, ["other", "bnm"])
+    result = sections.build_sections(manifest, parsed, ["other"])
 
     assert [section["key"] for section in result] == [
         "top_visited",
@@ -86,7 +86,7 @@ def test_section_assembly_uses_canonical_order_and_assigns_every_dataset_once() 
         "name": "Most-Consumed Malaysian Data",
         "key": "top_visited",
         "type": "popular",
-        "datasets": ["other", "bnm"],
+        "datasets": ["other"],
     }
     category_ids = [
         dataset_id
@@ -101,9 +101,9 @@ def test_section_assembly_uses_canonical_order_and_assigns_every_dataset_once() 
         "hansard_parliamentary_terms",
         "hansard_mps",
         "reference",
-        "other",
     ]
-    assert len(category_ids) == len(set(category_ids)) == len(manifest["datasets"])
+    all_section_ids = category_ids + result[0]["datasets"]
+    assert len(all_section_ids) == len(set(all_section_ids)) == len(manifest["datasets"])
 
 
 def test_fresh_metrics_cache_avoids_network(tmp_path: Path) -> None:

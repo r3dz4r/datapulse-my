@@ -193,6 +193,7 @@ def build_sections(
             kind="popular",
         )
     ]
+    assigned.update(popular_ids)
     for name, key in README_CATEGORIES:
         category_ids = [
             dataset_id
