@@ -35,6 +35,8 @@ GENERATORS = (
     "gen_jsonld_catalog.py",
     "gen_mcp_reference.py",
     "gen_dashboard_filters.py",
+    "gen_dashboard_sections.py",
+    "embed_dashboard_data.py",
 )
 HEALTH_STEPS = (
     "gen_data_reports.sh",
@@ -44,6 +46,7 @@ HEALTH_STEPS = (
     "gen_changelog.py",
 )
 RELEASE_STEPS = (
+    "gen_dashboard_sections.py",
     "gen_data_reports.sh",
     "gen_badges.sh",
     "gen_readme_summary.sh",
@@ -54,6 +57,7 @@ RELEASE_STEPS = (
     "gen_jsonld_catalog.py",
     "gen_mcp_reference.py",
     "gen_dashboard_filters.py",
+    "embed_dashboard_data.py",
     "gen_trust_snapshot.py",
 )
 HEALTH_OUTPUTS = (
@@ -71,6 +75,8 @@ RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "docs/mcp-reference.md",
     "mcp.json",
     "docs/.dashboard_filters.json",
+    "docs/.dashboard_sections.json",
+    "docs/index.html",
 )
 PROFILE_INPUTS = (
     ".git",
@@ -82,6 +88,7 @@ PROFILE_INPUTS = (
     "mcp.json",
     "mcp",
     "scripts",
+    ".cache",
 )
 
 
@@ -136,6 +143,18 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(RELEASE_FIXTURE / "docs/index.html", source / "docs/index.html")
     shutil.copy2(RELEASE_FIXTURE / "mcp.json", source / "mcp.json")
     shutil.copytree(RELEASE_FIXTURE / "mcp", source / "mcp")
+
+    metrics_cache = source / ".cache/datapulse/metrics_dataset_cumul.json"
+    _write_json(
+        metrics_cache,
+        {
+            "fetched_at": "2999-01-01T00:00:00Z",
+            "datasets": [
+                {"id": row["id"], "views": index + 1}
+                for index, row in enumerate(manifest["datasets"])
+            ],
+        },
+    )
 
     scripts = source / "scripts"
     scripts.mkdir()
@@ -198,7 +217,7 @@ def test_health_cycle_lists_five_steps(tmp_path: Path) -> None:
         assert step in result.stdout
 
 
-def test_release_build_lists_all_eleven_steps(tmp_path: Path) -> None:
+def test_release_build_lists_all_thirteen_steps(tmp_path: Path) -> None:
     result = _run_profile(tmp_path, "release-build", list_mode=True)
 
     assert result.returncode == 0, result.stderr

@@ -3,10 +3,10 @@
 # DataPulse MY generation profiles.
 #
 # health-cycle: 5 steps for artifacts derived from the live health snapshot.
-# release-build: source stamp plus 11 steps for the complete public-site artifact set.
+# release-build: source stamp plus 13 steps for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
-# It never commits, pushes, deploys, or performs the dashboard HTML embed step.
+# It never commits, pushes, or deploys; release-build embeds dashboard data locally.
 #
 set -euo pipefail
 
@@ -89,9 +89,10 @@ case "$profile" in
     )
     ;;
   release-build)
-    description="Regenerate health-cycle plus public discovery, JSON-LD, MCP, envelope, and filter artifacts."
+    description="Regenerate health-cycle plus public discovery, JSON-LD, MCP, envelope, and dashboard artifacts."
     generators=(
       "bump_mcp_source_version.py"
+      "gen_dashboard_sections.py"
       "gen_data_reports.sh"
       "gen_badges.sh"
       "gen_readme_summary.sh"
@@ -102,10 +103,12 @@ case "$profile" in
       "gen_jsonld_catalog.py"
       "gen_mcp_reference.py"
       "gen_dashboard_filters.py"
+      "embed_dashboard_data.py"
       "gen_trust_snapshot.py"
     )
     outputs=(
       "mcp/server.py (SOURCE_COMMIT_SHA/SOURCE_COMMIT_DATE constants); mcp.json (source_commit_sha/source_commit_date fields)"
+      "docs/.dashboard_sections.json"
       "data/<id>.md"
       "badges/<id>.svg; badges/status-*.svg; badges/index.svg"
       "README.md (trust-summary block only)"
@@ -116,6 +119,7 @@ case "$profile" in
       "data/jsonld/<id>.json; data/jsonld/catalog.json"
       "docs/mcp-reference.md; mcp.json"
       "docs/.dashboard_filters.json"
+      "docs/index.html (embedded manifest, health, filters, and sections)"
       "docs/trust-snapshot-<date>.{md,json}"
     )
     ;;

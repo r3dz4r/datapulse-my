@@ -28,6 +28,8 @@ OWNED_CATEGORIES = (
     "docs/mcp-reference.md",
     "mcp.json",
     "docs/.dashboard_filters.json",
+    "docs/.dashboard_sections.json",
+    "docs/index.html",
 )
 
 
@@ -112,6 +114,8 @@ def test_first_build_produces_expected_outputs(
         "docs/mcp-reference.md",
         "mcp.json",
         "docs/.dashboard_filters.json",
+        "docs/.dashboard_sections.json",
+        "docs/index.html",
     }
     assert expected <= hashes.keys()
 

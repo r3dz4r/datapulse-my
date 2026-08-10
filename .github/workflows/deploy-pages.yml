@@ -78,39 +78,6 @@ jobs:
       - name: Run release-build generation profile
         run: bash scripts/generate.sh release-build
 
-      - name: Inject embedded data
-        run: |
-          # release-build already ran python3 scripts/gen_dashboard_filters.py.
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          html_path = Path("docs/index.html")
-          html = html_path.read_text(encoding="utf-8")
-          try:
-              manifest = json.dumps(json.load(open("datapulse.json", encoding="utf-8")))
-              health = json.dumps(json.load(open("health/latest.json", encoding="utf-8")))
-              dashboard_filters = json.dumps(json.load(open("docs/.dashboard_filters.json", encoding="utf-8")))
-          except FileNotFoundError:
-              manifest, health, dashboard_filters = "null", "null", "null"
-
-          data = (
-              '<script id="embedded-data">\n'
-              f'    window.__DATAPULSE_DATA__ = {{health: {health}, manifest: {manifest}, dashboardFilters: {dashboard_filters}}};\n'
-              '  </script>'
-          )
-          marker = '<script id="embedded-data">'
-          start = html.find(marker)
-          if start >= 0:
-              end = html.index("</script>", start) + len("</script>")
-              html = html[:start] + data + html[end:]
-          else:
-              html = html.replace("</body>", f"  {data}\n</body>")
-
-          with html_path.open("w", encoding="utf-8", newline="\n") as output:
-              output.write(html)
-          PY
-
       - name: Assemble Pages artifact
         run: |
           # GitHub Pages CDN serves `Cache-Control: max-age=600` for all artifacts.
