@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_realtime_mybas_kuala_terengganu
-last_checked: 2026-08-09T05:15:50Z
+last_checked: 2026-08-10T00:31:37Z
 status: fresh
 freshness_delta: 0 days
 record_count: 25
@@ -25,11 +25,11 @@ HTTP 200; valid GTFS realtime protobuf (25 vehicles)
 
 ## Last checked
 
-2026-08-09 at 05:15:50 UTC.
+2026-08-10 at 00:31:37 UTC.
 
 ## File size
 
-The checked resource is 2,197 bytes.
+The checked resource is 2,194 bytes.
 
 ## Provenance
 

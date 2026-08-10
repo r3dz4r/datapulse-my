@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_trade_sitc_1d
-last_checked: 2026-08-07T07:25:52Z
-status: fresh
-freshness_delta: 4 days
+last_checked: 2026-08-09T08:37:11Z
+status: aging
+freshness_delta: 69 days
 next_expected_update: monthly
 record_count: 3498
 date_range: 2000-01-01 to 2026-06-01
@@ -18,15 +18,15 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Fresh
+**Status:** Aging
 
-**Freshness:** 4 days
+**Freshness:** 69 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-07 at 07:25:52 UTC.
+2026-08-09 at 08:37:11 UTC.
 
 ## File size
 

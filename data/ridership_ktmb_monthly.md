@@ -5,15 +5,15 @@ source_url: "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_mont
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-08-08T05:49:42Z
+last_checked: 2026-08-09T08:37:11Z
 last_observed: 2026-07-01
-last_modified: 2026-08-07T20:31:32Z
+last_modified: 2026-08-08T20:31:32Z
 record_count: 290
 column_count: 3
 status: fresh
 notes: "Tier-1 wave C already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: ridership_ktmb_monthly
-freshness_delta: 38 days
+freshness_delta: 39 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Keretapi Tanah Melayu Berhad via data.gov.my"
 
 **Status:** Fresh
 
-**Freshness:** 38 days
+**Freshness:** 39 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-08 at 05:49:42 UTC.
+2026-08-09 at 08:37:11 UTC.
 
 ## File size
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_trade_enduse_bec
-last_checked: 2026-08-07T07:25:52Z
+last_checked: 2026-08-09T08:37:11Z
 status: stale
-freshness_delta: 128 days
+freshness_delta: 130 days
 next_expected_update: overdue
 record_count: 14332
 date_range: 2010-01-01 to 2026-04-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Stale
 
-**Freshness:** 128 days
+**Freshness:** 130 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-07 at 07:25:52 UTC.
+2026-08-09 at 08:37:11 UTC.
 
 ## File size
 

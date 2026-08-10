@@ -12,7 +12,7 @@ session ID returned by the initialize response for subsequent calls.
 
 ### `search_datasets`
 
-Search DataPulse MY's 345 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence.
+Search DataPulse MY's 364 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence.
 
 Input schema:
 
@@ -211,7 +211,7 @@ printf 'live=%s head=%s\n' "$live_count" "$head_count"
 test "$live_count" -eq "$head_count"
 ```
 
-The expected count at this revision is `345`. If the assertion fails, do not
+The expected count at this revision is `364`. If the assertion fails, do not
 merge: the MCP server is stale and the manifest-count claim is false.
 
 ## Regenerate

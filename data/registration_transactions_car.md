@@ -1,11 +1,11 @@
 ---
 dataset_id: registration_transactions_car
-last_checked: 2026-08-09T05:30:41Z
-last_checked: 2026-08-09T05:30:41Z
+last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-09T08:37:11Z
 status: stale
-freshness_delta: 40 days
+freshness_delta: 9 days
 next_expected_update: daily
-record_count: 409310
+record_count: 489340
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This dataset captures the registration of cars, not the sale or import or any other transaction. Therefore, if a car is not registered for use on the road, it will not be present in this dataset (e.g. cars which are purchased purely for private display). Furthermore, it should be noted that this dataset was extremely difficult to prepare, especially for data from the early 2000s when data collection systems were not as sophisticated as they are now. Accordingly, if you spot any errors in the dataset or have any suggestions to improve its quality, please write to help.dtsa@jdn.gov.my so the data.gov.my team can work with JPJ to fix or improve it as soon as possible.", "The serving filename rotates by UTC year; the health probe resolves it at runtime."]
@@ -20,17 +20,17 @@ attribution: Road Transport Department Malaysia and Ministry of Transport via da
 
 **Status:** Stale
 
-**Freshness:** 40 days
+**Freshness:** 9 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 05:30:41 UTC.
+2026-08-09 at 08:37:11 UTC.
 
 ## File size
 
-The checked resource is 23,557,984 bytes.
+The checked resource is 28,186,891 bytes.
 
 ## Provenance
 

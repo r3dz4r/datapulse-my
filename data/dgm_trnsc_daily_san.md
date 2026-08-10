@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_trnsc_daily_san
-last_checked: 2026-08-09T05:30:41Z
-last_checked: 2026-08-09T05:30:41Z
-status: unknown-freshness
-freshness_delta: unknown
+last_checked: 2026-08-09T08:37:11Z
+last_checked: 2026-08-09T08:37:11Z
+status: fresh
+freshness_delta: 1 days
 next_expected_update: daily
 record_count: 7222
 schema_version: unknown
@@ -18,15 +18,15 @@ attribution: Payments Network Malaysia and Bank Negara Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Unknown freshness
+**Status:** Fresh
 
-**Freshness:** unknown
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-09 at 05:30:41 UTC.
+2026-08-09 at 08:37:11 UTC.
 
 ## File size
 
