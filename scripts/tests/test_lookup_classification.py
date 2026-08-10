@@ -16,7 +16,9 @@ POLICY_PATH = ROOT / "scripts/probe-policy.json"
 LOOKUP_DATASET_ID = "dgm_currency_codes"
 
 
-def _run_lookup_probe(tmp_path: Path, last_modified: datetime | None) -> dict:
+def _run_lookup_probe(
+    tmp_path: Path, last_modified: datetime | None, *, http_status: int = 200
+) -> dict:
     policy = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
     assert policy["datasets"][LOOKUP_DATASET_ID]["freshness"] == {
         "extraction-mode": "structural-hash",
@@ -27,6 +29,7 @@ def _run_lookup_probe(tmp_path: Path, last_modified: datetime | None) -> dict:
         "datasets": [
             {
                 "id": LOOKUP_DATASET_ID,
+                "data_type": "reference",
                 "url": "https://example.invalid/lookup.json",
                 "refresh_frequency": "daily",
                 "namespace": "test",
@@ -57,12 +60,12 @@ if [[ "$output_path" == "-" ]]; then
   exit 0
 fi
 printf '[{"code":"ABC","label":"Lookup value"}]\n' > "$output_path"
-printf '%s\r\n' 'HTTP/1.1 200 OK' > "$headers_path"
+printf 'HTTP/1.1 %s Mock\r\n' "${MOCK_HTTP_STATUS:-200}" > "$headers_path"
 if [[ -n "${MOCK_LAST_MODIFIED:-}" ]]; then
   printf 'Last-Modified: %s\r\n' "$MOCK_LAST_MODIFIED" >> "$headers_path"
 fi
 printf '\r\n' >> "$headers_path"
-printf '200'
+printf '%s' "${MOCK_HTTP_STATUS:-200}"
 """,
         encoding="utf-8",
     )
@@ -71,6 +74,7 @@ printf '200'
     environment = os.environ.copy()
     environment["PATH"] = f"{fake_bin}:{environment['PATH']}"
     environment["DATAPULSE_PROBE_POLICY"] = str(POLICY_PATH)
+    environment["MOCK_HTTP_STATUS"] = str(http_status)
     if last_modified is not None:
         environment["MOCK_LAST_MODIFIED"] = format_datetime(
             last_modified, usegmt=True
@@ -92,25 +96,32 @@ printf '200'
     return json.loads(completed.stdout)["datasets"][0]
 
 
-def test_lookup_with_fresh_last_modified_is_fresh(tmp_path: Path) -> None:
+def test_reachable_reference_with_fresh_last_modified_is_reference(tmp_path: Path) -> None:
     row = _run_lookup_probe(tmp_path, datetime.now(timezone.utc) - timedelta(hours=1))
 
-    assert row["status"] == "fresh"
+    assert row["status"] == "reference"
     assert row["content_freshness_date"] is None
     assert row["freshness_signal_source"] == "last_modified_header"
 
 
-def test_lookup_with_stale_last_modified_is_stale(tmp_path: Path) -> None:
+def test_reachable_reference_with_stale_last_modified_is_reference(tmp_path: Path) -> None:
     row = _run_lookup_probe(tmp_path, datetime.now(timezone.utc) - timedelta(days=4))
 
-    assert row["status"] == "stale"
+    assert row["status"] == "reference"
     assert row["content_freshness_date"] is None
     assert row["freshness_signal_source"] == "last_modified_header"
 
 
-def test_lookup_without_last_modified_is_unknown(tmp_path: Path) -> None:
+def test_reachable_reference_without_last_modified_is_reference(tmp_path: Path) -> None:
     row = _run_lookup_probe(tmp_path, None)
 
-    assert row["status"] == "unknown-freshness"
+    assert row["status"] == "reference"
     assert row["content_freshness_date"] is None
     assert row["freshness_signal_source"] == "none"
+
+
+def test_unreachable_reference_is_unreachable(tmp_path: Path) -> None:
+    row = _run_lookup_probe(tmp_path, None, http_status=503)
+
+    assert row["status"] == "unreachable"
+    assert row["http_status"] == 503

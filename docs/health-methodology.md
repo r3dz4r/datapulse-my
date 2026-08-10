@@ -64,6 +64,7 @@ The health schema is unchanged for T33.
 | `unreachable` | The source request failed or returned non-2xx. |
 | `unknown` | No reliable classification is available. |
 | `unknown-freshness` | Reachable and structurally usable, but no freshness evidence exists. |
+| `reference` | Versioned reference/lookup data is reachable and countable; date-based freshness does not apply. |
 
 ## Freshness and reachability
 
@@ -71,7 +72,8 @@ Reachability is not freshness. The probe chooses the newest defensible signal
 from an HTTP `Last-Modified` header or parsed content date. Daily, weekly,
 monthly, quarterly, and annual cadences use 1, 7, 30, 90, and 365-day baselines.
 Future content dates are rejected. A 200 response without either signal becomes
-`unknown-freshness`, not `fresh`.
+`unknown-freshness`, not `fresh`, unless the manifest identifies the dataset as
+versioned `reference` data.
 
 BNM content dates are date-only. The dashboard adds the MYT time declared in
 each manifest `refresh_frequency` for display; that time is presentation

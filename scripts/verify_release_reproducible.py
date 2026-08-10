@@ -31,7 +31,7 @@ CATEGORY_ORDER = (
     "mcp.json",
     "docs/.dashboard_filters.json",
 )
-STATUS_BADGE_COUNT = 8
+STATUS_BADGE_COUNT = 9
 
 
 class SetupFailure(RuntimeError):

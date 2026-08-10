@@ -33,7 +33,8 @@ if ! summary="$(jq -er '
         {key: "browser_dependent", label: "browser-dependent"},
         {key: "unreachable", label: "unreachable"},
         {key: "unknown", label: "unknown"},
-        {key: "unknown_freshness", label: "unknown-freshness"}
+        {key: "unknown_freshness", label: "unknown-freshness"},
+        {key: "reference", label: "reference"}
       ]
       | map(. + {count: ($counts[.key] // 0)})
       | if all(.[]; (.count | type == "number" and . >= 0 and floor == .)) then

@@ -268,6 +268,7 @@ async def test_find_stale_returns_only_freshness_or_schema_risks(
         "unreachable",
         "unknown",
         "unknown-freshness",
+        "reference",
     ]
     manifest = {
         "datasets": [
@@ -303,6 +304,32 @@ async def test_find_stale_returns_only_freshness_or_schema_risks(
         {"staleness_days", "access_dependency", "expected_record_count"} <= set(item)
         for item in result.data
     )
+
+
+async def test_find_stale_excludes_reference_when_snapshot_is_old(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = {"datasets": [{"id": "lookup", "name": "Lookup"}]}
+    health = {
+        "checked_at": "2020-01-01T00:00:00+00:00",
+        "datasets": [
+            {
+                "dataset_id": "lookup",
+                "status": "reference",
+                "message": "Reference data verified",
+            }
+        ],
+    }
+
+    async def fake_load_catalogue() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("find_stale", {"max_age_hours": 24})
+
+    assert result.data == []
 
 
 async def test_get_provenance_returns_citation_fields(live_data: tuple[dict, dict]) -> None:
@@ -441,8 +468,12 @@ def test_browser_content_freshness_extraction() -> None:
     assert any(item["content_freshness_date"] for item in browser_datasets)
 
 
-def test_headerless_direct_datasets_report_unknown_freshness() -> None:
+def test_headerless_direct_datasets_distinguish_reference_data() -> None:
+    manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
     health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+    reference_ids = {
+        item["id"] for item in manifest["datasets"] if item.get("data_type") == "reference"
+    }
     headerless_without_content_date = [
         item
         for item in health["datasets"]
@@ -455,7 +486,8 @@ def test_headerless_direct_datasets_report_unknown_freshness() -> None:
     assert headerless_without_content_date
     assert all(
         item["freshness_signal_source"] == "none"
-        and item["status"] == "unknown-freshness"
+        and item["status"]
+        == ("reference" if item["dataset_id"] in reference_ids else "unknown-freshness")
         for item in headerless_without_content_date
     )
 

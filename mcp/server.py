@@ -360,7 +360,9 @@ async def find_stale(
                     "expected_record_count": entry.get("expected_record_count"),
                 }
             )
-        elif record.get("status") in {"aging", "stale", "degraded"} or snapshot_is_old:
+        elif record.get("status") != "reference" and (
+            record.get("status") in {"aging", "stale", "degraded"} or snapshot_is_old
+        ):
             message = record.get("message", "No health message")
             if snapshot_is_old and record.get("status") not in {"aging", "stale", "degraded"}:
                 message = "Latest health snapshot is older than the requested maximum age"

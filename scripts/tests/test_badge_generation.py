@@ -14,6 +14,7 @@ STATUSES = (
     "unreachable",
     "unknown",
     "unknown-freshness",
+    "reference",
 )
 
 
@@ -39,6 +40,7 @@ def test_generator_emits_all_status_badges_including_zero_counts(tmp_path: Path)
                         "unreachable": 1,
                         "unknown": 0,
                         "unknown_freshness": 1,
+                        "reference": 1,
                     }
                 },
                 "datasets": [

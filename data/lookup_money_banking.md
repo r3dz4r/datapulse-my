@@ -1,7 +1,7 @@
 ---
 dataset_id: lookup_money_banking
-last_checked: 2026-08-10T04:08:14Z
-status: unknown-freshness
+last_checked: 2026-08-10T05:22:19Z
+status: reference
 freshness_delta: unknown
 next_expected_update: as-required
 schema_version: unknown
@@ -16,7 +16,7 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Unknown freshness
+**Status:** Reference
 
 **Freshness:** unknown
 
@@ -24,7 +24,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 04:08:14 UTC.
+2026-08-10 at 05:22:19 UTC.
 
 ## File size
 

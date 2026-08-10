@@ -93,6 +93,31 @@ def test_representative_expected_status_mutation_is_detected() -> None:
     assert actual != mutated_expected
 
 
+def test_reachable_reference_data_has_no_freshness_clock() -> None:
+    row = {
+        "dataset_id": "lookup",
+        "data_type": "reference",
+        "refresh_frequency": "daily",
+        "last_checked": "2026-08-08T12:00:00Z",
+        "http_status": 200,
+        "probe_status": "degraded",
+    }
+
+    assert classify_status(row, NOW) == ("reference", "versioned-reference-data")
+
+
+def test_unreachable_reference_data_remains_unreachable() -> None:
+    row = {
+        "dataset_id": "lookup",
+        "data_type": "reference",
+        "refresh_frequency": "daily",
+        "last_checked": "2026-08-08T12:00:00Z",
+        "http_status": 503,
+    }
+
+    assert classify_status(row, NOW) == ("unreachable", "transport-failure")
+
+
 @pytest.mark.parametrize(
     ("last_checked", "reason"),
     [
