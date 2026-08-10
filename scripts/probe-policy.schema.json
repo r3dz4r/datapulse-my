@@ -43,7 +43,8 @@
         "extraction-mode": {
           "enum": ["max", "min", "first-row", "structural-hash"]
         },
-        "fallback": {"enum": ["last-modified", "unknown-freshness"]}
+        "fallback": {"enum": ["last-modified", "unknown-freshness"]},
+        "date-source": {"const": "data.gov.my-page"}
       },
       "allOf": [
         {

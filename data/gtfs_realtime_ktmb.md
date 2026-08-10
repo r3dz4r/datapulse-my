@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_realtime_ktmb
-last_checked: 2026-08-10T05:01:24Z
+last_checked: 2026-08-10T06:01:29Z
 status: fresh
 freshness_delta: 0 days
 record_count: 0
@@ -25,7 +25,7 @@ HTTP 200; valid GTFS realtime protobuf (0 vehicles)
 
 ## Last checked
 
-2026-08-10 at 05:01:24 UTC.
+2026-08-10 at 06:01:29 UTC.
 
 ## File size
 
