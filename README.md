@@ -5,7 +5,7 @@
 **Open in Google Colab:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb)
 
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
-> any MCP-compatible client with one config block. Your agent gets **364 official
+> any MCP-compatible client with one config block. Your agent gets **372 official
 > Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
 > BAS.MY)** — with declared licences and an honest eight-status trust taxonomy
 > instead of a blanket green checkmark.
@@ -45,7 +45,7 @@ nor a parseable content date proves when the data was updated. The public
 [`_trust_summary`](health/latest.json) shows the distribution and explicitly
 counts missing freshness and row-count signals.
 
-Current distribution (`_trust_summary`): [89 fresh](badges/status-fresh.svg) · [104 aging](badges/status-aging.svg) · [145 stale](badges/status-stale.svg) · [7 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [21 unknown-freshness](badges/status-unknown-freshness.svg)
+Current distribution (`_trust_summary`): [89 fresh](badges/status-fresh.svg) · [104 aging](badges/status-aging.svg) · [145 stale](badges/status-stale.svg) · [6 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [22 unknown-freshness](badges/status-unknown-freshness.svg)
 
 <!--
 Statuses with zero count are omitted. Full per-dataset health is in
@@ -141,7 +141,7 @@ the catalogue natively:
 - 3 resources: `datapulse://index`, `datapulse://licences`, `datapulse://{dataset_id}`
 
 The public endpoint is live and serves all 5 read-only tools over the
-364-dataset catalogue.
+372-dataset catalogue.
 
 Connect from Claude Desktop:
 
