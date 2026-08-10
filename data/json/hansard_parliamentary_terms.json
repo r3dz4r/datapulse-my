@@ -1,0 +1,53 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "hansard_parliamentary_terms",
+  "status": "fresh",
+  "last_checked": "2026-08-10T10:07:26Z",
+  "freshness_days": 6,
+  "next_expected_update": null,
+  "refresh_frequency": "weekly",
+  "record_count": 15,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "pageProps",
+      "type": "string"
+    },
+    {
+      "name": "__N_SSP",
+      "type": "boolean"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via Hansard probe script"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 15 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [
+    "The term calendar is extracted from the empty-keyword Hansard search response."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://hansard.parlimen.gov.my/_next/data/Zlu4qRDxrOCEM-7h59E5o/cari.json?keyword=",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "Malaysian Parliament Digital Hansard (government_open_data)"
+}

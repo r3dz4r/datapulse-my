@@ -1,7 +1,7 @@
 ---
 dataset_id: dgm_usage_metrics_openapi_cumul
-last_checked: 2026-08-10T06:06:00Z
-last_checked: 2026-08-10T06:06:00Z
+last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-10T10:07:26Z
 status: aging
 freshness_delta: 2 days
 next_expected_update: daily
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 06:06:00 UTC.
+2026-08-10 at 10:07:26 UTC.
 
 ## File size
 

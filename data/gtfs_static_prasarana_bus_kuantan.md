@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_static_prasarana_bus_kuantan
-last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T10:07:26Z
 status: unreachable
 freshness_delta: unknown
 record_count: null
@@ -25,7 +25,7 @@ HTTP 404
 
 ## Last checked
 
-2026-08-10 at 04:08:14 UTC.
+2026-08-10 at 10:07:26 UTC.
 
 ## File size
 

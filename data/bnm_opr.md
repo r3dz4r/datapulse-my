@@ -1,6 +1,6 @@
 ---
 dataset_id: bnm_opr
-last_checked: 2026-08-10T08:12:00Z
+last_checked: 2026-08-10T10:07:26Z
 status: stale
 freshness_delta: 95 days
 next_expected_update: monthly
@@ -24,7 +24,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 08:12:00 UTC.
+2026-08-10 at 10:07:26 UTC.
 
 ## File size
 

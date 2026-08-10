@@ -1,6 +1,6 @@
 ---
 dataset_id: dgm_almanak_astronomi
-last_checked: 2026-08-10T04:08:14Z
+last_checked: 2026-08-10T10:07:26Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: daily
@@ -25,7 +25,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 04:08:14 UTC.
+2026-08-10 at 10:07:26 UTC.
 
 ## File size
 

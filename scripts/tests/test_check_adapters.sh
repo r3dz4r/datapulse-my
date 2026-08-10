@@ -12,6 +12,7 @@ DATAPULSE_CHECK_SOURCE_ONLY=true source "$repo_root/scripts/check.sh"
 [[ "$(probe_adapter met_weather)" == "weather" ]]
 [[ "$(probe_adapter doe_apims)" == "browser" ]]
 [[ "$(probe_adapter gtfs_realtime_ktmb)" == "gtfs-realtime" ]]
+[[ "$(probe_adapter hansard_sittings)" == "hansard-script" ]]
 [[ "$(probe_policy_value met_weather '.freshness["extraction-mode"]')" == "min" ]]
 [[ "$(probe_policy_value exchangerates_daily_0900 '.rolling["fingerprint-mode"]')" == "columns-only" ]]
 [[ "$(probe_policy_value doe_apims '.browser["wait-seconds"]')" == "30" ]]
@@ -41,11 +42,20 @@ check_direct_dataset() { printf 'direct:%s\n' "$1"; }
 check_weather_dataset() { printf 'weather:%s\n' "$1"; }
 check_browser_dataset() { printf 'browser:%s:%s\n' "$1" "$3"; }
 check_gtfs_dataset() { printf 'gtfs:%s\n' "$1"; }
+check_hansard_script_dataset() { printf 'hansard:%s\n' "$1"; }
 
 [[ "$(dispatch_policy_adapter fuelprice https://example.invalid)" == "direct:fuelprice" ]]
 [[ "$(dispatch_policy_adapter met_weather https://example.invalid)" == "weather:met_weather" ]]
 [[ "$(dispatch_policy_adapter doe_apims https://example.invalid)" == "browser:doe_apims:30" ]]
 [[ "$(dispatch_policy_adapter gtfs_realtime_ktmb https://example.invalid)" == "gtfs:gtfs_realtime_ktmb" ]]
+[[ "$(dispatch_policy_adapter hansard_sittings https://example.invalid)" == "hansard:hansard_sittings" ]]
+
+printf '%s\n' '{"status":"ok","katalog":{"dewan-rakyat":{"http_status":200,"sittings_total":4086,"latest":"2026-07-16"},"dewan-negara":{"http_status":200,"sittings_total":1522,"latest":"2026-08-04"},"kamar-khas":{"http_status":200,"sittings_total":584,"latest":"2026-07-16"}},"takwim":{"current_term_end":"2026-08-04","total_terms":15},"mps":{"http_status":200,"total_mps":2017},"freshness":{"content_freshness_date":"2026-08-04"}}' > "$fixture"
+[[ "$(extract_hansard_probe_metrics hansard_sittings "$fixture")" == '{"http_status":200,"record_count":6192,"content_freshness_date":"2026-08-04"}' ]]
+[[ "$(extract_hansard_probe_metrics hansard_parliamentary_terms "$fixture")" == '{"http_status":200,"record_count":15,"content_freshness_date":"2026-08-04"}' ]]
+[[ "$(extract_hansard_probe_metrics hansard_mps "$fixture")" == '{"http_status":200,"record_count":2017,"content_freshness_date":"2026-08-04"}' ]]
+jq '.mps.last_modified = "2026-08-09T12:34:56Z"' "$fixture" > "$invalid_policy"
+[[ "$(extract_hansard_probe_metrics hansard_mps "$invalid_policy")" == '{"http_status":200,"record_count":2017,"content_freshness_date":"2026-08-09"}' ]]
 
 [[ "$(render_dynamic_url pricecatcher 2025-12-31)" == "https://storage.data.gov.my/pricecatcher/pricecatcher_2025-12.parquet" ]]
 [[ "$(render_dynamic_url pricecatcher 2026-01-01)" == "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-01.parquet" ]]

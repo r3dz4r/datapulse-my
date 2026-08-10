@@ -239,7 +239,7 @@ validate_adapter_config() {
   local adapter="$2"
 
   case "$adapter" in
-    direct|gtfs-static|gtfs-realtime)
+    direct|gtfs-static|gtfs-realtime|hansard-script)
       ;;
     weather)
       probe_policy_value "$dataset_id" '.freshness["content-date-field"]' >/dev/null \
@@ -1088,6 +1088,96 @@ check_direct_dataset() {
   emit "$dataset_id" "$source_url" "$probe_status" "$probe_message" "$details"
 }
 
+extract_hansard_probe_metrics() {
+  local dataset_id="$1"
+  local probe_output_file="$2"
+
+  jq -ce --arg id "$dataset_id" '
+    if .status != "ok" then error(.error // "Hansard probe did not return ok")
+    elif $id == "hansard_sittings" then
+      (.katalog | to_entries) as $chambers
+      | if ($chambers | length) != 3
+          or any($chambers[]; (.value.http_status // 0) != 200)
+        then error("Hansard katalog endpoints were incomplete or unreachable")
+        else {
+          http_status: 200,
+          record_count: ([$chambers[].value.sittings_total] | add),
+          content_freshness_date: ([$chambers[].value.latest] | max)
+        }
+        end
+    elif $id == "hansard_parliamentary_terms" then
+      {
+        http_status: 200,
+        record_count: .takwim.total_terms,
+        content_freshness_date: .takwim.current_term_end
+      }
+    elif $id == "hansard_mps" then
+      if (.mps.http_status // 0) != 200
+        then error("Hansard MP endpoint was unreachable")
+        else {
+          http_status: 200,
+          record_count: .mps.total_mps,
+          content_freshness_date: (
+            .mps.last_modified // .freshness.content_freshness_date
+            | if type == "string" then .[0:10] else . end
+          )
+        }
+        end
+    else error("Unsupported Hansard dataset id")
+    end
+    | if (.record_count | type) != "number"
+        or .record_count < 0
+        or (.content_freshness_date | type) != "string"
+        or (.content_freshness_date | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$") | not)
+      then error("Hansard probe returned invalid metrics")
+      else .
+      end
+  ' "$probe_output_file"
+}
+
+check_hansard_script_dataset() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local hansard_probe_script="/home/redza/hansard-probe/probe_hansard.sh"
+  local probe_output_file metrics details http_status record_count
+  local content_freshness_date
+
+  if ! respect_robots_txt "$dataset_id" "$source_url"; then
+    emit_robots_blocked "$dataset_id" "$source_url"
+    return 0
+  fi
+
+  probe_output_file="$(mktemp)"
+  if [[ ! -r "$hansard_probe_script" ]] \
+    || ! bash "$hansard_probe_script" > "$probe_output_file" 2>/dev/null \
+    || ! metrics="$(extract_hansard_probe_metrics "$dataset_id" "$probe_output_file" 2>/dev/null)"; then
+    rm -f "$probe_output_file"
+    details="$(jq -cn --arg request_url "$source_url" \
+      '{request_url: $request_url, access_method: "Hansard probe script"}')"
+    emit "$dataset_id" "$source_url" "unreachable" \
+      "Hansard probe script failed" "$details"
+    return 0
+  fi
+  rm -f "$probe_output_file"
+
+  http_status="$(jq '.http_status' <<< "$metrics")"
+  record_count="$(jq '.record_count' <<< "$metrics")"
+  content_freshness_date="$(jq -r '.content_freshness_date' <<< "$metrics")"
+  details="$(jq -cn \
+    --arg request_url "$source_url" \
+    --argjson http_status "$http_status" \
+    --argjson record_count "$record_count" \
+    --arg content_freshness_date "$content_freshness_date" \
+    '{
+      request_url: $request_url,
+      access_method: "Hansard probe script",
+      http_status: $http_status,
+      record_count: $record_count,
+      content_freshness_date: $content_freshness_date
+    }')"
+  emit "$dataset_id" "$source_url" "fresh" "HTTP ${http_status}" "$details"
+}
+
 check_npra_guidance_dataset() {
   local dataset_id="$1"
   local source_url="$2"
@@ -1201,6 +1291,9 @@ dispatch_policy_adapter() {
       ;;
     gtfs-static|gtfs-realtime)
       check_gtfs_dataset "$dataset_id" "$source_url"
+      ;;
+    hansard-script)
+      check_hansard_script_dataset "$dataset_id" "$source_url"
       ;;
   esac
 }
