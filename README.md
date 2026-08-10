@@ -5,7 +5,7 @@
 **Open in Google Colab:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb)
 
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
-> any MCP-compatible client with one config block. Your agent gets **372 official
+> any MCP-compatible client with one config block. Your agent gets **375 official
 > Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
 > BAS.MY)** — with declared licences and an honest nine-status trust taxonomy
 > instead of a blanket green checkmark.
@@ -143,7 +143,7 @@ the catalogue natively:
 - 3 resources: `datapulse://index`, `datapulse://licences`, `datapulse://{dataset_id}`
 
 The public endpoint is live and serves all 5 read-only tools over the
-372-dataset catalogue.
+375-dataset catalogue.
 
 Connect from Claude Desktop:
 
