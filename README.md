@@ -245,6 +245,14 @@ does not infer a time from midnight or UTC conversion.
   [Sample JSON](samples/exchangerates_daily_1200.json)
 - [BNM Daily Exchange Rates (1700)](data/exchangerates_daily_1700.md) —
   [Sample JSON](samples/exchangerates_daily_1700.json)
+- [Overnight Policy Rate (OPR)](data/bnm_opr.md)
+- [Base Rates / BLR / Effective LR](data/bnm_base_rate.md)
+- [Kuala Lumpur USD/MYR Reference Rate](data/bnm_kl_usd_myr.md)
+- [Interest Rates: Banking Institutions](data/bnm_interest_rate.md)
+- [Interest Volume: Banking Institutions](data/bnm_interest_volume.md)
+- [Interbank Swap](data/bnm_interbank_swap.md)
+- [Kijang Emas (Gold Reference Price)](data/bnm_kijang_emas.md)
+- [Malaysia Overnight Rate (MYOR)](data/bnm_myor.md)
 
 #### MET Malaysia
 
