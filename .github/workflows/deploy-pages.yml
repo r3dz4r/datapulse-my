@@ -60,7 +60,8 @@ jobs:
         run: |
           echo "::notice::Deploy skipped: head commit carries [skip deploy] trailer"
           echo "Skipped at $(date -Iseconds) due to commit message trailer"
-          exit 0
+          echo "Intentionally failing the job to bypass the remaining steps."
+          exit 1
       - name: Check out repository
         if: github.event_name != 'workflow_run'
         uses: actions/checkout@v4
