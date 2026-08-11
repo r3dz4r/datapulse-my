@@ -56,6 +56,10 @@ while IFS=$'\t' read -r dataset_id raw_status; do
       status="unknown-freshness"
       color="#6e7681"
       ;;
+    discontinued)
+      status="discontinued"
+      color="#484f58"
+      ;;
     reference)
       status="reference"
       color="#0ea5e9"
