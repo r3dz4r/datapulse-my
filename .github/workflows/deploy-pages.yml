@@ -45,9 +45,9 @@ env:
 
 concurrency:
   # Two named concurrency groups, dynamic-key on whether the run is a
-  # timer/trailer-triggered skip or a real deploy. Group names:
-  #   - pages-skip   ← runs that hit the trailer-gate (chore(health) timer pushes)
-  #   - pages-deploy ← runs that actually go through the deploy steps
+  # timer/trailer-triggered fast-deploy or a full deploy. Group names:
+  #   - pages-fast    ← timer chore(health) pushes (fast path: embed + assemble + deploy)
+  #   - pages-deploy  ← full release-build deploys (manual, dispatch, workflow_run)
   #
   # `cancel-in-progress: false` on both — concurrent pushes do NOT cancel each
   # other; they queue. Without this, every 15-min timer race would kill an
@@ -55,25 +55,24 @@ concurrency:
   group: >-
     ${{ (github.event_name == 'push'
           && endsWith(github.event.head_commit.message, '[skip deploy]'))
-        && 'pages-skip' || 'pages-deploy' }}
+        && 'pages-fast' || 'pages-deploy' }}
   cancel-in-progress: false
 
 jobs:
   deploy:
-    # Skip the job entirely when:
-    #   (1) the trigger is a `workflow_run` whose upstream conclusion was not `success` (don't re-deploy failed builds), OR
-    #   (2) the push HEAD's message ends with the `[skip deploy]` trailer (timer-generated
-    #       health-data-only commits).
-    # When this `if:` evaluates false, the run shows as `skipped` (neutral grey) instead of
-    # `failure` (red) — the canonical pattern for clean intentional bypass.
+    # Full deploy job. Both fast-path (timer chore(health)) and full-path
+    # (manual/dispatch/weekly) runs land here; the fast path skips the heavy
+    # release-build regeneration because the timer already generated and
+    # committed all artifacts. We only need to re-embed the fresh dashboard
+    # data into docs/index.html, then assemble + deploy (~2-3 min instead of
+    # 8-13 min).
     #
-    # Trailer-detection uses `endsWith` (not `contains`) because the timer's commit message
-    # is single-line and ends in the literal trailer, while commit messages that merely *cite*
-    # `[skip deploy]` in their body (e.g. documentation about the trailer convention) should
-    # NOT trigger the skip. Verified manually against 5 days of timer commits.
+    # Trigger gating:
+    #   - workflow_run: only run when the upstream health check succeeded
+    #   - push: always run (both timer fast-path and manual full-path)
+    # The per-step `if:` on the release-build step distinguishes the two paths.
     if: >-
       (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
-      && (github.event_name != 'push' || !endsWith(github.event.head_commit.message, '[skip deploy]'))
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -99,7 +98,16 @@ jobs:
       - name: Install release verification dependencies
         run: python -m pip install jsonschema --requirement mcp/requirements.txt
 
-      - name: Run release-build generation profile
+      # Fast path (timer chore(health) pushes): the timer already generated and
+      # committed health/latest.json + badges + RSS + changelog + README summary.
+      # We only need to re-embed the fresh dashboard data into docs/index.html,
+      # then assemble + deploy. This is ~2-3 min vs 8-13 min for full release-build.
+      - name: Embed fresh dashboard data (fast path)
+        if: github.event_name == 'push' && endsWith(github.event.head_commit.message, '[skip deploy]')
+        run: python3 scripts/embed_dashboard_data.py
+
+      - name: Run release-build generation profile (full path)
+        if: github.event_name != 'push' || !endsWith(github.event.head_commit.message, '[skip deploy]')
         run: bash scripts/generate.sh release-build
 
       - name: Assemble Pages artifact
