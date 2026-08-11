@@ -1517,7 +1517,8 @@ build_health_snapshot() {
            null
          elif ($entry.discontinued // false) then
            "discontinued"
-         elif ($staleness_days != null and $staleness_days > 730) then
+         elif (($probe.http_status | type) == "number"
+               and (($probe.http_status == 404) or ($probe.http_status == 410))) then
            "discontinued"
          else null
          end) as $discontinued_status
