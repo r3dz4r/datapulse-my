@@ -65,3 +65,6 @@ sudo systemctl start datapulse-health.service
 After `systemctl start datapulse-health.service`, the `health/latest.json` mtime will refresh within the next probe cycle (the service runs immediately on start, not waiting for the next 15-min tick).
 
 **Prevention (long-term, pending):** switch the `ExecStartPre` step from `git pull --rebase --autostash` to `git fetch origin main && git merge --ff-only origin/main || true` (or move VPS-managed commits to a separate branch). Eliminate the rebase step entirely so neither writer can collide. Track at the `system/datapulse-health.service` unit in `r3dz4r/dotfiles`.
+
+<!-- deploy-trigger: 2026-08-11T23:32:55Z -->
+
