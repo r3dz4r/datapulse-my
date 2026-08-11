@@ -51,6 +51,7 @@ done < <(jq -r '
       ["unreachable", ($counts.unreachable // 0), "#f85149"],
       ["unknown", ($counts.unknown // 0), "#6e7681"],
       ["unknown-freshness", ($counts.unknown_freshness // 0), "#6e7681"],
+      ["discontinued", ($counts.discontinued // 0), "#484f58"],
       ["reference", ($counts.reference // 0), "#0ea5e9"]
     ][]
   | select(.[1] | type == "number" and . >= 0 and floor == .)
