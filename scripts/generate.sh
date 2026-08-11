@@ -104,6 +104,7 @@ case "$profile" in
       "gen_mcp_reference.py"
       "gen_dashboard_filters.py"
       "embed_dashboard_data.py"
+      "check_url_drift.py"
       "gen_trust_snapshot.py"
     )
     outputs=(
@@ -120,6 +121,7 @@ case "$profile" in
       "docs/mcp-reference.md; mcp.json"
       "docs/.dashboard_filters.json"
       "docs/index.html (embedded manifest, health, filters, and sections)"
+      "URL drift and cadence audit"
       "docs/trust-snapshot-<date>.{md,json}"
     )
     ;;

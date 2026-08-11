@@ -44,6 +44,9 @@ jobs:
       - name: Verify repository contract
         run: python3 scripts/verify_repository_contract.py
 
+      - name: Check URL drift and cadence
+        run: python3 scripts/check_url_drift.py
+
       - name: Verify local release invariants
         run: bash scripts/verify_release_invariants.sh --local
 

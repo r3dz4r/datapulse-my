@@ -103,6 +103,22 @@ stops the unit and must be resolved in the operational clone.
 | Deployed `/home/redza/.local/share/datapulse-mcp/server.py` | Manual redeploy | `datapulse-mcp.service` | After any MCP code change |
 | `/etc/systemd/system/datapulse-health.{service,timer}` | Manual install | Root | When timer source changes |
 
+## URL drift invariant
+
+For every dataset, the dashboard URL, health probe URL, manifest URL, JSON
+envelope URL, and JSON-LD `sameAs` URL must be identical. This keeps the URL a
+consumer sees in the dashboard equal to the URL the probe actually fetched.
+
+Verify the invariant locally with:
+
+```sh
+python3 scripts/check_url_drift.py
+```
+
+The check exits 1 and names each affected dataset when drift or a missing
+surface is found. Cadence findings are reported for operators but do not mask
+URL failures; `release-build` runs this audit before producing the release.
+
 ## Verification
 
 The 7-gate check covers the post-deploy invariants. For pre-deploy
