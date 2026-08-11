@@ -39,3 +39,29 @@ systemctl status datapulse-health.timer datapulse-health.service
 tail -n 100 /var/log/datapulse-health.err
 journalctl --user -u datapulse-mcp.service -n 100 --no-pager
 ```
+
+## Rebase-collision: timer runs, service fails, dashboard stale (2026-08-12)
+
+**Diagnostic signature:** `health/latest.json` mtime is >1 h old at the same time that `datapulse-health.timer` is `active (waiting)` AND `datapulse-health.service` last exited with `Result: exit-code` (typically 128). A pull/rebase process is the failure point but the timer thread is still signalling success.
+
+**Cause:** the systemd `ExecStartPre` step runs `git pull --rebase --autostash`. If a previous tick was interrupted mid-rebase (typical trigger: a skip-deploy GitHub Actions push to `main` landing in the same window the VPS pull runs), a stale `.git/rebase-merge` directory is left behind. Every subsequent 15 min tick exits 128 before the probe ever runs, so the timeline looks like:
+
+1. `health/latest.json` mtime freezes while the timer keeps ticking.
+2. `git status` (from the repo directory) reports `Your branch is ahead of origin/main by N commit` plus `You are currently rebasing. (all conflicts fixed: run "git rebase --continue")` or `(no commits, rebase in progress)`.
+3. `tail -n 50 /var/log/datapulse-health.err` shows repeating `fatal: It seems that there is already a rebase-merge directory, and I wonder if you are in the middle of another rebase.` lines.
+
+**Fix (verified 2026-08-12, recovered commit 56af356):**
+
+```sh
+sudo systemctl stop datapulse-health.timer
+cd /home/redza/datapulse-my
+rm -fr .git/rebase-merge .git/rebase-apply
+git rebase --continue   # or `git rebase --abort` if it loops
+git push origin main
+sudo systemctl start datapulse-health.timer
+sudo systemctl start datapulse-health.service
+```
+
+After `systemctl start datapulse-health.service`, the `health/latest.json` mtime will refresh within the next probe cycle (the service runs immediately on start, not waiting for the next 15-min tick).
+
+**Prevention (long-term, pending):** switch the `ExecStartPre` step from `git pull --rebase --autostash` to `git fetch origin main && git merge --ff-only origin/main || true` (or move VPS-managed commits to a separate branch). Eliminate the rebase step entirely so neither writer can collide. Track at the `system/datapulse-health.service` unit in `r3dz4r/dotfiles`.
