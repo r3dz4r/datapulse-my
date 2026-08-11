@@ -141,7 +141,7 @@ fi
 curl_timeout="${DATAPULSE_CURL_TIMEOUT:-30}"
 gtfs_timeout="${DATAPULSE_GTFS_TIMEOUT:-45}"
 camofox_timeout="${CAMOFOX_TIMEOUT:-45}"
-camofox_base_url="${CAMOFOX_BASE_URL:-http://100.74.84.121:9377}"
+camofox_base_url="${CAMOFOX_BASE_URL:-http://localhost:9377}"
 
 probe_policy_value() {
   local dataset_id="$1"

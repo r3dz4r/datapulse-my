@@ -12,9 +12,11 @@ jobs:
   health-check:
     runs-on: ubuntu-latest
     env:
-      # The VPS-only Tailscale default is unreachable from hosted runners.
-      # Set this repository variable if Camofox gains a public endpoint.
-      CAMOFOX_BASE_URL: ${{ vars.CAMOFOX_BASE_URL || 'http://100.74.84.121:9377' }}
+      # Camofox lives on the VPS; the Actions runner cannot reach a private
+      # Tailscale IP. Leave CAMOFOX_BASE_URL unset unless you have published
+      # Camofox via a Tailscale Funnel / Cloudflare Tunnel that the runner
+      # can reach. No public IP is encoded in this workflow.
+      CAMOFOX_BASE_URL: ${{ vars.CAMOFOX_BASE_URL }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

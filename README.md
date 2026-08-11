@@ -82,8 +82,9 @@ content-date extraction.
 **To enable browser probing:**
 
 1. Run the Camofox Docker sidecar on a reachable address (default
-   `http://localhost:9377`; on this VPS, Tailscale-only at
-   `100.74.84.121:9377`).
+   `http://localhost:9377`). The probe script and the GitHub Actions
+   workflow pick this up from the `CAMOFOX_BASE_URL` environment
+   variable; nothing in this repo encodes a public IP.
 2. Set `CAMOFOX_BASE_URL` to that address.
 3. Restart the timer with `systemctl restart datapulse-health.timer`.
 
