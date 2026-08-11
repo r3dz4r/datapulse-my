@@ -51,12 +51,18 @@ jobs:
   deploy:
     # Skip the job entirely when:
     #   (1) the trigger is a `workflow_run` whose upstream conclusion was not `success` (don't re-deploy failed builds), OR
-    #   (2) the push HEAD carries a `[skip deploy]` trailer (timer-generated health-data-only commits).
+    #   (2) the push HEAD's message ends with the `[skip deploy]` trailer (timer-generated
+    #       health-data-only commits).
     # When this `if:` evaluates false, the run shows as `skipped` (neutral grey) instead of
     # `failure` (red) — the canonical pattern for clean intentional bypass.
+    #
+    # Trailer-detection uses `endsWith` (not `contains`) because the timer's commit message
+    # is single-line and ends in the literal trailer, while commit messages that merely *cite*
+    # `[skip deploy]` in their body (e.g. documentation about the trailer convention) should
+    # NOT trigger the skip. Verified manually against 5 days of timer commits.
     if: >-
       (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
-      && (github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip deploy]'))
+      && (github.event_name != 'push' || !endsWith(github.event.head_commit.message, '[skip deploy]'))
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
