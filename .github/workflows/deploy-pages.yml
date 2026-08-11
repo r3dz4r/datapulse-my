@@ -49,19 +49,19 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # Skip the job entirely when:
+    #   (1) the trigger is a `workflow_run` whose upstream conclusion was not `success` (don't re-deploy failed builds), OR
+    #   (2) the push HEAD carries a `[skip deploy]` trailer (timer-generated health-data-only commits).
+    # When this `if:` evaluates false, the run shows as `skipped` (neutral grey) instead of
+    # `failure` (red) — the canonical pattern for clean intentional bypass.
+    if: >-
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+      && (github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip deploy]'))
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Skip deploy for [skip deploy] commits
-        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[skip deploy]')
-        run: |
-          echo "::notice::Deploy skipped: head commit carries [skip deploy] trailer"
-          echo "Skipped at $(date -Iseconds) due to commit message trailer"
-          echo "Intentionally failing the job to bypass the remaining steps."
-          exit 1
       - name: Check out repository
         if: github.event_name != 'workflow_run'
         uses: actions/checkout@v4
