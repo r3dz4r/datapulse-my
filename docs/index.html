@@ -5672,13 +5672,6 @@
       <a class="trust-link" href="/health/latest.json">View detailed health →</a>
     </section>
 
-    <section class="summary" aria-label="Dataset health summary">
-      <div><strong id="summary-total">—</strong><span>Datasets tracked</span></div>
-      <div><strong id="summary-fresh">—</strong><span>Fresh</span></div>
-      <div><strong id="summary-aging">—</strong><span>Aging</span></div>
-      <div><strong id="summary-stale">—</strong><span>Stale</span></div>
-    </section>
-
     <section class="landing-section" aria-labelledby="faq-heading">
       <div class="landing-heading">
         <p class="section-kicker">FAQ</p>
@@ -6182,10 +6175,7 @@
           renderStatusFilters(health.datasets);
           document.querySelector("#last-updated").textContent =
             `Last checked: ${formatDate(health.checked_at)} MYT`;
-          document.querySelector("#summary-total").textContent = numberFormat.format(manifest.datasets.length);
-          document.querySelector("#summary-fresh").textContent = numberFormat.format(statusCount("fresh"));
-          document.querySelector("#summary-aging").textContent = numberFormat.format(statusCount("aging"));
-          document.querySelector("#summary-stale").textContent = numberFormat.format(statusCount("stale"));
+
           document.querySelectorAll("[data-status-count]").forEach(node => {
             node.textContent = numberFormat.format(statusCount(node.dataset.statusCount));
           });
