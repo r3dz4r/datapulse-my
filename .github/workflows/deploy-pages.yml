@@ -55,6 +55,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      - name: Skip deploy for [skip deploy] commits
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[skip deploy]')
+        run: |
+          echo "::notice::Deploy skipped: head commit carries [skip deploy] trailer"
+          echo "Skipped at $(date -Iseconds) due to commit message trailer"
+          exit 0
       - name: Check out repository
         if: github.event_name != 'workflow_run'
         uses: actions/checkout@v4
