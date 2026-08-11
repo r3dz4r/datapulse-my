@@ -38,7 +38,7 @@ need to handle.
 
 ## Dataset health
 
-Health is reported as `fresh`, `aging`, `stale`, `degraded`,
+Health is reported as `fresh`, `aging`, `stale`, `discontinued`, `degraded`,
 `browser-dependent`, `unreachable`, `unknown`, `unknown-freshness`, or
 `reference`. Unknown freshness means the URL and content shape work, but neither
 a Last-Modified header nor a parseable content date proves when the data was
@@ -46,6 +46,10 @@ updated. Reference means versioned lookup data is reachable and its record count
 is measured, while date-based freshness does not apply. The public
 [`_trust_summary`](health/latest.json) shows the distribution and explicitly
 counts missing freshness and row-count signals.
+
+**Discontinued** — The source has stopped publishing new data. The data is frozen
+at the last known content date. This is not a freshness failure — it's a publisher
+decision.
 
 Current distribution (`_trust_summary`): [97 fresh](badges/status-fresh.svg) · [105 aging](badges/status-aging.svg) · [151 stale](badges/status-stale.svg) · [3 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [13 reference](badges/status-reference.svg)
 
