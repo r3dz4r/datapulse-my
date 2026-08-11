@@ -95,6 +95,7 @@ DataPulse MY distinguishes between:
 - Browser-required access (Camofox needed to render the page)
 - Schema validity (record count within expected tolerance)
 - Freshness (Last-Modified header or parsed content date within declared cadence)
+- Discontinued data (`discontinued`) when the source has stopped publishing and the data is frozen at its last known content date; this is a publisher decision, not a freshness failure
 - Unknown freshness (`unknown-freshness`) when HTTP and content shape pass but neither freshness signal is available
 - Reference data (`reference`) when a versioned lookup table is reachable and countable but date-based freshness does not apply
 

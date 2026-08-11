@@ -16,6 +16,7 @@ STATUSES = (
     "fresh",
     "aging",
     "stale",
+    "discontinued",
     "degraded",
     "browser-dependent",
     "unreachable",

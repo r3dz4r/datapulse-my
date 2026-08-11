@@ -29,6 +29,7 @@ if ! summary="$(jq -er '
         {key: "fresh", label: "fresh"},
         {key: "aging", label: "aging"},
         {key: "stale", label: "stale"},
+        {key: "discontinued", label: "discontinued"},
         {key: "degraded", label: "degraded"},
         {key: "browser_dependent", label: "browser-dependent"},
         {key: "unreachable", label: "unreachable"},

@@ -1499,7 +1499,17 @@ build_health_snapshot() {
            end
          else "unknown-freshness"
          end) as $staleness_status
-      | (if ($probe.access_method // "" | ascii_downcase) == "camofox" then
+      | (if ($entry.data_type // "") == "reference" then
+           null
+         elif ($entry.discontinued // false) then
+           "discontinued"
+         elif ($staleness_days != null and $staleness_days > 730) then
+           "discontinued"
+         else null
+         end) as $discontinued_status
+      | (if $discontinued_status != null then
+           $discontinued_status
+         elif ($probe.access_method // "" | ascii_downcase) == "camofox" then
            "browser-dependent"
          elif (($probe.http_status | type) != "number" or $probe.http_status < 200 or $probe.http_status >= 300) then
            "unreachable"
@@ -1589,7 +1599,7 @@ build_health_snapshot() {
        | [ $manifest_rows[].id as $id | $merged[] | select(.dataset_id == $id) ]
      else $updated_datasets
      end) as $datasets
-  | (reduce ["fresh", "aging", "stale", "degraded", "browser-dependent", "unreachable", "unknown", "unknown-freshness", "reference"][] as $status
+  | (reduce ["fresh", "aging", "stale", "discontinued", "degraded", "browser-dependent", "unreachable", "unknown", "unknown-freshness", "reference"][] as $status
       ({}; .[status_key($status)] = ([$datasets[] | select(.status == $status)] | length))) as $by_status
   | {
       schema: $schema,
