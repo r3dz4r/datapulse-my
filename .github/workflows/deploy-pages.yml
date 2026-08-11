@@ -44,8 +44,19 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  # Two named concurrency groups, dynamic-key on whether the run is a
+  # timer/trailer-triggered skip or a real deploy. Group names:
+  #   - pages-skip   ← runs that hit the trailer-gate (chore(health) timer pushes)
+  #   - pages-deploy ← runs that actually go through the deploy steps
+  #
+  # `cancel-in-progress: false` on both — concurrent pushes do NOT cancel each
+  # other; they queue. Without this, every 15-min timer race would kill an
+  # 8–13 min in-flight manual deploy, and vice-versa.
+  group: >-
+    ${{ (github.event_name == 'push'
+          && endsWith(github.event.head_commit.message, '[skip deploy]'))
+        && 'pages-skip' || 'pages-deploy' }}
+  cancel-in-progress: false
 
 jobs:
   deploy:
