@@ -106,11 +106,17 @@ elif command -v git >/dev/null 2>&1; then
 fi
 
 if $due_mode; then
+  retry_cadence_minutes="${RETRY_CADENCE_MINUTES:-240}"
+  if [[ ! "$retry_cadence_minutes" =~ ^[1-9][0-9]*$ ]]; then
+    printf 'Invalid retry cadence minutes: %s\n' "$retry_cadence_minutes" >&2
+    exit 2
+  fi
   now_epoch="$(date -u +%s)"
   jq \
     --slurpfile previous "$previous_file" \
     --arg tier_filter "$tier_filter" \
     --arg cadence_override "$cadence_override" \
+    --argjson retry_cadence_minutes "$retry_cadence_minutes" \
     --argjson now_epoch "$now_epoch" \
     '
     def tier_and_cadence($frequency):
@@ -123,15 +129,23 @@ if $due_mode; then
         else error("Unsupported refresh_frequency: \($frequency)")
         end;
 
+    def failure_cadence($status; $message; $default_minutes):
+      if (($status == "browser-dependent" and (($message // "") | test("unavailable|failed|error"; "i")))
+          or $status == "unreachable" or $status == "degraded")
+      then $retry_cadence_minutes
+      else $default_minutes
+      end;
+
     ((($previous[0] // {}).datasets) // []) as $previous_rows
     | .datasets |= map(
         . as $entry
         | tier_and_cadence($entry.refresh_frequency) as $schedule
         | (first($previous_rows[] | select(.dataset_id == $entry.id)) // {}) as $old
         | (if $cadence_override == "" then $schedule[1] else ($cadence_override | tonumber) end) as $cadence_minutes
+        | failure_cadence($old.status; $old.message; $cadence_minutes) as $effective_cadence
         | (try ($old.last_checked | fromdateiso8601) catch null) as $last_checked_epoch
         | select(($tier_filter == "" or $schedule[0] == $tier_filter)
-            and ($last_checked_epoch == null or ($now_epoch - $last_checked_epoch) >= ($cadence_minutes * 60)))
+            and ($last_checked_epoch == null or ($now_epoch - $last_checked_epoch) >= ($effective_cadence * 60)))
       )
     ' "$manifest" > "$selected_manifest_file"
 else
