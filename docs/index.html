@@ -27,6 +27,7 @@
       --fresh: #4c1;
       --aging: #dfb317;
       --stale: #fe7d37;
+      --discontinued: #7d8994;
       --degraded: #e05d44;
       --unreachable: #e05d44;
       --browser: #007ec6;
@@ -583,6 +584,7 @@
     .legend-status.fresh { --legend-color: var(--fresh); }
     .legend-status.aging { --legend-color: var(--aging); }
     .legend-status.stale { --legend-color: var(--stale); }
+    .legend-status.discontinued { --legend-color: var(--discontinued); }
     .legend-status.degraded { --legend-color: var(--degraded); }
     .legend-status.browser-dependent { --legend-color: var(--browser); }
     .legend-status.unreachable { --legend-color: var(--unreachable); }
@@ -709,6 +711,7 @@
     .status-fresh { --status: var(--fresh); }
     .status-aging { --status: var(--aging); }
     .status-stale { --status: var(--stale); }
+    .status-discontinued { --status: var(--discontinued); }
     .status-degraded { --status: var(--degraded); }
     .status-unreachable { --status: var(--unreachable); }
     .status-browser-dependent { --status: var(--browser); }
@@ -5484,6 +5487,7 @@
         <div class="hero-stat" data-stat="fresh"><strong>—</strong><span>Fresh</span></div>
         <div class="hero-stat" data-stat="aging"><strong>—</strong><span>Aging</span></div>
         <div class="hero-stat" data-stat="stale"><strong>—</strong><span>Stale</span></div>
+        <div class="hero-stat" data-stat="discontinued"><strong>—</strong><span>Discontinued</span></div>
         <div class="hero-stat" data-stat="degraded"><strong>—</strong><span>Degraded</span></div>
         <div class="hero-stat" data-stat="browser_dependent"><strong>—</strong><span>Browser-dependent</span></div>
         <div class="hero-stat" data-stat="unreachable"><strong>—</strong><span>Unreachable</span></div>
@@ -5657,6 +5661,7 @@
         <div><dt><span class="legend-status fresh">fresh</span> <span class="legend-count" data-status-count="fresh">—</span></dt><dd>Freshness evidence is within cadence.</dd></div>
         <div><dt><span class="legend-status aging">aging</span> <span class="legend-count" data-status-count="aging">—</span></dt><dd>Evidence is 1.5–3× beyond cadence.</dd></div>
         <div><dt><span class="legend-status stale">stale</span> <span class="legend-count" data-status-count="stale">—</span></dt><dd>Evidence is more than 3× beyond cadence.</dd></div>
+        <div><dt><span class="legend-status discontinued">discontinued</span> <span class="legend-count" data-status-count="discontinued">—</span></dt><dd>Source stopped publishing; data is frozen at its last known content date.</dd></div>
         <div><dt><span class="legend-status degraded">degraded</span> <span class="legend-count" data-status-count="degraded">—</span></dt><dd>Too few records or content shape changed.</dd></div>
         <div><dt><span class="legend-status browser-dependent">browser-dependent</span> <span class="legend-count" data-status-count="browser_dependent">—</span></dt><dd>A browser is required to reach the page.</dd></div>
         <div><dt><span class="legend-status unreachable">unreachable</span> <span class="legend-count" data-status-count="unreachable">—</span></dt><dd>The latest HTTP or browser probe failed.</dd></div>
@@ -5993,7 +5998,7 @@
           counts.set(status, (counts.get(status) || 0) + 1);
         }
         const order = [
-          "fresh", "aging", "stale", "degraded", "browser-dependent",
+          "fresh", "aging", "stale", "discontinued", "degraded", "browser-dependent",
           "unreachable", "unknown", "unknown-freshness", "reference"
         ];
         return order
@@ -6124,7 +6129,7 @@
         const statuses = [
           ["all", healthRows.length],
           ...[
-            "fresh", "aging", "stale", "degraded", "browser-dependent",
+            "fresh", "aging", "stale", "discontinued", "degraded", "browser-dependent",
             "unreachable", "unknown", "unknown-freshness", "reference"
           ].filter(status => counts.has(status)).map(status => [status, counts.get(status)])
         ];

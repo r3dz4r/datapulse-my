@@ -95,7 +95,7 @@ def test_gen_badges_produces_svg_per_id(tmp_path: Path) -> None:
         assert dataset_id in relative
 
 
-def test_gen_status_legend_lists_all_nine_statuses(tmp_path: Path) -> None:
+def test_gen_status_legend_lists_all_configured_statuses(tmp_path: Path) -> None:
     source = _stage_fixture(tmp_path)
     health_path = source / "health/latest.json"
     health = json.loads(health_path.read_text(encoding="utf-8"))

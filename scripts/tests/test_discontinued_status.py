@@ -1,4 +1,4 @@
-"""Regression tests for cadence-based freshness classification in check.sh."""
+"""Regression tests for discontinued health-status classification."""
 
 from __future__ import annotations
 
@@ -9,22 +9,27 @@ from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
 from pathlib import Path
 
-import pytest
-
 
 ROOT = Path(__file__).resolve().parents[2]
 CHECK_SCRIPT = ROOT / "scripts/check.sh"
 
 
 def _classify(
-    tmp_path: Path, frequency: str, age_days: int, *, reference: bool = False
+    tmp_path: Path,
+    age_days: int,
+    *,
+    frequency: str = "annual",
+    discontinued: bool = False,
+    reference: bool = False,
 ) -> dict:
     manifest_row = {
-        "id": "fixture_cadence",
+        "id": "fixture_discontinued",
         "url": "https://example.invalid/fixture.json",
         "refresh_frequency": frequency,
         "namespace": "test",
     }
+    if discontinued:
+        manifest_row["discontinued"] = True
     if reference:
         manifest_row["data_type"] = "reference"
     (tmp_path / "datapulse.json").write_text(
@@ -77,38 +82,19 @@ printf '200'
     return json.loads(completed.stdout)["datasets"][0]
 
 
-@pytest.mark.parametrize(
-    ("frequency", "age_days", "expected_staleness", "expected_status"),
-    [
-        ("hourly", 1, "stale", "stale"),
-        ("30 seconds", 1, "stale", "stale"),
-        ("biennial to triennial (survey years)", 1200, "aging", "discontinued"),
-        ("as-required", 200, "aging", "aging"),
-        ("as-required", 300, "stale", "stale"),
-    ],
-)
-def test_cadence_and_null_fallback_are_conservative(
-    tmp_path: Path,
-    frequency: str,
-    age_days: int,
-    expected_staleness: str,
-    expected_status: str,
-) -> None:
-    row = _classify(tmp_path, frequency, age_days)
-
-    assert row["staleness_status"] == expected_staleness
-    assert row["status"] == expected_status
+def test_staleness_over_730_days_is_discontinued(tmp_path: Path) -> None:
+    assert _classify(tmp_path, 731)["status"] == "discontinued"
 
 
-def test_reference_status_precedes_staleness(tmp_path: Path) -> None:
-    row = _classify(tmp_path, "as-required", 300, reference=True)
+def test_manifest_discontinued_flag_wins_for_fresh_data(tmp_path: Path) -> None:
+    assert _classify(tmp_path, 1, discontinued=True)["status"] == "discontinued"
 
-    assert row["staleness_status"] == "stale"
+
+def test_null_cadence_over_730_days_is_discontinued(tmp_path: Path) -> None:
+    assert _classify(tmp_path, 800, frequency="as-required")["status"] == "discontinued"
+
+
+def test_reference_data_is_not_reclassified(tmp_path: Path) -> None:
+    row = _classify(tmp_path, 800, frequency="as-required", reference=True)
+
     assert row["status"] == "reference"
-
-
-def test_bnm_opr_has_monthly_manifest_cadence() -> None:
-    manifest = json.loads((ROOT / "datapulse.json").read_text(encoding="utf-8"))
-    bnm_opr = next(row for row in manifest["datasets"] if row["id"] == "bnm_opr")
-
-    assert bnm_opr["refresh_frequency"] == "monthly"
