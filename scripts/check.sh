@@ -707,6 +707,7 @@ check_browser_dataset() {
   local dataset_id="$1"
   local source_url="$2"
   local wait_seconds="$3"
+  local suppress_failure_emit="${4:-0}"
   local user_id="datapulse-check-${dataset_id}"
   local open_response tab_id snapshot_response snapshot details
   local stations timestamp snapshot_chars content_freshness_date date_regex
@@ -725,17 +726,17 @@ check_browser_dataset() {
       --data "$(jq -cn --arg userId "$user_id" --arg url "$source_url" \
         '{userId: $userId, url: $url}')" 2>/dev/null)"; then
       details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
-      emit "$dataset_id" "$source_url" "browser-dependent" \
+      [[ "$suppress_failure_emit" == 1 ]] || emit "$dataset_id" "$source_url" "browser-dependent" \
         "Camofox unavailable; browser check required" "$details"
-      return 0
+      return 1
     fi
   fi
 
   tab_id="$(jq -r '.tabId // empty' <<< "$open_response" 2>/dev/null)"
   if [[ -z "$tab_id" ]]; then
     details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
-    emit "$dataset_id" "$source_url" "browser-dependent" "Camofox returned no tab id" "$details"
-    return 0
+    [[ "$suppress_failure_emit" == 1 ]] || emit "$dataset_id" "$source_url" "browser-dependent" "Camofox returned no tab id" "$details"
+    return 1
   fi
 
   sleep 5
@@ -768,16 +769,16 @@ check_browser_dataset() {
   if [[ -z "$snapshot_response" ]] || ! jq -e 'has("snapshot") and (.snapshot | type == "string") and (.snapshot | length) > 100' <<< "$snapshot_response" >/dev/null 2>&1; then
     close_camofox_tab "$tab_id" "$user_id" || true
     details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
-    emit "$dataset_id" "$source_url" "browser-dependent" "Camofox snapshot failed" "$details"
-    return 0
+    [[ "$suppress_failure_emit" == 1 ]] || emit "$dataset_id" "$source_url" "browser-dependent" "Camofox snapshot failed" "$details"
+    return 1
   fi
 
   snapshot="$(jq -r '.snapshot // empty' <<< "$snapshot_response" 2>/dev/null)"
   if [[ -z "$snapshot" ]]; then
     close_camofox_tab "$tab_id" "$user_id" || true
     details="$(jq -cn --arg access_method 'Camofox' '{access_method: $access_method}')"
-    emit "$dataset_id" "$source_url" "browser-dependent" "Camofox returned no snapshot" "$details"
-    return 0
+    [[ "$suppress_failure_emit" == 1 ]] || emit "$dataset_id" "$source_url" "browser-dependent" "Camofox returned no snapshot" "$details"
+    return 1
   fi
 
   stations="$(grep -Ec 'row "[0-9]+ [A-Z]' <<< "$snapshot" || true)"
@@ -1301,7 +1302,11 @@ dispatch_policy_adapter() {
       ;;
     browser)
       wait_seconds="$(probe_policy_value "$dataset_id" '.browser["wait-seconds"]')" || return 1
-      check_browser_dataset "$dataset_id" "$source_url" "$wait_seconds"
+      if ! check_browser_dataset "$dataset_id" "$source_url" "$wait_seconds" 1; then
+        printf 'Browser check failed for %s; retrying once\n' "$dataset_id" >&2
+        sleep 2
+        check_browser_dataset "$dataset_id" "$source_url" "$wait_seconds" || true
+      fi
       ;;
     gtfs-static|gtfs-realtime)
       check_gtfs_dataset "$dataset_id" "$source_url"
