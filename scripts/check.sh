@@ -691,7 +691,7 @@ warm_camofox_browser() {
     --max-time "$camofox_timeout" \
     --request POST "${camofox_base_url}/tabs/open" \
     --header 'Content-Type: application/json' \
-    --data "$(jq -cn --arg userId "$user_id" --arg url 'about:blank' \
+    --data "$(jq -cn --arg userId "$user_id" --arg url 'https://example.com' \
       '{userId: $userId, url: $url}')" 2>/dev/null)"; then
     return 0
   fi
