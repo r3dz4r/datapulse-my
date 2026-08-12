@@ -10,6 +10,7 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  DOTFILES_DIR: /home/runner/dotfiles
 
 jobs:
   deterministic-safety-net:
@@ -17,6 +18,19 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Check out r3dz4r/dotfiles (contract checks reference dotfiles/system/* and dotfiles/scripts/*)
+        uses: actions/checkout@v4
+        with:
+          repository: r3dz4r/dotfiles
+          path: /home/runner/dotfiles
+          token: ${{ secrets.CROSS_REPO_TOKEN }}
+        continue-on-error: true
+        # Operator must create a fine-grained PAT on github.com/r3dz4r/dotfiles
+        # with read-only access to its system/, scripts/, notes/ trees,
+        # then add it to r3dz4r/datapulse-my repository secrets as
+        # CROSS_REPO_TOKEN. Until that's wired, the 3 dotfiles-coupling
+        # contract tests skip with a clear reason.
 
       - name: Set up Python
         uses: actions/setup-python@v5
