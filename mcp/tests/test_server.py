@@ -29,6 +29,13 @@ TOOL_PARAMETERS = {
     "find_by_licence": {"licence"},
 }
 
+EXPECTED_TOOL_ANNOTATIONS = {
+    "readOnlyHint": True,
+    "destructiveHint": False,
+    "idempotentHint": True,
+    "openWorldHint": True,
+}
+
 
 @pytest.fixture(scope="module")
 def anyio_backend() -> str:
@@ -71,6 +78,10 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
         schema = tools[tool_name].parameters
         assert "required" in schema
         assert set(schema["properties"]) == parameter_names
+        assert (
+            tools[tool_name].annotations.model_dump(exclude_none=True)
+            == EXPECTED_TOOL_ANNOTATIONS
+        )
         for parameter in schema["properties"].values():
             assert parameter["description"]
             assert "e.g." in parameter["description"]
