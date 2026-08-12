@@ -19,6 +19,8 @@ health/latest.json (merge with prior snapshot in --due mode)
        +--> health/history.jsonl --> health/history_daily.json
        +--> badges/ + feed.xml + README summary + catalog-snapshot.json
        +--> deltas/<cycle>.json
+       +--> record-evidence/<vertical-id>/{<run-date>,latest}.json
+       +--> datapulse.json + health/latest.json --> catalog-graph.json
        +--> data/json/<id>.json
        +--> data/jsonld/catalog.json + dashboard JSON-LD
        |
@@ -56,14 +58,16 @@ surface for the dashboard, MCP server, badges, and feed.
 Two profiles in `scripts/generate.sh` orchestrate the generators in
 reviewed order, with explicit path ownership:
 
-- `health-cycle` — 7 steps (`gen_data_reports.sh` →
+- `health-cycle` — 9 steps (`gen_data_reports.sh` →
   `gen_badges.sh` → `gen_readme_summary.sh` → `gen_rss.sh` →
   `gen_catalog_snapshot.py` → `gen_health_history.py --compact` →
-  `gen_dataset_deltas.py`). Owns `data/<id>.md`, `badges/`, README trust
+  `gen_dataset_deltas.py` → `gen_record_evidence.py` →
+  `gen_catalog_graph.py`). Owns `data/<id>.md`, `badges/`, README trust
   summary, `feed.xml`, `catalog-snapshot.json`, the deprecated
-  `changelog.json` alias, history, and `deltas/`. Invoked by the timer and the
+  `changelog.json` alias, history, `deltas/`, opt-in `record-evidence/`, and
+  `catalog-graph.json`. Invoked by the timer and the
   weekly fallback after a successful probe.
-- `release-build` — includes the `health-cycle` generators plus 6
+- `release-build` — includes the `health-cycle` generators plus the
   release-only steps (`gen_llms_summary.py` →
   `gen_json_envelope.py --force` → `gen_jsonld_catalog.py` →
   `gen_mcp_reference.py` → `gen_dashboard_filters.py` →
@@ -72,6 +76,42 @@ reviewed order, with explicit path ownership:
   `docs/mcp-reference.md`, `mcp.json`, `docs/.dashboard_filters.json`, and
   `docs/trust-snapshot-<date>.{md,json}`.
   Invoked by the Pages deploy.
+
+## Vertical pilots
+
+Verticals opt into deeper, row-level processing with `vertical: true`, a
+`record_evidence_schema`, and a raw `record_source_url` in `datapulse.json`.
+All three fields are optional for backwards compatibility. The generator is a
+normal profile step but exits successfully without output when no vertical is
+declared.
+
+The sole current pilot is `pharmaceutical_products`, using
+`record-evidence/v1`. Its full daily envelope is
+`record-evidence/pharmaceutical_products/<run-date>.json`; `latest.json`
+retains aggregate counts and a deterministic excerpt for discovery. The CSV
+ingestion and base classification code are generic, while the reviewed NPRA
+profile supplies the registration-number rule, products freshness window, and
+OSA linkage pointers.
+
+The ten statuses and NPRA products cadence are small local constants borrowed
+from the pharma engine. DataPulse does not import or clone that module, because
+the public pipeline must not depend on a sibling repository or its venv. The
+pilot does not yet resolve OSA pointers against the licence datasets, ingest
+cancelled registrations as alternatives, or emit record/graph diffs.
+
+## Catalogue relationships
+
+`catalog-graph.json` links catalogue entries using only literal declared
+metadata and records the matched physical fields plus the manifest schema URL
+on every edge. `same_steward` requires both manifest `source` (publisher
+sub-unit) and `steward` (agency) to match, while `same_agency` requires only
+`steward` and is emitted when `source` differs or is absent; the other edge
+kinds are exact `geography`, `series_code`, and `schema_id` matches plus the
+directional `successor_to` relation declared by `supersedes` (the target is the
+predecessor). Free-text `geo_coverage` is deliberately not interpreted as
+`geography`. The artifact publishes connected/isolated coverage and reports
+precision as unmeasured until a reviewed truth set exists; fuzzy matching and
+record-level entity resolution are outside this graph.
 
 ## MCP source-to-deployment sync
 

@@ -13,7 +13,6 @@ from scripts.tests.generator_harness import (
     run_generator_twice,
 )
 
-
 ROOT = Path(__file__).resolve().parents[2]
 MINIMAL_FIXTURE = ROOT / "scripts/tests/fixtures/generator/minimal"
 HEALTH_FIXTURE = (
@@ -32,6 +31,8 @@ GENERATORS = (
     "gen_catalog_snapshot.py",
     "gen_health_history.py",
     "gen_dataset_deltas.py",
+    "gen_record_evidence.py",
+    "gen_catalog_graph.py",
     "gen_trust_snapshot.py",
     "gen_json_envelope.py",
     "gen_jsonld_catalog.py",
@@ -49,6 +50,8 @@ HEALTH_STEPS = (
     "gen_catalog_snapshot.py",
     "gen_health_history.py",
     "gen_dataset_deltas.py",
+    "gen_record_evidence.py",
+    "gen_catalog_graph.py",
 )
 RELEASE_STEPS = (
     "gen_dashboard_sections.py",
@@ -60,6 +63,8 @@ RELEASE_STEPS = (
     "gen_catalog_snapshot.py",
     "gen_health_history.py",
     "gen_dataset_deltas.py",
+    "gen_record_evidence.py",
+    "gen_catalog_graph.py",
     "gen_json_envelope.py",
     "gen_jsonld_catalog.py",
     "gen_mcp_reference.py",
@@ -78,6 +83,7 @@ HEALTH_OUTPUTS = (
     "health/history.jsonl",
     "health/history_daily.json",
     "deltas/2026-08-08T00:00.json",
+    "catalog-graph.json",
 )
 RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "llms.txt",
@@ -181,13 +187,9 @@ def _stage_source(tmp_path: Path) -> Path:
         cwd=source,
         check=True,
     )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], cwd=source, check=True
-    )
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=source, check=True)
     subprocess.run(["git", "add", "."], cwd=source, check=True)
-    subprocess.run(
-        ["git", "commit", "-q", "-m", "fixture"], cwd=source, check=True
-    )
+    subprocess.run(["git", "commit", "-q", "-m", "fixture"], cwd=source, check=True)
     return source
 
 
@@ -196,9 +198,7 @@ def _runner(tmp_path: Path, *arguments: str) -> Path:
     runner = tmp_path / f"runner-{name}.sh"
     command = " ".join(arguments)
     runner.write_text(
-        "#!/usr/bin/env bash\n"
-        "set -euo pipefail\n"
-        f"bash scripts/generate.sh {command}\n",
+        f"#!/usr/bin/env bash\nset -euo pipefail\nbash scripts/generate.sh {command}\n",
         encoding="utf-8",
     )
     runner.chmod(0o755)
@@ -223,7 +223,7 @@ def _run_profile(
     )
 
 
-def test_health_cycle_lists_seven_steps(tmp_path: Path) -> None:
+def test_health_cycle_lists_nine_steps(tmp_path: Path) -> None:
     result = _run_profile(tmp_path, "health-cycle", list_mode=True)
 
     assert result.returncode == 0, result.stderr
@@ -231,12 +231,23 @@ def test_health_cycle_lists_seven_steps(tmp_path: Path) -> None:
         assert step in result.stdout
 
 
-def test_release_build_lists_all_sixteen_steps(tmp_path: Path) -> None:
+def test_release_build_lists_all_eighteen_steps(tmp_path: Path) -> None:
     result = _run_profile(tmp_path, "release-build", list_mode=True)
 
     assert result.returncode == 0, result.stderr
     for step in RELEASE_STEPS:
         assert step in result.stdout
+
+
+def test_record_evidence_runs_immediately_after_deltas(tmp_path: Path) -> None:
+    result = _run_profile(tmp_path, "health-cycle", list_mode=True)
+
+    assert result.returncode == 0, result.stderr
+    assert (
+        result.stdout.index("gen_dataset_deltas.py")
+        < result.stdout.index("gen_record_evidence.py")
+        < result.stdout.index("gen_catalog_graph.py")
+    )
 
 
 def test_health_cycle_runs_in_clean_fixture(tmp_path: Path) -> None:

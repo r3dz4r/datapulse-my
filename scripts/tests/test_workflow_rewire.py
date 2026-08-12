@@ -8,10 +8,10 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[2]
 SYSTEMD_UNIT = ROOT / "deploy/systemd/datapulse-health.service"
 CANONICAL_SYSTEMD_UNIT = Path("/home/redza/dotfiles/system/datapulse-health.service")
+CANONICAL_PIPELINE = Path("/home/redza/dotfiles/scripts/datapulse-pipeline.sh")
 HEALTH_WORKFLOW = ROOT / ".github/workflows/health-check.yml"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-pages.yml"
 
@@ -48,13 +48,16 @@ def test_systemd_unit_preserves_flock_guard() -> None:
 def test_systemd_unit_emits_lock_skip_telemetry() -> None:
     unit = _read(CANONICAL_SYSTEMD_UNIT)
     assert "--status skipped" in unit
-    assert 'lock_busy' in unit
+    assert "lock_busy" in unit
 
 
 def test_systemd_unit_preserves_scoped_commit() -> None:
     exec_start = _exec_start(_read(SYSTEMD_UNIT))
 
-    expected = "health/ deltas/ badges/ feed.xml README.md catalog-snapshot.json changelog.json"
+    expected = (
+        "health/ deltas/ record-evidence/ badges/ feed.xml README.md "
+        "catalog-snapshot.json changelog.json"
+    )
     assert f"git add {expected}" in exec_start
     git_add = re.search(r"git add ([^;\n]+)", exec_start)
     assert git_add is not None
@@ -84,9 +87,9 @@ def test_deploy_pages_workflow_uses_release_build() -> None:
 
 def test_deploy_pages_workflow_paths_trigger_includes_generate_sh() -> None:
     workflow = _read(DEPLOY_WORKFLOW)
-    paths_block = workflow.split("    paths:\n", 1)[1].split(
-        "  workflow_dispatch:", 1
-    )[0]
+    paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[
+        0
+    ]
 
     assert '"scripts/generate.sh"' in paths_block
     assert not re.search(r'"scripts/gen_[^\"]+\.(?:sh|py)"', paths_block)
@@ -137,3 +140,11 @@ def test_generate_sh_profiles_match_workflow_invocations() -> None:
         )
         assert f"Profile: {profile}" in listed.stdout
         assert f"bash scripts/generate.sh {profile}" in _read(workflow_path)
+
+
+def test_canonical_pipeline_stages_and_validates_record_evidence() -> None:
+    pipeline = _read(CANONICAL_PIPELINE)
+
+    assert "record-evidence" in pipeline.split("ARTIFACT_PATHS=", 1)[1].split(")", 1)[0]
+    assert "python3 scripts/gen_record_evidence.py" in pipeline
+    assert "validate_record_evidence(envelope, full=False)" in pipeline

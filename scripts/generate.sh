@@ -2,8 +2,8 @@
 #
 # DataPulse MY generation profiles.
 #
-# health-cycle: 7 steps for artifacts derived from the live health snapshot.
-# release-build: source stamp plus 15 steps for the complete public-site artifact set.
+# health-cycle: 9 steps for artifacts derived from the live health snapshot.
+# release-build: source stamp plus 18 steps for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
 # It never commits, pushes, or deploys; release-build embeds dashboard data locally.
@@ -81,6 +81,8 @@ case "$profile" in
       "gen_catalog_snapshot.py"
       "gen_health_history.py"
       "gen_dataset_deltas.py"
+      "gen_record_evidence.py"
+      "gen_catalog_graph.py"
     )
     outputs=(
       "data/<id>.md"
@@ -90,6 +92,8 @@ case "$profile" in
       "catalog-snapshot.json; changelog.json (deprecated alias)"
       "health/history.jsonl; health/history_daily.json"
       "deltas/<cycle>.json"
+      "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
+      "catalog-graph.json"
     )
     ;;
   release-build)
@@ -105,6 +109,8 @@ case "$profile" in
       "gen_catalog_snapshot.py"
       "gen_health_history.py"
       "gen_dataset_deltas.py"
+      "gen_record_evidence.py"
+      "gen_catalog_graph.py"
       "gen_json_envelope.py"
       "gen_jsonld_catalog.py"
       "gen_mcp_reference.py"
@@ -124,6 +130,8 @@ case "$profile" in
       "catalog-snapshot.json; changelog.json (deprecated alias)"
       "health/history.jsonl; health/history_daily.json"
       "deltas/<cycle>.json"
+      "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
+      "catalog-graph.json"
       "data/json/<id>.json"
       "data/jsonld/<id>.json; data/jsonld/catalog.json"
       "docs/mcp-reference.md; mcp.json"

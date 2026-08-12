@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://data-pulse.my/record-evidence.schema.json",
+  "title": "DataPulse MY record-evidence/v1 envelope",
+  "type": "object",
+  "required": [
+    "schema",
+    "dataset_id",
+    "observed_at",
+    "run_date",
+    "source_url",
+    "source_sha256",
+    "record_count",
+    "schema_valid_count",
+    "freshness",
+    "status_distribution",
+    "records"
+  ],
+  "properties": {
+    "schema": {"const": "record-evidence/v1"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "run_date": {"type": "string", "format": "date"},
+    "source_url": {"type": "string", "format": "uri"},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "record_count": {"type": "integer", "minimum": 0},
+    "schema_valid_count": {"type": "integer", "minimum": 0},
+    "freshness": {"$ref": "#/$defs/freshness"},
+    "status_distribution": {"$ref": "#/$defs/statusDistribution"},
+    "records": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/record"}
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "fresh",
+        "aging",
+        "stale",
+        "discontinued",
+        "degraded",
+        "browser-dependent",
+        "unreachable",
+        "unknown",
+        "unknown-freshness",
+        "reference"
+      ]
+    },
+    "freshness": {
+      "type": "object",
+      "required": ["source_last_modified", "age_days", "status"],
+      "properties": {
+        "source_last_modified": {
+          "oneOf": [
+            {"type": "string", "format": "date-time"},
+            {"type": "null"}
+          ]
+        },
+        "age_days": {
+          "oneOf": [
+            {"type": "integer", "minimum": 0},
+            {"type": "null"}
+          ]
+        },
+        "status": {"$ref": "#/$defs/status"}
+      },
+      "additionalProperties": false
+    },
+    "statusDistribution": {
+      "type": "object",
+      "required": [
+        "fresh",
+        "aging",
+        "stale",
+        "discontinued",
+        "degraded",
+        "browser-dependent",
+        "unreachable",
+        "unknown",
+        "unknown-freshness",
+        "reference"
+      ],
+      "properties": {
+        "fresh": {"type": "integer", "minimum": 0},
+        "aging": {"type": "integer", "minimum": 0},
+        "stale": {"type": "integer", "minimum": 0},
+        "discontinued": {"type": "integer", "minimum": 0},
+        "degraded": {"type": "integer", "minimum": 0},
+        "browser-dependent": {"type": "integer", "minimum": 0},
+        "unreachable": {"type": "integer", "minimum": 0},
+        "unknown": {"type": "integer", "minimum": 0},
+        "unknown-freshness": {"type": "integer", "minimum": 0},
+        "reference": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "record": {
+      "type": "object",
+      "required": ["record_id", "status", "explanation", "evidence_digest"],
+      "properties": {
+        "record_id": {"type": "string", "minLength": 1},
+        "status": {"$ref": "#/$defs/status"},
+        "explanation": {
+          "type": "object",
+          "required": ["freshness", "structural", "linkage", "alternatives"],
+          "properties": {
+            "freshness": {
+              "type": "object",
+              "required": ["source_last_modified", "age_days"],
+              "properties": {
+                "source_last_modified": {
+                  "oneOf": [
+                    {"type": "string", "format": "date-time"},
+                    {"type": "null"}
+                  ]
+                },
+                "age_days": {
+                  "oneOf": [
+                    {"type": "integer", "minimum": 0},
+                    {"type": "null"}
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            "structural": {
+              "type": "object",
+              "required": ["schema_ok", "missing_required_fields"],
+              "properties": {
+                "schema_ok": {"type": "boolean"},
+                "missing_required_fields": {
+                  "type": "array",
+                  "items": {"type": "string", "minLength": 1},
+                  "uniqueItems": true
+                }
+              },
+              "additionalProperties": false
+            },
+            "linkage": {
+              "type": "object",
+              "required": ["linked_to", "unmatched"],
+              "properties": {
+                "linked_to": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["kind", "to"],
+                    "properties": {
+                      "kind": {"type": "string", "minLength": 1},
+                      "to": {"type": "string", "minLength": 1}
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "unmatched": {
+                  "type": "array",
+                  "items": {"type": "string", "minLength": 1},
+                  "uniqueItems": true
+                }
+              },
+              "additionalProperties": false
+            },
+            "alternatives": {
+              "type": "array",
+              "items": {"type": "string", "minLength": 1},
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "evidence_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -64,6 +64,41 @@
           "minLength": 1,
           "pattern": "^[a-z0-9][a-z0-9_-]*$"
         },
+        "series_code": {
+          "description": "Stable code explicitly grouping datasets in the same canonical series.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "geography": {
+          "description": "Exact catalogue geography key used for deterministic relationship matching.",
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_id": {
+          "description": "Stable identifier for an explicitly shared dataset schema.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_.-]*$"
+        },
+        "supersedes": {
+          "description": "Dataset ID or IDs explicitly replaced by this dataset.",
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          ]
+        },
         "data_type": {
           "description": "Dataset semantic type when date-based freshness does not apply.",
           "type": "string",
@@ -89,6 +124,20 @@
           "minLength": 1
         },
         "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "vertical": {
+          "description": "Opt in to the reviewed record-level evidence pipeline. Optional while vertical support is piloted.",
+          "type": "boolean"
+        },
+        "record_evidence_schema": {
+          "description": "Record-level evidence envelope version emitted for this vertical.",
+          "type": "string",
+          "const": "record-evidence/v1"
+        },
+        "record_source_url": {
+          "description": "Raw tabular CSV URL ingested by the record evidence pipeline.",
           "type": "string",
           "format": "uri"
         },
