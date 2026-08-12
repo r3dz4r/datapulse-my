@@ -36,12 +36,12 @@ ExecStart=/usr/bin/flock -n /tmp/datapulse-health.lock /bin/bash -c 'set -Eeuo p
   jq -e . "$$health_tmp" >/dev/null; \
   mv "$$health_tmp" health/latest.json; \
   bash scripts/generate.sh health-cycle; \
-  if [[ -z "$$(git status --porcelain -- health/ deltas/ badges/ feed.xml README.md catalog-snapshot.json changelog.json)" ]]; then \
+  if [[ -z "$$(git status --porcelain -- health/ deltas/ record-evidence/ badges/ feed.xml README.md catalog-snapshot.json changelog.json)" ]]; then \
     echo "datapulse-health: probe finished at $$(date -Iseconds); $$probed datasets probed; no artifact changes"; \
     exit 0; \
   fi; \
   echo "datapulse-health: probe finished at $$(date -Iseconds); $$probed datasets probed; artifacts changed, committing"; \
-  git add health/ deltas/ badges/ feed.xml README.md catalog-snapshot.json changelog.json; \
+  git add health/ deltas/ record-evidence/ badges/ feed.xml README.md catalog-snapshot.json changelog.json; \
   git -c user.name="Redza Halim" -c user.email="r3dz4r@gmail.com" commit -m "chore(health): update due dataset health"; \
   git pull --rebase --autostash; \
   git push origin HEAD:main; \

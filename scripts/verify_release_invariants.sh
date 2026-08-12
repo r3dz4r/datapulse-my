@@ -45,8 +45,16 @@ fetch manifest.json datapulse.json
 fetch health.json health/latest.json
 fetch catalog.json data/jsonld/catalog.json
 fetch catalog-snapshot.json catalog-snapshot.json
+fetch catalog-graph.json catalog-graph.json
 fetch mcp.json mcp.json
 fetch llms.txt llms.txt
+
+vertical_ids=()
+while IFS= read -r dataset_id; do
+  [[ -n "$dataset_id" ]] || continue
+  vertical_ids+=("$dataset_id")
+  fetch "record-evidence-$dataset_id.json" "record-evidence/$dataset_id/latest.json"
+done < <(jq -r '.datasets[] | select(.vertical == true) | .id' "$work_dir/manifest.json")
 
 dataset_count="$(
   jq -er '.datasets | select(type == "array" and length > 0) | length' \
@@ -62,12 +70,15 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from scripts.gen_record_evidence import validate_record_evidence
+
 work = Path(sys.argv[1])
 base = sys.argv[2]
 manifest = json.loads((work / "manifest.json").read_text())
 health = json.loads((work / "health.json").read_text())
 catalog = json.loads((work / "catalog.json").read_text())
 catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
+catalog_graph = json.loads((work / "catalog-graph.json").read_text())
 
 manifest_ids = [row["id"] for row in manifest["datasets"]]
 health_ids = [row["dataset_id"] for row in health["datasets"]]
@@ -122,6 +133,88 @@ assert catalog_snapshot["manifest"]["datasets_total"] == expected_count
 assert catalog_snapshot["health"]["datasets_total"] == expected_count
 assert catalog_snapshot["health"]["by_status"] == summary_statuses
 assert len(catalog_snapshot["datasets"]) == expected_count
+
+edge_kinds = (
+    "same_steward",
+    "same_agency",
+    "same_geography",
+    "canonical_series",
+    "successor_to",
+    "shared_schema",
+)
+weights = {
+    "same_steward": 2,
+    "same_agency": 1,
+    "same_geography": 1,
+    "canonical_series": 2,
+    "successor_to": 3,
+    "shared_schema": 1,
+}
+assert set(catalog_graph) >= {
+    "generated_at", "node_count", "edge_count", "edge_kinds", "coverage",
+    "precision", "nodes", "edges",
+}
+nodes = catalog_graph["nodes"]
+edges = catalog_graph["edges"]
+assert isinstance(nodes, list) and isinstance(edges, list)
+assert catalog_graph["generated_at"] == health["checked_at"]
+assert catalog_graph["node_count"] == len(manifest_ids) == len(nodes)
+assert [node["dataset_id"] for node in nodes] == sorted(manifest_ids)
+assert all(
+    isinstance(node, dict)
+    and set(node) == {"dataset_id", "title", "steward", "agency"}
+    and isinstance(node["dataset_id"], str)
+    and isinstance(node["title"], str)
+    for node in nodes
+)
+assert set(catalog_graph["edge_kinds"]) == set(edge_kinds)
+assert all(
+    isinstance(count, int) and not isinstance(count, bool) and count >= 0
+    for count in catalog_graph["edge_kinds"].values()
+)
+assert catalog_graph["edge_count"] == len(edges) == sum(catalog_graph["edge_kinds"].values())
+edge_keys = [(edge["kind"], edge["from"], edge["to"]) for edge in edges]
+assert edge_keys == sorted(edge_keys)
+assert len(edge_keys) == len(set(edge_keys))
+assert all(
+    isinstance(edge, dict)
+    and set(edge) == {"kind", "from", "to", "weight", "provenance"}
+    and edge["kind"] in edge_kinds
+    and edge["from"] in set(manifest_ids)
+    and edge["to"] in set(manifest_ids)
+    and edge["from"] != edge["to"]
+    and edge["weight"] == weights[edge["kind"]]
+    and isinstance(edge["provenance"], dict)
+    and set(edge["provenance"]) == {"matched_fields", "manifest_version"}
+    and isinstance(edge["provenance"]["matched_fields"], list)
+    and edge["provenance"]["matched_fields"]
+    and all(isinstance(field, str) and field for field in edge["provenance"]["matched_fields"])
+    and edge["provenance"]["manifest_version"] == manifest["$schema"]
+    for edge in edges
+)
+connected = {endpoint for edge in edges for endpoint in (edge["from"], edge["to"])}
+assert catalog_graph["coverage"] == {
+    "datasets_with_at_least_one_edge": len(connected),
+    "isolated_datasets": sorted(set(manifest_ids) - connected),
+}
+assert catalog_graph["precision"]["measured"] is False
+assert catalog_graph["precision"]["fuzzy_edges"] == 0
+
+verticals = [row for row in manifest["datasets"] if row.get("vertical") is True]
+for dataset in verticals:
+    dataset_id = dataset["id"]
+    path = work / f"record-evidence-{dataset_id}.json"
+    record_evidence = json.loads(path.read_text(encoding="utf-8"))
+    assert dataset.get("record_evidence_schema") == "record-evidence/v1"
+    assert record_evidence["dataset_id"] == dataset_id
+    assert record_evidence["source_url"] == dataset.get("record_source_url", dataset["url"])
+    errors = validate_record_evidence(record_evidence, full=False)
+    assert not errors, f"{path}: {'; '.join(errors)}"
+    excerpt_count = len(record_evidence["records"])
+    if record_evidence["record_count"]:
+        assert 1 <= excerpt_count <= 100
+    else:
+        assert excerpt_count == 0
 
 with (work / "artifact-urls.txt").open("w", encoding="utf-8") as output:
     for dataset_id in manifest_ids:

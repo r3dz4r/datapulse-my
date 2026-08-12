@@ -54,6 +54,22 @@ and current-cycle history segment. `catalog-snapshot.json` is the canonical
 current-state summary. `changelog.json` is a byte-identical deprecated alias
 for one release and is not a delta ledger.
 
+## Per-record evidence
+
+Dataset health answers whether an upstream file is reachable, timely, and
+structurally plausible as one opaque unit. `record-evidence/v1` is a fourth,
+deeper layer for explicitly opted-in verticals: it hashes the observed raw CSV,
+validates each row, classifies each row with the same ten-status vocabulary,
+and attaches a stable digest to that row's freshness, structural, linkage, and
+alternative evidence.
+
+The envelope does not replace `health/latest.json`, and a fresh dataset-level
+probe does not imply every row is valid. Conversely, one degraded row does not
+rewrite the dataset-health result. Aggregate record counts and the full daily
+record list live under `record-evidence/<dataset-id>/`; `latest.json` contains a
+bounded representative excerpt. See [`record-evidence-v1.md`](record-evidence-v1.md)
+for the binding contract and pilot caveats.
+
 ## Production classification (T33, 2026-08-09)
 
 The 15-minute timer invokes `bash scripts/check.sh --due`. The full-probe
