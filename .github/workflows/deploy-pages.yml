@@ -16,7 +16,9 @@ on:
       - "health.schema.json"
       - "agent.json"
       - "mcp.json"
+      - "catalog-snapshot.json"
       - "changelog.json"
+      - "deltas/**"
       - "health/latest.json"
       - "badges/**"
       - "samples/**"
@@ -99,7 +101,7 @@ jobs:
         run: python -m pip install jsonschema --requirement mcp/requirements.txt
 
       # Fast path (timer chore(health) pushes): the timer already generated and
-      # committed health/latest.json + badges + RSS + changelog + README summary.
+      # committed health/latest.json + history/deltas + badges + RSS + catalog snapshot + README summary.
       # We only need to re-embed the fresh dashboard data into docs/index.html,
       # then assemble + deploy. This is ~2-3 min vs 8-13 min for full release-build.
       - name: Embed fresh dashboard data (fast path)
@@ -124,8 +126,8 @@ jobs:
           # https://data-pulse.my/foo.md, etc. URLs in the landing page and
           # README should NOT include the `docs/` prefix.
           cp -R docs/. _site/
-          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json datapulse.schema.json health.schema.json agent.json mcp.json changelog.json _site/
-          cp -R health badges samples data _site/
+          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json datapulse.schema.json health.schema.json agent.json mcp.json catalog-snapshot.json changelog.json _site/
+          cp -R health deltas badges samples data _site/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

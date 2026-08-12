@@ -15,12 +15,12 @@ from scripts.tests.generator_harness import (
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "scripts/tests/fixtures/generator/python_release"
 
-CHANGELOG_GENERATOR = ROOT / "scripts/gen_changelog.py"
+CHANGELOG_GENERATOR = ROOT / "scripts/gen_catalog_snapshot.py"
 JSONLD_GENERATOR = ROOT / "scripts/gen_jsonld_catalog.py"
 MCP_GENERATOR = ROOT / "scripts/gen_mcp_reference.py"
 
 CHANGELOG_INPUTS = ["datapulse.json", "health/latest.json"]
-CHANGELOG_OUTPUTS = ["changelog.json"]
+CHANGELOG_OUTPUTS = ["catalog-snapshot.json", "changelog.json"]
 JSONLD_INPUTS = ["datapulse.json", "health/latest.json", "docs/index.html"]
 JSONLD_OUTPUTS = [
     "data/jsonld/catalog.json",
@@ -199,6 +199,7 @@ def test_changelog_joins_manifest_and_health() -> None:
 
     assert result.returncode == 0, result.stderr
     changelog = _json_output(result, "changelog.json")
+    assert result.outputs["catalog-snapshot.json"] == result.outputs["changelog.json"]
     assert changelog["generated_at"] == "2026-08-08T12:34:56Z"
     assert changelog["health"]["checked_at"] == "2026-08-08T12:34:56Z"
     assert {
@@ -255,6 +256,7 @@ def test_changelog_handles_malformed_health(tmp_path: Path) -> None:
     )
 
     assert result.returncode != 0
+    assert result.outputs["catalog-snapshot.json"] is None
     assert result.outputs["changelog.json"] is None
 
 
@@ -381,6 +383,20 @@ def test_generated_jsonld_is_valid_jsonld() -> None:
 
 
 def test_does_not_touch_tracked_workspace() -> None:
+    tracked_paths = (
+        "changelog.json",
+        "catalog-snapshot.json",
+        "mcp.json",
+        "data/jsonld",
+        "docs/mcp-reference.md",
+    )
+    before = subprocess.run(
+        ["git", "status", "--short", "--", *tracked_paths],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
     cases = (
         (CHANGELOG_GENERATOR, CHANGELOG_INPUTS, CHANGELOG_OUTPUTS),
         (JSONLD_GENERATOR, JSONLD_INPUTS, JSONLD_OUTPUTS),
@@ -396,10 +412,7 @@ def test_does_not_touch_tracked_workspace() -> None:
             "status",
             "--short",
             "--",
-            "changelog.json",
-            "mcp.json",
-            "data/jsonld",
-            "docs/mcp-reference.md",
+            *tracked_paths,
         ],
         cwd=ROOT,
         capture_output=True,
@@ -407,4 +420,4 @@ def test_does_not_touch_tracked_workspace() -> None:
         check=False,
     )
     assert status.returncode == 0, status.stderr
-    assert status.stdout == ""
+    assert status.stdout == before

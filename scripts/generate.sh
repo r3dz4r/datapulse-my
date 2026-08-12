@@ -2,8 +2,8 @@
 #
 # DataPulse MY generation profiles.
 #
-# health-cycle: 5 steps for artifacts derived from the live health snapshot.
-# release-build: source stamp plus 13 steps for the complete public-site artifact set.
+# health-cycle: 7 steps for artifacts derived from the live health snapshot.
+# release-build: source stamp plus 15 steps for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
 # It never commits, pushes, or deploys; release-build embeds dashboard data locally.
@@ -78,14 +78,18 @@ case "$profile" in
       "gen_badges.sh"
       "gen_readme_summary.sh"
       "gen_rss.sh"
-      "gen_changelog.py"
+      "gen_catalog_snapshot.py"
+      "gen_health_history.py"
+      "gen_dataset_deltas.py"
     )
     outputs=(
       "data/<id>.md"
       "badges/<id>.svg; badges/status-*.svg; badges/index.svg"
       "README.md (dataset counts and trust-summary block)"
       "feed.xml"
-      "changelog.json"
+      "catalog-snapshot.json; changelog.json (deprecated alias)"
+      "health/history.jsonl; health/history_daily.json"
+      "deltas/<cycle>.json"
     )
     ;;
   release-build)
@@ -98,7 +102,9 @@ case "$profile" in
       "gen_readme_summary.sh"
       "gen_llms_summary.py"
       "gen_rss.sh"
-      "gen_changelog.py"
+      "gen_catalog_snapshot.py"
+      "gen_health_history.py"
+      "gen_dataset_deltas.py"
       "gen_json_envelope.py"
       "gen_jsonld_catalog.py"
       "gen_mcp_reference.py"
@@ -115,7 +121,9 @@ case "$profile" in
       "README.md (dataset counts and trust-summary block)"
       "llms.txt (dataset-count references only)"
       "feed.xml"
-      "changelog.json"
+      "catalog-snapshot.json; changelog.json (deprecated alias)"
+      "health/history.jsonl; health/history_daily.json"
+      "deltas/<cycle>.json"
       "data/json/<id>.json"
       "data/jsonld/<id>.json; data/jsonld/catalog.json"
       "docs/mcp-reference.md; mcp.json"
@@ -141,6 +149,7 @@ command_for() {
       printf 'DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" bash scripts/%s' "$1"
       ;;
     gen_json_envelope.py) printf 'python3 scripts/%s --force' "$1" ;;
+    gen_health_history.py) printf 'python3 scripts/%s --compact' "$1" ;;
     *.py) printf 'python3 scripts/%s' "$1" ;;
   esac
 }
@@ -182,6 +191,11 @@ for index in "${!generators[@]}"; do
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
         env "${environment[@]}" \
         python3 "scripts/$generator" --force
+      ;;
+    gen_health_history.py)
+      DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
+        env "${environment[@]}" \
+        python3 "scripts/$generator" --compact
       ;;
     *.py)
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \

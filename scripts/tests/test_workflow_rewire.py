@@ -47,10 +47,11 @@ def test_systemd_unit_preserves_flock_guard() -> None:
 def test_systemd_unit_preserves_scoped_commit() -> None:
     exec_start = _exec_start(_read(SYSTEMD_UNIT))
 
-    assert "git add health/ badges/ feed.xml README.md changelog.json" in exec_start
+    expected = "health/ deltas/ badges/ feed.xml README.md catalog-snapshot.json changelog.json"
+    assert f"git add {expected}" in exec_start
     git_add = re.search(r"git add ([^;\n]+)", exec_start)
     assert git_add is not None
-    assert git_add.group(1) == "health/ badges/ feed.xml README.md changelog.json"
+    assert git_add.group(1) == expected
 
 
 def test_health_check_workflow_uses_generate_sh() -> None:

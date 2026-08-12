@@ -16,7 +16,9 @@ scripts/check.sh + extractors + GTFS helper + Camofox
        v
 health/latest.json (merge with prior snapshot in --due mode)
        |
-       +--> badges/ + feed.xml + README summary + changelog.json
+       +--> health/history.jsonl --> health/history_daily.json
+       +--> badges/ + feed.xml + README summary + catalog-snapshot.json
+       +--> deltas/<cycle>.json
        +--> data/json/<id>.json
        +--> data/jsonld/catalog.json + dashboard JSON-LD
        |
@@ -40,15 +42,26 @@ then their results are merged with preserved rows from the prior snapshot
 in manifest order. A successful snapshot drives the `health-cycle`
 generation profile.
 
+The frozen-snapshot publisher runs `scripts/gen_health_history.py --compact`
+after validating and installing the new `health/latest.json`, and before
+staging any artifacts. The writer upserts one observation per manifest dataset
+using `(dataset_id, cycle)` as its key. Raw observations remain in
+`health/history.jsonl` for 90 days by default; older observations are merged
+into per-dataset, per-day aggregates in `health/history_daily.json`. Both
+history artifacts are additive; `health/latest.json` remains the compatibility
+surface for the dashboard, MCP server, badges, and feed.
+
 ## Generation profiles
 
 Two profiles in `scripts/generate.sh` orchestrate the generators in
 reviewed order, with explicit path ownership:
 
-- `health-cycle` — 5 steps (`gen_data_reports.sh` →
+- `health-cycle` — 7 steps (`gen_data_reports.sh` →
   `gen_badges.sh` → `gen_readme_summary.sh` → `gen_rss.sh` →
-  `gen_changelog.py`). Owns `data/<id>.md`, `badges/`, README trust
-  summary, `feed.xml`, `changelog.json`. Invoked by the timer and the
+  `gen_catalog_snapshot.py` → `gen_health_history.py --compact` →
+  `gen_dataset_deltas.py`). Owns `data/<id>.md`, `badges/`, README trust
+  summary, `feed.xml`, `catalog-snapshot.json`, the deprecated
+  `changelog.json` alias, history, and `deltas/`. Invoked by the timer and the
   weekly fallback after a successful probe.
 - `release-build` — includes the `health-cycle` generators plus 6
   release-only steps (`gen_llms_summary.py` →

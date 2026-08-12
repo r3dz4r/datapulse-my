@@ -1,6 +1,7 @@
 name: Pull request CI
 
 on:
+  push:
   pull_request:
   workflow_dispatch:
 
@@ -35,8 +36,8 @@ jobs:
           python3 -m jsonschema -i datapulse.json datapulse.schema.json
           python3 -m jsonschema -i health/latest.json health.schema.json
 
-      - name: Run repository-contract tests
-        run: python3 -m pytest -q scripts/tests/
+      - name: Run repository-contract and MCP tests
+        run: python3 -m pytest -q scripts/tests/ mcp/tests/
 
       - name: Test local agent-ready verification
         run: bash scripts/tests/test_verify_agent_ready.sh

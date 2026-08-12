@@ -149,7 +149,15 @@ def test_canary_does_not_modify_tracked_workspace(
         status = subprocess.check_output(
             ["git", "status", "--short"], cwd=ROOT, text=True
         ).splitlines()
-        protected = ("health/", "badges/", "feed.xml", "changelog.json", "data/")
+        protected = (
+            "health/",
+            "deltas/",
+            "badges/",
+            "feed.xml",
+            "catalog-snapshot.json",
+            "changelog.json",
+            "data/",
+        )
         return [line for line in status if line[3:].startswith(protected)]
 
     before = protected_status()

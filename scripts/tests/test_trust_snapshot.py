@@ -33,7 +33,7 @@ def _write_inputs(repo: Path, statuses: dict[str, str], record_count: int) -> No
         }
         for dataset_id, status in statuses.items()
     ]
-    (repo / "changelog.json").write_text(
+    (repo / "catalog-snapshot.json").write_text(
         json.dumps({"datasets": datasets}), encoding="utf-8"
     )
     (repo / "datapulse.json").write_text(
