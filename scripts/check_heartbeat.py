@@ -12,7 +12,15 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LOG = ROOT / "var/log/stages.jsonl"
-STAGES = {"probe", "history", "snapshot", "deltas", "validate", "publish"}
+STAGES = {
+    "probe",
+    "history",
+    "snapshot",
+    "deltas",
+    "validate",
+    "publish",
+    "mcp-sync",
+}
 STATUSES = {"success", "fail", "skipped"}
 
 

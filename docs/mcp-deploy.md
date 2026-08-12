@@ -147,14 +147,86 @@ MCP source so the deployed service can introspect its source-of-truth:
   `source_commit_sha` to the current repo HEAD. Exit 0 if they match,
   exit 1 on mismatch, exit 2 if the endpoint is unreachable.
 
-Run the verify check after any MCP change:
+The five-minute health pipeline deploys MCP source automatically. It archives
+`origin/main` into a frozen `/tmp/datapulse-run.*` directory, probes and
+validates that snapshot, publishes any changed health artifacts, and then runs
+the non-fatal `mcp-sync` stage with the frozen
+`$run_dir/mcp/server.py`. The live working tree is never used as the MCP deploy
+source.
+
+`scripts/sync_mcp_deployment.sh` performs the deployment transaction:
+
+1. Compare SHA-256 hashes of the frozen source and
+   `/home/redza/.local/share/datapulse-mcp/server.py`.
+2. If either the source or source-marker systemd configuration differs, create
+   a timestamped `.bak`, copy through a same-directory temporary file, and
+   atomically replace the deployed copy.
+3. Install `99-source-marker.conf`, whose `UnsetEnvironment=` removes legacy
+   `DATAPULSE_MCP_SOURCE_SHA` and `DATAPULSE_MCP_SOURCE_DATE` overrides. The
+   marker embedded by `release-build` is authoritative.
+4. Export `XDG_RUNTIME_DIR=/run/user/$(id -u)`, reload the user manager when its
+   drop-in changed, and restart `datapulse-mcp.service`.
+5. Use `curl` against `http://127.0.0.1:8788/mcp` to initialize an MCP session,
+   confirm the live source SHA, list the tools, and assert that every tool has
+   the complete read-only annotations. A failed restart or verification rolls
+   back the deployed copy and drop-in, then returns non-zero.
+
+The explicit runtime directory is required for the system-service context. A
+process with the health unit's stripped environment cannot connect to the user
+bus (`systemctl --user` reports `Failed to connect to bus: No medium found`).
+With `XDG_RUNTIME_DIR=/run/user/1001`, the same command reaches the lingering
+user manager and restarts the service. The sync script derives `1001` with
+`id -u`; it does not hard-code the UID.
+
+The pipeline records `mcp-sync` telemetry as `success` with result
+`no-change` or `deployed`. A sync error is recorded as `fail` with
+`non_fatal=true`, logged with the `datapulse-mcp:` prefix, and does not stop the
+health cycle or publication.
+
+To run the normal sync or the independent read-only HEAD check:
 
 ```bash
+scripts/sync_mcp_deployment.sh --source mcp/server.py
 python3 scripts/verify_mcp_deployment.py
 ```
 
-This is read-only — it doesn't write to the deployed service. The check
-uses the JSON-RPC handshake already documented above.
+The Python check is read-only and uses the JSON-RPC handshake already
+documented above. MCP deployment no longer requires a manual `cp` followed by
+`systemctl --user restart`.
+
+### Manual idempotency and change verification
+
+Run the production source twice. The first invocation deploys only if needed;
+the second must log `datapulse-mcp: no change` and leave the service PID
+unchanged:
+
+```bash
+scripts/sync_mcp_deployment.sh --source mcp/server.py
+pid_before=$(systemctl --user show datapulse-mcp.service -p MainPID --value)
+scripts/sync_mcp_deployment.sh --source mcp/server.py
+pid_after=$(systemctl --user show datapulse-mcp.service -p MainPID --value)
+test "$pid_before" = "$pid_after"
+```
+
+For a reversible change-deploy test, make a temporary source whose embedded
+marker is a known 40-character value, deploy it, and read the marker back from
+the live endpoint. The sync command does the endpoint check with `curl` and
+logs the verified marker; the Python one-liner below independently reads the
+same live handshake. Always restore the production source afterward:
+
+```bash
+test_dir=$(mktemp -d /tmp/datapulse-mcp-marker-test.XXXXXX)
+test_sha=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+cp mcp/server.py "$test_dir/server.py"
+current_sha=$(sed -n -E \
+  's/^SOURCE_COMMIT_SHA = os.getenv\("DATAPULSE_MCP_SOURCE_SHA", "([^"]+)"\)$/\1/p' \
+  "$test_dir/server.py")
+test -n "$current_sha"
+sed -i "s/$current_sha/$test_sha/" "$test_dir/server.py"
+scripts/sync_mcp_deployment.sh --source "$test_dir/server.py"
+python3 -c 'from scripts.verify_mcp_deployment import deployed_source_sha; print(deployed_source_sha("http://127.0.0.1:8788/mcp"))'
+scripts/sync_mcp_deployment.sh --source mcp/server.py
+```
 
 ## Named Cloudflare Tunnel
 
