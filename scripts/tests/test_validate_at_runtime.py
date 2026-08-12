@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
 
 from scripts.validate_at_runtime import (
     validate_health,
@@ -61,7 +64,11 @@ def test_validate_health_stale_dataset_ref(tmp_path: Path) -> None:
 
 
 def test_pipeline_calls_validator() -> None:
-    pipeline = Path("/home/redza/dotfiles/scripts/datapulse-pipeline.sh")
+    pipeline = Path(
+        os.environ.get("DOTFILES_DIR", "/home/redza/dotfiles")
+    ) / "scripts" / "datapulse-pipeline.sh"
+    if not pipeline.exists():
+        pytest.skip(f"dotfiles not co-located: {pipeline}")
     result = subprocess.run(
         ["bash", "-n", str(pipeline)], capture_output=True, text=True, check=False
     )
