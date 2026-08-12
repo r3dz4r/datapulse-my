@@ -20,8 +20,8 @@ ExecStartPre=/bin/bash -c 'set -e; if [[ ! -d /home/redza/datapulse-my/.git ]]; 
 # timer is observable whether or not it produces artifacts. Both stdout
 # (probe cycle count) and stderr (EHR messages) go to the same log file
 # (StandardOutput/StandardError both append:/var/log/datapulse-health.err).
-# Fix (2026-08-07): flock single-instance guard. At 318 datasets a full
-# sweep can take ~7 min; if a tick ever outlives the 15-min timer window
+# Fix (2026-08-07): flock single-instance guard. At 375 datasets a full
+# sweep can take ~7 min; if a tick ever outlives the 5-min timer window
 # the next tick would collide on health/latest.json. flock -n makes a
 # tick exit immediately (skip) when the previous probe still holds the
 # lock. Lock file lives in /tmp (per-process, cleared on reboot).
