@@ -201,3 +201,24 @@ else
 fi
 
 printf 'Post-deploy release invariants: PASS\n'
+
+if [[ -z "${DATAPULSE_API_KEYS_FILE:-}" ]]; then
+  printf 'Buyer API keys: WARN (DATAPULSE_API_KEYS_FILE is unset; key validation skipped)\n' >&2
+else
+  python3 - "$DATAPULSE_API_KEYS_FILE" <<'PY'
+import json
+import re
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    document = json.load(source)
+active = document.get("active", [])
+assert isinstance(active, list), "buyer API active keys must be an array"
+for index, key in enumerate(active):
+    assert isinstance(key, dict), f"active key {index} must be an object"
+    assert isinstance(key.get("hashed_token"), str) and key["hashed_token"], f"active key {index} has no hashed_token"
+    scopes = key.get("scopes")
+    assert isinstance(scopes, list) and scopes and all(isinstance(s, str) and re.fullmatch(r"[a-z]+(?:\.[a-z]+)+", s) for s in scopes), f"active key {index} has invalid scopes"
+print(f"Buyer API keys: PASS ({len(active)} active)")
+PY
+fi

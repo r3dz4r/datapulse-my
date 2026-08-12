@@ -11,6 +11,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 SYSTEMD_UNIT = ROOT / "deploy/systemd/datapulse-health.service"
+CANONICAL_SYSTEMD_UNIT = Path("/home/redza/dotfiles/system/datapulse-health.service")
 HEALTH_WORKFLOW = ROOT / ".github/workflows/health-check.yml"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-pages.yml"
 
@@ -42,6 +43,12 @@ def test_systemd_unit_preserves_atomic_health_write() -> None:
 
 def test_systemd_unit_preserves_flock_guard() -> None:
     assert "flock -n /tmp/datapulse-health.lock" in _read(SYSTEMD_UNIT)
+
+
+def test_systemd_unit_emits_lock_skip_telemetry() -> None:
+    unit = _read(CANONICAL_SYSTEMD_UNIT)
+    assert "--status skipped" in unit
+    assert 'lock_busy' in unit
 
 
 def test_systemd_unit_preserves_scoped_commit() -> None:

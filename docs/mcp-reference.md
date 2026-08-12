@@ -5,6 +5,8 @@
 DataPulse MY exposes a read-only Streamable HTTP endpoint at
 `https://mcp.data-pulse.my/mcp`. It requires no authentication.
 
+Looking for the billable buyer API? See [the buyer API reference](buyer-api-reference.md).
+
 Clients must send `Accept: application/json, text/event-stream` and use the
 session ID returned by the initialize response for subsequent calls.
 

@@ -101,7 +101,7 @@ authentication, CAPTCHAs, or terms-of-service restrictions. Every source we
 probe is publicly available without login; the data is aggregate/non-personal;
 and the probe respects each dataset's declared refresh frequency.
 
-All scraping is rate-limited (15-minute cadence, dataset-tier cadence applied)
+All scraping is rate-limited (5-minute cadence, dataset-tier cadence applied)
 and identifies itself via User-Agent. Sources we cannot probe without
 authentication, CAPTCHA bypass, or ToS violation are marked `unreachable` or
 `browser-dependent` — never silently scraped through a workaround.
@@ -123,7 +123,7 @@ RAG systems, and internal knowledge tools to consume.
   [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) and can use the
   entire portfolio immediately — no scraping, API-key setup, or data-format
   reverse-engineering.
-- **Honest freshness signals:** a 15-minute timer probes datasets when their
+- **Honest freshness signals:** a 5-minute timer probes datasets when their
   cadence tier is due, separating HTTP
   reachability, browser dependency, schema validity, and source freshness so
   missing evidence is visible instead of being labelled healthy.
@@ -166,6 +166,14 @@ Connect from Claude Desktop:
 See [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) for the full
 discovery index, and [`docs/mcp-deploy.md`](./docs/mcp-deploy.md) for the
 deployment architecture.
+
+### Authenticated buyer API
+
+Paying integrations use the separate, versioned `/api/v1/` buyer API. It uses
+`X-API-Key` authentication, durable per-key request limits, and audit logs;
+the public MCP endpoint above remains intentionally unauthenticated. See the
+[buyer API reference](./docs/buyer-api-reference.md) for endpoint and operator
+details.
 
 ### How to consume the data
 
@@ -559,7 +567,7 @@ review the known quirks before designing a collection method.
 
 ## Monitoring
 
-- The VPS `datapulse-health.timer` wakes every 15 minutes and runs only the
+- The VPS `datapulse-health.timer` wakes every 5 minutes and runs only the
   datasets whose cadence tier is due.
 - GitHub Actions performs a full weekly probe as a fallback and republishes the
   generated health, badge, feed, README, catalog snapshot, and delta artifacts.
