@@ -79,7 +79,8 @@ jobs:
       (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: >-
+        ${{ steps.deployment.outputs.page_url || steps.deployment_retry_1.outputs.page_url || steps.deployment_retry_2.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -138,6 +139,29 @@ jobs:
 
       - name: Deploy dashboard
         id: deployment
+        continue-on-error: true
+        timeout-minutes: 15
+        uses: actions/deploy-pages@v4
+
+      - name: Wait before deploy retry 1
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 25
+
+      - name: Deploy dashboard (retry 1)
+        id: deployment_retry_1
+        if: steps.deployment.outcome == 'failure'
+        continue-on-error: true
+        timeout-minutes: 15
+        uses: actions/deploy-pages@v4
+
+      - name: Wait before deploy retry 2
+        if: steps.deployment_retry_1.outcome == 'failure'
+        run: sleep 25
+
+      - name: Deploy dashboard (retry 2)
+        id: deployment_retry_2
+        if: steps.deployment_retry_1.outcome == 'failure'
+        timeout-minutes: 15
         uses: actions/deploy-pages@v4
 
       - name: Post-deploy release invariants
