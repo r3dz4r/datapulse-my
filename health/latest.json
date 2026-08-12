@@ -1,28 +1,28 @@
 {
   "schema": "datapulse/v0.3/dataset-health",
-  "checked_at": "2026-08-12T16:16:35Z",
+  "checked_at": "2026-08-12T16:20:31Z",
   "_trust_summary": {
-    "checked_at": "2026-08-12T16:16:35Z",
+    "checked_at": "2026-08-12T16:20:31Z",
     "datasets_total": 375,
     "by_status": {
       "fresh": 100,
       "aging": 103,
-      "stale": 152,
+      "stale": 153,
       "discontinued": 1,
       "degraded": 0,
       "browser_dependent": 5,
-      "unreachable": 1,
+      "unreachable": 0,
       "unknown": 0,
       "unknown_freshness": 0,
       "reference": 13
     },
     "datasets_health_signal_source": {
-      "last_modified_header": 159,
+      "last_modified_header": 160,
       "content_date_parse": 200,
-      "neither": 16
+      "neither": 15
     },
-    "datasets_with_no_last_modified_header": 213,
-    "datasets_with_no_record_count_extracted": 7,
+    "datasets_with_no_last_modified_header": 212,
+    "datasets_with_no_record_count_extracted": 6,
     "oldest_last_modified": "2023-09-15T07:20:46Z",
     "newest_last_modified": "2026-08-12T16:01:08Z",
     "stale_datasets": [
@@ -628,6 +628,10 @@
       },
       {
         "dataset_id": "ridership_od_brt_daily",
+        "days_since_modified": 5
+      },
+      {
+        "dataset_id": "ridership_od_rapidrail_daily",
         "days_since_modified": 5
       },
       {
@@ -9037,17 +9041,17 @@
     },
     {
       "dataset_id": "ridership_od_rapidrail_daily",
-      "last_checked": "2026-08-11T14:21:08Z",
+      "last_checked": "2026-08-12T16:20:31Z",
       "namespace": "transport",
       "url": "https://storage.data.gov.my/transportation/rail/rapidrail_2026_daily.csv",
-      "status": "unreachable",
-      "message": "curl request failed",
+      "status": "stale",
+      "message": "HTTP 200",
       "request_url": "https://storage.data.gov.my/transportation/rail/rapidrail_2026_daily.csv",
       "access_method": "direct curl GET",
-      "http_status": null,
-      "content_length": null,
-      "last_modified": null,
-      "content_freshness_date": null,
+      "http_status": 200,
+      "content_length": 183490345,
+      "last_modified": "2026-08-08T10:56:06Z",
+      "content_freshness_date": "2026-08-07",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -9059,12 +9063,12 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
+      "record_count": 3656037,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
-      "column_count": null,
-      "first_row_hash": null,
+      "column_count": 4,
+      "first_row_hash": "shape-v1:f6ebe9551c362a442e16beb8d9cca909ddab62b32a404ec781e71751f7cc1e8e",
       "content_shape_changed": false,
       "locations": null,
       "date_range": null,
@@ -9078,12 +9082,12 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": 3639603,
-      "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "record_count_within_tolerance": true,
+      "staleness_days": 5,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none"
+      "freshness_signal": "last-modified-header",
+      "freshness_signal_source": "last_modified_header"
     },
     {
       "dataset_id": "dosm_gdp_qtr_real_demand_granular",
