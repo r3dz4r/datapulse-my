@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 SYSTEMD_UNIT = ROOT / "deploy/systemd/datapulse-health.service"
-CANONICAL_SYSTEMD_UNIT = Path("/home/redza/dotfiles/system/datapulse-health.service")
-CANONICAL_PIPELINE = Path("/home/redza/dotfiles/scripts/datapulse-pipeline.sh")
+CANONICAL_SYSTEMD_UNIT = Path(
+    os.environ.get("DOTFILES_DIR", "/home/redza/dotfiles")
+) / "system" / "datapulse-health.service"
+CANONICAL_PIPELINE = Path(
+    os.environ.get("DOTFILES_DIR", "/home/redza/dotfiles")
+) / "scripts" / "datapulse-pipeline.sh"
 HEALTH_WORKFLOW = ROOT / ".github/workflows/health-check.yml"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-pages.yml"
 
@@ -46,6 +52,8 @@ def test_systemd_unit_preserves_flock_guard() -> None:
 
 
 def test_systemd_unit_emits_lock_skip_telemetry() -> None:
+    if not CANONICAL_SYSTEMD_UNIT.exists():
+        pytest.skip(f"dotfiles not co-located: {CANONICAL_SYSTEMD_UNIT}")
     unit = _read(CANONICAL_SYSTEMD_UNIT)
     assert "--status skipped" in unit
     assert "lock_busy" in unit
@@ -143,6 +151,8 @@ def test_generate_sh_profiles_match_workflow_invocations() -> None:
 
 
 def test_canonical_pipeline_stages_and_validates_record_evidence() -> None:
+    if not CANONICAL_PIPELINE.exists():
+        pytest.skip(f"dotfiles not co-located: {CANONICAL_PIPELINE}")
     pipeline = _read(CANONICAL_PIPELINE)
 
     assert "record-evidence" in pipeline.split("ARTIFACT_PATHS=", 1)[1].split(")", 1)[0]
