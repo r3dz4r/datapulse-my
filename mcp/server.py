@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import json
+import logging
 from asyncio import gather
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +14,8 @@ from typing import Any
 import httpx
 import mcp.types as mcp_types
 from fastmcp import FastMCP
+from fastmcp.server.dependencies import get_http_request
+from fastmcp.server.middleware import Middleware
 from mcp.types import Implementation as MCPImplementation, ToolAnnotations
 from pydantic import Field
 from fastmcp.tools import FunctionTool
@@ -48,6 +51,56 @@ LICENCE_URLS = {
     CC_BY_4: "https://creativecommons.org/licenses/by/4.0/",
     OGL_MY: "https://www.data.gov.my/pages/terms-of-use",
 }
+
+logger = logging.getLogger("uvicorn.error")
+logger.setLevel(logging.INFO)
+
+
+def _sanitise_tool_arg(value: Any, *, key: str | None = None) -> Any:
+    """Bound tool-call values and redact common credential-shaped fields."""
+    if key and ("api_key" in key.casefold() or "token" in key.casefold()):
+        return "[REDACTED]"
+    if isinstance(value, str):
+        return value[:200]
+    if isinstance(value, dict):
+        return {
+            str(item_key): _sanitise_tool_arg(item_value, key=str(item_key))
+            for item_key, item_value in value.items()
+        }
+    if isinstance(value, list):
+        return [_sanitise_tool_arg(item) for item in value]
+    if isinstance(value, tuple):
+        return [_sanitise_tool_arg(item) for item in value]
+    return value
+
+
+def _request_client_ip() -> str:
+    """Get the client address forwarded by the local reverse proxy."""
+    try:
+        request = get_http_request()
+        return (
+            request.headers.get("x-real-ip")
+            or request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+            or (request.client.host if request.client else "unknown")
+        )
+    except RuntimeError:
+        return "unknown"
+
+
+class ToolUsageLoggingMiddleware(Middleware):
+    """Log sanitized usage details for actual MCP tool calls only."""
+
+    async def on_call_tool(self, context: Any, call_next: Any) -> Any:
+        message = context.message
+        args = _sanitise_tool_arg(message.arguments or {})
+        logger.info(
+            "mcp-tool: tool=%s args=%s ip=%s timestamp=%s",
+            message.name,
+            json.dumps(args, ensure_ascii=False, separators=(",", ":")),
+            _request_client_ip(),
+            context.timestamp.isoformat(),
+        )
+        return await call_next(context)
 
 
 def _manifest_dataset_count(manifest_path: Path | None = None) -> int:
@@ -123,6 +176,7 @@ mcp = FastMCP(
     "DataPulse MY",
     version=SOURCE_VERSION_STRING,
     instructions="Read-only access to DataPulse MY's Malaysian public dataset catalogue.",
+    middleware=[ToolUsageLoggingMiddleware()],
 )
 
 READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
