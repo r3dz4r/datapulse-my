@@ -10,7 +10,7 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  DOTFILES_DIR: /home/runner/work/datapulse-my/dotfiles
+  DOTFILES_DIR: /home/runner/work/datapulse-my/datapulse-my/.dotfiles
 
 jobs:
   deterministic-safety-net:
@@ -23,16 +23,20 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: r3dz4r/dotfiles
-          path: /home/runner/work/datapulse-my/dotfiles
+          path: /home/runner/work/datapulse-my/datapulse-my/.dotfiles
           token: ${{ secrets.CROSS_REPO_TOKEN }}
         continue-on-error: true
         # Operator must create a fine-grained PAT on github.com/r3dz4r/dotfiles
         # with read-only access to its system/, scripts/, notes/ trees,
         # then add it to r3dz4r/datapulse-my repository secrets as
-        # CROSS_REPO_TOKEN. Until that's wired, the 3 dotfiles-coupling
-        # contract tests skip with a clear reason.
-        # GitHub Actions requires checkout `path:` to live under the workspace,
-        # so we co-locate dotfiles inside /home/runner/work/datapulse-my/dotfiles.
+        # CROSS_REPO_TOKEN.
+        #
+        # GitHub Actions requires checkout `path:` to live INSIDE the
+        # current repo's workspace. We use a hidden subdirectory .dotfiles/
+        # so the checkout doesn't pollute the working tree (and so the
+        # .gitignore style of operator can also add it locally).
+        # The 3 contract tests consume DOTFILES_DIR and skip gracefully
+        # when the path is absent.
 
       - name: Set up Python
         uses: actions/setup-python@v5
