@@ -25,18 +25,11 @@ jobs:
           repository: r3dz4r/dotfiles
           path: /home/runner/work/datapulse-my/datapulse-my/.dotfiles
           token: ${{ secrets.CROSS_REPO_TOKEN }}
-        continue-on-error: true
-        # Operator must create a fine-grained PAT on github.com/r3dz4r/dotfiles
-        # with read-only access to its system/, scripts/, notes/ trees,
-        # then add it to r3dz4r/datapulse-my repository secrets as
-        # CROSS_REPO_TOKEN.
-        #
-        # GitHub Actions requires checkout `path:` to live INSIDE the
-        # current repo's workspace. We use a hidden subdirectory .dotfiles/
-        # so the checkout doesn't pollute the working tree (and so the
-        # .gitignore style of operator can also add it locally).
-        # The 3 contract tests consume DOTFILES_DIR and skip gracefully
-        # when the path is absent.
+        # NOTE: do NOT add continue-on-error here. We want a 403 (insufficient
+        # PAT scopes) to fail the workflow loudly so the operator notices
+        # and fixes the token. With continue-on-error:true the 3 contract
+        # tests silently skip and the CI green-light hides the secret
+        # misconfiguration.
 
       - name: Set up Python
         uses: actions/setup-python@v5
