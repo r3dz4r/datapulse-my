@@ -5467,7 +5467,7 @@
       <div class="hero-copy">
         <p class="hero-kicker">The trust layer for Malaysian open data</p>
         <h1 id="hero-heading">Verified health for Malaysian public data</h1>
-        <p class="hero-subhead">Malaysia ranks #1 in the world for open data — and none of it is verified. We probe 375 official datasets every 15 minutes, classify each into one of nine honest statuses, and expose it read-only over MCP.</p>
+        <p class="hero-subhead">Malaysia ranks #1 in the world for open data — and none of it is verified. We probe 375 official datasets every 5 minutes, classify each into one of ten honest statuses, and expose it read-only over MCP.</p>
         <div class="hero-actions">
           <a class="button-link" href="#connect">Connect your agent</a>
           <a class="button-link button-link-secondary" href="#live-status">View live status</a>
@@ -5475,7 +5475,7 @@
         <ul class="hero-trust-band" aria-label="DataPulse trust signals">
           <li><span class="hero-trust-anchor">#1 open data, verified</span></li>
           <li><a href="#live-status">375 datasets verified</a></li>
-          <li><a href="/health-methodology.html">15-min cadence</a></li>
+          <li><a href="/health-methodology.html">5-min cadence</a></li>
           <li><a href="#connect">Read-only MCP</a></li>
           <li><a href="https://github.com/r3dz4r/datapulse-my">Open source</a></li>
         </ul>
@@ -5568,7 +5568,7 @@
         <li class="workflow-step">
           <span class="step-number" aria-hidden="true">01</span>
           <h3>Probe</h3>
-          <p>A 15-minute timer fetches each dataset: HTTP headers, content dates, record counts, schema shape.</p>
+          <p>A 5-minute timer fetches each dataset: HTTP headers, content dates, record counts, schema shape.</p>
         </li>
         <li class="workflow-step">
           <span class="step-number" aria-hidden="true">02</span>
@@ -5578,7 +5578,7 @@
         <li class="workflow-step">
           <span class="step-number" aria-hidden="true">03</span>
           <h3>Classify</h3>
-          <p>One of nine honest statuses — never a blanket “healthy”. If we can’t prove freshness, we say so.</p>
+          <p>One of ten honest statuses — never a blanket “healthy”. If we can’t prove freshness, we say so.</p>
         </li>
         <li class="workflow-step">
           <span class="step-number" aria-hidden="true">04</span>
@@ -5642,7 +5642,7 @@
       authentication, CAPTCHAs, or terms-of-service restrictions. Every source we probe
       is publicly available without login; the data is aggregate/non-personal; and the
       probe respects each dataset's declared refresh frequency.</p>
-      <p>All scraping is rate-limited (15-minute cadence, dataset-tier cadence applied)
+      <p>All scraping is rate-limited (5-minute cadence, dataset-tier cadence applied)
       and identifies itself via User-Agent. Sources we cannot probe without authentication,
       CAPTCHA bypass, or ToS violation are marked <code>unreachable</code> or
       <code>browser-dependent</code> — never silently scraped through a workaround.</p>
@@ -5680,7 +5680,7 @@
       <div class="faq-list">
         <details>
           <summary>Is this live right now?</summary>
-          <p>Yes — 375 datasets probed every 15 minutes. See the <a href="#live-status">live status above</a>.</p>
+          <p>Yes — 375 datasets probed every 5 minutes. See the <a href="#live-status">live status above</a>.</p>
         </details>
         <details>
           <summary>Does DataPulse replace data.gov.my?</summary>
