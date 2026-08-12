@@ -10,7 +10,7 @@ the smallest valid input that exercises the behavior under test.
 
 | Generator | Minimum copied inputs | Generated outputs |
 | --- | --- | --- |
-| `gen_changelog.py` | `datapulse.json`, `health/latest.json` | `changelog.json` |
+| `gen_catalog_snapshot.py` | `datapulse.json`, `health/latest.json` | `catalog-snapshot.json`, deprecated `changelog.json` alias |
 | `gen_data_reports.sh` | `health/latest.json`, plus each matching `data/<dataset_id>.md` to refresh | The copied `data/<dataset_id>.md` files |
 | `gen_dashboard_filters.py` | `datapulse.json` | `docs/.dashboard_filters.json` |
 | `gen_json_envelope.py` | `datapulse.json`, `health/latest.json`; matching `data/<dataset_id>.md` files are optional inputs for quirks and breaking changes | `data/json/<dataset_id>.json` |

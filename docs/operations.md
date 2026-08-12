@@ -58,7 +58,7 @@ stops the unit and must be resolved in the operational clone.
    Atomic probe writes + `health-cycle` artifacts. Pushes
    `chore(health): ...` commits automatically when artifacts change.
    Failure here manifests as missing/old `health/latest.json` or
-   absent artifacts in `badges/`, `feed.xml`, `changelog.json`.
+   absent artifacts in `badges/`, `feed.xml`, `catalog-snapshot.json`, or `deltas/`.
 
 2. **`deploy-pages.yml` workflow** — owned by GH Actions.
    Runs `release-build` then embed then deploy. Failure here
@@ -93,7 +93,9 @@ stops the unit and must be resolved in the operational clone.
 | `badges/<id>.svg`, `badges/status-*.svg`, `badges/index.svg` | `scripts/gen_badges.sh` | `datapulse-health.timer` | After every successful probe |
 | `README.md` (trust-summary block only) | `scripts/gen_readme_summary.sh` | `datapulse-health.timer` | After every successful probe |
 | `feed.xml` | `scripts/gen_rss.sh` | `datapulse-health.timer` | After every successful probe |
-| `changelog.json` | `scripts/gen_changelog.py` | `datapulse-health.timer` | After every successful probe |
+| `catalog-snapshot.json` + deprecated `changelog.json` alias | `scripts/gen_catalog_snapshot.py` | `datapulse-health.timer` | After every successful probe |
+| `health/history.jsonl`, `health/history_daily.json` | `scripts/gen_health_history.py --compact` | `datapulse-health.timer` | After every successful probe |
+| `deltas/<cycle>.json` | `scripts/gen_dataset_deltas.py` | `datapulse-health.timer` | After history generation for each probe cycle |
 | `data/json/<id>.json` (non-GTFS) | `scripts/gen_json_envelope.py --force` | `deploy-pages.yml` (release-build Step 6) | On every Pages deploy |
 | `data/jsonld/<id>.json`, `data/jsonld/catalog.json` | `scripts/gen_jsonld_catalog.py` | `deploy-pages.yml` (release-build Step 7) | On every Pages deploy |
 | `docs/mcp-reference.md`, `mcp.json` | `scripts/gen_mcp_reference.py` | `deploy-pages.yml` (release-build Step 8) | On every Pages deploy |

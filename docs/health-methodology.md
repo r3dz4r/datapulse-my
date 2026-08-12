@@ -9,6 +9,51 @@ DataPulse MY reports evidence, not a promise that upstream data is correct.
 The schema identifier is a top-level field. `_trust_summary` does not duplicate
 the schema identifier.
 
+## Longitudinal telemetry
+
+`health/history.jsonl` records one observation for every dataset in every
+published probe cycle. Each JSONL object contains `dataset_id`, `observed_at`,
+`cycle`, `status`, `freshness_signal`, `last_modified`, `content_date`,
+`record_count`, `record_count_estimated`, `http_status`, `latency_ms`,
+`probe_outcome`, and `message`, plus `name`, manifest `url`, and `shape_hash`
+when available. Re-running a cycle replaces the matching
+`(dataset_id, cycle)` object instead of creating a duplicate. Status changes
+are represented by successive observations and can therefore be queried
+without changing the ten-status snapshot taxonomy.
+
+The existing probe snapshot does not currently expose request duration, so
+`latency_ms` is explicitly `null` rather than estimated. The writer will carry
+through a numeric `latency_ms` when the validated probe output provides one.
+`probe_outcome` is `success` for a 2xx response, `timeout` when the probe
+message identifies a timeout, and `error` otherwise.
+
+`python3 scripts/gen_health_history.py --compact` enforces the default 90-day
+raw retention window. Expired observations are rolled into per-dataset,
+per-calendar-day entries in `health/history_daily.json` with observation and
+probe-outcome counts, status distribution, availability percentage, record
+count min/mean/max, and mean latency. A compact cycle index prevents an old
+cycle rerun from inflating an aggregate. Compacted cycles are immutable; a
+correction must be made while the raw observation is inside the retention
+window.
+
+## Dataset delta ledger
+
+`scripts/gen_dataset_deltas.py` runs after the history writer and creates one
+immutable `deltas/<cycle>.json` file. Catalog additions and removals compare
+membership with the immediately preceding recorded cycle. For every
+value-bearing dataset, status, manifest URL, shape hash, and direct (not
+estimated) record count compare with that dataset's latest earlier history row
+whose `probe_outcome` is `success`. This per-dataset baseline may be older than
+the preceding cycle when a probe was skipped or failed; every change records
+its `from_cycle`. A first cycle has `no_history_baseline_yet` and emits no
+changes. Re-running identical inputs verifies the existing bytes, while an
+attempt to change an existing cycle file fails instead of overwriting it.
+
+Each ledger records SHA-256 digests of the manifest, current health snapshot,
+and current-cycle history segment. `catalog-snapshot.json` is the canonical
+current-state summary. `changelog.json` is a byte-identical deprecated alias
+for one release and is not a delta ledger.
+
 ## Production classification (T33, 2026-08-09)
 
 The 15-minute timer invokes `bash scripts/check.sh --due`. The full-probe

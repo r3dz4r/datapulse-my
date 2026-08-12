@@ -82,7 +82,7 @@ printf '200'
     [
         ("hourly", 1, "stale", "stale"),
         ("30 seconds", 1, "stale", "stale"),
-        ("biennial to triennial (survey years)", 1200, "aging", "discontinued"),
+        ("biennial to triennial (survey years)", 1200, "aging", "aging"),
         ("as-required", 200, "aging", "aging"),
         ("as-required", 300, "stale", "stale"),
     ],

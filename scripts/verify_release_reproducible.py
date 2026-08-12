@@ -24,7 +24,7 @@ CATEGORY_ORDER = (
     "badges/",
     "feed.xml",
     "README.md (trust-summary)",
-    "changelog.json",
+    "catalog-snapshot.json",
     "data/json/",
     "data/jsonld/",
     "docs/mcp-reference.md",
@@ -33,7 +33,7 @@ CATEGORY_ORDER = (
     "docs/.dashboard_sections.json",
     "docs/index.html",
 )
-STATUS_BADGE_COUNT = 9
+STATUS_BADGE_COUNT = 10
 
 
 class SetupFailure(RuntimeError):
@@ -181,7 +181,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
     jsonld = _regular_files(root / "data/jsonld")
     singleton_paths = {
         "feed.xml": root / "feed.xml",
-        "changelog.json": root / "changelog.json",
+        "catalog-snapshot.json": root / "catalog-snapshot.json",
         "docs/mcp-reference.md": root / "docs/mcp-reference.md",
         "mcp.json": root / "mcp.json",
         "docs/.dashboard_filters.json": root / "docs/.dashboard_filters.json",
@@ -206,7 +206,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "badges/": _expected_badge_count(source, identifiers),
         "feed.xml": 1,
         "README.md (trust-summary)": 1,
-        "changelog.json": 1,
+        "catalog-snapshot.json": 1,
         "data/json/": len(non_gtfs),
         "data/jsonld/": len(identifiers) + 1,
         "docs/mcp-reference.md": 1,
@@ -220,7 +220,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "data/<id>.md": data_reports,
         "badges/": badges,
         "feed.xml": (singleton_paths["feed.xml"],),
-        "changelog.json": (singleton_paths["changelog.json"],),
+        "catalog-snapshot.json": (singleton_paths["catalog-snapshot.json"],),
         "data/json/": envelopes,
         "data/jsonld/": jsonld,
         "docs/mcp-reference.md": (singleton_paths["docs/mcp-reference.md"],),

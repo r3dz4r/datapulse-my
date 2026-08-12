@@ -562,7 +562,7 @@ review the known quirks before designing a collection method.
 - The VPS `datapulse-health.timer` wakes every 15 minutes and runs only the
   datasets whose cadence tier is due.
 - GitHub Actions performs a full weekly probe as a fallback and republishes the
-  generated health, badge, feed, README, and changelog artifacts.
+  generated health, badge, feed, README, catalog snapshot, and delta artifacts.
 - RSS feed — available.
 - Status badges — available.
 - More datasets — planned.

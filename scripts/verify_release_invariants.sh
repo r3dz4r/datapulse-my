@@ -44,7 +44,7 @@ fetch() {
 fetch manifest.json datapulse.json
 fetch health.json health/latest.json
 fetch catalog.json data/jsonld/catalog.json
-fetch changelog.json changelog.json
+fetch catalog-snapshot.json catalog-snapshot.json
 fetch mcp.json mcp.json
 fetch llms.txt llms.txt
 
@@ -67,7 +67,7 @@ base = sys.argv[2]
 manifest = json.loads((work / "manifest.json").read_text())
 health = json.loads((work / "health.json").read_text())
 catalog = json.loads((work / "catalog.json").read_text())
-changelog = json.loads((work / "changelog.json").read_text())
+catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 
 manifest_ids = [row["id"] for row in manifest["datasets"]]
 health_ids = [row["dataset_id"] for row in health["datasets"]]
@@ -116,12 +116,12 @@ assert readme_statuses == {
     status: count for status, count in summary_statuses.items() if count
 }
 
-assert changelog["generated_at"] == health["checked_at"]
-assert changelog["health"]["checked_at"] == health["checked_at"]
-assert changelog["manifest"]["datasets_total"] == expected_count
-assert changelog["health"]["datasets_total"] == expected_count
-assert changelog["health"]["by_status"] == summary_statuses
-assert len(changelog["datasets"]) == expected_count
+assert catalog_snapshot["generated_at"] == health["checked_at"]
+assert catalog_snapshot["health"]["checked_at"] == health["checked_at"]
+assert catalog_snapshot["manifest"]["datasets_total"] == expected_count
+assert catalog_snapshot["health"]["datasets_total"] == expected_count
+assert catalog_snapshot["health"]["by_status"] == summary_statuses
+assert len(catalog_snapshot["datasets"]) == expected_count
 
 with (work / "artifact-urls.txt").open("w", encoding="utf-8") as output:
     for dataset_id in manifest_ids:

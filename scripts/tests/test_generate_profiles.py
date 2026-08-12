@@ -29,7 +29,9 @@ GENERATORS = (
     "gen_readme_summary.sh",
     "gen_llms_summary.py",
     "gen_rss.sh",
-    "gen_changelog.py",
+    "gen_catalog_snapshot.py",
+    "gen_health_history.py",
+    "gen_dataset_deltas.py",
     "gen_trust_snapshot.py",
     "gen_json_envelope.py",
     "gen_jsonld_catalog.py",
@@ -37,13 +39,16 @@ GENERATORS = (
     "gen_dashboard_filters.py",
     "gen_dashboard_sections.py",
     "embed_dashboard_data.py",
+    "check_url_drift.py",
 )
 HEALTH_STEPS = (
     "gen_data_reports.sh",
     "gen_badges.sh",
     "gen_readme_summary.sh",
     "gen_rss.sh",
-    "gen_changelog.py",
+    "gen_catalog_snapshot.py",
+    "gen_health_history.py",
+    "gen_dataset_deltas.py",
 )
 RELEASE_STEPS = (
     "gen_dashboard_sections.py",
@@ -52,12 +57,15 @@ RELEASE_STEPS = (
     "gen_readme_summary.sh",
     "gen_llms_summary.py",
     "gen_rss.sh",
-    "gen_changelog.py",
+    "gen_catalog_snapshot.py",
+    "gen_health_history.py",
+    "gen_dataset_deltas.py",
     "gen_json_envelope.py",
     "gen_jsonld_catalog.py",
     "gen_mcp_reference.py",
     "gen_dashboard_filters.py",
     "embed_dashboard_data.py",
+    "check_url_drift.py",
     "gen_trust_snapshot.py",
 )
 HEALTH_OUTPUTS = (
@@ -66,6 +74,10 @@ HEALTH_OUTPUTS = (
     "badges/alpha.svg",
     "badges/status-fresh.svg",
     "changelog.json",
+    "catalog-snapshot.json",
+    "health/history.jsonl",
+    "health/history_daily.json",
+    "deltas/2026-08-08T00:00.json",
 )
 RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "llms.txt",
@@ -122,12 +134,14 @@ def _stage_source(tmp_path: Path) -> Path:
 
     health = json.loads(HEALTH_FIXTURE.read_text(encoding="utf-8"))
     for row in health["datasets"]:
+        dataset_id = row["dataset_id"]
         row.update(
             {
                 "last_checked": health["checked_at"],
                 "message": "Fixture health result.",
                 "http_status": 200,
                 "record_count": 1,
+                "url": f"data:text/csv,name%0A{dataset_id}",
             }
         )
     _write_json(source / "health/latest.json", health)
@@ -209,7 +223,7 @@ def _run_profile(
     )
 
 
-def test_health_cycle_lists_five_steps(tmp_path: Path) -> None:
+def test_health_cycle_lists_seven_steps(tmp_path: Path) -> None:
     result = _run_profile(tmp_path, "health-cycle", list_mode=True)
 
     assert result.returncode == 0, result.stderr
@@ -217,7 +231,7 @@ def test_health_cycle_lists_five_steps(tmp_path: Path) -> None:
         assert step in result.stdout
 
 
-def test_release_build_lists_all_thirteen_steps(tmp_path: Path) -> None:
+def test_release_build_lists_all_sixteen_steps(tmp_path: Path) -> None:
     result = _run_profile(tmp_path, "release-build", list_mode=True)
 
     assert result.returncode == 0, result.stderr
@@ -267,7 +281,7 @@ def test_stops_on_first_failure(tmp_path: Path) -> None:
         tmp_path,
         "health-cycle",
         source=source,
-        outputs=("badges/alpha.svg", "feed.xml", "changelog.json"),
+        outputs=("badges/alpha.svg", "feed.xml", "catalog-snapshot.json"),
     )
 
     assert result.returncode != 0
@@ -310,7 +324,7 @@ def test_list_mode_does_not_execute_generators(tmp_path: Path) -> None:
             "data/alpha.md",
             "badges/alpha.svg",
             "feed.xml",
-            "changelog.json",
+            "catalog-snapshot.json",
             "sentinel.txt",
         ],
     )
@@ -319,7 +333,12 @@ def test_list_mode_does_not_execute_generators(tmp_path: Path) -> None:
     assert result.outputs["sentinel.txt"] == b"untouched\n"
     assert all(
         result.outputs[path] is None
-        for path in ("data/alpha.md", "badges/alpha.svg", "feed.xml", "changelog.json")
+        for path in (
+            "data/alpha.md",
+            "badges/alpha.svg",
+            "feed.xml",
+            "catalog-snapshot.json",
+        )
     )
 
 

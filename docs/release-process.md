@@ -8,7 +8,8 @@ extractor configuration are sources. `scripts/check.sh` writes
 that snapshot and the manifest:
 
 - `health-cycle` owns `data/<id>.md`, `badges/`, the README trust-summary block,
-  `feed.xml`, and `changelog.json`. The 15-minute timer and weekly health
+  `feed.xml`, `catalog-snapshot.json`, its temporary `changelog.json` alias,
+  `health/history*`, and `deltas/`. The 15-minute timer and weekly health
   workflow invoke it after a successful probe.
 - `release-build` owns the `health-cycle` paths plus
   `data/json/<id>.json`, `data/jsonld/`, `docs/mcp-reference.md`, `mcp.json`,
@@ -23,11 +24,11 @@ then run the owning profile instead of patching an output directly.
 
 Two named profiles in `scripts/generate.sh` orchestrate the generators in reviewed order:
 
-- `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `changelog.json`.
+- `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `catalog-snapshot.json` plus the deprecated `changelog.json` alias, `health/history*`, and `deltas/`.
 - `release-build` — invoked by the Pages deploy workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), dashboard filters (`docs/.dashboard_filters.json`), and the date-stamped trust snapshot (`docs/trust-snapshot-<date>.{md,json}`).
 
-`release-build` numbers the source stamp as Step 0, followed by eleven artifact
-generators as Steps 1–11. Both profiles support `--list` for dry-run enumeration
+`release-build` numbers the source stamp as Step 0, followed by sixteen artifact
+generators through Step 16. Both profiles support `--list` for dry-run enumeration
 of steps + owned paths. Both refuse to push or deploy — those actions remain
 with their operational owner.
 
