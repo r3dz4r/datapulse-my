@@ -52,6 +52,24 @@ def test_publication_lag_recorded(tmp_path: Path) -> None:
     assert row["extra"]["publication_lag_ms"] == 4200
 
 
+def test_mcp_sync_stage_records_deploy_result(tmp_path: Path) -> None:
+    log = tmp_path / "stages.jsonl"
+    _append(
+        log,
+        "--stage",
+        "mcp-sync",
+        "--duration",
+        "42",
+        "--status",
+        "success",
+        "--extra-json",
+        '{"result":"no-change"}',
+    )
+    row = json.loads(log.read_text(encoding="utf-8"))
+    assert row["stage"] == "mcp-sync"
+    assert row["extra"] == {"result": "no-change"}
+
+
 def test_lock_skip_emits_skipped_status(tmp_path: Path) -> None:
     log = tmp_path / "stages.jsonl"
     lock = tmp_path / "health.lock"
