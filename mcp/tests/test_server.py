@@ -149,6 +149,23 @@ async def test_search_datasets_returns_ranked_live_results() -> None:
     assert all(item["licence"] == "Creative Commons Attribution 4.0" for item in result.data)
 
 
+async def test_tool_call_logs_sanitized_usage(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level("INFO", logger=server.logger.name)
+
+    async with Client(server.mcp) as client:
+        await client.call_tool("search_datasets", {"query": "fuel"})
+
+    records = [record.getMessage() for record in caplog.records if record.name == server.logger.name]
+    tool_logs = [record for record in records if record.startswith("mcp-tool:")]
+    assert len(tool_logs) == 1
+    assert "tool=search_datasets" in tool_logs[0]
+    assert '"query":"fuel"' in tool_logs[0]
+    assert "timestamp=" in tool_logs[0]
+    assert server._sanitise_tool_arg({"api_key": "should-not-appear"}) == {
+        "api_key": "[REDACTED]"
+    }
+
+
 async def test_search_datasets_exact_title_scores_above_partial() -> None:
     async with Client(server.mcp) as client:
         exact = await client.call_tool(
