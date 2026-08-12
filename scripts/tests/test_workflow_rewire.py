@@ -156,5 +156,8 @@ def test_canonical_pipeline_stages_and_validates_record_evidence() -> None:
     pipeline = _read(CANONICAL_PIPELINE)
 
     assert "record-evidence" in pipeline.split("ARTIFACT_PATHS=", 1)[1].split(")", 1)[0]
-    assert "python3 scripts/gen_record_evidence.py" in pipeline
+    assert re.search(
+        r"(?:\$\{PYTHON_BIN\}|python3)\s+scripts/gen_record_evidence\.py",
+        pipeline,
+    )
     assert "validate_record_evidence(envelope, full=False)" in pipeline
