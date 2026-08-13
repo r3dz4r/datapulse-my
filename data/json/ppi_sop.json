@@ -1,0 +1,44 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "ppi_sop",
+  "status": "unknown-freshness",
+  "last_checked": "2026-08-13T02:46:04Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 0,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 0 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://api.data.gov.my/data-catalogue?id=ppi_sop",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "data.gov.my (economy)"
+}

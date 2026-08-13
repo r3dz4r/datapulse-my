@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CHECK_SCRIPT = ROOT / "scripts/check.sh"
 POLICY_PATH = ROOT / "scripts/probe-policy.json"
-LOOKUP_DATASET_ID = "dgm_currency_codes"
+LOOKUP_DATASET_ID = "currency_codes"
 
 
 def _run_lookup_probe(
