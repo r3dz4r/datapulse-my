@@ -5,7 +5,7 @@ source_url: "https://storage.dosm.gov.my/population/population_dun.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "annual"
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-11T14:21:08Z
 last_observed: 2024-01-01
 last_modified: 2026-07-05T22:39:19Z
 record_count: 15000
@@ -13,7 +13,7 @@ column_count: 8
 status: aging
 notes: "Tier-1 wave G newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: population_dun
-freshness_delta: 952 days
+freshness_delta: 953 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Aging
 
-**Freshness:** 952 days
+**Freshness:** 953 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 

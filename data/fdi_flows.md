@@ -5,7 +5,7 @@ source_url: "https://storage.dosm.gov.my/bop/fdi_flows.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "quarterly"
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-11T14:21:08Z
 last_observed: 2025-07-01
 last_modified: 2025-11-26T09:18:23Z
 record_count: 71
@@ -13,7 +13,7 @@ column_count: 4
 status: stale
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: fdi_flows
-freshness_delta: 405 days
+freshness_delta: 406 days
 next_expected_update: "quarterly"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Stale
 
-**Freshness:** 405 days
+**Freshness:** 406 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 

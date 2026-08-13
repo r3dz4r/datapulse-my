@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_population_malaysia
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-11T14:21:08Z
 status: fresh
-freshness_delta: 221 days
+freshness_delta: 222 days
 next_expected_update: annual
 record_count: 17814
 date_range: 1970-01-01 to 2026-01-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 221 days
+**Freshness:** 222 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 

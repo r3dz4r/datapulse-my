@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_static_mybas_johor
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-11T14:21:08Z
 status: fresh
 freshness_delta: 0 days
 record_count: 76731
@@ -25,11 +25,11 @@ HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 
-The checked resource is 4,867,968 bytes.
+The checked resource is 4,872,054 bytes.
 
 ## Provenance
 

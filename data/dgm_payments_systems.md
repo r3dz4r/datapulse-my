@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_payments_systems
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-11T14:21:08Z
 status: stale
-freshness_delta: 190 days
+freshness_delta: 191 days
 next_expected_update: overdue
 record_count: 516
 date_range: 2019-01-01 to 2026-02-01
@@ -20,13 +20,13 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 190 days
+**Freshness:** 191 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 

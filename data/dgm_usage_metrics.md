@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_usage_metrics
-last_checked: 2026-08-10T10:07:26Z
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-12T16:16:35Z
+last_checked: 2026-08-12T16:16:35Z
 status: fresh
 freshness_delta: 1 days
 next_expected_update: daily
-record_count: 1058
+record_count: 1060
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: —"]
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-12 at 16:16:35 UTC.
 
 ## File size
 
-The checked resource is 82,260 bytes.
+The checked resource is 82,416 bytes.
 
 ## Provenance
 

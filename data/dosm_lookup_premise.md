@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_lookup_premise
-last_checked: 2026-08-10T10:07:26Z
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-11T14:21:08Z
 status: fresh
-freshness_delta: 4 days
+freshness_delta: 1 days
 next_expected_update: as-required
-record_count: 3892
+record_count: 3893
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This data is collected for the purpose of price surveillance, and is excellent for high-frequency analysis of specific items in specific locations. Inflation surveillance requires a different approach, in particular to ensure proper representativeness. Inflation analysis should be conducted using DOSM's CPI data."]
@@ -20,17 +20,17 @@ attribution: Ministry of Domestic Trade and Cost of Living and Department of Sta
 
 **Status:** Fresh
 
-**Freshness:** 4 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 
-The checked resource is 489,060 bytes.
+The checked resource is 489,201 bytes.
 
 ## Provenance
 

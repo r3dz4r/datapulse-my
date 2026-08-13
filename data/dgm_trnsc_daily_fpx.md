@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_trnsc_daily_fpx
-last_checked: 2026-08-10T10:07:26Z
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-12T16:16:35Z
+last_checked: 2026-08-12T16:16:35Z
 status: fresh
 freshness_delta: 1 days
 next_expected_update: daily
-record_count: 7236
+record_count: 7242
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This dataset is provided with the highest practical timeliness (updated by 2am daily for data up to the previous day) due to its high potential for use in nowcasting and forecasting models. However, there may occasional revisions to ensure eventual consistency with the monthly payment statistics published by the Central Bank of Malaysia (BNM). Furthermore, users should note that data for 2024-11-24 is missing at this time; this will be rectified by 1 March 2026."]
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-12 at 16:16:35 UTC.
 
 ## File size
 
-The checked resource is 605,058 bytes.
+The checked resource is 605,558 bytes.
 
 ## Provenance
 

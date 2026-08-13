@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_interestrates_annual
-last_checked: 2026-08-10T10:07:26Z
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-11T14:21:08Z
 status: aging
-freshness_delta: 586 days
+freshness_delta: 587 days
 next_expected_update: annual
 record_count: 707
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 586 days
+**Freshness:** 587 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 
