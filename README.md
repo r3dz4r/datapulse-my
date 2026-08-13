@@ -384,12 +384,8 @@ does not infer a time from midnight or UTC conversion.
   [Sample JSON](samples/dgm_federal_finance_qtr_revenue.json)
 - [data.gov.my Quarterly Federal Operating Expenditure](data/dgm_federal_finance_qtr_oe.md) —
   [Sample JSON](samples/dgm_federal_finance_qtr_oe.json)
-- [data.gov.my State Government Expenditure](data/dgm_state_finance_expenditure.md) —
-  [Sample JSON](samples/dgm_state_finance_expenditure.json)
 - [data.gov.my Monthly Money Aggregates](data/dgm_money_aggregates.md) —
   [Sample JSON](samples/dgm_money_aggregates.json)
-- [data.gov.my Monthly Currency in Circulation](data/dgm_currency_in_circulation.md) —
-  [Sample JSON](samples/dgm_currency_in_circulation.json)
 - [data.gov.my Monthly Payment Systems](data/dgm_payments_systems.md) —
   [Sample JSON](samples/dgm_payments_systems.json)
 - [data.gov.my Monthly Payment Instruments](data/dgm_payments_instruments.md) —
@@ -418,18 +414,12 @@ does not infer a time from midnight or UTC conversion.
   [Sample JSON](samples/dgm_pekab40_screenings_state.json)
 - [data.gov.my Malaysian National Health Accounts Expenditure](data/dgm_mnha.md) —
   [Sample JSON](samples/dgm_mnha.json)
-- [data.gov.my Monthly Electricity Consumption](data/dgm_electricity_consumption.md) —
-  [Sample JSON](samples/dgm_electricity_consumption.json)
 - [data.gov.my Monthly Electricity Supply](data/dgm_electricity_supply.md) —
   [Sample JSON](samples/dgm_electricity_supply.json)
-- [data.gov.my Water Consumption by State and Sector](data/dgm_water_consumption.md) —
-  [Sample JSON](samples/dgm_water_consumption.json)
 - [data.gov.my Water Production by State](data/dgm_water_production.md) —
   [Sample JSON](samples/dgm_water_production.json)
 - [data.gov.my Access to Treated Water by State and Strata](data/dgm_water_access.md) —
   [Sample JSON](samples/dgm_water_access.json)
-- [data.gov.my Daily Public Transport Ridership](data/dgm_ridership_headline.md) —
-  [Sample JSON](samples/dgm_ridership_headline.json)
 - [data.gov.my Monthly KTMB Ridership](data/dgm_ktmb_ridership_monthly.md) —
   [Sample JSON](samples/dgm_ktmb_ridership_monthly.json)
 - [data.gov.my Cellular Subscribers by Plan Type](data/dgm_cellular_subscribers.md) —
@@ -502,9 +492,7 @@ DataPulse MY currently tracks the portfolio declared in `datapulse.json`.
 | data.gov.my Interest Rates (`dgm_interest_rates`) | Monthly |
 | data.gov.my Federal Revenue (`dgm_federal_finance_qtr_revenue`) | Quarterly |
 | data.gov.my Federal Operating Expenditure (`dgm_federal_finance_qtr_oe`) | Quarterly |
-| data.gov.my State Government Expenditure (`dgm_state_finance_expenditure`) | Annual |
 | data.gov.my Money Aggregates (`dgm_money_aggregates`) | Monthly |
-| data.gov.my Currency in Circulation (`dgm_currency_in_circulation`) | Monthly |
 | data.gov.my Payment Systems (`dgm_payments_systems`) | Monthly |
 | data.gov.my Payment Instruments (`dgm_payments_instruments`) | Monthly |
 | data.gov.my Payment Channels (`dgm_payments_channels`) | Monthly |
@@ -523,12 +511,9 @@ DataPulse MY currently tracks the portfolio declared in `datapulse.json`.
 | data.gov.my Sexually Transmitted Diseases by State (`dgm_std_state`) | Annual |
 | data.gov.my PeKaB40 Screenings by State (`dgm_pekab40_screenings_state`) | Daily |
 | data.gov.my Malaysian National Health Accounts (`dgm_mnha`) | Annual |
-| data.gov.my Electricity Consumption (`dgm_electricity_consumption`) | Monthly |
 | data.gov.my Electricity Supply (`dgm_electricity_supply`) | Monthly |
-| data.gov.my Water Consumption (`dgm_water_consumption`) | Annual |
 | data.gov.my Water Production (`dgm_water_production`) | Annual |
 | data.gov.my Treated Water Access (`dgm_water_access`) | Annual |
-| data.gov.my Public Transport Ridership (`dgm_ridership_headline`) | Daily |
 | data.gov.my KTMB Ridership (`dgm_ktmb_ridership_monthly`) | Monthly |
 | data.gov.my Cellular Subscribers (`dgm_cellular_subscribers`) | Annual |
 | data.gov.my Prisoners by State and Sex (`dgm_prisoners_state`) | Annual |
