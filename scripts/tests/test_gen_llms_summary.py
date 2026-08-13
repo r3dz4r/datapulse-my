@@ -61,6 +61,42 @@ def test_idempotent_second_run(tmp_path: Path) -> None:
     assert (tmp_path / "llms.txt").read_bytes() == after_first
 
 
+def test_removes_per_dataset_bullets_absent_from_manifest(tmp_path: Path) -> None:
+    manifest = {
+        "datasets": [
+            {"id": "current"},
+            {"id": "renamed", "canonical_id": "legacy"},
+        ]
+    }
+    (tmp_path / "datapulse.json").write_text(
+        json.dumps(manifest) + "\n", encoding="utf-8"
+    )
+    (tmp_path / "llms.txt").write_text(
+        "\n".join(
+            [
+                "# Fixture",
+                "> a machine-readable manifest of 42 official datasets",
+                "## Datasets",
+                "- [Current](https://example.test/data/current.md)",
+                "- [Legacy](https://example.test/data/legacy.md)",
+                "- [Stale](https://example.test/data/removed.md)",
+                "Agents can query the 42-dataset catalogue natively.",
+                "The endpoint serves tools over the 42-dataset catalogue.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    output = (tmp_path / "llms.txt").read_text(encoding="utf-8")
+    assert "data/current.md" in output
+    assert "data/legacy.md" in output
+    assert "data/removed.md" not in output
+
+
 def test_missing_pattern_fails(tmp_path: Path) -> None:
     _write_fixture(tmp_path, include_mcp_line=False)
 

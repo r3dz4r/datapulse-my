@@ -12,6 +12,9 @@ from pathlib import Path
 
 MANIFEST_PATTERN = r"a machine-readable manifest of \d+ official datasets"
 CATALOGUE_PATTERN = r"the \d+-dataset catalogue"
+DATASET_BULLET_PATTERN = re.compile(
+    r"^- \[[^]]+\]\((?:https?://[^)\s]+/)?data/([^)/\s]+)\.md\)"
+)
 
 
 class GenerationError(Exception):
@@ -31,6 +34,9 @@ def generate(root: Path) -> None:
     if not isinstance(datasets, list):
         raise GenerationError(f"{manifest_path}: 'datasets' must be an array")
     count = len(datasets)
+    valid_ids = {entry["id"] for entry in datasets} | {
+        entry["canonical_id"] for entry in datasets if entry.get("canonical_id")
+    }
 
     try:
         original = llms_path.read_text(encoding="utf-8")
@@ -46,6 +52,14 @@ def generate(root: Path) -> None:
         CATALOGUE_PATTERN,
         f"the {count}-dataset catalogue",
         updated,
+    )
+    updated = "".join(
+        line
+        for line in updated.splitlines(keepends=True)
+        if not (
+            (match := DATASET_BULLET_PATTERN.match(line))
+            and match.group(1) not in valid_ids
+        )
     )
 
     missing = []
