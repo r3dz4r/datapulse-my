@@ -16,7 +16,7 @@ import mcp.types as mcp_types
 from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_http_request
 from fastmcp.server.middleware import Middleware
-from mcp.types import Implementation as MCPImplementation, ToolAnnotations
+from mcp.types import Icon, Implementation as MCPImplementation, ToolAnnotations
 from pydantic import Field
 from fastmcp.tools import FunctionTool
 from typing_extensions import Annotated
@@ -186,6 +186,21 @@ READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
     openWorldHint=True,
 )
 
+TOOL_ICONS = [
+    Icon(
+        src="https://data-pulse.my/badges/status-fresh.svg",
+        mimeType="image/svg+xml",
+        sizes=["110x20"],
+    )
+]
+TOOL_META = {
+    "publisher": "DataPulse MY",
+    "publisher_url": "https://data-pulse.my/",
+    "version": SOURCE_VERSION_STRING,
+    "repository_url": "https://github.com/r3dz4r/datapulse-my",
+    "dataset_count": DATASET_COUNT,
+}
+
 
 async def _fetch_json(path: str) -> dict[str, Any]:
     """Fetch one JSON document from the published DataPulse MY site."""
@@ -231,7 +246,13 @@ def _search_score(entry: dict[str, Any], query: str) -> int:
     return score
 
 
-@mcp.tool(description=SEARCH_DESCRIPTION, annotations=READ_ONLY_TOOL_ANNOTATIONS)
+@mcp.tool(
+    title="Discover Malaysian Public Data",
+    description=SEARCH_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
 async def search_datasets(
     query: Annotated[
         str,
@@ -241,6 +262,7 @@ async def search_datasets(
                 "Free-text search terms; natural language is allowed, e.g. "
                 "'inflation cpi'."
             ),
+            examples=["inflation cpi"],
         ),
     ],
     licence: Annotated[
@@ -248,7 +270,8 @@ async def search_datasets(
         Field(
             description=(
                 "Optional exact licence name or supported alias, e.g. 'CC BY 4.0'."
-            )
+            ),
+            examples=["CC BY 4.0", "Open Government Licence (Malaysia)"],
         ),
     ] = None,
     source: Annotated[
@@ -256,7 +279,8 @@ async def search_datasets(
         Field(
             description=(
                 "Optional case-insensitive source-name substring, e.g. 'OpenDOSM'."
-            )
+            ),
+            examples=["OpenDOSM", "data.gov.my", "MET Malaysia"],
         ),
     ] = None,
     limit: Annotated[
@@ -310,7 +334,13 @@ async def search_datasets(
     return matches[:limit]
 
 
-@mcp.tool(description=GET_DATASET_DESCRIPTION, annotations=READ_ONLY_TOOL_ANNOTATIONS)
+@mcp.tool(
+    title="Inspect Dataset Health and Details",
+    description=GET_DATASET_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
 async def get_dataset(
     dataset_id: Annotated[
         str,
@@ -320,6 +350,7 @@ async def get_dataset(
                 "Canonical dataset identifier, e.g. 'dosm_cpi_state'. See the "
                 "registry catalogue for valid IDs."
             ),
+            examples=["dosm_cpi_state"],
         ),
     ],
 ) -> dict[str, Any]:
@@ -397,6 +428,7 @@ async def find_stale(
                 "Maximum acceptable age of the latest health check in whole hours; "
                 "non-negative integer, e.g. 72."
             ),
+            examples=[24, 72],
         ),
     ] = 24,
 ) -> list[dict[str, Any]]:
@@ -445,16 +477,22 @@ async def find_stale(
 
 _find_stale_tool = FunctionTool.from_function(
     find_stale,
+    title="Identify Freshness and Schema Risks",
     description=FIND_STALE_DESCRIPTION,
+    icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
 )
 _find_stale_tool.parameters.setdefault("required", [])
 mcp.add_tool(_find_stale_tool)
 
 
 @mcp.tool(
+    title="Build Citation-Ready Provenance",
     description=GET_PROVENANCE_DESCRIPTION,
+    icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
 )
 async def get_provenance(
     dataset_ids: Annotated[
@@ -499,8 +537,11 @@ async def get_provenance(
 
 
 @mcp.tool(
+    title="Scope Reusable Data by Licence",
     description=FIND_BY_LICENCE_DESCRIPTION,
+    icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
 )
 async def find_by_licence(
     licence: Annotated[
@@ -511,6 +552,11 @@ async def find_by_licence(
                 "Exact licence name or supported alias, e.g. "
                 "'Creative Commons Attribution 4.0'."
             ),
+            examples=[
+                "Creative Commons Attribution 4.0",
+                "CC BY 4.0",
+                "OGL",
+            ],
         ),
     ],
 ) -> dict[str, Any]:
