@@ -14,9 +14,7 @@
       "dgm_blood_donations_state",
       "dgm_cellular_subscribers",
       "dgm_crops_state",
-      "dgm_currency_in_circulation",
       "dgm_drug_addicts_age",
-      "dgm_electricity_consumption",
       "dgm_electricity_supply",
       "dgm_epf_dividend",
       "dgm_federal_finance_qtr_oe",
@@ -38,13 +36,10 @@
       "dgm_payments_transactions_fpx",
       "dgm_pekab40_screenings_state",
       "dgm_prisoners_state",
-      "dgm_ridership_headline",
       "dgm_schools_district",
-      "dgm_state_finance_expenditure",
       "dgm_std_state",
       "dgm_vehicle_registrations_type_fuel",
       "dgm_water_access",
-      "dgm_water_consumption",
       "dgm_water_production",
       "doe_apims",
       "doe_mqims",
@@ -142,7 +137,6 @@
       "dosm_gdp_qtr_real_demand_granular",
       "dgm_arrivals",
       "dgm_arrivals_soe",
-      "dgm_births",
       "dosm_births_annual",
       "dosm_births_annual_sex_ethnic",
       "dosm_births_annual_sex_ethnic_state",
@@ -155,14 +149,11 @@
       "dgm_covid_cases_vaxstatus",
       "dosm_cpi_annual",
       "dosm_cpi_annual_inflation",
-      "dosm_cpi_headline",
       "dosm_cpi_headline_inflation",
       "dosm_cpi_lowincome",
       "dosm_cpi_strata",
       "dosm_crops_district_area",
       "dosm_crops_district_production",
-      "dgm_currency_in_circulation_annual",
-      "dosm_deaths",
       "dosm_deaths_district_sex",
       "dosm_deaths_early_childhood",
       "dosm_deaths_early_childhood_sex",
@@ -178,13 +169,8 @@
       "dgm_drug_addicts_occupation",
       "dgm_drug_arrests_age",
       "dgm_drug_arrests_ethnicity",
-      "dosm_economic_indicators",
       "dgm_electricity_access",
       "dgm_enrolment_school_district",
-      "dgm_federal_budget_moe",
-      "dgm_federal_budget_moh",
-      "dgm_federal_finance_qtr",
-      "dgm_federal_finance_year",
       "dgm_federal_finance_year_de",
       "dgm_federal_finance_year_oe",
       "dosm_fertility_state",
@@ -253,7 +239,6 @@
       "dosm_productivity_annual",
       "dosm_productivity_annual_priority",
       "dosm_productivity_qtr",
-      "dgm_registrations_type_fuel",
       "dgm_sanitation_access",
       "dosm_sppi",
       "dosm_sppi_1d",
@@ -287,9 +272,7 @@
       "dgm_government_apps",
       "dgm_government_apps_downloads",
       "dgm_government_apps_reviews",
-      "dgm_lookup_federal_finance",
       "dosm_lookup_item",
-      "dgm_lookup_money_banking",
       "dosm_lookup_premise",
       "dosm_mcoicop",
       "dgm_metrics_content",
@@ -430,14 +413,19 @@
       "glob": "*.json",
       "generator": "scripts/gen_jsonld_catalog.py",
       "editing": "generator-only",
-      "allowed_auxiliary_globs": ["catalog.json"]
+      "allowed_auxiliary_globs": [
+        "catalog.json"
+      ]
     },
     {
       "directory": "badges",
       "glob": "*.svg",
       "generator": "scripts/gen_badges.sh",
       "editing": "generator-only",
-      "allowed_auxiliary_globs": ["index.svg", "status-*.svg"]
+      "allowed_auxiliary_globs": [
+        "index.svg",
+        "status-*.svg"
+      ]
     }
   ]
 }
