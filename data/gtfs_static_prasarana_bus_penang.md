@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_static_prasarana_bus_penang
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 status: fresh
 freshness_delta: 0 days
 record_count: 308509
@@ -25,11 +25,11 @@ HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 
-The checked resource is 3,447,966 bytes.
+The checked resource is 3,447,955 bytes.
 
 ## Provenance
 

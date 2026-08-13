@@ -185,6 +185,10 @@ jobs:
               "$url" --output "$output" || fail "$surface could not be fetched from $url"
           }
 
+          git fetch --no-tags --depth=1 origin main || \
+            fail "deployed source branch could not be fetched"
+          git checkout --detach "$DEPLOYED_SHA" || \
+            fail "deployed source SHA $DEPLOYED_SHA could not be checked out"
           [[ "$(git rev-parse HEAD)" == "$DEPLOYED_SHA" ]] || \
             fail "checked-out SHA does not match deployed SHA $DEPLOYED_SHA"
 

@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_ktmb
-last_checked: 2026-08-13T01:52:03Z
+last_checked: 2026-08-13T02:46:04Z
 status: fresh
 freshness_delta: 0 days
-record_count: 1
+record_count: 2
 content_freshness_date: 2026-08-03
 schema_version: GTFS
 schema_drift: none
@@ -21,15 +21,15 @@ attribution: KTMB via data.gov.my GTFS API
 
 **Freshness:** 0 days
 
-HTTP 200; valid GTFS realtime protobuf (1 vehicles)
+HTTP 200; valid GTFS realtime protobuf (2 vehicles)
 
 ## Last checked
 
-2026-08-13 at 01:52:03 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 
-The checked resource is 73 bytes.
+The checked resource is 130 bytes.
 
 ## Provenance
 

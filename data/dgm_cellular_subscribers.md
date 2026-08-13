@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_cellular_subscribers
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 status: stale
-freshness_delta: 2048 days
+freshness_delta: 2050 days
 next_expected_update: overdue
 record_count: 66
 date_range: 2000-01-01 to 2021-01-01
@@ -20,13 +20,13 @@ attribution: MCMC via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 2048 days
+**Freshness:** 2050 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

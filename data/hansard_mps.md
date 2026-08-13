@@ -1,8 +1,8 @@
 ---
 dataset_id: hansard_mps
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 status: fresh
-freshness_delta: 7 days
+freshness_delta: 9 days
 next_expected_update: weekly
 last_observed: 2026-08-04
 record_count: 2017
@@ -20,13 +20,13 @@ attribution: Parliament of Malaysia via Malaysian Parliament Digital Hansard
 
 **Status:** Fresh
 
-**Freshness:** 7 days
+**Freshness:** 9 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

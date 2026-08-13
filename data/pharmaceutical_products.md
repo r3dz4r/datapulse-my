@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/healthcare/pharmaceutical_products.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 last_observed: null
 last_modified: 2026-08-08T09:55:45Z
 record_count: 28073
@@ -13,7 +13,7 @@ column_count: 16
 status: fresh
 notes: "Tier-1 wave E newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: pharmaceutical_products
-freshness_delta: 3 days
+freshness_delta: 4 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
 
 **Status:** Fresh
 
-**Freshness:** 3 days
+**Freshness:** 4 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

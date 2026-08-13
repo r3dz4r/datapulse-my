@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_hh_income
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 status: fresh
-freshness_delta: 953 days
+freshness_delta: 955 days
 next_expected_update: biennial to triennial (survey years)
 record_count: 22
 date_range: 1970-01-01 to 2024-01-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 953 days
+**Freshness:** 955 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

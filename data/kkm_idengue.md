@@ -22,7 +22,7 @@ attribution: KKM via iDengue portal (MYSA hosted)
 
 **Freshness:** unknown
 
-Browser check succeeded
+Camofox unavailable; browser check required
 
 ## Last checked
 

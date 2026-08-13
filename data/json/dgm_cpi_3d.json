@@ -1,0 +1,44 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dgm_cpi_3d",
+  "status": "discontinued",
+  "last_checked": "2026-08-13T02:46:04Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": null,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "HTTP 404"
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as discontinued"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://api.data.gov.my/data-catalogue?id=cpi_3d",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "data.gov.my (economy)"
+}

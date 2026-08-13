@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/healthcare/hospital_beds.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "annual"
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 last_observed: 2022-01-01
 last_modified: 2024-09-27T01:28:51Z
 record_count: 5468
@@ -13,7 +13,7 @@ column_count: 5
 status: stale
 notes: "Tier-1 wave B already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: hospital_beds
-freshness_delta: 1683 days
+freshness_delta: 1685 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Ministry of Health Malaysia via data.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 1683 days
+**Freshness:** 1685 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

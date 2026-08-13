@@ -22,7 +22,7 @@ attribution: DOE Malaysia via MyEQMS
 
 **Freshness:** 1 days
 
-Browser check succeeded
+Camofox unavailable; browser check required
 
 ## Last checked
 

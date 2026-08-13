@@ -1,8 +1,8 @@
 ---
 dataset_id: currency_in_circulation
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 status: stale
-freshness_delta: 253 days
+freshness_delta: 255 days
 next_expected_update: monthly
 schema_version: unknown
 schema_drift: none
@@ -18,13 +18,13 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 253 days
+**Freshness:** 255 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

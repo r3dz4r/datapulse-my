@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_water_access
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 status: stale
-freshness_delta: 1683 days
+freshness_delta: 1685 days
 next_expected_update: overdue
 record_count: 1035
 date_range: 2000-01-01 to 2022-01-01
@@ -20,13 +20,13 @@ attribution: SPAN and NRES via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1683 days
+**Freshness:** 1685 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

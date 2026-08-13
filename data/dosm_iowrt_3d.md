@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_iowrt_3d
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 status: fresh
-freshness_delta: 25 days
+freshness_delta: 0 days
 next_expected_update: monthly
-record_count: 5800
+record_count: 5860
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: In cases where proper financial statements for an establishment are incomplete or unavailable, the data is reported based on the best available estimates. Furthermore, note that seasonally adjusted volume index data is not provided at group (3 digit) level."]
@@ -19,17 +19,17 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 25 days
+**Freshness:** 0 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 
-The checked resource is 216,525 bytes.
+The checked resource is 218,775 bytes.
 
 ## Provenance
 

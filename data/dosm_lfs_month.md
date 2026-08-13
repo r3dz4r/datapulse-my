@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_lfs_month
-last_checked: 2026-08-11T14:21:08Z
-status: stale
-freshness_delta: 102 days
+last_checked: 2026-08-13T02:46:04Z
+status: aging
+freshness_delta: 73 days
 next_expected_update: monthly
-record_count: 197
+record_count: 198
 date_range: 2010-01-01 to 2026-05-01
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 102 days
+**Freshness:** 73 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 
-The checked resource is 10,706 bytes.
+The checked resource is 10,760 bytes.
 
 ## Provenance
 
