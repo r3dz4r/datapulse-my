@@ -1,0 +1,63 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "prisoners_state",
+  "status": "stale",
+  "last_checked": "2026-08-13T02:46:04Z",
+  "freshness_days": 1685,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 234,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "sex",
+      "type": "string"
+    },
+    {
+      "name": "prisoners",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 234 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 4 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Annual dates use 1 January, while counts are snapshots at 31 December.",
+    "Both-sex rows coexist with female and male rows and must not be summed together.",
+    "Counts combine convicted and remand prisoners and should not be interpreted as crime or recidivism measures."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/publicsafety/prisoners_state.csv",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "data.gov.my (storage.data.gov.my) (government_open_data)"
+}

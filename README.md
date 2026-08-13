@@ -7,7 +7,7 @@
 [![M8ven Score](https://m8ven.ai/badge/mcp/r3dz4r-datapulse-my-fsfgq3)](https://m8ven.ai/mcp/r3dz4r-datapulse-my-fsfgq3)
 
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
-> any MCP-compatible client with one config block. Your agent gets **409 official
+> any MCP-compatible client with one config block. Your agent gets **385 official
 > Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
 > BAS.MY)** — with declared licences and an honest nine-status trust taxonomy
 > instead of a blanket green checkmark.
@@ -53,7 +53,7 @@ counts missing freshness and row-count signals.
 frozen at the last known content date. This is not a freshness failure — it's a
 publisher decision.
 
-Current distribution (`_trust_summary`): [92 fresh](badges/status-fresh.svg) · [117 aging](badges/status-aging.svg) · [130 stale](badges/status-stale.svg) · [14 discontinued](badges/status-discontinued.svg) · [2 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [38 unknown-freshness](badges/status-unknown-freshness.svg) · [11 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [92 fresh](badges/status-fresh.svg) · [117 aging](badges/status-aging.svg) · [129 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [2 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [28 unknown-freshness](badges/status-unknown-freshness.svg) · [11 reference](badges/status-reference.svg)
 
 <!--
 Statuses with zero count are omitted. Full per-dataset health is in
@@ -150,7 +150,7 @@ the catalogue natively:
 - 3 resources: `datapulse://index`, `datapulse://licences`, `datapulse://{dataset_id}`
 
 The public endpoint is live and serves all 5 read-only tools over the
-409-dataset catalogue.
+385-dataset catalogue.
 
 Connect from Claude Desktop:
 
@@ -380,10 +380,10 @@ does not infer a time from midnight or UTC conversion.
 
 - [data.gov.my Monthly Interest Rates](data/dgm_interest_rates.md) —
   [Sample JSON](samples/dgm_interest_rates.json)
-- [data.gov.my Quarterly Federal Government Revenue](data/dgm_federal_finance_qtr_revenue.md) —
-  [Sample JSON](samples/dgm_federal_finance_qtr_revenue.json)
-- [data.gov.my Quarterly Federal Operating Expenditure](data/dgm_federal_finance_qtr_oe.md) —
-  [Sample JSON](samples/dgm_federal_finance_qtr_oe.json)
+- [data.gov.my Quarterly Federal Government Revenue](data/federal_finance_qtr_revenue.md) —
+  [Sample JSON](samples/federal_finance_qtr_revenue.json)
+- [data.gov.my Quarterly Federal Operating Expenditure](data/federal_finance_qtr_oe.md) —
+  [Sample JSON](samples/federal_finance_qtr_oe.json)
 - [data.gov.my Monthly Money Aggregates](data/dgm_money_aggregates.md) —
   [Sample JSON](samples/dgm_money_aggregates.json)
 - [data.gov.my Monthly Payment Systems](data/dgm_payments_systems.md) —
@@ -394,50 +394,48 @@ does not infer a time from midnight or UTC conversion.
   [Sample JSON](samples/dgm_payments_channels.json)
 - [data.gov.my Annual Interest Rates](data/dgm_interest_rates_annual.md) —
   [Sample JSON](samples/dgm_interest_rates_annual.json)
-- [data.gov.my Annual EPF Dividend Rates](data/dgm_epf_dividend.md) —
-  [Sample JSON](samples/dgm_epf_dividend.json)
+- [data.gov.my Annual EPF Dividend Rates](data/epf_dividend.md) —
+  [Sample JSON](samples/epf_dividend.json)
 - [data.gov.my Monthly Vehicle Registrations by Type and Fuel](data/dgm_vehicle_registrations_type_fuel.md) —
   [Sample JSON](samples/dgm_vehicle_registrations_type_fuel.json)
 - [data.gov.my Daily FPX Transactions](data/dgm_payments_transactions_fpx.md) —
   [Sample JSON](samples/dgm_payments_transactions_fpx.json)
-- [data.gov.my Hospital Beds by State and Hospital Type](data/dgm_hospital_beds.md) —
-  [Sample JSON](samples/dgm_hospital_beds.json)
-- [data.gov.my Healthcare Staff by State and Staff Type](data/dgm_healthcare_staff.md) —
-  [Sample JSON](samples/dgm_healthcare_staff.json)
-- [data.gov.my Daily Blood Donations by Blood Group and State](data/dgm_blood_donations_state.md) —
-  [Sample JSON](samples/dgm_blood_donations_state.json)
-- [data.gov.my Infant Immunisation Coverage](data/dgm_infant_immunisation.md) —
-  [Sample JSON](samples/dgm_infant_immunisation.json)
-- [data.gov.my Sexually Transmitted Diseases by State](data/dgm_std_state.md) —
-  [Sample JSON](samples/dgm_std_state.json)
-- [data.gov.my Daily PeKaB40 Health Screenings by State](data/dgm_pekab40_screenings_state.md) —
-  [Sample JSON](samples/dgm_pekab40_screenings_state.json)
-- [data.gov.my Malaysian National Health Accounts Expenditure](data/dgm_mnha.md) —
-  [Sample JSON](samples/dgm_mnha.json)
-- [data.gov.my Monthly Electricity Supply](data/dgm_electricity_supply.md) —
-  [Sample JSON](samples/dgm_electricity_supply.json)
-- [data.gov.my Water Production by State](data/dgm_water_production.md) —
-  [Sample JSON](samples/dgm_water_production.json)
-- [data.gov.my Access to Treated Water by State and Strata](data/dgm_water_access.md) —
-  [Sample JSON](samples/dgm_water_access.json)
+- [data.gov.my Healthcare Staff by State and Staff Type](data/healthcare_staff.md) —
+  [Sample JSON](samples/healthcare_staff.json)
+- [data.gov.my Daily Blood Donations by Blood Group and State](data/blood_donations_state.md) —
+  [Sample JSON](samples/blood_donations_state.json)
+- [data.gov.my Infant Immunisation Coverage](data/infant_immunisation.md) —
+  [Sample JSON](samples/infant_immunisation.json)
+- [data.gov.my Sexually Transmitted Diseases by State](data/std_state.md) —
+  [Sample JSON](samples/std_state.json)
+- [data.gov.my Daily PeKaB40 Health Screenings by State](data/pekab40_screenings_state.md) —
+  [Sample JSON](samples/pekab40_screenings_state.json)
+- [data.gov.my Malaysian National Health Accounts Expenditure](data/mnha.md) —
+  [Sample JSON](samples/mnha.json)
+- [data.gov.my Monthly Electricity Supply](data/electricity_supply.md) —
+  [Sample JSON](samples/electricity_supply.json)
+- [data.gov.my Water Production by State](data/water_production.md) —
+  [Sample JSON](samples/water_production.json)
+- [data.gov.my Access to Treated Water by State and Strata](data/water_access.md) —
+  [Sample JSON](samples/water_access.json)
 - [data.gov.my Monthly KTMB Ridership](data/dgm_ktmb_ridership_monthly.md) —
   [Sample JSON](samples/dgm_ktmb_ridership_monthly.json)
-- [data.gov.my Cellular Subscribers by Plan Type](data/dgm_cellular_subscribers.md) —
-  [Sample JSON](samples/dgm_cellular_subscribers.json)
-- [data.gov.my Prisoners by State and Sex](data/dgm_prisoners_state.md) —
-  [Sample JSON](samples/dgm_prisoners_state.json)
-- [data.gov.my Drug Addicts by State and Age Group](data/dgm_drug_addicts_age.md) —
-  [Sample JSON](samples/dgm_drug_addicts_age.json)
-- [data.gov.my Female Representation in Local Authorities](data/dgm_local_authority_sex.md) —
-  [Sample JSON](samples/dgm_local_authority_sex.json)
-- [data.gov.my Female Representation in Parliament](data/dgm_parliament_sex.md) —
-  [Sample JSON](samples/dgm_parliament_sex.json)
-- [data.gov.my Monthly Marine Fish Landings by State](data/dgm_fish_landings.md) —
-  [Sample JSON](samples/dgm_fish_landings.json)
-- [data.gov.my Crop Area and Production by State](data/dgm_crops_state.md) —
-  [Sample JSON](samples/dgm_crops_state.json)
-- [data.gov.my Public Education Institutions by District](data/dgm_schools_district.md) —
-  [Sample JSON](samples/dgm_schools_district.json)
+- [data.gov.my Cellular Subscribers by Plan Type](data/cellular_subscribers.md) —
+  [Sample JSON](samples/cellular_subscribers.json)
+- [data.gov.my Prisoners by State and Sex](data/prisoners_state.md) —
+  [Sample JSON](samples/prisoners_state.json)
+- [data.gov.my Drug Addicts by State and Age Group](data/drug_addicts_age.md) —
+  [Sample JSON](samples/drug_addicts_age.json)
+- [data.gov.my Female Representation in Local Authorities](data/local_authority_sex.md) —
+  [Sample JSON](samples/local_authority_sex.json)
+- [data.gov.my Female Representation in Parliament](data/parliament_sex.md) —
+  [Sample JSON](samples/parliament_sex.json)
+- [data.gov.my Monthly Marine Fish Landings by State](data/fish_landings.md) —
+  [Sample JSON](samples/fish_landings.json)
+- [data.gov.my Crop Area and Production by State](data/crops_state.md) —
+  [Sample JSON](samples/crops_state.json)
+- [data.gov.my Public Education Institutions by District](data/schools_district.md) —
+  [Sample JSON](samples/schools_district.json)
 ### GTFS transit feeds
 
 The transport namespace adds 16 GTFS Static schedule ZIPs and 14 GTFS Realtime
@@ -490,39 +488,38 @@ DataPulse MY currently tracks the portfolio declared in `datapulse.json`.
 | OpenDOSM Export-Oriented IPI (`dosm_ipi_export`) | Monthly |
 | OpenDOSM Domestic-Oriented IPI (`dosm_ipi_domestic`) | Monthly |
 | data.gov.my Interest Rates (`dgm_interest_rates`) | Monthly |
-| data.gov.my Federal Revenue (`dgm_federal_finance_qtr_revenue`) | Quarterly |
-| data.gov.my Federal Operating Expenditure (`dgm_federal_finance_qtr_oe`) | Quarterly |
+| data.gov.my Federal Revenue (`federal_finance_qtr_revenue`) | Quarterly |
+| data.gov.my Federal Operating Expenditure (`federal_finance_qtr_oe`) | Quarterly |
 | data.gov.my Money Aggregates (`dgm_money_aggregates`) | Monthly |
 | data.gov.my Payment Systems (`dgm_payments_systems`) | Monthly |
 | data.gov.my Payment Instruments (`dgm_payments_instruments`) | Monthly |
 | data.gov.my Payment Channels (`dgm_payments_channels`) | Monthly |
 | data.gov.my Annual Interest Rates (`dgm_interest_rates_annual`) | Annual |
-| data.gov.my EPF Dividend Rates (`dgm_epf_dividend`) | Annual |
+| data.gov.my EPF Dividend Rates (`epf_dividend`) | Annual |
 | data.gov.my Vehicle Registrations by Type and Fuel (`dgm_vehicle_registrations_type_fuel`) | Monthly |
 | data.gov.my FPX Transactions (`dgm_payments_transactions_fpx`) | Daily |
 | OpenDOSM Births by State (`dosm_birth_state`) | Annual |
 | OpenDOSM Deaths by State (`dosm_death_state`) | Annual |
 | OpenDOSM Maternal Deaths by State (`dosm_death_maternal_state`) | Annual |
 | OpenDOSM Marriages by State and Sex (`dosm_marriages_state`) | Annual |
-| data.gov.my Hospital Beds (`dgm_hospital_beds`) | Annual |
-| data.gov.my Healthcare Staff (`dgm_healthcare_staff`) | Annual |
-| data.gov.my Blood Donations by State (`dgm_blood_donations_state`) | Daily |
-| data.gov.my Infant Immunisation (`dgm_infant_immunisation`) | Annual |
-| data.gov.my Sexually Transmitted Diseases by State (`dgm_std_state`) | Annual |
-| data.gov.my PeKaB40 Screenings by State (`dgm_pekab40_screenings_state`) | Daily |
-| data.gov.my Malaysian National Health Accounts (`dgm_mnha`) | Annual |
-| data.gov.my Electricity Supply (`dgm_electricity_supply`) | Monthly |
-| data.gov.my Water Production (`dgm_water_production`) | Annual |
-| data.gov.my Treated Water Access (`dgm_water_access`) | Annual |
+| data.gov.my Healthcare Staff (`healthcare_staff`) | Annual |
+| data.gov.my Blood Donations by State (`blood_donations_state`) | Daily |
+| data.gov.my Infant Immunisation (`infant_immunisation`) | Annual |
+| data.gov.my Sexually Transmitted Diseases by State (`std_state`) | Annual |
+| data.gov.my PeKaB40 Screenings by State (`pekab40_screenings_state`) | Daily |
+| data.gov.my Malaysian National Health Accounts (`mnha`) | Annual |
+| data.gov.my Electricity Supply (`electricity_supply`) | Monthly |
+| data.gov.my Water Production (`water_production`) | Annual |
+| data.gov.my Treated Water Access (`water_access`) | Annual |
 | data.gov.my KTMB Ridership (`dgm_ktmb_ridership_monthly`) | Monthly |
-| data.gov.my Cellular Subscribers (`dgm_cellular_subscribers`) | Annual |
-| data.gov.my Prisoners by State and Sex (`dgm_prisoners_state`) | Annual |
-| data.gov.my Drug Addicts by State and Age (`dgm_drug_addicts_age`) | Annual |
-| data.gov.my Female Representation in Local Authorities (`dgm_local_authority_sex`) | Annual |
-| data.gov.my Female Representation in Parliament (`dgm_parliament_sex`) | Annual |
-| data.gov.my Marine Fish Landings (`dgm_fish_landings`) | Monthly |
-| data.gov.my Crops by State (`dgm_crops_state`) | Annual |
-| data.gov.my Schools by District (`dgm_schools_district`) | Annual |
+| data.gov.my Cellular Subscribers (`cellular_subscribers`) | Annual |
+| data.gov.my Prisoners by State and Sex (`prisoners_state`) | Annual |
+| data.gov.my Drug Addicts by State and Age (`drug_addicts_age`) | Annual |
+| data.gov.my Female Representation in Local Authorities (`local_authority_sex`) | Annual |
+| data.gov.my Female Representation in Parliament (`parliament_sex`) | Annual |
+| data.gov.my Marine Fish Landings (`fish_landings`) | Monthly |
+| data.gov.my Crops by State (`crops_state`) | Annual |
+| data.gov.my Schools by District (`schools_district`) | Annual |
 | OpenDOSM Household Income, Malaysia (`dosm_hh_income`) | Biennial to triennial (survey years) |
 | OpenDOSM Household Income by State (`dosm_hh_income_state`) | Biennial to triennial (survey years) |
 | OpenDOSM Household Income by District (`dosm_hh_income_district`) | Biennial to triennial (survey years) |

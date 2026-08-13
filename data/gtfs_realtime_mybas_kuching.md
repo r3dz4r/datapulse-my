@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_realtime_mybas_kuching
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-13T03:40:12Z
 status: fresh
 freshness_delta: 0 days
 record_count: 45
@@ -25,7 +25,7 @@ HTTP 200; valid GTFS realtime protobuf (45 vehicles)
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-13 at 03:40:12 UTC.
 
 ## File size
 
