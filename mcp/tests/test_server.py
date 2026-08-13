@@ -36,6 +36,14 @@ EXPECTED_TOOL_ANNOTATIONS = {
     "openWorldHint": True,
 }
 
+EXPECTED_TOOL_TITLES = {
+    "search_datasets": "Discover Malaysian Public Data",
+    "get_dataset": "Inspect Dataset Health and Details",
+    "find_stale": "Identify Freshness and Schema Risks",
+    "get_provenance": "Build Citation-Ready Provenance",
+    "find_by_licence": "Scope Reusable Data by Licence",
+}
+
 
 @pytest.fixture(scope="module")
 def anyio_backend() -> str:
@@ -90,9 +98,60 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
     assert tools["get_provenance"].parameters["properties"]["dataset_ids"][
         "examples"
     ] == [["fuelprice", "pricecatcher"]]
+    assert tools["search_datasets"].parameters["properties"]["query"]["examples"] == [
+        "inflation cpi"
+    ]
+    assert tools["search_datasets"].parameters["properties"]["licence"]["examples"] == [
+        "CC BY 4.0",
+        "Open Government Licence (Malaysia)",
+    ]
+    assert tools["search_datasets"].parameters["properties"]["source"]["examples"] == [
+        "OpenDOSM",
+        "data.gov.my",
+        "MET Malaysia",
+    ]
+    assert tools["get_dataset"].parameters["properties"]["dataset_id"]["examples"] == [
+        "dosm_cpi_state"
+    ]
+    assert tools["find_stale"].parameters["properties"]["max_age_hours"]["examples"] == [
+        24,
+        72,
+    ]
+    assert tools["find_by_licence"].parameters["properties"]["licence"]["examples"] == [
+        "Creative Commons Attribution 4.0",
+        "CC BY 4.0",
+        "OGL",
+    ]
     assert f"{len(manifest['datasets'])} Malaysian public datasets" in tools[
         "search_datasets"
     ].description
+
+
+async def test_tools_list_exposes_display_and_publisher_metadata() -> None:
+    async with Client(server.mcp) as client:
+        listed_tools = await client.list_tools()
+
+    tools = {tool.name: tool for tool in listed_tools}
+    assert set(tools) == set(EXPECTED_TOOL_TITLES)
+
+    for tool_name, expected_title in EXPECTED_TOOL_TITLES.items():
+        payload = tools[tool_name].model_dump(by_alias=True, exclude_none=True)
+        assert payload["title"] == expected_title
+        assert payload["icons"] == [
+            {
+                "src": "https://data-pulse.my/badges/status-fresh.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": ["110x20"],
+            }
+        ]
+        assert payload["_meta"] == {
+            "publisher": "DataPulse MY",
+            "publisher_url": "https://data-pulse.my/",
+            "version": server.SOURCE_VERSION_STRING,
+            "repository_url": "https://github.com/r3dz4r/datapulse-my",
+            "dataset_count": server.DATASET_COUNT,
+            "fastmcp": {"tags": []},
+        }
 
 
 def test_dataset_count_is_derived_from_manifest(tmp_path: Path) -> None:

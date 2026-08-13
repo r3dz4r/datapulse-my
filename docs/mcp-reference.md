@@ -22,6 +22,9 @@ Input schema:
   "properties": {
     "query": {
       "description": "Free-text search terms; natural language is allowed, e.g. 'inflation cpi'.",
+      "examples": [
+        "inflation cpi"
+      ],
       "minLength": 1,
       "type": "string"
     },
@@ -35,7 +38,11 @@ Input schema:
         }
       ],
       "default": null,
-      "description": "Optional exact licence name or supported alias, e.g. 'CC BY 4.0'."
+      "description": "Optional exact licence name or supported alias, e.g. 'CC BY 4.0'.",
+      "examples": [
+        "CC BY 4.0",
+        "Open Government Licence (Malaysia)"
+      ]
     },
     "source": {
       "anyOf": [
@@ -47,7 +54,12 @@ Input schema:
         }
       ],
       "default": null,
-      "description": "Optional case-insensitive source-name substring, e.g. 'OpenDOSM'."
+      "description": "Optional case-insensitive source-name substring, e.g. 'OpenDOSM'.",
+      "examples": [
+        "OpenDOSM",
+        "data.gov.my",
+        "MET Malaysia"
+      ]
     },
     "limit": {
       "default": 10,
@@ -76,6 +88,9 @@ Input schema:
   "properties": {
     "dataset_id": {
       "description": "Canonical dataset identifier, e.g. 'dosm_cpi_state'. See the registry catalogue for valid IDs.",
+      "examples": [
+        "dosm_cpi_state"
+      ],
       "minLength": 1,
       "type": "string"
     }
@@ -100,6 +115,10 @@ Input schema:
     "max_age_hours": {
       "default": 24,
       "description": "Maximum acceptable age of the latest health check in whole hours; non-negative integer, e.g. 72.",
+      "examples": [
+        24,
+        72
+      ],
       "minimum": 0,
       "type": "integer"
     }
@@ -154,6 +173,11 @@ Input schema:
   "properties": {
     "licence": {
       "description": "Exact licence name or supported alias, e.g. 'Creative Commons Attribution 4.0'.",
+      "examples": [
+        "Creative Commons Attribution 4.0",
+        "CC BY 4.0",
+        "OGL"
+      ],
       "minLength": 1,
       "type": "string"
     }
