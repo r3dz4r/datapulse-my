@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_productivity_qtr
-last_checked: 2026-08-10T10:07:26Z
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-11T14:21:08Z
 status: stale
-freshness_delta: 313 days
+freshness_delta: 314 days
 next_expected_update: quarterly
 record_count: 1848
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 313 days
+**Freshness:** 314 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 

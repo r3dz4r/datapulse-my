@@ -1,7 +1,7 @@
 ---
 dataset_id: gtfs_static_prasarana_bus_kuantan
-last_checked: 2026-08-10T10:07:26Z
-status: unreachable
+last_checked: 2026-08-11T14:21:08Z
+status: discontinued
 freshness_delta: unknown
 record_count: null
 content_freshness_date: null
@@ -17,7 +17,7 @@ attribution: Prasarana Malaysia Berhad via data.gov.my GTFS API
 
 ## Status
 
-**Status:** Unreachable
+**Status:** Discontinued
 
 **Freshness:** unknown
 
@@ -25,7 +25,7 @@ HTTP 404
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 

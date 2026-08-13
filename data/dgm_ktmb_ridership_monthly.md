@@ -1,6 +1,6 @@
 ---
 dataset_id: dgm_ktmb_ridership_monthly
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-11T14:21:08Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: monthly
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 

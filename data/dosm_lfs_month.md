@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_lfs_month
-last_checked: 2026-08-10T10:07:26Z
+last_checked: 2026-08-11T14:21:08Z
 status: stale
-freshness_delta: 101 days
+freshness_delta: 102 days
 next_expected_update: monthly
 record_count: 197
 date_range: 2010-01-01 to 2026-05-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Stale
 
-**Freshness:** 101 days
+**Freshness:** 102 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-10 at 10:07:26 UTC.
+2026-08-11 at 14:21:08 UTC.
 
 ## File size
 
