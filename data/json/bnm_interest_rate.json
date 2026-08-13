@@ -1,9 +1,9 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "bnm_interest_rate",
-  "status": "fresh",
-  "last_checked": "2026-08-11T14:21:08Z",
-  "freshness_days": 0,
+  "status": "degraded",
+  "last_checked": "2026-08-13T02:46:04Z",
+  "freshness_days": 1,
   "next_expected_update": null,
   "refresh_frequency": "monthly",
   "record_count": 3,
@@ -22,13 +22,13 @@
     },
     {
       "name": "freshness",
-      "status": "pass",
-      "method": "Health snapshot classifies the dataset as fresh"
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as degraded"
     },
     {
       "name": "schema_stable",
-      "status": "pass",
-      "method": "Probe observed 8 column(s) with no content-shape change"
+      "status": "fail",
+      "method": "Probe detected a content-shape change"
     }
   ],
   "known_quirks": [

@@ -1,8 +1,8 @@
 ---
 dataset_id: met_weather
-last_checked: 2026-08-12T16:16:35Z
+last_checked: 2026-08-13T02:46:04Z
 status: aging
-freshness_delta: 2 days
+freshness_delta: 3 days
 next_expected_update: 2026-08-03
 record_count: 2520
 date_range: 2026-08-02 to 2026-08-08
@@ -20,13 +20,13 @@ attribution: MET Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 2 days
+**Freshness:** 3 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-12 at 16:16:35 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

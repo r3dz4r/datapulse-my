@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_mybas_kuching
-last_checked: 2026-08-13T01:52:03Z
+last_checked: 2026-08-13T02:46:04Z
 status: fresh
 freshness_delta: 0 days
-record_count: 46
+record_count: 45
 content_freshness_date: 2026-08-03
 schema_version: GTFS
 schema_drift: none
@@ -21,15 +21,15 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Freshness:** 0 days
 
-HTTP 200; valid GTFS realtime protobuf (46 vehicles)
+HTTP 200; valid GTFS realtime protobuf (45 vehicles)
 
 ## Last checked
 
-2026-08-13 at 01:52:03 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 
-The checked resource is 4,173 bytes.
+The checked resource is 4,096 bytes.
 
 ## Provenance
 

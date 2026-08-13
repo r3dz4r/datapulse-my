@@ -1,0 +1,4378 @@
+{
+  "week": "2026-08-13",
+  "iso_week": "2026-W33",
+  "generated_at": "2026-08-13T00:00:00Z",
+  "source_commit": "32dde448f583cc5fbe660bd047f75085dfc5fc43",
+  "date_range": {
+    "start": "2026-08-07",
+    "end": "2026-08-13"
+  },
+  "status_distribution": {
+    "fresh": 92,
+    "aging": 117,
+    "stale": 130,
+    "discontinued": 14,
+    "degraded": 2,
+    "browser-dependent": 5,
+    "unreachable": 0,
+    "unknown": 0,
+    "unknown-freshness": 38,
+    "reference": 11,
+    "percentages": {
+      "fresh": 22.5,
+      "aging": 28.6,
+      "stale": 31.8,
+      "discontinued": 3.4,
+      "degraded": 0.5,
+      "browser-dependent": 1.2,
+      "unreachable": 0.0,
+      "unknown": 0.0,
+      "unknown-freshness": 9.3,
+      "reference": 2.7
+    },
+    "total": 409
+  },
+  "coverage": {
+    "total_datasets": 409,
+    "by_namespace": {
+      "economy": 165,
+      "environment": 14,
+      "government_open_data": 80,
+      "healthcare": 28,
+      "other": 74,
+      "transport": 47,
+      "weather": 1
+    },
+    "by_licence": {
+      "Creative Commons Attribution 4.0": 309,
+      "Open Government Licence (Malaysia)": 100
+    }
+  },
+  "changes": {
+    "baseline": {
+      "manifest_commit": "4760e265acac11da56569c89c95d665e4a9b8d2d",
+      "health_commit": "02965c7921dbc4eb4c9f92256cb66c627e700a06"
+    },
+    "new_breaks": [],
+    "recovered": [
+      {
+        "dataset_id": "fuelprice",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_ktmb",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_alor_setar",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_ipoh",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_johor",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kangar",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kota_bharu",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kuala_terengganu",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kuching",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_melaka",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_seremban_a",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_seremban_b",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_kl",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_mrtfeeder",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_penang",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "pricecatcher",
+        "old_status": "degraded",
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      }
+    ],
+    "schema_changes": [
+      {
+        "dataset_id": "dgm_blood_donations_state",
+        "old_record_count": 488930,
+        "new_record_count": 489385,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_payments_transactions_fpx",
+        "old_record_count": 7218,
+        "new_record_count": 7245,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_pekab40_screenings_state",
+        "old_record_count": 42704,
+        "new_record_count": 42816,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_vehicle_registrations_type_fuel",
+        "old_record_count": 10763,
+        "new_record_count": 10801,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ipi_domestic",
+        "old_record_count": 5970,
+        "new_record_count": 6015,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ipi_export",
+        "old_record_count": 5174,
+        "new_record_count": 5213,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_month",
+        "old_record_count": 197,
+        "new_record_count": 198,
+        "old_content_shape": {
+          "column_count": 8
+        },
+        "new_content_shape": {
+          "column_count": 8
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates_daily_0900",
+        "old_record_count": 17114,
+        "new_record_count": 17129,
+        "old_content_shape": {
+          "column_count": 29
+        },
+        "new_content_shape": {
+          "column_count": 29
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates_daily_1130",
+        "old_record_count": 11386,
+        "new_record_count": 11394,
+        "old_content_shape": {
+          "column_count": 9
+        },
+        "new_content_shape": {
+          "column_count": 9
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates_daily_1200",
+        "old_record_count": 18679,
+        "new_record_count": 18691,
+        "old_content_shape": {
+          "column_count": 29
+        },
+        "new_content_shape": {
+          "column_count": 29
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates_daily_1700",
+        "old_record_count": 17148,
+        "new_record_count": 17160,
+        "old_content_shape": {
+          "column_count": 29
+        },
+        "new_content_shape": {
+          "column_count": 29
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "fuelprice",
+        "old_record_count": 19,
+        "new_record_count": 945,
+        "old_content_shape": {
+          "column_count": 8
+        },
+        "new_content_shape": {
+          "column_count": 10
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_ktmb",
+        "old_record_count": 7.108333333333333,
+        "new_record_count": 2,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_alor_setar",
+        "old_record_count": 26.458333333333332,
+        "new_record_count": 44,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_ipoh",
+        "old_record_count": 25.025,
+        "new_record_count": 20,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_johor",
+        "old_record_count": 114.35833333333333,
+        "new_record_count": 77,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kangar",
+        "old_record_count": 14.641666666666667,
+        "new_record_count": 24,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kota_bharu",
+        "old_record_count": 30.291666666666668,
+        "new_record_count": 59,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kuala_terengganu",
+        "old_record_count": 17.425,
+        "new_record_count": 26,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kuching",
+        "old_record_count": 33.49166666666667,
+        "new_record_count": 45,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_melaka",
+        "old_record_count": 40.25,
+        "new_record_count": 24,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_seremban_a",
+        "old_record_count": 30.866666666666667,
+        "new_record_count": 26,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_seremban_b",
+        "old_record_count": 33.6,
+        "new_record_count": 23,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_kl",
+        "old_record_count": 0.125,
+        "new_record_count": 0,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_mrtfeeder",
+        "old_record_count": 102.15833333333333,
+        "new_record_count": 118,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_penang",
+        "old_record_count": 123.30833333333334,
+        "new_record_count": 152,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_static_ktmb",
+        "old_record_count": 2881,
+        "new_record_count": 2879,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "met_weather",
+        "old_record_count": 2520,
+        "new_record_count": 2520,
+        "old_content_shape": {
+          "column_count": 9
+        },
+        "new_content_shape": {
+          "column_count": 9
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "pricecatcher",
+        "old_record_count": 2286,
+        "new_record_count": 8311,
+        "old_content_shape": {
+          "column_count": 2
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      }
+    ],
+    "newly_probed": [
+      {
+        "dataset_id": "air_pollution",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "births",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "bnm_base_rate",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "bnm_interbank_swap",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "bnm_interest_rate",
+        "status": "degraded",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "bnm_interest_volume",
+        "status": "degraded",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "bnm_kijang_emas",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "bnm_kl_usd_myr",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "bnm_myor",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "bnm_opr",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "bop_balance",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "cosmetic_notifications",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "cosmetic_notifications_cancelled",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "covid_deaths_linelist",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "cpi_3d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "cpi_4d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "cpi_5d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "cpi_core",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "cpi_core_inflation",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "cpi_headline",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "currency_in_circulation",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "currency_in_circulation_annual",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "deaths",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_almanak_astronomi",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_arrivals",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_arrivals_soe",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_blood_donations",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_bop_balance",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_completion_school_state",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cosmetics_manufacturers",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_covid_cases",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_covid_cases_age",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_covid_cases_vaxstatus",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_3d",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_4d",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_5d",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_core",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_core_inflation",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_state",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_state_inflation",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_currency_codes",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_datasets",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_domains",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_domains_dnssec",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_domains_idn",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_domains_ipv6",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_drug_addicts_drugtype",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_drug_addicts_education",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_drug_addicts_occupation",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_drug_arrests_age",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_drug_arrests_ethnicity",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_electricity_access",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_employment_sector",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_enrolment_school_district",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_fdi_flows",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_federal_finance_year_de",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_federal_finance_year_oe",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_fertility",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_annual_nominal_supply",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_annual_real_supply",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_gni_annual_nominal",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_qtr_nominal",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_qtr_real",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_qtr_real_sa",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_state_real_supply",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_government_apps",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_government_apps_active",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_government_apps_downloads",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_government_apps_reviews",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_expenditure_dun",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_expenditure_parlimen",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_income",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_income_district",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_income_state",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_inequality",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_inequality_district",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_inequality_state",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_poverty",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_poverty_district",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_poverty_state",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_interestrates_annual",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ipi_2d",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ipi_3d",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ipi_5d",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ipi_domestic",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ipi_export",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_lecturers_uni",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_lfs_month",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_lfs_qtr",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_lfs_qtr_state",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_lfs_year",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_marriages_state",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_marriages_state_age",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_metrics_content",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_metrics_dataset_cumul",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_mnha_moh",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_nutrition_children_sex",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_nutrition_children_strata",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_organ_pledges",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_organ_pledges_state",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_passports",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_pekab40_screenings",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_population_district",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_population_dun",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_population_malaysia",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_population_parlimen",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_population_state",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_poskod",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ppi",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ppi_2d",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ppi_3d",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ppi_sop",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_prisoners_prison",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_sanitation_access",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_sppi_3d",
+        "status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_state_finance_revenue",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_teachers_district",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_trade_sitc_1d",
+        "status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_trnsc_daily_directdebit",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_trnsc_daily_fpx",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_trnsc_daily_jompay",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_trnsc_daily_san",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_usage_metrics",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_usage_metrics_openapi",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_usage_metrics_openapi_cumul",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_vaxreg_covid",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dgm_water_pollution_basin",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_arc_dosm",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_bec",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_births_annual",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_births_annual_sex_ethnic",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_births_annual_sex_ethnic_state",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_births_annual_state",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_births_district_sex",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_cpi_annual",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_cpi_annual_inflation",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_cpi_headline_inflation",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_cpi_lowincome",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_cpi_strata",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_crops_district_area",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_crops_district_production",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_district_sex",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_early_childhood",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_early_childhood_sex",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_early_childhood_state",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_early_childhood_state_sex",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_maternal",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_maternal_state",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_sex_ethnic",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_sex_ethnic_state",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_state",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_fertility_state",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_forest_reserve",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_forest_reserve_state",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_nominal_demand",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_nominal_demand_granular",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_nominal_income",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_nominal_supply_granular",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_real_demand",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_real_demand_granular",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_real_supply_granular",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_district_real_supply",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_gni_annual_real",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_lookup",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_demand",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_demand_granular",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_supply",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_supply_granular",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_demand",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_demand_granular",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_sa_demand",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_sa_supply",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_supply",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_supply_granular",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_access_amenities",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_income_dun",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_income_parlimen",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_inequality_dun",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_inequality_parlimen",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_poverty_dun",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_poverty_parlimen",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_profile",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_profile_state",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hies_district",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hies_malaysia_percentile",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hies_state",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hies_state_percentile",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_iowrt",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_iowrt_2d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_iowrt_3d",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ipi",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ipi_1d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_district",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_dun",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_month_duration",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_month_sa",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_month_status",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_month_youth",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_parlimen",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_qtr_sru_age",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_qtr_sru_sex",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_qtr_tru_age",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_qtr_tru_sex",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_state_sex",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_year_sex",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lookup_item",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lookup_premise",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_marriages",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_marriages_age",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_mcoicop",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_mineral_extraction",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_msic",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ppi_1d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ppi_sitc",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_productivity_annual",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_productivity_annual_priority",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_productivity_lookup",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_productivity_qtr",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_sitc",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_sitc_sop",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_sppi",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_sppi_1d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_sppi_2d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_stillbirths",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_stillbirths_state",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "dosm_timber_production",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "economic_indicators",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "electricity_consumption",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "fdi_flows",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "federal_budget_moe",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "federal_budget_moh",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "federal_finance_qtr",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "federal_finance_qtr_de",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "federal_finance_year",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "federal_finance_year_revenue",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gdp_qtr_nominal",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "gdp_qtr_real",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ghg_emissions",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "hansard_mps",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "hansard_parliamentary_terms",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "hansard_sittings",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "hospital_beds",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "interestrates",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ipi_2d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ipi_3d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ipi_5d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ipi_domestic",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ipi_export",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "lfs_month",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "lookup_federal_finance",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "lookup_money_banking",
+        "status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "monetary_aggregates",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "payment_channels",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "payment_instruments",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "payment_systems",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_importers",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_manufacturers",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_products",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_products_cancelled",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_wholesalers",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "population_district",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "population_dun",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "population_malaysia",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "population_parlimen",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "population_state",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ppi_2d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ppi_3d",
+        "status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "registration_transactions_all",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "registration_transactions_car",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "registration_transactions_motorcycle",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "registrations_type_fuel",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ridership_headline",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ridership_ktmb_daily",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ridership_ktmb_monthly",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_brt_daily",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_ets",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_intercity",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_komuter",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_komuter_utara",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_rapidrail_daily",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_shuttle_tebrau",
+        "status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "sdg_03-3-1",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "sdg_04-6-1",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "sdg_10-c-1",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "sdg_16-1-1",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "sdg_16-2-2",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "sppi_3d",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "state_finance_expenditure",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "trade_headline",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "vaxreg_covid_demog",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      },
+      {
+        "dataset_id": "water_consumption",
+        "status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "health/latest.json@02965c7921db..HEAD"
+      }
+    ],
+    "added": [
+      {
+        "dataset_id": "air_pollution",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "births",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "bnm_base_rate",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "bnm_interbank_swap",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "bnm_interest_rate",
+        "old_status": null,
+        "new_status": "degraded",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "bnm_interest_volume",
+        "old_status": null,
+        "new_status": "degraded",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "bnm_kijang_emas",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "bnm_kl_usd_myr",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "bnm_myor",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "bnm_opr",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "bop_balance",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "cosmetic_notifications",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "cosmetic_notifications_cancelled",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "covid_deaths_linelist",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "cpi_3d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "cpi_4d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "cpi_5d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "cpi_core",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "cpi_core_inflation",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "cpi_headline",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "currency_in_circulation",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "currency_in_circulation_annual",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "deaths",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_almanak_astronomi",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_arrivals",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_arrivals_soe",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_blood_donations",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_bop_balance",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_completion_school_state",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cosmetics_manufacturers",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_covid_cases",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_covid_cases_age",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_covid_cases_vaxstatus",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_3d",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_4d",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_5d",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_core",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_core_inflation",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_state",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_cpi_state_inflation",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_currency_codes",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_datasets",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_domains",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_domains_dnssec",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_domains_idn",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_domains_ipv6",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_drug_addicts_drugtype",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_drug_addicts_education",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_drug_addicts_occupation",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_drug_arrests_age",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_drug_arrests_ethnicity",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_electricity_access",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_employment_sector",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_enrolment_school_district",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_fdi_flows",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_federal_finance_year_de",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_federal_finance_year_oe",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_fertility",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_annual_nominal_supply",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_annual_real_supply",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_gni_annual_nominal",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_qtr_nominal",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_qtr_real",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_qtr_real_sa",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_gdp_state_real_supply",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_government_apps",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_government_apps_active",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_government_apps_downloads",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_government_apps_reviews",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_expenditure_dun",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_expenditure_parlimen",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_income",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_income_district",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_income_state",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_inequality",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_inequality_district",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_inequality_state",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_poverty",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_poverty_district",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_hh_poverty_state",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_interestrates_annual",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ipi_2d",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ipi_3d",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ipi_5d",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ipi_domestic",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ipi_export",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_lecturers_uni",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_lfs_month",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_lfs_qtr",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_lfs_qtr_state",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_lfs_year",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_marriages_state",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_marriages_state_age",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_metrics_content",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_metrics_dataset_cumul",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_mnha_moh",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_nutrition_children_sex",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_nutrition_children_strata",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_organ_pledges",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_organ_pledges_state",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_passports",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_pekab40_screenings",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_population_district",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_population_dun",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_population_malaysia",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_population_parlimen",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_population_state",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_poskod",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ppi",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ppi_2d",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ppi_3d",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ppi_sop",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_prisoners_prison",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_sanitation_access",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_sppi_3d",
+        "old_status": null,
+        "new_status": "discontinued",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_state_finance_revenue",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_teachers_district",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_trade_sitc_1d",
+        "old_status": null,
+        "new_status": "unknown-freshness",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_trnsc_daily_directdebit",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_trnsc_daily_fpx",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_trnsc_daily_jompay",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_trnsc_daily_san",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_usage_metrics",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_usage_metrics_openapi",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_usage_metrics_openapi_cumul",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_vaxreg_covid",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dgm_water_pollution_basin",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_arc_dosm",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_bec",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_births_annual",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_births_annual_sex_ethnic",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_births_annual_sex_ethnic_state",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_births_annual_state",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_births_district_sex",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_cpi_annual",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_cpi_annual_inflation",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_cpi_headline_inflation",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_cpi_lowincome",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_cpi_strata",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_crops_district_area",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_crops_district_production",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_district_sex",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_early_childhood",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_early_childhood_sex",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_early_childhood_state",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_early_childhood_state_sex",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_maternal",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_maternal_state",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_sex_ethnic",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_sex_ethnic_state",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_deaths_state",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_fertility_state",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_forest_reserve",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_forest_reserve_state",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_nominal_demand",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_nominal_demand_granular",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_nominal_income",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_nominal_supply_granular",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_real_demand",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_real_demand_granular",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_annual_real_supply_granular",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_district_real_supply",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_gni_annual_real",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_lookup",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_demand",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_demand_granular",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_supply",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_supply_granular",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_demand",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_demand_granular",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_sa_demand",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_sa_supply",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_supply",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_supply_granular",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_access_amenities",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_income_dun",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_income_parlimen",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_inequality_dun",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_inequality_parlimen",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_poverty_dun",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_poverty_parlimen",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_profile",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hh_profile_state",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hies_district",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hies_malaysia_percentile",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hies_state",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_hies_state_percentile",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_iowrt",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_iowrt_2d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_iowrt_3d",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ipi",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ipi_1d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_district",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_dun",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_month_duration",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_month_sa",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_month_status",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_month_youth",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_parlimen",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_qtr_sru_age",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_qtr_sru_sex",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_qtr_tru_age",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_qtr_tru_sex",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_state_sex",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lfs_year_sex",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lookup_item",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_lookup_premise",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_marriages",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_marriages_age",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_mcoicop",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_mineral_extraction",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_msic",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ppi_1d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ppi_sitc",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_productivity_annual",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_productivity_annual_priority",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_productivity_lookup",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_productivity_qtr",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_sitc",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_sitc_sop",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_sppi",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_sppi_1d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_sppi_2d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_stillbirths",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_stillbirths_state",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "dosm_timber_production",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "economic_indicators",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "electricity_consumption",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "fdi_flows",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "federal_budget_moe",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "federal_budget_moh",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "federal_finance_qtr",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "federal_finance_qtr_de",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "federal_finance_year",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "federal_finance_year_revenue",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "gdp_qtr_nominal",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "gdp_qtr_real",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ghg_emissions",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "hansard_mps",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "hansard_parliamentary_terms",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "hansard_sittings",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "hospital_beds",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "interestrates",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ipi_2d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ipi_3d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ipi_5d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ipi_domestic",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ipi_export",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "lfs_month",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "lookup_federal_finance",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "lookup_money_banking",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "monetary_aggregates",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "payment_channels",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "payment_instruments",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "payment_systems",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_importers",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_manufacturers",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_products",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_products_cancelled",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_wholesalers",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "population_district",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "population_dun",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "population_malaysia",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "population_parlimen",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "population_state",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ppi_2d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ppi_3d",
+        "old_status": null,
+        "new_status": "aging",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "registration_transactions_all",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "registration_transactions_car",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "registration_transactions_motorcycle",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "registrations_type_fuel",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ridership_headline",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ridership_ktmb_daily",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ridership_ktmb_monthly",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_brt_daily",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_ets",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_intercity",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_komuter",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_komuter_utara",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_rapidrail_daily",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_shuttle_tebrau",
+        "old_status": null,
+        "new_status": "fresh",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "sdg_03-3-1",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "sdg_04-6-1",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "sdg_10-c-1",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "sdg_16-1-1",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "sdg_16-2-2",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "sppi_3d",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "state_finance_expenditure",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "trade_headline",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "vaxreg_covid_demog",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      },
+      {
+        "dataset_id": "water_consumption",
+        "old_status": null,
+        "new_status": "stale",
+        "last_checked": "2026-08-13T02:46:04Z",
+        "source": "datapulse.json@4760e265acac..HEAD"
+      }
+    ]
+  },
+  "source_level_staleness": [
+    {
+      "source": "Digital Services",
+      "steward": "National Digital Department and Ministry of Digital",
+      "dataset_count": 4,
+      "dataset_ids": [
+        "dgm_government_apps_active",
+        "dgm_government_apps",
+        "dgm_government_apps_downloads",
+        "dgm_government_apps_reviews"
+      ],
+      "threshold_days": 60,
+      "minimum_staleness_days": 114,
+      "latest_data_as_of": "2026-04-21",
+      "finding": "The source appears to have stopped publishing across this dataset family."
+    }
+  ],
+  "caveats": {
+    "unknown_freshness": 38,
+    "unreachable": 0,
+    "history": "Compared with manifest and health baselines 4760e265acac / 02965c7921db."
+  },
+  "reproducibility": {
+    "command": "bash scripts/gen_trust_snapshot.sh",
+    "license": "MIT",
+    "cite": "https://data-pulse.my/trust-snapshot-2026-08-13.md"
+  }
+}

@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_gdp_qtr_real_sa_demand
-last_checked: 2026-08-11T14:21:08Z
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-13T02:46:04Z
 status: aging
-freshness_delta: 222 days
+freshness_delta: 224 days
 next_expected_update: quarterly
 record_count: 270
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 222 days
+**Freshness:** 224 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

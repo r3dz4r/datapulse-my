@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_ipi_1d
-last_checked: 2026-08-11T14:21:08Z
-last_checked: 2026-08-11T14:21:08Z
-status: stale
-freshness_delta: 132 days
+last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-13T02:46:04Z
+status: aging
+freshness_delta: 73 days
 next_expected_update: monthly
-record_count: 1185
+record_count: 1203
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The most recent 1 year of data may be revised in future releases. Furthermore, note that year-on-year growth is not provided for the seasonally adjusted series, which should only be used to compute month-on-month growth."]
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 132 days
+**Freshness:** 73 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 
-The checked resource is 115,771 bytes.
+The checked resource is 117,531 bytes.
 
 ## Provenance
 

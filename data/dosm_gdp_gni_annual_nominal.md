@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_gdp_gni_annual_nominal
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 status: aging
-freshness_delta: 587 days
+freshness_delta: 589 days
 next_expected_update: annual
 record_count: 157
 date_range: 1947-01-01 to 2025-01-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 587 days
+**Freshness:** 589 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

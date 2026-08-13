@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_payments_channels
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
 status: stale
-freshness_delta: 191 days
+freshness_delta: 193 days
 next_expected_update: overdue
 record_count: 430
 date_range: 2019-01-01 to 2026-02-01
@@ -20,13 +20,13 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 191 days
+**Freshness:** 193 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 

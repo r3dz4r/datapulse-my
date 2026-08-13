@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_iowrt
-last_checked: 2026-08-11T14:21:08Z
-last_checked: 2026-08-11T14:21:08Z
-status: stale
-freshness_delta: 102 days
+last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-13T02:46:04Z
+status: aging
+freshness_delta: 73 days
 next_expected_update: monthly
-record_count: 290
+record_count: 293
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: In cases where proper financial statements for an establishment are incomplete or unavailable, the data is reported based on the best available estimates."]
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 102 days
+**Freshness:** 73 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 
-The checked resource is 29,616 bytes.
+The checked resource is 29,923 bytes.
 
 ## Provenance
 

@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_gdp_qtr_nominal_demand_granular
-last_checked: 2026-08-11T14:21:08Z
-last_checked: 2026-08-11T14:21:08Z
+last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-13T02:46:04Z
 status: fresh
-freshness_delta: 19 days
+freshness_delta: 21 days
 next_expected_update: quarterly
 record_count: 3425
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 19 days
+**Freshness:** 21 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-11 at 14:21:08 UTC.
+2026-08-13 at 02:46:04 UTC.
 
 ## File size
 
