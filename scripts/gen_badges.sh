@@ -30,43 +30,43 @@ while IFS=$'\t' read -r dataset_id raw_status; do
   case "$raw_status" in
     fresh)
       status="fresh"
-      color="#3fb950"
+      color="#16A34A"
       ;;
     aging)
       status="aging"
-      color="#d29922"
+      color="#CA8A04"
       ;;
     stale)
       status="stale"
-      color="#f85149"
+      color="#DC2626"
       ;;
     degraded)
       status="degraded"
-      color="#a371f7"
+      color="#DC2626"
       ;;
     unreachable)
       status="unreachable"
-      color="#f85149"
+      color="#991B1B"
       ;;
     browser-dependent)
       status="browser-dependent"
-      color="#58a6ff"
+      color="#7C3AED"
       ;;
     unknown-freshness)
       status="unknown-freshness"
-      color="#6e7681"
+      color="#6B7280"
       ;;
     discontinued)
       status="discontinued"
-      color="#484f58"
+      color="#6B7280"
       ;;
     reference)
       status="reference"
-      color="#0ea5e9"
+      color="#0EA5E9"
       ;;
     *)
       status="unknown"
-      color="#6e7681"
+      color="#6B7280"
       ;;
   esac
 
@@ -80,8 +80,8 @@ while IFS=$'\t' read -r dataset_id raw_status; do
   printf '%s\n' \
     '<svg xmlns="http://www.w3.org/2000/svg" width="110" height="20" role="img" aria-label="health: '"$escaped_status"'">' \
     '  <title>health: '"$escaped_status"'</title>' \
-    '  <rect x="0.5" y="0.5" width="109" height="19" rx="3" fill="#0d1117" stroke="'"$color"'" stroke-width="1"'"$stroke_dasharray"'/>' \
-    '  <g fill="'"$color"'" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="500">' \
+    '  <rect x="0.5" y="0.5" width="109" height="19" rx="3" fill="#FFFFFF" stroke="'"$color"'" stroke-width="1"'"$stroke_dasharray"'/>' \
+    '  <g fill="#0F172A" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="500">' \
     '    <text x="17.5" y="14">health</text>' \
     '    <text x="72.5" y="14" textLength="68" lengthAdjust="spacingAndGlyphs">'"$escaped_status"'</text>' \
     '  </g>' \
