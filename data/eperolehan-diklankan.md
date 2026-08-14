@@ -1,6 +1,6 @@
 ---
 dataset_id: eperolehan-diklankan
-last_checked: 2026-08-14T04:31:43Z
+last_checked: 2026-08-14T09:46:02Z
 status: browser-dependent
 freshness_delta: 0 days
 next_expected_update: unknown
@@ -22,11 +22,11 @@ attribution: MOF ePerolehan
 
 **Freshness:** 0 days
 
-Camofox unavailable; browser check required
+Browser check succeeded
 
 ## Last checked
 
-2026-08-14 at 04:31:43 UTC.
+2026-08-14 at 09:46:02 UTC.
 
 ## File size
 
