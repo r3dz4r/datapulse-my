@@ -91,10 +91,15 @@ for match in month_first.finditer(text):
         pass
 
 if dates:
+    today = date.today()
     # Rolling forecasts use the configured start (min date), not a future horizon.
-    # Default: max date in the body IS the publication-freshness signal.
+    # When extraction-mode is "max", future dates (beyond today) are skipped so
+    # the extraction surfaces the latest actual publication date instead of the
+    # furthest forecast day. Mirrors check.sh's extract_max_date future-filter
+    # so both code paths agree on the freshness signal.
     if extraction_mode == "min":
         print(min(dates).isoformat())
     else:
-        print(max(dates).isoformat())
+        past = {d for d in dates if d <= today}
+        print(max(past).isoformat() if past else max(dates).isoformat())
 PY
