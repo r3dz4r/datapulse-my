@@ -14,802 +14,22 @@
     window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
     plausible.init()
   </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Lexend:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/datapulse.css">
   <style>
-    :root {
-      color-scheme: light;
-      --color-bg: #FFFFFF;
-      --color-fg: #0F172A;
-      --color-muted: #F1F5F9;
-      --color-muted-fg: #475569;
-      --color-border: #E2E8F0;
-      --color-accent: #0F172A;
-      --color-primary: #0EA5E9;
-      --color-fresh: #16A34A;
-      --color-aging: #CA8A04;
-      --color-stale: #DC2626;
-      --color-discontinued: #6B7280;
-      --color-browser-dependent: #7C3AED;
-      --color-unreachable: #991B1B;
-      --color-degraded: #DC2626;
-      --color-unknown: #6B7280;
-      --color-unknown-freshness: #6B7280;
-      --color-reference: #0EA5E9;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      min-width: 20rem;
-      margin: 0;
-      color: var(--color-fg);
-      background: var(--color-bg);
-      line-height: 1.5;
-    }
-
-    a {
-      color: var(--color-primary);
-      text-decoration-thickness: 0.08em;
-      text-underline-offset: 0.18em;
-    }
-
-    a:hover { color: var(--color-primary); }
-    a:focus-visible { outline: 0.18rem solid var(--color-degraded); outline-offset: 0.2rem; }
-
-    .skip-link {
-      position: fixed;
-      z-index: 10;
-      top: 0.75rem;
-      left: 0.75rem;
-      padding: 0.5rem 0.75rem;
-      color: var(--color-bg);
-      background: var(--color-fg);
-      transform: translateY(-200%);
-    }
-
-    .skip-link:focus { transform: translateY(0); }
-
-    /* Active-development banner (added 2026-08-06 alongside v0.4.0 release) */
-    .wip-banner {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0.6rem 1.25rem;
-      margin-top: 0.6rem;
-      border: 1px solid var(--color-border);
-      border-left: 3px solid var(--color-aging);
-      border-radius: 8px;
-      background: var(--color-muted);
-      color: var(--color-fg);
-      font-size: 0.85rem;
-      line-height: 1.45;
-    }
-    .wip-banner strong { color: var(--color-aging); }
-    .wip-banner a { color: var(--color-primary); }
-    .wip-banner code { font-size: 0.82em; padding: 0 0.3em; background: var(--color-bg); border-radius: 3px; }
-
-    .skip-link:focus { transform: translateY(0); }
-
-    .shell {
-      width: min(88rem, calc(100% - 2rem));
-      margin-inline: auto;
-    }
-
-    header {
-      padding-block: 1.25rem;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .site-header {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem 2rem;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .site-name {
-      color: var(--color-fg);
-      font: 750 1.1rem/1 system-ui, -apple-system, "Segoe UI", sans-serif;
-      letter-spacing: -0.025em;
-      text-decoration: none;
-    }
-
-    .site-name:hover { color: var(--color-primary); }
-
-    h1, h2, h3 {
-      margin: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    }
-
-    h1 {
-      font-size: clamp(2.5rem, 8vw, 5.5rem);
-      letter-spacing: -0.055em;
-      line-height: 0.95;
-    }
-
-    .hero {
-      padding-block: clamp(3.5rem, 9vw, 7rem) 2rem;
-    }
-
-    .hero-kicker {
-      margin: 0 0 0.75rem;
-      color: var(--color-fresh);
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .hero-copy {
-      max-width: 66rem;
-    }
-
-    .hero-subhead {
-      max-width: 54rem;
-      margin: 1.5rem 0 0;
-      color: var(--color-muted-fg);
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      font-size: clamp(1.05rem, 2vw, 1.3rem);
-    }
-
-    .hero-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-top: 2rem;
-    }
-
-    .button-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 2.75rem;
-      padding: 0.7rem 1rem;
-      border: 1px solid var(--color-primary);
-      border-radius: 0.5rem;
-      color: var(--color-bg);
-      background: var(--color-primary);
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      font-size: 0.9rem;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    .button-link:hover { color: var(--color-bg); background: var(--color-primary); }
-
-    .button-link-secondary {
-      color: var(--color-fg);
-      border-color: var(--color-border);
-      background: transparent;
-    }
-
-    .button-link-secondary:hover {
-      color: var(--color-fg);
-      border-color: var(--color-primary);
-      background: var(--color-muted);
-    }
-
-    .hero-trust-band {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem 0;
-      margin: 1.25rem 0 0;
-      padding: 0;
-      color: var(--color-muted-fg);
-      font-size: 0.75rem;
-      list-style: none;
-    }
-
-    .hero-trust-band li:not(:last-child)::after {
-      margin-inline: 0.6rem;
-      color: var(--color-border);
-      content: "·";
-    }
-
-    .hero-trust-band a { color: inherit; }
-
-    .hero-trust-anchor {
-      padding: 0.2rem 0.4rem;
-      border: 1px solid var(--color-fresh);
-      border-radius: 0.25rem;
-      color: var(--color-bg);
-      background: var(--color-fresh);
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1px;
-      margin-top: 3rem;
-      overflow: hidden;
-      border: 1px solid var(--color-border);
-      border-radius: 0.5rem;
-      background: var(--color-border);
-    }
-
-    .hero-stat {
-      min-width: 0;
-      padding: 1rem;
-      background: var(--color-muted);
-    }
-
-    .hero-stat strong {
-      display: block;
-      font: 750 clamp(1.45rem, 4vw, 2rem)/1.1 system-ui, sans-serif;
-      overflow-wrap: anywhere;
-    }
-
-    .hero-stat span {
-      display: block;
-      margin-top: 0.3rem;
-      color: var(--color-muted-fg);
-      font-size: 0.68rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-
-    .connect {
-      margin-block: 2rem 3rem;
-      padding: clamp(1.25rem, 4vw, 2rem);
-      border: 1px solid var(--color-border);
-      border-radius: 0.5rem;
-      background: var(--color-muted);
-    }
-
-    .connect-heading { max-width: 52rem; }
-    .connect-heading p { margin: 0.75rem 0 0; color: var(--color-muted-fg); }
-
-    .terminal {
-      margin-top: 1.5rem;
-      overflow: hidden;
-      border: 1px solid var(--color-border);
-      border-radius: 0.5rem;
-      background: var(--color-muted);
-    }
-
-    .terminal-bar {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      justify-content: space-between;
-      min-height: 2.75rem;
-      padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid var(--color-border);
-      color: var(--color-muted-fg);
-      font-size: 0.72rem;
-    }
-
-    .copy-button {
-      padding: 0.4rem 0.65rem;
-      border: 1px solid var(--color-border);
-      border-radius: 0.25rem;
-      color: var(--color-fg);
-      background: var(--color-muted);
-      cursor: pointer;
-      font: inherit;
-    }
-
-    .copy-button:hover { border-color: var(--color-primary); }
-    .copy-button:focus-visible { outline: 0.18rem solid var(--color-degraded); outline-offset: 0.2rem; }
-
-    .terminal pre {
-      margin: 0;
-      padding: 1.25rem;
-      overflow-x: auto;
-      color: var(--color-fg);
-      font: 0.82rem/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    }
-
-    .tool-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin: 1rem 0 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .tool-chip {
-      padding: 0.35rem 0.55rem;
-      border: 1px solid var(--color-border);
-      border-radius: 0.25rem;
-      color: var(--color-primary);
-      background: var(--color-muted);
-      font-size: 0.72rem;
-    }
-
-    .query-demo { margin-top: 1rem; }
-    .query-demo code { color: var(--color-muted-fg); }
-    .query-demo .command { color: var(--color-fg); }
-
-    .landing-section {
-      padding-block: clamp(2.5rem, 7vw, 5rem);
-      border-top: 1px solid var(--color-border);
-    }
-
-    .landing-heading { max-width: 52rem; }
-    .landing-heading p { margin: 0.75rem 0 0; color: var(--color-muted-fg); }
-    .section-kicker {
-      margin: 0 0 0.5rem;
-      color: var(--color-fresh);
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .pain-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-
-    .pain-card {
-      padding: 1.25rem;
-      border: 1px solid var(--color-border);
-      border-radius: 0.5rem;
-      background: var(--color-muted);
-    }
-
-    .pain-icon {
-      display: inline-grid;
-      width: 2rem;
-      height: 2rem;
-      margin-bottom: 1rem;
-      place-items: center;
-      border: 1px solid var(--color-border);
-      border-radius: 0.25rem;
-      color: var(--color-aging);
-      background: var(--color-muted);
-    }
-
-    .pain-icon svg { width: 1rem; height: 1rem; }
-    .pain-card p { margin: 0.6rem 0 0; color: var(--color-muted-fg); font-size: 0.85rem; }
-
-    .workflow {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 0;
-      margin: 2rem 0 0.5rem;
-      padding: 0;
-      list-style: none;
-    }
-
-    .workflow-step {
-      position: relative;
-      padding: 0 0 1.75rem 3.25rem;
-    }
-
-    .workflow-step:not(:last-child)::after {
-      position: absolute;
-      top: 2.1rem;
-      bottom: 0;
-      left: 1rem;
-      width: 1px;
-      background: var(--color-border);
-      content: "";
-    }
-
-    .step-number {
-      position: absolute;
-      z-index: 1;
-      top: 0;
-      left: 0;
-      display: grid;
-      width: 2rem;
-      height: 2rem;
-      place-items: center;
-      border: 1px solid var(--color-primary);
-      border-radius: 50%;
-      color: var(--color-primary);
-      background: var(--color-bg);
-      font-size: 0.75rem;
-      font-weight: 700;
-    }
-
-    .workflow-step h3 { padding-top: 0.25rem; }
-    .workflow-step p { margin: 0.55rem 0 0; color: var(--color-muted-fg); font-size: 0.82rem; }
-
-    .taxonomy-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.45rem;
-      margin: 1rem 0 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .taxonomy-chips li {
-      padding: 0.3rem 0.5rem;
-      border: 1px solid var(--status-color, var(--color-border));
-      border-radius: 0.25rem;
-      color: var(--color-fg);
-      background: var(--color-muted);
-      font-size: 0.68rem;
-    }
-
-    .taxonomy-chips .fresh { --status-color: var(--color-fresh); }
-    .taxonomy-chips .aging { --status-color: var(--color-aging); }
-    .taxonomy-chips .stale { --status-color: var(--color-stale); }
-    .taxonomy-chips .degraded { --status-color: var(--color-degraded); }
-    .taxonomy-chips .unreachable { --status-color: var(--color-unreachable); }
-    .taxonomy-chips .browser-dependent { --status-color: var(--color-browser-dependent); }
-    .taxonomy-chips .unknown { --status-color: var(--color-unknown); }
-    .taxonomy-chips .unknown-freshness { --status-color: var(--color-unknown-freshness); }
-    .taxonomy-chips .reference { --status-color: var(--color-reference); }
-
-    .comparison-wrap {
-      margin-top: 1.5rem;
-      overflow-x: auto;
-      border: 1px solid var(--color-border);
-      border-radius: 0.5rem;
-    }
-
-    .comparison-table {
-      width: 100%;
-      min-width: 46rem;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-      text-align: left;
-    }
-
-    .comparison-table th, .comparison-table td {
-      padding: 0.8rem;
-      border-bottom: 1px solid var(--color-border);
-      border-left: 1px solid var(--color-border);
-      vertical-align: top;
-    }
-
-    .comparison-table th:first-child, .comparison-table td:first-child { border-left: 0; }
-    .comparison-table thead th { color: var(--color-fg); background: var(--color-muted); }
-    .comparison-table tbody th { color: var(--color-fg); background: var(--color-muted); }
-    .comparison-table td { color: var(--color-muted-fg); background: var(--color-bg); }
-    .comparison-table td:nth-child(2) { color: var(--color-fg); background: var(--color-muted); }
-    .comparison-table tbody tr:last-child > * { border-bottom: 0; }
-    .tradeoff { margin: 0.85rem 0 0; color: var(--color-muted-fg); font-size: 0.75rem; }
-
-    .faq-list { margin-top: 1.5rem; border-top: 1px solid var(--color-border); }
-    .faq-list details { border-bottom: 1px solid var(--color-border); }
-    .faq-list summary {
-      padding: 1rem 2rem 1rem 0;
-      color: var(--color-fg);
-      cursor: pointer;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      font-weight: 700;
-    }
-    .faq-list summary:focus-visible { outline: 0.18rem solid var(--color-degraded); outline-offset: 0.2rem; }
-    .faq-list p { max-width: 58rem; margin: -0.25rem 0 1rem; color: var(--color-muted-fg); font-size: 0.85rem; }
-
-    .adoption-band {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-      align-items: center;
-      justify-content: space-between;
-      margin-block: 2rem;
-      padding: clamp(1.5rem, 5vw, 3rem);
-      border: 1px solid var(--color-primary);
-      border-radius: 0.5rem;
-      background: var(--color-muted);
-    }
-
-    .adoption-band p { margin: 0.5rem 0 0; color: var(--color-muted-fg); }
-    .adoption-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-
-    .changelog-strip {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem 1.25rem;
-      align-items: center;
-      margin-bottom: 3rem;
-      padding: 0.85rem 1rem;
-      border: 1px solid var(--color-border);
-      border-left: 0.25rem solid var(--color-fresh);
-      border-radius: 0.25rem;
-      color: var(--color-muted-fg);
-      background: var(--color-muted);
-      font-size: 0.72rem;
-    }
-
-    .changelog-strip strong { color: var(--color-fg); }
-
-    .header-meta, .card-links, .metrics {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem 1rem;
-    }
-
-    .header-meta {
-      margin-top: 1.5rem;
-      color: var(--color-muted-fg);
-      font-size: 0.8rem;
-    }
-
-    .site-header .header-meta { margin-top: 0; }
-
-    .clipboard-fallback {
-      position: fixed;
-      inset: 0 auto auto -10000px;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1px;
-      margin-block: 1.5rem;
-      overflow: hidden;
-      border: 1px solid var(--color-border);
-      border-radius: 0.5rem;
-      background: var(--color-border);
-    }
-
-    .summary div { padding: 1rem; background: var(--color-muted); }
-
-    .summary strong {
-      display: block;
-      font: 750 1.6rem/1.1 system-ui, sans-serif;
-    }
-
-    .summary span, dt {
-      color: var(--color-muted-fg);
-      font-size: 0.68rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-
-    .trust-posture {
-      margin-block: 1.5rem;
-      padding: 1rem;
-      border: 1px solid var(--color-border);
-      border-radius: 0.5rem;
-      background: var(--color-muted);
-    }
-
-    .trust-posture h2 { font-size: 1rem; }
-    .trust-gaps { margin: 0.35rem 0 0; color: var(--color-muted-fg); font-size: 0.78rem; }
-    .status-legend {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-      gap: 0.5rem 1rem;
-      margin: 0.85rem 0 0;
-    }
-    .status-legend div { min-width: 0; }
-    .status-legend dt { color: var(--color-fg); font-weight: 700; }
-    .status-legend dd { margin: 0.1rem 0 0; color: var(--color-muted-fg); font-size: 0.72rem; }
-    .legend-status { color: var(--legend-color, var(--color-fg)); }
-    .legend-status.fresh { --legend-color: var(--color-fresh); }
-    .legend-status.aging { --legend-color: var(--color-aging); }
-    .legend-status.stale { --legend-color: var(--color-stale); }
-    .legend-status.discontinued { --legend-color: var(--color-discontinued); }
-    .legend-status.degraded { --legend-color: var(--color-degraded); }
-    .legend-status.browser-dependent { --legend-color: var(--color-browser-dependent); }
-    .legend-status.unreachable { --legend-color: var(--color-unreachable); }
-    .legend-status.unknown { --legend-color: var(--color-unknown); }
-    .legend-status.unknown-freshness { --legend-color: var(--color-unknown-freshness); }
-    .legend-status.reference { --legend-color: var(--color-reference); }
-    .legend-count { margin-left: 0.25rem; color: var(--color-muted-fg); font-variant-numeric: tabular-nums; }
-    .trust-link { display: inline-block; margin-top: 0.65rem; font-size: 0.78rem; }
-
-    main { padding-bottom: 4rem; }
-
-    .section-heading {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem 1rem;
-      align-items: baseline;
-      justify-content: space-between;
-      margin: 2rem 0 1rem;
-    }
-
-    h2 { font-size: 1.5rem; }
-    .section-note { margin: 0; color: var(--color-muted-fg); font-size: 0.75rem; }
-
-    .dashboard-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem 1rem;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin: 0 0 1.25rem;
-    }
-
-    .dashboard-filter-groups { min-width: 0; }
-
-    .dashboard-sections {
-      display: grid;
-      gap: 1rem;
-    }
-
-    .dashboard-section {
-      overflow: hidden;
-      border: 1px solid var(--color-border);
-      border-radius: 0.65rem;
-      background: var(--color-muted);
-    }
-
-    .dashboard-section.section-popular {
-      border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
-    }
-
-    .section-header {
-      display: flex;
-      width: 100%;
-      gap: 0.75rem 1rem;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem;
-      border: 0;
-      background: transparent;
-      color: var(--color-fg);
-      cursor: pointer;
-      font: inherit;
-      text-align: left;
-    }
-
-    .section-header:hover { background: var(--color-muted); }
-    .section-header:focus-visible { outline: 0.2rem solid var(--color-accent); outline-offset: -0.2rem; }
-
-    .section-title-group { min-width: 0; }
-    .section-title { display: block; font-size: 1.05rem; font-weight: 800; line-height: 1.3; }
-    .section-kicker { display: block; margin-top: 0.2rem; color: var(--color-muted-fg); font-size: 0.72rem; }
-    .section-meta { flex: none; color: var(--color-muted-fg); font-size: 0.7rem; text-align: right; }
-    .section-count { display: block; color: var(--color-fg); font-weight: 700; }
-    .section-status-mix { display: block; margin-top: 0.2rem; }
-    .section-chevron { display: inline-block; margin-left: 0.35rem; transition: transform 150ms ease; }
-    .section-header[aria-expanded="true"] .section-chevron { transform: rotate(180deg); }
-
-    .section-body {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 1rem;
-      padding: 0 1rem 1rem;
-    }
-
-    .category-filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .55rem;
-      margin: 0;
-    }
-
-    .status-filters { margin-top: 0.55rem; }
-
-    .category-filter {
-      border: 1px solid var(--color-border);
-      border-radius: 999px;
-      background: var(--color-muted);
-      color: var(--color-fg);
-      cursor: pointer;
-      font: inherit;
-      padding: .5rem .8rem;
-    }
-
-    .category-filter[aria-pressed="true"] {
-      border-color: var(--color-accent);
-      background: var(--color-accent);
-      color: var(--color-bg);
-    }
-
-    .section-toggle-all { white-space: nowrap; }
-
-    .dataset-card {
-      display: flex;
-      min-width: 0;
-      flex-direction: column;
-      padding: 1rem;
-      border: 1px solid var(--color-border);
-      border-top: 0.25rem solid var(--status, var(--color-unknown));
-      border-radius: 0.5rem;
-      background: var(--color-muted);
-    }
-
-    .dataset-card:hover { background: var(--color-muted); }
-    .status-fresh { --status: var(--color-fresh); }
-    .status-aging { --status: var(--color-aging); }
-    .status-stale { --status: var(--color-stale); }
-    .status-discontinued { --status: var(--color-discontinued); }
-    .status-degraded { --status: var(--color-degraded); }
-    .status-unreachable { --status: var(--color-unreachable); }
-    .status-browser-dependent { --status: var(--color-browser-dependent); }
-    .status-unknown-freshness { --status: var(--color-unknown-freshness); }
-    .status-reference { --status: var(--color-reference); }
-
-    .card-heading {
-      display: flex;
-      gap: 0.75rem;
-      align-items: flex-start;
-      justify-content: space-between;
-    }
-
-    h3 { font-size: 1.05rem; line-height: 1.3; }
-    .status-badge { width: 6.875rem; height: 1.25rem; flex: none; }
-
-    .dataset-id {
-      margin: 0.5rem 0 0;
-      color: var(--color-muted-fg);
-      font-size: 0.7rem;
-      overflow-wrap: anywhere;
-    }
-
-    .source-link {
-      margin-top: 0.8rem;
-      font-size: 0.78rem;
-      overflow-wrap: anywhere;
-    }
-
-    .facts {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 0.6rem;
-      margin: 1rem 0 0;
-    }
-
-    .fact { min-width: 0; padding-top: 0.6rem; border-top: 1px solid var(--color-border); }
-    dd { margin: 0.15rem 0 0; font-size: 0.8rem; overflow-wrap: anywhere; }
-
-    .metrics {
-      margin: 1rem 0 0;
-      padding: 0;
-      gap: 0.4rem;
-      list-style: none;
-    }
-
-    .metric {
-      padding: 0.25rem 0.4rem;
-      border: 1px solid var(--color-border);
-      border-radius: 0.25rem;
-      color: var(--color-muted-fg);
-      font-size: 0.68rem;
-    }
-
-    .metric strong { color: var(--color-fg); }
-    .card-links { margin-top: auto; padding-top: 1rem; font-size: 0.74rem; }
-
-    .loading, .empty-state {
-      grid-column: 1 / -1;
-      padding: 3rem 1rem;
-      border: 1px dashed var(--color-border);
-      border-radius: 0.5rem;
-      color: var(--color-muted-fg);
-      background: var(--color-muted);
-      text-align: center;
-    }
-
-    footer {
-      padding-block: 1.5rem 3rem;
-      border-top: 1px solid var(--color-border);
-      color: var(--color-muted-fg);
-      font-size: 0.75rem;
-    }
-
-    footer p { margin: 0; }
-    @media (min-width: 40rem) {
-      .shell { width: min(88rem, calc(100% - 3rem)); }
-      .hero-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .pain-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .summary { grid-template-columns: repeat(4, 1fr); }
-      .section-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-
-    @media (min-width: 70rem) {
-      .workflow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .workflow-step { padding: 3.25rem 1.5rem 0 0; }
-      .workflow-step:not(:last-child)::after {
-        top: 1rem;
-        right: 0;
-        bottom: auto;
-        left: 2rem;
-        width: auto;
-        height: 1px;
-      }
-      .section-body { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    }
+    :root{--color-degraded:#DC2626;--color-unknown:#6B7280;--color-unknown-freshness:#6B7280}
+    .wip-banner{width:min(1200px,calc(100% - 48px));margin:.6rem auto 0;padding:.6rem 1.25rem;border:1px solid var(--color-border);border-left:3px solid var(--color-aging);background:var(--color-muted);font-size:.85rem}.wip-banner strong{color:var(--color-aging)}
+    .hero-trust-band{display:flex;flex-wrap:wrap;gap:.5rem 0;margin:1.25rem 0 0;padding:0;color:var(--color-muted-fg);font-size:.75rem;list-style:none}.hero-trust-band li:not(:last-child)::after{margin-inline:.6rem;content:"·"}.hero-trust-anchor{padding:.2rem .4rem;border:1px solid var(--color-fresh);color:var(--color-bg);background:var(--color-fresh);font-weight:700}
+    .hero-stats,.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;margin-block:1.5rem;border:1px solid var(--color-border);background:var(--color-border)}.hero-stat,.summary div{min-width:0;padding:1rem;background:var(--color-muted)}.hero-stat strong,.summary strong{display:block;font:750 clamp(1.45rem,4vw,2rem)/1.1 Lexend,sans-serif;overflow-wrap:anywhere}.hero-stat span,.summary span,dt{display:block;margin-top:.3rem;color:var(--color-muted-fg);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase}
+    .connect,.trust-posture{margin-block:2rem;padding:clamp(1.25rem,4vw,2rem);border:1px solid var(--color-border);background:var(--color-muted)}.terminal{margin-top:1.5rem;overflow:hidden;border:1px solid var(--color-border);background:var(--color-muted)}.terminal-bar{display:flex;justify-content:space-between;align-items:center;min-height:2.75rem;padding:.5rem .75rem;border-bottom:1px solid var(--color-border);font-size:.72rem}.terminal .copy-button{position:static;min-width:0;min-height:0;padding:.4rem .65rem;opacity:1;font:inherit}.terminal pre{padding:1.25rem;background:transparent}.tool-chip,.metric{padding:.35rem .55rem;border:1px solid var(--color-border);color:var(--color-primary);background:var(--color-muted);font-size:.72rem}.query-demo{margin-top:1rem}
+    .landing-section{border-top:1px solid var(--color-border)}.landing-section>.section-intro{max-width:52rem}.landing-section>.section-intro>p:not(.eyebrow),.pain-card p,.workflow-step p,.adoption-band p{margin-top:.6rem;color:var(--color-muted-fg);font-size:.85rem}.pain-grid{display:grid;gap:1rem;margin-top:1.5rem}.pain-card{padding:1.25rem;border:1px solid var(--color-border);background:var(--color-muted)}.pain-icon{display:inline-grid;width:2rem;height:2rem;margin-bottom:1rem;place-items:center;border:1px solid var(--color-border);color:var(--color-aging)}.pain-icon svg{width:1rem;height:1rem}.workflow{display:grid;margin:2rem 0 .5rem;padding:0;list-style:none}.workflow-step{position:relative;padding:0 0 1.75rem 3.25rem}.workflow-step:not(:last-child)::after{position:absolute;top:2.1rem;bottom:0;left:1rem;width:1px;background:var(--color-border);content:""}.step-number{position:absolute;left:0;display:grid;width:2rem;height:2rem;place-items:center;border:1px solid var(--color-primary);border-radius:50%;color:var(--color-primary);font-size:.75rem;font-weight:700}
+    .taxonomy-chips,.category-filters,.metrics,.card-links{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0 0;padding:0;list-style:none}.taxonomy-chips li{padding:.3rem .5rem;border:1px solid var(--status-color,var(--color-border));font-size:.68rem}.fresh,.status-fresh{--status-color:var(--color-fresh);--status:var(--color-fresh)}.aging,.status-aging{--status-color:var(--color-aging);--status:var(--color-aging)}.stale,.status-stale{--status-color:var(--color-stale);--status:var(--color-stale)}.degraded,.status-degraded{--status-color:var(--color-degraded);--status:var(--color-degraded)}.unreachable,.status-unreachable{--status-color:var(--color-unreachable);--status:var(--color-unreachable)}.browser-dependent,.status-browser-dependent{--status-color:var(--color-browser-dependent);--status:var(--color-browser-dependent)}.unknown{--status-color:var(--color-unknown)}.unknown-freshness,.status-unknown-freshness{--status-color:var(--color-unknown-freshness);--status:var(--color-unknown-freshness)}.reference,.status-reference{--status-color:var(--color-reference);--status:var(--color-reference)}
+    .comparison-table{min-width:46rem;font-size:.78rem}.comparison-table th,.comparison-table td{padding:.8rem;border-left:1px solid var(--color-border)}.faq-list{margin-top:1.5rem;border-top:1px solid var(--color-border)}.faq-list details{border-bottom:1px solid var(--color-border)}.faq-list summary{padding:1rem 2rem 1rem 0;font-weight:700}.faq-list p{margin:-.25rem 0 1rem;color:var(--color-muted-fg)}.adoption-band,.changelog-strip{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;margin-block:2rem;padding:1.5rem;border:1px solid var(--color-border);background:var(--color-muted)}.changelog-strip{margin-bottom:3rem;padding:.85rem 1rem;border-left:.25rem solid var(--color-fresh);font-size:.72rem}
+    .clipboard-fallback{position:fixed;inset:0 auto auto -10000px;opacity:0;pointer-events:none}.trust-gaps,.section-note{color:var(--color-muted-fg);font-size:.78rem}.dashboard-toolbar{display:flex;flex-wrap:wrap;gap:.75rem 1rem;justify-content:space-between;margin-bottom:1.25rem}.dashboard-sections{display:grid;gap:1rem}.dashboard-section{overflow:hidden;border:1px solid var(--color-border);background:var(--color-muted)}.section-header{display:flex;width:100%;gap:1rem;align-items:center;justify-content:space-between;padding:1rem;border:0;color:var(--color-fg);background:transparent;font:inherit;text-align:left}.section-title-group{min-width:0}.section-title{display:block;font-size:1.05rem;font-weight:800}.section-kicker,.section-meta{color:var(--color-muted-fg);font-size:.72rem}.section-meta{text-align:right}.section-count,.section-status-mix{display:block}.section-chevron{display:inline-block;transition:transform 150ms ease}.section-header[aria-expanded="true"] .section-chevron{transform:rotate(180deg)}.section-body,.facts{display:grid;gap:1rem;padding:0 1rem 1rem}.category-filters{margin:0}.status-filters{margin-top:.55rem}.category-filter{padding:.5rem .8rem;border:1px solid var(--color-border);border-radius:999px;background:var(--color-muted);font:inherit}.category-filter[aria-pressed="true"]{color:var(--color-bg);background:var(--color-accent)}.section-toggle-all{white-space:nowrap}
+    .dataset-card{display:flex;min-width:0;flex-direction:column;padding:1rem;border:1px solid var(--color-border);border-top:.25rem solid var(--status,var(--color-unknown));background:var(--color-muted)}.card-heading{display:flex;gap:.75rem;justify-content:space-between}.status-badge{width:6.875rem;height:1.25rem;flex:none}.dataset-id,.source-link{margin-top:.5rem;color:var(--color-muted-fg);font-size:.75rem;overflow-wrap:anywhere}.facts{margin-top:1rem}.fact{padding-top:.6rem;border-top:1px solid var(--color-border)}.fact dd{margin:.15rem 0 0;font-size:.8rem}.card-links{margin-top:auto;padding-top:1rem;font-size:.74rem}.loading,.empty-state{grid-column:1/-1;padding:3rem 1rem;border:1px dashed var(--color-border);color:var(--color-muted-fg);background:var(--color-muted);text-align:center}
+    @media(min-width:40rem){.hero-stats{grid-template-columns:repeat(4,1fr)}.pain-grid{grid-template-columns:repeat(3,1fr)}.summary{grid-template-columns:repeat(4,1fr)}.section-body{grid-template-columns:repeat(2,1fr)}.facts{grid-template-columns:repeat(2,1fr)}}@media(min-width:70rem){.workflow{grid-template-columns:repeat(4,1fr)}.workflow-step{padding:3.25rem 1.5rem 0 0}.section-body{grid-template-columns:repeat(3,1fr)}}
   </style>
   <script type="application/ld+json">
 {
@@ -5572,26 +4792,26 @@
     Releases ship as <a href="https://github.com/r3dz4r/datapulse-my/releases">tags on GitHub</a> —
     current milestone: <a href="https://github.com/r3dz4r/datapulse-my/releases/tag/v0.4.0">v0.4.0</a>.
   </div>
-  <header>
-    <div class="shell site-header">
-      <a class="site-name" href="landing.html">DataPulse MY</a>
-      <div class="header-meta">
+  <nav class="site-nav" aria-label="Primary navigation">
+    <div class="wrap nav-inner">
+      <a class="brand" href="landing.html"><span class="brand-mark">[DATA]</span> DataPulse MY</a>
+      <div class="nav-links">
         <span id="last-updated">Last checked: loading…</span>
         <a href="https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/feed.xml">RSS health feed</a>
         <a href="https://github.com/r3dz4r/datapulse-my">View repository</a>
       </div>
     </div>
-  </header>
+  </nav>
 
-  <main id="main-content" class="shell">
+  <main id="main-content" class="wrap">
     <section class="hero" aria-labelledby="hero-heading">
-      <div class="hero-copy">
-        <p class="hero-kicker">The trust layer for Malaysian open data</p>
+      <div class="section-intro">
+        <p class="eyebrow">The trust layer for Malaysian open data</p>
         <h1 id="hero-heading">Verified health for Malaysian public data</h1>
-        <p class="hero-subhead">Malaysia ranks #1 in the world for open data — and none of it is verified. We probe 385 official datasets every 5 minutes, classify each into one of ten honest statuses, and expose it read-only over MCP.</p>
-        <div class="hero-actions">
-          <a class="button-link" href="#connect">Connect your agent</a>
-          <a class="button-link button-link-secondary" href="#live-status">View live status</a>
+        <p class="hero-copy">Malaysia ranks #1 in the world for open data — and none of it is verified. We probe 385 official datasets every 5 minutes, classify each into one of ten honest statuses, and expose it read-only over MCP.</p>
+        <div class="actions">
+          <a class="button button-primary" href="#connect">Connect your agent</a>
+          <a class="button button-secondary" href="#live-status">View live status</a>
         </div>
         <ul class="hero-trust-band" aria-label="DataPulse trust signals">
           <li><span class="hero-trust-anchor">#1 open data, verified</span></li>
@@ -5620,7 +4840,7 @@
     </section>
 
     <section id="connect" class="connect" aria-labelledby="connect-heading">
-      <div class="connect-heading">
+      <div class="section-intro">
         <h2 id="connect-heading">Connect your AI agent in 30 seconds</h2>
         <p>No API key. Read-only. Works with Claude Desktop, Cursor, Cline, and any MCP client.</p>
       </div>
@@ -5655,8 +4875,8 @@
     </section>
 
     <section class="landing-section" aria-labelledby="problem-heading">
-      <div class="landing-heading">
-        <p class="section-kicker">The problem</p>
+      <div class="section-intro">
+        <p class="eyebrow">The problem</p>
         <h2 id="problem-heading">Malaysian open data is silently breaking</h2>
         <p>Malaysia just topped the global Open Data Inventory — 99/100 for openness, #1 of 198 countries. World-class supply. But the ranking measures availability, not truth. Here’s what “published” actually hides:</p>
       </div>
@@ -5680,8 +4900,8 @@
     </section>
 
     <section class="landing-section" aria-labelledby="mechanism-heading">
-      <div class="landing-heading">
-        <p class="section-kicker">The mechanism</p>
+      <div class="section-intro">
+        <p class="eyebrow">The mechanism</p>
         <h2 id="mechanism-heading">How one dataset gets its status</h2>
         <p>Probing is the mechanism; an honest status is the outcome. Every cycle follows the same inspectable path.</p>
       </div>
@@ -5721,12 +4941,12 @@
     </section>
 
     <section class="landing-section" aria-labelledby="comparison-heading">
-      <div class="landing-heading">
-        <p class="section-kicker">The comparison</p>
+      <div class="section-intro">
+        <p class="eyebrow">The comparison</p>
         <h2 id="comparison-heading">The honest difference</h2>
         <p>DataPulse adds verification and machine-readable context while keeping official publishers as the source of record.</p>
       </div>
-      <div class="comparison-wrap">
+      <div class="surface-table-wrap">
         <table class="comparison-table">
           <thead>
             <tr><th scope="col">Capability</th><th scope="col">DataPulse MY</th><th scope="col">data.gov.my direct</th><th scope="col">Wrapped-data resellers</th></tr>
@@ -5741,7 +4961,7 @@
           </tbody>
         </table>
       </div>
-      <p class="tradeoff">You can’t get data we don’t track; we document gaps, not fill them.</p>
+      <p class="section-lead">You can’t get data we don’t track; we document gaps, not fill them.</p>
     </section>
 
     <section class="landing-section" id="camofox" aria-labelledby="camofox-heading">
@@ -5778,24 +4998,24 @@
     <section id="live-status" class="trust-posture" aria-labelledby="trust-heading">
       <h2 id="trust-heading">Honest trust posture</h2>
       <p id="trust-gaps" class="trust-gaps">Loading signal gaps…</p>
-      <dl class="status-legend" aria-label="Health status legend">
-        <div><dt><span class="legend-status fresh">fresh</span> <span class="legend-count" data-status-count="fresh">—</span></dt><dd>Freshness evidence is within cadence.</dd></div>
-        <div><dt><span class="legend-status aging">aging</span> <span class="legend-count" data-status-count="aging">—</span></dt><dd>Evidence is 1.5–3× beyond cadence.</dd></div>
-        <div><dt><span class="legend-status stale">stale</span> <span class="legend-count" data-status-count="stale">—</span></dt><dd>Evidence is more than 3× beyond cadence.</dd></div>
-        <div><dt><span class="legend-status discontinued">discontinued</span> <span class="legend-count" data-status-count="discontinued">—</span></dt><dd>Source stopped publishing; data is frozen at its last known content date.</dd></div>
-        <div><dt><span class="legend-status degraded">degraded</span> <span class="legend-count" data-status-count="degraded">—</span></dt><dd>Too few records or content shape changed.</dd></div>
-        <div><dt><span class="legend-status browser-dependent">browser-dependent</span> <span class="legend-count" data-status-count="browser_dependent">—</span></dt><dd>A browser is required to reach the page.</dd></div>
-        <div><dt><span class="legend-status unreachable">unreachable</span> <span class="legend-count" data-status-count="unreachable">—</span></dt><dd>The latest HTTP or browser probe failed.</dd></div>
-        <div><dt><span class="legend-status unknown">unknown</span> <span class="legend-count" data-status-count="unknown">—</span></dt><dd>No successful probe in the last seven days.</dd></div>
-        <div><dt><span class="legend-status unknown-freshness">unknown-freshness</span> <span class="legend-count" data-status-count="unknown_freshness">—</span></dt><dd>URL works, but no freshness signal is available.</dd></div>
-        <div><dt><span class="legend-status reference">reference</span> <span class="legend-count" data-status-count="reference">—</span></dt><dd>Versioned reference/lookup data; verified reachable, no freshness clock applies.</dd></div>
+      <dl class="legend" aria-label="Health status legend">
+        <div class="legend-item"><dt><span class="legend-swatch fresh" aria-hidden="true"></span>fresh <span class="surface-count" data-status-count="fresh">—</span></dt><dd>Freshness evidence is within cadence.</dd></div>
+        <div class="legend-item"><dt><span class="legend-swatch aging" aria-hidden="true"></span>aging <span class="surface-count" data-status-count="aging">—</span></dt><dd>Evidence is 1.5–3× beyond cadence.</dd></div>
+        <div class="legend-item"><dt><span class="legend-swatch stale" aria-hidden="true"></span>stale <span class="surface-count" data-status-count="stale">—</span></dt><dd>Evidence is more than 3× beyond cadence.</dd></div>
+        <div class="legend-item"><dt><span class="legend-swatch discontinued" aria-hidden="true"></span>discontinued <span class="surface-count" data-status-count="discontinued">—</span></dt><dd>Source stopped publishing; data is frozen at its last known content date.</dd></div>
+        <div class="legend-item"><dt><span class="legend-swatch degraded" aria-hidden="true"></span>degraded <span class="surface-count" data-status-count="degraded">—</span></dt><dd>Too few records or content shape changed.</dd></div>
+        <div class="legend-item"><dt><span class="legend-swatch browser-dependent" aria-hidden="true"></span>browser-dependent <span class="surface-count" data-status-count="browser_dependent">—</span></dt><dd>A browser is required to reach the page.</dd></div>
+        <div class="legend-item"><dt><span class="legend-swatch unreachable" aria-hidden="true"></span>unreachable <span class="surface-count" data-status-count="unreachable">—</span></dt><dd>The latest HTTP or browser probe failed.</dd></div>
+        <div class="legend-item"><dt><span class="legend-swatch unknown" aria-hidden="true"></span>unknown <span class="surface-count" data-status-count="unknown">—</span></dt><dd>No successful probe in the last seven days.</dd></div>
+        <div class="legend-item"><dt><span class="legend-swatch unknown-freshness" aria-hidden="true"></span>unknown-freshness <span class="surface-count" data-status-count="unknown_freshness">—</span></dt><dd>URL works, but no freshness signal is available.</dd></div>
+        <div class="legend-item"><dt><span class="legend-swatch reference" aria-hidden="true"></span>reference <span class="surface-count" data-status-count="reference">—</span></dt><dd>Versioned reference/lookup data; verified reachable, no freshness clock applies.</dd></div>
       </dl>
-      <a class="trust-link" href="/health/latest.json">View detailed health →</a>
+      <a class="inline-arrow" href="/health/latest.json">View detailed health →</a>
     </section>
 
     <section class="landing-section" aria-labelledby="faq-heading">
-      <div class="landing-heading">
-        <p class="section-kicker">FAQ</p>
+      <div class="section-intro">
+        <p class="eyebrow">FAQ</p>
         <h2 id="faq-heading">Questions before you connect</h2>
       </div>
       <div class="faq-list">
@@ -5827,9 +5047,9 @@
         <h2 id="adoption-heading">Free. Open source. No API key.</h2>
         <p>Give your agent verified Malaysian public-data context in one connection.</p>
       </div>
-      <div class="adoption-actions">
-        <a class="button-link" href="#connect">Connect your agent</a>
-        <a class="button-link button-link-secondary" href="https://github.com/r3dz4r/datapulse-my">View on GitHub</a>
+      <div class="actions">
+        <a class="button button-primary" href="#connect">Connect your agent</a>
+        <a class="button button-secondary" href="https://github.com/r3dz4r/datapulse-my">View on GitHub</a>
       </div>
     </section>
 
@@ -5845,7 +5065,7 @@
     </aside>
 
     <section id="datasets" aria-labelledby="dataset-heading">
-      <div class="section-heading">
+      <div class="surface-label">
         <h2 id="dataset-heading">Dataset health</h2>
         <p class="section-note">Live from the latest committed health envelope</p>
       </div>
@@ -5867,7 +5087,7 @@
   </main>
 
   <footer>
-    <div class="shell">
+    <div class="wrap">
       <p>DataPulse MY documents official sources; it does not replace them.
         <a href="https://github.com/r3dz4r/datapulse-my/blob/main/LICENSE">Licence</a> ·
         <a href="https://github.com/r3dz4r/datapulse-my/blob/main/datapulse.json">Manifest</a> ·
