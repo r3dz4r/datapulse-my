@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="assets/datapulse.css">
   <style>
     :root{--color-degraded:#DC2626;--color-unknown:#6B7280;--color-unknown-freshness:#6B7280}
-    .wip-banner{width:min(1200px,calc(100% - 48px));margin:.6rem auto 0;padding:.6rem 1.25rem;border:1px solid var(--color-border);border-left:3px solid var(--color-aging);background:var(--color-muted);font-size:.85rem}.wip-banner strong{color:var(--color-aging)}
+    .landing-section{border-top:1px solid var(--color-border)}
     .dashboard-utilities{border-bottom:1px solid var(--color-border);background:var(--color-muted);font:500 .78rem/1.4 "JetBrains Mono",monospace}.dashboard-utilities .wrap{display:flex;flex-wrap:wrap;gap:.35rem 1rem;align-items:center;justify-content:flex-end;min-height:2.5rem}
     .hero-trust-band{display:flex;flex-wrap:wrap;gap:.5rem 0;margin:1.25rem 0 0;padding:0;color:var(--color-muted-fg);font-size:.75rem;list-style:none}.hero-trust-band li:not(:last-child)::after{margin-inline:.6rem;content:"·"}.hero-trust-anchor{padding:.2rem .4rem;border:1px solid var(--color-fresh);color:var(--color-bg);background:var(--color-fresh);font-weight:700}
     .hero-stats,.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;margin-block:1.5rem;border:1px solid var(--color-border);background:var(--color-border)}.hero-stat,.summary div{min-width:0;padding:1rem;background:var(--color-muted)}.hero-stat strong,.summary strong{display:block;font:750 clamp(1.45rem,4vw,2rem)/1.1 Lexend,sans-serif;overflow-wrap:anywhere}.hero-stat span,.summary span,dt{display:block;margin-top:.3rem;color:var(--color-muted-fg);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase}
@@ -4820,13 +4820,6 @@
   </head>
 <body>
   <a class="skip-link" href="#datasets">Skip to datasets</a>
-  <div class="wip-banner" role="status">
-    <strong>Active development.</strong> Dashboards update as probes complete; per-dataset
-    reports under <code>data/{id}.md</code> may briefly lag the live
-    <a href="https://r3dz4r.github.io/datapulse-my/health/latest.json">health snapshot</a>.
-    Releases ship as <a href="https://github.com/r3dz4r/datapulse-my/releases">tags on GitHub</a> —
-    current milestone: <a href="https://github.com/r3dz4r/datapulse-my/releases/tag/v0.4.0">v0.4.0</a>.
-  </div>
   <nav class="site-nav" aria-label="Primary navigation">
     <div class="wrap nav-inner">
       <a class="brand" href="/landing" aria-label="DataPulse MY home"><span class="brand-mark">[DATA]</span> DataPulse MY</a>
