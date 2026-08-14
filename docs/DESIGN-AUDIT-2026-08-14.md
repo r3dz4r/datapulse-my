@@ -14,8 +14,9 @@
 |---|---|---|---|
 | `https://data-pulse.my/` | "DataPulse MY — Malaysian public data health" | "Live health for 385 Malaysian public datasets tracked by DataPulse MY." | 1,017,113 bytes |
 | `https://data-pulse.my/landing` | "DataPulse MY — A trust layer for Malaysian public datasets" | "DataPulse MY is a trust layer for Malaysian public datasets, with health, provenance, and programmatic access." | 30,182 bytes |
+| `https://data-pulse.my/npra.html` | "NPRA — Malaysian pharmaceutical & cosmetic registry" | "Live verified coverage of Malaysia's National Pharmaceutical Regulatory Agency (NPRA) registry: 8 datasets, 7 fresh, 1 stale." | 16,861 bytes |
 
-Both fetches returned HTTP 200 on 14 August 2026.
+All three fetches returned HTTP 200 on 14 August 2026.
 
 ## Empirical findings (visual confirmation of sol brief)
 
@@ -86,9 +87,9 @@ Files live in `/home/redza/dotfiles/notes/audit-2026-08-14-screenshots/` (operat
 
 - Phase 1 (CSS extraction) — SHIPPED in commit `17042f0`
 - Phase 2 (dashboard on shared CSS, B1) — SHIPPED in commit `8f8a848`
-- Phase 3 (NPRA page) — PENDING
+- Phase 3 (NPRA page) — SHIPPED in commit cc42315
 - Phase 4 (generator durability test) — SHIPPED in commit `2aa99f7`
-- Phase 5 (nav integration sitewide) — PENDING; this audit's items 1, 3, 6 are also Phase 5 scope
+- Phase 5 (nav/footer/discovery integration sitewide) — COMPLETE locally; route swap remains a separate pending operator gate.
 
 ## Empirical-evidence update — 2026-08-14 capture after Group A
 

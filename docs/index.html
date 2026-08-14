@@ -15,6 +15,7 @@
   <style>
     :root{--color-degraded:#DC2626;--color-unknown:#6B7280;--color-unknown-freshness:#6B7280}
     .wip-banner{width:min(1200px,calc(100% - 48px));margin:.6rem auto 0;padding:.6rem 1.25rem;border:1px solid var(--color-border);border-left:3px solid var(--color-aging);background:var(--color-muted);font-size:.85rem}.wip-banner strong{color:var(--color-aging)}
+    .dashboard-utilities{border-bottom:1px solid var(--color-border);background:var(--color-muted);font:500 .78rem/1.4 "JetBrains Mono",monospace}.dashboard-utilities .wrap{display:flex;flex-wrap:wrap;gap:.35rem 1rem;align-items:center;justify-content:flex-end;min-height:2.5rem}
     .hero-trust-band{display:flex;flex-wrap:wrap;gap:.5rem 0;margin:1.25rem 0 0;padding:0;color:var(--color-muted-fg);font-size:.75rem;list-style:none}.hero-trust-band li:not(:last-child)::after{margin-inline:.6rem;content:"·"}.hero-trust-anchor{padding:.2rem .4rem;border:1px solid var(--color-fresh);color:var(--color-bg);background:var(--color-fresh);font-weight:700}
     .hero-stats,.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;margin-block:1.5rem;border:1px solid var(--color-border);background:var(--color-border)}.hero-stat,.summary div{min-width:0;padding:1rem;background:var(--color-muted)}.hero-stat strong,.summary strong{display:block;font:750 clamp(1.45rem,4vw,2rem)/1.1 Lexend,sans-serif;overflow-wrap:anywhere}.hero-stat span,.summary span,dt{display:block;margin-top:.3rem;color:var(--color-muted-fg);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase}
     .connect,.trust-posture{margin-block:2rem;padding:clamp(1.25rem,4vw,2rem);border:1px solid var(--color-border);background:var(--color-muted)}.terminal{margin-top:1.5rem;overflow:hidden;border:1px solid var(--color-border);background:var(--color-muted)}.terminal-bar{display:flex;justify-content:space-between;align-items:center;min-height:2.75rem;padding:.5rem .75rem;border-bottom:1px solid var(--color-border);font-size:.72rem}.terminal .copy-button{position:static;min-width:0;min-height:0;padding:.4rem .65rem;opacity:1;font:inherit}.terminal pre{padding:1rem;background:transparent;font-size:.9rem;line-height:1.45}.tool-chip,.metric{padding:.4rem .6rem;border:1px solid var(--color-border);color:var(--color-primary);background:var(--color-muted);font-size:.78rem}.query-demo{margin-top:1rem}
@@ -4828,14 +4829,22 @@
   </div>
   <nav class="site-nav" aria-label="Primary navigation">
     <div class="wrap nav-inner">
-      <a class="brand" href="landing.html"><span class="brand-mark">[DATA]</span> DataPulse MY</a>
+      <a class="brand" href="/landing" aria-label="DataPulse MY home"><span class="brand-mark">[DATA]</span> DataPulse MY</a>
       <div class="nav-links">
-        <span id="last-updated">Last checked: loading…</span>
-        <a href="https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/feed.xml">RSS health feed</a>
-        <a href="https://github.com/r3dz4r/datapulse-my">View repository</a>
+        <a href="/" aria-label="Open the DataPulse MY dashboard">Dashboard</a>
+        <a href="/npra.html" aria-label="Open the DataPulse MY NPRA engine page">NPRA</a>
+        <a href="/landing#mcp" aria-label="Open the MCP agent section">MCP</a>
+        <a href="/landing#surfaces" aria-label="Open the catalogue surfaces section">Catalogue</a>
+        <a href="https://github.com/r3dz4r/datapulse-my" aria-label="Open the DataPulse MY GitHub repository">GitHub</a>
       </div>
     </div>
   </nav>
+  <div class="dashboard-utilities" aria-label="Dashboard status utilities">
+    <div class="wrap">
+      <span id="last-updated">Last checked: loading…</span>
+      <a href="https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/feed.xml">RSS health feed</a>
+    </div>
+  </div>
 
   <main id="main-content" class="wrap">
     <section class="hero" aria-labelledby="hero-heading">
@@ -5122,14 +5131,26 @@
   </main>
 
   <footer>
-    <div class="wrap">
-      <p>DataPulse MY documents official sources; it does not replace them.
-        <a href="https://github.com/r3dz4r/datapulse-my/blob/main/LICENSE">Licence</a> ·
-        <a href="https://github.com/r3dz4r/datapulse-my/blob/main/datapulse.json">Manifest</a> ·
-        <a href="https://github.com/r3dz4r/datapulse-my/blob/main/health/latest.json">Health JSON</a> ·
-        <a href="https://mcp.data-pulse.my/mcp">MCP server</a>
-      </p>
+    <div class="wrap footer-grid">
+      <div>
+        <p>Source: <a href="https://github.com/r3dz4r/datapulse-my" aria-label="Open the DataPulse MY source repository">github.com/r3dz4r/datapulse-my</a> (MIT)</p>
+        <p>Upstream: data.gov.my, BNM, DOSM, MET, DOE, KKM, KPDN, NPRA</p>
+        <p>Trust: every dataset record shows its source URL, last-checked timestamp, and licence.</p>
+      </div>
+      <div>
+        <div class="footer-links">
+          <a href="https://github.com/r3dz4r/datapulse-my" aria-label="Open the source repository">Source/repository</a>
+          <a href="https://github.com/r3dz4r/datapulse-my/blob/main/LICENSE" aria-label="Open the MIT licence">MIT licence</a>
+          <a href="https://github.com/r3dz4r/datapulse-my/blob/main/STAKEHOLDER-ONE-PAGER.md" aria-label="Open the stakeholder explainer">Stakeholder explainer</a>
+          <a href="architecture.md" aria-label="Read the DataPulse MY architecture">Architecture</a>
+          <a href="health-methodology.md" aria-label="Read the health methodology">Health methodology</a>
+          <a href="/llms.txt" aria-label="Open llms.txt for agents">Agents: /llms.txt</a>
+          <a href="/agent.json" aria-label="Open agent.json">/agent.json</a>
+          <a href="/mcp.json" aria-label="Open mcp.json">/mcp.json</a>
+        </div>
+      </div>
     </div>
+    <div class="wrap footer-end">No tracking. No analytics. No cookies. No accounts.</div>
   </footer>
 
   <script id="embedded-data">
