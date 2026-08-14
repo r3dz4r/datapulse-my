@@ -5,7 +5,7 @@ source_url: "https://storage.dosm.gov.my/ppi/sppi_3d.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
 last_observed: 2026-01-01
 last_modified: 2026-05-08T04:31:43Z
 record_count: 3062
@@ -13,7 +13,7 @@ column_count: 4
 status: stale
 notes: "Tier-1 wave D newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: sppi_3d
-freshness_delta: 224 days
+freshness_delta: 225 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Stale
 
-**Freshness:** 224 days
+**Freshness:** 225 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 

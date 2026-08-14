@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_blood_donations
-last_checked: 2026-08-13T02:46:04Z
-last_checked: 2026-08-13T02:46:04Z
-status: aging
-freshness_delta: 3 days
+last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-14T04:59:27Z
+status: fresh
+freshness_delta: 1 days
 next_expected_update: daily
-record_count: 37635
+record_count: 37650
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The true number of daily blood donations is higher than the number recorded in this dataset, which does not reflect donations made at locations other than the 22 main sites integrated with BBISv2. However, the 22 main sites cover the large majority of blood donations in Malaysia (~80%), and therefore provide a representative view of blood donation trends."]
@@ -18,19 +18,19 @@ attribution: National Blood Centre and Ministry of Health Malaysia via data.gov.
 
 ## Status
 
-**Status:** Aging
+**Status:** Fresh
 
-**Freshness:** 3 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 
-The checked resource is 2,317,289 bytes.
+The checked resource is 2,318,215 bytes.
 
 ## Provenance
 

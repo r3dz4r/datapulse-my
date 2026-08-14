@@ -5,15 +5,15 @@ source_url: "https://storage.data.gov.my/healthcare/cosmetic_notifications.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
 last_observed: null
-last_modified: 2026-08-08T09:56:14Z
-record_count: 241749
+last_modified: 2026-08-14T04:28:31Z
+record_count: 241830
 column_count: 4
 status: fresh
 notes: "Tier-1 wave E newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: cosmetic_notifications
-freshness_delta: 4 days
+freshness_delta: 0 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,17 +28,17 @@ attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
 
 **Status:** Fresh
 
-**Freshness:** 4 days
+**Freshness:** 0 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 
-The checked resource is 23,631,729 bytes.
+The checked resource is 23,636,657 bytes.
 
 ## Provenance
 

@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_usage_metrics_openapi_cumul
-last_checked: 2026-08-13T02:46:04Z
-last_checked: 2026-08-13T02:46:04Z
-status: aging
-freshness_delta: 3 days
+last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-14T04:59:27Z
+status: stale
+freshness_delta: 4 days
 next_expected_update: daily
 record_count: 30
 schema_version: unknown
@@ -18,19 +18,19 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 ## Status
 
-**Status:** Aging
+**Status:** Stale
 
-**Freshness:** 3 days
+**Freshness:** 4 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 
-The checked resource is 2,577 bytes.
+The checked resource is 2,571 bytes.
 
 ## Provenance
 

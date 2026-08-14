@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_domains_dnssec
-last_checked: 2026-08-13T02:46:04Z
-last_checked: 2026-08-13T02:46:04Z
-status: stale
-freshness_delta: 589 days
+last_checked: 2026-08-14T04:47:13Z
+last_checked: 2026-08-14T04:47:13Z
+status: unreachable
+freshness_delta: unknown
 next_expected_update: monthly
-record_count: 3663
+record_count: null
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: –"]
@@ -18,19 +18,19 @@ attribution: MYNIC and Ministry of Digital via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Unreachable
 
-**Freshness:** 589 days
+**Freshness:** unknown
 
-HTTP 200
+curl request failed
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:47:13 UTC.
 
 ## File size
 
-The checked resource is 320,941 bytes.
+The health snapshot did not report a file size.
 
 ## Provenance
 

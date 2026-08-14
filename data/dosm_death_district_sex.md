@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_death_district_sex
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
 status: aging
-freshness_delta: 955 days
+freshness_delta: 956 days
 next_expected_update: annual
 record_count: 2361
 date_range: 2020-01-01 to 2024-01-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 955 days
+**Freshness:** 956 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 

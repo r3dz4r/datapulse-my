@@ -1,8 +1,8 @@
 ---
 dataset_id: ridership_od_rapidrail_daily
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
 status: stale
-freshness_delta: 6 days
+freshness_delta: 7 days
 next_expected_update: daily
 record_count: 3656037
 schema_version: unknown
@@ -19,13 +19,13 @@ attribution: Prasarana Malaysia Berhad and Ministry of Transport via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 6 days
+**Freshness:** 7 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 

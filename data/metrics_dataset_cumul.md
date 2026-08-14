@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_metrics_dataset_cumul
-last_checked: 2026-08-13T02:46:04Z
-last_checked: 2026-08-13T02:46:04Z
-status: aging
-freshness_delta: 3 days
+last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-14T04:59:27Z
+status: stale
+freshness_delta: 4 days
 next_expected_update: daily
-record_count: 281
+record_count: 285
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This dataset is updated on a daily basis, shortly after midnight. As such, there may be mild discrepancies between the counts provided in this dataset, relative to the realtime counts shown on each catalogue page."]
@@ -18,19 +18,19 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 ## Status
 
-**Status:** Aging
+**Status:** Stale
 
-**Freshness:** 3 days
+**Freshness:** 4 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 
-The checked resource is 66,934 bytes.
+The checked resource is 68,000 bytes.
 
 ## Provenance
 

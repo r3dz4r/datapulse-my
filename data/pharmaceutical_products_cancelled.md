@@ -5,15 +5,15 @@ source_url: "https://storage.data.gov.my/healthcare/pharmaceutical_products_canc
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-08-13T02:46:04Z
-last_observed: 2026-02-19
-last_modified: 2026-08-08T09:55:58Z
-record_count: 1594
+last_checked: 2026-08-14T04:59:27Z
+last_observed: 2026-04-24
+last_modified: 2026-08-14T04:28:25Z
+record_count: 1597
 column_count: 7
 status: stale
 notes: "Tier-1 wave E newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: pharmaceutical_products_cancelled
-freshness_delta: 175 days
+freshness_delta: 112 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,17 +28,17 @@ attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 175 days
+**Freshness:** 112 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 
-The checked resource is 219,471 bytes.
+The checked resource is 219,907 bytes.
 
 ## Provenance
 
