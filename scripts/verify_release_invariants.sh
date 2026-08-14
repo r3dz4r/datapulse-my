@@ -36,7 +36,8 @@ fetch() {
     fi
     return
   fi
-  curl --fail --location --silent --show-error --retry 2 \
+  curl --fail --location --silent --show-error \
+    --retry 12 --retry-delay 15 --retry-all-errors \
     --connect-timeout 10 --max-time 30 \
     "$base_url/$path" --output "$work_dir/$name"
 }
@@ -325,7 +326,7 @@ if $local_mode; then
   methodology_file="docs/health-methodology.html"
 else
   methodology_file="$work_dir/health-methodology.html"
-  fetch "health-methodology.html" "$methodology_file"
+  fetch "health-methodology.html" "health-methodology.html"
 fi
 [[ -s "$methodology_file" ]] || {
   printf 'Health methodology: rendered HTML is missing or empty\n' >&2

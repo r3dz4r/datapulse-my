@@ -73,6 +73,10 @@ change is reviewed separately:
    level-one title from `docs/health-methodology.md`; this prevents a source-only
    documentation edit from reintroducing the public 404.
 
+Public artifact fetches inside `scripts/verify_release_invariants.sh` retry HTTP
+errors, including transient 404 responses, for a three-minute Pages-propagation
+delay budget before rejecting the deployed release.
+
 A failure blocks the workflow after deployment and identifies the rejected
 surface. Resolve the source or generation issue, rerun the same
 `release-build` → embed → deploy sequence, and do not waive the failing gate.
