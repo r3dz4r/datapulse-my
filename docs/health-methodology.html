@@ -33,7 +33,7 @@
 <p>DataPulse MY reports evidence, not a promise that upstream data is
 correct.</p>
 <h2 id="schema-version">Schema version</h2>
-<p><code>health/latest.json.schema = "datapulse/v0.3/dataset-health"</code></p>
+<p><code>health/latest.json.schema = "datapulse/v0.4/dataset-health"</code></p>
 <p>The schema identifier is a top-level field.
 <code>_trust_summary</code> does not duplicate the schema
 identifier.</p>
@@ -41,16 +41,16 @@ identifier.</p>
 <p><code>health/history.jsonl</code> records one observation for every
 dataset in every published probe cycle. Each JSONL object contains
 <code>dataset_id</code>, <code>observed_at</code>, <code>cycle</code>,
-<code>status</code>, <code>freshness_signal</code>,
-<code>last_modified</code>, <code>content_date</code>,
-<code>record_count</code>, <code>record_count_estimated</code>,
-<code>http_status</code>, <code>latency_ms</code>,
-<code>probe_outcome</code>, and <code>message</code>, plus
-<code>name</code>, manifest <code>url</code>, and
-<code>shape_hash</code> when available. Re-running a cycle replaces the
-matching <code>(dataset_id, cycle)</code> object instead of creating a
-duplicate. Status changes are represented by successive observations and
-can therefore be queried without changing the ten-status snapshot
+<code>status</code>, <code>anomaly_detected</code>,
+<code>freshness_signal</code>, <code>last_modified</code>,
+<code>content_date</code>, <code>record_count</code>,
+<code>record_count_estimated</code>, <code>http_status</code>,
+<code>latency_ms</code>, <code>probe_outcome</code>, and
+<code>message</code>, plus <code>name</code>, manifest <code>url</code>,
+and <code>shape_hash</code> when available. Re-running a cycle replaces
+the matching <code>(dataset_id, cycle)</code> object instead of creating
+a duplicate. Status changes are represented by successive observations
+and can therefore be queried without changing the ten-status snapshot
 taxonomy.</p>
 <p>The existing probe snapshot does not currently expose request
 duration, so <code>latency_ms</code> is explicitly <code>null</code>
@@ -146,7 +146,8 @@ diff. To revert a classification change, edit
 <code>real_status</code> back to <code>"live"</code>) and wait for the
 next <code>--due</code> probe.</p>
 <h2 id="schemaversion-changes">Schema/version changes</h2>
-<p>The health schema is unchanged for T33.</p>
+<p>The current health schema identifier is
+<code>datapulse/v0.4/dataset-health</code>.</p>
 <h2 id="status-taxonomy">Status taxonomy</h2>
 <table>
 <thead>
@@ -170,33 +171,49 @@ window.</td>
 <td>Freshness age is over 3× cadence.</td>
 </tr>
 <tr class="even">
+<td><code>discontinued</code></td>
+<td>The publisher has stopped updating the dataset; the last known
+content is retained.</td>
+</tr>
+<tr class="odd">
 <td><code>degraded</code></td>
 <td>Reachable, but schema/shape or record-count checks failed.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>browser-dependent</code></td>
 <td>Assessment requires rendered browser state.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>unreachable</code></td>
 <td>The source request failed or returned non-2xx.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>unknown</code></td>
 <td>No reliable classification is available.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>unknown-freshness</code></td>
 <td>Reachable and structurally usable, but no freshness evidence
 exists.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>reference</code></td>
 <td>Versioned reference/lookup data is reachable and countable;
 date-based freshness does not apply.</td>
 </tr>
 </tbody>
 </table>
+<h2 id="freshness-anomaly-signal">Freshness anomaly signal</h2>
+<p><code>anomaly_detected</code> is orthogonal to the ten-status
+taxonomy and never changes a dataset's status. During warm-up, it flags
+a freshness delta strictly greater than two times the declared cadence.
+After fourteen distinct prior UTC-day observations, it flags a delta
+strictly greater than the prior fourteen-day population mean plus two
+population standard deviations. The current snapshot is excluded from
+that baseline. <code>anomaly_detection</code> records the mode, sample
+count, threshold, and current value; missing evidence,
+<code>as-required</code>, reference, and discontinued rows are
+<code>not_evaluated</code> and false.</p>
 <h2 id="freshness-and-reachability">Freshness and reachability</h2>
 <p>Reachability is not freshness. The probe chooses the newest
 defensible signal from an HTTP <code>Last-Modified</code> header or

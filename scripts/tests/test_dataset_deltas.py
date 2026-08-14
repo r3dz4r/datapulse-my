@@ -218,6 +218,38 @@ def test_delta_status_change_uses_latest_successful_prior(tmp_path: Path) -> Non
     ]
 
 
+def test_anomaly_transition_ignores_pre_feature_baseline(tmp_path: Path) -> None:
+    prior, cycle = "2026-08-12T17:55", "2026-08-12T18:00"
+    old = _history_row("alpha", prior)
+    current = _history_row("alpha", cycle)
+    paths = _prepare(
+        tmp_path,
+        cycle=cycle,
+        health_overrides={"alpha": {"anomaly_detected": True}},
+        history=[old, current],
+    )
+    assert _generate(cycle, *paths)["deltas"]["anomaly_changed"] == []
+
+    old["anomaly_detected"] = False
+    (paths[3] / f"{cycle}.json").unlink()
+    paths = _prepare(
+        tmp_path,
+        cycle=cycle,
+        health_overrides={"alpha": {"anomaly_detected": True}},
+        history=[old, current],
+    )
+    assert _generate(cycle, *paths)["deltas"]["anomaly_changed"] == [
+        {
+            "dataset_id": "alpha",
+            "name": "Alpha Dataset",
+            "from_anomaly_detected": False,
+            "to_anomaly_detected": True,
+            "from_cycle": prior,
+            "metric": "freshness_delta_days",
+        }
+    ]
+
+
 def test_delta_url_change(tmp_path: Path) -> None:
     prior, cycle = "2026-08-12T17:55", "2026-08-12T18:00"
     history = [

@@ -1435,7 +1435,7 @@ build_health_snapshot() {
   jq -s \
   --slurpfile manifest "$manifest" \
   --slurpfile previous "$previous_file" \
-  --arg schema "datapulse/v0.3/dataset-health" \
+  --arg schema "datapulse/v0.4/dataset-health" \
   --arg checked_at "$checked_at" \
   --argjson checked_epoch "$checked_epoch" \
   --argjson due_mode "$due_mode" \
@@ -1649,9 +1649,9 @@ build_health_snapshot() {
 }
 
 if $compare_health; then
-  build_health_snapshot > "$comparison_output_file"
+  build_health_snapshot | "${DATAPULSE_PYTHON_BIN:-python3}" "$script_dir/gen_anomaly.py" --manifest "$manifest" --history health/history.jsonl > "$comparison_output_file"
   cat "$comparison_output_file"
   python3 "$script_dir/compare_health.py" "$comparison_output_file" "$manifest" >&2
 else
-  build_health_snapshot
+  build_health_snapshot | "${DATAPULSE_PYTHON_BIN:-python3}" "$script_dir/gen_anomaly.py" --manifest "$manifest" --history health/history.jsonl
 fi

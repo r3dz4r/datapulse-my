@@ -13,6 +13,7 @@ from pathlib import Path
 MANIFEST_PATTERN = r"a machine-readable manifest of \d+ official datasets"
 CATALOGUE_PATTERN = r"the \d+-dataset catalogue"
 PROVENANCE_PATTERN = r"Each manifest entry retains a human-readable `steward` and provides a stable\n`custodian` publisher ID resolved through `custodians\.json`\."
+ANOMALY_PATTERN = r"Health rows expose `anomaly_detected` plus `anomaly_detection` to explain\nfreshness-delta outliers; this signal does not add or change statuses\."
 DATASET_BULLET_PATTERN = re.compile(
     r"^- \[[^]]+\]\((?:https?://[^)\s]+/)?data/([^)/\s]+)\.md\)"
 )
@@ -60,6 +61,12 @@ def generate(root: Path) -> None:
         "`custodian` publisher ID resolved through `custodians.json`.",
         updated,
     )
+    updated, anomaly_matches = re.subn(
+        ANOMALY_PATTERN,
+        "Health rows expose `anomaly_detected` plus `anomaly_detection` to explain\n"
+        "freshness-delta outliers; this signal does not add or change statuses.",
+        updated,
+    )
     updated = "".join(
         line
         for line in updated.splitlines(keepends=True)
@@ -78,6 +85,8 @@ def generate(root: Path) -> None:
         )
     if any(entry.get("custodian") for entry in datasets) and provenance_matches != 1:
         missing.append(f"{PROVENANCE_PATTERN!r} (expected 1, found {provenance_matches})")
+    if any(entry.get("custodian") for entry in datasets) and anomaly_matches != 1:
+        missing.append(f"{ANOMALY_PATTERN!r} (expected 1, found {anomaly_matches})")
     if missing:
         raise GenerationError("missing llms.txt count pattern(s): " + ", ".join(missing))
 

@@ -6,7 +6,7 @@
   "required": ["schema", "checked_at", "_trust_summary", "datasets"],
   "properties": {
     "schema": {
-      "const": "datapulse/v0.3/dataset-health"
+      "const": "datapulse/v0.4/dataset-health"
     },
     "checked_at": {
       "type": "string",
@@ -88,6 +88,24 @@
               "unknown-freshness",
               "reference"
             ]
+          },
+          "anomaly_detected": {
+            "type": "boolean"
+          },
+          "anomaly_detection": {
+            "type": "object",
+            "required": ["metric", "mode", "window_days", "sample_days", "mean_days", "stdev_days", "threshold_days", "latest_days"],
+            "properties": {
+              "metric": {"const": "freshness_delta_days"},
+              "mode": {"enum": ["rolling_14d", "cadence_fallback", "not_evaluated"]},
+              "window_days": {"const": 14},
+              "sample_days": {"type": "integer", "minimum": 0, "maximum": 14},
+              "mean_days": {"type": ["number", "null"], "minimum": 0},
+              "stdev_days": {"type": ["number", "null"], "minimum": 0},
+              "threshold_days": {"type": ["number", "null"], "minimum": 0},
+              "latest_days": {"type": ["number", "null"], "minimum": 0}
+            },
+            "additionalProperties": false
           }
         },
         "additionalProperties": true

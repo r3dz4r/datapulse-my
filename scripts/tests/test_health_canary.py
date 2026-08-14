@@ -191,7 +191,7 @@ def test_check_compare_health_runs_against_existing_health(tmp_path: Path) -> No
         ]
     }
     prior_health = {
-        "schema": "datapulse/v0.3/dataset-health",
+        "schema": "datapulse/v0.4/dataset-health",
         "checked_at": "2026-08-08T00:00:00Z",
         "_trust_summary": {"datasets_total": 1, "by_status": {"fresh": 1}},
         "datasets": [
