@@ -41,6 +41,7 @@ GENERATORS = (
     "gen_dashboard_sections.py",
     "embed_dashboard_data.py",
     "check_url_drift.py",
+    "gen_health_methodology_html.py",
 )
 HEALTH_STEPS = (
     "gen_data_reports.sh",
@@ -72,6 +73,7 @@ RELEASE_STEPS = (
     "embed_dashboard_data.py",
     "check_url_drift.py",
     "gen_trust_snapshot.py",
+    "gen_health_methodology_html.py",
 )
 HEALTH_OUTPUTS = (
     "README.md",
@@ -95,6 +97,7 @@ RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "docs/.dashboard_filters.json",
     "docs/.dashboard_sections.json",
     "docs/index.html",
+    "docs/health-methodology.html",
 )
 PROFILE_INPUTS = (
     ".git",
@@ -161,6 +164,10 @@ def _stage_source(tmp_path: Path) -> Path:
     )
     (source / "docs").mkdir()
     shutil.copy2(RELEASE_FIXTURE / "docs/index.html", source / "docs/index.html")
+    shutil.copy2(
+        RELEASE_FIXTURE / "docs/health-methodology.md",
+        source / "docs/health-methodology.md",
+    )
     shutil.copy2(RELEASE_FIXTURE / "mcp.json", source / "mcp.json")
     shutil.copytree(RELEASE_FIXTURE / "mcp", source / "mcp")
 
@@ -178,6 +185,7 @@ def _stage_source(tmp_path: Path) -> Path:
 
     scripts = source / "scripts"
     scripts.mkdir()
+    shutil.copytree(ROOT / "scripts/templates", scripts / "templates")
     shutil.copy2(ROOT / "scripts/generate.sh", scripts / "generate.sh")
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
@@ -231,7 +239,7 @@ def test_health_cycle_lists_nine_steps(tmp_path: Path) -> None:
         assert step in result.stdout
 
 
-def test_release_build_lists_all_eighteen_steps(tmp_path: Path) -> None:
+def test_release_build_lists_all_nineteen_steps(tmp_path: Path) -> None:
     result = _run_profile(tmp_path, "release-build", list_mode=True)
 
     assert result.returncode == 0, result.stderr

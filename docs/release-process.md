@@ -14,7 +14,10 @@ that snapshot and the manifest:
 - `release-build` owns the `health-cycle` paths plus
   `data/json/<id>.json`, `data/jsonld/`, `docs/mcp-reference.md`, `mcp.json`,
   `docs/.dashboard_filters.json`, and the weekly
-  `docs/trust-snapshot-<date>.{md,json}` roundup. The Pages deploy workflow
+  `docs/trust-snapshot-<date>.{md,json}` roundup, plus the rendered
+  `docs/health-methodology.html`. `scripts/gen_health_methodology_html.py`
+  owns the last file and renders it from `docs/health-methodology.md` with
+  `scripts/templates/health-methodology.html.tmpl`. The Pages deploy workflow
   invokes it before embedding and assembling the public artifact.
 
 Treat generated paths as profile outputs: change their source or generator,
@@ -27,8 +30,10 @@ Two named profiles in `scripts/generate.sh` orchestrate the generators in review
 - `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `catalog-snapshot.json` plus the deprecated `changelog.json` alias, `health/history*`, and `deltas/`.
 - `release-build` — invoked by the Pages deploy workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), dashboard filters (`docs/.dashboard_filters.json`), and the date-stamped trust snapshot (`docs/trust-snapshot-<date>.{md,json}`).
 
-`release-build` numbers the source stamp as Step 0, followed by sixteen artifact
-generators through Step 16. Both profiles support `--list` for dry-run enumeration
+`release-build` numbers the source stamp as Step 0, followed by nineteen artifact
+generators through Step 19. Step 19 runs
+`python3 scripts/gen_health_methodology_html.py` and owns
+`docs/health-methodology.html`. Both profiles support `--list` for dry-run enumeration
 of steps + owned paths. Both refuse to push or deploy — those actions remain
 with their operational owner.
 
@@ -64,6 +69,9 @@ change is reviewed separately:
    health rows.
 7. `scripts/verify_agent_ready.sh` and
    `scripts/verify_release_invariants.sh` accept the public surfaces.
+8. Rendered `health-methodology.html` exists, is non-empty, and contains the
+   level-one title from `docs/health-methodology.md`; this prevents a source-only
+   documentation edit from reintroducing the public 404.
 
 A failure blocks the workflow after deployment and identifies the rejected
 surface. Resolve the source or generation issue, rerun the same
