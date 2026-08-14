@@ -150,8 +150,11 @@
       const render = records => {
         const counts = records.reduce((result, row) => { result[row.status] = (result[row.status] || 0) + 1; return result; }, {});
         const latest = records.map(row => row.last_modified).filter(Boolean).sort().at(-1);
-        const checked = latest ? latest.replace(/:\d{2}Z$/, ' UTC').replace('T', ' ') : 'unavailable';
-        document.querySelector('[data-npra-cfd]').textContent = `${records.length} datasets · ${counts.fresh || 0} fresh · ${counts.stale || 0} stale · last checked ${checked}`;
+        const checkedDate = latest ? new Date(latest) : null;
+        const checked = checkedDate && !Number.isNaN(checkedDate.valueOf())
+          ? new Intl.DateTimeFormat('en-MY', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kuala_Lumpur' }).format(checkedDate)
+          : 'unavailable';
+        document.querySelector('[data-npra-cfd]').textContent = `${records.length} datasets · ${counts.fresh || 0} fresh · ${counts.stale || 0} stale · last checked ${checked} MYT`;
         records.forEach(row => {
           const status = label(row.status);
           document.querySelectorAll(`[data-npra-status="${row.dataset_id}"]`).forEach(node => { node.className = `legend-swatch ${status}`; });
