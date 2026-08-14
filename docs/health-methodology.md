@@ -4,7 +4,7 @@ DataPulse MY reports evidence, not a promise that upstream data is correct.
 
 ## Schema version
 
-`health/latest.json.schema = "datapulse/v0.3/dataset-health"`
+`health/latest.json.schema = "datapulse/v0.4/dataset-health"`
 
 The schema identifier is a top-level field. `_trust_summary` does not duplicate
 the schema identifier.
@@ -13,7 +13,7 @@ the schema identifier.
 
 `health/history.jsonl` records one observation for every dataset in every
 published probe cycle. Each JSONL object contains `dataset_id`, `observed_at`,
-`cycle`, `status`, `freshness_signal`, `last_modified`, `content_date`,
+`cycle`, `status`, `anomaly_detected`, `freshness_signal`, `last_modified`, `content_date`,
 `record_count`, `record_count_estimated`, `http_status`, `latency_ms`,
 `probe_outcome`, and `message`, plus `name`, manifest `url`, and `shape_hash`
 when available. Re-running a cycle replaces the matching
@@ -111,7 +111,7 @@ next `--due` probe.
 
 ## Schema/version changes
 
-The health schema is unchanged for T33.
+The current health schema identifier is `datapulse/v0.4/dataset-health`.
 
 ## Status taxonomy
 
@@ -120,12 +120,24 @@ The health schema is unchanged for T33.
 | `fresh` | Reachable, structurally usable, and within the freshness window. |
 | `aging` | Freshness age is over 1.5× cadence and at most 3× cadence. |
 | `stale` | Freshness age is over 3× cadence. |
+| `discontinued` | The publisher has stopped updating the dataset; the last known content is retained. |
 | `degraded` | Reachable, but schema/shape or record-count checks failed. |
 | `browser-dependent` | Assessment requires rendered browser state. |
 | `unreachable` | The source request failed or returned non-2xx. |
 | `unknown` | No reliable classification is available. |
 | `unknown-freshness` | Reachable and structurally usable, but no freshness evidence exists. |
 | `reference` | Versioned reference/lookup data is reachable and countable; date-based freshness does not apply. |
+
+## Freshness anomaly signal
+
+`anomaly_detected` is orthogonal to the ten-status taxonomy and never changes a
+dataset's status. During warm-up, it flags a freshness delta strictly greater
+than two times the declared cadence. After fourteen distinct prior UTC-day
+observations, it flags a delta strictly greater than the prior fourteen-day
+population mean plus two population standard deviations. The current snapshot
+is excluded from that baseline. `anomaly_detection` records the mode, sample
+count, threshold, and current value; missing evidence, `as-required`,
+reference, and discontinued rows are `not_evaluated` and false.
 
 ## Freshness and reachability
 

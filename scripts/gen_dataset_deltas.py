@@ -17,6 +17,7 @@ DELTA_NAMES = (
     "added",
     "removed",
     "status_changed",
+    "anomaly_changed",
     "url_changed",
     "schema_changed",
     "record_count_changed",
@@ -204,6 +205,20 @@ def build_delta(
                         "to_status": current.get("status"),
                         "from_cycle": baseline["cycle"],
                         "signal_source": signal,
+                    }
+                )
+            if (
+                "anomaly_detected" in baseline
+                and baseline.get("anomaly_detected") != current.get("anomaly_detected")
+            ):
+                deltas["anomaly_changed"].append(
+                    {
+                        "dataset_id": dataset_id,
+                        "name": name,
+                        "from_anomaly_detected": baseline.get("anomaly_detected"),
+                        "to_anomaly_detected": current.get("anomaly_detected"),
+                        "from_cycle": baseline["cycle"],
+                        "metric": "freshness_delta_days",
                     }
                 )
             old_url, new_url = baseline.get("url"), entry.get("url")

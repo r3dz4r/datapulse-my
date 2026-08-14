@@ -15,6 +15,9 @@ infrastructure and does not imply adoption by any LLM provider or improved citat
 Each manifest entry retains a human-readable `steward` and provides a stable
 `custodian` publisher ID resolved through `custodians.json`.
 
+Health rows expose `anomaly_detected` plus `anomaly_detection` to explain
+freshness-delta outliers; this signal does not add or change statuses.
+
 For focused human-readable NPRA coverage, use the [NPRA engine page](https://data-pulse.my/npra.html).
 
 ## Model Context Protocol (MCP)

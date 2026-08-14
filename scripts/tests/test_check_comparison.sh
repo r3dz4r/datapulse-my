@@ -20,7 +20,7 @@ JSON
 
 cat > "$fixture_dir/health.json" <<'JSON'
 {
-  "schema": "datapulse/v0.3/dataset-health",
+  "schema": "datapulse/v0.4/dataset-health",
   "checked_at": "2099-01-01T00:00:00Z",
   "_trust_summary": {"datasets_total": 1},
   "datasets": [

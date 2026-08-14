@@ -129,6 +129,8 @@ RAG systems, and internal knowledge tools to consume.
   cadence tier is due, separating HTTP
   reachability, browser dependency, schema validity, and source freshness so
   missing evidence is visible instead of being labelled healthy.
+  Consumers can also use `anomaly_detected` as an explainable, orthogonal
+  freshness-delta signal without changing the ten-status taxonomy.
 - **Machine-readable and licence-clear:** every dataset has a JSON envelope with
   its schema, licence, and refresh cadence, giving legal and engineering teams
   the information they need to approve and integrate it.

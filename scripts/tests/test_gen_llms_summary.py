@@ -20,6 +20,10 @@ def _write_fixture(root: Path, *, count: int = 3, include_mcp_line: bool = True)
     lines = [
         "# Fixture\n",
         "> a machine-readable manifest of 42 official datasets, fresh metadata\n",
+        "Each manifest entry retains a human-readable `steward` and provides a stable\n",
+        "`custodian` publisher ID resolved through `custodians.json`.\n",
+        "Health rows expose `anomaly_detected` plus `anomaly_detection` to explain\n",
+        "freshness-delta outliers; this signal does not add or change statuses.\n",
         "Unrelated content stays byte-identical.\n",
         "Agents can query the 42-dataset catalogue natively.\n",
     ]

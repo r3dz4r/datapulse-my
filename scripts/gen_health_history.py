@@ -141,6 +141,8 @@ def observation(
         "url": entry.get("url") or row.get("url"),
         "shape_hash": row.get("first_row_hash"),
     }
+    if "anomaly_detected" in row:
+        optional["anomaly_detected"] = row.get("anomaly_detected") is True
     result.update({key: value for key, value in optional.items() if value is not None})
     return result
 
