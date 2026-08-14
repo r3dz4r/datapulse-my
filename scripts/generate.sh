@@ -3,7 +3,7 @@
 # DataPulse MY generation profiles.
 #
 # health-cycle: 9 steps for artifacts derived from the live health snapshot.
-# release-build: source stamp plus 18 steps for the complete public-site artifact set.
+# release-build: source stamp plus 19 steps for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
 # It never commits, pushes, or deploys; release-build embeds dashboard data locally.
@@ -118,6 +118,7 @@ case "$profile" in
       "embed_dashboard_data.py"
       "check_url_drift.py"
       "gen_trust_snapshot.py"
+      "gen_health_methodology_html.py"
     )
     outputs=(
       "mcp/server.py (SOURCE_COMMIT_SHA/SOURCE_COMMIT_DATE constants); mcp.json (source_commit_sha/source_commit_date fields)"
@@ -139,6 +140,7 @@ case "$profile" in
       "docs/index.html (embedded manifest, health, filters, and sections)"
       "URL drift and cadence audit"
       "docs/trust-snapshot-<date>.{md,json}"
+      "docs/health-methodology.html"
     )
     ;;
   *)

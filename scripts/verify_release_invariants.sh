@@ -315,3 +315,24 @@ for index, key in enumerate(active):
 print(f"Buyer API keys: PASS ({len(active)} active)")
 PY
 fi
+
+expected_methodology_title="$(sed -n 's/^# //p' docs/health-methodology.md | head -n 1)"
+[[ -n "$expected_methodology_title" ]] || {
+  printf 'Health methodology: source title is missing\n' >&2
+  exit 1
+}
+if $local_mode; then
+  methodology_file="docs/health-methodology.html"
+else
+  methodology_file="$work_dir/health-methodology.html"
+  fetch "health-methodology.html" "$methodology_file"
+fi
+[[ -s "$methodology_file" ]] || {
+  printf 'Health methodology: rendered HTML is missing or empty\n' >&2
+  exit 1
+}
+grep -Fq ">$expected_methodology_title<" "$methodology_file" || {
+  printf 'Health methodology: rendered HTML does not contain source title\n' >&2
+  exit 1
+}
+printf 'Health methodology HTML: PASS\n'
