@@ -202,13 +202,14 @@ def verify_repository_contract(root: Path) -> list[str]:
     errors: list[str] = []
     schema = _load_json(root, "datapulse.schema.json", errors)
     manifest = _load_json(root, "datapulse.json", errors)
+    custodians = _load_json(root, "custodians.json", errors)
     health = _load_json(root, "health/latest.json", errors)
     scope = _load_json(root, "scripts/contract-scope.json", errors)
     probe_policy = _load_json(root, "scripts/probe-policy.json", errors)
     probe_policy_schema = _load_json(root, "scripts/probe-policy.schema.json", errors)
     if any(
         document is None
-        for document in (schema, manifest, health, scope, probe_policy, probe_policy_schema)
+        for document in (schema, manifest, custodians, health, scope, probe_policy, probe_policy_schema)
     ):
         return errors
 
@@ -221,6 +222,22 @@ def verify_repository_contract(root: Path) -> list[str]:
         errors.append(f"datapulse.schema.json: invalid schema: {exc}")
 
     manifest_rows = manifest.get("datasets", []) if isinstance(manifest, dict) else []
+    registry = custodians.get("custodians", {}) if isinstance(custodians, dict) else {}
+    if custodians.get("schema") != "datapulse/v1/custodians":
+        errors.append("custodians.json:schema: expected datapulse/v1/custodians")
+    if not isinstance(registry, dict):
+        errors.append("custodians.json:custodians: expected object")
+        registry = {}
+    referenced_custodians = {
+        row.get("custodian") for row in manifest_rows
+        if isinstance(row, dict) and isinstance(row.get("custodian"), str)
+    }
+    missing_custodians = referenced_custodians - set(registry)
+    if missing_custodians:
+        errors.append("datapulse.json: unresolved custodian IDs: " + _format_ids(missing_custodians))
+    unused_custodians = set(registry) - referenced_custodians
+    if unused_custodians:
+        errors.append("custodians.json: unreferenced custodian IDs: " + _format_ids(unused_custodians))
     health_rows = health.get("datasets", []) if isinstance(health, dict) else []
     manifest_ids = [row.get("id") for row in manifest_rows if isinstance(row, dict)]
     health_ids = [row.get("dataset_id") for row in health_rows if isinstance(row, dict)]

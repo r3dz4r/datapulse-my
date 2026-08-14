@@ -25,6 +25,15 @@ def test_valid_fixture_passes(repository: Path) -> None:
     assert verify_repository_contract(repository) == []
 
 
+def test_unresolved_custodian_reports_the_id(repository: Path) -> None:
+    manifest_path = repository / "datapulse.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["datasets"][0]["custodian"] = "missing"
+    write_json(manifest_path, manifest)
+
+    assert any("unresolved custodian" in error and "missing" in error for error in verify_repository_contract(repository))
+
+
 def test_duplicate_manifest_id_reports_the_id(repository: Path) -> None:
     manifest_path = repository / "datapulse.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
