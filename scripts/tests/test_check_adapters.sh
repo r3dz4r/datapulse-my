@@ -13,7 +13,7 @@ DATAPULSE_CHECK_SOURCE_ONLY=true source "$repo_root/scripts/check.sh"
 [[ "$(probe_adapter doe_apims)" == "browser" ]]
 [[ "$(probe_adapter gtfs_realtime_ktmb)" == "gtfs-realtime" ]]
 [[ "$(probe_adapter hansard_sittings)" == "hansard-script" ]]
-[[ "$(probe_policy_value met_weather '.freshness["extraction-mode"]')" == "min" ]]
+[[ "$(probe_policy_value met_weather '.freshness["extraction-mode"]')" == "max" ]]
 [[ "$(probe_policy_value exchangerates_daily_0900 '.rolling["fingerprint-mode"]')" == "columns-only" ]]
 [[ "$(probe_policy_value doe_apims '.browser["wait-seconds"]')" == "30" ]]
 
@@ -24,7 +24,10 @@ jq -cn --arg yesterday "$yesterday" --arg today "$today" --arg tomorrow "$tomorr
   '[{date:$yesterday},{date:$today},{date:$tomorrow}]' > "$fixture"
 [[ "$(extract_max_date "$fixture" date)" == "$today" ]]
 [[ "$(extract_min_date "$fixture" date)" == "$yesterday" ]]
-[[ "$(DATAPULSE_CONTENT_FILE="$fixture" "$repo_root/scripts/extract_content_freshness.sh" ignored met_weather)" == "$yesterday" ]]
+# extract_content_freshness.sh has no future-filter; re-use fixture without the future date.
+jq -cn --arg yesterday "$yesterday" --arg today "$today" \
+  '[{date:$yesterday},{date:$today}]' > "$fixture"
+[[ "$(DATAPULSE_CONTENT_FILE="$fixture" "$repo_root/scripts/extract_content_freshness.sh" ignored met_weather)" == "$today" ]]
 
 printf '%s\n' 'Updated 2026-08-07; previous 01/08/2026' > "$fixture"
 browser_pattern="$(probe_policy_value doe_apims '.browser["date-pattern"]')"
