@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_realtime_prasarana_bus_kl
-last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-14T09:46:02Z
 status: fresh
 freshness_delta: 0 days
 record_count: 0
@@ -25,7 +25,7 @@ HTTP 200; valid GTFS realtime protobuf (0 vehicles)
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-14 at 09:46:02 UTC.
 
 ## File size
 
