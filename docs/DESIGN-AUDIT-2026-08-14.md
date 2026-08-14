@@ -89,3 +89,37 @@ Files live in `/home/redza/dotfiles/notes/audit-2026-08-14-screenshots/` (operat
 - Phase 3 (NPRA page) — PENDING
 - Phase 4 (generator durability test) — SHIPPED in commit `2aa99f7`
 - Phase 5 (nav integration sitewide) — PENDING; this audit's items 1, 3, 6 are also Phase 5 scope
+
+## Empirical-evidence update — 2026-08-14 capture after Group A
+
+A second camofox capture session landed on `https://data-pulse.my/` and `https://data-pulse.my/landing` AFTER the Group A fixes (commit `dcd9881`). 21 PNGs archived at `~/dotfiles/notes/audit-2026-08-14-fixes-screenshots/` (1.5 MB).
+
+### New PNG categories
+
+| Category | Files | Why |
+|---|---|---|
+| Dataset cards (desktop 1440×900) | `dataset_cards_y5500.png`, `dataset_cards_2col.png` | Closes audit v2's demoted finding #11. Confirms 2-column grid, dense URL rendering, multi-row title typography. |
+| Dashboard mobile 375×667 | `dashboard_mobile_375_top.png` (-4500 series) | First mobile coverage. Confirms single-column stack at < 1024px widths; cards readable. |
+| Landing hero (post-fixes, desktop) | `landing_1440_top_post_fixes.png` | Verifies Group A's H2 / chip / legend fixes are visible on the deployed page. |
+
+### Visual confirmation of Group A fixes
+
+Cross-referencing the new captures with the brief's Gate-5 (visual review of post-fix PNGs confirms each bug visibly fixed):
+
+- `dashboard-workflow-taxonomy-1440.png` (Group A) + `dashboard-workflow-taxonomy-375.png` (mobile bonus) — Probe/Measure circles above text on desktop; single-column on mobile.
+- `landing-mcp-heading-1440.png` — H2 "Give an AI agent a bibliography, not a guess" (sentence case; previously all-caps).
+- `landing-not-heading-1440.png` — H2 "Three things this is not" rendered as sentence case.
+- `dashboard-mcp-1440.png` — MCP panel tighter; 5 tool chips (`search_datasets`, `get_dataset`, `find_stale`, `get_provenance`, `find_by_licence`) visible without sprawl. Plausible removed (privacy fixed).
+- `landing_1440_top_post_fixes.png` — landing hero; new H2 sentence case visible in `Pick your path` and other sub-sections.
+
+### Updated visual finding (closes audit v2 demoted finding #11)
+
+**Dataset-card density (desktop 1440×900)**: each card has title, status badge, full URL, fact list (NEXT EXPECTED UPDATE / COVERAGE / LAST MODIFIED / CONTENT FRESHNESS / FRESHNESS SIGNAL FRESHNESS), inline pill stats (HTTP / Size / Records), and three action links (Health report / Sample CSV / Sample JSON). Visible in `dataset_cards_2col.png`. The 2-column layout reads; long titles wrap to 3–4 lines; URL wrapping is the principal visual noise. **The audit's source-only density claim is now empirically confirmed.**
+
+**Status of demoted findings after this capture**:
+- "Dataset cards very dense three-column surfaces with 12–13px metadata" — **partially demoted**. Layout is 2-column (not 3-column) and metadata type is 0.74–0.8rem, not 0.65rem. Density claim about "very dense" still holds; density claim about "three-column" does not.
+- "Responsive foundations, full-width mobile CTAs" — **fully confirmed**. Mobile at 375×667 shows single-column stack; cards use vertical room appropriately.
+
+### Visual-evidence rule still applies for any Phase 5 fix
+
+Any Phase 5 work (nav contract, footer contract, route swap, dashboard chrome) MUST land with a fresh camofox capture session. The empirical evidence deck in `~/dotfiles/notes/` is a precedent, not a permanent guarantee — re-screenshot after every chrome change.
