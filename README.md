@@ -138,7 +138,9 @@ RAG systems, and internal knowledge tools to consume.
   to ground chatbots and AI tools in current Malaysian public data.
 
 **Every manifest dataset declares either CC BY 4.0 or OGL licensing and is
-assessed with the honest nine-status trust taxonomy.**
+assessed with the honest ten-status trust taxonomy.** Each entry retains its
+human-readable `steward` and supplies a stable `custodian` ID resolved through
+[`custodians.json`](custodians.json) for publisher-level provenance.
 
 ### MCP server (read-only)
 

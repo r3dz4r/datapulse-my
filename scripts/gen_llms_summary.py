@@ -12,6 +12,7 @@ from pathlib import Path
 
 MANIFEST_PATTERN = r"a machine-readable manifest of \d+ official datasets"
 CATALOGUE_PATTERN = r"the \d+-dataset catalogue"
+PROVENANCE_PATTERN = r"Each manifest entry retains a human-readable `steward` and provides a stable\n`custodian` publisher ID resolved through `custodians\.json`\."
 DATASET_BULLET_PATTERN = re.compile(
     r"^- \[[^]]+\]\((?:https?://[^)\s]+/)?data/([^)/\s]+)\.md\)"
 )
@@ -53,6 +54,12 @@ def generate(root: Path) -> None:
         f"the {count}-dataset catalogue",
         updated,
     )
+    updated, provenance_matches = re.subn(
+        PROVENANCE_PATTERN,
+        "Each manifest entry retains a human-readable `steward` and provides a stable\n"
+        "`custodian` publisher ID resolved through `custodians.json`.",
+        updated,
+    )
     updated = "".join(
         line
         for line in updated.splitlines(keepends=True)
@@ -69,6 +76,8 @@ def generate(root: Path) -> None:
         missing.append(
             f"{CATALOGUE_PATTERN!r} (expected 2, found {catalogue_matches})"
         )
+    if any(entry.get("custodian") for entry in datasets) and provenance_matches != 1:
+        missing.append(f"{PROVENANCE_PATTERN!r} (expected 1, found {provenance_matches})")
     if missing:
         raise GenerationError("missing llms.txt count pattern(s): " + ", ".join(missing))
 

@@ -44,6 +44,7 @@
         "name",
         "source",
         "steward",
+        "custodian",
         "url",
         "licence",
         "attribution",
@@ -122,6 +123,12 @@
         "steward": {
           "type": "string",
           "minLength": 1
+        },
+        "custodian": {
+          "description": "Stable publishing-agency ID resolved through custodians.json.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
         },
         "url": {
           "type": "string",
