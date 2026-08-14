@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_electricity_access
-last_checked: 2026-08-13T02:46:04Z
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-14T04:59:27Z
 status: stale
-freshness_delta: 2050 days
+freshness_delta: 2051 days
 next_expected_update: annual
 record_count: 44
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Energy Commission and Malaysian electricity utilities via data.gov.
 
 **Status:** Stale
 
-**Freshness:** 2050 days
+**Freshness:** 2051 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 

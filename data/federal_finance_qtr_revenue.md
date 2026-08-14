@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_federal_finance_qtr_revenue
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
 status: stale
-freshness_delta: 955 days
+freshness_delta: 956 days
 next_expected_update: overdue
 record_count: 2373
 date_range: 1996-01-01 to 2024-01-01
@@ -20,13 +20,13 @@ attribution: Accountant General's Department of Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 955 days
+**Freshness:** 956 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 

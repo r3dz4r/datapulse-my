@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_metrics_content
-last_checked: 2026-08-13T02:46:04Z
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-14T04:59:27Z
 status: fresh
-freshness_delta: 12 days
+freshness_delta: 13 days
 next_expected_update: monthly
 record_count: 36
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 12 days
+**Freshness:** 13 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 

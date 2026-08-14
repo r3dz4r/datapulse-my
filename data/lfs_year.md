@@ -1,6 +1,6 @@
 ---
 dataset_id: dgm_lfs_year
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
 status: unknown-freshness
 freshness_delta: unknown
 next_expected_update: unknown
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 

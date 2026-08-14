@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_federal_finance_year_oe
-last_checked: 2026-08-13T02:46:04Z
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-14T04:59:27Z
 status: stale
-freshness_delta: 1320 days
+freshness_delta: 1321 days
 next_expected_update: annual
 record_count: 495
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Accountant General’s Department of Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1320 days
+**Freshness:** 1321 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 

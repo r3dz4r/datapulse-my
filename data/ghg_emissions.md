@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/environment/ghg_emissions.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "annual"
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
 last_observed: 2021-01-01
 last_modified: 2024-09-12T15:15:38Z
 record_count: 56
@@ -13,7 +13,7 @@ column_count: 3
 status: stale
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: ghg_emissions
-freshness_delta: 2050 days
+freshness_delta: 2051 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Ministry of Natural Resources and Environmental Sustainability via
 
 **Status:** Stale
 
-**Freshness:** 2050 days
+**Freshness:** 2051 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 

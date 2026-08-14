@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_arrivals
-last_checked: 2026-08-13T02:46:04Z
-last_checked: 2026-08-13T02:46:04Z
+last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-14T04:59:27Z
 status: stale
-freshness_delta: 681 days
+freshness_delta: 682 days
 next_expected_update: monthly
 record_count: 13050
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Immigration Department of Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 681 days
+**Freshness:** 682 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-13 at 02:46:04 UTC.
+2026-08-14 at 04:59:27 UTC.
 
 ## File size
 
