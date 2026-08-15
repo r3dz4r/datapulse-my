@@ -92,6 +92,23 @@ async def generate() -> None:
         }
         for tool in tools
     ]
+    discovery["resources"] = [
+        {
+            "uri": str(resource.uri),
+            "name": getattr(resource, "name", str(resource.uri)),
+            "description": resource.description,
+            "mimeType": getattr(resource, "mime_type", "application/json"),
+        }
+        for resource in resources
+    ] + [
+        {
+            "uri": template.uri_template,
+            "name": getattr(template, "name", template.uri_template),
+            "description": template.description,
+            "mimeType": getattr(template, "mime_type", "application/json"),
+        }
+        for template in templates
+    ]
     discovery_path.write_text(
         json.dumps(discovery, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )

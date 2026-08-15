@@ -13,8 +13,29 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - id: release
+        uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      - uses: actions/checkout@v4
+        if: steps.release.outputs.release_created == 'true'
+        with:
+          fetch-depth: 0
+      - name: Assert and publish attestation anchor
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          set -Eeuo pipefail
+          git fetch --tags --force
+          anchored="$(git show "$TAG:.attestations/chain_head.json" | jq -er .chain_head)"
+          [[ "$anchored" =~ ^[0-9a-f]{64}$ ]]
+          body="$(gh release view "$TAG" --json body --jq '.body // ""')"
+          body="$(printf '%s\n' "$body" | sed -E '/^Attestation-Chain-Head: [0-9a-f]{64}$/d')"
+          gh release edit "$TAG" --notes "${body}
+
+          Attestation-Chain-Head: ${anchored}"
+          gh release view "$TAG" --json body --jq .body | grep -Fq "Attestation-Chain-Head: $anchored"

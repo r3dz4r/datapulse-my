@@ -21,6 +21,10 @@ def _load(path: Path) -> object:
         raise EmbedError(f"cannot read {path}: {error}") from error
 
 
+def _load_optional(path: Path | None) -> object:
+    return _load(path) if path is not None and path.exists() else {}
+
+
 def _dump(document: object) -> str:
     return json.dumps(document, ensure_ascii=False, separators=(",", ":")).replace(
         "</", "<\\/"
@@ -58,6 +62,7 @@ def embed(
     health_path: Path,
     filters_path: Path,
     sections_path: Path,
+    attestations_path: Path | None = None,
 ) -> None:
     try:
         html = html_path.read_text(encoding="utf-8")
@@ -72,7 +77,8 @@ def embed(
         f"health: {_dump(health)}, "
         f"manifest: {_dump(_load(manifest_path))}, "
         f"dashboardFilters: {_dump(_load(filters_path))}, "
-        f"dashboardSections: {_dump(_load(sections_path))}"
+        f"dashboardSections: {_dump(_load(sections_path))}, "
+        f"attestations: {_dump(_load_optional(attestations_path))}"
         "};\n"
         "  </script>"
     )
@@ -107,13 +113,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--sections", type=Path, default=root / "docs/.dashboard_sections.json"
     )
+    parser.add_argument(
+        "--attestations", type=Path, default=root / "attestations/latest/index.json"
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
-        embed(args.html, args.manifest, args.health, args.filters, args.sections)
+        embed(args.html, args.manifest, args.health, args.filters, args.sections, args.attestations)
     except EmbedError as error:
         print(f"embed_dashboard_data.py: {error}", file=sys.stderr)
         return 1

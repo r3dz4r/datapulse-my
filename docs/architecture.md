@@ -31,7 +31,7 @@ GitHub Pages artifact --------------------> data-pulse.my
        |
        +--> manifest, reports, health, samples, agent discovery
 
-mcp/server.py --fetches published manifest + health + trends + drift + reconciliation--> read-only MCP tools
+mcp/server.py --fetches published manifest + health + trends + drift + reconciliation + attestations--> read-only MCP tools
 ```
 
 `get_evidence` projects pipeline receipts from `health/latest.json`, while
@@ -71,7 +71,7 @@ measures publish timeliness, not uptime.
 Two profiles in `scripts/generate.sh` orchestrate the generators in
 reviewed order, with explicit path ownership:
 
-- `health-cycle` — 12 steps (`gen_data_reports.sh` →
+- `health-cycle` — 13 steps (`gen_data_reports.sh` →
   `gen_badges.sh` → `gen_readme_summary.sh` → `gen_rss.sh` →
   `gen_catalog_snapshot.py` → `gen_health_history.py --compact` → `gen_trends.py` → `gen_drift.py` →
   `gen_dataset_deltas.py` → `gen_record_evidence.py` →
@@ -85,7 +85,7 @@ reviewed order, with explicit path ownership:
   `gen_json_envelope.py --force` → `gen_jsonld_catalog.py` →
   `gen_mcp_reference.py` → `gen_dashboard_filters.py` →
   `gen_trust_snapshot.py`). Owns all
-  health-cycle paths plus `data/json/<id>.json`, `data/jsonld/`,
+  health-cycle paths plus signed `attestations/`, `data/json/<id>.json`, `data/jsonld/`,
   `docs/mcp-reference.md`, `mcp.json`, `docs/.dashboard_filters.json`, and
   `docs/trust-snapshot-<date>.{md,json}`.
   Invoked by the Pages deploy.
