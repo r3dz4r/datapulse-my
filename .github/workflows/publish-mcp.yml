@@ -29,4 +29,20 @@ jobs:
         run: ./mcp-publisher login github-oidc
 
       - name: Publish server to MCP Registry
-        run: ./mcp-publisher publish
+        run: |
+          # Idempotency guard: the registry rejects duplicate versions
+          # ("invalid version: cannot publish duplicate version"). The
+          # registry version (server.json "version", source-SHA stamped)
+          # is decoupled from release-please tags, so re-publishing an
+          # already-published version is expected on later releases.
+          # Skip quietly when the version is already live.
+          REGISTRY_URL="https://registry.modelcontextprotocol.io"
+          NAME="io.github.r3dz4r/datapulse-my"
+          VERSION="$(python3 -c "import json; print(json.load(open('server.json'))['version'])")"
+          EXISTING="$(curl -fsS "${REGISTRY_URL}/v0/servers/${NAME//\//%2F}/versions" 2>/dev/null || true)"
+          if echo "$EXISTING" | grep -q "\"version\":\"${VERSION}\""; then
+            echo "Version ${VERSION} already published to MCP Registry — skipping."
+            exit 0
+          fi
+          echo "Publishing version ${VERSION} to MCP Registry..."
+          ./mcp-publisher publish
