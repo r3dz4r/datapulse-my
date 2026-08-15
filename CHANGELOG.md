@@ -4,6 +4,13 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## [0.8.1](https://github.com/r3dz4r/datapulse-my/compare/v0.8.0...v0.8.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* **ci:** use GITHUB_TOKEN for attestation anchor injection ([0eb0e60](https://github.com/r3dz4r/datapulse-my/commit/0eb0e60618f2f9be837a8b9bf51554bc529f2fa9))
+
 ## [0.8.0](https://github.com/r3dz4r/datapulse-my/compare/v0.7.0...v0.8.0) (2026-08-15)
 
 
