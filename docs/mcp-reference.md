@@ -605,3 +605,44 @@ python3 scripts/gen_mcp_reference.py
 ```
 
 The command updates this file and the tool schemas in `mcp.json`.
+
+## Known issues (v0.8.0)
+
+- **`verify_attestation` L1 `key_time_valid` flag**: under live verification, the
+  `key_time_valid` sub-flag may report `false` even when `signature_valid` and
+  `key_registry_match` are both `true`. The underlying Ed25519 signature is
+  cryptographically valid; the flag reflects a date-window comparison in the
+  verifier that is more conservative than necessary. The cryptographic chain
+  is intact — the risk is the verifier over-rejecting, not under-verifying.
+  Fix: tighten the time-window comparison in `_verify_attestation()` to use
+  the registry row's `not_before` / `not_after` rather than the sign-time
+  metadata. Tracked as a follow-up; the cryptographic primitive remains
+  trustworthy.
+- **`release` event trigger does not auto-fire publish-mcp.yml** on
+  release-please-created releases. Workaround: `workflow_dispatch` against
+  the new tag. The idempotency guard (added in v0.5.0) makes the no-op
+  publish safe.
+- **`last-release-sha` config flag** in `release-please-config.json` should
+  be removed after the next clean release cycle (sol-audit note).
+
+## Verify in 1 curl
+
+The whole point of the alpha build is that anyone can verify, in one curl:
+
+```sh
+curl -sS https://data-pulse.my/attestations/2026-08-15/fuelprice.json \
+  | jq '{signer: .payload.key_id, observed_at: .payload.observed_at, \
+         status: .payload.last_status, fingerprint: .payload.content_fingerprint.value, \
+         chain_link: .chain_link}'
+```
+
+The response is a signed envelope. To verify the signature, fetch the
+public key from the well-known endpoint and check:
+
+```sh
+curl -sS https://data-pulse.my/.well-known/datapulse-probe-keys.json
+```
+
+The attestation `key_id` should match the registry's `current_key_id`,
+and the public key bytes should verify the signature over the canonical
+payload.
