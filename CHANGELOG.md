@@ -4,6 +4,21 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## [0.8.0](https://github.com/r3dz4r/datapulse-my/compare/v0.7.0...v0.8.0) (2026-08-15)
+
+
+### Features
+
+* **attestation:** publish real Ed25519 key registry + first daily digests ([cf738fd](https://github.com/r3dz4r/datapulse-my/commit/cf738fd506ad20e998011b20d02ef6a22b6676fe))
+* **attestation:** signed probe attestation chain + trust_verdict + verify_attestation (the alpha) ([11ec455](https://github.com/r3dz4r/datapulse-my/commit/11ec455b2ca24bce91398159ff1f991aac4cc509))
+
+
+### Bug Fixes
+
+* **ci:** bind DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE secret to deploy step ([5d60a56](https://github.com/r3dz4r/datapulse-my/commit/5d60a56b8f304b504c6849a393d55fbe2100df25))
+* **ci:** copy .attestations/ to _site for chain_head.json access ([a55b3ad](https://github.com/r3dz4r/datapulse-my/commit/a55b3ad0995ced853960529a02f4be93275e74dd))
+* **ci:** write the attestation key to a temp file before gen runs ([77f42a7](https://github.com/r3dz4r/datapulse-my/commit/77f42a79b5090a41a0b841cb4b704e7d690ab439))
+
 ## [0.7.0](https://github.com/r3dz4r/datapulse-my/compare/v0.6.0...v0.7.0) (2026-08-15)
 
 
