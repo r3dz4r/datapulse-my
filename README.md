@@ -7,7 +7,7 @@
 [![M8ven Score](https://m8ven.ai/badge/mcp/r3dz4r-datapulse-my-fsfgq3)](https://m8ven.ai/mcp/r3dz4r-datapulse-my-fsfgq3)
 
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
-> any MCP-compatible client with one config block. Your agent gets **385 official
+> any MCP-compatible client with one config block. Your agent gets **389 official
 > Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
 > BAS.MY)** — with declared licences and an honest nine-status trust taxonomy
 > instead of a blanket green checkmark.
@@ -53,7 +53,7 @@ counts missing freshness and row-count signals.
 frozen at the last known content date. This is not a freshness failure — it's a
 publisher decision.
 
-Current distribution (`_trust_summary`): [103 fresh](badges/status-fresh.svg) · [107 aging](badges/status-aging.svg) · [130 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [28 unknown-freshness](badges/status-unknown-freshness.svg) · [11 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [103 fresh](badges/status-fresh.svg) · [107 aging](badges/status-aging.svg) · [130 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [32 unknown-freshness](badges/status-unknown-freshness.svg) · [11 reference](badges/status-reference.svg)
 
 <!--
 Statuses with zero count are omitted. Full per-dataset health is in
@@ -154,7 +154,7 @@ the catalogue natively:
 - 3 resources: `datapulse://index`, `datapulse://licences`, `datapulse://{dataset_id}`
 
 The public endpoint is live and serves all 5 read-only tools over the
-385-dataset catalogue.
+389-dataset catalogue.
 
 Connect from Claude Desktop:
 

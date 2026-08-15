@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-15T04:36:16Z",
-  "node_count": 385,
-  "edge_count": 8169,
+  "generated_at": "2026-08-15T04:50:17Z",
+  "node_count": 389,
+  "edge_count": 8175,
   "edge_kinds": {
-    "same_steward": 4056,
+    "same_steward": 4062,
     "same_agency": 4111,
     "same_geography": 0,
     "canonical_series": 1,
@@ -11,7 +11,7 @@
     "shared_schema": 1
   },
   "coverage": {
-    "datasets_with_at_least_one_edge": 361,
+    "datasets_with_at_least_one_edge": 365,
     "isolated_datasets": [
       "almanak_astronomi",
       "cosmetics_manufacturers",
@@ -1844,6 +1844,30 @@
       "title": "Lecturers in Public Universities by Citizenship & Sex",
       "steward": "Ministry of Higher Education Malaysia",
       "agency": "data.gov.my (OpenAPI)"
+    },
+    {
+      "dataset_id": "legal_advisory_branch",
+      "title": "Legal Advisory Services by Branch",
+      "steward": "Legal Aid Department",
+      "agency": "data.gov.my"
+    },
+    {
+      "dataset_id": "legal_advisory_case_type",
+      "title": "Legal Advisory Services by Branch & Case Type",
+      "steward": "Legal Aid Department",
+      "agency": "data.gov.my"
+    },
+    {
+      "dataset_id": "legal_advisory_category",
+      "title": "Legal Advisory Services by Branch & Category",
+      "steward": "Legal Aid Department",
+      "agency": "data.gov.my"
+    },
+    {
+      "dataset_id": "legal_advisory_subcategory",
+      "title": "Legal Advisory Services by Branch & Subcategory",
+      "steward": "Legal Aid Department",
+      "agency": "data.gov.my"
     },
     {
       "dataset_id": "lfs_month",
@@ -102886,6 +102910,84 @@
       "kind": "same_steward",
       "from": "ipi_export",
       "to": "sppi_3d",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://r3dz4r.github.io/datapulse-my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "legal_advisory_branch",
+      "to": "legal_advisory_case_type",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://r3dz4r.github.io/datapulse-my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "legal_advisory_branch",
+      "to": "legal_advisory_category",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://r3dz4r.github.io/datapulse-my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "legal_advisory_branch",
+      "to": "legal_advisory_subcategory",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://r3dz4r.github.io/datapulse-my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "legal_advisory_case_type",
+      "to": "legal_advisory_category",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://r3dz4r.github.io/datapulse-my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "legal_advisory_case_type",
+      "to": "legal_advisory_subcategory",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://r3dz4r.github.io/datapulse-my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "legal_advisory_category",
+      "to": "legal_advisory_subcategory",
       "weight": 2,
       "provenance": {
         "matched_fields": [
