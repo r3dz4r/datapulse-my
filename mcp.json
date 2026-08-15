@@ -408,6 +408,58 @@
       }
     },
     {
+      "name": "trust_verdict",
+      "description": "Return the published signed facts, unsigned methodology-versioned trust score, and existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "description": "Canonical dataset identifier to aggregate, e.g. 'fuelprice'.",
+            "examples": [
+              "fuelprice"
+            ],
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "verify_attestation",
+      "description": "Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "reference": {
+            "description": "Dataset id or relative digest reference, e.g. 'fuelprice'.",
+            "examples": [
+              "fuelprice",
+              "attestations/2026-08-15/fuelprice.json"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "replay_chain": {
+            "default": false,
+            "description": "Replay daily heads to the newest tag anchor, e.g. true for an auditor.",
+            "examples": [
+              false,
+              true
+            ],
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reference"
+        ],
+        "type": "object"
+      }
+    },
+    {
       "name": "find_by_licence",
       "description": "Return all datasets with the given licence, summarised. Use to enumerate what's available under a specific licence for compliance/reuse scoping.",
       "inputSchema": {
@@ -434,50 +486,56 @@
   "resources": [
     {
       "uri": "datapulse://index",
-      "name": "Dataset index",
-      "description": "Lightweight list of all 389 datasets with namespace. Read this first.",
+      "name": "dataset_index",
+      "description": "Read first; lightweight list of all DataPulse MY dataset ids with current status, title, source, licence, and namespace.",
       "mimeType": "application/json"
     },
     {
       "uri": "datapulse://anomalies",
-      "name": "Anomaly summary",
+      "name": "anomaly_resource",
       "description": "Datasets flagged by the latest published anomaly detection, ranked by severity with pipeline-computed evidence.",
       "mimeType": "application/json"
     },
     {
       "uri": "datapulse://trends",
-      "name": "Trend summary",
+      "name": "trend_resource",
       "description": "Published per-dataset freshness trends and publish-reliability evidence, including methodology and aggregate counts.",
       "mimeType": "application/json"
     },
     {
       "uri": "datapulse://reliability",
-      "name": "Reliability summary",
-      "description": "Counts of datasets by evaluated publish-reliability grade, computed from the published trend artifact.",
+      "name": "reliability_summary",
+      "description": "Live count of DataPulse MY datasets by evaluated publish-reliability grade; reliability is timeliness, not uptime.",
       "mimeType": "application/json"
     },
     {
       "uri": "datapulse://drift",
-      "name": "Drift summary",
+      "name": "drift_resource",
       "description": "Published per-dataset schema and record-count drift evidence, including methodology and aggregate verdict counts.",
       "mimeType": "application/json"
     },
     {
       "uri": "datapulse://reconciliation",
-      "name": "Reconciliation summary",
+      "name": "reconciliation_resource",
       "description": "Published cross-source reconciliation groups with pairwise count, date, status, tolerance, and verdict evidence.",
       "mimeType": "application/json"
     },
     {
+      "uri": "datapulse://attestations",
+      "name": "attestation_resource",
+      "description": "Latest signed probe attestation index and daily chain head.",
+      "mimeType": "application/json"
+    },
+    {
       "uri": "datapulse://licences",
-      "name": "Licence summary",
-      "description": "Counts of datasets by licence, computed from the current manifest.",
+      "name": "licence_summary",
+      "description": "Live count of DataPulse MY datasets grouped by licence.",
       "mimeType": "application/json"
     },
     {
       "uri": "datapulse://{dataset_id}",
-      "name": "Full manifest entry",
-      "description": "Full schema, source URL, attribution, and current health for one dataset.",
+      "name": "dataset_resource",
+      "description": "Full published manifest entry for one exact DataPulse MY dataset id.",
       "mimeType": "application/json"
     }
   ],

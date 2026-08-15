@@ -3,7 +3,7 @@
 ## Endpoint status
 
 The stable public endpoint is live at `https://mcp.data-pulse.my/mcp`. It has
-been verified end to end: `tools/list` returns 13 tools over the 389-dataset
+been verified end to end: `tools/list` returns 15 tools over the 389-dataset
 catalogue.
 
 The current read-only contract is `search_datasets`, `get_dataset`, `find_stale`,
@@ -94,7 +94,7 @@ curl -sS "$endpoint" \
   | jq '.result.tools | length'
 ```
 
-The expected output is `13`.
+The expected output is `15`.
 
 `verify_evidence` serializes outbound checks behind one process-local lock and
 caches results for 10 minutes. It refuses browser-dependent datasets and unsafe
@@ -250,7 +250,7 @@ Cloudflared 2026.7.3 is installed. The named tunnel routes
 ## Limitations
 
 - The service is single-region on one VPS.
-- There is intentionally no authentication: all thirteen tools are read-only over
+- There is intentionally no authentication: all fifteen tools are read-only over
   already-public data and have no write side effects or PII access.
 - Origin validation and rate limiting are enforced by nginx, so bypassing nginx
   is unsupported.

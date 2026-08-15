@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 import re
 import json
+import base64
+import hashlib
 import asyncio
 import logging
 from copy import deepcopy
@@ -17,6 +19,8 @@ from typing import Any
 from urllib.parse import urljoin, urlsplit
 
 import httpx
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 import mcp.types as mcp_types
 from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_http_request
@@ -46,6 +50,7 @@ MCP_PORT = int(os.getenv("MCP_PORT", "8788"))
 REQUEST_TIMEOUT_SECONDS = 30.0
 VERIFY_CACHE_SECONDS = 600.0
 VERIFY_MAX_REDIRECTS = 5
+ZERO = "0" * 64
 ALLOWED_SOURCE_HOSTS = frozenset(
     {
         "api.bnm.gov.my",
@@ -241,6 +246,16 @@ FIND_BY_LICENCE_DESCRIPTION = (
     "Return all datasets with the given licence, summarised. Use to enumerate what's "
     "available under a specific licence for compliance/reuse scoping."
 )
+TRUST_VERDICT_DESCRIPTION = (
+    "Return the published signed facts, unsigned methodology-versioned trust score, "
+    "and existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. "
+    "This tool does not re-probe or verify the signature; call verify_attestation separately."
+)
+VERIFY_ATTESTATION_DESCRIPTION = (
+    "Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, "
+    "e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; "
+    "optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence."
+)
 
 class SourceImplementation(MCPImplementation):
     """Factory type for protocol server information with source markers."""
@@ -349,6 +364,26 @@ async def _load_reconciliation() -> dict[str, Any]:
     ):
         raise ValueError("health/reconciliation.json has an unsupported schema")
     return reconciliation
+
+
+async def _load_attestations() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    try:
+        index, head, scores = await gather(
+            _fetch_json("attestations/latest/index.json"),
+            _fetch_json("attestations/latest/chain_head.json"),
+            _fetch_json("attestations/latest/scores.json"),
+        )
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise RuntimeError("Published attestation artifacts are unavailable; retry after Pages deployment completes") from exc
+        raise
+    if index.get("schema") != "datapulse/v1/attestation-index" or not isinstance(index.get("attestations"), dict):
+        raise ValueError("attestation index has an unsupported schema")
+    if head.get("schema") != "datapulse/v1/daily-chain-head-envelope":
+        raise ValueError("chain head has an unsupported schema")
+    if scores.get("schema") != "datapulse/v1/trust-scores" or not isinstance(scores.get("datasets"), list):
+        raise ValueError("trust scores have an unsupported schema")
+    return index, head, scores
 
 
 async def _load_catalogue() -> tuple[dict[str, Any], dict[str, Any]]:
@@ -1402,6 +1437,132 @@ _verify_evidence_tool.parameters.setdefault("required", [])
 mcp.add_tool(_verify_evidence_tool)
 
 
+def _canonical_json(value: object) -> bytes:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+
+
+def _latest_live_verification(dataset_id: str) -> str | None:
+    rows = [payload.get("verified_at") for (key, (_, payload)) in _VERIFY_CACHE.items() if key[0] == dataset_id]
+    return max((value for value in rows if isinstance(value, str)), default=None)
+
+
+def _reconciliation_for(dataset_id: str, artifact: dict[str, Any]) -> dict[str, Any] | None:
+    return next((group for group in artifact.get("groups", []) if any(member.get("id") == dataset_id for member in group.get("members", []))), None)
+
+
+async def trust_verdict(
+    dataset_id: Annotated[str, Field(min_length=1, description="Canonical dataset identifier to aggregate, e.g. 'fuelprice'.", examples=["fuelprice"])]
+) -> dict[str, Any]:
+    catalogue, trends, drift, reconciliation, attestation_bundle = await gather(
+        _load_catalogue(), _load_trends(), _load_drift(), _load_reconciliation(), _load_attestations()
+    )
+    manifest, health = catalogue
+    index, _, scores = attestation_bundle
+    entry = next((row for row in manifest.get("datasets", []) if row.get("id") == dataset_id), None)
+    if entry is None:
+        raise ValueError(f"Unknown dataset id: {dataset_id}")
+    ref = index["attestations"].get(dataset_id)
+    if not isinstance(ref, str):
+        raise RuntimeError(f"No published attestation for dataset id: {dataset_id}")
+    envelope = await _fetch_json(ref)
+    health_row = _health_by_id(health).get(dataset_id, {})
+    trend = next((r for r in trends["datasets"] if r.get("dataset_id") == dataset_id), None)
+    drift_row = next((r for r in drift["datasets"] if r.get("dataset_id") == dataset_id), None)
+    score = next((r for r in scores["datasets"] if r.get("dataset_id") == dataset_id), None)
+    return {
+        "dataset_id": dataset_id,
+        "facts": envelope["payload"],
+        "evidence": {"health": _project_evidence(health_row, EVIDENCE_FIELDS), "trend": trend, "drift": drift_row, "reconciliation": _reconciliation_for(dataset_id, reconciliation)},
+        "score": score,
+        "signature_ref": ref,
+        "citation_text": f"{entry['name']} — {entry['source']}; observed {envelope['payload']['observed_at']}; DataPulse MY attestation {ref}.",
+        "observed_at": envelope["payload"]["observed_at"],
+        "verified_live_at": _latest_live_verification(dataset_id),
+        "validity_notice": "Score reflects data as of observed_at; call verify_evidence for production use.",
+    }
+
+
+_trust_verdict_tool = FunctionTool.from_function(trust_verdict, title="Aggregate a Signed Trust Verdict", description=TRUST_VERDICT_DESCRIPTION, icons=TOOL_ICONS, annotations=READ_ONLY_TOOL_ANNOTATIONS, meta=TOOL_META)
+_trust_verdict_tool.parameters.setdefault("required", [])
+mcp.add_tool(_trust_verdict_tool)
+
+
+def _safe_attestation_ref(reference: str, index: dict[str, Any]) -> str:
+    ref = index["attestations"].get(reference, reference)
+    if not isinstance(ref, str) or not re.fullmatch(r"attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/[A-Za-z0-9_-]+\.json", ref):
+        raise ValueError("Unknown dataset id or unsafe attestation reference")
+    return ref
+
+
+def _iso_datetime(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _daily_head_valid(head: dict[str, Any], registry: dict[str, Any]) -> bool:
+    payload = head.get("payload", {}); previous = payload.get("previous_chain_head", "")
+    key = next((r for r in registry.get("keys", []) if r.get("key_id") == payload.get("key_id")), None)
+    if not key or not re.fullmatch(r"[0-9a-f]{64}", previous): return False
+    if hashlib.sha256(_canonical_json(head.get("dataset_links", []))).hexdigest() != payload.get("dataset_links_sha256"): return False
+    if hashlib.sha256(bytes.fromhex(previous) + _canonical_json(payload)).hexdigest() != head.get("chain_head"): return False
+    try:
+        Ed25519PublicKey.from_public_bytes(base64.b64decode(key["public_key_base64"])).verify(base64.b64decode(head["signature_base64"]), _canonical_json(payload))
+    except (InvalidSignature, ValueError, TypeError, KeyError): return False
+    return True
+
+
+async def _verify_git_anchor(anchor: dict[str, Any], expected_head: str) -> bool:
+    tag, declared_commit = anchor.get("tag"), anchor.get("commit")
+    if not isinstance(tag, str) or not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag): return False
+    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS, follow_redirects=True) as client:
+        response = await client.get(f"https://api.github.com/repos/r3dz4r/datapulse-my/git/ref/tags/{tag}"); response.raise_for_status(); target = response.json()["object"]
+        if target["type"] == "tag":
+            response = await client.get(f"https://api.github.com/repos/r3dz4r/datapulse-my/git/tags/{target['sha']}"); response.raise_for_status(); target = response.json()["object"]
+        if target["type"] != "commit" or target["sha"] != declared_commit: return False
+        response = await client.get(f"https://raw.githubusercontent.com/r3dz4r/datapulse-my/{target['sha']}/.attestations/chain_head.json"); response.raise_for_status(); committed = response.json()
+    return committed.get("chain_head") == expected_head
+
+
+async def verify_attestation(
+    reference: Annotated[str, Field(min_length=1, description="Dataset id or relative digest reference, e.g. 'fuelprice'.", examples=["fuelprice", "attestations/2026-08-15/fuelprice.json"])],
+    replay_chain: Annotated[bool, Field(description="Replay daily heads to the newest tag anchor, e.g. true for an auditor.", examples=[False, True])] = False,
+) -> dict[str, Any]:
+    index, latest_head, _ = await _load_attestations()
+    ref = _safe_attestation_ref(reference, index)
+    envelope, registry = await gather(_fetch_json(ref), _fetch_json(".well-known/datapulse-probe-keys.json"))
+    payload = envelope.get("payload", {}); key = next((r for r in registry.get("keys", []) if r.get("key_id") == payload.get("key_id")), None)
+    key_match = bool(key and key.get("public_key_base64") == payload.get("signer_pubkey_base64")); signature_valid = False
+    if key_match:
+        try:
+            Ed25519PublicKey.from_public_bytes(base64.b64decode(key["public_key_base64"])).verify(base64.b64decode(envelope["signature_base64"]), _canonical_json(payload)); signature_valid = True
+        except (InvalidSignature, ValueError, TypeError): pass
+    previous = payload.get("previous_chain_head", "")
+    expected_link = hashlib.sha256(bytes.fromhex(previous) + _canonical_json(payload)).hexdigest() if re.fullmatch(r"[0-9a-f]{64}", previous) else None
+    link_valid = expected_link == envelope.get("chain_link")
+    observed = _iso_datetime(payload["observed_at"]) if isinstance(payload.get("observed_at"), str) else None
+    key_time_valid = bool(key and observed and _iso_datetime(key["not_before"]) <= observed <= _iso_datetime(key["not_after"]))
+    l1 = bool(signature_valid and key_match and link_valid and key_time_valid and key.get("algorithm", "Ed25519") == "Ed25519" and key.get("status") != "compromised" and not key.get("compromised_at")) if key else False
+    l2 = {"covered": replay_chain, "satisfied": False, "anchor_tag": None, "anchor_commit": None, "reason": "set replay_chain=true"}
+    if replay_chain:
+        chain_index = await _fetch_json("attestations/chain-index.json"); current = await _fetch_json(f"attestations/{payload['date']}/chain_head.json"); seen = set(); member = any(row.get("dataset_id") == payload.get("dataset_id") and row.get("chain_link") == envelope.get("chain_link") for row in current.get("dataset_links", []))
+        while current["chain_head"] not in seen:
+            if not member or not _daily_head_valid(current, registry): l2["reason"] = "daily head, membership, or signature is invalid"; break
+            seen.add(current["chain_head"]); anchor = chain_index.get("anchors", {}).get(current["chain_head"])
+            if anchor and await _verify_git_anchor(anchor, current["chain_head"]): l2 = {"covered": True, "satisfied": True, "anchor_tag": anchor["tag"], "anchor_commit": anchor["commit"], "reason": "signed daily heads replay to a Git-verified tag anchor"}; break
+            previous = current["payload"]["previous_chain_head"]
+            if previous == ZERO: l2["reason"] = "chain reached genesis without tag anchor"; break
+            prior_ref = chain_index.get("heads", {}).get(previous)
+            if not prior_ref: l2["reason"] = "previous daily head is not discoverable"; break
+            prior = await _fetch_json(prior_ref)
+            if prior.get("chain_head") != previous: l2["reason"] = "chain index points to the wrong prior head"; break
+            current = prior; member = True
+    return {"reference": reference, "digest_ref": ref, "dataset_id": payload.get("dataset_id"), "digest": envelope, "linked_chain_head": payload.get("previous_chain_head"), "latest_chain_head": latest_head.get("chain_head"), "levels": {"L1": {"covered": True, "satisfied": l1, "signature_valid": signature_valid, "key_registry_match": key_match, "key_time_valid": key_time_valid, "chain_link_valid": link_valid}, "L2": l2, "L3": {"covered": False, "satisfied": False, "reason": "call verify_evidence(dataset_id)"}}}
+
+
+_verify_attestation_tool = FunctionTool.from_function(verify_attestation, title="Verify a Signed Probe Attestation", description=VERIFY_ATTESTATION_DESCRIPTION, icons=TOOL_ICONS, annotations=READ_ONLY_TOOL_ANNOTATIONS, meta=TOOL_META)
+_verify_attestation_tool.parameters.setdefault("required", [])
+mcp.add_tool(_verify_attestation_tool)
+
+
 @mcp.tool(
     title="Scope Reusable Data by Licence",
     description=FIND_BY_LICENCE_DESCRIPTION,
@@ -1542,6 +1703,16 @@ async def drift_resource() -> str:
 async def reconciliation_resource() -> str:
     """Return the complete published reconciliation artifact as JSON."""
     return json.dumps(await _load_reconciliation(), ensure_ascii=False)
+
+
+@mcp.resource(
+    "datapulse://attestations",
+    description="Latest signed probe attestation index and daily chain head.",
+    mime_type="application/json",
+)
+async def attestation_resource() -> str:
+    index, head, _ = await _load_attestations()
+    return json.dumps({"index": index, "chain_head": head}, ensure_ascii=False)
 
 
 @mcp.resource(

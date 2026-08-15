@@ -2,7 +2,7 @@
 #
 # DataPulse MY generation profiles.
 #
-# health-cycle: 12 steps for artifacts derived from the live health snapshot.
+# health-cycle: 13 steps for artifacts derived from the live health snapshot.
 # release-build: source stamp plus 21 steps for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
@@ -83,6 +83,7 @@ case "$profile" in
       "gen_trends.py"
       "gen_drift.py"
       "gen_reconciliation.py"
+      "gen_attestations.py"
       "gen_dataset_deltas.py"
       "gen_record_evidence.py"
       "gen_catalog_graph.py"
@@ -97,6 +98,7 @@ case "$profile" in
       "health/trends.json"
       "health/drift.json"
       "health/reconciliation.json"
+      "attestations/<date>/{<id>.json,index.json,chain_head.json,scores.json}; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "catalog-graph.json"
@@ -117,6 +119,7 @@ case "$profile" in
       "gen_trends.py"
       "gen_drift.py"
       "gen_reconciliation.py"
+      "gen_attestations.py"
       "gen_dataset_deltas.py"
       "gen_record_evidence.py"
       "gen_catalog_graph.py"
@@ -142,6 +145,7 @@ case "$profile" in
       "health/trends.json"
       "health/drift.json"
       "health/reconciliation.json"
+      "attestations/<date>/{<id>.json,index.json,chain_head.json,scores.json}; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "catalog-graph.json"
@@ -172,6 +176,7 @@ command_for() {
       ;;
     gen_json_envelope.py) printf 'python3 scripts/%s --force' "$1" ;;
     gen_health_history.py) printf 'python3 scripts/%s --compact' "$1" ;;
+    gen_attestations.py) printf 'DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=... python3 scripts/%s --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"' "$1" ;;
     *.py) printf 'python3 scripts/%s' "$1" ;;
   esac
 }
@@ -218,6 +223,18 @@ for index in "${!generators[@]}"; do
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
         env "${environment[@]}" \
         python3 "scripts/$generator" --compact
+      ;;
+    gen_attestations.py)
+      if [[ -z "${DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE:-}" ]]; then
+        if [[ -f docs/.well-known/datapulse-probe-keys.json ]]; then
+          printf 'set DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE for attestation generation\n' >&2
+          exit 1
+        fi
+        printf 'attestation generation skipped: no published key registry in this fixture\n'
+        continue
+      fi
+      DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" \
+        python3 "scripts/$generator" --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"
       ;;
     *.py)
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \

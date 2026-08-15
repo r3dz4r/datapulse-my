@@ -445,6 +445,68 @@ Input schema:
 }
 ```
 
+### `trust_verdict`
+
+Return the published signed facts, unsigned methodology-versioned trust score, and existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "dataset_id": {
+      "description": "Canonical dataset identifier to aggregate, e.g. 'fuelprice'.",
+      "examples": [
+        "fuelprice"
+      ],
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "dataset_id"
+  ],
+  "type": "object"
+}
+```
+
+### `verify_attestation`
+
+Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "reference": {
+      "description": "Dataset id or relative digest reference, e.g. 'fuelprice'.",
+      "examples": [
+        "fuelprice",
+        "attestations/2026-08-15/fuelprice.json"
+      ],
+      "minLength": 1,
+      "type": "string"
+    },
+    "replay_chain": {
+      "default": false,
+      "description": "Replay daily heads to the newest tag anchor, e.g. true for an auditor.",
+      "examples": [
+        false,
+        true
+      ],
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "reference"
+  ],
+  "type": "object"
+}
+```
+
 ### `find_by_licence`
 
 Return all datasets with the given licence, summarised. Use to enumerate what's available under a specific licence for compliance/reuse scoping.
@@ -486,6 +548,8 @@ Input schema:
 - `datapulse://drift` — Published per-dataset schema and record-count drift evidence, including methodology and aggregate verdict counts.
 
 - `datapulse://reconciliation` — Published cross-source reconciliation groups with pairwise count, date, status, tolerance, and verdict evidence.
+
+- `datapulse://attestations` — Latest signed probe attestation index and daily chain head.
 
 - `datapulse://licences` — Live count of DataPulse MY datasets grouped by licence.
 
