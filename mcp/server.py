@@ -146,6 +146,12 @@ FIND_STALE_DESCRIPTION = (
     "from the latest health snapshot. Use when an agent needs to know which data has "
     "a freshness or schema-validity risk."
 )
+FIND_ANOMALIES_DESCRIPTION = (
+    "Return datasets flagged by the latest published anomaly detection, ranked by "
+    "how far the observed update interval exceeds its threshold. Includes the "
+    "pipeline-computed evidence; use when an agent needs to identify unusual dataset "
+    "update delays without recomputing anomaly detection."
+)
 GET_PROVENANCE_DESCRIPTION = (
     "Return citation-ready provenance metadata for the listed dataset ids: source "
     "steward, licence (with URL), source URL, access method (curl/Camofox), "
@@ -489,6 +495,107 @@ _find_stale_tool.parameters.setdefault("required", [])
 mcp.add_tool(_find_stale_tool)
 
 
+def _anomaly_results(
+    manifest: dict[str, Any],
+    health: dict[str, Any],
+    *,
+    mode: str | None = None,
+) -> list[dict[str, Any]]:
+    """Join pipeline-computed anomaly evidence to manifest titles and rank it."""
+    health_records = _health_by_id(health)
+    anomalies: list[dict[str, Any]] = []
+
+    for entry in manifest.get("datasets", []):
+        record = health_records.get(entry["id"], {})
+        if record.get("anomaly_detected") is not True:
+            continue
+        evidence = record.get("anomaly_detection") or {}
+        if mode is not None and evidence.get("mode") != mode:
+            continue
+        latest_days = evidence.get("latest_days")
+        threshold_days = evidence.get("threshold_days")
+        severity_ratio = (
+            latest_days / threshold_days
+            if isinstance(latest_days, (int, float))
+            and isinstance(threshold_days, (int, float))
+            and threshold_days > 0
+            else 0.0
+        )
+        anomalies.append(
+            {
+                "id": entry["id"],
+                "title": entry["name"],
+                "status": record.get("status", "unknown"),
+                "staleness_days": record.get("staleness_days"),
+                "mode": evidence.get("mode"),
+                "latest_days": latest_days,
+                "threshold_days": threshold_days,
+                "severity_ratio": severity_ratio,
+                "anomaly_detection": evidence,
+            }
+        )
+
+    anomalies.sort(
+        key=lambda item: (
+            -item["severity_ratio"],
+            -(
+                item["staleness_days"]
+                if item["staleness_days"] is not None
+                else -1
+            ),
+            item["id"],
+        )
+    )
+    return anomalies
+
+
+async def find_anomalies(
+    limit: Annotated[
+        int,
+        Field(
+            ge=1,
+            le=200,
+            description=(
+                "Maximum ranked anomalies to return; integer from 1 to 200, e.g. 50."
+            ),
+            examples=[10, 50],
+        ),
+    ] = 50,
+    mode: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Optional exact detection mode; e.g. 'rolling_14d' or "
+                "'cadence_fallback'."
+            ),
+            examples=["rolling_14d", "cadence_fallback"],
+        ),
+    ] = None,
+) -> list[dict[str, Any]]:
+    """Expose anomaly decisions already computed by the health pipeline."""
+    valid_modes = {"rolling_14d", "cadence_fallback", "not_evaluated"}
+    if mode is not None and mode not in valid_modes:
+        raise ValueError(
+            "Unknown anomaly mode: "
+            f"{mode}. Expected one of: {', '.join(sorted(valid_modes))}"
+        )
+
+    manifest, health = await _load_catalogue()
+    return _anomaly_results(manifest, health, mode=mode)[:limit]
+
+
+_find_anomalies_tool = FunctionTool.from_function(
+    find_anomalies,
+    title="Identify Dataset Update Anomalies",
+    description=FIND_ANOMALIES_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+_find_anomalies_tool.parameters.setdefault("required", [])
+mcp.add_tool(_find_anomalies_tool)
+
+
 @mcp.tool(
     title="Build Citation-Ready Provenance",
     description=GET_PROVENANCE_DESCRIPTION,
@@ -607,6 +714,20 @@ async def dataset_index() -> str:
         for entry in manifest.get("datasets", [])
     ]
     return json.dumps(index, ensure_ascii=False)
+
+
+@mcp.resource(
+    "datapulse://anomalies",
+    description=(
+        "Datasets flagged by the latest published anomaly detection, ranked by "
+        "severity with pipeline-computed evidence."
+    ),
+    mime_type="application/json",
+)
+async def anomaly_resource() -> str:
+    """Return all current anomaly results as a JSON array."""
+    manifest, health = await _load_catalogue()
+    return json.dumps(_anomaly_results(manifest, health), ensure_ascii=False)
 
 
 @mcp.resource(

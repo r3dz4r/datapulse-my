@@ -219,7 +219,7 @@ jobs:
             fail "llms.txt does not contain '$expected_dataset_count datasets'"
           grep -Fq "MCP" "$smoke_dir/llms.txt" || \
             fail "llms.txt does not mention MCP"
-          for tool in search_datasets get_dataset find_stale get_provenance find_by_licence; do
+          for tool in search_datasets get_dataset find_stale find_anomalies get_provenance find_by_licence; do
             grep -Fq "$tool" "$smoke_dir/llms.txt" || \
               fail "llms.txt is missing MCP tool $tool"
           done
@@ -236,11 +236,12 @@ jobs:
               "search_datasets",
               "get_dataset",
               "find_stale",
+              "find_anomalies",
               "get_provenance",
               "find_by_licence"
             ]
           ' "$smoke_dir/mcp.json" >/dev/null || \
-            fail "mcp.json is invalid or does not advertise the expected 5 tools"
+            fail "mcp.json is invalid or does not advertise the expected 6 tools"
 
           fetch "health snapshot" "https://data-pulse.my/health/latest.json" "$smoke_dir/health.json"
           jq -e --argjson expected "$expected_dataset_count" \
