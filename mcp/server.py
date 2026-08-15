@@ -168,6 +168,11 @@ FIND_SCHEMA_DRIFT_DESCRIPTION = (
     "of structural transitions; includes pipeline-computed evidence so agents "
     "do not infer drift from freshness alone."
 )
+CHECK_RECONCILIATION_DESCRIPTION = (
+    "Return the published cross-source reconciliation group for a dataset name or id, "
+    "including per-member counts, dates, statuses, tolerances, and contextual deltas. "
+    "A discrepancy requires human review and does not prove either source is wrong."
+)
 GET_PROVENANCE_DESCRIPTION = (
     "Return citation-ready provenance metadata for the listed dataset ids: source "
     "steward, licence (with URL), source URL, access method (curl/Camofox), "
@@ -270,6 +275,22 @@ async def _load_drift() -> dict[str, Any]:
     if drift.get("schema") != "datapulse/v1/dataset-drift" or not isinstance(drift.get("datasets"), list):
         raise ValueError("health/drift.json has an unsupported schema")
     return drift
+
+
+async def _load_reconciliation() -> dict[str, Any]:
+    try:
+        reconciliation = await _fetch_json("health/reconciliation.json")
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise RuntimeError(
+                "Published reconciliation artifact is unavailable; retry after the Pages deployment completes"
+            ) from exc
+        raise
+    if reconciliation.get("schema") != "datapulse/v1/dataset-reconciliation" or not isinstance(
+        reconciliation.get("groups"), list
+    ):
+        raise ValueError("health/reconciliation.json has an unsupported schema")
+    return reconciliation
 
 
 async def _load_catalogue() -> tuple[dict[str, Any], dict[str, Any]]:
@@ -813,6 +834,53 @@ _find_schema_drift_tool.parameters.setdefault("required", [])
 mcp.add_tool(_find_schema_drift_tool)
 
 
+def _resolve_reconciliation_dataset(manifest: dict[str, Any], dataset_name: str) -> dict[str, Any]:
+    query = dataset_name.strip()
+    datasets = [row for row in manifest.get("datasets", []) if isinstance(row, dict) and isinstance(row.get("id"), str) and isinstance(row.get("name"), str)]
+    matches = [row for row in datasets if row["id"] == query]
+    if not matches:
+        matches = [row for row in datasets if row["name"].casefold() == query.casefold()]
+    if not matches:
+        matches = [row for row in datasets if query.casefold() in row["name"].casefold()]
+    if not matches:
+        raise ValueError(f"Unknown dataset name or id: {dataset_name}")
+    if len(matches) > 1:
+        ids = ", ".join(sorted(row["id"] for row in matches))
+        raise ValueError(f"Ambiguous dataset name {dataset_name!r}; matching ids: {ids}")
+    return matches[0]
+
+
+def _reconciliation_result(manifest: dict[str, Any], reconciliation: dict[str, Any], dataset_name: str) -> dict[str, Any]:
+    entry = _resolve_reconciliation_dataset(manifest, dataset_name)
+    group = next((row for row in reconciliation.get("groups", []) if any(member.get("id") == entry["id"] for member in row.get("members", []))), None)
+    if group is None:
+        return {"matched_dataset_id": entry["id"], "dataset_name": entry["name"], "verdict": "single_source", "group": None, "reason": "No reviewed or conservatively inferred reconciliation group contains this dataset."}
+    return {"matched_dataset_id": entry["id"], "group": group}
+
+
+async def check_reconciliation(
+    dataset_name: Annotated[
+        str,
+        Field(min_length=1, description="Dataset id or name to reconcile, e.g. 'interestrates' or 'Monthly Interest Rates'.", examples=["interestrates", "Monthly Interest Rates"]),
+    ],
+) -> dict[str, Any]:
+    """Return published reconciliation evidence for one resolved dataset."""
+    manifest, reconciliation = await gather(_load_manifest(), _load_reconciliation())
+    return _reconciliation_result(manifest, reconciliation, dataset_name)
+
+
+_check_reconciliation_tool = FunctionTool.from_function(
+    check_reconciliation,
+    title="Check Cross-Source Reconciliation",
+    description=CHECK_RECONCILIATION_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+_check_reconciliation_tool.parameters.setdefault("required", [])
+mcp.add_tool(_check_reconciliation_tool)
+
+
 @mcp.tool(
     title="Build Citation-Ready Provenance",
     description=GET_PROVENANCE_DESCRIPTION,
@@ -971,6 +1039,16 @@ async def trend_resource() -> str:
 async def drift_resource() -> str:
     """Return the complete published drift artifact as JSON."""
     return json.dumps(await _load_drift(), ensure_ascii=False)
+
+
+@mcp.resource(
+    "datapulse://reconciliation",
+    description="Published cross-source reconciliation groups with pairwise count, date, status, tolerance, and verdict evidence.",
+    mime_type="application/json",
+)
+async def reconciliation_resource() -> str:
+    """Return the complete published reconciliation artifact as JSON."""
+    return json.dumps(await _load_reconciliation(), ensure_ascii=False)
 
 
 @mcp.resource(

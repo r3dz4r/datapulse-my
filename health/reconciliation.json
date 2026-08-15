@@ -1,0 +1,1269 @@
+{
+  "schema": "datapulse/v1/dataset-reconciliation",
+  "generated_at": "2026-08-15T11:31:09Z",
+  "window_days": 0,
+  "methodology": {
+    "identity_precedence": [
+      "seed_override",
+      "exact_canonical_url",
+      "exact_semantic_title_guarded"
+    ],
+    "semantic_title_guards": [
+      "same_custodian",
+      "same_refresh_frequency",
+      "same_granularity_signature",
+      "different_endpoint_channel"
+    ],
+    "semantic_title_stop_words": [],
+    "automatic_name_record_count_policy": "context_only",
+    "default_record_count_tolerance_pct": 5.0,
+    "default_content_date_tolerance_days": 2,
+    "disclaimer": "A discrepancy is a publication difference requiring review, not proof that either source is wrong."
+  },
+  "summary": {
+    "datasets_total": 389,
+    "groups_total": 22,
+    "datasets_grouped": 44,
+    "datasets_single_source": 345,
+    "by_verdict": {
+      "agree": 21,
+      "discrepancy": 0,
+      "different_granularity": 0,
+      "insufficient_data": 1
+    }
+  },
+  "groups": [
+    {
+      "group_key": "name:dosm:quarterly-real-gdp-seasonally-adjusted:2cdaa5970204",
+      "logical_name": "OpenDOSM Quarterly Real GDP (Seasonally Adjusted)",
+      "grouping_method": "semantic_title",
+      "relationship": "equivalent",
+      "confidence": "moderate",
+      "verdict": "insufficient_data",
+      "requires_human_review": false,
+      "reason": "no pair has an evaluable strict count, content-date, or availability comparison",
+      "rationale": "exact semantic title, custodian, cadence, and granularity match across endpoint channels",
+      "tolerances": {
+        "record_count_policy": "context_only",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "dosm_gdp_qtr_real_sa",
+          "name": "OpenDOSM Quarterly Real GDP (Seasonally Adjusted)",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/gdp/gdp_qtr_real_sa.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 45,
+          "record_count_estimated": false,
+          "content_date": "2026-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "gdp_qtr_real_sa",
+          "name": "Quarterly Real GDP (Seasonally Adjusted)",
+          "source": "data.gov.my",
+          "source_family": "dosm",
+          "url": "https://api.data.gov.my/data-catalogue?id=gdp_qtr_real_sa",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 45,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_gdp_qtr_real_sa",
+          "right_id": "gdp_qtr_real_sa",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": null,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "seed:cpi-headline-inflation",
+      "logical_name": "Monthly CPI Inflation by Division",
+      "grouping_method": "seed",
+      "relationship": "equivalent",
+      "confidence": "reviewed",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "Reviewed OpenDOSM CSV and data.gov.my catalogue presentations of the same DOSM series.",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "dosm_cpi_headline_inflation",
+          "name": "Monthly CPI Inflation by Division (2-digit)",
+          "source": "DOSM via data.gov.my",
+          "source_family": "dosm",
+          "url": "https://api.data.gov.my/data-catalogue?id=cpi_headline_inflation",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 7798,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "content_date_parse"
+        },
+        {
+          "id": "dosm_cpi_inflation",
+          "name": "OpenDOSM Monthly CPI Inflation by Division",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/cpi/cpi_2d_inflation.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 7798,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_cpi_headline_inflation",
+          "right_id": "dosm_cpi_inflation",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "seed:cpi-state",
+      "logical_name": "Monthly CPI by State and Division",
+      "grouping_method": "seed",
+      "relationship": "equivalent",
+      "confidence": "reviewed",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "Reviewed OpenDOSM CSV and data.gov.my catalogue presentations of the same DOSM series.",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "cpi_state",
+          "name": "Monthly CPI by State & Division (2-digit)",
+          "source": "data.gov.my",
+          "source_family": "dosm",
+          "url": "https://api.data.gov.my/data-catalogue?id=cpi_state",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 44352,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "dosm_cpi_state",
+          "name": "OpenDOSM Monthly CPI by State & Division",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/cpi/cpi_2d_state.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 44352,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "cpi_state",
+          "right_id": "dosm_cpi_state",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "seed:cpi-state-inflation",
+      "logical_name": "Monthly CPI Inflation by State and Division",
+      "grouping_method": "seed",
+      "relationship": "equivalent",
+      "confidence": "reviewed",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "Reviewed OpenDOSM CSV and data.gov.my catalogue presentations of the same DOSM series.",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "cpi_state_inflation",
+          "name": "Monthly CPI Inflation by State & Division (2-digit)",
+          "source": "data.gov.my",
+          "source_family": "dosm",
+          "url": "https://api.data.gov.my/data-catalogue?id=cpi_state_inflation",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 44128,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "dosm_cpi_state_inflation",
+          "name": "OpenDOSM Monthly CPI Inflation by State and Division",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/cpi/cpi_2d_state_inflation.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 44128,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "cpi_state_inflation",
+          "right_id": "dosm_cpi_state_inflation",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "seed:interest-rates-annual",
+      "logical_name": "Annual Interest Rates",
+      "grouping_method": "seed",
+      "relationship": "equivalent",
+      "confidence": "reviewed",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "Reviewed storage.data.gov.my CSV and data.gov.my OpenAPI presentations of the same BNM series.",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "dgm_interest_rates_annual",
+          "name": "data.gov.my Annual Interest Rates",
+          "source": "data.gov.my (storage.data.gov.my)",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/interest_rates_annual.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 707,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "interestrates_annual",
+          "name": "Annual Interest Rates",
+          "source": "data.gov.my (OpenAPI)",
+          "source_family": "bnm",
+          "url": "https://api.data.gov.my/data-catalogue?id=interestrates_annual",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 707,
+          "record_count_estimated": false,
+          "content_date": "2025-01-01",
+          "content_date_source": "content_date_parse"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dgm_interest_rates_annual",
+          "right_id": "interestrates_annual",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "seed:vehicle-registrations-by-fuel",
+      "logical_name": "Monthly Vehicle Registrations by Type and Fuel",
+      "grouping_method": "seed",
+      "relationship": "equivalent",
+      "confidence": "reviewed",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "Reviewed storage.data.gov.my CSV and data.gov.my OpenAPI presentations of the same JPJ series.",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "dgm_vehicle_registrations_type_fuel",
+          "name": "data.gov.my Monthly Vehicle Registrations by Type and Fuel",
+          "source": "data.gov.my (storage.data.gov.my)",
+          "source_family": "jpj",
+          "url": "https://storage.data.gov.my/transportation/registrations_type_fuel.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 10801,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "registrations_type_fuel",
+          "name": "Monthly Vehicle Registrations by Vehicle and Fuel Type",
+          "source": "data.gov.my (OpenAPI)",
+          "source_family": "jpj",
+          "url": "https://api.data.gov.my/data-catalogue?id=registrations_type_fuel",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 10801,
+          "record_count_estimated": false,
+          "content_date": "2026-07-01",
+          "content_date_source": "content_date_parse"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dgm_vehicle_registrations_type_fuel",
+          "right_id": "registrations_type_fuel",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:0f2933488749965a",
+      "logical_name": "data.gov.my Monthly Interest Rates",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.data.gov.my/finsector/interest_rates.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dgm_interest_rates",
+          "name": "data.gov.my Monthly Interest Rates",
+          "source": "data.gov.my (storage.data.gov.my)",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/interest_rates.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 5712,
+          "record_count_estimated": false,
+          "content_date": "2026-02-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "interestrates",
+          "name": "Monthly Interest Rates",
+          "source": "data.gov.my",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/interest_rates.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 5712,
+          "record_count_estimated": false,
+          "content_date": "2026-02-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dgm_interest_rates",
+          "right_id": "interestrates",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:13ad499069ad4869",
+      "logical_name": "Monthly Core CPI Inflation",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.dosm.gov.my/cpi/cpi_2d_core_inflation.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "cpi_core_inflation",
+          "name": "Monthly Core CPI Inflation",
+          "source": "OpenDOSM (also indexed by data.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/cpi/cpi_2d_core_inflation.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 1414,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "dosm_cpi_core_inflation",
+          "name": "OpenDOSM Monthly Core CPI Inflation by Division",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/cpi/cpi_2d_core_inflation.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 1414,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "cpi_core_inflation",
+          "right_id": "dosm_cpi_core_inflation",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:4bb770bcc6e57d03",
+      "logical_name": "OpenDOSM Monthly Trade Headline",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.dosm.gov.my/trade/trade_headline.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dosm_trade_headline",
+          "name": "OpenDOSM Monthly Trade Headline",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/trade/trade_headline.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 743,
+          "record_count_estimated": false,
+          "content_date": "2026-04-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "trade_headline",
+          "name": "OpenDOSM Monthly Trade Headline",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/trade/trade_headline.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 743,
+          "record_count_estimated": false,
+          "content_date": "2026-04-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_trade_headline",
+          "right_id": "trade_headline",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:4d34983c0cd3a9fa",
+      "logical_name": "OpenDOSM Annual Population by Parliamentary Constituency",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.dosm.gov.my/population/population_parlimen.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dosm_population_parlimen",
+          "name": "OpenDOSM Annual Population by Parliamentary Constituency",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/population/population_parlimen.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 5550,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "population_parlimen",
+          "name": "Annual Population by Parliamentary Constituency",
+          "source": "OpenDOSM (also indexed by data.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/population/population_parlimen.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 5550,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_population_parlimen",
+          "right_id": "population_parlimen",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:4d583621d47e505e",
+      "logical_name": "OpenDOSM Quarterly Nominal GDP",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.dosm.gov.my/gdp/gdp_qtr_nominal.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dosm_gdp_qtr_nominal",
+          "name": "OpenDOSM Quarterly Nominal GDP",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/gdp/gdp_qtr_nominal.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 130,
+          "record_count_estimated": false,
+          "content_date": "2026-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "gdp_qtr_nominal",
+          "name": "OpenDOSM Quarterly Nominal GDP",
+          "source": "OpenDOSM (storage.dosm.gov.my) (also indexed by data.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/gdp/gdp_qtr_nominal.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 130,
+          "record_count_estimated": false,
+          "content_date": "2026-01-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_gdp_qtr_nominal",
+          "right_id": "gdp_qtr_nominal",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:4da1f2648b6780d7",
+      "logical_name": "OpenDOSM Annual Population by State",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.dosm.gov.my/population/population_state.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dosm_population_state",
+          "name": "OpenDOSM Annual Population by State",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/population/population_state.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 270063,
+          "record_count_estimated": false,
+          "content_date": "2026-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "population_state",
+          "name": "OpenDOSM Annual Population by State",
+          "source": "OpenDOSM (storage.dosm.gov.my) (also indexed by data.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/population/population_state.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 270063,
+          "record_count_estimated": false,
+          "content_date": "2026-01-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_population_state",
+          "right_id": "population_state",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:5884e61440b4f0e5",
+      "logical_name": "OpenDOSM Annual Population, Malaysia",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.dosm.gov.my/population/population_malaysia.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dosm_population_malaysia",
+          "name": "OpenDOSM Annual Population, Malaysia",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/population/population_malaysia.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 17814,
+          "record_count_estimated": false,
+          "content_date": "2026-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "population_malaysia",
+          "name": "OpenDOSM Annual Population, Malaysia",
+          "source": "OpenDOSM (storage.dosm.gov.my) (also indexed by data.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/population/population_malaysia.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 17814,
+          "record_count_estimated": false,
+          "content_date": "2026-01-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_population_malaysia",
+          "right_id": "population_malaysia",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:595255298a80903a",
+      "logical_name": "OpenDOSM IPI for Domestic-Oriented Divisions",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.dosm.gov.my/ipi/ipi_domestic.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dosm_ipi_domestic",
+          "name": "OpenDOSM IPI for Domestic-Oriented Divisions",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/ipi/ipi_domestic.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 6015,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "ipi_domestic",
+          "name": "Monthly IPI for Domestic-Oriented Divisions",
+          "source": "OpenDOSM (also indexed by data.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/ipi/ipi_domestic.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 6015,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_ipi_domestic",
+          "right_id": "ipi_domestic",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:650de466f4543807",
+      "logical_name": "OpenDOSM Monthly Labour Force Statistics",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.dosm.gov.my/labour/lfs_month.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dosm_lfs_month",
+          "name": "OpenDOSM Monthly Labour Force Statistics",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/labour/lfs_month.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 198,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "lfs_month",
+          "name": "OpenDOSM Monthly Labour Force Statistics",
+          "source": "OpenDOSM (storage.dosm.gov.my) (also indexed by data.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/labour/lfs_month.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 198,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_lfs_month",
+          "right_id": "lfs_month",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:725d784617a27867",
+      "logical_name": "OpenDOSM Quarterly Real GDP",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.dosm.gov.my/gdp/gdp_qtr_real.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dosm_gdp_qtr_real",
+          "name": "OpenDOSM Quarterly Real GDP",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/gdp/gdp_qtr_real.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 130,
+          "record_count_estimated": false,
+          "content_date": "2026-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "gdp_qtr_real",
+          "name": "OpenDOSM Quarterly Real GDP",
+          "source": "OpenDOSM (storage.dosm.gov.my) (also indexed by data.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/gdp/gdp_qtr_real.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 130,
+          "record_count_estimated": false,
+          "content_date": "2026-01-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_gdp_qtr_real",
+          "right_id": "gdp_qtr_real",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:7b2619bae5290049",
+      "logical_name": "data.gov.my Monthly KTMB Ridership",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_monthly.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dgm_ktmb_ridership_monthly",
+          "name": "data.gov.my Monthly KTMB Ridership",
+          "source": "data.gov.my (storage.data.gov.my)",
+          "source_family": "ktmb",
+          "url": "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_monthly.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 290,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "ridership_ktmb_monthly",
+          "name": "Monthly KTMB Ridership",
+          "source": "data.gov.my",
+          "source_family": "ktmb",
+          "url": "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_monthly.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 290,
+          "record_count_estimated": false,
+          "content_date": "2026-07-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dgm_ktmb_ridership_monthly",
+          "right_id": "ridership_ktmb_monthly",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:82f0d329d043bff5",
+      "logical_name": "data.gov.my Monthly Payment Instruments",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.data.gov.my/finsector/payments/instruments.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dgm_payments_instruments",
+          "name": "data.gov.my Monthly Payment Instruments",
+          "source": "data.gov.my (storage.data.gov.my)",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/payments/instruments.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 688,
+          "record_count_estimated": false,
+          "content_date": "2026-02-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "payment_instruments",
+          "name": "Monthly Payment Instruments",
+          "source": "data.gov.my",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/payments/instruments.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 688,
+          "record_count_estimated": false,
+          "content_date": "2026-02-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dgm_payments_instruments",
+          "right_id": "payment_instruments",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:85afa3f71b585e93",
+      "logical_name": "data.gov.my Monthly Money Aggregates",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.data.gov.my/finsector/money_aggregates.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dgm_money_aggregates",
+          "name": "data.gov.my Monthly Money Aggregates",
+          "source": "data.gov.my (storage.data.gov.my)",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/money_aggregates.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 1896,
+          "record_count_estimated": false,
+          "content_date": "2026-02-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "monetary_aggregates",
+          "name": "Monthly Monetary Aggregates",
+          "source": "data.gov.my",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/money_aggregates.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 1896,
+          "record_count_estimated": false,
+          "content_date": "2026-02-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dgm_money_aggregates",
+          "right_id": "monetary_aggregates",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:8c63d819a5633337",
+      "logical_name": "OpenDOSM IPI for Export-Oriented Divisions",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.dosm.gov.my/ipi/ipi_export.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dosm_ipi_export",
+          "name": "OpenDOSM IPI for Export-Oriented Divisions",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/ipi/ipi_export.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 5213,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "ipi_export",
+          "name": "Monthly IPI for Export-Oriented Divisions",
+          "source": "OpenDOSM (also indexed by data.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/ipi/ipi_export.csv",
+          "status": "aging",
+          "availability_class": "available",
+          "record_count": 5213,
+          "record_count_estimated": false,
+          "content_date": "2026-06-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_ipi_export",
+          "right_id": "ipi_export",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:d1e069b7ec630300",
+      "logical_name": "data.gov.my Monthly Payment Channels",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.data.gov.my/finsector/payments/channels.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dgm_payments_channels",
+          "name": "data.gov.my Monthly Payment Channels",
+          "source": "data.gov.my (storage.data.gov.my)",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/payments/channels.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 430,
+          "record_count_estimated": false,
+          "content_date": "2026-02-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "payment_channels",
+          "name": "Monthly Payment Channels",
+          "source": "data.gov.my",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/payments/channels.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 430,
+          "record_count_estimated": false,
+          "content_date": "2026-02-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dgm_payments_channels",
+          "right_id": "payment_channels",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:d94a67a87a5bea77",
+      "logical_name": "data.gov.my Monthly Payment Systems",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://storage.data.gov.my/finsector/payments/systems.csv",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "dgm_payments_systems",
+          "name": "data.gov.my Monthly Payment Systems",
+          "source": "data.gov.my (storage.data.gov.my)",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/payments/systems.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 516,
+          "record_count_estimated": false,
+          "content_date": "2026-02-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "payment_systems",
+          "name": "Monthly Payment Systems",
+          "source": "data.gov.my",
+          "source_family": "bnm",
+          "url": "https://storage.data.gov.my/finsector/payments/systems.csv",
+          "status": "stale",
+          "availability_class": "available",
+          "record_count": 516,
+          "record_count_estimated": false,
+          "content_date": "2026-02-01",
+          "content_date_source": "last_modified_header"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dgm_payments_systems",
+          "right_id": "payment_systems",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    }
+  ]
+}

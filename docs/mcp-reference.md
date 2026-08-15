@@ -281,6 +281,33 @@ Input schema:
 }
 ```
 
+### `check_reconciliation`
+
+Return the published cross-source reconciliation group for a dataset name or id, including per-member counts, dates, statuses, tolerances, and contextual deltas. A discrepancy requires human review and does not prove either source is wrong.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "dataset_name": {
+      "description": "Dataset id or name to reconcile, e.g. 'interestrates' or 'Monthly Interest Rates'.",
+      "examples": [
+        "interestrates",
+        "Monthly Interest Rates"
+      ],
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "dataset_name"
+  ],
+  "type": "object"
+}
+```
+
 ### `get_provenance`
 
 Return citation-ready provenance metadata for the listed dataset ids: source steward, licence (with URL), source URL, access method (curl/Camofox), last-verified timestamp. Use when an agent needs to cite DataPulse MY data in a response and must include proper attribution and licence.
@@ -351,6 +378,8 @@ Input schema:
 - `datapulse://trends` — Published per-dataset freshness trends and publish-reliability evidence, including methodology and aggregate counts.
 
 - `datapulse://drift` — Published per-dataset schema and record-count drift evidence, including methodology and aggregate verdict counts.
+
+- `datapulse://reconciliation` — Published cross-source reconciliation groups with pairwise count, date, status, tolerance, and verdict evidence.
 
 - `datapulse://licences` — Live count of DataPulse MY datasets grouped by licence.
 
