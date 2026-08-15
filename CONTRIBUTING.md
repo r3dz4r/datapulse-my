@@ -124,3 +124,20 @@ post-deploy verification, see:
 - `docs/release-process.md` — generation profiles, MCP source synchronization, post-deploy invariants
 - `docs/troubleshooting.md` — symptom → owner → action mapping
 - `docs/mcp-deploy.md` — redeploy steps for the MCP service
+
+## Release process
+
+This project uses [release-please](https://github.com/googleapis/release-please) for automated SemVer releases. Releases are driven by [Conventional Commits](https://www.conventionalcommits.org/) on `main`.
+
+| Commit prefix | Version bump | Example |
+|---|---|---|
+| `feat:` | minor (0.x.0) | `feat(mcp): add find_by_licence tool` |
+| `fix:` | patch (0.x.y) | `fix(workflow): handle OIDC failure` |
+| `perf:` | patch | `perf(scoring): cache title matches` |
+| `feat!:` or `BREAKING CHANGE:` | major (x.0.0) | `feat!: change tool schema` |
+| `chore:`, `docs:`, `refactor:`, `style:`, `test:`, `ci:` | none | (hidden from changelog) |
+| Any commit with `[skip release]` footer | none | `chore(health): update [skip release]` |
+
+Daily health/dataset-output commits should include `[skip release]` in the commit body or footer to avoid bloating the changelog. The existing `chore(health): ... [skip deploy]` pattern already exists for GitHub Pages deploy suppression; release-please respects the same footer convention.
+
+After a release-please PR is merged, the `Publish to MCP Registry` workflow (`.github/workflows/publish-mcp.yml`) auto-fires on the new tag push and refreshes the official MCP Registry entry.
