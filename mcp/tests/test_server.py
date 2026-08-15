@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import base64
+import hashlib
 import sys
 import httpx
 from datetime import datetime, timezone
@@ -10,6 +12,8 @@ from pathlib import Path
 
 import pytest
 from fastmcp import Client
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 
 MCP_DIR = Path(__file__).resolve().parents[1]
@@ -39,6 +43,8 @@ TOOL_PARAMETERS = {
     "get_provenance": {"dataset_ids"},
     "get_evidence": {"dataset_id"},
     "verify_evidence": {"dataset_id"},
+    "trust_verdict": {"dataset_id"},
+    "verify_attestation": {"reference", "replay_chain"},
     "find_by_licence": {"licence"},
 }
 
@@ -62,8 +68,66 @@ EXPECTED_TOOL_TITLES = {
     "get_provenance": "Build Citation-Ready Provenance",
     "get_evidence": "Inspect Published Evidence Receipts",
     "verify_evidence": "Re-verify Source Transport Evidence",
+    "trust_verdict": "Aggregate a Signed Trust Verdict",
+    "verify_attestation": "Verify a Signed Probe Attestation",
     "find_by_licence": "Scope Reusable Data by Licence",
 }
+
+
+def install_attestation_fixture(monkeypatch: pytest.MonkeyPatch, *, tamper: str | None = None, anchored: bool = True) -> None:
+    private = Ed25519PrivateKey.generate()
+    public64 = base64.b64encode(private.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)).decode()
+    previous = "0" * 64
+    payload = {"schema":"datapulse/v1/probe-attestation","date":"2026-08-15","observed_at":"2026-08-15T00:00:00Z","dataset_id":"sample","source_url":"https://example.test/data","observed_request_url":"https://example.test/data","access_dependency":"direct","probe_count_14d":1,"probe_count_24h":1,"last_status":"fresh","last_staleness_days":0,"content_fingerprint":None,"browser_receipt":{"available":False,"reason":None},"previous_chain_head":previous,"key_id":"ed25519-test","signer_pubkey_base64":public64}
+    canonical = server._canonical_json
+    link = hashlib.sha256(bytes.fromhex(previous) + canonical(payload)).hexdigest()
+    envelope = {"schema":"datapulse/v1/probe-attestation-envelope","payload":payload,"signature_base64":base64.b64encode(private.sign(canonical(payload))).decode(),"chain_link":link,"verification_level":"L1-capable"}
+    if tamper == "signature_base64": envelope["signature_base64"] = "A" * 88
+    if tamper == "chain_link": envelope["chain_link"] = "0" * 64
+    links = [{"dataset_id":"sample","chain_link":link}]
+    head_payload = {"schema":"datapulse/v1/daily-chain-head","date":"2026-08-15","previous_chain_head":previous,"dataset_count":1,"dataset_links_sha256":hashlib.sha256(canonical(links)).hexdigest(),"key_id":"ed25519-test"}
+    head_value = hashlib.sha256(bytes.fromhex(previous) + canonical(head_payload)).hexdigest()
+    head = {"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":base64.b64encode(private.sign(canonical(head_payload))).decode(),"chain_head":head_value,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}
+    index = {"schema":"datapulse/v1/attestation-index","date":"2026-08-15","chain_head_ref":"attestations/2026-08-15/chain_head.json","attestations":{"sample":"attestations/2026-08-15/sample.json"}}
+    scores = {"schema":"datapulse/v1/trust-scores","methodology_version":1,"datasets":[{"dataset_id":"sample","methodology_version":1,"score":90.0,"components":{},"observed_at":payload["observed_at"]}]}
+    registry = {"schema":"datapulse/v1/probe-key-registry","keys":[{"key_id":"ed25519-test","algorithm":"Ed25519","public_key_base64":public64,"not_before":"2026-01-01T00:00:00Z","not_after":"2027-01-01T00:00:00Z","status":"active"}]}
+    chain_index = {"schema":"datapulse/v1/chain-index","heads":{head_value:"attestations/2026-08-15/chain_head.json"},"anchors":({head_value:{"tag":"v0.8.0","commit":"a"*40}} if anchored else {})}
+    async def load_attestations(): return index, head, scores
+    async def fetch(path: str): return {"attestations/2026-08-15/sample.json":envelope,"attestations/2026-08-15/chain_head.json":head,".well-known/datapulse-probe-keys.json":registry,"attestations/chain-index.json":chain_index}[path]
+    monkeypatch.setattr(server, "_load_attestations", load_attestations)
+    monkeypatch.setattr(server, "_fetch_json", fetch)
+
+
+async def test_verify_attestation_l1_passes(monkeypatch: pytest.MonkeyPatch) -> None:
+    install_attestation_fixture(monkeypatch)
+    result = await server.verify_attestation("sample", False)
+    assert result["levels"]["L1"]["satisfied"] is True
+    assert result["levels"]["L2"]["covered"] is False and result["levels"]["L3"]["covered"] is False
+
+
+@pytest.mark.parametrize("field", ["signature_base64", "chain_link"])
+async def test_verify_attestation_l1_rejects_tamper(monkeypatch: pytest.MonkeyPatch, field: str) -> None:
+    install_attestation_fixture(monkeypatch, tamper=field)
+    assert (await server.verify_attestation("sample", False))["levels"]["L1"]["satisfied"] is False
+
+
+async def test_verify_attestation_l2_replays_to_anchor(monkeypatch: pytest.MonkeyPatch) -> None:
+    install_attestation_fixture(monkeypatch)
+    async def valid_git_anchor(anchor: dict, expected_head: str) -> bool: return True
+    monkeypatch.setattr(server, "_verify_git_anchor", valid_git_anchor)
+    result = await server.verify_attestation("sample", True)
+    assert result["levels"]["L2"]["covered"] is True and result["levels"]["L2"]["satisfied"] is True
+
+
+async def test_trust_verdict_is_join_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    install_attestation_fixture(monkeypatch)
+    async def catalogue(): return ({"datasets":[{"id":"sample","name":"Sample","source":"Agency"}]}, {"datasets":[{"dataset_id":"sample","status":"fresh","last_checked":"2026-08-15T00:00:00Z"}]})
+    async def trends(): return {"datasets":[{"dataset_id":"sample","trend":"stable"}]}
+    async def drift(): return {"datasets":[{"dataset_id":"sample","verdict":"stable"}]}
+    async def recon(): return {"groups":[]}
+    monkeypatch.setattr(server, "_load_catalogue", catalogue); monkeypatch.setattr(server, "_load_trends", trends); monkeypatch.setattr(server, "_load_drift", drift); monkeypatch.setattr(server, "_load_reconciliation", recon)
+    result = await server.trust_verdict("sample")
+    assert result["score"]["methodology_version"] == 1 and result["verified_live_at"] is None
 
 
 async def test_find_schema_drift_filters_limits_and_ranks(monkeypatch: pytest.MonkeyPatch) -> None:

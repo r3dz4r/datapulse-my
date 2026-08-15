@@ -29,6 +29,9 @@ trap 'rm -rf "$work_dir"' EXIT
 fetch() {
   local name="$1" path="$2"
   if $local_mode; then
+    if [[ "$path" == ".well-known/"* ]]; then
+      path="docs/$path"
+    fi
     if [[ "$path" == "health/latest.json" && -n "${DATAPULSE_LOCAL_HEALTH_FILE:-}" ]]; then
       cp "$DATAPULSE_LOCAL_HEALTH_FILE" "$work_dir/$name"
     else
@@ -52,6 +55,10 @@ fetch catalog-snapshot.json catalog-snapshot.json
 fetch catalog-graph.json catalog-graph.json
 fetch mcp.json mcp.json
 fetch llms.txt llms.txt
+fetch attestation-keys.json .well-known/datapulse-probe-keys.json
+fetch attestation-index.json attestations/latest/index.json
+fetch attestation-head.json attestations/latest/chain_head.json
+fetch attestation-scores.json attestations/latest/scores.json
 
 vertical_ids=()
 while IFS= read -r dataset_id; do
@@ -83,6 +90,10 @@ health = json.loads((work / "health.json").read_text())
 trends = json.loads((work / "trends.json").read_text())
 drift = json.loads((work / "drift.json").read_text())
 reconciliation = json.loads((work / "reconciliation.json").read_text())
+attestation_keys = json.loads((work / "attestation-keys.json").read_text())
+attestation_index = json.loads((work / "attestation-index.json").read_text())
+attestation_head = json.loads((work / "attestation-head.json").read_text())
+attestation_scores = json.loads((work / "attestation-scores.json").read_text())
 catalog = json.loads((work / "catalog.json").read_text())
 catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 catalog_graph = json.loads((work / "catalog-graph.json").read_text())
@@ -96,6 +107,14 @@ assert len(manifest_ids) == len(set(manifest_ids)) == expected_count
 assert len(health_ids) == len(set(health_ids)) == expected_count
 assert len(catalog_ids) == len(set(catalog_ids)) == expected_count
 assert set(manifest_ids) == set(health_ids) == set(catalog_ids)
+assert attestation_keys["schema"] == "datapulse/v1/probe-key-registry"
+assert attestation_index["schema"] == "datapulse/v1/attestation-index"
+assert len(attestation_index["attestations"]) == expected_count
+assert attestation_head["schema"] == "datapulse/v1/daily-chain-head-envelope"
+assert len(attestation_head["dataset_links"]) == expected_count
+assert re.fullmatch(r"[0-9a-f]{64}", attestation_head["chain_head"])
+assert attestation_scores["schema"] == "datapulse/v1/trust-scores"
+assert len(attestation_scores["datasets"]) == expected_count
 
 trend_ids = [row["dataset_id"] for row in trends["datasets"]]
 assert trends["schema"] == "datapulse/v1/dataset-trends"
@@ -311,8 +330,8 @@ async def main() -> None:
     expected_resources = [str(resource.uri) for resource in runtime_resources]
     expected_resources.extend(template.uri_template for template in runtime_templates)
     assert advertised_resources == expected_resources
-    assert len(runtime_tools) == 13
-    assert len(runtime_resources) == 7
+    assert len(runtime_tools) == 15
+    assert len(runtime_resources) == 8
     assert len(runtime_templates) == 1
     print(
         "MCP runtime schema assertion: PASS "

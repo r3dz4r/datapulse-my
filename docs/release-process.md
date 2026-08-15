@@ -27,7 +27,7 @@ then run the owning profile instead of patching an output directly.
 
 Two named profiles in `scripts/generate.sh` orchestrate the generators in reviewed order:
 
-- `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `catalog-snapshot.json` plus the deprecated `changelog.json` alias, `health/history*`, `health/trends.json`, `health/drift.json`, `health/reconciliation.json`, and `deltas/`.
+- `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `catalog-snapshot.json` plus the deprecated `changelog.json` alias, `health/history*`, `health/trends.json`, `health/drift.json`, `health/reconciliation.json`, signed `attestations/`, methodology-v1 scores, `datapulse.json` attestation refs, and `deltas/`.
 - `release-build` — invoked by the Pages deploy workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), dashboard filters (`docs/.dashboard_filters.json`), and the date-stamped trust snapshot (`docs/trust-snapshot-<date>.{md,json}`).
 
 `release-build` numbers the source stamp as Step 0, followed by twenty-one artifact
@@ -63,9 +63,9 @@ change is reviewed separately:
 3. The deployed `llms.txt` reports the live count, mentions MCP, and lists all
    advertised MCP tools.
 4. The deployed JSON-LD catalog is valid and contains one entry per health row.
-5. The deployed `mcp.json` is valid and advertises the reviewed 13-tool order
-   (including `find_unreliable`) and 7-concrete-resource-plus-1-template order
-   (including `datapulse://reliability`).
+5. The deployed `mcp.json` is valid and advertises the reviewed 15-tool order
+   (including `trust_verdict` and `verify_attestation`) and 8-concrete-resource-plus-1-template order
+   (including `datapulse://attestations`).
 6. The deployed `health/latest.json`, `health/trends.json`, `health/drift.json`, and `health/reconciliation.json` are valid and contain the expected live health rows.
 7. `scripts/verify_agent_ready.sh` and
    `scripts/verify_release_invariants.sh` accept the public surfaces.

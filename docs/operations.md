@@ -9,6 +9,11 @@ acquires `/tmp/datapulse-health.lock`, probes due datasets with
 moves it to `health/latest.json`. A successful probe then invokes
 `bash scripts/generate.sh health-cycle`.
 
+The health cycle signs daily probe facts with the protected Ed25519 key referenced by
+`DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE`; private keys remain outside the checkout.
+It publishes immutable dated envelopes plus `attestations/latest/` and a public key
+registry at `.well-known/datapulse-probe-keys.json`.
+
 `scripts/check.sh --due` maps refresh frequencies to probe tiers:
 
 | Tier | Manifest frequency | Due interval |

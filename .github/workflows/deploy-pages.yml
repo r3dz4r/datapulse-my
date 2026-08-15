@@ -22,6 +22,9 @@ on:
       - "record-evidence/**"
       - "record-evidence.schema.json"
       - "health/**"
+      - "attestations/**"
+      - ".attestations/**"
+      - "docs/.well-known/**"
       - "badges/**"
       - "samples/**"
       - "data/**"
@@ -137,6 +140,9 @@ jobs:
           cp -R docs/. _site/
           cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
           cp -R health deltas record-evidence badges samples data _site/
+          cp -R attestations _site/
+          mkdir -p _site/.well-known
+          cp docs/.well-known/datapulse-probe-keys.json _site/.well-known/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -219,7 +225,7 @@ jobs:
             fail "llms.txt does not contain '$expected_dataset_count datasets'"
           grep -Fq "MCP" "$smoke_dir/llms.txt" || \
             fail "llms.txt does not mention MCP"
-          for tool in search_datasets get_dataset find_stale find_anomalies find_deteriorating find_recovering find_unreliable find_schema_drift check_reconciliation get_provenance get_evidence verify_evidence find_by_licence; do
+          for tool in search_datasets get_dataset find_stale find_anomalies find_deteriorating find_recovering find_unreliable find_schema_drift check_reconciliation get_provenance get_evidence verify_evidence trust_verdict verify_attestation find_by_licence; do
             grep -Fq "$tool" "$smoke_dir/llms.txt" || \
               fail "llms.txt is missing MCP tool $tool"
           done
@@ -245,17 +251,26 @@ jobs:
               "get_provenance",
               "get_evidence",
               "verify_evidence",
-              "find_by_licence"
+              "trust_verdict", "verify_attestation", "find_by_licence"
             ]
           ' "$smoke_dir/mcp.json" >/dev/null || \
-            fail "mcp.json is invalid or does not advertise the expected 13 tools"
+            fail "mcp.json is invalid or does not advertise the expected 15 tools"
           jq -e '
             [.resources[].uri] == [
               "datapulse://index", "datapulse://anomalies", "datapulse://trends", "datapulse://reliability",
-              "datapulse://drift", "datapulse://reconciliation", "datapulse://licences",
+              "datapulse://drift", "datapulse://reconciliation", "datapulse://attestations", "datapulse://licences",
               "datapulse://{dataset_id}"
             ]
-          ' "$smoke_dir/mcp.json" >/dev/null || fail "mcp.json does not advertise 7 concrete resources plus 1 template"
+          ' "$smoke_dir/mcp.json" >/dev/null || fail "mcp.json does not advertise 8 concrete resources plus 1 template"
+
+          fetch "probe key registry" "https://data-pulse.my/.well-known/datapulse-probe-keys.json" "$smoke_dir/keys.json"
+          fetch "latest attestation index" "https://data-pulse.my/attestations/latest/index.json" "$smoke_dir/attestation-index.json"
+          fetch "latest attestation head" "https://data-pulse.my/attestations/latest/chain_head.json" "$smoke_dir/attestation-head.json"
+          fetch "latest trust scores" "https://data-pulse.my/attestations/latest/scores.json" "$smoke_dir/scores.json"
+          jq -e --argjson expected "$expected_dataset_count" '.schema == "datapulse/v1/probe-key-registry" and (.keys | length > 0)' "$smoke_dir/keys.json" >/dev/null || fail "key registry is invalid"
+          jq -e --argjson expected "$expected_dataset_count" '.schema == "datapulse/v1/attestation-index" and (.attestations | length == $expected)' "$smoke_dir/attestation-index.json" >/dev/null || fail "attestation index is invalid"
+          jq -e --argjson expected "$expected_dataset_count" '.schema == "datapulse/v1/daily-chain-head-envelope" and (.dataset_links | length == $expected) and (.chain_head | test("^[0-9a-f]{64}$"))' "$smoke_dir/attestation-head.json" >/dev/null || fail "attestation head is invalid"
+          jq -e --argjson expected "$expected_dataset_count" '.schema == "datapulse/v1/trust-scores" and (.datasets | length == $expected)' "$smoke_dir/scores.json" >/dev/null || fail "trust scores are invalid"
 
           fetch "health snapshot" "https://data-pulse.my/health/latest.json" "$smoke_dir/health.json"
           jq -e --argjson expected "$expected_dataset_count" \
