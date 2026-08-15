@@ -25,6 +25,7 @@ TOOL_PARAMETERS = {
     "search_datasets": {"query", "licence", "source", "limit"},
     "get_dataset": {"dataset_id"},
     "find_stale": {"max_age_hours"},
+    "find_anomalies": {"limit", "mode"},
     "get_provenance": {"dataset_ids"},
     "find_by_licence": {"licence"},
 }
@@ -40,6 +41,7 @@ EXPECTED_TOOL_TITLES = {
     "search_datasets": "Discover Malaysian Public Data",
     "get_dataset": "Inspect Dataset Health and Details",
     "find_stale": "Identify Freshness and Schema Risks",
+    "find_anomalies": "Identify Dataset Update Anomalies",
     "get_provenance": "Build Citation-Ready Provenance",
     "find_by_licence": "Scope Reusable Data by Licence",
 }
@@ -95,6 +97,7 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
             assert "e.g." in parameter["description"]
 
     assert tools["find_stale"].parameters["required"] == []
+    assert tools["find_anomalies"].parameters["required"] == []
     assert tools["get_provenance"].parameters["properties"]["dataset_ids"][
         "examples"
     ] == [["fuelprice", "pricecatcher"]]
@@ -116,6 +119,14 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
     assert tools["find_stale"].parameters["properties"]["max_age_hours"]["examples"] == [
         24,
         72,
+    ]
+    assert tools["find_anomalies"].parameters["properties"]["limit"]["examples"] == [
+        10,
+        50,
+    ]
+    assert tools["find_anomalies"].parameters["properties"]["mode"]["examples"] == [
+        "rolling_14d",
+        "cadence_fallback",
     ]
     assert tools["find_by_licence"].parameters["properties"]["licence"]["examples"] == [
         "Creative Commons Attribution 4.0",
@@ -449,6 +460,122 @@ async def test_find_stale_excludes_reference_when_snapshot_is_old(
     assert result.data == []
 
 
+async def test_find_anomalies_matches_live_health(live_data: tuple[dict, dict]) -> None:
+    manifest, health = live_data
+    manifest_ids = {item["id"] for item in manifest["datasets"]}
+    expected_count = sum(
+        item["dataset_id"] in manifest_ids and item.get("anomaly_detected") is True
+        for item in health["datasets"]
+    )
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("find_anomalies", {"limit": 50})
+
+    assert len(result.data) == min(expected_count, 50)
+    assert all(
+        set(item)
+        == {
+            "id",
+            "title",
+            "status",
+            "staleness_days",
+            "mode",
+            "latest_days",
+            "threshold_days",
+            "severity_ratio",
+            "anomaly_detection",
+        }
+        for item in result.data
+    )
+    assert all(item["id"] in manifest_ids for item in result.data)
+    assert all(
+        item["anomaly_detection"]
+        == next(
+            record["anomaly_detection"]
+            for record in health["datasets"]
+            if record["dataset_id"] == item["id"]
+        )
+        for item in result.data
+    )
+    assert [item["severity_ratio"] for item in result.data] == sorted(
+        (item["severity_ratio"] for item in result.data), reverse=True
+    )
+
+
+async def test_find_anomalies_filters_limits_and_ranks_by_threshold_ratio(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = {
+        "datasets": [
+            {"id": "long-delay", "name": "Long Delay"},
+            {"id": "high-ratio", "name": "High Ratio"},
+            {"id": "rolling", "name": "Rolling"},
+            {"id": "normal", "name": "Normal"},
+        ]
+    }
+    health = {
+        "datasets": [
+            {
+                "dataset_id": "long-delay",
+                "status": "stale",
+                "staleness_days": 100,
+                "anomaly_detected": True,
+                "anomaly_detection": {
+                    "mode": "cadence_fallback",
+                    "latest_days": 100.0,
+                    "threshold_days": 50,
+                },
+            },
+            {
+                "dataset_id": "high-ratio",
+                "status": "stale",
+                "staleness_days": 12,
+                "anomaly_detected": True,
+                "anomaly_detection": {
+                    "mode": "cadence_fallback",
+                    "latest_days": 12.0,
+                    "threshold_days": 2,
+                },
+            },
+            {
+                "dataset_id": "rolling",
+                "status": "aging",
+                "staleness_days": 8,
+                "anomaly_detected": True,
+                "anomaly_detection": {
+                    "mode": "rolling_14d",
+                    "latest_days": 8.0,
+                    "threshold_days": 4.0,
+                },
+            },
+            {
+                "dataset_id": "normal",
+                "status": "fresh",
+                "staleness_days": 1,
+                "anomaly_detected": False,
+                "anomaly_detection": {
+                    "mode": "cadence_fallback",
+                    "latest_days": 1.0,
+                    "threshold_days": 2,
+                },
+            },
+        ]
+    }
+
+    async def fake_load_catalogue() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool(
+            "find_anomalies", {"limit": 1, "mode": "cadence_fallback"}
+        )
+
+    assert [item["id"] for item in result.data] == ["high-ratio"]
+    assert result.data[0]["severity_ratio"] == 6.0
+
+
 async def test_get_provenance_returns_citation_fields(live_data: tuple[dict, dict]) -> None:
     manifest, health = live_data
     dataset_ids = [item["id"] for item in manifest["datasets"][:2]]
@@ -520,6 +647,26 @@ async def test_licences_resource_returns_live_counts(live_data: tuple[dict, dict
         result = await client.read_resource("datapulse://licences")
 
     assert json.loads(result[0].text) == expected
+
+
+async def test_anomalies_resource_matches_tool_shape_and_order(
+    live_data: tuple[dict, dict],
+) -> None:
+    manifest, health = live_data
+    manifest_ids = {item["id"] for item in manifest["datasets"]}
+    expected_count = sum(
+        item["dataset_id"] in manifest_ids and item.get("anomaly_detected") is True
+        for item in health["datasets"]
+    )
+
+    async with Client(server.mcp) as client:
+        tool_result = await client.call_tool("find_anomalies", {"limit": 200})
+        resource_result = await client.read_resource("datapulse://anomalies")
+
+    payload = json.loads(resource_result[0].text)
+    assert len(payload) == expected_count
+    assert payload[:200] == tool_result.data
+    assert all(item["anomaly_detection"] for item in payload)
 
 
 async def test_dataset_resource_template_returns_full_manifest_entry(

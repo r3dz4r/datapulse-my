@@ -249,7 +249,7 @@ async def main() -> None:
         for tool in runtime
     ]
     assert advertised == expected
-    print("MCP runtime schema assertion: PASS (5 tools)")
+    print(f"MCP runtime schema assertion: PASS ({len(runtime)} tools)")
 
 
 asyncio.run(main())

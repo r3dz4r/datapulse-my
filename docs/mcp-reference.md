@@ -128,6 +128,49 @@ Input schema:
 }
 ```
 
+### `find_anomalies`
+
+Return datasets flagged by the latest published anomaly detection, ranked by how far the observed update interval exceeds its threshold. Includes the pipeline-computed evidence; use when an agent needs to identify unusual dataset update delays without recomputing anomaly detection.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "limit": {
+      "default": 50,
+      "description": "Maximum ranked anomalies to return; integer from 1 to 200, e.g. 50.",
+      "examples": [
+        10,
+        50
+      ],
+      "maximum": 200,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "mode": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional exact detection mode; e.g. 'rolling_14d' or 'cadence_fallback'.",
+      "examples": [
+        "rolling_14d",
+        "cadence_fallback"
+      ]
+    }
+  },
+  "type": "object",
+  "required": []
+}
+```
+
 ### `get_provenance`
 
 Return citation-ready provenance metadata for the listed dataset ids: source steward, licence (with URL), source URL, access method (curl/Camofox), last-verified timestamp. Use when an agent needs to cite DataPulse MY data in a response and must include proper attribution and licence.
@@ -192,6 +235,8 @@ Input schema:
 ## Resources
 
 - `datapulse://index` — Read first; lightweight list of all DataPulse MY dataset ids with current status, title, source, licence, and namespace.
+
+- `datapulse://anomalies` — Datasets flagged by the latest published anomaly detection, ranked by severity with pipeline-computed evidence.
 
 - `datapulse://licences` — Live count of DataPulse MY datasets grouped by licence.
 
