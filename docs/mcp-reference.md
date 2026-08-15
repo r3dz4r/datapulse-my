@@ -243,6 +243,44 @@ Input schema:
 }
 ```
 
+### `find_schema_drift`
+
+Return datasets with published structural or record-count drift evidence, ranked with structural changes first. Optionally require a minimum number of structural transitions; includes pipeline-computed evidence so agents do not infer drift from freshness alone.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "limit": {
+      "default": 50,
+      "description": "Maximum ranked drift results to return; integer from 1 to 200, e.g. 50.",
+      "examples": [
+        10,
+        50
+      ],
+      "maximum": 200,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "min_change_count": {
+      "default": 0,
+      "description": "Minimum structural fingerprint or column-count transitions; integer from 0 to 100, e.g. 1.",
+      "examples": [
+        0,
+        1
+      ],
+      "maximum": 100,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "type": "object",
+  "required": []
+}
+```
+
 ### `get_provenance`
 
 Return citation-ready provenance metadata for the listed dataset ids: source steward, licence (with URL), source URL, access method (curl/Camofox), last-verified timestamp. Use when an agent needs to cite DataPulse MY data in a response and must include proper attribution and licence.
@@ -311,6 +349,8 @@ Input schema:
 - `datapulse://anomalies` — Datasets flagged by the latest published anomaly detection, ranked by severity with pipeline-computed evidence.
 
 - `datapulse://trends` — Published per-dataset freshness trends and publish-reliability evidence, including methodology and aggregate counts.
+
+- `datapulse://drift` — Published per-dataset schema and record-count drift evidence, including methodology and aggregate verdict counts.
 
 - `datapulse://licences` — Live count of DataPulse MY datasets grouped by licence.
 

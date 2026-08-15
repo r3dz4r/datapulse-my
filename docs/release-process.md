@@ -9,7 +9,7 @@ that snapshot and the manifest:
 
 - `health-cycle` owns `data/<id>.md`, `badges/`, the README trust-summary block,
   `feed.xml`, `catalog-snapshot.json`, its temporary `changelog.json` alias,
-  `health/history*`, `health/trends.json`, and `deltas/`. The 15-minute timer and weekly health
+  `health/history*`, `health/trends.json`, `health/drift.json`, and `deltas/`. The 15-minute timer and weekly health
   workflow invoke it after a successful probe.
 - `release-build` owns the `health-cycle` paths plus
   `data/json/<id>.json`, `data/jsonld/`, `docs/mcp-reference.md`, `mcp.json`,
@@ -27,11 +27,11 @@ then run the owning profile instead of patching an output directly.
 
 Two named profiles in `scripts/generate.sh` orchestrate the generators in reviewed order:
 
-- `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `catalog-snapshot.json` plus the deprecated `changelog.json` alias, `health/history*`, `health/trends.json`, and `deltas/`.
+- `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `catalog-snapshot.json` plus the deprecated `changelog.json` alias, `health/history*`, `health/trends.json`, `health/drift.json`, and `deltas/`.
 - `release-build` — invoked by the Pages deploy workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), dashboard filters (`docs/.dashboard_filters.json`), and the date-stamped trust snapshot (`docs/trust-snapshot-<date>.{md,json}`).
 
-`release-build` numbers the source stamp as Step 0, followed by nineteen artifact
-generators through Step 19. Step 19 runs
+`release-build` numbers the source stamp as Step 0, followed by twenty artifact
+generators through Step 20. Step 20 runs
 `python3 scripts/gen_health_methodology_html.py` and owns
 `docs/health-methodology.html`. Both profiles support `--list` for dry-run enumeration
 of steps + owned paths. Both refuse to push or deploy — those actions remain
@@ -65,7 +65,7 @@ change is reviewed separately:
 4. The deployed JSON-LD catalog is valid and contains one entry per health row.
 5. The deployed `mcp.json` is valid and advertises the reviewed runtime tool
    list in order.
-6. The deployed `health/latest.json` and `health/trends.json` are valid and contain the expected live health rows.
+6. The deployed `health/latest.json`, `health/trends.json`, and `health/drift.json` are valid and contain the expected live health rows.
 7. `scripts/verify_agent_ready.sh` and
    `scripts/verify_release_invariants.sh` accept the public surfaces.
 8. Rendered `health-methodology.html` exists, is non-empty, and contains the

@@ -110,6 +110,7 @@ def test_history_carries_delta_comparison_fields(tmp_path: Path) -> None:
         {
             "url": "https://example.test/dataset-000.csv",
             "first_row_hash": "shape-v1:fixture",
+            "column_count": 7,
         }
     )
     snapshot.write_text(json.dumps(payload) + "\n", encoding="utf-8")
@@ -120,6 +121,7 @@ def test_history_carries_delta_comparison_fields(tmp_path: Path) -> None:
     row = _history(tmp_path)[0]
     assert row["url"] == "https://example.test/dataset-000.csv"
     assert row["shape_hash"] == "shape-v1:fixture"
+    assert row["column_count"] == 7
 
 
 def test_history_retention(tmp_path: Path) -> None:

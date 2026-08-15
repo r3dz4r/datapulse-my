@@ -116,17 +116,20 @@ def test_deploy_pages_workflow_preserves_post_deploy_invariants() -> None:
         'fetch "JSON-LD catalog"',
         'fetch "MCP advertisement"',
         'fetch "health snapshot"',
+        'fetch "drift snapshot"',
     ):
         assert surface in invariants
 
 
-def test_deploy_pages_publishes_and_verifies_trends() -> None:
+def test_deploy_pages_publishes_and_verifies_trends_and_drift() -> None:
     workflow = _read(DEPLOY_WORKFLOW)
     paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
     assert '"health/**"' in paths_block
     assert 'fetch "trend snapshot"' in workflow
     assert "datapulse/v1/dataset-trends" in workflow
-    assert "expected 8 tools" in workflow
+    assert 'fetch "drift snapshot"' in workflow
+    assert "datapulse/v1/dataset-drift" in workflow
+    assert "expected 9 tools" in workflow
 
 
 def test_no_workflow_permissions_broadened() -> None:

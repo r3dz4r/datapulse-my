@@ -150,10 +150,10 @@ DataPulse MY also exposes an AI-ready, read-only MCP server so agents can query
 the catalogue natively:
 
 - Endpoint: `https://mcp.data-pulse.my/mcp` (Streamable HTTP, no auth)
-- 8 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `get_provenance`, `find_by_licence`
-- 4 resources plus 1 resource template: `datapulse://index`, `datapulse://anomalies`, `datapulse://trends`, `datapulse://licences`, `datapulse://{dataset_id}`
+- 9 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_schema_drift`, `get_provenance`, `find_by_licence`
+- 5 resources plus 1 resource template: `datapulse://index`, `datapulse://anomalies`, `datapulse://trends`, `datapulse://drift`, `datapulse://licences`, `datapulse://{dataset_id}`
 
-The public endpoint is live and serves all 8 read-only tools over the
+The public endpoint is live and serves all 9 read-only tools over the
 389-dataset catalogue.
 
 Connect from Claude Desktop:
@@ -193,6 +193,7 @@ curl -s https://r3dz4r.github.io/datapulse-my/llms.txt
 - [`datapulse.json`](https://r3dz4r.github.io/datapulse-my/datapulse.json) — manifest with a declared `$schema`
 - [`health/latest.json`](https://r3dz4r.github.io/datapulse-my/health/latest.json) — latest freshness snapshot
 - [`health/trends.json`](https://r3dz4r.github.io/datapulse-my/health/trends.json) — published freshness trends and publish-reliability evidence
+- [`health/drift.json`](https://r3dz4r.github.io/datapulse-my/health/drift.json) — published structural and record-count drift evidence
 - [`feed.xml`](https://r3dz4r.github.io/datapulse-my/feed.xml) — dataset health change feed
 - [`datapulse.schema.json`](https://r3dz4r.github.io/datapulse-my/datapulse.schema.json) — manifest schema
 

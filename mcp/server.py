@@ -162,6 +162,12 @@ FIND_RECOVERING_DESCRIPTION = (
     "staleness reductions first. Includes pipeline-computed trend and publish-reliability "
     "evidence."
 )
+FIND_SCHEMA_DRIFT_DESCRIPTION = (
+    "Return datasets with published structural or record-count drift evidence, "
+    "ranked with structural changes first. Optionally require a minimum number "
+    "of structural transitions; includes pipeline-computed evidence so agents "
+    "do not infer drift from freshness alone."
+)
 GET_PROVENANCE_DESCRIPTION = (
     "Return citation-ready provenance metadata for the listed dataset ids: source "
     "steward, licence (with URL), source URL, access method (curl/Camofox), "
@@ -250,6 +256,20 @@ async def _load_trends() -> dict[str, Any]:
     ):
         raise ValueError("health/trends.json has an unsupported schema")
     return trends
+
+
+async def _load_drift() -> dict[str, Any]:
+    try:
+        drift = await _fetch_json("health/drift.json")
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise RuntimeError(
+                "Published drift artifact is unavailable; retry after the Pages deployment completes"
+            ) from exc
+        raise
+    if drift.get("schema") != "datapulse/v1/dataset-drift" or not isinstance(drift.get("datasets"), list):
+        raise ValueError("health/drift.json has an unsupported schema")
+    return drift
 
 
 async def _load_catalogue() -> tuple[dict[str, Any], dict[str, Any]]:
@@ -749,6 +769,50 @@ _find_recovering_tool.parameters.setdefault("required", [])
 mcp.add_tool(_find_recovering_tool)
 
 
+def _drift_results(manifest: dict[str, Any], drift: dict[str, Any], *, min_change_count: int) -> list[dict[str, Any]]:
+    manifest_by_id = {entry["id"]: entry for entry in manifest.get("datasets", [])}
+    results: list[dict[str, Any]] = []
+    for row in drift.get("datasets", []):
+        entry = manifest_by_id.get(row.get("dataset_id"))
+        if entry is None or row.get("verdict") not in {"drift_detected", "record_count_drift"}:
+            continue
+        shape_changes = row.get("shape_change_count") if isinstance(row.get("shape_change_count"), int) else 0
+        column_changes = row.get("column_change_count") if isinstance(row.get("column_change_count"), int) else 0
+        if max(shape_changes, column_changes) < min_change_count:
+            continue
+        results.append({
+            "id": entry["id"], "title": entry["name"], "verdict": row["verdict"],
+            "shape_changed_recently": row.get("shape_changed_recently"), "shape_change_count": shape_changes,
+            "last_shape_change_at": row.get("last_shape_change_at"), "column_count_changed": row.get("column_count_changed"),
+            "column_change_count": column_changes, "record_trend": row.get("record_trend"), "record_change_pct": row.get("record_change_pct"),
+            "record_count": row.get("record_count"), "column_count": row.get("column_count"), "expected_record_count": row.get("expected_record_count"),
+            "record_count_within_tolerance": row.get("record_count_within_tolerance"), "reason": row.get("reason"),
+        })
+    results.sort(key=lambda item: (0 if item["verdict"] == "drift_detected" else 1, -max(item["shape_change_count"], item["column_change_count"]), item["id"]))
+    return results
+
+
+async def find_schema_drift(
+    limit: Annotated[int, Field(ge=1, le=200, description="Maximum ranked drift results to return; integer from 1 to 200, e.g. 50.", examples=[10, 50])] = 50,
+    min_change_count: Annotated[int, Field(ge=0, le=100, description="Minimum structural fingerprint or column-count transitions; integer from 0 to 100, e.g. 1.", examples=[0, 1])] = 0,
+) -> list[dict[str, Any]]:
+    """Expose pipeline-computed schema and record-count drift decisions."""
+    manifest, drift = await gather(_load_manifest(), _load_drift())
+    return _drift_results(manifest, drift, min_change_count=min_change_count)[:limit]
+
+
+_find_schema_drift_tool = FunctionTool.from_function(
+    find_schema_drift,
+    title="Identify Schema and Content Drift",
+    description=FIND_SCHEMA_DRIFT_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+_find_schema_drift_tool.parameters.setdefault("required", [])
+mcp.add_tool(_find_schema_drift_tool)
+
+
 @mcp.tool(
     title="Build Citation-Ready Provenance",
     description=GET_PROVENANCE_DESCRIPTION,
@@ -894,6 +958,19 @@ async def anomaly_resource() -> str:
 async def trend_resource() -> str:
     """Return the complete published trend artifact as JSON."""
     return json.dumps(await _load_trends(), ensure_ascii=False)
+
+
+@mcp.resource(
+    "datapulse://drift",
+    description=(
+        "Published per-dataset schema and record-count drift evidence, including "
+        "methodology and aggregate verdict counts."
+    ),
+    mime_type="application/json",
+)
+async def drift_resource() -> str:
+    """Return the complete published drift artifact as JSON."""
+    return json.dumps(await _load_drift(), ensure_ascii=False)
 
 
 @mcp.resource(
