@@ -4,6 +4,21 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## [0.6.0](https://github.com/r3dz4r/datapulse-my/compare/v0.5.0...v0.6.0) (2026-08-15)
+
+
+### Features
+
+* **anomaly:** calibrate detection — 12/14 rolling tolerance + strict &gt;3x cadence fallback ([e1cfab3](https://github.com/r3dz4r/datapulse-my/commit/e1cfab3fe6e4ea96060aa30e7de7268f67450da6))
+* **drift:** add schema/content drift detection, expose via MCP ([859b1bd](https://github.com/r3dz4r/datapulse-my/commit/859b1bd0760f9f063a6ab45e93a15bda1380f048))
+* **mcp:** expose anomaly detection — find_anomalies tool + datapulse://anomalies resource ([de3f084](https://github.com/r3dz4r/datapulse-my/commit/de3f084add4e0e3a087edfd5ee208eb3d3fa88c4))
+* **trends:** add dataset trend tracking + reliability scoring, expose via MCP ([5706ca6](https://github.com/r3dz4r/datapulse-my/commit/5706ca6a1ed698dc08b0cc1ee35af2972e41763a))
+
+
+### Bug Fixes
+
+* **docs:** add find_anomalies to llms.txt tool table ([a36ccd9](https://github.com/r3dz4r/datapulse-my/commit/a36ccd97f334415ece0fdc62542938286455d800))
+
 ## [0.5.0](https://github.com/r3dz4r/datapulse-my/compare/v0.4.2...v0.5.0) (2026-08-15)
 
 
