@@ -185,6 +185,36 @@ def test_dataset_count_follows_published_manifest_redirect(
     assert server._manifest_dataset_count(tmp_path / "missing.json") == 1
 
 
+@pytest.mark.anyio
+async def test_fetch_json_follows_redirects(monkeypatch: pytest.MonkeyPatch) -> None:
+    class RedirectedResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {"ok": True}
+
+    class FakeAsyncClient:
+        def __init__(self, *args, **kwargs) -> None:
+            self.timeout = kwargs.get("timeout")
+
+        async def __aenter__(self) -> "FakeAsyncClient":
+            return self
+
+        async def __aexit__(self, *exc) -> None:
+            return None
+
+        async def get(self, url: str, **kwargs) -> RedirectedResponse:
+            assert url == f"{server.DATA_BASE}/datapulse.json"
+            assert kwargs.get("follow_redirects") is True
+            return RedirectedResponse()
+
+    monkeypatch.setattr(server.httpx, "AsyncClient", FakeAsyncClient)
+
+    result = await server._fetch_json("datapulse.json")
+    assert result == {"ok": True}
+
+
 async def test_search_datasets_returns_ranked_live_results() -> None:
     async with Client(server.mcp) as client:
         result = await client.call_tool(

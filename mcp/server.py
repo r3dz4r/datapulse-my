@@ -205,7 +205,9 @@ TOOL_META = {
 async def _fetch_json(path: str) -> dict[str, Any]:
     """Fetch one JSON document from the published DataPulse MY site."""
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
-        response = await client.get(f"{DATA_BASE}/{path.lstrip('/')}")
+        response = await client.get(
+            f"{DATA_BASE}/{path.lstrip('/')}", follow_redirects=True
+        )
         response.raise_for_status()
         return response.json()
 
