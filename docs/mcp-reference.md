@@ -362,7 +362,7 @@ Input schema:
 
 ### `get_provenance`
 
-Return citation-ready provenance metadata for the listed dataset ids: source steward, licence (with URL), source URL, access method (curl/Camofox), last-verified timestamp. Use when an agent needs to cite DataPulse MY data in a response and must include proper attribution and licence.
+Return citation-ready provenance metadata for the listed dataset ids, plus compact pipeline-published evidence receipts: row probe time, HTTP status, request URL, access dependency, freshness source, content date, record count, shape fingerprint, anomaly flag, and status. Use when an agent must cite data and show the evidence behind the trust claim without recomputing it.
 
 Input schema:
 
@@ -388,6 +388,58 @@ Input schema:
   },
   "required": [
     "dataset_ids"
+  ],
+  "type": "object"
+}
+```
+
+### `get_evidence`
+
+Return the complete pipeline-published evidence receipt for one dataset id, including probe time, transport, access dependency, freshness, record-count, shape, tolerance, status, and anomaly fields. Use for a deep audit, e.g. get_evidence('fuelprice'); values are presented without MCP-side recomputation.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "dataset_id": {
+      "description": "Canonical dataset identifier for a deep receipt, e.g. 'fuelprice'.",
+      "examples": [
+        "fuelprice"
+      ],
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "dataset_id"
+  ],
+  "type": "object"
+}
+```
+
+### `verify_evidence`
+
+Perform a rate-limited live streamed GET for one direct-access dataset and compare transport receipts with the latest published evidence, e.g. verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints remain pipeline-only and are explicitly reported as unverified; results are ephemeral and never update health artifacts.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "dataset_id": {
+      "description": "Canonical direct-access dataset identifier to re-fetch, e.g. 'fuelprice'.",
+      "examples": [
+        "fuelprice"
+      ],
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "dataset_id"
   ],
   "type": "object"
 }

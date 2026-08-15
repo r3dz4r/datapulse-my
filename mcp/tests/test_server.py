@@ -37,6 +37,8 @@ TOOL_PARAMETERS = {
     "find_schema_drift": {"limit", "min_change_count"},
     "check_reconciliation": {"dataset_name"},
     "get_provenance": {"dataset_ids"},
+    "get_evidence": {"dataset_id"},
+    "verify_evidence": {"dataset_id"},
     "find_by_licence": {"licence"},
 }
 
@@ -58,6 +60,8 @@ EXPECTED_TOOL_TITLES = {
     "find_schema_drift": "Identify Schema and Content Drift",
     "check_reconciliation": "Check Cross-Source Reconciliation",
     "get_provenance": "Build Citation-Ready Provenance",
+    "get_evidence": "Inspect Published Evidence Receipts",
+    "verify_evidence": "Re-verify Source Transport Evidence",
     "find_by_licence": "Scope Reusable Data by Licence",
 }
 
@@ -201,6 +205,7 @@ def live_reconciliation() -> dict:
 
 @pytest.fixture(autouse=True)
 def local_catalogue(monkeypatch: pytest.MonkeyPatch) -> None:
+    server._VERIFY_CACHE.clear()
     manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
     health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
     trends = json.loads((REPO_DIR / "health/trends.json").read_text(encoding="utf-8"))
@@ -266,6 +271,10 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
     assert tools["get_provenance"].parameters["properties"]["dataset_ids"][
         "examples"
     ] == [["fuelprice", "pricecatcher"]]
+    assert tools["get_evidence"].parameters["required"] == ["dataset_id"]
+    assert tools["verify_evidence"].parameters["required"] == ["dataset_id"]
+    assert tools["get_evidence"].parameters["properties"]["dataset_id"]["examples"] == ["fuelprice"]
+    assert tools["verify_evidence"].parameters["properties"]["dataset_id"]["examples"] == ["fuelprice"]
     assert tools["search_datasets"].parameters["properties"]["query"]["examples"] == [
         "inflation cpi"
     ]
@@ -918,23 +927,119 @@ async def test_get_provenance_returns_citation_fields(live_data: tuple[dict, dic
         result = await client.call_tool("get_provenance", {"dataset_ids": dataset_ids})
 
     assert [item["id"] for item in result.data] == dataset_ids
-    assert all(
-        set(item)
-        == {
-            "id",
-            "steward",
-            "source",
-            "licence",
-            "licence_url",
-            "url",
-            "access_method",
-            "last_verified",
-            "schema_version",
-        }
-        for item in result.data
-    )
-    assert all(item["last_verified"] == health["checked_at"] for item in result.data)
+    assert all("evidence" in item for item in result.data)
+    assert all(item["last_verified"] == next(row["last_checked"] for row in health["datasets"] if row["dataset_id"] == item["id"]) for item in result.data)
     assert all(item["licence_url"].startswith("https://") for item in result.data)
+
+
+async def test_get_evidence_projects_complete_published_receipt(monkeypatch: pytest.MonkeyPatch) -> None:
+    row = {field: f"value-{field}" for field in server.EVIDENCE_FIELDS}
+    manifest = {"datasets": [{"id": "sample"}]}
+    health = {"schema": "datapulse/v0.4/dataset-health", "checked_at": "snapshot", "datasets": [{**row, "dataset_id": "sample"}]}
+    async def load() -> tuple[dict, dict]: return manifest, health
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    result = await server.get_evidence("sample")
+    assert result["evidence"] == {field: row[field] for field in server.EVIDENCE_FIELDS}
+
+
+async def test_get_evidence_keeps_missing_receipts_explicit(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def load() -> tuple[dict, dict]: return {"datasets": [{"id": "sample"}]}, {"datasets": []}
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    result = await server.get_evidence("sample")
+    assert result["evidence_available"] is False
+    assert set(result["evidence"]) == set(server.EVIDENCE_FIELDS)
+    assert all(value is None for value in result["evidence"].values())
+
+
+async def test_get_provenance_includes_compact_receipts_and_row_probe_time(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"
+    manifest = {"datasets": [{"id": "sample", "steward": "Agency", "source": "Publisher", "licence": server.CC_BY_4, "url": url}]}
+    row = {"dataset_id": "sample", "last_checked": "row-time", "access_method": "direct", "http_status": 200, "request_url": url, "access_dependency": "direct", "freshness_signal_source": "content_date_parse", "content_freshness_date": "2026-08-14", "record_count": 10, "first_row_hash": "shape-v1:abc", "anomaly_detected": False, "status": "fresh"}
+    health = {"schema": "schema", "checked_at": "snapshot", "datasets": [row]}
+    async def load() -> tuple[dict, dict]: return manifest, health
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    result = await server.get_provenance(["sample"])
+    assert result[0]["last_verified"] == "row-time"
+    assert result[0]["evidence"] == {**{field: row.get(field) for field in server.COMPACT_EVIDENCE_FIELDS}, "available": True, "snapshot_checked_at": "snapshot"}
+
+
+def install_fake_live_http(monkeypatch: pytest.MonkeyPatch, responses: list[httpx.Response | Exception]) -> list[httpx.Request]:
+    requests: list[httpx.Request] = []
+    class FakeAsyncClient:
+        def __init__(self, *args, **kwargs) -> None: assert kwargs["timeout"] == server.REQUEST_TIMEOUT_SECONDS
+        async def __aenter__(self): return self
+        async def __aexit__(self, *exc): return None
+        def build_request(self, method: str, url: str) -> httpx.Request:
+            request = httpx.Request(method, url); requests.append(request); return request
+        async def send(self, request: httpx.Request, *, stream: bool) -> httpx.Response:
+            assert stream is True
+            outcome = responses.pop(0)
+            if isinstance(outcome, Exception): raise outcome
+            outcome.request = request
+            return outcome
+    monkeypatch.setattr(server.httpx, "AsyncClient", FakeAsyncClient)
+    return requests
+
+
+def _verification_fixture(url: str) -> tuple[dict, dict]:
+    return ({"datasets": [{"id": "sample", "url": url, "source": "data.gov.my"}]}, {"datasets": [{"dataset_id": "sample", "last_checked": "now", "request_url": url, "access_dependency": "direct", "http_status": 200, "last_modified": "2026-08-14T01:02:03Z", "content_length": 123}]})
+
+
+async def test_verify_evidence_matches_transport_and_marks_content_unverified(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"
+    manifest, health = _verification_fixture(url)
+    async def load() -> tuple[dict, dict]: return manifest, health
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    requests = install_fake_live_http(monkeypatch, [httpx.Response(200, headers={"Last-Modified": "Fri, 14 Aug 2026 01:02:03 GMT", "Content-Length": "123"})])
+    result = await server.verify_evidence("sample")
+    assert [request.url for request in requests] == [httpx.URL(url)]
+    assert result["verdict"] == "match" and result["last_modified_match"] is True
+    assert result["content_date_match"] is None and result["record_count_match"] is None and result["first_row_hash_match"] is None
+
+
+async def test_verify_evidence_reports_transport_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"; manifest, health = _verification_fixture(url)
+    async def load() -> tuple[dict, dict]: return manifest, health
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    install_fake_live_http(monkeypatch, [httpx.Response(200, headers={"Last-Modified": "Sat, 15 Aug 2026 01:02:03 GMT", "Content-Length": "456"})])
+    result = await server.verify_evidence("sample")
+    assert result["verdict"] == "mismatch"
+
+
+async def test_verify_evidence_reports_timeout_as_unreachable(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"; manifest, health = _verification_fixture(url)
+    async def load() -> tuple[dict, dict]: return manifest, health
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    install_fake_live_http(monkeypatch, [httpx.ReadTimeout("timed out", request=httpx.Request("GET", url))])
+    result = await server.verify_evidence("sample")
+    assert result["verdict"] == "unreachable" and result["live_http_status"] is None
+
+
+async def test_verify_evidence_refuses_browser_without_httpx(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def load() -> tuple[dict, dict]: return {"datasets": [{"id": "browser", "url": "https://www.eperolehan.gov.my/a", "source": "ePerolehan"}]}, {"datasets": [{"dataset_id": "browser", "access_dependency": "browser", "access_method": "Camofox"}]}
+    class ForbiddenClient:
+        def __init__(self, *args, **kwargs): raise AssertionError("unexpected HTTP")
+    monkeypatch.setattr(server, "_load_catalogue", load); monkeypatch.setattr(server.httpx, "AsyncClient", ForbiddenClient)
+    result = await server.verify_evidence("browser")
+    assert result["verdict"] == "not_verifiable"
+
+
+async def test_verify_evidence_refuses_unapproved_redirect(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"; manifest, health = _verification_fixture(url)
+    async def load() -> tuple[dict, dict]: return manifest, health
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    install_fake_live_http(monkeypatch, [httpx.Response(302, headers={"Location": "https://example.com/private"})])
+    result = await server.verify_evidence("sample")
+    assert result["verdict"] == "not_verifiable" and "example.com" in result["details"][0]
+
+
+async def test_verify_evidence_uses_cache_without_force_bypass(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"; manifest, health = _verification_fixture(url)
+    async def load() -> tuple[dict, dict]: return manifest, health
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    requests = install_fake_live_http(monkeypatch, [httpx.Response(200)])
+    first = await server.verify_evidence("sample"); second = await server.verify_evidence("sample")
+    assert len(requests) == 1 and first["cached"] is False and second["cached"] is True
 
 
 async def test_find_by_licence_returns_summary(live_data: tuple[dict, dict]) -> None:

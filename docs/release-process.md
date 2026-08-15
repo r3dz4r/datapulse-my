@@ -63,7 +63,7 @@ change is reviewed separately:
 3. The deployed `llms.txt` reports the live count, mentions MCP, and lists all
    advertised MCP tools.
 4. The deployed JSON-LD catalog is valid and contains one entry per health row.
-5. The deployed `mcp.json` is valid and advertises the reviewed 11-tool order
+5. The deployed `mcp.json` is valid and advertises the reviewed 13-tool order
    (including `find_unreliable`) and 7-concrete-resource-plus-1-template order
    (including `datapulse://reliability`).
 6. The deployed `health/latest.json`, `health/trends.json`, `health/drift.json`, and `health/reconciliation.json` are valid and contain the expected live health rows.
@@ -105,7 +105,13 @@ is read-only — it doesn't write to the deployed service.
 ## Envelope policy
 
 - `data/json/<id>.json` is generated for every non-GTFS registry ID by `scripts/gen_json_envelope.py`. The 30 GTFS datasets are excluded by `scripts/contract-scope.json:json_envelope.excluded_ids`.
-- The 11 non-canonical legacy envelopes (8 missing `schema` field + 3 browser-shaped: `eperolehan-diklankan`, `fuelprice`, `pricecatcher`) are not yet normalized. This is tracked as a follow-up, not a blocker; the contract verifier treats them as compliant because they're in `approved_ids`.
+- The non-canonical legacy envelopes (8 missing `schema` field + 3 browser-shaped: `eperolehan-diklankan`, `fuelprice`, `pricecatcher`) are not yet normalized. This is tracked as a follow-up, not a blocker; the contract verifier treats them as compliant because they're in `approved_ids`.
+
+The reviewed MCP order is `search_datasets`, `get_dataset`, `find_stale`,
+`find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`,
+`find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`,
+`verify_evidence`, `find_by_licence`. The live verifier unit suite is required
+before release.
 - `docs/.dashboard_filters.json` is regenerated on every deploy. Hardcoded namespace counts in `docs/index.html` would be a regression; the file must NOT contain any literal `Economy (N)`, `Transport (N)`, etc. counts.
 
 ## Pull-request CI
