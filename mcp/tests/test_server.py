@@ -17,6 +17,8 @@ sys.path.insert(0, str(MCP_DIR))
 
 import server  # noqa: E402
 
+LOAD_TRENDS = server._load_trends
+
 
 pytestmark = pytest.mark.anyio
 
@@ -26,6 +28,8 @@ TOOL_PARAMETERS = {
     "get_dataset": {"dataset_id"},
     "find_stale": {"max_age_hours"},
     "find_anomalies": {"limit", "mode"},
+    "find_deteriorating": {"limit", "min_anomaly_rate"},
+    "find_recovering": {"limit"},
     "get_provenance": {"dataset_ids"},
     "find_by_licence": {"licence"},
 }
@@ -42,6 +46,8 @@ EXPECTED_TOOL_TITLES = {
     "get_dataset": "Inspect Dataset Health and Details",
     "find_stale": "Identify Freshness and Schema Risks",
     "find_anomalies": "Identify Dataset Update Anomalies",
+    "find_deteriorating": "Identify Deteriorating Dataset Trends",
+    "find_recovering": "Identify Recovering Dataset Trends",
     "get_provenance": "Build Citation-Ready Provenance",
     "find_by_licence": "Scope Reusable Data by Licence",
 }
@@ -60,10 +66,16 @@ def live_data() -> tuple[dict, dict]:
     )
 
 
+@pytest.fixture(scope="module")
+def live_trends() -> dict:
+    return json.loads((REPO_DIR / "health/trends.json").read_text(encoding="utf-8"))
+
+
 @pytest.fixture(autouse=True)
 def local_catalogue(monkeypatch: pytest.MonkeyPatch) -> None:
     manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
     health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+    trends = json.loads((REPO_DIR / "health/trends.json").read_text(encoding="utf-8"))
 
     async def fake_load_catalogue() -> tuple[dict, dict]:
         return manifest, health
@@ -74,9 +86,13 @@ def local_catalogue(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake_load_health() -> dict:
         return health
 
+    async def fake_load_trends() -> dict:
+        return trends
+
     monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
     monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
     monkeypatch.setattr(server, "_load_health", fake_load_health)
+    monkeypatch.setattr(server, "_load_trends", fake_load_trends)
 
 
 async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> None:
@@ -98,6 +114,11 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
 
     assert tools["find_stale"].parameters["required"] == []
     assert tools["find_anomalies"].parameters["required"] == []
+    assert tools["find_deteriorating"].parameters["required"] == []
+    assert tools["find_recovering"].parameters["required"] == []
+    assert tools["find_deteriorating"].parameters["properties"]["limit"]["examples"] == [10, 50]
+    assert tools["find_deteriorating"].parameters["properties"]["min_anomaly_rate"]["examples"] == [25.0, 50.0]
+    assert tools["find_recovering"].parameters["properties"]["limit"]["examples"] == [10, 50]
     assert tools["get_provenance"].parameters["properties"]["dataset_ids"][
         "examples"
     ] == [["fuelprice", "pricecatcher"]]
@@ -574,6 +595,115 @@ async def test_find_anomalies_filters_limits_and_ranks_by_threshold_ratio(
 
     assert [item["id"] for item in result.data] == ["high-ratio"]
     assert result.data[0]["severity_ratio"] == 6.0
+
+
+def _trend_fixture() -> tuple[dict, dict]:
+    manifest = {
+        "datasets": [
+            {"id": "fast", "name": "Fast"},
+            {"id": "anomalous", "name": "Anomalous"},
+            {"id": "recovered", "name": "Recovered"},
+        ]
+    }
+    base = {
+        "latest_status": "aging",
+        "cadence_days": 1,
+        "latest_staleness_days": 4,
+        "trend_sample_days": 4,
+        "history_span_days": 3.0,
+        "publish_on_time_pct": 50.0,
+        "reliability_grade": "D",
+        "reliability_sample_days": 4,
+        "anomaly_sample_days": 4,
+        "reason": "fixture",
+    }
+    trends = {
+        "schema": "datapulse/v1/dataset-trends",
+        "datasets": [
+            {**base, "dataset_id": "fast", "trend": "deteriorating", "slope_days_per_week": 7.0, "anomaly_rate_pct": 25.0},
+            {**base, "dataset_id": "anomalous", "trend": "deteriorating", "slope_days_per_week": 3.5, "anomaly_rate_pct": 75.0},
+            {**base, "dataset_id": "recovered", "trend": "recovering", "slope_days_per_week": -14.0, "anomaly_rate_pct": 0.0},
+        ],
+    }
+    return manifest, trends
+
+
+async def test_find_deteriorating_filters_limits_and_ranks(monkeypatch: pytest.MonkeyPatch) -> None:
+    manifest, trends = _trend_fixture()
+
+    async def fake_load_manifest() -> dict:
+        return manifest
+
+    async def fake_load_trends() -> dict:
+        return trends
+
+    monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
+    monkeypatch.setattr(server, "_load_trends", fake_load_trends)
+    async with Client(server.mcp) as client:
+        ranked = await client.call_tool("find_deteriorating", {"limit": 2})
+        filtered = await client.call_tool(
+            "find_deteriorating", {"limit": 2, "min_anomaly_rate": 50.0}
+        )
+
+    assert [row["id"] for row in ranked.data] == ["fast", "anomalous"]
+    assert [row["id"] for row in filtered.data] == ["anomalous"]
+    assert set(ranked.data[0]) == {
+        "id", "title", "trend", "latest_status", "cadence_days",
+        "latest_staleness_days", "slope_days_per_week", "trend_sample_days",
+        "history_span_days", "publish_on_time_pct", "reliability_grade",
+        "reliability_sample_days", "anomaly_rate_pct", "anomaly_sample_days", "reason",
+    }
+
+
+async def test_find_recovering_returns_most_negative_slope_first(monkeypatch: pytest.MonkeyPatch) -> None:
+    manifest, trends = _trend_fixture()
+    manifest["datasets"].append({"id": "recovering-slow", "name": "Recovering Slow"})
+    trends["datasets"].append(
+        {**trends["datasets"][-1], "dataset_id": "recovering-slow", "slope_days_per_week": -3.5}
+    )
+
+    async def fake_load_manifest() -> dict:
+        return manifest
+
+    async def fake_load_trends() -> dict:
+        return trends
+
+    monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
+    monkeypatch.setattr(server, "_load_trends", fake_load_trends)
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("find_recovering", {"limit": 50})
+
+    assert [row["id"] for row in result.data] == ["recovered", "recovering-slow"]
+
+
+async def test_trend_tools_match_live_artifact(live_trends: dict) -> None:
+    expected_deteriorating = sum(
+        row["trend"] == "deteriorating" for row in live_trends["datasets"]
+    )
+    expected_recovering = sum(
+        row["trend"] == "recovering" for row in live_trends["datasets"]
+    )
+    async with Client(server.mcp) as client:
+        deteriorating = await client.call_tool("find_deteriorating", {"limit": 200})
+        recovering = await client.call_tool("find_recovering", {"limit": 200})
+    assert len(deteriorating.data) == min(expected_deteriorating, 200)
+    assert len(recovering.data) == min(expected_recovering, 200)
+
+
+async def test_trends_resource_returns_complete_published_artifact(live_trends: dict) -> None:
+    async with Client(server.mcp) as client:
+        result = await client.read_resource("datapulse://trends")
+    assert json.loads(result[0].text) == live_trends
+
+
+async def test_load_trends_rejects_unsupported_schema(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_fetch_json(path: str) -> dict:
+        assert path == "health/trends.json"
+        return {"schema": "wrong", "datasets": []}
+
+    monkeypatch.setattr(server, "_fetch_json", fake_fetch_json)
+    with pytest.raises(ValueError, match="unsupported schema"):
+        await LOAD_TRENDS()
 
 
 async def test_get_provenance_returns_citation_fields(live_data: tuple[dict, dict]) -> None:

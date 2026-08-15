@@ -30,6 +30,7 @@ GENERATORS = (
     "gen_rss.sh",
     "gen_catalog_snapshot.py",
     "gen_health_history.py",
+    "gen_trends.py",
     "gen_dataset_deltas.py",
     "gen_record_evidence.py",
     "gen_catalog_graph.py",
@@ -50,6 +51,7 @@ HEALTH_STEPS = (
     "gen_rss.sh",
     "gen_catalog_snapshot.py",
     "gen_health_history.py",
+    "gen_trends.py",
     "gen_dataset_deltas.py",
     "gen_record_evidence.py",
     "gen_catalog_graph.py",
@@ -63,6 +65,7 @@ RELEASE_STEPS = (
     "gen_rss.sh",
     "gen_catalog_snapshot.py",
     "gen_health_history.py",
+    "gen_trends.py",
     "gen_dataset_deltas.py",
     "gen_record_evidence.py",
     "gen_catalog_graph.py",
@@ -84,6 +87,7 @@ HEALTH_OUTPUTS = (
     "catalog-snapshot.json",
     "health/history.jsonl",
     "health/history_daily.json",
+    "health/trends.json",
     "deltas/2026-08-08T00:00.json",
     "catalog-graph.json",
 )
@@ -189,6 +193,7 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(ROOT / "scripts/generate.sh", scripts / "generate.sh")
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
+    shutil.copy2(ROOT / "scripts/gen_anomaly.py", scripts / "gen_anomaly.py")
     subprocess.run(["git", "init", "-q"], cwd=source, check=True)
     subprocess.run(
         ["git", "config", "user.email", "test@example.invalid"],
@@ -231,7 +236,7 @@ def _run_profile(
     )
 
 
-def test_health_cycle_lists_nine_steps(tmp_path: Path) -> None:
+def test_health_cycle_lists_ten_steps(tmp_path: Path) -> None:
     result = _run_profile(tmp_path, "health-cycle", list_mode=True)
 
     assert result.returncode == 0, result.stderr
@@ -256,6 +261,14 @@ def test_record_evidence_runs_immediately_after_deltas(tmp_path: Path) -> None:
         < result.stdout.index("gen_record_evidence.py")
         < result.stdout.index("gen_catalog_graph.py")
     )
+
+
+def test_trends_runs_immediately_after_history(tmp_path: Path) -> None:
+    result = _run_profile(tmp_path, "health-cycle", list_mode=True)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.index("gen_health_history.py") < result.stdout.index("gen_trends.py")
+    assert result.stdout.index("gen_trends.py") < result.stdout.index("gen_dataset_deltas.py")
 
 
 def test_health_cycle_runs_in_clean_fixture(tmp_path: Path) -> None:

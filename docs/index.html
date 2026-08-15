@@ -4949,13 +4949,15 @@
         <li class="tool-chip"><code>get_dataset</code></li>
         <li class="tool-chip"><code>find_stale</code></li>
         <li class="tool-chip"><code>find_anomalies</code></li>
+        <li class="tool-chip"><code>find_deteriorating</code></li>
+        <li class="tool-chip"><code>find_recovering</code></li>
         <li class="tool-chip"><code>get_provenance</code></li>
         <li class="tool-chip"><code>find_by_licence</code></li>
       </ul>
 
       <div class="terminal query-demo" aria-label="MCP query example">
         <pre><code><span class="command">$ curl -s https://mcp.data-pulse.my/mcp ...</span>
-# → 6 read-only tools over 389 licence-declared datasets</code></pre>
+# → 8 read-only tools over 389 licence-declared datasets</code></pre>
       </div>
     </section>
 
@@ -5009,7 +5011,7 @@
         <li class="workflow-step">
           <span class="step-number" aria-hidden="true">04</span>
           <h3>Publish</h3>
-          <p>Health JSON, badge, report, RSS, and MCP tools update atomically — all machine-readable.</p>
+          <p>Health JSON, trend reliability evidence, badge, report, RSS, and MCP tools update atomically — all machine-readable.</p>
         </li>
       </ol>
       <ul class="taxonomy-chips" aria-label="Ten dataset health statuses">

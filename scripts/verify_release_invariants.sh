@@ -44,6 +44,7 @@ fetch() {
 
 fetch manifest.json datapulse.json
 fetch health.json health/latest.json
+fetch trends.json health/trends.json
 fetch catalog.json data/jsonld/catalog.json
 fetch catalog-snapshot.json catalog-snapshot.json
 fetch catalog-graph.json catalog-graph.json
@@ -77,6 +78,7 @@ work = Path(sys.argv[1])
 base = sys.argv[2]
 manifest = json.loads((work / "manifest.json").read_text())
 health = json.loads((work / "health.json").read_text())
+trends = json.loads((work / "trends.json").read_text())
 catalog = json.loads((work / "catalog.json").read_text())
 catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 catalog_graph = json.loads((work / "catalog-graph.json").read_text())
@@ -90,6 +92,25 @@ assert len(manifest_ids) == len(set(manifest_ids)) == expected_count
 assert len(health_ids) == len(set(health_ids)) == expected_count
 assert len(catalog_ids) == len(set(catalog_ids)) == expected_count
 assert set(manifest_ids) == set(health_ids) == set(catalog_ids)
+
+trend_ids = [row["dataset_id"] for row in trends["datasets"]]
+assert trends["schema"] == "datapulse/v1/dataset-trends"
+assert len(trend_ids) == len(set(trend_ids)) == expected_count
+assert set(trend_ids) == set(manifest_ids)
+assert trends["summary"]["datasets_total"] == expected_count
+assert set(trends["summary"]["by_trend"]) == {
+    "deteriorating", "recovering", "stable", "insufficient_data"
+}
+assert sum(trends["summary"]["by_trend"].values()) == expected_count
+assert set(trends["summary"]["by_reliability_grade"]) == {
+    "A", "B", "C", "D", "F", "insufficient_data"
+}
+assert sum(trends["summary"]["by_reliability_grade"].values()) == expected_count
+assert all(row["trend"] in trends["summary"]["by_trend"] for row in trends["datasets"])
+assert all(
+    row["reliability_grade"] in trends["summary"]["by_reliability_grade"]
+    for row in trends["datasets"]
+)
 
 missing_reports = [
     dataset_id for dataset_id in health_ids

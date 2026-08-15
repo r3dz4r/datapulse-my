@@ -120,6 +120,15 @@ def test_deploy_pages_workflow_preserves_post_deploy_invariants() -> None:
         assert surface in invariants
 
 
+def test_deploy_pages_publishes_and_verifies_trends() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
+    assert '"health/**"' in paths_block
+    assert 'fetch "trend snapshot"' in workflow
+    assert "datapulse/v1/dataset-trends" in workflow
+    assert "expected 8 tools" in workflow
+
+
 def test_no_workflow_permissions_broadened() -> None:
     health = yaml.safe_load(_read(HEALTH_WORKFLOW))
     deploy = yaml.safe_load(_read(DEPLOY_WORKFLOW))

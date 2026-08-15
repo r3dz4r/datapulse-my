@@ -26,8 +26,8 @@ DataPulse MY exposes a **read-only MCP server** so AI agents (Claude Desktop, Cu
 
 - **MCP endpoint:** https://mcp.data-pulse.my/mcp
 - **Transport:** Streamable HTTP (POST-only, single endpoint)
-- **Auth:** none required (all 5 tools are read-only)
-- **Source:** reads the same `datapulse.json` + `health/latest.json` served from this repository; no separate API
+- **Auth:** none required (all 8 tools are read-only)
+- **Source:** reads the same `datapulse.json` + `health/latest.json` + `health/trends.json` served from this repository; no separate API
 
 ### Agent discovery endpoints
 
@@ -53,12 +53,16 @@ For AI agents that look up canonical discovery paths before fetching:
 | `get_dataset(dataset_id)` | Full detail + health for one dataset |
 | `find_stale(max_age_hours?)` | Find datasets whose health is not green |
 | `find_anomalies(limit?, mode?)` | Find datasets flagged by the latest anomaly detection, ranked by severity |
+| `find_deteriorating(limit?, min_anomaly_rate?)` | Find datasets with a published deteriorating freshness trend |
+| `find_recovering(limit?)` | Find datasets with a published recovering freshness trend |
 | `get_provenance(dataset_ids[])` | Citation-ready metadata for one or many datasets |
 | `find_by_licence(licence)` | Enumerate what's available under a given licence |
 
 ### Resources (read-only context)
 
 - `datapulse://index` — lightweight list of every manifest dataset with namespace (read first)
+- `datapulse://anomalies` — anomaly summary with pipeline-computed evidence
+- `datapulse://trends` — published freshness trends and publish reliability
 - `datapulse://licences` — licence summary (154 CC BY 4.0 + 12 OGL)
 - `datapulse://{dataset_id}` — full manifest entry for one dataset (on-demand)
 
@@ -84,7 +88,7 @@ freshness and route/stop/trip counts or realtime vehicle counts and feed timesta
 The `datapulse://index` resource exposes each dataset's namespace for lightweight
 transport filtering.
 
-The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 5 read-only tools over the 389-dataset catalogue. Deployment and service details for `datapulse-mcp` are in [`mcp-deploy.md`](https://data-pulse.my/mcp-deploy.md).
+The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 8 read-only tools over the 389-dataset catalogue. Deployment and service details for `datapulse-mcp` are in [`mcp-deploy.md`](https://data-pulse.my/mcp-deploy.md).
 
 ## Manifest
 
@@ -94,6 +98,7 @@ The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 5 
 ## Health
 
 - [Latest health snapshot](https://r3dz4r.github.io/datapulse-my/health/latest.json): Every dataset's current status, HTTP status, Last-Modified metadata, parsed content freshness date, freshness signal source, record counts, and check time. Machine-readable.
+- [Published trends](https://r3dz4r.github.io/datapulse-my/health/trends.json): Per-dataset freshness trends, OLS slopes, publish-on-time reliability, and anomaly sampling evidence. Machine-readable.
 - [RSS feed](https://r3dz4r.github.io/datapulse-my/feed.xml): Dataset health changes with status-tagged entries and RFC 822 publication dates.
 
 ## Trust posture

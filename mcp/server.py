@@ -152,6 +152,16 @@ FIND_ANOMALIES_DESCRIPTION = (
     "pipeline-computed evidence; use when an agent needs to identify unusual dataset "
     "update delays without recomputing anomaly detection."
 )
+FIND_DETERIORATING_DESCRIPTION = (
+    "Return datasets whose published freshness trend is deteriorating, ranked by "
+    "staleness slope. Optionally require a minimum historical anomaly rate; includes "
+    "pipeline-computed trend and reliability evidence so agents do not recompute it."
+)
+FIND_RECOVERING_DESCRIPTION = (
+    "Return datasets whose published freshness trend is recovering, with the fastest "
+    "staleness reductions first. Includes pipeline-computed trend and publish-reliability "
+    "evidence."
+)
 GET_PROVENANCE_DESCRIPTION = (
     "Return citation-ready provenance metadata for the listed dataset ids: source "
     "steward, licence (with URL), source URL, access method (curl/Camofox), "
@@ -224,6 +234,22 @@ async def _load_manifest() -> dict[str, Any]:
 
 async def _load_health() -> dict[str, Any]:
     return await _fetch_json("health/latest.json")
+
+
+async def _load_trends() -> dict[str, Any]:
+    try:
+        trends = await _fetch_json("health/trends.json")
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise RuntimeError(
+                "Published trend artifact is unavailable; retry after the Pages deployment completes"
+            ) from exc
+        raise
+    if trends.get("schema") != "datapulse/v1/dataset-trends" or not isinstance(
+        trends.get("datasets"), list
+    ):
+        raise ValueError("health/trends.json has an unsupported schema")
+    return trends
 
 
 async def _load_catalogue() -> tuple[dict[str, Any], dict[str, Any]]:
@@ -596,6 +622,133 @@ _find_anomalies_tool.parameters.setdefault("required", [])
 mcp.add_tool(_find_anomalies_tool)
 
 
+def _trend_results(
+    manifest: dict[str, Any],
+    trends: dict[str, Any],
+    *,
+    trend: str,
+    min_anomaly_rate: float | None = None,
+) -> list[dict[str, Any]]:
+    manifest_by_id = {entry["id"]: entry for entry in manifest.get("datasets", [])}
+    results: list[dict[str, Any]] = []
+    for row in trends.get("datasets", []):
+        entry = manifest_by_id.get(row.get("dataset_id"))
+        if entry is None or row.get("trend") != trend:
+            continue
+        anomaly_rate = row.get("anomaly_rate_pct")
+        if min_anomaly_rate is not None and (
+            not isinstance(anomaly_rate, (int, float))
+            or isinstance(anomaly_rate, bool)
+            or anomaly_rate < min_anomaly_rate
+        ):
+            continue
+        results.append(
+            {
+                "id": entry["id"],
+                "title": entry["name"],
+                "trend": row["trend"],
+                "latest_status": row.get("latest_status"),
+                "cadence_days": row.get("cadence_days"),
+                "latest_staleness_days": row.get("latest_staleness_days"),
+                "slope_days_per_week": row.get("slope_days_per_week"),
+                "trend_sample_days": row.get("trend_sample_days"),
+                "history_span_days": row.get("history_span_days"),
+                "publish_on_time_pct": row.get("publish_on_time_pct"),
+                "reliability_grade": row.get("reliability_grade"),
+                "reliability_sample_days": row.get("reliability_sample_days"),
+                "anomaly_rate_pct": anomaly_rate,
+                "anomaly_sample_days": row.get("anomaly_sample_days"),
+                "reason": row.get("reason"),
+            }
+        )
+    if trend == "deteriorating":
+        results.sort(
+            key=lambda item: (
+                -item["slope_days_per_week"]
+                if isinstance(item["slope_days_per_week"], (int, float))
+                else float("inf"),
+                -(item["anomaly_rate_pct"] if isinstance(item["anomaly_rate_pct"], (int, float)) else -1),
+                item["publish_on_time_pct"] if isinstance(item["publish_on_time_pct"], (int, float)) else 101,
+                item["id"],
+            )
+        )
+    else:
+        results.sort(
+            key=lambda item: (
+                item["slope_days_per_week"] if isinstance(item["slope_days_per_week"], (int, float)) else float("inf"),
+                item["id"],
+            )
+        )
+    return results
+
+
+async def find_deteriorating(
+    limit: Annotated[
+        int,
+        Field(
+            ge=1,
+            le=200,
+            description="Maximum ranked deteriorating datasets to return; integer from 1 to 200, e.g. 50.",
+            examples=[10, 50],
+        ),
+    ] = 50,
+    min_anomaly_rate: Annotated[
+        float | None,
+        Field(
+            ge=0,
+            le=100,
+            description="Optional minimum percent of anomaly-evaluable history days, e.g. 25.0.",
+            examples=[25.0, 50.0],
+        ),
+    ] = None,
+) -> list[dict[str, Any]]:
+    """Expose pipeline-computed deteriorating trend decisions."""
+    manifest, trends = await gather(_load_manifest(), _load_trends())
+    return _trend_results(
+        manifest, trends, trend="deteriorating", min_anomaly_rate=min_anomaly_rate
+    )[:limit]
+
+
+_find_deteriorating_tool = FunctionTool.from_function(
+    find_deteriorating,
+    title="Identify Deteriorating Dataset Trends",
+    description=FIND_DETERIORATING_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+_find_deteriorating_tool.parameters.setdefault("required", [])
+mcp.add_tool(_find_deteriorating_tool)
+
+
+async def find_recovering(
+    limit: Annotated[
+        int,
+        Field(
+            ge=1,
+            le=200,
+            description="Maximum ranked recovering datasets to return; integer from 1 to 200, e.g. 50.",
+            examples=[10, 50],
+        ),
+    ] = 50,
+) -> list[dict[str, Any]]:
+    """Expose pipeline-computed recovering trend decisions."""
+    manifest, trends = await gather(_load_manifest(), _load_trends())
+    return _trend_results(manifest, trends, trend="recovering")[:limit]
+
+
+_find_recovering_tool = FunctionTool.from_function(
+    find_recovering,
+    title="Identify Recovering Dataset Trends",
+    description=FIND_RECOVERING_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+_find_recovering_tool.parameters.setdefault("required", [])
+mcp.add_tool(_find_recovering_tool)
+
+
 @mcp.tool(
     title="Build Citation-Ready Provenance",
     description=GET_PROVENANCE_DESCRIPTION,
@@ -728,6 +881,19 @@ async def anomaly_resource() -> str:
     """Return all current anomaly results as a JSON array."""
     manifest, health = await _load_catalogue()
     return json.dumps(_anomaly_results(manifest, health), ensure_ascii=False)
+
+
+@mcp.resource(
+    "datapulse://trends",
+    description=(
+        "Published per-dataset freshness trends and publish-reliability evidence, "
+        "including methodology and aggregate counts."
+    ),
+    mime_type="application/json",
+)
+async def trend_resource() -> str:
+    """Return the complete published trend artifact as JSON."""
+    return json.dumps(await _load_trends(), ensure_ascii=False)
 
 
 @mcp.resource(

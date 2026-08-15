@@ -171,6 +171,78 @@ Input schema:
 }
 ```
 
+### `find_deteriorating`
+
+Return datasets whose published freshness trend is deteriorating, ranked by staleness slope. Optionally require a minimum historical anomaly rate; includes pipeline-computed trend and reliability evidence so agents do not recompute it.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "limit": {
+      "default": 50,
+      "description": "Maximum ranked deteriorating datasets to return; integer from 1 to 200, e.g. 50.",
+      "examples": [
+        10,
+        50
+      ],
+      "maximum": 200,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "min_anomaly_rate": {
+      "anyOf": [
+        {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional minimum percent of anomaly-evaluable history days, e.g. 25.0.",
+      "examples": [
+        25.0,
+        50.0
+      ]
+    }
+  },
+  "type": "object",
+  "required": []
+}
+```
+
+### `find_recovering`
+
+Return datasets whose published freshness trend is recovering, with the fastest staleness reductions first. Includes pipeline-computed trend and publish-reliability evidence.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "limit": {
+      "default": 50,
+      "description": "Maximum ranked recovering datasets to return; integer from 1 to 200, e.g. 50.",
+      "examples": [
+        10,
+        50
+      ],
+      "maximum": 200,
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "type": "object",
+  "required": []
+}
+```
+
 ### `get_provenance`
 
 Return citation-ready provenance metadata for the listed dataset ids: source steward, licence (with URL), source URL, access method (curl/Camofox), last-verified timestamp. Use when an agent needs to cite DataPulse MY data in a response and must include proper attribution and licence.
@@ -237,6 +309,8 @@ Input schema:
 - `datapulse://index` — Read first; lightweight list of all DataPulse MY dataset ids with current status, title, source, licence, and namespace.
 
 - `datapulse://anomalies` — Datasets flagged by the latest published anomaly detection, ranked by severity with pipeline-computed evidence.
+
+- `datapulse://trends` — Published per-dataset freshness trends and publish-reliability evidence, including methodology and aggregate counts.
 
 - `datapulse://licences` — Live count of DataPulse MY datasets grouped by licence.
 
