@@ -2,7 +2,7 @@
 #
 # DataPulse MY generation profiles.
 #
-# health-cycle: 9 steps for artifacts derived from the live health snapshot.
+# health-cycle: 10 steps for artifacts derived from the live health snapshot.
 # release-build: source stamp plus 19 steps for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
@@ -80,6 +80,7 @@ case "$profile" in
       "gen_rss.sh"
       "gen_catalog_snapshot.py"
       "gen_health_history.py"
+      "gen_trends.py"
       "gen_dataset_deltas.py"
       "gen_record_evidence.py"
       "gen_catalog_graph.py"
@@ -91,6 +92,7 @@ case "$profile" in
       "feed.xml"
       "catalog-snapshot.json; changelog.json (deprecated alias)"
       "health/history.jsonl; health/history_daily.json"
+      "health/trends.json"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "catalog-graph.json"
@@ -108,6 +110,7 @@ case "$profile" in
       "gen_rss.sh"
       "gen_catalog_snapshot.py"
       "gen_health_history.py"
+      "gen_trends.py"
       "gen_dataset_deltas.py"
       "gen_record_evidence.py"
       "gen_catalog_graph.py"
@@ -130,6 +133,7 @@ case "$profile" in
       "feed.xml"
       "catalog-snapshot.json; changelog.json (deprecated alias)"
       "health/history.jsonl; health/history_daily.json"
+      "health/trends.json"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "catalog-graph.json"
