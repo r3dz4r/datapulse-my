@@ -1,0 +1,59 @@
+name: Anchor release attestation
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  anchor:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'autorelease: pending')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          fetch-depth: 0
+      - run: python -m pip install cryptography==50.0.0
+      - name: Fetch and verify latest signed head
+        run: |
+          set -Eeuo pipefail
+          work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
+          curl -fsSL https://data-pulse.my/attestations/latest/chain_head.json -o "$work/head.json"
+          curl -fsSL https://data-pulse.my/.well-known/datapulse-probe-keys.json -o "$work/keys.json"
+          python3 - "$work/head.json" "$work/keys.json" <<'PY'
+          import base64, json, sys
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+          head=json.load(open(sys.argv[1])); keys=json.load(open(sys.argv[2])); payload=head["payload"]
+          key=next(row for row in keys["keys"] if row["key_id"]==payload["key_id"])
+          canonical=json.dumps(payload,ensure_ascii=False,sort_keys=True,separators=(",", ":")).encode()
+          Ed25519PublicKey.from_public_bytes(base64.b64decode(key["public_key_base64"])).verify(base64.b64decode(head["signature_base64"]),canonical)
+          assert len(head["chain_head"])==64
+          PY
+          mkdir -p .attestations
+          cp "$work/head.json" .attestations/chain_head.json
+      - name: Commit anchor to release PR branch
+        run: |
+          set -Eeuo pipefail
+          git diff --quiet -- .attestations/chain_head.json && exit 0
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .attestations/chain_head.json
+          git commit -m 'chore(release): anchor attestation chain head'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+      - name: Add anchor trailer to PR body
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          head="$(jq -er .chain_head .attestations/chain_head.json)"
+          body="$(gh pr view ${{ github.event.pull_request.number }} --json body --jq '.body // ""')"
+          trailer="Attestation-Chain-Head: ${head}"
+          body="$(printf '%s\n' "$body" | sed -E '/^Attestation-Chain-Head: [0-9a-f]{64}$/d')"
+          gh pr edit ${{ github.event.pull_request.number }} --body "$(printf '%s\n\n%s\n' "$body" "$trailer")"

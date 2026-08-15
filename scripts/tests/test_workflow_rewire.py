@@ -64,7 +64,7 @@ def test_systemd_unit_preserves_scoped_commit() -> None:
 
     expected = (
         "health/ deltas/ record-evidence/ badges/ feed.xml README.md "
-        "catalog-snapshot.json changelog.json"
+        "catalog-snapshot.json changelog.json attestations/ datapulse.json"
     )
     assert f"git add {expected}" in exec_start
     git_add = re.search(r"git add ([^;\n]+)", exec_start)
@@ -132,7 +132,7 @@ def test_deploy_pages_publishes_and_verifies_trends_and_drift() -> None:
     assert "datapulse/v1/dataset-drift" in workflow
     assert 'fetch "reconciliation snapshot"' in workflow
     assert "datapulse/v1/dataset-reconciliation" in workflow
-    assert "expected 13 tools" in workflow
+    assert "expected 15 tools" in workflow
 
 
 def test_no_workflow_permissions_broadened() -> None:
