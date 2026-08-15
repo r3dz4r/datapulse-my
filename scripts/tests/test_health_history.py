@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import gzip
 import json
 import subprocess
+from datetime import datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -31,6 +33,7 @@ def _run(
     compact: bool = False,
     retention_days: int = 90,
     now: str = "2026-08-12T18:00:05+08:00",
+    archives_dir: Path | None = None,
 ) -> subprocess.CompletedProcess[str]:
     command = [
         "python3",
@@ -48,6 +51,7 @@ def _run(
         "--now",
         now,
     ]
+    command.extend(["--archives-dir", str(archives_dir or (tmp_path / "archives"))])
     if compact:
         command.append("--compact")
     return subprocess.run(command, capture_output=True, text=True, check=False)
@@ -191,6 +195,71 @@ def test_history_compaction_is_idempotent(tmp_path: Path) -> None:
     assert daily["compacted_cycles"] == ["2026-08-12T18:00"]
     assert sum(row["observations"] for row in daily["aggregates"]) == 2
     assert _history(tmp_path) == []
+
+
+def test_archives_expired_rows(tmp_path: Path) -> None:
+    history_path = tmp_path / "history.jsonl"
+    rows = []
+    for day in range(90):
+        observed_at = (
+            datetime(2026, 5, 19) + timedelta(days=day)
+        ).strftime("%Y-%m-%dT00:00:05Z")
+        rows.append(
+            {
+                "dataset_id": "dataset-000",
+                "observed_at": observed_at,
+                "cycle": observed_at[:16],
+                "status": "fresh",
+                "probe_outcome": "success",
+                "record_count": day,
+                "latency_ms": 10,
+            }
+        )
+    history_path.write_text(
+        "".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8"
+    )
+    snapshot = _snapshot(tmp_path, count=1, checked_at="2026-08-16T00:00:05Z")
+    archives_dir = tmp_path / "archives"
+
+    first = _run(
+        tmp_path,
+        snapshot,
+        cycle="2026-08-16T00:00",
+        compact=True,
+        retention_days=30,
+        now="2026-08-16T00:00:05+00:00",
+        archives_dir=archives_dir,
+    )
+
+    assert first.returncode == 0, first.stderr
+    hot_rows = _history(tmp_path)
+    assert len(hot_rows) == 31
+    assert min(row["observed_at"] for row in hot_rows) >= "2026-07-17T00:00:00Z"
+    archive_rows = []
+    for archive_path in sorted(archives_dir.glob("*.jsonl.gz")):
+        with gzip.open(archive_path, "rt", encoding="utf-8") as archive:
+            archive_rows.extend(json.loads(line) for line in archive)
+    assert len(archive_rows) == 59
+    assert {row["cycle"] for row in archive_rows} == {
+        row["cycle"] for row in rows if row["observed_at"] < "2026-07-17T00:00:00Z"
+    }
+
+    second = _run(
+        tmp_path,
+        snapshot,
+        cycle="2026-08-16T00:00",
+        compact=True,
+        retention_days=30,
+        now="2026-08-16T00:00:05+00:00",
+        archives_dir=archives_dir,
+    )
+
+    assert second.returncode == 0, second.stderr
+    reread_archive_rows = []
+    for archive_path in sorted(archives_dir.glob("*.jsonl.gz")):
+        with gzip.open(archive_path, "rt", encoding="utf-8") as archive:
+            reread_archive_rows.extend(json.loads(line) for line in archive)
+    assert reread_archive_rows == archive_rows
 
 
 def test_history_latest_unchanged(tmp_path: Path) -> None:

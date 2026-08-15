@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import os
 import re
@@ -18,7 +19,8 @@ DEFAULT_SNAPSHOT = ROOT / "health/latest.json"
 DEFAULT_MANIFEST = ROOT / "datapulse.json"
 DEFAULT_HISTORY = ROOT / "health/history.jsonl"
 DEFAULT_DAILY = ROOT / "health/history_daily.json"
-DEFAULT_RETENTION_DAYS = 90
+DEFAULT_ARCHIVES_DIR = Path.home() / "runtime/datapulse-history"
+DEFAULT_RETENTION_DAYS = 7
 DAILY_SCHEMA = "datapulse/v1/health-history-daily"
 STATUSES = (
     "fresh",
@@ -359,8 +361,9 @@ def compact_history(
     daily_path: Path,
     *,
     retention_days: int,
+    archives_dir: Path,
     now: datetime,
-) -> tuple[list[dict[str, Any]], dict[str, Any], int]:
+) -> tuple[list[dict[str, Any]], dict[str, Any], int, int]:
     cutoff = now - timedelta(days=retention_days)
     retained: list[dict[str, Any]] = []
     expired: list[dict[str, Any]] = []
@@ -369,10 +372,10 @@ def compact_history(
         (expired if observed < cutoff else retained).append(row)
 
     daily, compacted_cycles = read_daily(daily_path)
+    newly_expired = [row for row in expired if row["cycle"] not in compacted_cycles]
+    archived_count = archive_rows(newly_expired, archives_dir)
     grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
-    for row in expired:
-        if row["cycle"] in compacted_cycles:
-            continue
+    for row in newly_expired:
         day = parse_datetime(row["observed_at"], field="observed_at").date().isoformat()
         grouped.setdefault((row["dataset_id"], day), []).append(row)
     for key, group in grouped.items():
@@ -386,7 +389,25 @@ def compact_history(
         "compacted_cycles": sorted(compacted_cycles),
         "aggregates": [daily[key] for key in sorted(daily)],
     }
-    return retained, document, len(expired)
+    return retained, document, len(expired), archived_count
+
+
+def archive_rows(rows: list[dict[str, Any]], archives_dir: Path) -> int:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        month = parse_datetime(row["observed_at"], field="observed_at").strftime("%Y-%m")
+        grouped.setdefault(month, []).append(row)
+    for month, month_rows in grouped.items():
+        archive_path = archives_dir / f"health-{month}.jsonl.gz"
+        archives_dir.mkdir(parents=True, exist_ok=True)
+        with gzip.open(archive_path, "ab") as archive:
+            for row in month_rows:
+                archive.write(
+                    (json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n").encode(
+                        "utf-8"
+                    )
+                )
+    return len(rows)
 
 
 def atomic_write(path: Path, content: str) -> None:
@@ -421,6 +442,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--history", type=Path, default=DEFAULT_HISTORY)
     parser.add_argument("--daily", type=Path, default=DEFAULT_DAILY)
+    parser.add_argument("--archives-dir", type=Path, default=DEFAULT_ARCHIVES_DIR)
     parser.add_argument("--cycle", help="probe-cycle start as YYYY-MM-DDTHH:MM")
     parser.add_argument("--retention-days", type=int, default=DEFAULT_RETENTION_DAYS)
     parser.add_argument("--compact", action="store_true")
@@ -444,16 +466,18 @@ def main() -> None:
         current = snapshot_observations(snapshot, cycle, catalog_by_id)
         rows = upsert_history(read_history(args.history), current)
         expired_count = 0
+        archived_count = 0
         if args.compact:
             now = (
                 parse_datetime(args.now, field="now")
                 if args.now
                 else datetime.now(UTC)
             )
-            rows, daily, expired_count = compact_history(
+            rows, daily, expired_count, archived_count = compact_history(
                 rows,
                 args.daily,
                 retention_days=args.retention_days,
+                archives_dir=args.archives_dir,
                 now=now,
             )
             atomic_write(
@@ -468,6 +492,8 @@ def main() -> None:
         f"Health history upserted {len(current)} observations for {cycle}; "
         f"{len(rows)} raw retained, {expired_count} compacted"
     )
+    if archived_count:
+        print(f"archived {archived_count} rows to {args.archives_dir}")
 
 
 if __name__ == "__main__":

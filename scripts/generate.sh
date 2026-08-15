@@ -222,7 +222,8 @@ for index in "${!generators[@]}"; do
     gen_health_history.py)
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
         env "${environment[@]}" \
-        python3 "scripts/$generator" --compact
+        python3 "scripts/$generator" --compact --retention-days 7 \
+          --archives-dir "${DATAPULSE_ARCHIVES_DIR:-/home/redza/runtime/datapulse-history}"
       ;;
     gen_attestations.py)
       if [[ -z "${DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE:-}" ]]; then

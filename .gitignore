@@ -24,3 +24,7 @@ record-evidence/**/2026-*.json
 .env
 .env.*
 !.env.example
+
+# Health observation history (rolling 7-day window, regenerated every probe cycle).
+# Older rows live in ~/runtime/datapulse-history/health-YYYY-MM.jsonl.gz
+health/history.jsonl
