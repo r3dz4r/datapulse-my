@@ -99,14 +99,14 @@ def evidence(*, latest: float | None, values: list[float], cadence: float | None
     base = {"metric": METRIC, "window_days": WINDOW_DAYS, "sample_days": len(values), "mean_days": None, "stdev_days": None, "threshold_days": None, "latest_days": latest}
     if not eligible or latest is None:
         return False, base | {"mode": "not_evaluated"}
-    if len(values) == WINDOW_DAYS:
+    if len(values) >= WINDOW_DAYS - 2:
         mean = statistics.fmean(values)
         stdev = statistics.pstdev(values)
         threshold = mean + 2 * stdev
         return latest > threshold, base | {"mode": "rolling_14d", "mean_days": round(mean, 3), "stdev_days": round(stdev, 3), "threshold_days": round(threshold, 3)}
     if cadence is None:
         return False, base | {"mode": "not_evaluated"}
-    threshold = 2 * cadence
+    threshold = 3 * cadence
     return latest > threshold, base | {"mode": "cadence_fallback", "threshold_days": threshold}
 
 

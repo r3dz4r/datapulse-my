@@ -206,9 +206,10 @@ date-based freshness does not apply.</td>
 <h2 id="freshness-anomaly-signal">Freshness anomaly signal</h2>
 <p><code>anomaly_detected</code> is orthogonal to the ten-status
 taxonomy and never changes a dataset's status. During warm-up, it flags
-a freshness delta strictly greater than two times the declared cadence.
-After fourteen distinct prior UTC-day observations, it flags a delta
-strictly greater than the prior fourteen-day population mean plus two
+a freshness delta strictly greater than three times the declared
+cadence. With at least twelve distinct successful prior UTC-day
+observations in the fourteen-day window, it flags a delta strictly
+greater than the available observations' population mean plus two
 population standard deviations. The current snapshot is excluded from
 that baseline. <code>anomaly_detection</code> records the mode, sample
 count, threshold, and current value; missing evidence,
