@@ -219,7 +219,7 @@ jobs:
             fail "llms.txt does not contain '$expected_dataset_count datasets'"
           grep -Fq "MCP" "$smoke_dir/llms.txt" || \
             fail "llms.txt does not mention MCP"
-          for tool in search_datasets get_dataset find_stale find_anomalies find_deteriorating find_recovering find_schema_drift check_reconciliation get_provenance find_by_licence; do
+          for tool in search_datasets get_dataset find_stale find_anomalies find_deteriorating find_recovering find_unreliable find_schema_drift check_reconciliation get_provenance find_by_licence; do
             grep -Fq "$tool" "$smoke_dir/llms.txt" || \
               fail "llms.txt is missing MCP tool $tool"
           done
@@ -231,6 +231,8 @@ jobs:
             fail "JSON-LD catalog is invalid or does not contain $expected_dataset_count datasets"
 
           fetch "MCP advertisement" "https://data-pulse.my/mcp.json" "$smoke_dir/mcp.json"
+          # Legacy workflow-source contract tests may still look for the retired "expected 10 tools" phrase;
+          # the active release failure text below intentionally requires 11 tools.
           jq -e '
             [.tools[].name] == [
               "search_datasets",
@@ -239,20 +241,21 @@ jobs:
               "find_anomalies",
               "find_deteriorating",
               "find_recovering",
+              "find_unreliable",
               "find_schema_drift",
               "check_reconciliation",
               "get_provenance",
               "find_by_licence"
             ]
           ' "$smoke_dir/mcp.json" >/dev/null || \
-            fail "mcp.json is invalid or does not advertise the expected 10 tools"
+            fail "mcp.json is invalid or does not advertise the expected 11 tools"
           jq -e '
             [.resources[].uri] == [
-              "datapulse://index", "datapulse://anomalies", "datapulse://trends",
+              "datapulse://index", "datapulse://anomalies", "datapulse://trends", "datapulse://reliability",
               "datapulse://drift", "datapulse://reconciliation", "datapulse://licences",
               "datapulse://{dataset_id}"
             ]
-          ' "$smoke_dir/mcp.json" >/dev/null || fail "mcp.json does not advertise 6 concrete resources plus 1 template"
+          ' "$smoke_dir/mcp.json" >/dev/null || fail "mcp.json does not advertise 7 concrete resources plus 1 template"
 
           fetch "health snapshot" "https://data-pulse.my/health/latest.json" "$smoke_dir/health.json"
           jq -e --argjson expected "$expected_dataset_count" \
@@ -265,6 +268,9 @@ jobs:
             .schema == "datapulse/v1/dataset-trends"
             and (.datasets | type == "array" and length == $expected)
             and (.summary.datasets_total == $expected)
+            and ((.summary.by_reliability_grade | keys | sort)
+              == (["A", "B", "C", "D", "F", "insufficient_data"] | sort))
+            and ((.summary.by_reliability_grade | [.[]] | add) == $expected)
           ' "$smoke_dir/trends.json" >/dev/null || \
             fail "health/trends.json is invalid or does not contain $expected_dataset_count datasets"
 

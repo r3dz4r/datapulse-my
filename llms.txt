@@ -26,7 +26,7 @@ DataPulse MY exposes a **read-only MCP server** so AI agents (Claude Desktop, Cu
 
 - **MCP endpoint:** https://mcp.data-pulse.my/mcp
 - **Transport:** Streamable HTTP (POST-only, single endpoint)
-- **Auth:** none required (all 10 tools are read-only)
+- **Auth:** none required (all 11 tools are read-only)
 - **Source:** reads the same `datapulse.json` + `health/latest.json` + `health/trends.json` + `health/drift.json` + `health/reconciliation.json` served from this repository; no separate API
 
 ### Agent discovery endpoints
@@ -52,9 +52,10 @@ For AI agents that look up canonical discovery paths before fetching:
 | `search_datasets(query, licence?, source?, limit?)` | Find datasets by topic, agency, or licence |
 | `get_dataset(dataset_id)` | Full detail + health for one dataset |
 | `find_stale(max_age_hours?)` | Find datasets whose health is not green |
-| `find_anomalies(limit?, mode?)` | Find datasets flagged by the latest anomaly detection, ranked by severity |
+| `find_anomalies(limit?, mode?, min_reliability?)` | Find datasets flagged by the latest anomaly detection, ranked by severity |
 | `find_deteriorating(limit?, min_anomaly_rate?)` | Find datasets with a published deteriorating freshness trend |
 | `find_recovering(limit?)` | Find datasets with a published recovering freshness trend |
+| `find_unreliable(limit?, at_or_below_grade?)` | Find datasets with evaluated low publish reliability |
 | `find_schema_drift(limit?, min_change_count?)` | Find published structural or record-count drift evidence |
 | `check_reconciliation(dataset_name)` | Return cross-source reconciliation evidence; discrepancies require human review |
 | `get_provenance(dataset_ids[])` | Citation-ready metadata for one or many datasets |
@@ -65,6 +66,7 @@ For AI agents that look up canonical discovery paths before fetching:
 - `datapulse://index` — lightweight list of every manifest dataset with namespace (read first)
 - `datapulse://anomalies` — anomaly summary with pipeline-computed evidence
 - `datapulse://trends` — published freshness trends and publish reliability
+- `datapulse://reliability` — publish-reliability grade counts (timeliness, not uptime).
 - `datapulse://drift` — published structural and record-count drift evidence
 - `datapulse://reconciliation` — published cross-source reconciliation evidence; differences are not proof either source is wrong
 - `datapulse://licences` — licence summary (154 CC BY 4.0 + 12 OGL)
@@ -92,7 +94,7 @@ freshness and route/stop/trip counts or realtime vehicle counts and feed timesta
 The `datapulse://index` resource exposes each dataset's namespace for lightweight
 transport filtering.
 
-The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 10 read-only tools over the 389-dataset catalogue. Deployment and service details for `datapulse-mcp` are in [`mcp-deploy.md`](https://data-pulse.my/mcp-deploy.md).
+The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 11 read-only tools over the 389-dataset catalogue. Deployment and service details for `datapulse-mcp` are in [`mcp-deploy.md`](https://data-pulse.my/mcp-deploy.md).
 
 ## Manifest
 
