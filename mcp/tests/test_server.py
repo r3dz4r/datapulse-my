@@ -30,9 +30,10 @@ TOOL_PARAMETERS = {
     "search_datasets": {"query", "licence", "source", "limit"},
     "get_dataset": {"dataset_id"},
     "find_stale": {"max_age_hours"},
-    "find_anomalies": {"limit", "mode"},
+    "find_anomalies": {"limit", "mode", "min_reliability"},
     "find_deteriorating": {"limit", "min_anomaly_rate"},
     "find_recovering": {"limit"},
+    "find_unreliable": {"limit", "at_or_below_grade"},
     "find_schema_drift": {"limit", "min_change_count"},
     "check_reconciliation": {"dataset_name"},
     "get_provenance": {"dataset_ids"},
@@ -53,6 +54,7 @@ EXPECTED_TOOL_TITLES = {
     "find_anomalies": "Identify Dataset Update Anomalies",
     "find_deteriorating": "Identify Deteriorating Dataset Trends",
     "find_recovering": "Identify Recovering Dataset Trends",
+    "find_unreliable": "Identify Unreliable Dataset Publishing",
     "find_schema_drift": "Identify Schema and Content Drift",
     "check_reconciliation": "Check Cross-Source Reconciliation",
     "get_provenance": "Build Citation-Ready Provenance",
@@ -252,6 +254,7 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
     assert tools["find_anomalies"].parameters["required"] == []
     assert tools["find_deteriorating"].parameters["required"] == []
     assert tools["find_recovering"].parameters["required"] == []
+    assert tools["find_unreliable"].parameters["required"] == []
     assert tools["find_schema_drift"].parameters["required"] == []
     assert tools["find_schema_drift"].parameters["properties"]["limit"]["examples"] == [10, 50]
     assert tools["find_schema_drift"].parameters["properties"]["min_change_count"]["examples"] == [0, 1]
@@ -290,6 +293,15 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
         "rolling_14d",
         "cadence_fallback",
     ]
+    assert tools["find_anomalies"].parameters["properties"]["min_reliability"][
+        "examples"
+    ] == ["A", "C"]
+    assert tools["find_unreliable"].parameters["properties"]["limit"][
+        "examples"
+    ] == [10, 50]
+    assert tools["find_unreliable"].parameters["properties"]["at_or_below_grade"][
+        "examples"
+    ] == ["C", "F"]
     assert tools["find_by_licence"].parameters["properties"]["licence"]["examples"] == [
         "Creative Commons Attribution 4.0",
         "CC BY 4.0",
@@ -622,9 +634,12 @@ async def test_find_stale_excludes_reference_when_snapshot_is_old(
     assert result.data == []
 
 
-async def test_find_anomalies_matches_live_health(live_data: tuple[dict, dict]) -> None:
+async def test_find_anomalies_matches_live_health(
+    live_data: tuple[dict, dict], live_trends: dict
+) -> None:
     manifest, health = live_data
     manifest_ids = {item["id"] for item in manifest["datasets"]}
+    trends_by_id = {item["dataset_id"]: item for item in live_trends["datasets"]}
     expected_count = sum(
         item["dataset_id"] in manifest_ids and item.get("anomaly_detected") is True
         for item in health["datasets"]
@@ -646,6 +661,9 @@ async def test_find_anomalies_matches_live_health(live_data: tuple[dict, dict]) 
             "threshold_days",
             "severity_ratio",
             "anomaly_detection",
+            "publish_on_time_pct",
+            "reliability_grade",
+            "reliability_sample_days",
         }
         for item in result.data
     )
@@ -661,6 +679,12 @@ async def test_find_anomalies_matches_live_health(live_data: tuple[dict, dict]) 
     )
     assert [item["severity_ratio"] for item in result.data] == sorted(
         (item["severity_ratio"] for item in result.data), reverse=True
+    )
+    assert all(
+        item["reliability_grade"] == trends_by_id[item["id"]]["reliability_grade"]
+        and item["publish_on_time_pct"] == trends_by_id[item["id"]]["publish_on_time_pct"]
+        and item["reliability_sample_days"] == trends_by_id[item["id"]]["reliability_sample_days"]
+        for item in result.data
     )
 
 
@@ -736,6 +760,45 @@ async def test_find_anomalies_filters_limits_and_ranks_by_threshold_ratio(
 
     assert [item["id"] for item in result.data] == ["high-ratio"]
     assert result.data[0]["severity_ratio"] == 6.0
+
+
+async def test_find_anomalies_filters_by_minimum_reliability(monkeypatch: pytest.MonkeyPatch) -> None:
+    manifest = {"datasets": [{"id": key, "name": key} for key in ("a", "c", "d", "unknown")]}
+    health = {"datasets": [{"dataset_id": key, "status": "stale", "staleness_days": days, "anomaly_detected": True, "anomaly_detection": {"mode": "cadence_fallback", "latest_days": days, "threshold_days": 1.0}} for key, days in (("a", 2.0), ("c", 3.0), ("d", 10.0), ("unknown", 20.0))]}
+    trends = {"datasets": [{"dataset_id": "a", "reliability_grade": "A", "publish_on_time_pct": 100.0, "reliability_sample_days": 4}, {"dataset_id": "c", "reliability_grade": "C", "publish_on_time_pct": 75.0, "reliability_sample_days": 4}, {"dataset_id": "d", "reliability_grade": "D", "publish_on_time_pct": 50.0, "reliability_sample_days": 4}, {"dataset_id": "unknown", "reliability_grade": "insufficient_data", "publish_on_time_pct": None, "reliability_sample_days": 0}]}
+    async def fake_load_catalogue() -> tuple[dict, dict]: return manifest, health
+    async def fake_load_trends() -> dict: return trends
+    monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
+    monkeypatch.setattr(server, "_load_trends", fake_load_trends)
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("find_anomalies", {"limit": 50, "min_reliability": "c"})
+    assert [item["id"] for item in result.data] == ["c", "a"]
+    assert [item["reliability_grade"] for item in result.data] == ["C", "A"]
+    with pytest.raises(ValueError, match="Unknown minimum reliability grade"):
+        await server.find_anomalies(min_reliability="unknown")
+
+
+async def test_find_unreliable_filters_limits_and_ranks(monkeypatch: pytest.MonkeyPatch) -> None:
+    manifest = {"datasets": [{"id": grade.casefold(), "name": f"Grade {grade}"} for grade in ("A", "B", "C", "D", "F")]}
+    trends = {"datasets": [{"dataset_id": grade.casefold(), "reliability_grade": grade, "publish_on_time_pct": pct, "reliability_sample_days": 4, "latest_status": "stale", "trend": "deteriorating", "reason": "fixture"} for grade, pct in (("A", 100.0), ("B", 90.0), ("C", 75.0), ("D", 50.0), ("F", 25.0))]}
+    async def fake_load_manifest() -> dict: return manifest
+    async def fake_load_trends() -> dict: return trends
+    monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
+    monkeypatch.setattr(server, "_load_trends", fake_load_trends)
+    async with Client(server.mcp) as client:
+        default = await client.call_tool("find_unreliable", {"limit": 50})
+        grade_d = await client.call_tool("find_unreliable", {"limit": 2, "at_or_below_grade": "d"})
+    assert [item["id"] for item in default.data] == ["f", "d", "c"]
+    assert [item["id"] for item in grade_d.data] == ["f", "d"]
+    assert set(default.data[0]) == {"id", "title", "reliability_grade", "publish_on_time_pct", "reliability_sample_days", "latest_status", "trend", "reason"}
+
+
+async def test_find_unreliable_matches_live_artifact(live_trends: dict) -> None:
+    expected = sum(row["reliability_grade"] in {"C", "D", "F"} for row in live_trends["datasets"])
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("find_unreliable", {"limit": 200})
+    assert len(result.data) == min(expected, 200)
+    assert all(row["reliability_grade"] in {"C", "D", "F"} and row["reliability_sample_days"] > 0 for row in result.data)
 
 
 def _trend_fixture() -> tuple[dict, dict]:
@@ -938,6 +1001,12 @@ async def test_anomalies_resource_matches_tool_shape_and_order(
     assert len(payload) == expected_count
     assert payload[:200] == tool_result.data
     assert all(item["anomaly_detection"] for item in payload)
+
+
+async def test_reliability_resource_returns_live_grade_counts(live_trends: dict) -> None:
+    async with Client(server.mcp) as client:
+        result = await client.read_resource("datapulse://reliability")
+    assert json.loads(result[0].text) == live_trends["summary"]["by_reliability_grade"]
 
 
 async def test_dataset_resource_template_returns_full_manifest_entry(

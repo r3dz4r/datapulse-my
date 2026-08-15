@@ -34,7 +34,7 @@
           <a class="button button-secondary" href="#mcp" aria-label="Connect an AI agent to DataPulse MY">Connect an AI agent</a>
         </div>
         <a class="text-link" href="/data/jsonld/catalog.json" aria-label="Read the DataPulse MY catalogue as JSON">Read the catalogue as JSON</a>
-        <p id="live-counters" class="data-strip" aria-live="polite">385 datasets · 92 fresh · 130 stale · 14 discontinued · 10 MCP tools</p>
+        <p id="live-counters" class="data-strip" aria-live="polite">385 datasets · 92 fresh · 130 stale · 14 discontinued · 11 MCP tools</p>
       </div>
     </section>
 
@@ -50,7 +50,7 @@
           <a class="path-card" href="#mcp" aria-label="Connect an AI agent to DataPulse MY MCP">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v1a6 6 0 0 1-12 0V8z"/></svg>
             <h3>Plug in an AI agent</h3>
-            <p>Point any MCP client at this endpoint. No auth. Nine tools for searching and checking datasets.</p>
+            <p>Point any MCP client at this endpoint. No auth. Eleven tools for searching and checking datasets.</p>
           </a>
           <a class="path-card" href="#surfaces" aria-label="Query the DataPulse MY catalogue surfaces">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
@@ -116,14 +116,15 @@
             <p class="copy-status" data-copy-status="mcp-config" aria-live="polite"></p>
           </div>
           <div>
-            <p class="tool-note">Ten tools. No auth. Read-only. Streamable HTTP.</p>
+            <p class="tool-note">Eleven tools. No auth. Read-only. Streamable HTTP.</p>
             <ul class="tool-list">
               <li><span class="tool-name">search_datasets(query, licence?, source?)</span><span class="tool-description">Find datasets by topic, agency, or licence and return ranked matches.</span></li>
               <li><span class="tool-name">get_dataset(dataset_id)</span><span class="tool-description">Return full detail, latest health, and provenance signals for one dataset.</span></li>
               <li><span class="tool-name">find_stale(max_age_hours?)</span><span class="tool-description">Find datasets with a freshness or schema-validity risk.</span></li>
-              <li><span class="tool-name">find_anomalies(limit?, mode?)</span><span class="tool-description">Identify unusual dataset update delays with pipeline-computed evidence.</span></li>
+              <li><span class="tool-name">find_anomalies(limit?, mode?, min_reliability?)</span><span class="tool-description">Identify unusual dataset update delays with pipeline-computed evidence.</span></li>
               <li><span class="tool-name">find_deteriorating(limit?, min_anomaly_rate?)</span><span class="tool-description">Find published freshness trends that are deteriorating.</span></li>
               <li><span class="tool-name">find_recovering(limit?)</span><span class="tool-description">Find published freshness trends that are recovering.</span></li>
+              <li><span class="tool-name">find_unreliable(limit?, at_or_below_grade?)</span><span class="tool-description">Find datasets with low publish-reliability grades.</span></li>
               <li><span class="tool-name">find_schema_drift(limit?, min_change_count?)</span><span class="tool-description">Find published structural or record-count drift evidence.</span></li>
               <li><span class="tool-name">check_reconciliation(dataset_name)</span><span class="tool-description">Return cross-source publication differences for human review.</span></li>
               <li><span class="tool-name">get_provenance(dataset_ids[])</span><span class="tool-description">Return citation-ready metadata with source steward, licence, and source URL.</span></li>
@@ -141,7 +142,7 @@
         <h2 id="surfaces-title">The catalogue is the asset. Use it from anywhere.</h2>
         <div class="surface-layout">
           <div class="terminal-wrap">
-            <div class="surface-label"><span class="eyebrow">COMMAND LINE</span><span class="surface-count">10 surfaces</span></div>
+            <div class="surface-label"><span class="eyebrow">COMMAND LINE</span><span class="surface-count">11 surfaces</span></div>
             <pre id="catalogue-command"><code>$ curl https://data-pulse.my/datapulse.json | jq -r \
   '.datasets[] | select(.source == "data.gov.my") \
   | .id' | head -5
@@ -287,7 +288,7 @@ exchangerates_daily_1200</code></pre>
         if (copied) window.setTimeout(() => { status.textContent = ''; }, 2000);
       };
       document.querySelectorAll('[data-copy-target]').forEach(button => button.addEventListener('click', () => copyText(button)));
-          health().then(result => { if (!result) return; document.getElementById('live-counters').textContent = `${result.total} datasets · ${result.counts.fresh} fresh · ${result.counts.stale} stale · ${result.counts.discontinued} discontinued · 10 MCP tools`; renderLegend(result.counts); renderWaffle(result.total, result.counts); });
+          health().then(result => { if (!result) return; document.getElementById('live-counters').textContent = `${result.total} datasets · ${result.counts.fresh} fresh · ${result.counts.stale} stale · ${result.counts.discontinued} discontinued · 11 MCP tools`; renderLegend(result.counts); renderWaffle(result.total, result.counts); });
     })();
   </script>
 </body>

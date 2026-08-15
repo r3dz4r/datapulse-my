@@ -55,7 +55,9 @@ into per-dataset, per-day aggregates in `health/history_daily.json`. Both
 history artifacts are additive; `health/latest.json` remains the compatibility
 surface for the dashboard, MCP server, badges, and feed.
 `gen_trends.py` then scans the bounded history window and publishes the complete
-`health/trends.json` artifact used by trend MCP tools and resources.
+`health/trends.json` artifact used by trend, anomaly-reliability,
+unreliable-publishing, and reliability-summary MCP tools and resources. Reliability
+measures publish timeliness, not uptime.
 `gen_drift.py` then publishes structural and record-count evidence to
 `health/drift.json`.
 `gen_reconciliation.py` then applies reviewed seed → exact canonical URL → guarded exact semantic title precedence and publishes `health/reconciliation.json`; differences require human review and are not proof either source is wrong.

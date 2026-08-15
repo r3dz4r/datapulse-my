@@ -130,7 +130,7 @@ Input schema:
 
 ### `find_anomalies`
 
-Return datasets flagged by the latest published anomaly detection, ranked by how far the observed update interval exceeds its threshold. Includes the pipeline-computed evidence; use when an agent needs to identify unusual dataset update delays without recomputing anomaly detection.
+Return datasets flagged by the latest published anomaly detection, ranked by how far the observed update interval exceeds its threshold. Optionally require a minimum publish-reliability grade; includes pipeline-computed anomaly and reliability evidence so agents do not recompute it.
 
 Input schema:
 
@@ -163,6 +163,22 @@ Input schema:
       "examples": [
         "rolling_14d",
         "cadence_fallback"
+      ]
+    },
+    "min_reliability": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional minimum publish-reliability grade; e.g. 'C' keeps A, B, and C and excludes insufficient data.",
+      "examples": [
+        "A",
+        "C"
       ]
     }
   },
@@ -236,6 +252,42 @@ Input schema:
       "maximum": 200,
       "minimum": 1,
       "type": "integer"
+    }
+  },
+  "type": "object",
+  "required": []
+}
+```
+
+### `find_unreliable`
+
+Return datasets whose evaluated publish-reliability grade is at or below a threshold, with the worst grades and lowest on-time percentages first. Reliability measures timeliness of successful freshness observations, not uptime; sample days are included so agents can judge evidence depth.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "limit": {
+      "default": 50,
+      "description": "Maximum ranked unreliable datasets to return; integer from 1 to 200, e.g. 50.",
+      "examples": [
+        10,
+        50
+      ],
+      "maximum": 200,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "at_or_below_grade": {
+      "default": "C",
+      "description": "Inclusive reliability threshold; e.g. 'C' returns grades C, D, and F.",
+      "examples": [
+        "C",
+        "F"
+      ],
+      "type": "string"
     }
   },
   "type": "object",
@@ -376,6 +428,8 @@ Input schema:
 - `datapulse://anomalies` — Datasets flagged by the latest published anomaly detection, ranked by severity with pipeline-computed evidence.
 
 - `datapulse://trends` — Published per-dataset freshness trends and publish-reliability evidence, including methodology and aggregate counts.
+
+- `datapulse://reliability` — Live count of DataPulse MY datasets by evaluated publish-reliability grade; reliability is timeliness, not uptime.
 
 - `datapulse://drift` — Published per-dataset schema and record-count drift evidence, including methodology and aggregate verdict counts.
 

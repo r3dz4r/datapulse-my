@@ -296,14 +296,29 @@ import server
 
 
 async def main() -> None:
-    advertised = json.load(open(sys.argv[1], encoding="utf-8"))["tools"]
-    runtime = await server.mcp.list_tools()
-    expected = [
+    advertised_document = json.load(open(sys.argv[1], encoding="utf-8"))
+    advertised_tools = advertised_document["tools"]
+    runtime_tools = await server.mcp.list_tools()
+    expected_tools = [
         {"name": tool.name, "description": tool.description, "inputSchema": tool.parameters}
-        for tool in runtime
+        for tool in runtime_tools
     ]
-    assert advertised == expected
-    print(f"MCP runtime schema assertion: PASS ({len(runtime)} tools)")
+    assert advertised_tools == expected_tools
+
+    advertised_resources = [resource["uri"] for resource in advertised_document["resources"]]
+    runtime_resources = await server.mcp.list_resources()
+    runtime_templates = await server.mcp.list_resource_templates()
+    expected_resources = [str(resource.uri) for resource in runtime_resources]
+    expected_resources.extend(template.uri_template for template in runtime_templates)
+    assert advertised_resources == expected_resources
+    assert len(runtime_tools) == 11
+    assert len(runtime_resources) == 7
+    assert len(runtime_templates) == 1
+    print(
+        "MCP runtime schema assertion: PASS "
+        f"({len(runtime_tools)} tools, {len(runtime_resources)} concrete resources, "
+        f"{len(runtime_templates)} template)"
+    )
 
 
 asyncio.run(main())

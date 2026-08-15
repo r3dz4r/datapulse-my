@@ -150,10 +150,10 @@ DataPulse MY also exposes an AI-ready, read-only MCP server so agents can query
 the catalogue natively:
 
 - Endpoint: `https://mcp.data-pulse.my/mcp` (Streamable HTTP, no auth)
-- 10 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `find_by_licence`
-- 6 resources plus 1 resource template: `datapulse://index`, `datapulse://anomalies`, `datapulse://trends`, `datapulse://drift`, `datapulse://reconciliation`, `datapulse://licences`, `datapulse://{dataset_id}`
+- 11 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `find_by_licence`
+- 7 resources plus 1 resource template: `datapulse://index`, `datapulse://anomalies`, `datapulse://trends`, `datapulse://reliability`, `datapulse://drift`, `datapulse://reconciliation`, `datapulse://licences`, `datapulse://{dataset_id}`
 
-The public endpoint is live and serves all 10 read-only tools over the
+The public endpoint is live and serves all 11 read-only tools over the
 389-dataset catalogue.
 
 Connect from Claude Desktop:
@@ -232,9 +232,8 @@ API key):
 }
 ```
 
-Restart Claude Desktop, confirm the hammer icon shows "datapulse-my" with 10
-tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `get_provenance`,
-`find_by_licence`. Cursor / Cline use the same JSON in their MCP config panel.
+Restart Claude Desktop, confirm the hammer icon shows "datapulse-my" with 11
+tools in the runtime order above. Cursor / Cline use the same JSON in their MCP config panel.
 
 ## Included datasets
 

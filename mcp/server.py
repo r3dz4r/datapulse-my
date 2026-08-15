@@ -51,6 +51,10 @@ LICENCE_URLS = {
     CC_BY_4: "https://creativecommons.org/licenses/by/4.0/",
     OGL_MY: "https://www.data.gov.my/pages/terms-of-use",
 }
+RELIABILITY_GRADES = ("A", "B", "C", "D", "F")
+RELIABILITY_GRADE_RANK = {
+    grade: index for index, grade in enumerate(RELIABILITY_GRADES)
+}
 
 logger = logging.getLogger("uvicorn.error")
 logger.setLevel(logging.INFO)
@@ -148,9 +152,9 @@ FIND_STALE_DESCRIPTION = (
 )
 FIND_ANOMALIES_DESCRIPTION = (
     "Return datasets flagged by the latest published anomaly detection, ranked by "
-    "how far the observed update interval exceeds its threshold. Includes the "
-    "pipeline-computed evidence; use when an agent needs to identify unusual dataset "
-    "update delays without recomputing anomaly detection."
+    "how far the observed update interval exceeds its threshold. Optionally require "
+    "a minimum publish-reliability grade; includes pipeline-computed anomaly and "
+    "reliability evidence so agents do not recompute it."
 )
 FIND_DETERIORATING_DESCRIPTION = (
     "Return datasets whose published freshness trend is deteriorating, ranked by "
@@ -161,6 +165,12 @@ FIND_RECOVERING_DESCRIPTION = (
     "Return datasets whose published freshness trend is recovering, with the fastest "
     "staleness reductions first. Includes pipeline-computed trend and publish-reliability "
     "evidence."
+)
+FIND_UNRELIABLE_DESCRIPTION = (
+    "Return datasets whose evaluated publish-reliability grade is at or below a "
+    "threshold, with the worst grades and lowest on-time percentages first. "
+    "Reliability measures timeliness of successful freshness observations, not uptime; "
+    "sample days are included so agents can judge evidence depth."
 )
 FIND_SCHEMA_DRIFT_DESCRIPTION = (
     "Return datasets with published structural or record-count drift evidence, "
@@ -565,11 +575,18 @@ mcp.add_tool(_find_stale_tool)
 def _anomaly_results(
     manifest: dict[str, Any],
     health: dict[str, Any],
+    trends: dict[str, Any],
     *,
     mode: str | None = None,
+    min_reliability: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Join pipeline-computed anomaly evidence to manifest titles and rank it."""
+    """Join pipeline-computed anomaly and reliability evidence and rank it."""
     health_records = _health_by_id(health)
+    reliability_records = {
+        row["dataset_id"]: row
+        for row in trends.get("datasets", [])
+        if isinstance(row, dict) and isinstance(row.get("dataset_id"), str)
+    }
     anomalies: list[dict[str, Any]] = []
 
     for entry in manifest.get("datasets", []):
@@ -578,6 +595,14 @@ def _anomaly_results(
             continue
         evidence = record.get("anomaly_detection") or {}
         if mode is not None and evidence.get("mode") != mode:
+            continue
+        reliability = reliability_records.get(entry["id"], {})
+        grade = reliability.get("reliability_grade")
+        if min_reliability is not None and (
+            grade not in RELIABILITY_GRADE_RANK
+            or RELIABILITY_GRADE_RANK[grade]
+            > RELIABILITY_GRADE_RANK[min_reliability]
+        ):
             continue
         latest_days = evidence.get("latest_days")
         threshold_days = evidence.get("threshold_days")
@@ -599,6 +624,9 @@ def _anomaly_results(
                 "threshold_days": threshold_days,
                 "severity_ratio": severity_ratio,
                 "anomaly_detection": evidence,
+                "publish_on_time_pct": reliability.get("publish_on_time_pct"),
+                "reliability_grade": grade,
+                "reliability_sample_days": reliability.get("reliability_sample_days"),
             }
         )
 
@@ -638,6 +666,16 @@ async def find_anomalies(
             examples=["rolling_14d", "cadence_fallback"],
         ),
     ] = None,
+    min_reliability: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Optional minimum publish-reliability grade; e.g. 'C' keeps A, B, "
+                "and C and excludes insufficient data."
+            ),
+            examples=["A", "C"],
+        ),
+    ] = None,
 ) -> list[dict[str, Any]]:
     """Expose anomaly decisions already computed by the health pipeline."""
     valid_modes = {"rolling_14d", "cadence_fallback", "not_evaluated"}
@@ -646,9 +684,23 @@ async def find_anomalies(
             "Unknown anomaly mode: "
             f"{mode}. Expected one of: {', '.join(sorted(valid_modes))}"
         )
+    if min_reliability is not None:
+        min_reliability = min_reliability.strip().upper()
+        if min_reliability not in RELIABILITY_GRADE_RANK:
+            raise ValueError(
+                "Unknown minimum reliability grade: "
+                f"{min_reliability}. Expected one of: {', '.join(RELIABILITY_GRADES)}"
+            )
 
-    manifest, health = await _load_catalogue()
-    return _anomaly_results(manifest, health, mode=mode)[:limit]
+    catalogue, trends = await gather(_load_catalogue(), _load_trends())
+    manifest, health = catalogue
+    return _anomaly_results(
+        manifest,
+        health,
+        trends,
+        mode=mode,
+        min_reliability=min_reliability,
+    )[:limit]
 
 
 _find_anomalies_tool = FunctionTool.from_function(
@@ -788,6 +840,101 @@ _find_recovering_tool = FunctionTool.from_function(
 )
 _find_recovering_tool.parameters.setdefault("required", [])
 mcp.add_tool(_find_recovering_tool)
+
+
+def _unreliable_results(
+    manifest: dict[str, Any],
+    trends: dict[str, Any],
+    *,
+    at_or_below_grade: str,
+) -> list[dict[str, Any]]:
+    """Join evaluated reliability evidence to manifest titles and rank it."""
+    manifest_by_id = {entry["id"]: entry for entry in manifest.get("datasets", [])}
+    threshold_rank = RELIABILITY_GRADE_RANK[at_or_below_grade]
+    results: list[dict[str, Any]] = []
+    for row in trends.get("datasets", []):
+        entry = manifest_by_id.get(row.get("dataset_id"))
+        grade = row.get("reliability_grade")
+        if (
+            entry is None
+            or grade not in RELIABILITY_GRADE_RANK
+            or RELIABILITY_GRADE_RANK[grade] < threshold_rank
+        ):
+            continue
+        results.append(
+            {
+                "id": entry["id"],
+                "title": entry["name"],
+                "reliability_grade": grade,
+                "publish_on_time_pct": row.get("publish_on_time_pct"),
+                "reliability_sample_days": row.get("reliability_sample_days"),
+                "latest_status": row.get("latest_status"),
+                "trend": row.get("trend"),
+                "reason": row.get("reason"),
+            }
+        )
+    results.sort(
+        key=lambda item: (
+            -RELIABILITY_GRADE_RANK[item["reliability_grade"]],
+            item["publish_on_time_pct"]
+            if isinstance(item["publish_on_time_pct"], (int, float))
+            else 101,
+            item["id"],
+        )
+    )
+    return results
+
+
+async def find_unreliable(
+    limit: Annotated[
+        int,
+        Field(
+            ge=1,
+            le=200,
+            description=(
+                "Maximum ranked unreliable datasets to return; integer from 1 to "
+                "200, e.g. 50."
+            ),
+            examples=[10, 50],
+        ),
+    ] = 50,
+    at_or_below_grade: Annotated[
+        str,
+        Field(
+            description=(
+                "Inclusive reliability threshold; e.g. 'C' returns grades C, D, "
+                "and F."
+            ),
+            examples=["C", "F"],
+        ),
+    ] = "C",
+) -> list[dict[str, Any]]:
+    """Expose pipeline-computed publish-reliability decisions."""
+    at_or_below_grade = at_or_below_grade.strip().upper()
+    valid_thresholds = {"B", "C", "D", "F"}
+    if at_or_below_grade not in valid_thresholds:
+        raise ValueError(
+            "Unknown unreliable grade threshold: "
+            f"{at_or_below_grade}. Expected one of: B, C, D, F"
+        )
+    manifest, trends = await gather(_load_manifest(), _load_trends())
+    return _unreliable_results(
+        manifest,
+        trends,
+        at_or_below_grade=at_or_below_grade,
+    )[:limit]
+
+
+_find_unreliable_tool = FunctionTool.from_function(
+    find_unreliable,
+    title="Identify Unreliable Dataset Publishing",
+    description=FIND_UNRELIABLE_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+_find_unreliable_tool.parameters.setdefault("required", [])
+mcp.add_tool(_find_unreliable_tool)
 
 
 def _drift_results(manifest: dict[str, Any], drift: dict[str, Any], *, min_change_count: int) -> list[dict[str, Any]]:
@@ -1011,8 +1158,12 @@ async def dataset_index() -> str:
 )
 async def anomaly_resource() -> str:
     """Return all current anomaly results as a JSON array."""
-    manifest, health = await _load_catalogue()
-    return json.dumps(_anomaly_results(manifest, health), ensure_ascii=False)
+    catalogue, trends = await gather(_load_catalogue(), _load_trends())
+    manifest, health = catalogue
+    return json.dumps(
+        _anomaly_results(manifest, health, trends),
+        ensure_ascii=False,
+    )
 
 
 @mcp.resource(
@@ -1026,6 +1177,23 @@ async def anomaly_resource() -> str:
 async def trend_resource() -> str:
     """Return the complete published trend artifact as JSON."""
     return json.dumps(await _load_trends(), ensure_ascii=False)
+
+
+@mcp.resource(
+    "datapulse://reliability",
+    description=(
+        "Live count of DataPulse MY datasets by evaluated publish-reliability grade; "
+        "reliability is timeliness, not uptime."
+    ),
+    mime_type="application/json",
+)
+async def reliability_summary() -> str:
+    """Return the published reliability-grade count object."""
+    trends = await _load_trends()
+    return json.dumps(
+        trends["summary"]["by_reliability_grade"],
+        ensure_ascii=False,
+    )
 
 
 @mcp.resource(
