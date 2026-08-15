@@ -123,8 +123,14 @@ jobs:
       - name: Run release-build generation profile (full path)
         if: github.event_name != 'push' || !endsWith(github.event.head_commit.message, '[skip deploy]')
         env:
-          DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
-        run: bash scripts/generate.sh release-build
+          DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
+        run: |
+          if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then
+            echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json
+            chmod 600 /tmp/datapulse-attestation-key.json
+            export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json
+          fi
+          bash scripts/generate.sh release-build
 
       - name: Assemble Pages artifact
         run: |
