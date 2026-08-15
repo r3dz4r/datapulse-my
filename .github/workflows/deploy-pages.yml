@@ -143,6 +143,7 @@ jobs:
           cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
           cp -R health deltas record-evidence badges samples data _site/
           cp -R attestations _site/
+          cp -R .attestations _site/ 2>/dev/null || true
           mkdir -p _site/.well-known
           cp docs/.well-known/datapulse-probe-keys.json _site/.well-known/
 
