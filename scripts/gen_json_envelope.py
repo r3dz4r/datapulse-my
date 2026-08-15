@@ -7,6 +7,8 @@ import argparse
 import csv
 import io
 import json
+import multiprocessing
+import os
 import re
 import urllib.request
 from pathlib import Path
@@ -240,6 +242,12 @@ def build_envelope(root: Path, manifest: dict[str, Any], health: dict[str, Any])
     }
 
 
+def generate_envelope(root: str, row: dict[str, Any], health: dict[str, Any]) -> tuple[str, str]:
+    envelope = build_envelope(Path(root), row, health)
+    serialized = json.dumps(envelope, indent=2, ensure_ascii=False) + "\n"
+    return row["id"], serialized
+
+
 def generate(root: Path, *, dry_run: bool, force: bool) -> int:
     manifest = load_json(root / "datapulse.json")
     snapshot = load_json(root / "health/latest.json")
@@ -274,11 +282,15 @@ def generate(root: Path, *, dry_run: bool, force: bool) -> int:
         return len(targets)
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    for row in targets:
-        envelope = build_envelope(root, row, health_by_id[row["id"]])
-        serialized = json.dumps(envelope, indent=2, ensure_ascii=False) + "\n"
-        json.loads(serialized)
-        path = output_dir / f"{row['id']}.json"
+    worker_args = [
+        (str(root), row, health_by_id[row["id"]])
+        for row in targets
+    ]
+    workers = min(os.cpu_count() or 1, 8)
+    with multiprocessing.Pool(processes=workers) as pool:
+        generated = pool.starmap(generate_envelope, worker_args)
+    for dataset_id, serialized in generated:
+        path = output_dir / f"{dataset_id}.json"
         if path.exists() and not force:
             raise FileExistsError(f"refusing to overwrite {path}; pass --force to replace it")
         path.write_text(serialized, encoding="utf-8")
