@@ -122,6 +122,8 @@ jobs:
 
       - name: Run release-build generation profile (full path)
         if: github.event_name != 'push' || !endsWith(github.event.head_commit.message, '[skip deploy]')
+        env:
+          DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
         run: bash scripts/generate.sh release-build
 
       - name: Assemble Pages artifact
