@@ -219,7 +219,7 @@ jobs:
             fail "llms.txt does not contain '$expected_dataset_count datasets'"
           grep -Fq "MCP" "$smoke_dir/llms.txt" || \
             fail "llms.txt does not mention MCP"
-          for tool in search_datasets get_dataset find_stale find_anomalies find_deteriorating find_recovering get_provenance find_by_licence; do
+          for tool in search_datasets get_dataset find_stale find_anomalies find_deteriorating find_recovering find_schema_drift get_provenance find_by_licence; do
             grep -Fq "$tool" "$smoke_dir/llms.txt" || \
               fail "llms.txt is missing MCP tool $tool"
           done
@@ -239,11 +239,12 @@ jobs:
               "find_anomalies",
               "find_deteriorating",
               "find_recovering",
+              "find_schema_drift",
               "get_provenance",
               "find_by_licence"
             ]
           ' "$smoke_dir/mcp.json" >/dev/null || \
-            fail "mcp.json is invalid or does not advertise the expected 8 tools"
+            fail "mcp.json is invalid or does not advertise the expected 9 tools"
 
           fetch "health snapshot" "https://data-pulse.my/health/latest.json" "$smoke_dir/health.json"
           jq -e --argjson expected "$expected_dataset_count" \
@@ -258,6 +259,15 @@ jobs:
             and (.summary.datasets_total == $expected)
           ' "$smoke_dir/trends.json" >/dev/null || \
             fail "health/trends.json is invalid or does not contain $expected_dataset_count datasets"
+
+          fetch "drift snapshot" "https://data-pulse.my/health/drift.json" "$smoke_dir/drift.json"
+          jq -e --argjson expected "$expected_dataset_count" '
+            .schema == "datapulse/v1/dataset-drift"
+            and (.datasets | type == "array" and length == $expected)
+            and (.summary.datasets_total == $expected)
+            and ((.summary.by_verdict | to_entries | map(.value) | add) == $expected)
+          ' "$smoke_dir/drift.json" >/dev/null || \
+            fail "health/drift.json is invalid or does not contain $expected_dataset_count datasets"
 
           bash scripts/verify_agent_ready.sh || \
             fail "verify_agent_ready.sh rejected the deployed agent surfaces"

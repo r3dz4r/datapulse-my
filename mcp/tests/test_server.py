@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+import httpx
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,6 +19,7 @@ sys.path.insert(0, str(MCP_DIR))
 import server  # noqa: E402
 
 LOAD_TRENDS = server._load_trends
+LOAD_DRIFT = server._load_drift
 
 
 pytestmark = pytest.mark.anyio
@@ -30,6 +32,7 @@ TOOL_PARAMETERS = {
     "find_anomalies": {"limit", "mode"},
     "find_deteriorating": {"limit", "min_anomaly_rate"},
     "find_recovering": {"limit"},
+    "find_schema_drift": {"limit", "min_change_count"},
     "get_provenance": {"dataset_ids"},
     "find_by_licence": {"licence"},
 }
@@ -48,9 +51,58 @@ EXPECTED_TOOL_TITLES = {
     "find_anomalies": "Identify Dataset Update Anomalies",
     "find_deteriorating": "Identify Deteriorating Dataset Trends",
     "find_recovering": "Identify Recovering Dataset Trends",
+    "find_schema_drift": "Identify Schema and Content Drift",
     "get_provenance": "Build Citation-Ready Provenance",
     "find_by_licence": "Scope Reusable Data by Licence",
 }
+
+
+async def test_find_schema_drift_filters_limits_and_ranks(monkeypatch: pytest.MonkeyPatch) -> None:
+    manifest = {"datasets": [{"id": "structural", "name": "Structural"}, {"id": "record", "name": "Record"}, {"id": "stable", "name": "Stable"}]}
+    base = {"shape_changed_recently": False, "shape_change_count": 0, "last_shape_change_at": None, "column_count_changed": False, "column_change_count": 0, "record_trend": "stable", "record_change_pct": 0.0, "record_count": 100, "column_count": 2, "expected_record_count": 100, "record_count_within_tolerance": True, "reason": "fixture"}
+    drift = {"schema": "datapulse/v1/dataset-drift", "datasets": [{**base, "dataset_id": "record", "verdict": "record_count_drift", "record_count_within_tolerance": False}, {**base, "dataset_id": "structural", "verdict": "drift_detected", "shape_changed_recently": True, "shape_change_count": 2}, {**base, "dataset_id": "stable", "verdict": "stable"}]}
+    async def fake_load_manifest() -> dict: return manifest
+    async def fake_load_drift() -> dict: return drift
+    monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
+    monkeypatch.setattr(server, "_load_drift", fake_load_drift)
+    async with Client(server.mcp) as client:
+        all_drift = await client.call_tool("find_schema_drift", {"limit": 50})
+        structural = await client.call_tool("find_schema_drift", {"limit": 1, "min_change_count": 1})
+    assert [row["id"] for row in all_drift.data] == ["structural", "record"]
+    assert [row["id"] for row in structural.data] == ["structural"]
+    assert set(all_drift.data[0]) == {"id", "title", "verdict", "shape_changed_recently", "shape_change_count", "last_shape_change_at", "column_count_changed", "column_change_count", "record_trend", "record_change_pct", "record_count", "column_count", "expected_record_count", "record_count_within_tolerance", "reason"}
+
+
+async def test_schema_drift_tool_matches_live_artifact(live_drift: dict) -> None:
+    expected = sum(row["verdict"] in {"drift_detected", "record_count_drift"} for row in live_drift["datasets"])
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("find_schema_drift", {"limit": 200})
+    assert len(result.data) == min(expected, 200)
+
+
+async def test_drift_resource_returns_complete_published_artifact(live_drift: dict) -> None:
+    async with Client(server.mcp) as client:
+        result = await client.read_resource("datapulse://drift")
+    assert json.loads(result[0].text) == live_drift
+
+
+async def test_load_drift_rejects_unsupported_schema(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_fetch_json(path: str) -> dict:
+        assert path == "health/drift.json"
+        return {"schema": "wrong", "datasets": []}
+    monkeypatch.setattr(server, "_fetch_json", fake_fetch_json)
+    with pytest.raises(ValueError, match="unsupported schema"):
+        await LOAD_DRIFT()
+
+
+async def test_load_drift_reports_missing_publication(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_fetch_json(path: str) -> dict:
+        request = httpx.Request("GET", f"https://example.test/{path}")
+        response = httpx.Response(404, request=request)
+        raise httpx.HTTPStatusError("missing", request=request, response=response)
+    monkeypatch.setattr(server, "_fetch_json", fake_fetch_json)
+    with pytest.raises(RuntimeError, match="Pages deployment completes"):
+        await LOAD_DRIFT()
 
 
 @pytest.fixture(scope="module")
@@ -71,11 +123,17 @@ def live_trends() -> dict:
     return json.loads((REPO_DIR / "health/trends.json").read_text(encoding="utf-8"))
 
 
+@pytest.fixture(scope="module")
+def live_drift() -> dict:
+    return json.loads((REPO_DIR / "health/drift.json").read_text(encoding="utf-8"))
+
+
 @pytest.fixture(autouse=True)
 def local_catalogue(monkeypatch: pytest.MonkeyPatch) -> None:
     manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
     health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
     trends = json.loads((REPO_DIR / "health/trends.json").read_text(encoding="utf-8"))
+    drift = json.loads((REPO_DIR / "health/drift.json").read_text(encoding="utf-8"))
 
     async def fake_load_catalogue() -> tuple[dict, dict]:
         return manifest, health
@@ -89,10 +147,14 @@ def local_catalogue(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake_load_trends() -> dict:
         return trends
 
+    async def fake_load_drift() -> dict:
+        return drift
+
     monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
     monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
     monkeypatch.setattr(server, "_load_health", fake_load_health)
     monkeypatch.setattr(server, "_load_trends", fake_load_trends)
+    monkeypatch.setattr(server, "_load_drift", fake_load_drift)
 
 
 async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> None:
@@ -116,6 +178,9 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
     assert tools["find_anomalies"].parameters["required"] == []
     assert tools["find_deteriorating"].parameters["required"] == []
     assert tools["find_recovering"].parameters["required"] == []
+    assert tools["find_schema_drift"].parameters["required"] == []
+    assert tools["find_schema_drift"].parameters["properties"]["limit"]["examples"] == [10, 50]
+    assert tools["find_schema_drift"].parameters["properties"]["min_change_count"]["examples"] == [0, 1]
     assert tools["find_deteriorating"].parameters["properties"]["limit"]["examples"] == [10, 50]
     assert tools["find_deteriorating"].parameters["properties"]["min_anomaly_rate"]["examples"] == [25.0, 50.0]
     assert tools["find_recovering"].parameters["properties"]["limit"]["examples"] == [10, 50]

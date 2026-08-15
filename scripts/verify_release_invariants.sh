@@ -45,6 +45,7 @@ fetch() {
 fetch manifest.json datapulse.json
 fetch health.json health/latest.json
 fetch trends.json health/trends.json
+fetch drift.json health/drift.json
 fetch catalog.json data/jsonld/catalog.json
 fetch catalog-snapshot.json catalog-snapshot.json
 fetch catalog-graph.json catalog-graph.json
@@ -79,6 +80,7 @@ base = sys.argv[2]
 manifest = json.loads((work / "manifest.json").read_text())
 health = json.loads((work / "health.json").read_text())
 trends = json.loads((work / "trends.json").read_text())
+drift = json.loads((work / "drift.json").read_text())
 catalog = json.loads((work / "catalog.json").read_text())
 catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 catalog_graph = json.loads((work / "catalog-graph.json").read_text())
@@ -110,6 +112,22 @@ assert all(row["trend"] in trends["summary"]["by_trend"] for row in trends["data
 assert all(
     row["reliability_grade"] in trends["summary"]["by_reliability_grade"]
     for row in trends["datasets"]
+)
+
+drift_ids = [row["dataset_id"] for row in drift["datasets"]]
+assert drift["schema"] == "datapulse/v1/dataset-drift"
+assert len(drift_ids) == len(set(drift_ids)) == expected_count
+assert set(drift_ids) == set(manifest_ids)
+assert drift["summary"]["datasets_total"] == expected_count
+assert set(drift["summary"]["by_verdict"]) == {
+    "drift_detected", "record_count_drift", "stable", "insufficient_data"
+}
+assert sum(drift["summary"]["by_verdict"].values()) == expected_count
+assert all(row["verdict"] in drift["summary"]["by_verdict"] for row in drift["datasets"])
+assert all(
+    row["record_count_within_tolerance"] is None
+    or isinstance(row["record_count_within_tolerance"], bool)
+    for row in drift["datasets"]
 )
 
 missing_reports = [

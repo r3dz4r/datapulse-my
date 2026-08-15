@@ -52,6 +52,10 @@ TIMEOUT_PATTERN = re.compile(r"timed?\s*out|timeout", re.IGNORECASE)
 CYCLE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$")
 
 
+def is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
 def parse_datetime(value: str, *, field: str) -> datetime:
     if not isinstance(value, str):
         raise ValueError(f"{field} must be an ISO 8601 string")
@@ -140,6 +144,9 @@ def observation(
         "name": entry.get("name") or row.get("name"),
         "url": entry.get("url") or row.get("url"),
         "shape_hash": row.get("first_row_hash"),
+        "column_count": (
+            row.get("column_count") if is_number(row.get("column_count")) else None
+        ),
     }
     if "anomaly_detected" in row:
         optional["anomaly_detected"] = row.get("anomaly_detected") is True
