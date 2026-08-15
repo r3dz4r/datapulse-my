@@ -36,25 +36,29 @@ def _history(tmp_path: Path, values: list[float], *, same_day: bool = False) -> 
     return path
 
 
-def test_fallback_is_strictly_above_threshold_and_skips_as_required(tmp_path: Path) -> None:
+def test_fallback_is_strictly_above_stale_boundary_and_skips_as_required(tmp_path: Path) -> None:
     history = _history(tmp_path, [])
-    equal = MODULE.annotate(_snapshot(2), _manifest(), history)
-    above = MODULE.annotate(_snapshot(2.1), _manifest(), history)
-    skipped = MODULE.annotate(_snapshot(100), _manifest("as-required"), history)
+    equal = MODULE.annotate(_snapshot(3), _manifest(), history)
+    above = MODULE.annotate(_snapshot(3.1), _manifest(), history)
+    skipped = MODULE.annotate(_snapshot(271), _manifest("as-required"), history)
     assert equal["datasets"][0]["anomaly_detected"] is False
     assert above["datasets"][0]["anomaly_detected"] is True
     assert skipped["datasets"][0]["anomaly_detection"]["mode"] == "not_evaluated"
 
 
-def test_missing_signal_and_reference_are_not_evaluated(tmp_path: Path) -> None:
+def test_missing_signal_and_ineligible_statuses_are_not_evaluated(tmp_path: Path) -> None:
     history = _history(tmp_path, [])
-    assert MODULE.annotate(_snapshot(None), _manifest(), history)["datasets"][0]["anomaly_detection"]["mode"] == "not_evaluated"
-    assert MODULE.annotate(_snapshot(10, "reference"), _manifest(), history)["datasets"][0]["anomaly_detected"] is False
+    missing = MODULE.annotate(_snapshot(None), _manifest(), history)["datasets"][0]
+    assert missing["anomaly_detection"]["mode"] == "not_evaluated"
+    for status in ("reference", "discontinued"):
+        row = MODULE.annotate(_snapshot(10, status), _manifest(), history)["datasets"][0]
+        assert row["anomaly_detected"] is False
+        assert row["anomaly_detection"]["mode"] == "not_evaluated"
 
 
-def test_fourteen_prior_days_activate_rolling_and_exclude_current(tmp_path: Path) -> None:
+def test_twelve_of_fourteen_prior_days_activate_rolling_and_exclude_current(tmp_path: Path) -> None:
     rows = []
-    for day in range(1, 15):
+    for day in range(3, 15):
         rows.append({"dataset_id": "x", "observed_at": f"2026-08-{day:02d}T12:00:00Z", "probe_outcome": "success", "last_modified": f"2026-08-{day:02d}T12:00:00Z"})
     rows.append({"dataset_id": "x", "observed_at": "2026-08-15T11:00:00Z", "probe_outcome": "success", "last_modified": "2026-07-01T00:00:00Z"})
     path = tmp_path / "history.jsonl"
@@ -62,7 +66,7 @@ def test_fourteen_prior_days_activate_rolling_and_exclude_current(tmp_path: Path
     result = MODULE.annotate(_snapshot(1), _manifest(), path)
     details = result["datasets"][0]["anomaly_detection"]
     assert details["mode"] == "rolling_14d"
-    assert details["sample_days"] == 14
+    assert details["sample_days"] == 12
     assert details["threshold_days"] == 0
     assert result["datasets"][0]["anomaly_detected"] is True
 

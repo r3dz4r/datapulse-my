@@ -132,12 +132,13 @@ The current health schema identifier is `datapulse/v0.4/dataset-health`.
 
 `anomaly_detected` is orthogonal to the ten-status taxonomy and never changes a
 dataset's status. During warm-up, it flags a freshness delta strictly greater
-than two times the declared cadence. After fourteen distinct prior UTC-day
-observations, it flags a delta strictly greater than the prior fourteen-day
-population mean plus two population standard deviations. The current snapshot
-is excluded from that baseline. `anomaly_detection` records the mode, sample
-count, threshold, and current value; missing evidence, `as-required`,
-reference, and discontinued rows are `not_evaluated` and false.
+than three times the declared cadence. With at least twelve distinct successful
+prior UTC-day observations in the fourteen-day window, it flags a delta strictly
+greater than the available observations' population mean plus two population
+standard deviations. The current snapshot is excluded from that baseline.
+`anomaly_detection` records the mode, sample count, threshold, and current value;
+missing evidence, `as-required`, reference, and discontinued rows are
+`not_evaluated` and false.
 
 ## Freshness and reachability
 
