@@ -109,6 +109,11 @@ stops the unit and must be resolved in the operational clone.
 | `docs/mcp-reference.md`, `mcp.json` | `scripts/gen_mcp_reference.py` | `deploy-pages.yml` (release-build Step 8) | On every Pages deploy |
 | `docs/.dashboard_filters.json` | `scripts/gen_dashboard_filters.py` | `deploy-pages.yml` (release-build Step 9) | On every Pages deploy |
 | `docs/trust-snapshot-<date>.{md,json}` | `scripts/gen_trust_snapshot.py` | `deploy-pages.yml` (release-build Step 11) | On the weekly release build |
+
+`verify_evidence` uses a process-local 10-minute cache and global serialization;
+the cache is cleared when the MCP process restarts. Monitor `mcp-tool` logs for
+verification volume and external timeout rates. Replace this with shared
+limiting/cache before adding workers or replicas.
 | `mcp/server.py` `SOURCE_COMMIT_SHA` constant | `scripts/bump_mcp_source_version.py` | `deploy-pages.yml` (release-build Step 0) | On every Pages deploy |
 | Deployed `/home/redza/.local/share/datapulse-mcp/server.py` | Manual redeploy | `datapulse-mcp.service` | After any MCP code change |
 | `/etc/systemd/system/datapulse-health.{service,timer}` | Manual install | Root | When timer source changes |

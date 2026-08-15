@@ -5,11 +5,16 @@ from __future__ import annotations
 import os
 import re
 import json
+import asyncio
 import logging
+from copy import deepcopy
 from asyncio import gather
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
+from time import monotonic
 from typing import Any
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 import mcp.types as mcp_types
@@ -39,6 +44,35 @@ DATA_BASE = os.getenv("DATA_BASE", "https://r3dz4r.github.io/datapulse-my").rstr
 MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
 MCP_PORT = int(os.getenv("MCP_PORT", "8788"))
 REQUEST_TIMEOUT_SECONDS = 30.0
+VERIFY_CACHE_SECONDS = 600.0
+VERIFY_MAX_REDIRECTS = 5
+ALLOWED_SOURCE_HOSTS = frozenset(
+    {
+        "api.bnm.gov.my",
+        "api.data.gov.my",
+        "eqms.doe.gov.my",
+        "hansard.parlimen.gov.my",
+        "idengue.mysa.gov.my",
+        "storage.data.gov.my",
+        "storage.dosm.gov.my",
+        "www.eperolehan.gov.my",
+    }
+)
+EVIDENCE_FIELDS = (
+    "last_checked", "http_status", "request_url", "access_dependency",
+    "access_method", "freshness_signal", "freshness_signal_source",
+    "last_modified", "content_freshness_date", "record_count",
+    "record_count_estimated", "first_row_hash", "content_shape_changed",
+    "column_count", "expected_record_count", "record_count_within_tolerance",
+    "staleness_days", "status", "anomaly_detected", "anomaly_detection", "message",
+)
+COMPACT_EVIDENCE_FIELDS = (
+    "last_checked", "http_status", "request_url", "access_dependency",
+    "freshness_signal_source", "content_freshness_date", "record_count",
+    "first_row_hash", "anomaly_detected", "status",
+)
+_VERIFY_CACHE: dict[tuple[str, str, str | None], tuple[float, dict[str, Any]]] = {}
+_VERIFY_LOCK = asyncio.Lock()
 CC_BY_4 = "Creative Commons Attribution 4.0"
 OGL_MY = "Open Government Licence (Malaysia)"
 LICENCE_ALIASES = {
@@ -184,10 +218,24 @@ CHECK_RECONCILIATION_DESCRIPTION = (
     "A discrepancy requires human review and does not prove either source is wrong."
 )
 GET_PROVENANCE_DESCRIPTION = (
-    "Return citation-ready provenance metadata for the listed dataset ids: source "
-    "steward, licence (with URL), source URL, access method (curl/Camofox), "
-    "last-verified timestamp. Use when an agent needs to cite DataPulse MY data in "
-    "a response and must include proper attribution and licence."
+    "Return citation-ready provenance metadata for the listed dataset ids, plus "
+    "compact pipeline-published evidence receipts: row probe time, HTTP status, "
+    "request URL, access dependency, freshness source, content date, record count, "
+    "shape fingerprint, anomaly flag, and status. Use when an agent must cite data "
+    "and show the evidence behind the trust claim without recomputing it."
+)
+GET_EVIDENCE_DESCRIPTION = (
+    "Return the complete pipeline-published evidence receipt for one dataset id, "
+    "including probe time, transport, access dependency, freshness, record-count, "
+    "shape, tolerance, status, and anomaly fields. Use for a deep audit, e.g. "
+    "get_evidence('fuelprice'); values are presented without MCP-side recomputation."
+)
+VERIFY_EVIDENCE_DESCRIPTION = (
+    "Perform a rate-limited live streamed GET for one direct-access dataset and "
+    "compare transport receipts with the latest published evidence, e.g. "
+    "verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints "
+    "remain pipeline-only and are explicitly reported as unverified; results are "
+    "ephemeral and never update health artifacts."
 )
 FIND_BY_LICENCE_DESCRIPTION = (
     "Return all datasets with the given licence, summarised. Use to enumerate what's "
@@ -310,6 +358,150 @@ async def _load_catalogue() -> tuple[dict[str, Any], dict[str, Any]]:
 
 def _health_by_id(health: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {item["dataset_id"]: item for item in health.get("datasets", [])}
+
+
+class _LiveVerificationBlocked(ValueError):
+    """Raised when a source URL is outside the safe live-verification policy."""
+
+
+def _project_evidence(
+    health_record: dict[str, Any], fields: tuple[str, ...]
+) -> dict[str, Any]:
+    """Project published evidence fields without deriving new claims."""
+    return {field: health_record.get(field) for field in fields}
+
+
+def _is_browser_dependent(
+    entry: dict[str, Any], health_record: dict[str, Any]
+) -> bool:
+    return (
+        health_record.get("access_dependency") == "browser"
+        or str(health_record.get("access_method", "")).strip().casefold() == "camofox"
+        or "camofox-rendered" in str(entry.get("source", "")).casefold()
+    )
+
+
+def _validated_live_url(value: str) -> str:
+    """Allow only reviewed HTTPS source origins and reject embedded credentials."""
+    parsed = urlsplit(value)
+    host = (parsed.hostname or "").casefold()
+    if parsed.scheme.casefold() != "https":
+        raise _LiveVerificationBlocked("live verification requires an HTTPS source URL")
+    if parsed.username is not None or parsed.password is not None:
+        raise _LiveVerificationBlocked("source URL credentials are not allowed")
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise _LiveVerificationBlocked("source URL has an invalid port") from exc
+    if port not in (None, 443):
+        raise _LiveVerificationBlocked("source URL must use the default HTTPS port")
+    if host not in ALLOWED_SOURCE_HOSTS:
+        raise _LiveVerificationBlocked(
+            f"source host is not approved for live verification: {host or 'missing'}"
+        )
+    return value
+
+
+def _normalise_http_date(value: str | None) -> str | None:
+    if value is None:
+        return None
+    try:
+        parsed = parsedate_to_datetime(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+async def _fetch_live_receipts(source_url: str) -> dict[str, Any]:
+    """Stream a safe GET and return headers without downloading the response body."""
+    current_url = _validated_live_url(source_url)
+    async with httpx.AsyncClient(
+        timeout=REQUEST_TIMEOUT_SECONDS,
+        headers={
+            "Accept": "*/*",
+            "Accept-Encoding": "identity",
+            "User-Agent": "DataPulseMY/1.0 (+https://data-pulse.my/about)",
+        },
+    ) as client:
+        for redirect_count in range(VERIFY_MAX_REDIRECTS + 1):
+            request = client.build_request("GET", current_url)
+            response = await client.send(request, stream=True)
+            try:
+                if response.status_code in {301, 302, 303, 307, 308}:
+                    location = response.headers.get("location")
+                    if not location:
+                        break
+                    if redirect_count >= VERIFY_MAX_REDIRECTS:
+                        raise _LiveVerificationBlocked(
+                            f"source exceeded {VERIFY_MAX_REDIRECTS} redirects"
+                        )
+                    current_url = _validated_live_url(urljoin(current_url, location))
+                    continue
+                content_length_value = response.headers.get("content-length")
+                try:
+                    content_length = int(content_length_value) if content_length_value is not None else None
+                except ValueError:
+                    content_length = None
+                last_modified_raw = response.headers.get("last-modified")
+                return {
+                    "request_url": source_url,
+                    "final_url": str(response.url),
+                    "http_status": response.status_code,
+                    "last_modified": _normalise_http_date(last_modified_raw),
+                    "content_length": content_length,
+                }
+            finally:
+                await response.aclose()
+    raise _LiveVerificationBlocked("redirect response did not include a destination")
+
+
+def _verification_result_base(
+    dataset_id: str, source_url: str | None, health_record: dict[str, Any]
+) -> dict[str, Any]:
+    return {
+        "dataset_id": dataset_id,
+        "verified_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "verification_scope": "transport_receipts",
+        "ephemeral": True, "cached": False, "cache_age_seconds": 0.0,
+        "source_url": source_url,
+        "recorded_last_checked": health_record.get("last_checked"),
+        "recorded_status": health_record.get("status"),
+        "recorded_staleness_days": health_record.get("staleness_days"),
+        "recorded_request_url": health_record.get("request_url"),
+        "live_request_url": None, "live_final_url": None, "request_url_match": None,
+        "recorded_http_status": health_record.get("http_status"), "live_http_status": None,
+        "http_status_match": None, "recorded_last_modified": health_record.get("last_modified"),
+        "live_last_modified": None, "last_modified_match": None,
+        "recorded_content_length": health_record.get("content_length"),
+        "live_content_length": None, "content_length_match": None,
+        "recorded_content_date": health_record.get("content_freshness_date"),
+        "live_content_date": None, "content_date_match": None,
+        "recorded_record_count": health_record.get("record_count"),
+        "live_record_count": None, "record_count_match": None,
+        "recorded_first_row_hash": health_record.get("first_row_hash"),
+        "live_first_row_hash": None, "first_row_hash_match": None,
+        "unverified_fields": ["content_freshness_date", "record_count", "first_row_hash"],
+        "verdict": "not_verifiable", "details": [],
+    }
+
+
+def _cached_verification_result(
+    key: tuple[str, str, str | None], now: float
+) -> dict[str, Any] | None:
+    cached = _VERIFY_CACHE.get(key)
+    if cached is None:
+        return None
+    cached_at, payload = cached
+    age = now - cached_at
+    if age >= VERIFY_CACHE_SECONDS:
+        _VERIFY_CACHE.pop(key, None)
+        return None
+    result = deepcopy(payload)
+    result["cached"] = True
+    result["cache_age_seconds"] = round(max(age, 0.0), 3)
+    return result
 
 
 def _canonical_licence(licence: str) -> str:
@@ -1049,7 +1241,7 @@ async def get_provenance(
         ),
     ],
 ) -> list[dict[str, Any]]:
-    """Build provenance from manifest and health fields without inference."""
+    """Build provenance and compact published receipts without inference."""
     manifest, health = await _load_catalogue()
     manifest_by_id = {item["id"]: item for item in manifest.get("datasets", [])}
     health_records = _health_by_id(health)
@@ -1070,11 +1262,144 @@ async def get_provenance(
                 "licence_url": LICENCE_URLS.get(entry.get("licence")),
                 "url": entry.get("url"),
                 "access_method": health_record.get("access_method", "unknown"),
-                "last_verified": health.get("checked_at") if health_record else None,
+                "last_verified": health_record.get("last_checked"),
                 "schema_version": health.get("schema"),
+                "evidence": {
+                    **_project_evidence(health_record, COMPACT_EVIDENCE_FIELDS),
+                    "available": bool(health_record),
+                    "snapshot_checked_at": health.get("checked_at"),
+                },
             }
         )
     return provenance
+
+
+async def get_evidence(
+    dataset_id: Annotated[
+        str,
+        Field(
+            min_length=1,
+            description="Canonical dataset identifier for a deep receipt, e.g. 'fuelprice'.",
+            examples=["fuelprice"],
+        ),
+    ],
+) -> dict[str, Any]:
+    """Return all selected evidence fields exactly as published by the pipeline."""
+    manifest, health = await _load_catalogue()
+    manifest_by_id = {item["id"]: item for item in manifest.get("datasets", [])}
+    if dataset_id not in manifest_by_id:
+        raise ValueError(f"Unknown dataset id: {dataset_id}")
+    health_record = _health_by_id(health).get(dataset_id, {})
+    return {
+        "dataset_id": dataset_id,
+        "schema_version": health.get("schema"),
+        "snapshot_checked_at": health.get("checked_at"),
+        "evidence_available": bool(health_record),
+        "evidence": _project_evidence(health_record, EVIDENCE_FIELDS),
+    }
+
+
+_get_evidence_tool = FunctionTool.from_function(
+    get_evidence,
+    title="Inspect Published Evidence Receipts",
+    description=GET_EVIDENCE_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+_get_evidence_tool.parameters.setdefault("required", [])
+mcp.add_tool(_get_evidence_tool)
+
+
+async def verify_evidence(
+    dataset_id: Annotated[
+        str,
+        Field(
+            min_length=1,
+            description="Canonical direct-access dataset identifier to re-fetch, e.g. 'fuelprice'.",
+            examples=["fuelprice"],
+        ),
+    ],
+) -> dict[str, Any]:
+    """Compare safe live transport receipts without mutating published evidence."""
+    manifest, health = await _load_catalogue()
+    entry = {item["id"]: item for item in manifest.get("datasets", [])}.get(dataset_id)
+    if entry is None:
+        raise ValueError(f"Unknown dataset id: {dataset_id}")
+    health_record = _health_by_id(health).get(dataset_id, {})
+    source_url = entry.get("url")
+    result = _verification_result_base(dataset_id, source_url, health_record)
+    if _is_browser_dependent(entry, health_record):
+        result["details"].append(
+            "browser-dependent dataset; live verification requires the Camofox sidecar"
+        )
+        return result
+    if not isinstance(source_url, str) or not source_url:
+        result["details"].append("dataset has no source URL")
+        return result
+
+    key = (dataset_id, source_url, health_record.get("last_checked"))
+    async with _VERIFY_LOCK:
+        now = monotonic()
+        cached = _cached_verification_result(key, now)
+        if cached is not None:
+            return cached
+        try:
+            live = await _fetch_live_receipts(source_url)
+        except _LiveVerificationBlocked as exc:
+            result["details"].append(str(exc))
+            return result
+        except httpx.RequestError as exc:
+            result["verdict"] = "unreachable"
+            result["details"].append(f"live request failed: {exc.__class__.__name__}")
+            _VERIFY_CACHE[key] = (now, deepcopy(result))
+            return result
+
+        result.update({
+            "live_request_url": live["request_url"],
+            "live_final_url": live["final_url"],
+            "live_http_status": live["http_status"],
+            "live_last_modified": live["last_modified"],
+            "live_content_length": live["content_length"],
+        })
+        recorded_request_url = health_record.get("request_url")
+        result["request_url_match"] = source_url == recorded_request_url if isinstance(recorded_request_url, str) else None
+        recorded_http_status = health_record.get("http_status")
+        result["http_status_match"] = live["http_status"] == recorded_http_status if isinstance(recorded_http_status, int) else None
+        recorded_last_modified = health_record.get("last_modified")
+        if recorded_last_modified is not None or live["last_modified"] is not None:
+            result["last_modified_match"] = recorded_last_modified == live["last_modified"]
+        recorded_content_length = health_record.get("content_length")
+        if isinstance(recorded_content_length, int) and isinstance(live["content_length"], int):
+            result["content_length_match"] = recorded_content_length == live["content_length"]
+
+        if not 200 <= live["http_status"] < 300:
+            result["verdict"] = "unreachable"
+            result["details"].append(f"live source returned HTTP {live['http_status']}")
+        else:
+            mismatches = [field for field in ("request_url_match", "http_status_match", "last_modified_match", "content_length_match") if result[field] is False]
+            result["verdict"] = "mismatch" if mismatches else "match"
+            result["details"].append(
+                ("transport receipt mismatch: " + ", ".join(mismatches))
+                if mismatches else "all comparable transport receipts match recorded evidence"
+            )
+        result["details"].append(
+            "content date, record count, and shape fingerprint require the canonical probe pipeline and were not recomputed"
+        )
+        _VERIFY_CACHE[key] = (now, deepcopy(result))
+        return result
+
+
+_verify_evidence_tool = FunctionTool.from_function(
+    verify_evidence,
+    title="Re-verify Source Transport Evidence",
+    description=VERIFY_EVIDENCE_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+_verify_evidence_tool.parameters.setdefault("required", [])
+mcp.add_tool(_verify_evidence_tool)
 
 
 @mcp.tool(

@@ -26,7 +26,7 @@ DataPulse MY exposes a **read-only MCP server** so AI agents (Claude Desktop, Cu
 
 - **MCP endpoint:** https://mcp.data-pulse.my/mcp
 - **Transport:** Streamable HTTP (POST-only, single endpoint)
-- **Auth:** none required (all 11 tools are read-only)
+- **Auth:** none required (all 13 tools are read-only)
 - **Source:** reads the same `datapulse.json` + `health/latest.json` + `health/trends.json` + `health/drift.json` + `health/reconciliation.json` served from this repository; no separate API
 
 ### Agent discovery endpoints
@@ -59,6 +59,8 @@ For AI agents that look up canonical discovery paths before fetching:
 | `find_schema_drift(limit?, min_change_count?)` | Find published structural or record-count drift evidence |
 | `check_reconciliation(dataset_name)` | Return cross-source reconciliation evidence; discrepancies require human review |
 | `get_provenance(dataset_ids[])` | Citation-ready metadata for one or many datasets |
+| `get_evidence(dataset_id)` | Complete pipeline-published evidence receipt |
+| `verify_evidence(dataset_id)` | Cached, ephemeral transport-only live check; browser-dependent sources are refused |
 | `find_by_licence(licence)` | Enumerate what's available under a given licence |
 
 ### Resources (read-only context)
@@ -94,7 +96,7 @@ freshness and route/stop/trip counts or realtime vehicle counts and feed timesta
 The `datapulse://index` resource exposes each dataset's namespace for lightweight
 transport filtering.
 
-The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 11 read-only tools over the 389-dataset catalogue. Deployment and service details for `datapulse-mcp` are in [`mcp-deploy.md`](https://data-pulse.my/mcp-deploy.md).
+The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 13 read-only tools over the 389-dataset catalogue. `verify_evidence` never updates health artifacts and does not recompute semantic content evidence. Deployment and service details for `datapulse-mcp` are in [`mcp-deploy.md`](https://data-pulse.my/mcp-deploy.md).
 
 ## Manifest
 

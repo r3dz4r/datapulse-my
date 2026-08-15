@@ -311,7 +311,7 @@ async def main() -> None:
     expected_resources = [str(resource.uri) for resource in runtime_resources]
     expected_resources.extend(template.uri_template for template in runtime_templates)
     assert advertised_resources == expected_resources
-    assert len(runtime_tools) == 11
+    assert len(runtime_tools) == 13
     assert len(runtime_resources) == 7
     assert len(runtime_templates) == 1
     print(

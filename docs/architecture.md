@@ -34,6 +34,10 @@ GitHub Pages artifact --------------------> data-pulse.my
 mcp/server.py --fetches published manifest + health + trends + drift + reconciliation--> read-only MCP tools
 ```
 
+`get_evidence` projects pipeline receipts from `health/latest.json`, while
+`verify_evidence` performs an independent ephemeral transport check and never
+feeds the probe pipeline.
+
 ## Sources and probes
 
 `datapulse.json` is the registry and scheduling contract. Direct sources use
