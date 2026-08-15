@@ -61,7 +61,7 @@ stops the unit and must be resolved in the operational clone.
 1. **`datapulse-health.timer` / `.service`** — owned by root.
    Atomic probe writes + `health-cycle` artifacts. Pushes
    `chore(health): ...` commits automatically when artifacts change.
-   Failure here manifests as missing/old `health/latest.json`, `health/trends.json`, `health/drift.json`, or
+   Failure here manifests as missing/old `health/latest.json`, `health/trends.json`, `health/drift.json`, `health/reconciliation.json`, or
    absent artifacts in `badges/`, `feed.xml`, `catalog-snapshot.json`, or `deltas/`.
 
 2. **`deploy-pages.yml` workflow** — owned by GH Actions.
@@ -101,6 +101,7 @@ stops the unit and must be resolved in the operational clone.
 | `health/history.jsonl`, `health/history_daily.json` | `scripts/gen_health_history.py --compact` | `datapulse-health.timer` | After every successful probe |
 | `health/trends.json` | `scripts/gen_trends.py` after history | `datapulse-health.timer` | After every successful probe |
 | `health/drift.json` | `scripts/gen_drift.py` after trends | `datapulse-health.timer` | After every successful probe |
+| `health/reconciliation.json` | `scripts/gen_reconciliation.py` after drift | `datapulse-health.timer` | After every successful probe |
 | `deltas/<cycle>.json` | `scripts/gen_dataset_deltas.py` | `datapulse-health.timer` | After history generation for each probe cycle |
 | `data/json/<id>.json` (non-GTFS) | `scripts/gen_json_envelope.py --force` | `deploy-pages.yml` (release-build Step 6) | On every Pages deploy |
 | `data/jsonld/<id>.json`, `data/jsonld/catalog.json` | `scripts/gen_jsonld_catalog.py` | `deploy-pages.yml` (release-build Step 7) | On every Pages deploy |

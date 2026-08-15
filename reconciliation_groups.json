@@ -1,0 +1,45 @@
+{
+  "schema": "datapulse/v1/reconciliation-groups",
+  "groups": [
+    {
+      "key": "cpi-headline-inflation",
+      "logical_name": "Monthly CPI Inflation by Division",
+      "members": ["dosm_cpi_inflation", "dosm_cpi_headline_inflation"],
+      "relationship": "equivalent",
+      "rationale": "Reviewed OpenDOSM CSV and data.gov.my catalogue presentations of the same DOSM series.",
+      "comparison": {"record_count_policy": "strict", "record_count_tolerance_pct": 5.0, "content_date_tolerance_days": 2}
+    },
+    {
+      "key": "cpi-state",
+      "logical_name": "Monthly CPI by State and Division",
+      "members": ["dosm_cpi_state", "cpi_state"],
+      "relationship": "equivalent",
+      "rationale": "Reviewed OpenDOSM CSV and data.gov.my catalogue presentations of the same DOSM series.",
+      "comparison": {"record_count_policy": "strict", "record_count_tolerance_pct": 5.0, "content_date_tolerance_days": 2}
+    },
+    {
+      "key": "cpi-state-inflation",
+      "logical_name": "Monthly CPI Inflation by State and Division",
+      "members": ["dosm_cpi_state_inflation", "cpi_state_inflation"],
+      "relationship": "equivalent",
+      "rationale": "Reviewed OpenDOSM CSV and data.gov.my catalogue presentations of the same DOSM series.",
+      "comparison": {"record_count_policy": "strict", "record_count_tolerance_pct": 5.0, "content_date_tolerance_days": 2}
+    },
+    {
+      "key": "interest-rates-annual",
+      "logical_name": "Annual Interest Rates",
+      "members": ["dgm_interest_rates_annual", "interestrates_annual"],
+      "relationship": "equivalent",
+      "rationale": "Reviewed storage.data.gov.my CSV and data.gov.my OpenAPI presentations of the same BNM series.",
+      "comparison": {"record_count_policy": "strict", "record_count_tolerance_pct": 5.0, "content_date_tolerance_days": 2}
+    },
+    {
+      "key": "vehicle-registrations-by-fuel",
+      "logical_name": "Monthly Vehicle Registrations by Type and Fuel",
+      "members": ["dgm_vehicle_registrations_type_fuel", "registrations_type_fuel"],
+      "relationship": "equivalent",
+      "rationale": "Reviewed storage.data.gov.my CSV and data.gov.my OpenAPI presentations of the same JPJ series.",
+      "comparison": {"record_count_policy": "strict", "record_count_tolerance_pct": 5.0, "content_date_tolerance_days": 2}
+    }
+  ]
+}

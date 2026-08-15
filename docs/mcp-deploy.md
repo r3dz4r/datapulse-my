@@ -3,14 +3,14 @@
 ## Endpoint status
 
 The stable public endpoint is live at `https://mcp.data-pulse.my/mcp`. It has
-been verified end to end: `tools/list` returns 9 tools over the 389-dataset
+been verified end to end: `tools/list` returns 10 tools over the 389-dataset
 catalogue.
 
 The current read-only contract is `search_datasets`, `get_dataset`, `find_stale`,
 `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_schema_drift`,
-`get_provenance`, and `find_by_licence`; it also publishes the concrete resources
+`check_reconciliation`, `get_provenance`, and `find_by_licence`; it also publishes the concrete resources
 `datapulse://index`, `datapulse://anomalies`, `datapulse://trends`,
-`datapulse://drift`, and `datapulse://licences`, plus the
+`datapulse://drift`, `datapulse://reconciliation`, and `datapulse://licences`, plus the
 `datapulse://{dataset_id}` resource template.
 
 The durable services currently terminate at nginx on
@@ -246,7 +246,7 @@ Cloudflared 2026.7.3 is installed. The named tunnel routes
 ## Limitations
 
 - The service is single-region on one VPS.
-- There is intentionally no authentication: all nine tools are read-only over
+- There is intentionally no authentication: all ten tools are read-only over
   already-public data and have no write side effects or PII access.
 - Origin validation and rate limiting are enforced by nginx, so bypassing nginx
   is unsupported.

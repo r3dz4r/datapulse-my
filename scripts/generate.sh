@@ -2,8 +2,8 @@
 #
 # DataPulse MY generation profiles.
 #
-# health-cycle: 11 steps for artifacts derived from the live health snapshot.
-# release-build: source stamp plus 20 steps for the complete public-site artifact set.
+# health-cycle: 12 steps for artifacts derived from the live health snapshot.
+# release-build: source stamp plus 21 steps for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
 # It never commits, pushes, or deploys; release-build embeds dashboard data locally.
@@ -82,6 +82,7 @@ case "$profile" in
       "gen_health_history.py"
       "gen_trends.py"
       "gen_drift.py"
+      "gen_reconciliation.py"
       "gen_dataset_deltas.py"
       "gen_record_evidence.py"
       "gen_catalog_graph.py"
@@ -95,6 +96,7 @@ case "$profile" in
       "health/history.jsonl; health/history_daily.json"
       "health/trends.json"
       "health/drift.json"
+      "health/reconciliation.json"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "catalog-graph.json"
@@ -114,6 +116,7 @@ case "$profile" in
       "gen_health_history.py"
       "gen_trends.py"
       "gen_drift.py"
+      "gen_reconciliation.py"
       "gen_dataset_deltas.py"
       "gen_record_evidence.py"
       "gen_catalog_graph.py"
@@ -138,6 +141,7 @@ case "$profile" in
       "health/history.jsonl; health/history_daily.json"
       "health/trends.json"
       "health/drift.json"
+      "health/reconciliation.json"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "catalog-graph.json"

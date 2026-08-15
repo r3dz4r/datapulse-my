@@ -117,6 +117,7 @@ def test_deploy_pages_workflow_preserves_post_deploy_invariants() -> None:
         'fetch "MCP advertisement"',
         'fetch "health snapshot"',
         'fetch "drift snapshot"',
+        'fetch "reconciliation snapshot"',
     ):
         assert surface in invariants
 
@@ -129,7 +130,9 @@ def test_deploy_pages_publishes_and_verifies_trends_and_drift() -> None:
     assert "datapulse/v1/dataset-trends" in workflow
     assert 'fetch "drift snapshot"' in workflow
     assert "datapulse/v1/dataset-drift" in workflow
-    assert "expected 9 tools" in workflow
+    assert 'fetch "reconciliation snapshot"' in workflow
+    assert "datapulse/v1/dataset-reconciliation" in workflow
+    assert "expected 10 tools" in workflow
 
 
 def test_no_workflow_permissions_broadened() -> None:

@@ -269,6 +269,28 @@
       }
     },
     {
+      "name": "check_reconciliation",
+      "description": "Return the published cross-source reconciliation group for a dataset name or id, including per-member counts, dates, statuses, tolerances, and contextual deltas. A discrepancy requires human review and does not prove either source is wrong.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_name": {
+            "description": "Dataset id or name to reconcile, e.g. 'interestrates' or 'Monthly Interest Rates'.",
+            "examples": [
+              "interestrates",
+              "Monthly Interest Rates"
+            ],
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_name"
+        ],
+        "type": "object"
+      }
+    },
+    {
       "name": "get_provenance",
       "description": "Return citation-ready provenance metadata for the listed dataset ids: source steward, licence (with URL), source URL, access method (curl/Camofox), last-verified timestamp. Use when an agent needs to cite DataPulse MY data in a response and must include proper attribution and licence.",
       "inputSchema": {
@@ -343,6 +365,12 @@
       "uri": "datapulse://drift",
       "name": "Drift summary",
       "description": "Published per-dataset schema and record-count drift evidence, including methodology and aggregate verdict counts.",
+      "mimeType": "application/json"
+    },
+    {
+      "uri": "datapulse://reconciliation",
+      "name": "Reconciliation summary",
+      "description": "Published cross-source reconciliation groups with pairwise count, date, status, tolerance, and verdict evidence.",
       "mimeType": "application/json"
     },
     {

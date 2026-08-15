@@ -4,7 +4,7 @@
   "@id": "https://data-pulse.my/#agent",
   "name": "DataPulse MY",
   "alternateName": "DataPulse Malaysia",
-  "description": "Open-source trust layer for Malaysian public data. Machine-readable manifest of 372 official datasets from data.gov.my, BNM, DOSM, DOE, KKM, KPDN, and MET Malaysia, with continuous health monitoring, licence metadata, and agent-native discovery.",
+  "description": "Open-source trust layer for Malaysian public data. Machine-readable manifest of 389 official datasets from data.gov.my, BNM, DOSM, DOE, KKM, KPDN, and MET Malaysia, with continuous health monitoring, licence metadata, and agent-native discovery.",
   "url": "https://data-pulse.my/",
   "inLanguage": [
     "en",
@@ -25,14 +25,15 @@
       "health": "https://data-pulse.my/health/latest.json",
       "trends": "https://data-pulse.my/health/trends.json",
       "drift": "https://data-pulse.my/health/drift.json",
+      "reconciliation": "https://data-pulse.my/health/reconciliation.json",
       "llms_txt": "https://data-pulse.my/llms.txt",
       "feed": "https://data-pulse.my/feed.xml"
     },
     "mcp_server": {
       "endpoint": "https://mcp.data-pulse.my/mcp",
       "transport": "streamable-http",
-      "tools": 9,
-      "resources": 5
+      "tools": 10,
+      "resources": 6
     },
     "structured_metadata": {
       "json_ld": true,

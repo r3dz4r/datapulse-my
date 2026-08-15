@@ -18,6 +18,7 @@ health/latest.json (merge with prior snapshot in --due mode)
        |
        +--> health/history.jsonl --> health/history_daily.json --> health/trends.json
                                       \--> health/drift.json
+                                      \--> health/reconciliation.json
        +--> badges/ + feed.xml + README summary + catalog-snapshot.json
        +--> deltas/<cycle>.json
        +--> record-evidence/<vertical-id>/{<run-date>,latest}.json
@@ -30,7 +31,7 @@ GitHub Pages artifact --------------------> data-pulse.my
        |
        +--> manifest, reports, health, samples, agent discovery
 
-mcp/server.py --fetches published manifest + health + trends + drift--> read-only MCP tools
+mcp/server.py --fetches published manifest + health + trends + drift + reconciliation--> read-only MCP tools
 ```
 
 ## Sources and probes
@@ -57,20 +58,21 @@ surface for the dashboard, MCP server, badges, and feed.
 `health/trends.json` artifact used by trend MCP tools and resources.
 `gen_drift.py` then publishes structural and record-count evidence to
 `health/drift.json`.
+`gen_reconciliation.py` then applies reviewed seed → exact canonical URL → guarded exact semantic title precedence and publishes `health/reconciliation.json`; differences require human review and are not proof either source is wrong.
 
 ## Generation profiles
 
 Two profiles in `scripts/generate.sh` orchestrate the generators in
 reviewed order, with explicit path ownership:
 
-- `health-cycle` — 11 steps (`gen_data_reports.sh` →
+- `health-cycle` — 12 steps (`gen_data_reports.sh` →
   `gen_badges.sh` → `gen_readme_summary.sh` → `gen_rss.sh` →
   `gen_catalog_snapshot.py` → `gen_health_history.py --compact` → `gen_trends.py` → `gen_drift.py` →
   `gen_dataset_deltas.py` → `gen_record_evidence.py` →
   `gen_catalog_graph.py`). Owns `data/<id>.md`, `badges/`, README trust
   summary, `feed.xml`, `catalog-snapshot.json`, the deprecated
   `changelog.json` alias, history, `deltas/`, opt-in `record-evidence/`, and
-  `catalog-graph.json`, `health/trends.json`, and `health/drift.json`. Invoked by the timer and the
+  `catalog-graph.json`, `health/trends.json`, `health/drift.json`, and `health/reconciliation.json`. Invoked by the timer and the
   weekly fallback after a successful probe.
 - `release-build` — includes the `health-cycle` generators plus the
   release-only steps (`gen_llms_summary.py` →

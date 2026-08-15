@@ -46,6 +46,7 @@ fetch manifest.json datapulse.json
 fetch health.json health/latest.json
 fetch trends.json health/trends.json
 fetch drift.json health/drift.json
+fetch reconciliation.json health/reconciliation.json
 fetch catalog.json data/jsonld/catalog.json
 fetch catalog-snapshot.json catalog-snapshot.json
 fetch catalog-graph.json catalog-graph.json
@@ -81,6 +82,7 @@ manifest = json.loads((work / "manifest.json").read_text())
 health = json.loads((work / "health.json").read_text())
 trends = json.loads((work / "trends.json").read_text())
 drift = json.loads((work / "drift.json").read_text())
+reconciliation = json.loads((work / "reconciliation.json").read_text())
 catalog = json.loads((work / "catalog.json").read_text())
 catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 catalog_graph = json.loads((work / "catalog-graph.json").read_text())
@@ -129,6 +131,19 @@ assert all(
     or isinstance(row["record_count_within_tolerance"], bool)
     for row in drift["datasets"]
 )
+
+assert reconciliation["schema"] == "datapulse/v1/dataset-reconciliation"
+assert isinstance(reconciliation["groups"], list)
+assert reconciliation["summary"]["datasets_total"] == expected_count
+assert reconciliation["summary"]["groups_total"] == len(reconciliation["groups"])
+assert reconciliation["summary"]["datasets_grouped"] + reconciliation["summary"]["datasets_single_source"] == expected_count
+assert set(reconciliation["summary"]["by_verdict"]) == {"agree", "discrepancy", "different_granularity", "insufficient_data"}
+assert sum(reconciliation["summary"]["by_verdict"].values()) == reconciliation["summary"]["groups_total"]
+grouped_ids = [member["id"] for group in reconciliation["groups"] for member in group["members"]]
+assert len(grouped_ids) == len(set(grouped_ids))
+assert set(grouped_ids) <= set(manifest_ids)
+assert len(grouped_ids) == reconciliation["summary"]["datasets_grouped"]
+assert all(group["verdict"] in reconciliation["summary"]["by_verdict"] for group in reconciliation["groups"])
 
 missing_reports = [
     dataset_id for dataset_id in health_ids

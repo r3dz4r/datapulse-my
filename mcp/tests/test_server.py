@@ -20,6 +20,7 @@ import server  # noqa: E402
 
 LOAD_TRENDS = server._load_trends
 LOAD_DRIFT = server._load_drift
+LOAD_RECONCILIATION = server._load_reconciliation
 
 
 pytestmark = pytest.mark.anyio
@@ -33,6 +34,7 @@ TOOL_PARAMETERS = {
     "find_deteriorating": {"limit", "min_anomaly_rate"},
     "find_recovering": {"limit"},
     "find_schema_drift": {"limit", "min_change_count"},
+    "check_reconciliation": {"dataset_name"},
     "get_provenance": {"dataset_ids"},
     "find_by_licence": {"licence"},
 }
@@ -52,6 +54,7 @@ EXPECTED_TOOL_TITLES = {
     "find_deteriorating": "Identify Deteriorating Dataset Trends",
     "find_recovering": "Identify Recovering Dataset Trends",
     "find_schema_drift": "Identify Schema and Content Drift",
+    "check_reconciliation": "Check Cross-Source Reconciliation",
     "get_provenance": "Build Citation-Ready Provenance",
     "find_by_licence": "Scope Reusable Data by Licence",
 }
@@ -105,6 +108,67 @@ async def test_load_drift_reports_missing_publication(monkeypatch: pytest.Monkey
         await LOAD_DRIFT()
 
 
+async def test_check_reconciliation_resolves_id_and_exact_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    manifest = {"datasets": [{"id": "alpha", "name": "Alpha Dataset"}, {"id": "beta", "name": "Beta Dataset"}]}
+    group = {"group_key": "seed:pair", "verdict": "discrepancy", "members": [{"id": "alpha"}, {"id": "beta"}]}
+    reconciliation = {"schema": "datapulse/v1/dataset-reconciliation", "groups": [group]}
+    async def fake_load_manifest() -> dict: return manifest
+    async def fake_load_reconciliation() -> dict: return reconciliation
+    monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
+    monkeypatch.setattr(server, "_load_reconciliation", fake_load_reconciliation)
+    async with Client(server.mcp) as client:
+        by_id = await client.call_tool("check_reconciliation", {"dataset_name": "alpha"})
+        by_name = await client.call_tool("check_reconciliation", {"dataset_name": "Alpha Dataset"})
+    assert by_id.data == {"matched_dataset_id": "alpha", "group": group}
+    assert by_name.data == by_id.data
+
+
+async def test_check_reconciliation_returns_single_source(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_load_manifest() -> dict: return {"datasets": [{"id": "only", "name": "Only Dataset"}]}
+    async def fake_load_reconciliation() -> dict: return {"schema": "datapulse/v1/dataset-reconciliation", "groups": []}
+    monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
+    monkeypatch.setattr(server, "_load_reconciliation", fake_load_reconciliation)
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("check_reconciliation", {"dataset_name": "only"})
+    assert result.data["matched_dataset_id"] == "only"
+    assert result.data["verdict"] == "single_source"
+    assert result.data["group"] is None
+
+
+async def test_reconciliation_tool_matches_live_exact_url_group(live_reconciliation: dict) -> None:
+    expected = next(group for group in live_reconciliation["groups"] if {member["id"] for member in group["members"]} == {"interestrates", "dgm_interest_rates"})
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("check_reconciliation", {"dataset_name": "interestrates"})
+    assert result.data["matched_dataset_id"] == "interestrates"
+    assert result.data["group"] == expected
+    assert expected["grouping_method"] == "exact_url"
+
+
+async def test_reconciliation_resource_returns_complete_published_artifact(live_reconciliation: dict) -> None:
+    async with Client(server.mcp) as client:
+        result = await client.read_resource("datapulse://reconciliation")
+    assert json.loads(result[0].text) == live_reconciliation
+
+
+async def test_load_reconciliation_rejects_unsupported_schema(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_fetch_json(path: str) -> dict:
+        assert path == "health/reconciliation.json"
+        return {"schema": "wrong", "groups": []}
+    monkeypatch.setattr(server, "_fetch_json", fake_fetch_json)
+    with pytest.raises(ValueError, match="unsupported schema"):
+        await LOAD_RECONCILIATION()
+
+
+async def test_load_reconciliation_reports_missing_publication(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_fetch_json(path: str) -> dict:
+        request = httpx.Request("GET", f"https://example.test/{path}")
+        response = httpx.Response(404, request=request)
+        raise httpx.HTTPStatusError("missing", request=request, response=response)
+    monkeypatch.setattr(server, "_fetch_json", fake_fetch_json)
+    with pytest.raises(RuntimeError, match="Pages deployment completes"):
+        await LOAD_RECONCILIATION()
+
+
 @pytest.fixture(scope="module")
 def anyio_backend() -> str:
     return "asyncio"
@@ -128,12 +192,18 @@ def live_drift() -> dict:
     return json.loads((REPO_DIR / "health/drift.json").read_text(encoding="utf-8"))
 
 
+@pytest.fixture(scope="module")
+def live_reconciliation() -> dict:
+    return json.loads((REPO_DIR / "health/reconciliation.json").read_text(encoding="utf-8"))
+
+
 @pytest.fixture(autouse=True)
 def local_catalogue(monkeypatch: pytest.MonkeyPatch) -> None:
     manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
     health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
     trends = json.loads((REPO_DIR / "health/trends.json").read_text(encoding="utf-8"))
     drift = json.loads((REPO_DIR / "health/drift.json").read_text(encoding="utf-8"))
+    reconciliation = json.loads((REPO_DIR / "health/reconciliation.json").read_text(encoding="utf-8"))
 
     async def fake_load_catalogue() -> tuple[dict, dict]:
         return manifest, health
@@ -150,11 +220,15 @@ def local_catalogue(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake_load_drift() -> dict:
         return drift
 
+    async def fake_load_reconciliation() -> dict:
+        return reconciliation
+
     monkeypatch.setattr(server, "_load_catalogue", fake_load_catalogue)
     monkeypatch.setattr(server, "_load_manifest", fake_load_manifest)
     monkeypatch.setattr(server, "_load_health", fake_load_health)
     monkeypatch.setattr(server, "_load_trends", fake_load_trends)
     monkeypatch.setattr(server, "_load_drift", fake_load_drift)
+    monkeypatch.setattr(server, "_load_reconciliation", fake_load_reconciliation)
 
 
 async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> None:
@@ -181,6 +255,8 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
     assert tools["find_schema_drift"].parameters["required"] == []
     assert tools["find_schema_drift"].parameters["properties"]["limit"]["examples"] == [10, 50]
     assert tools["find_schema_drift"].parameters["properties"]["min_change_count"]["examples"] == [0, 1]
+    assert tools["check_reconciliation"].parameters["required"] == ["dataset_name"]
+    assert tools["check_reconciliation"].parameters["properties"]["dataset_name"]["examples"] == ["interestrates", "Monthly Interest Rates"]
     assert tools["find_deteriorating"].parameters["properties"]["limit"]["examples"] == [10, 50]
     assert tools["find_deteriorating"].parameters["properties"]["min_anomaly_rate"]["examples"] == [25.0, 50.0]
     assert tools["find_recovering"].parameters["properties"]["limit"]["examples"] == [10, 50]
