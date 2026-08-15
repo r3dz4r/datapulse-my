@@ -4,6 +4,15 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## [0.7.0](https://github.com/r3dz4r/datapulse-my/compare/v0.6.0...v0.7.0) (2026-08-15)
+
+
+### Features
+
+* **evidence:** evidence receipts + verify_evidence live check — completes trust-layer moat plan ([8fbc66c](https://github.com/r3dz4r/datapulse-my/commit/8fbc66c9baccb49253dc75e7fe1e150a0251803f))
+* **reconciliation:** cross-source duplicate detection + MCP exposure ([b00fd1a](https://github.com/r3dz4r/datapulse-my/commit/b00fd1a0fb669443c4ad36e9b08881e615326b42))
+* **reliability:** expose reliability scoring — find_unreliable + min_reliability filter + resource ([105e178](https://github.com/r3dz4r/datapulse-my/commit/105e1786d199d2fc10ccf80153cc1fc22b177989))
+
 ## [0.6.0](https://github.com/r3dz4r/datapulse-my/compare/v0.5.0...v0.6.0) (2026-08-15)
 
 
