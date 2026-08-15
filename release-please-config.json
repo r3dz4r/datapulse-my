@@ -1,18 +1,24 @@
 {
-  "release-type": "simple",
-  "package-name": "datapulse-my",
-  "include-component-in-tag": false,
-  "pull-request-title-pattern": "chore(main): release ${version}",
-  "include-v-in-tag": true,
-  "version-file": "VERSION.txt",
-  "changelog-path": "CHANGELOG.md",
-  "changelog-sections": [
-    { "type": "feat", "section": "Features" },
-    { "type": "fix", "section": "Bug Fixes" },
-    { "type": "perf", "section": "Performance Improvements" },
-    { "type": "revert", "section": "Reverts" },
-    { "type": "docs", "section": "Documentation", "hidden": true },
-    { "type": "chore", "section": "Miscellaneous", "hidden": true },
-    { "type": "refactor", "section": "Refactors", "hidden": true }
-  ]
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "last-release-sha": "dfaee3f1865269d7a7a00284536c2a04023969f0",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "package-name": "datapulse-my",
+      "include-component-in-tag": false,
+      "pull-request-title-pattern": "chore(main): release ${version}",
+      "include-v-in-tag": true,
+      "version-file": "VERSION.txt",
+      "changelog-path": "CHANGELOG.md",
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "perf", "section": "Performance Improvements" },
+        { "type": "revert", "section": "Reverts" },
+        { "type": "docs", "section": "Documentation", "hidden": true },
+        { "type": "chore", "section": "Miscellaneous", "hidden": true },
+        { "type": "refactor", "section": "Refactors", "hidden": true }
+      ]
+    }
+  }
 }
