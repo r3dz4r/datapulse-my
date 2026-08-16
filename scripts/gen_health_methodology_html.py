@@ -10,6 +10,11 @@ import sys
 import tempfile
 from pathlib import Path
 
+try:  # Support both ``python scripts/...`` and package imports in tests.
+    from scripts import gen_site_nav
+except ImportError:
+    import gen_site_nav
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/health-methodology.md"
@@ -74,6 +79,12 @@ def main() -> int:
     except OSError as error:
         print(f"Unable to render health methodology HTML: {error}", file=sys.stderr)
         temporary.unlink(missing_ok=True)
+        return 1
+
+    try:
+        gen_site_nav.inject_nav(OUTPUT)
+    except (OSError, UnicodeError, ValueError) as error:
+        print(f"Unable to inject site navigation: {error}", file=sys.stderr)
         return 1
 
     print(f"Rendered {OUTPUT.relative_to(ROOT)}")

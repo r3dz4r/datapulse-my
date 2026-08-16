@@ -9,10 +9,16 @@ import subprocess
 import sys
 from pathlib import Path
 
+try:  # Support both ``python scripts/...`` and package imports in tests.
+    from scripts import gen_site_nav
+except ImportError:
+    import gen_site_nav
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT_GENERATOR = ROOT / "scripts/gen_health_methodology_content.py"
 TEMPLATE = ROOT / "scripts/templates/health-methodology.md.tmpl"
 OUTPUT = ROOT / "docs/health-methodology.md"
+HTML_OUTPUT = ROOT / "docs/health-methodology.html"
 EXTRACTED = ROOT / "docs/.health-methodology/extracted.md"
 BLOCK = re.compile(r"(<!-- BEGIN EXTRACTED: ([a-z0-9-]+) -->.*?<!-- END EXTRACTED: \2 -->)", re.DOTALL)
 PLACEHOLDER = re.compile(r"<!-- BEGIN EXTRACTED: ([a-z0-9-]+) -->")
@@ -46,6 +52,12 @@ def main() -> int:
         print(f"Unable to render health methodology Markdown: {error}", file=sys.stderr)
         return 1
     OUTPUT.write_text(rendered, encoding="utf-8")
+    if HTML_OUTPUT.is_file() and (ROOT / "docs/assets/site-nav.html").is_file():
+        try:
+            gen_site_nav.inject_nav(HTML_OUTPUT)
+        except (OSError, UnicodeError, ValueError) as error:
+            print(f"Unable to inject site navigation: {error}", file=sys.stderr)
+            return 1
     print(f"Rendered {OUTPUT.relative_to(ROOT)}")
     return 0
 

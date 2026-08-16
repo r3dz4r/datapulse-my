@@ -47,6 +47,7 @@ GENERATORS = (
     "check_url_drift.py",
     "gen_health_methodology_html.py",
     "gen_health_methodology.py",
+    "gen_site_nav.py",
     "gen_health_methodology_content.py",
     "health_policy.py",
     "check.sh",
@@ -89,6 +90,7 @@ RELEASE_STEPS = (
     "check_url_drift.py",
     "gen_trust_snapshot.py",
     "gen_health_methodology_html.py",
+    "gen_site_nav.py",
 )
 HEALTH_OUTPUTS = (
     "README.md",
@@ -206,6 +208,8 @@ def _stage_source(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     (source / "docs").mkdir()
+    (source / "docs/assets").mkdir()
+    shutil.copy2(ROOT / "docs/assets/site-nav.html", source / "docs/assets/site-nav.html")
     shutil.copy2(RELEASE_FIXTURE / "docs/index.html", source / "docs/index.html")
     shutil.copy2(
         RELEASE_FIXTURE / "docs/health-methodology.md",

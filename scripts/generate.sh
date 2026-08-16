@@ -132,6 +132,7 @@ case "$profile" in
       "check_url_drift.py"
       "gen_trust_snapshot.py"
       "gen_health_methodology_html.py"
+      "gen_site_nav.py"
     )
     outputs=(
       "mcp/server.py (SOURCE_COMMIT_SHA/SOURCE_COMMIT_DATE constants); mcp.json (source_commit_sha/source_commit_date fields)"
@@ -159,6 +160,7 @@ case "$profile" in
       "URL drift and cadence audit"
       "docs/trust-snapshot-<date>.{md,json}"
       "docs/health-methodology.html"
+      "docs/{index,landing,npra,health-methodology}.html site navigation"
     )
     ;;
   *)
