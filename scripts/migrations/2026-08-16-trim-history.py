@@ -37,12 +37,13 @@ def main() -> None:
     now = parse_datetime(args.now, field="now") if args.now else datetime.now(UTC)
     cutoff = now - timedelta(days=args.retention_days)
     rows = read_history(args.history)
-    retained = [
-        row
-        for row in rows
-        if parse_datetime(row["observed_at"], field="observed_at") >= cutoff
-    ]
-    expired = [row for row in rows if row not in retained]
+    retained = []
+    expired = []
+    for row in rows:
+        if parse_datetime(row["observed_at"], field="observed_at") >= cutoff:
+            retained.append(row)
+        else:
+            expired.append(row)
     archive_rows(expired, args.archives_dir)
     write_history(args.history, retained)
     print(f"archived {len(expired)} rows to {args.archives_dir}")
