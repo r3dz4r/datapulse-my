@@ -146,6 +146,7 @@ def run_generator(
 
             environment = os.environ.copy()
             environment["DATAPULSE_REPO_ROOT"] = str(workdir)
+            environment["DATAPULSE_ARCHIVES_DIR"] = str(workdir / ".archives")
             completed = subprocess.run(
                 command,
                 cwd=workdir,

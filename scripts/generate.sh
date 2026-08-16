@@ -220,10 +220,17 @@ for index in "${!generators[@]}"; do
         python3 "scripts/$generator" --force
       ;;
     gen_health_history.py)
+      if [[ -z "${DATAPULSE_ARCHIVES_DIR:-}" ]]; then
+        if [[ -d /home/redza/runtime && -w /home/redza/runtime ]]; then
+          DATAPULSE_ARCHIVES_DIR=/home/redza/runtime/datapulse-history
+        else
+          DATAPULSE_ARCHIVES_DIR="${DATAPULSE_REPO_ROOT:-$PWD}/.archives"
+        fi
+      fi
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
         env "${environment[@]}" \
         python3 "scripts/$generator" --compact --retention-days 7 \
-          --archives-dir "${DATAPULSE_ARCHIVES_DIR:-/home/redza/runtime/datapulse-history}"
+          --archives-dir "$DATAPULSE_ARCHIVES_DIR"
       ;;
     gen_attestations.py)
       if [[ -z "${DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE:-}" ]]; then

@@ -319,6 +319,8 @@ def test_release_build_runs_in_clean_fixture(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert all(result.outputs[path] is not None for path in RELEASE_OUTPUTS)
+    archives = list((result.workdir / ".archives").glob("health-*.jsonl.gz"))
+    assert archives, "release-build must archive expired history inside its workdir"
 
 
 def test_unknown_profile_exits_nonzero(tmp_path: Path) -> None:
