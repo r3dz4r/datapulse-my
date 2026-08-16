@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "health/**"
+      - "badges/**"
+      - "deltas/**"
+      - "record-evidence/**"
+      - "feed.xml"
+      - "data/**"
 
 permissions:
   contents: write
