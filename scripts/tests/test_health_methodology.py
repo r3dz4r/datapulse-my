@@ -8,6 +8,9 @@ from pathlib import Path
 from scripts.tests.test_generate_profiles import _stage_source
 
 
+ROOT = Path(__file__).resolve().parents[2]
+
+
 SECTIONS = (
     "schema-version",
     "history-schema",
@@ -69,6 +72,10 @@ def test_methodology_html_retains_rendered_structure(tmp_path: Path) -> None:
     )
     assert rendered.returncode == 0, rendered.stderr
     page = (source / "docs/health-methodology.html").read_text(encoding="utf-8")
+    css = (ROOT / "docs/assets/datapulse.css").read_text(encoding="utf-8")
     assert "Health methodology" in page
     assert "5 minutes" in page
     assert "assets/datapulse.css" in page
+    assert ":where(main) > :where(p)" in css
+    assert '<main id="main-content" class="wrap prose">' in page
+    assert 'style="max-width:52rem; padding-block:2.5rem"' not in page

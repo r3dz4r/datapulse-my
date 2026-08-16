@@ -26,6 +26,10 @@
     .skip-link { position: fixed; left: 16px; top: 8px; z-index: 3; padding: 8px 12px; color: var(--color-bg); background: var(--color-accent); transform: translateY(-150%); transition: transform 150ms ease-out; }
     .skip-link:focus { transform: translateY(0); }
     .wrap { width: min(1200px, calc(100% - 48px)); margin-inline: auto; }
+    .prose {
+      max-width: 52rem;
+      padding-block: 2.5rem;
+    }
     .site-nav { position: sticky; top: 0; z-index: 2; background: var(--color-bg); border-bottom: 1px solid var(--color-border); }
     .nav-inner { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 8px; }
     .brand { display: inline-flex; align-items: center; min-height: 44px; gap: 8px; font-family: "JetBrains Mono", monospace; font-weight: 500; text-decoration: none; white-space: nowrap; }
@@ -108,6 +112,110 @@
     tr:last-child td { border-bottom: 0; }
     th { font-size: 13px; font-weight: 600; }
     td { color: var(--color-muted-fg); }
+
+    /* === Prose typography =========================================================
+       Direct children of <main> get prose defaults. :where() keeps specificity at
+       zero so per-page class styles (e.g. .hero-copy, .pain-card p, .section-lead)
+       always win when defined. Affects:
+       - health-methodology.html (raw Pandoc markdown, no class names)
+       - landing/npra/index sections that have direct children of <main>
+    */
+    :where(main) > :where(p) {
+      margin-block: 1em;
+      color: var(--color-fg);
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+    :where(main) > :where(p):first-child {
+      margin-top: 0;
+    }
+    :where(main) > :where(h1) {
+      font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+      letter-spacing: -0.025em;
+      margin-block: 0 1rem;
+    }
+    :where(main) > :where(h2) {
+      font-size: 1.625rem;
+      letter-spacing: -0.02em;
+      margin-block: 2em 0.75em;
+      padding-top: 0.25em;
+      border-top: 1px solid var(--color-border);
+    }
+    :where(main) > :where(h3) {
+      font-size: 1.25rem;
+      margin-block: 1.75em 0.5em;
+    }
+    :where(main) > :where(h4) {
+      font-size: 1.05rem;
+      margin-block: 1.5em 0.4em;
+    }
+    :where(main) > :where(ul),
+    :where(main) > :where(ol) {
+      margin-block: 1em;
+      padding-inline-start: 1.5em;
+    }
+    :where(main) > :where(li) {
+      margin-block: 0.4em;
+      line-height: 1.6;
+    }
+    :where(main) > :where(code) {
+      padding: 0.1em 0.35em;
+      border-radius: 0.2em;
+      background: var(--color-muted);
+      color: var(--color-fg);
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+      font-size: 0.92em;
+    }
+    :where(main) > :where(pre) {
+      margin-block: 1.25em;
+      padding: 1rem 1.25rem;
+      border: 1px solid var(--color-border);
+      border-radius: 0.4rem;
+      background: var(--color-muted);
+      overflow-x: auto;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+      font-size: 0.85rem;
+      line-height: 1.55;
+    }
+    :where(main) > :where(pre) > :where(code) {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font-size: inherit;
+    }
+    :where(main) > :where(table) {
+      margin-block: 1.25em;
+      border: 1px solid var(--color-border);
+      font-size: 0.92rem;
+    }
+    :where(main) > :where(table) :where(th, td) {
+      padding: 0.55em 0.8em;
+      border-bottom: 1px solid var(--color-border);
+    }
+    :where(main) > :where(table) :where(thead) :where(th) {
+      background: var(--color-muted);
+      font-weight: 600;
+      text-align: left;
+    }
+    :where(main) > :where(blockquote) {
+      margin-block: 1.25em;
+      padding: 0.5em 1em;
+      border-left: 0.25rem solid var(--color-border);
+      color: var(--color-muted-fg);
+    }
+    :where(main) > :where(hr) {
+      margin-block: 2em;
+      border: 0;
+      border-top: 1px solid var(--color-border);
+    }
+
+    /* Body font-family. :where() at body level keeps specificity 0 so any class-based
+       font-family overrides still win. */
+    :where(body) {
+      font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    /* PROSE_TYPOGRAPHY_END */
     .surface-url { font: 400 14px/1.5 "JetBrains Mono", monospace; overflow-wrap: anywhere; }
     .not-list { display: grid; gap: 24px; margin: 32px 0 0; padding: 0; list-style: none; }
     .not-list li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 16px; align-items: start; }
