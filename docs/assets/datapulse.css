@@ -240,10 +240,10 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.001ms !important; transform: none !important; }
     }
-    @media (max-width: 560px) {
+    @media (max-width: 768px) {
       .wrap { width: min(100% - 32px, 1200px); }
       .nav-inner { align-items: flex-start; flex-direction: column; gap: 0; padding-block: 8px; }
-      .nav-links { width: 100%; justify-content: space-between; gap: 0 12px; }
+      .nav-links { width: 100%; justify-content: flex-start; gap: 4px 12px; }
       .hero { padding-top: 56px; }
       h2 { font-size: 28px; }
       .button { width: 100%; }
