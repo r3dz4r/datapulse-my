@@ -5,41 +5,20 @@ DataPulse MY reports evidence, not a promise that upstream data is correct.
 ## Schema version
 
 <!-- BEGIN EXTRACTED: schema-version -->
-The current health snapshot schema is `datapulse/v0.4/dataset-health`.
-<!-- END EXTRACTED: schema-version -->
 
 The schema identifier is a top-level field. `_trust_summary` does not duplicate the schema identifier.
 
 ## Longitudinal telemetry
 
 <!-- BEGIN EXTRACTED: history-schema -->
-Each `health/history.jsonl` row contains:
-
-  `dataset_id`, `observed_at`, `cycle`, `status`, `freshness_signal`, `last_modified`, `content_date`, `record_count`, `record_count_estimated`, `http_status`, `latency_ms`, `probe_outcome`, `message`
-
-`probe_outcome` is one of `success`, `error`, `timeout`. The optional
-fields `name`, `url`, `shape_hash`, `column_count`, and `anomaly_detected`
-are written only when the corresponding source data is available.
-
-The compact daily aggregate schema is `datapulse/v1/health-history-daily`.
-<!-- END EXTRACTED: history-schema -->
 
 <!-- BEGIN EXTRACTED: probe-outcomes -->
-The probe classifies every observation as one of `success`, `error`, `timeout`.
-<!-- END EXTRACTED: probe-outcomes -->
 
 Re-running a cycle replaces the matching `(dataset_id, cycle)` object instead of creating a duplicate. Status changes are represented by successive observations and can therefore be queried without changing the ten-status snapshot taxonomy.
 
 The existing probe snapshot does not currently expose request duration, so `latency_ms` is explicitly `null` rather than estimated. The writer will carry through a numeric `latency_ms` when the validated probe output provides one.
 
 <!-- BEGIN EXTRACTED: retention-and-archives -->
-Raw observations are kept in `health/history.jsonl` for **7 days**.
-On expiry, observations are compacted into `health/history_daily.json`
-(per-dataset, per-day aggregates: counts, status distribution, availability
-percentage, min/mean/max record counts, mean latency). Observations that
-fall outside the retention window are also archived to `~/runtime/datapulse-history/health-YYYY-MM.jsonl.gz`
-(monthly gzip files, append-only).
-<!-- END EXTRACTED: retention-and-archives -->
 
 ## Dataset delta ledger
 
@@ -56,18 +35,6 @@ The envelope does not replace `health/latest.json`, and a fresh dataset-level pr
 ## Production classification (T33, 2026-08-09)
 
 <!-- BEGIN EXTRACTED: probe-cadence -->
-The probe timer fires every **5 minutes** (systemd `OnCalendar=*:0/5`).
-
-The due policy in `scripts/check.sh` uses these cadence thresholds:
-
-| Frequency | Tier | Due after (minutes) |
-| --- | --- | ---: |
-| 30 seconds; hourly | `realtime` | 15 |
-| daily (weekdays…) | `daily` | 60 |
-| daily | `daily` | 1440 |
-| weekly; monthly; quarterly | `weekly-monthly` | 10080 |
-| annual; survey-year; as-required | `slow` | 43200 |
-<!-- END EXTRACTED: probe-cadence -->
 
 The full-probe canary (`docs/health-policy-compatibility.md`) reviewed on 2026-08-09 confirms the `--due` policy is consistent with the approved freshness policy. Status flips in the canary preserve the reviewed G2/G3/G4 outcomes: generated health remains the single production snapshot, a valid configured content signal takes precedence with the approved fallback, and classification uses the cadence-specific freshness windows below.
 
@@ -82,51 +49,18 @@ The version history and migration rationale remain maintained prose; the current
 ## Status taxonomy
 
 <!-- BEGIN EXTRACTED: status-taxonomy -->
-| Status | Meaning |
-| --- | --- |
-| `fresh` | Reachable, structurally usable, and within the freshness window. |
-| `aging` | Freshness age is over 1.5× baseline and at most 3× baseline. |
-| `stale` | Freshness age is over 3× baseline. |
-| `discontinued` | The publisher has stopped updating the dataset; the last known content is retained. |
-| `degraded` | Reachable, but probe, schema, shape, or record-count checks failed. |
-| `browser-dependent` | Assessment requires rendered browser state. |
-| `unreachable` | The source request failed or returned a non-2xx response. |
-| `unknown` | No reliable classification is available. |
-| `unknown-freshness` | Reachable and structurally usable, but no freshness evidence exists. |
-| `reference` | Versioned reference data is reachable; date-based freshness does not apply. |
-<!-- END EXTRACTED: status-taxonomy -->
 
 ## Freshness anomaly signal
 
 `anomaly_detected` is orthogonal to the ten-status taxonomy and never changes a dataset's status.
 
 <!-- BEGIN EXTRACTED: anomaly-mode -->
-During warm-up, a freshness delta is anomalous if strictly greater than three
-times the declared cadence. With at least 12 distinct successful prior UTC-day observations in the 14-day window, a delta is strictly greater
-than the population mean plus two population standard deviations.
-The current observation is excluded from the baseline.
-<!-- END EXTRACTED: anomaly-mode -->
 
 `anomaly_detection` records the mode, sample count, threshold, and current value; missing evidence, `as-required`, reference, and discontinued rows are `not_evaluated` and false.
 
 ## Freshness and reachability
 
 <!-- BEGIN EXTRACTED: freshness-baselines -->
-Reachability is not freshness. The probe chooses the newest defensible signal
-from an HTTP `Last-Modified` header or parsed content date.
-
-| Frequency | Baseline | Fresh / aging / stale |
-| --- | --- | --- |
-| `30 seconds` | 30 seconds | ≤1.5× / >1.5×–≤3× / >3× |
-| `hourly` | 1 hour | ≤1.5× / >1.5×–≤3× / >3× |
-| `daily` | 1 day | ≤1.5× / >1.5×–≤3× / >3× |
-| `weekly` | 7 days | ≤1.5× / >1.5×–≤3× / >3× |
-| `monthly` | 30 days | ≤1.5× / >1.5×–≤3× / >3× |
-| `quarterly` | 90 days | ≤1.5× / >1.5×–≤3× / >3× |
-| `annual` | 365 days | ≤1.5× / >1.5×–≤3× / >3× |
-
-Weekday-daily frequencies use the daily baseline. Survey-year verification uses 45-day and 90-day boundaries; as-required datasets do not infer a freshness window.
-<!-- END EXTRACTED: freshness-baselines -->
 
 Future content dates are rejected. A 200 response without either signal becomes `unknown-freshness`, not `fresh`, unless the manifest identifies the dataset as versioned `reference` data.
 

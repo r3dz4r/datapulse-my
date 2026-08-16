@@ -46,6 +46,10 @@ GENERATORS = (
     "embed_dashboard_data.py",
     "check_url_drift.py",
     "gen_health_methodology_html.py",
+    "gen_health_methodology.py",
+    "gen_health_methodology_content.py",
+    "health_policy.py",
+    "check.sh",
 )
 HEALTH_STEPS = (
     "gen_data_reports.sh",
@@ -64,6 +68,7 @@ HEALTH_STEPS = (
 RELEASE_STEPS = (
     "gen_dashboard_sections.py",
     "gen_data_reports.sh",
+    "gen_health_methodology.py",
     "gen_badges.sh",
     "gen_readme_summary.sh",
     "gen_llms_summary.py",
