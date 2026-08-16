@@ -1,0 +1,111 @@
+name: Pipeline auditor (weekly)
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # Sunday 00:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install --requirement requirements.txt
+
+      - name: Phase 1 - audit committed health
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          from datetime import datetime, timezone
+
+          def check(ok, message):
+              print(f"[{'PASS' if ok else 'FAIL'}] {message}")
+              return ok
+
+          try:
+              health = json.load(open("health/latest.json", encoding="utf-8"))
+              rows = health.get("datasets") if isinstance(health, dict) else health
+              valid_shape = isinstance(rows, (list, dict))
+          except (OSError, json.JSONDecodeError) as exc:
+              health, rows, valid_shape = None, [], False
+              print(f"[FAIL] health/latest.json parses: {exc}")
+          results = [check(valid_shape, "health/latest.json parses and has datasets")]
+          if not valid_shape:
+              sys.exit(1)
+          rows = list(rows.values()) if isinstance(rows, dict) else rows
+          def parse(value):
+              return datetime.fromisoformat(value.replace("Z", "+00:00"))
+          stamps = []
+          for row in rows:
+              if isinstance(row, dict) and row.get("last_checked"):
+                  try: stamps.append(parse(row["last_checked"]))
+                  except ValueError: pass
+          age = (datetime.now(timezone.utc) - max(stamps)).total_seconds() / 60 if stamps else float("inf")
+          results.append(check(age <= 15, f"latest dataset check is within 15m ({age:.1f}m)"))
+          results.append(check(len(rows) >= 300, f"dataset count is at least 300 ({len(rows)})"))
+          known = {"fresh", "aging", "stale", "discontinued", "degraded", "browser-dependent", "unreachable", "unknown", "unknown-freshness", "reference"}
+          unknown = sorted({row.get("status") for row in rows if not isinstance(row, dict) or row.get("status") not in known})
+          results.append(check(not unknown, f"all statuses use the known taxonomy ({', '.join(unknown) or 'ok'})"))
+          sys.exit(0 if all(results) else 1)
+          EOF
+
+      - name: Phase 2 - reprobe comparison
+        run: |
+          bash scripts/check.sh > /tmp/regenerated_health.json
+          python3 - <<'EOF'
+          import json, sys
+
+          committed = json.load(open("health/latest.json", encoding="utf-8"))["datasets"]
+          regenerated = json.load(open("/tmp/regenerated_health.json", encoding="utf-8"))["datasets"]
+          def check(ok, message):
+              print(f"[{'PASS' if ok else 'FAIL'}] {message}")
+              return ok
+          committed_by_id = {row.get("dataset_id"): row for row in committed}
+          regenerated_by_id = {row.get("dataset_id"): row for row in regenerated}
+          delta = abs(len(regenerated) - len(committed))
+          results = [check(len(regenerated) >= len(committed) * .5,
+                           f"reprobe did not collapse below 50% ({len(regenerated)}/{len(committed)})"),
+                     check(delta <= 5, f"reprobe count is within +/-5 ({len(regenerated)} vs {len(committed)})")]
+          missing = [dataset_id for dataset_id, row in committed_by_id.items()
+                     if row.get("status") != "browser-dependent"
+                     and not regenerated_by_id.get(dataset_id, {}).get("status")]
+          results.append(check(not missing,
+                               f"non-browser datasets have regenerated statuses ({len(missing)} missing)"))
+          if missing: print("[FAIL] missing: " + ", ".join(missing[:20]))
+          sys.exit(0 if all(results) else 1)
+          EOF
+
+      - name: Phase 3 - verify derived artifacts are reproducible
+        run: |
+          key_registry=docs/.well-known/datapulse-probe-keys.json
+          if [[ -f "$key_registry" ]]; then
+            mv "$key_registry" /tmp/datapulse-probe-keys.json
+            trap 'mv /tmp/datapulse-probe-keys.json "$key_registry"' EXIT
+          fi
+          DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE="" bash scripts/generate.sh health-cycle
+          python3 - <<'EOF'
+          import subprocess, sys
+          from pathlib import Path
+
+          paths = ["catalog-snapshot.json", "feed.xml", "README.md"]
+          committed = subprocess.check_output(["git", "ls-tree", "-r", "--name-only", "HEAD", "--", "badges"], text=True).splitlines()
+          current = [str(path) for path in Path("badges").rglob("*") if path.is_file()]
+          paths += sorted(set(committed) | set(current))
+          failed = []
+          for path in paths:
+              try:
+                  expected = subprocess.check_output(["git", "show", f"HEAD:{path}"])
+                  actual = Path(path).read_bytes()
+                  ok = actual == expected
+              except (OSError, subprocess.CalledProcessError) as exc:
+                  ok = False
+                  failed.append(f"{path} ({exc})")
+              else:
+                  if not ok: failed.append(path)
+              print(f"[{'PASS' if ok else 'FAIL'}] byte-identical {path}")
+          if failed: print("[FAIL] non-reproducible artifacts: " + ", ".join(failed))
+          sys.exit(1 if failed else 0)
+          EOF
