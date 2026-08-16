@@ -1,8 +1,8 @@
 ---
 dataset_id: bnm_myor
-last_checked: 2026-08-14T04:59:27Z
-status: fresh
-freshness_delta: 0 days
+last_checked: 2026-08-16T02:09:20Z
+status: aging
+freshness_delta: 2 days
 next_expected_update: daily
 schema_version: unknown
 schema_drift: none
@@ -16,15 +16,15 @@ attribution: Bank Negara Malaysia via BNM Open API
 
 ## Status
 
-**Status:** Fresh
+**Status:** Aging
 
-**Freshness:** 0 days
+**Freshness:** 2 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 

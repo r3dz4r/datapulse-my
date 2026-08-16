@@ -1,8 +1,8 @@
 ---
 dataset_id: bnm_opr
-last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-16T02:09:20Z
 status: stale
-freshness_delta: 99 days
+freshness_delta: 101 days
 next_expected_update: monthly
 schema_version: unknown
 schema_drift: none
@@ -18,13 +18,13 @@ attribution: Bank Negara Malaysia via BNM Open API
 
 **Status:** Stale
 
-**Freshness:** 99 days
+**Freshness:** 101 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 

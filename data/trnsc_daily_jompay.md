@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_trnsc_daily_jompay
-last_checked: 2026-08-14T04:59:27Z
-last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-08-16T02:09:20Z
 status: fresh
 freshness_delta: 1 days
 next_expected_update: daily
-record_count: 2415
+record_count: 2417
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This dataset is provided with the highest practical timeliness (updated by 2am daily for data up to the previous day) due to its high potential for use in nowcasting and forecasting models. However, there may occasional revisions to ensure eventual consistency with the monthly payment statistics published by the Central Bank of Malaysia (BNM)."]
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 
-The checked resource is 155,762 bytes.
+The checked resource is 155,891 bytes.
 
 ## Provenance
 

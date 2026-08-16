@@ -5,7 +5,7 @@ source_url: "https://storage.dosm.gov.my/ipi/ipi_3d.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-16T02:09:20Z
 last_observed: 2026-06-01
 last_modified: 2026-08-12T22:38:36Z
 record_count: 28070
@@ -13,7 +13,7 @@ column_count: 4
 status: aging
 notes: "Tier-1 wave D newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: ipi_3d
-freshness_delta: 74 days
+freshness_delta: 76 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Aging
 
-**Freshness:** 74 days
+**Freshness:** 76 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 

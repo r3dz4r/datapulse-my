@@ -2,30 +2,13 @@
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dosm_gdp_annual_nominal_supply_granular",
   "status": "stale",
-  "last_checked": "2026-08-13T02:46:04Z",
-  "freshness_days": 1320,
+  "last_checked": "2026-08-16T02:09:20Z",
+  "freshness_days": 1323,
   "next_expected_update": null,
   "refresh_frequency": "annual",
   "record_count": 1921,
   "date_range": null,
-  "fields": [
-    {
-      "name": "date",
-      "type": "date"
-    },
-    {
-      "name": "value",
-      "type": "number"
-    },
-    {
-      "name": "sector",
-      "type": "string"
-    },
-    {
-      "name": "series",
-      "type": "string"
-    }
-  ],
+  "fields": [],
   "checks": [
     {
       "name": "file_reachable",
@@ -49,7 +32,8 @@
     }
   ],
   "known_quirks": [
-    "Official catalogue caveat: Values for 2024 and 2025 may be revised in future releases. Furthermore, the sum of GDP for all sectors may not always equal to the values for overall GDP because of independent rounding to one decimal place. However, the differences are not obvious."
+    "Official catalogue caveat: Values for 2024 and 2025 may be revised in future releases. Furthermore, the sum of GDP for all sectors may not always equal to the values for overall GDP because of independent rounding to one decimal place. However, the differences are not obvious.",
+    "Fields are inferred at the next probe run."
   ],
   "breaking_changes": [],
   "reproducibility": {

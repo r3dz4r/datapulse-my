@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_ppi_sop
-last_checked: 2026-08-14T04:59:27Z
-status: unknown-freshness
-freshness_delta: unknown
+last_checked: 2026-08-16T02:09:20Z
+status: fresh
+freshness_delta: 18 days
 next_expected_update: unknown
-record_count: 0
+record_count: 12134
 date_range: unknown
 schema_version: 1.0
 schema_drift: unknown
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Unknown freshness
+**Status:** Fresh
 
-**Freshness:** unknown
+**Freshness:** 18 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 
-The checked resource is 2 bytes.
+The checked resource is 376,368 bytes.
 
 ## Provenance
 

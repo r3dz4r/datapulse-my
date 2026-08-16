@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_lecturers_uni
-last_checked: 2026-08-14T04:59:27Z
-last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-08-16T02:09:20Z
 status: stale
-freshness_delta: 1321 days
+freshness_delta: 1323 days
 next_expected_update: annual
 record_count: 2250
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Ministry of Higher Education Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1321 days
+**Freshness:** 1323 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 

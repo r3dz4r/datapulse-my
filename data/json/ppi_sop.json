@@ -1,14 +1,31 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "ppi_sop",
-  "status": "unknown-freshness",
-  "last_checked": "2026-08-13T02:46:04Z",
-  "freshness_days": null,
+  "status": "fresh",
+  "last_checked": "2026-08-16T02:09:20Z",
+  "freshness_days": 18,
   "next_expected_update": null,
   "refresh_frequency": "monthly",
-  "record_count": 0,
+  "record_count": 12134,
   "date_range": null,
-  "fields": [],
+  "fields": [
+    {
+      "name": "series",
+      "type": "string"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "stage",
+      "type": "integer"
+    },
+    {
+      "name": "index",
+      "type": "number"
+    }
+  ],
   "checks": [
     {
       "name": "file_reachable",
@@ -18,25 +35,23 @@
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Probe measured 0 record(s)"
+      "method": "Probe measured 12134 record(s)"
     },
     {
       "name": "freshness",
-      "status": "warn",
-      "method": "Health snapshot classifies the dataset as unknown-freshness"
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
     },
     {
       "name": "schema_stable",
-      "status": "warn",
-      "method": "The underlying probe has not produced this measurement."
+      "status": "pass",
+      "method": "Probe observed 4 column(s) with no content-shape change"
     }
   ],
-  "known_quirks": [
-    "Fields are inferred at the next probe run."
-  ],
+  "known_quirks": [],
   "breaking_changes": [],
   "reproducibility": {
-    "url": "https://api.data.gov.my/data-catalogue?id=ppi_sop",
+    "url": "https://storage.dosm.gov.my/ppi/ppi_sop.csv",
     "access_method": "curl"
   },
   "licence": "Creative Commons Attribution 4.0",

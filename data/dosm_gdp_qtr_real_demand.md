@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_gdp_qtr_real_demand
-last_checked: 2026-08-14T04:59:27Z
-last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-08-16T02:09:20Z
 status: aging
-freshness_delta: 225 days
+freshness_delta: 137 days
 next_expected_update: quarterly
-record_count: 825
+record_count: 844
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Values for 2022, 2023 and 2024 may be revised in future releases. Furthermore, the sum of GDP for all expenditure types may not always equal to the values for overall GDP because of independent rounding to one decimal place. However, the differences are not obvious."]
@@ -20,17 +20,17 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 225 days
+**Freshness:** 137 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 
-The checked resource is 62,421 bytes.
+The checked resource is 63,867 bytes.
 
 ## Provenance
 

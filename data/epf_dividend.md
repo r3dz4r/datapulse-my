@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_epf_dividend
-last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-16T02:09:20Z
 status: fresh
-freshness_delta: 166 days
+freshness_delta: 168 days
 next_expected_update: annual
 record_count: 74
 date_range: 1952-01-01 to 2025-01-01
@@ -20,13 +20,13 @@ attribution: Employees Provident Fund via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 166 days
+**Freshness:** 168 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 

@@ -19,6 +19,14 @@
         "extraction-mode": "max",
         "fallback": "last-modified"
       }
+    },
+    "data-catalogue-date": {
+      "type": "http",
+      "freshness": {
+        "content-date-field": "date",
+        "extraction-mode": "max",
+        "fallback": "last-modified"
+      }
     }
   },
   "datasets": {
@@ -2250,6 +2258,99 @@
     },
     "bnm_myor": {
       "template": "bnm-open-api"
+    },
+    "legal_advisory_branch": {
+      "template": "data-catalogue-date"
+    },
+    "legal_advisory_case_type": {
+      "template": "data-catalogue-date"
+    },
+    "legal_advisory_category": {
+      "template": "data-catalogue-date"
+    },
+    "legal_advisory_subcategory": {
+      "template": "data-catalogue-date"
+    },
+    "cpi_state": {
+      "template": "data-catalogue-date"
+    },
+    "cpi_state_inflation": {
+      "template": "data-catalogue-date"
+    },
+    "employment_sector": {
+      "template": "data-catalogue-date"
+    },
+    "fertility": {
+      "template": "data-catalogue-date"
+    },
+    "gdp_annual_nominal_supply": {
+      "template": "data-catalogue-date"
+    },
+    "gdp_annual_real_supply": {
+      "template": "data-catalogue-date"
+    },
+    "gdp_gni_annual_nominal": {
+      "template": "data-catalogue-date"
+    },
+    "gdp_qtr_real_sa": {
+      "template": "data-catalogue-date"
+    },
+    "gdp_state_real_supply": {
+      "template": "data-catalogue-date"
+    },
+    "hh_expenditure_dun": {
+      "template": "data-catalogue-date"
+    },
+    "hh_expenditure_parlimen": {
+      "template": "data-catalogue-date"
+    },
+    "hh_income": {
+      "template": "data-catalogue-date"
+    },
+    "hh_income_district": {
+      "template": "data-catalogue-date"
+    },
+    "hh_income_state": {
+      "template": "data-catalogue-date"
+    },
+    "hh_inequality": {
+      "template": "data-catalogue-date"
+    },
+    "hh_inequality_district": {
+      "template": "data-catalogue-date"
+    },
+    "hh_inequality_state": {
+      "template": "data-catalogue-date"
+    },
+    "hh_poverty": {
+      "template": "data-catalogue-date"
+    },
+    "hh_poverty_district": {
+      "template": "data-catalogue-date"
+    },
+    "hh_poverty_state": {
+      "template": "data-catalogue-date"
+    },
+    "lfs_qtr": {
+      "template": "data-catalogue-date"
+    },
+    "lfs_qtr_state": {
+      "template": "data-catalogue-date"
+    },
+    "lfs_year": {
+      "template": "data-catalogue-date"
+    },
+    "marriages_state": {
+      "template": "data-catalogue-date"
+    },
+    "marriages_state_age": {
+      "template": "data-catalogue-date"
+    },
+    "ppi": {
+      "template": "data-catalogue-date"
+    },
+    "trade_sitc_1d": {
+      "template": "data-catalogue-date"
     },
     "hansard_sittings": {
       "template": "hansard-script"

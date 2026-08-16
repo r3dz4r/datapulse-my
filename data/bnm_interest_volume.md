@@ -1,8 +1,8 @@
 ---
 dataset_id: bnm_interest_volume
-last_checked: 2026-08-14T04:59:27Z
-status: fresh
-freshness_delta: 1 days
+last_checked: 2026-08-16T02:09:20Z
+status: degraded
+freshness_delta: 2 days
 next_expected_update: monthly
 schema_version: unknown
 schema_drift: none
@@ -16,16 +16,16 @@ attribution: Bank Negara Malaysia via BNM Open API
 
 ## Status
 
-**Status:** Fresh
+**Status:** Degraded
 
-**Freshness:** 1 days
+**Freshness:** 2 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 
-The checked resource is 540 bytes.
+The checked resource is 547 bytes.

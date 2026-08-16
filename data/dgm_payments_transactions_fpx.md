@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_payments_transactions_fpx
-last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-16T02:09:20Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: daily
-record_count: 7248
+record_count: 7254
 date_range: 2020-01-01 to 2026-08-01
 schema_version: 1.0
 schema_drift: none
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 
-The checked resource is 272,670 bytes.
+The checked resource is 272,895 bytes.
 
 ## Provenance
 

@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_static_mybas_kuching
-last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-16T02:09:20Z
 status: fresh
 freshness_delta: 0 days
-record_count: 17170
+record_count: 0
 content_freshness_date: 2026-12-31
 schema_version: GTFS
 schema_drift: none
@@ -25,11 +25,11 @@ HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 
-The checked resource is 95,768 bytes.
+The checked resource is 1,173 bytes.
 
 ## Provenance
 

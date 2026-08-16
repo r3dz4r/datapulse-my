@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_gdp_annual_real_supply
-last_checked: 2026-08-14T04:59:27Z
+last_checked: 2026-08-16T02:09:20Z
 status: aging
-freshness_delta: 590 days
+freshness_delta: 592 days
 next_expected_update: annual
 record_count: 147
 date_range: 2015-01-01 to 2025-01-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 590 days
+**Freshness:** 592 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_gdp_annual_real_supply
-last_checked: 2026-08-14T04:59:27Z
-status: unknown-freshness
-freshness_delta: unknown
+last_checked: 2026-08-16T02:09:20Z
+status: aging
+freshness_delta: 592 days
 next_expected_update: unknown
 record_count: 147
 date_range: unknown
@@ -18,15 +18,15 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Unknown freshness
+**Status:** Aging
 
-**Freshness:** unknown
+**Freshness:** 592 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 

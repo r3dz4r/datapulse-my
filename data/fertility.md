@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_fertility
-last_checked: 2026-08-14T04:59:27Z
-status: unknown-freshness
-freshness_delta: unknown
+last_checked: 2026-08-16T02:09:20Z
+status: stale
+freshness_delta: 958 days
 next_expected_update: unknown
 record_count: 536
 date_range: unknown
@@ -18,15 +18,15 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Unknown freshness
+**Status:** Stale
 
-**Freshness:** unknown
+**Freshness:** 958 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 

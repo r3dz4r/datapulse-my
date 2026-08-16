@@ -5,10 +5,10 @@ source_url: "https://storage.data.gov.my/transportation/ktmb/ets_2026.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "daily"
-last_checked: 2026-08-14T04:59:27Z
-last_observed: 2026-08-13
-last_modified: 2026-08-13T19:31:21Z
-record_count: 520792
+last_checked: 2026-08-16T02:09:20Z
+last_observed: 2026-08-15
+last_modified: 2026-08-15T19:31:19Z
+record_count: 525537
 column_count: 5
 status: fresh
 notes: "Tier-1 wave F newly verified direct-storage source; HTTP 200 and CSV header verified."
@@ -34,11 +34,11 @@ HTTP 200
 
 ## Last checked
 
-2026-08-14 at 04:59:27 UTC.
+2026-08-16 at 02:09:20 UTC.
 
 ## File size
 
-The checked resource is 21,230,071 bytes.
+The checked resource is 21,423,976 bytes.
 
 ## Provenance
 
