@@ -9,6 +9,7 @@ import sys
 import httpx
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastmcp import Client
@@ -46,6 +47,7 @@ TOOL_PARAMETERS = {
     "trust_verdict": {"dataset_id"},
     "verify_attestation": {"reference", "replay_chain"},
     "find_by_licence": {"licence"},
+    "usage_summary": {"buyer_id", "since", "until"},
 }
 
 EXPECTED_TOOL_ANNOTATIONS = {
@@ -71,6 +73,7 @@ EXPECTED_TOOL_TITLES = {
     "trust_verdict": "Aggregate a Signed Trust Verdict",
     "verify_attestation": "Verify a Signed Probe Attestation",
     "find_by_licence": "Scope Reusable Data by Licence",
+    "usage_summary": "Summarize Buyer Tool Usage",
 }
 
 
@@ -268,8 +271,9 @@ def live_reconciliation() -> dict:
 
 
 @pytest.fixture(autouse=True)
-def local_catalogue(monkeypatch: pytest.MonkeyPatch) -> None:
+def local_catalogue(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     server._VERIFY_CACHE.clear()
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path / "usage"))
     manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
     health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
     trends = json.loads((REPO_DIR / "health/trends.json").read_text(encoding="utf-8"))
@@ -511,6 +515,33 @@ async def test_tool_call_logs_sanitized_usage(caplog: pytest.LogCaptureFixture) 
     assert server._sanitise_tool_arg({"api_key": "should-not-appear"}) == {
         "api_key": "[REDACTED]"
     }
+
+
+async def test_usage_jsonl_sink_and_summary(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    request = SimpleNamespace(headers={"x-buyer-id": "buyer-a", "x-request-id": "request-1"}, client=SimpleNamespace(host="127.0.0.1"))
+    monkeypatch.setattr(server, "get_http_request", lambda: request)
+    context = SimpleNamespace(message=SimpleNamespace(name="trust_verdict", arguments={"dataset_id": "fuelprice", "api_key": "secret"}), timestamp=datetime.now(timezone.utc))
+    result = await server.ToolUsageLoggingMiddleware().on_call_tool(context, lambda _: _result({"score": {"score": 92.0, "methodology_version": 2}}))
+    assert result["score"]["score"] == 92.0
+    record = json.loads(next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8"))
+    assert record["buyer_id"] == "buyer-a" and record["args"]["api_key"] == "[REDACTED]"
+    day = datetime.now(timezone.utc).date().isoformat()
+    (tmp_path / "2026-08-01.jsonl").write_text(json.dumps({"buyer_id": "buyer-a", "tool": "search_datasets", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
+    (tmp_path / "2026-08-02.jsonl").write_text("\n".join(json.dumps(row) for row in [
+        {"buyer_id": "buyer-a", "tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}},
+        {"buyer_id": "buyer-a", "tool": "trust_verdict", "args": {"dataset_id": "cpi"}, "result_summary": {"score": 76}},
+        {"buyer_id": "other", "tool": "trust_verdict", "args": {"dataset_id": "ignored"}, "result_summary": {"score": 100}},
+    ]) + "\n", encoding="utf-8")
+    (tmp_path / "2026-08-03.jsonl").write_text(json.dumps({"buyer_id": "other", "tool": "get_dataset", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
+    summary = await server.usage_summary("buyer-a", "2026-08-01", "2026-08-03")
+    assert summary == {"total_calls": 3, "by_tool": {"search_datasets": 1, "get_dataset": 1, "trust_verdict": 1}, "by_dataset": {"fuelprice": 1, "cpi": 1}, "trust_distribution": {"75-89": 1}}
+    with pytest.raises(ValueError): await server.usage_summary("buyer-a", "2026-08-03", "2026-08-02")
+    with pytest.raises(ValueError): await server.usage_summary("buyer-a", "invalid", day)
+
+
+async def _result(value: dict) -> dict:
+    return value
 
 
 async def test_search_datasets_exact_title_scores_above_partial() -> None:

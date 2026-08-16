@@ -1,0 +1,31 @@
+# Copy to ~/.config/datapulse/policy.yaml and tailor buyer access.
+schema_version: 1
+buyers:
+  # Default pre-billing access for requests with no gateway buyer identity.
+  - id: free-anonymous
+    tier: free
+    rate_limit_per_day: 100
+    allowed_categories: [reference, fresh]
+    masking: none
+  - id: pro-default
+    tier: pro
+    rate_limit_per_day: 10000
+    allowed_categories: [reference, fresh, aging]
+    masking: redact_pii_columns
+  # Enterprise can access all categories and receive audit exports.
+  - id: enterprise
+    tier: enterprise
+    rate_limit_per_day: unlimited
+    allowed_categories: all
+    masking: redact_pii_columns
+    audit_log_export: true
+datasets:
+  - id_pattern: "pharma_*"
+    access: gated
+    min_tier: pro
+    masking:
+      columns: [patient_id, prescriber_id, registration_holder_id]
+      strategy: hash_salted
+    audit:
+      log_every_access: true
+      retention_days: 2555

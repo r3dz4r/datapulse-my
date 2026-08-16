@@ -11,7 +11,7 @@ import asyncio
 import logging
 from copy import deepcopy
 from asyncio import gather
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from time import monotonic
@@ -130,20 +130,69 @@ def _request_client_ip() -> str:
         return "unknown"
 
 
+def _request_header(name: str, default: str) -> str:
+    """Read a gateway-provided request header when an HTTP request exists."""
+    try:
+        return get_http_request().headers.get(name, default)
+    except RuntimeError:
+        return default
+
+
+def _usage_dir() -> Path:
+    return Path(os.environ.get("DATAPULSE_USAGE_DIR", "/var/lib/datapulse/usage"))
+
+
+def _result_summary(tool: str, result: Any) -> dict[str, Any]:
+    """Keep the audit ledger useful without copying full tool responses."""
+    if isinstance(result, list):
+        return {"count": len(result)}
+    if tool == "trust_verdict" and isinstance(result, dict):
+        score = result.get("score", {})
+        if isinstance(score, dict):
+            return {key: score[key] for key in ("score", "methodology_version") if key in score}
+    if isinstance(result, dict):
+        return {key: result[key] for key in ("count", "dataset_id", "status") if key in result}
+    return {}
+
+
+def _append_usage_record(record: dict[str, Any]) -> None:
+    try:
+        usage_dir = _usage_dir()
+        usage_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        path = usage_dir / f"{datetime.now(timezone.utc).date().isoformat()}.jsonl"
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n")
+    except Exception:
+        logger.exception("mcp-tool: unable to persist usage record")
+
+
 class ToolUsageLoggingMiddleware(Middleware):
     """Log sanitized usage details for actual MCP tool calls only."""
 
     async def on_call_tool(self, context: Any, call_next: Any) -> Any:
         message = context.message
         args = _sanitise_tool_arg(message.arguments or {})
+        client_ip = _request_client_ip()
         logger.info(
             "mcp-tool: tool=%s args=%s ip=%s timestamp=%s",
             message.name,
             json.dumps(args, ensure_ascii=False, separators=(",", ":")),
-            _request_client_ip(),
+            client_ip,
             context.timestamp.isoformat(),
         )
-        return await call_next(context)
+        started = monotonic()
+        result = await call_next(context)
+        _append_usage_record({
+            "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+            "tool": message.name,
+            "buyer_id": _request_header("x-buyer-id", "anonymous"),
+            "args": args,
+            "result_summary": _result_summary(message.name, result),
+            "latency_ms": round((monotonic() - started) * 1000),
+            "request_id": _request_header("x-request-id", getattr(context, "request_id", "unknown")),
+            "client_ip": client_ip,
+        })
+        return result
 
 
 def _manifest_dataset_count(manifest_path: Path | None = None) -> int:
@@ -1606,6 +1655,53 @@ async def find_by_licence(
         "count": len(datasets),
         "datasets": datasets,
     }
+
+
+@mcp.tool(
+    title="Summarize Buyer Tool Usage",
+    description="Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07.",
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+async def usage_summary(
+    buyer_id: Annotated[str, Field(min_length=1, description="Buyer identifier, e.g. 'pro-default' or 'anonymous'.", examples=["pro-default"])],
+    since: Annotated[str, Field(description="Inclusive ISO start date YYYY-MM-DD, e.g. '2026-08-01'.", examples=["2026-08-01"])],
+    until: Annotated[str, Field(description="Inclusive ISO end date YYYY-MM-DD, e.g. '2026-08-07'.", examples=["2026-08-07"])],
+) -> dict[str, Any]:
+    """Aggregate persisted audit records for one buyer."""
+    try:
+        start, end = date.fromisoformat(since), date.fromisoformat(until)
+    except ValueError as exc:
+        raise ValueError("since and until must be ISO dates (YYYY-MM-DD)") from exc
+    if start > end:
+        raise ValueError("since must be on or before until")
+    summary: dict[str, Any] = {"total_calls": 0, "by_tool": {}, "by_dataset": {}, "trust_distribution": {}}
+    current = start
+    while current <= end:
+        path = _usage_dir() / f"{current.isoformat()}.jsonl"
+        if path.is_file():
+            for line in path.read_text(encoding="utf-8").splitlines():
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(record, dict):
+                    continue
+                if record.get("buyer_id") != buyer_id:
+                    continue
+                summary["total_calls"] += 1
+                tool = record.get("tool", "unknown")
+                summary["by_tool"][tool] = summary["by_tool"].get(tool, 0) + 1
+                dataset_id = record.get("args", {}).get("dataset_id")
+                if isinstance(dataset_id, str):
+                    summary["by_dataset"][dataset_id] = summary["by_dataset"].get(dataset_id, 0) + 1
+                score = record.get("result_summary", {}).get("score") if tool == "trust_verdict" else None
+                if isinstance(score, (int, float)):
+                    bucket = "90-100" if score >= 90 else "75-89" if score >= 75 else "50-74" if score >= 50 else "25-49" if score >= 25 else "0-24"
+                    summary["trust_distribution"][bucket] = summary["trust_distribution"].get(bucket, 0) + 1
+        current += timedelta(days=1)
+    return summary
 
 
 @mcp.resource(
