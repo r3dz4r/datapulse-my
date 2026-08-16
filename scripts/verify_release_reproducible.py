@@ -281,6 +281,7 @@ def _build(source: Path, workdir: Path, git_dir: str) -> BuildCapture:
     environment = {
         "PATH": os.environ.get("PATH", os.defpath),
         "GIT_DIR": git_dir,
+        "DATAPULSE_ARCHIVES_DIR": str(workdir / ".archives"),
     }
     try:
         completed = subprocess.run(

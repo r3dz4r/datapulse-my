@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts import verify_release_reproducible as verifier
 from scripts.tests.generator_harness import _capture_outputs
 from scripts.tests.test_generate_profiles import _stage_source
 
@@ -90,6 +91,31 @@ def _metadata_file(run: VerificationRun, name: str) -> Path:
     matches = list(run.workdir_root.glob(f"datapulse-release-meta-*/{name}"))
     assert len(matches) == 1
     return matches[0]
+
+
+def test_build_sets_archives_dir_inside_isolated_workdir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workdir = tmp_path / "isolated-build"
+    captured: dict[str, object] = {}
+
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured.update(kwargs)
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(verifier, "_copy_source", lambda destination: None)
+    monkeypatch.setattr(verifier.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        verifier,
+        "_capture",
+        lambda root, source: verifier.BuildCapture({}, {}, root),
+    )
+
+    verifier._build(ROOT, workdir, "/tmp/fake-git-dir")
+
+    environment = captured["env"]
+    assert isinstance(environment, dict)
+    assert environment["DATAPULSE_ARCHIVES_DIR"] == str(workdir / ".archives")
 
 
 def test_first_build_produces_expected_outputs(

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from scripts.tests.generator_harness import (
@@ -168,6 +169,29 @@ def _stage_source(tmp_path: Path) -> Path:
             }
         )
     _write_json(source / "health/latest.json", health)
+    checked_at = health["checked_at"]
+    history_observed_at = (
+        datetime.fromisoformat(checked_at.replace("Z", "+00:00")) + timedelta(days=8)
+    ).isoformat().replace("+00:00", "Z")
+    sample_dataset_id = manifest["datasets"][0]["id"]
+    history_row = {
+        "dataset_id": sample_dataset_id,
+        "observed_at": history_observed_at,
+        "cycle": history_observed_at[:16],
+        "status": "fresh",
+        "freshness_signal": "content-date-parse",
+        "last_modified": history_observed_at,
+        "content_date": history_observed_at[:10],
+        "record_count": 1,
+        "record_count_estimated": False,
+        "http_status": 200,
+        "probe_outcome": "success",
+        "message": "Fixture history row.",
+    }
+    (source / "health/history.jsonl").write_text(
+        json.dumps(history_row, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
 
     shutil.copy2(SHELL_FIXTURE / "README.md", source / "README.md")
     (source / "llms.txt").write_text(
