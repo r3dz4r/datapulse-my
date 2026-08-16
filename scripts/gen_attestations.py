@@ -28,19 +28,39 @@ def discover_git_anchors(root: Path) -> dict[str, dict[str, str]]:
         if len(head) == 64 and len(commit) == 40: anchors[head] = {"tag":tag, "commit":commit}
     return anchors
 
-STATUS_SCORE = {"fresh":100,"reference":100,"aging":65,"stale":20,"degraded":10,"unreachable":0,"discontinued":0,"browser-dependent":50,"unknown":50,"unknown-freshness":50}
+STATUS_SCORE = {"fresh":100,"reference":90,"aging":65,"stale":20,"degraded":10,"unreachable":0,"discontinued":0,"browser-dependent":50,"unknown":50,"unknown-freshness":50}
 TREND_SCORE = {"recovering":100,"stable":75,"deteriorating":25,"insufficient_data":50}
 DRIFT_SCORE = {"stable":100,"record_count_drift":40,"drift_detected":0,"insufficient_data":50}
 RECON_SCORE = {"agree":100,"different_granularity":50,"discrepancy":0,"insufficient_data":50,"single_source":50}
+
+# methodology_version 2 changes (from 1):
+# 1. Missing-signal components are weighted out of the denominator instead of defaulting to 50.
+#    This prevents 89% of single-source datasets from being artificially dragged into the
+#    25-49 score bucket by their absent cross_source_agreement signal.
+# 2. Reference-status datasets cap at 90 (was 100). Reference = stable-by-design, not current.
+# Score interpretation unchanged: 0-100, higher = more trustworthy. Use methodology_version
+# to detect schema drift if a consumer's downstream pipeline caches old scores.
+# A score has a 25-point floor, while datasets stale for at least a year are capped at 30:
+# a lone observed component must not produce an absolute-zero verdict or mask confirmed staleness.
+DEFAULT_COMPONENT_SCORES = {"freshness":50,"reliability":50,"trend":50,"drift":50,"cross_source_agreement":50}
+SCORE_WEIGHTS = {"freshness":.30,"reliability":.30,"trend":.20,"drift":.10,"cross_source_agreement":.10}
+
+def _is_default(value: float, component: str) -> bool:
+    """Return whether a component has its fallback value for missing signal."""
+    return value == DEFAULT_COMPONENT_SCORES[component]
 
 def score_rows(manifest: dict, health: dict, trends: dict, drift: dict, recon: dict, generated_at: str) -> dict:
     hs={r["dataset_id"]:r for r in health["datasets"]}; ts={r["dataset_id"]:r for r in trends["datasets"]}; ds={r["dataset_id"]:r for r in drift["datasets"]}; rs={m["id"]:g["verdict"] for g in recon["groups"] for m in g["members"]}; rows=[]
     for entry in manifest["datasets"]:
         did=entry["id"]; h=hs.get(did,{}); t=ts.get(did,{}); d=ds.get(did,{}); reliability=t.get("publish_on_time_pct")
         components={"freshness":STATUS_SCORE.get(h.get("status"),50),"reliability":reliability if isinstance(reliability,(int,float)) else 50,"trend":TREND_SCORE.get(t.get("trend"),50),"drift":DRIFT_SCORE.get(d.get("verdict"),50),"cross_source_agreement":RECON_SCORE.get(rs.get(did,"single_source"),50)}
-        value=round(.3*components["freshness"]+.3*components["reliability"]+.2*components["trend"]+.1*components["drift"]+.1*components["cross_source_agreement"],1)
-        rows.append({"dataset_id":did,"methodology_version":1,"score":value,"components":components,"observed_at":h.get("last_checked")})
-    return {"schema":"datapulse/v1/trust-scores","generated_at":generated_at,"methodology_version":1,"datasets":rows}
+        present_components={name:value for name,value in components.items() if not _is_default(value,name)}
+        present_weight_sum=sum(SCORE_WEIGHTS[name] for name in present_components)
+        value=round(sum(SCORE_WEIGHTS[name]/present_weight_sum*value for name,value in present_components.items()),1) if present_weight_sum else 50.0
+        value=max(value,25.0)
+        if h.get("status")=="stale" and (h.get("staleness_days") or 0)>=365: value=min(value,30.0)
+        rows.append({"dataset_id":did,"methodology_version":2,"score":value,"components":components,"observed_at":h.get("last_checked")})
+    return {"schema":"datapulse/v1/trust-scores","generated_at":generated_at,"methodology_version":2,"datasets":rows}
 
 def generate(root: Path, key_path: Path, now: datetime) -> None:
     manifest=load(root/"datapulse.json"); health=load(root/"health/latest.json"); trends=load(root/"health/trends.json"); drift=load(root/"health/drift.json"); recon=load(root/"health/reconciliation.json"); key=load(key_path)
@@ -59,7 +79,7 @@ def generate(root: Path, key_path: Path, now: datetime) -> None:
     if latest.exists(): shutil.rmtree(latest)
     latest.mkdir(parents=True)
     for filename in ("chain_head.json","index.json","scores.json"): shutil.copy2(dated/filename,latest/filename)
-    for entry in manifest["datasets"]: entry["attestation_ref"]=refs[entry["id"]]; entry["methodology_version"]=1
+    for entry in manifest["datasets"]: entry["attestation_ref"]=refs[entry["id"]]; entry["methodology_version"]=2
     dump(root/"datapulse.json",manifest)
 
 def main() -> int:

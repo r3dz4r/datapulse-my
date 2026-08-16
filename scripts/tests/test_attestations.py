@@ -64,10 +64,52 @@ def test_browser_digest_does_not_invent_receipt(tmp_path: Path):
     assert payload["content_fingerprint"] is None and payload["browser_receipt"]["available"] is False
 
 
-def test_methodology_v1_exact_score(tmp_path: Path):
+def test_missing_component_is_weighted_out_of_score_denominator(tmp_path: Path):
     root, key = fixture_root(tmp_path); ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc)); row = json.loads((root / "attestations/latest/scores.json").read_text())["datasets"][0]
     assert row["components"] == {"freshness":100,"reliability":100,"trend":75,"drift":100,"cross_source_agreement":50}
-    assert row["score"] == 90.0 and row["methodology_version"] == 1
+    assert row["score"] == 94.4
+
+
+def test_reference_status_caps_freshness_at_90(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    health = json.loads((root / "health/latest.json").read_text())
+    health["datasets"][0]["status"] = "reference"
+    write(root / "health/latest.json", health)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    row = json.loads((root / "attestations/latest/scores.json").read_text())["datasets"][0]
+    assert row["components"]["freshness"] == 90
+
+
+def test_stale_status_remains_low_when_missing_components_are_removed(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    health = json.loads((root / "health/latest.json").read_text())
+    health["datasets"][0].update(status="stale", staleness_days=365)
+    write(root / "health/latest.json", health)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    row = json.loads((root / "attestations/latest/scores.json").read_text())["datasets"][0]
+    assert row["score"] == 30.0
+
+
+def test_score_floor_avoids_absolute_zero_from_a_single_component(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    health = json.loads((root / "health/latest.json").read_text())
+    health["datasets"][0]["status"] = "unreachable"
+    write(root / "health/latest.json", health)
+    write(root / "health/trends.json", {"datasets": []})
+    write(root / "health/drift.json", {"datasets": []})
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    row = json.loads((root / "attestations/latest/scores.json").read_text())["datasets"][0]
+    assert row["score"] == 25.0
+
+
+def test_methodology_version_is_bumped_everywhere(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    scores = json.loads((root / "attestations/latest/scores.json").read_text())
+    manifest = json.loads((root / "datapulse.json").read_text())
+    assert scores["methodology_version"] == 2
+    assert all(row["methodology_version"] == 2 for row in scores["datasets"])
+    assert all(entry["methodology_version"] == 2 for entry in manifest["datasets"])
 
 
 def test_canonical_json_is_utf8_sorted_and_compact() -> None:
