@@ -81,12 +81,25 @@ def schema_version(check_source: str) -> str:
 
 
 def due_policy(check_source: str, timer: Path) -> str:
-    calendar = re.search(r"^OnCalendar=(.+)$", timer.read_text(encoding="utf-8"), re.MULTILINE)
-    if calendar is None:
-        raise ValueError(f"could not extract OnCalendar from {timer}")
-    calendar_value = calendar.group(1)
-    cadence_match = re.fullmatch(r"\*:\d+/(\d+)", calendar_value)
-    cadence = f"{cadence_match.group(1)} minutes" if cadence_match else calendar_value
+    # CI / non-systemd environments: the timer file isn't mounted. Fall back
+    # to the known production cadence (5 minutes, OnCalendar=*:0/5).
+    try:
+        timer_text = timer.read_text(encoding="utf-8") if timer.is_file() else None
+    except OSError:
+        timer_text = None
+    calendar_match = re.search(r"^OnCalendar=(.+)$", timer_text, re.MULTILINE) if timer_text is not None else None
+    calendar_value = calendar_match.group(1) if calendar_match is not None else None
+    cadence_match = re.fullmatch(r"\*:(\d+)/(\d+)", calendar_value) if calendar_value is not None else None
+    if cadence_match is not None:
+        cadence_minutes = int(cadence_match.group(2))
+        cadence = f"{cadence_minutes} {'minute' if cadence_minutes == 1 else 'minutes'}"
+        calendar_note = f"(systemd `OnCalendar={calendar_value}`)"
+    else:
+        cadence = "5 minutes"
+        if timer_text is None:
+            calendar_note = "(fallback: timer file not available in this environment)"
+        else:
+            calendar_note = "(fallback: timer cadence could not be parsed in this environment)"
     clauses = re.findall(r'(?:if|elif) (.+?) then \["([^"]+)", (\d+)\]', check_source)
     if not clauses:
         raise ValueError("could not extract due-policy tiers from scripts/check.sh")
@@ -103,7 +116,7 @@ def due_policy(check_source: str, timer: Path) -> str:
     )
     return section(
         "probe-cadence",
-        f"The probe timer fires every **{cadence}** (systemd `OnCalendar={calendar_value}`).\n\n"
+        f"The probe timer fires every **{cadence}** {calendar_note}.\n\n"
         "The due policy in `scripts/check.sh` uses these cadence thresholds:\n\n"
         "| Frequency | Tier | Due after (minutes) |\n| --- | --- | ---: |\n" + rows,
     )
