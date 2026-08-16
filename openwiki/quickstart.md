@@ -122,8 +122,7 @@ marker files are handled.
 - `llms.txt` — AI-agent discovery index (one file → full portfolio).
 - `scripts/check.sh`, `scripts/gen_badges.sh`, `scripts/gen_rss.sh`,
   `scripts/verify_agent_ready.sh` — health probe and derived-artifact generators.
-- `.github/workflows/health-check.yml`, `deploy-pages.yml`,
-  `openwiki-update.yml` — the three scheduled CI pipelines.
+- `deploy-pages.yml`, `openwiki-update.yml` — the two scheduled CI pipelines.
 - `mcp/server.py` — the read-only MCP server.
 
 ## Backlog

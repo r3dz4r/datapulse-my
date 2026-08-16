@@ -18,7 +18,6 @@ CANONICAL_SYSTEMD_UNIT = Path(
 CANONICAL_PIPELINE = Path(
     os.environ.get("DOTFILES_DIR", "/home/redza/dotfiles")
 ) / "scripts" / "datapulse-pipeline.sh"
-HEALTH_WORKFLOW = ROOT / ".github/workflows/health-check.yml"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-pages.yml"
 
 
@@ -70,16 +69,6 @@ def test_systemd_unit_preserves_scoped_commit() -> None:
     git_add = re.search(r"git add ([^;\n]+)", exec_start)
     assert git_add is not None
     assert git_add.group(1) == expected
-
-
-def test_health_check_workflow_uses_generate_sh() -> None:
-    workflow = _read(HEALTH_WORKFLOW)
-
-    assert "bash scripts/generate.sh health-cycle" in workflow
-    assert "bash scripts/gen_badges.sh" not in workflow
-    assert "bash scripts/gen_rss.sh" not in workflow
-    assert "bash scripts/gen_readme_summary.sh" not in workflow
-    assert "python3 scripts/gen_changelog.py" not in workflow
 
 
 def test_deploy_pages_workflow_uses_release_build() -> None:
@@ -135,11 +124,9 @@ def test_deploy_pages_publishes_and_verifies_trends_and_drift() -> None:
     assert "expected 15 tools" in workflow
 
 
-def test_no_workflow_permissions_broadened() -> None:
-    health = yaml.safe_load(_read(HEALTH_WORKFLOW))
+def test_deploy_workflow_permissions_not_broadened() -> None:
     deploy = yaml.safe_load(_read(DEPLOY_WORKFLOW))
 
-    assert health["permissions"] == {"contents": "write"}
     assert deploy["permissions"] == {
         "contents": "read",
         "pages": "write",
@@ -149,7 +136,6 @@ def test_no_workflow_permissions_broadened() -> None:
 
 def test_generate_sh_profiles_match_workflow_invocations() -> None:
     profiles = {
-        "health-cycle": HEALTH_WORKFLOW,
         "release-build": DEPLOY_WORKFLOW,
     }
 

@@ -7,21 +7,7 @@ agent marker files are treated.
 
 ## Scheduled CI pipelines
 
-Three workflows in `.github/workflows/` drive the project.
-
-### `health-check.yml` — weekly freshness probe
-
-Runs on a weekly cron (`0 0 * * 0`, every Sunday 00:00 UTC) and on
-`workflow_dispatch`. It is the heartbeat of the project:
-
-1. Runs `bash scripts/check.sh > health/latest.json` — probes all 122 datasets.
-2. Runs `bash scripts/gen_badges.sh` — regenerates `badges/<id>.svg`.
-3. Runs `bash scripts/gen_rss.sh` — regenerates `feed.xml`.
-4. If any of `health/`, `badges/`, or `feed.xml` changed, commits them as
-   `github-actions[bot]` (`chore(health): update weekly dataset health`) and
-   pushes to `main`. If nothing changed, it exits 0 with no empty commit.
-
-Requires `contents: write` for the bot commit.
+Two workflows in `.github/workflows/` drive the project.
 
 ### `deploy-pages.yml` — publish dashboard and artifacts
 

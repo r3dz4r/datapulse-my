@@ -35,12 +35,6 @@ on:
       - "scripts/generate.sh"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Weekly dataset health check"]
-    types:
-      - completed
-    branches:
-      - main
 
 permissions:
   contents: read
