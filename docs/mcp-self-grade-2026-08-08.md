@@ -1,5 +1,7 @@
 # MCP Self-Grade — mcpgrade (2026-08-08)
 
+> **ARCHIVED 2026-08-08 — superseded by `/home/redza/dotfiles/notes/mcpgrade-audit-2026-08-17.md`** (current audit: 100/100 Grade A on 16 tools, 0 findings). The literal-detector finding for the hardcoded "122" remains valid as a class-of-bug warning; the fix was applied 2026-08-17 in commit `79f586c` (replaced hardcoded counts with derived-from-`health/latest.json._trust_summary.datasets_total`).
+
 **Date:** 2026-08-09 00:10 MYT (graded 2026-08-08)
 **Tool:** [TengByte/mcpgrade](https://github.com/TengByte/mcpgrade) — Lighthouse-style scorecard for MCP agent usability
 **Target:** Live DataPulse MY MCP server — `https://mcp.data-pulse.my/mcp`, v3.4.5

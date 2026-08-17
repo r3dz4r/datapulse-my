@@ -24,7 +24,7 @@ are not backdated — each carries the date the work was actually done.
 | [4](2026-08-05-audit-findings.md) | 2026-08-05 | Audit: 9 documentation gaps we didn't know we had | `docs/AUDIT-2026-08-05.md` |
 | [5](2026-08-07-competitive-audit.md) | 2026-08-07 | Competitive audit: the MY open-data wrapper space is crowded | `references/competitive-audit-2026-08-07.md` |
 | [6](2026-08-07-trust-layer-moat.md) | 2026-08-07 | Trust-layer audit: continuous verified health is unclaimed | `references/trust-layer-competitor-audit-2026-08-07.md` |
-| [7](2026-08-09-moat-widening.md) | 2026-08-09 | Moat widening: 122 → 335 datasets, all verified | commits `3112e9d` etc. |
+| [7](2026-08-09-moat-widening.md) | 2026-08-09 | Moat widening: 122 → 335 datasets, all verified (archived) | commits `3112e9d` etc. |
 | [8](2026-08-09-uf-fix.md) | 2026-08-09 | CVE-class bug: 155 unknown-freshness (T32 at 10× scale) | commits `7563634`, `f49d72e` |
 | [9](2026-08-09-odin-number-one.md) | 2026-08-09 | ODIN #1: the availability-vs-verification gap | World Bank + Bernama + DOSM |
 
