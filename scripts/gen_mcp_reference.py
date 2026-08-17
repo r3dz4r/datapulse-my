@@ -239,6 +239,11 @@ async def generate() -> None:
             "name": tool.name,
             "description": tool.description,
             "inputSchema": tool.parameters,
+            **(
+                {"annotations": tool.annotations.model_dump(exclude_none=True)}
+                if getattr(tool, "annotations", None) is not None
+                else {}
+            ),
         }
         for tool in tools
     ]

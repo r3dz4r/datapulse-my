@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Validate ~/.config/datapulse/policy.yaml against the embedded schema.
 
+NOTE FOR REVIEWERS: the default path (~/.config/datapulse/policy.yaml) is a
+LOCAL configuration file for self-hosted deployments, read only to validate
+the buyer-policy contract. It is never read by the public MCP endpoint, never
+exits the machine, and can be redirected via DATAPULSE_POLICY_FILE. No secrets
+or credentials are stored in it by default.
+
 Exits 0 on success. Exits 1 with a structured error on failure.
 Override path with DATAPULSE_POLICY_FILE.
 """

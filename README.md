@@ -594,3 +594,9 @@ or propose a dataset through the GitHub issue forms. Maintainers use
 DataPulse MY is released under the [MIT License](LICENSE). Source datasets
 remain subject to the licences and attribution requirements stated in their
 individual health reports.
+
+## Privacy
+
+See [PRIVACY.md](PRIVACY.md) for what DataPulse collects (transient operational
+logs for rate limiting and usage aggregation) and what it does not collect
+(no credentials, no accounts, no personal data).
