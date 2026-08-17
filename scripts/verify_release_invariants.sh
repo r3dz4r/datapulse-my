@@ -329,7 +329,16 @@ async def main() -> None:
     advertised_tools = advertised_document["tools"]
     runtime_tools = await server.mcp.list_tools()
     expected_tools = [
-        {"name": tool.name, "description": tool.description, "inputSchema": tool.parameters}
+        {
+            "name": tool.name,
+            "description": tool.description,
+            "inputSchema": tool.parameters,
+            **(
+                {"annotations": tool.annotations.model_dump(exclude_none=True)}
+                if getattr(tool, "annotations", None) is not None
+                else {}
+            ),
+        }
         for tool in runtime_tools
     ]
     assert advertised_tools == expected_tools
