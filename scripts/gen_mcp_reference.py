@@ -141,6 +141,13 @@ def load_agent() -> dict:
 
 def update_agent(tool_count: int, document: dict) -> None:
     document["capabilities"]["mcp_server"]["tools"] = tool_count
+    description = document.get("description")
+    if isinstance(description, str):
+        document["description"] = re.sub(
+            r"\d+ official datasets",
+            f"{server.DATASET_COUNT} official datasets",
+            description,
+        )
     atomic_write(ROOT / "agent.json", json.dumps(document, indent=2, ensure_ascii=False) + "\n")
 
 
