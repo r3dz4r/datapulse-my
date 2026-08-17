@@ -115,6 +115,15 @@ assert len(attestation_head["dataset_links"]) == expected_count
 assert re.fullmatch(r"[0-9a-f]{64}", attestation_head["chain_head"])
 assert attestation_scores["schema"] == "datapulse/v1/trust-scores"
 assert len(attestation_scores["datasets"]) == expected_count
+assert attestation_scores["methodology_version"] == 3
+reasons = {"measured", "classified", "insufficient_history", "not_applicable", "missing_record", "unknown_status"}
+for row in attestation_scores["datasets"]:
+    assert row["methodology_version"] == 3
+    assert set(row["component_availability"]) == set(row["components"])
+    for state in row["component_availability"].values():
+        assert isinstance(state.get("available"), bool)
+        assert state.get("reason") in reasons
+        assert state["available"] == (state["reason"] in {"measured", "classified"})
 
 trend_ids = [row["dataset_id"] for row in trends["datasets"]]
 assert trends["schema"] == "datapulse/v1/dataset-trends"

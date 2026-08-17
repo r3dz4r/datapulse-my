@@ -64,10 +64,63 @@ def test_browser_digest_does_not_invent_receipt(tmp_path: Path):
     assert payload["content_fingerprint"] is None and payload["browser_receipt"]["available"] is False
 
 
-def test_missing_component_is_weighted_out_of_score_denominator(tmp_path: Path):
+def load_score_inputs(root: Path) -> tuple[dict, dict, dict, dict, dict]:
+    return ga.load_score_inputs(root)
+
+
+def test_component_keys_and_not_applicable_are_explicit(tmp_path: Path):
     root, key = fixture_root(tmp_path); ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc)); row = json.loads((root / "attestations/latest/scores.json").read_text())["datasets"][0]
     assert row["components"] == {"freshness":100,"reliability":100,"trend":75,"drift":100,"cross_source_agreement":50}
+    assert row["component_availability"].keys() == row["components"].keys()
+    assert row["component_availability"]["cross_source_agreement"] == {"available":False,"reason":"not_applicable"}
     assert row["score"] == 94.4
+
+
+def test_measured_neutral_reliability_counts(tmp_path: Path):
+    root, _ = fixture_root(tmp_path); trends = json.loads((root / "health/trends.json").read_text())
+    trends["datasets"][0]["publish_on_time_pct"] = 50; write(root / "health/trends.json", trends)
+    row = ga.score_rows(*load_score_inputs(root), "2026-08-15T01:00:00Z")["datasets"][0]
+    assert row["component_availability"]["reliability"] == {"available":True,"reason":"measured"}
+    assert row["score"] == 77.8
+
+
+def test_measured_neutral_reconciliation_counts(tmp_path: Path):
+    root, _ = fixture_root(tmp_path)
+    write(root / "health/reconciliation.json", {"groups":[{"verdict":"different_granularity","members":[{"id":"sample"}]}]})
+    row = ga.score_rows(*load_score_inputs(root), "2026-08-15T01:00:00Z")["datasets"][0]
+    assert row["components"]["cross_source_agreement"] == 50
+    assert row["component_availability"]["cross_source_agreement"] == {"available":True,"reason":"measured"}
+
+
+@pytest.mark.parametrize(("artifact", "field"), [("trends", "trend"), ("drift", "verdict")])
+def test_insufficient_history_is_excluded(tmp_path: Path, artifact: str, field: str):
+    root, _ = fixture_root(tmp_path); path = root / f"health/{artifact}.json"; doc = json.loads(path.read_text())
+    doc["datasets"][0][field] = "insufficient_data"; write(path, doc)
+    row = ga.score_rows(*load_score_inputs(root), "2026-08-15T01:00:00Z")["datasets"][0]
+    component = "trend" if artifact == "trends" else "drift"
+    assert row["component_availability"][component] == {"available":False,"reason":"insufficient_history"}
+
+
+def test_missing_record_is_explicit(tmp_path: Path):
+    root, _ = fixture_root(tmp_path); trends = json.loads((root / "health/trends.json").read_text())
+    trends["datasets"][0]["publish_on_time_pct"] = None; write(root / "health/trends.json", trends)
+    row = ga.score_rows(*load_score_inputs(root), "2026-08-15T01:00:00Z")["datasets"][0]
+    assert row["component_availability"]["reliability"] == {"available":False,"reason":"missing_record"}
+
+
+@pytest.mark.parametrize("status", ["browser-dependent", "unknown", "unknown-freshness", "reference", "discontinued"])
+def test_classified_freshness_counts(tmp_path: Path, status: str):
+    root, _ = fixture_root(tmp_path); health = json.loads((root / "health/latest.json").read_text())
+    health["datasets"][0]["status"] = status; write(root / "health/latest.json", health)
+    row = ga.score_rows(*load_score_inputs(root), "2026-08-15T01:00:00Z")["datasets"][0]
+    assert row["component_availability"]["freshness"] == {"available":True,"reason":"classified"}
+
+
+def test_unknown_status_is_excluded_and_visible(tmp_path: Path):
+    root, _ = fixture_root(tmp_path); health = json.loads((root / "health/latest.json").read_text())
+    health["datasets"][0]["status"] = "future-status"; write(root / "health/latest.json", health)
+    row = ga.score_rows(*load_score_inputs(root), "2026-08-15T01:00:00Z")["datasets"][0]
+    assert row["component_availability"]["freshness"] == {"available":False,"reason":"unknown_status"}
 
 
 def test_reference_status_caps_freshness_at_90(tmp_path: Path):
@@ -107,9 +160,9 @@ def test_methodology_version_is_bumped_everywhere(tmp_path: Path):
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
     scores = json.loads((root / "attestations/latest/scores.json").read_text())
     manifest = json.loads((root / "datapulse.json").read_text())
-    assert scores["methodology_version"] == 2
-    assert all(row["methodology_version"] == 2 for row in scores["datasets"])
-    assert all(entry["methodology_version"] == 2 for entry in manifest["datasets"])
+    assert scores["methodology_version"] == 3
+    assert all(row["methodology_version"] == 3 for row in scores["datasets"])
+    assert all(entry["methodology_version"] == 3 for entry in manifest["datasets"])
 
 
 def test_canonical_json_is_utf8_sorted_and_compact() -> None:

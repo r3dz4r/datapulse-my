@@ -40,6 +40,23 @@ cat > "$fixture_root/health/latest.json" <<'EOF'
 }
 EOF
 
+mkdir -p "$fixture_root/attestations/latest" "$fixture_root/docs/.well-known"
+cat > "$fixture_root/docs/.well-known/datapulse-probe-keys.json" <<'EOF'
+{"schema":"datapulse/v1/probe-key-registry","keys":[{"key_id":"fixture"}]}
+EOF
+cat > "$fixture_root/attestations/latest/index.json" <<'EOF'
+{"schema":"datapulse/v1/attestation-index","attestations":{"alpha":"attestations/alpha.json","beta":"attestations/beta.json"}}
+EOF
+cat > "$fixture_root/attestations/latest/chain_head.json" <<'EOF'
+{"schema":"datapulse/v1/daily-chain-head-envelope","chain_head":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","dataset_links":[{},{}]}
+EOF
+cat > "$fixture_root/attestations/latest/scores.json" <<'EOF'
+{"schema":"datapulse/v1/trust-scores","methodology_version":3,"datasets":[{"dataset_id":"alpha","methodology_version":3,"components":{"freshness":100},"component_availability":{"freshness":{"available":true,"reason":"measured"}}},{"dataset_id":"beta","methodology_version":3,"components":{"freshness":20},"component_availability":{"freshness":{"available":true,"reason":"classified"}}}]}
+EOF
+cat > "$fixture_root/attestations/alpha.json" <<'EOF'
+{"schema":"datapulse/v1/probe-attestation-envelope","payload":{"key_id":"fixture"},"chain_link":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+EOF
+
 if grep -Eq '(^|[^0-9])166([^0-9]|$)' "$repo_root/scripts/verify_agent_ready.sh"; then
   printf 'verify_agent_ready.sh still contains the fixed total 166\n' >&2
   exit 1

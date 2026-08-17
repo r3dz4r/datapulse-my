@@ -298,7 +298,8 @@ FIND_BY_LICENCE_DESCRIPTION = (
 )
 TRUST_VERDICT_DESCRIPTION = (
     "Return the published signed facts, unsigned methodology-versioned trust score, "
-    "and existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. "
+    "numeric components, and component_availability reasons, plus existing "
+    "health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. "
     "This tool does not re-probe or verify the signature; call verify_attestation separately."
 )
 VERIFY_ATTESTATION_DESCRIPTION = (

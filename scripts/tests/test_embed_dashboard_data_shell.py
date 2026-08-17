@@ -40,7 +40,7 @@ def test_cli_regeneration_preserves_shared_css_shell(tmp_path: Path) -> None:
             (REPOSITORY_ROOT / "docs/.dashboard_sections.json").read_text()
         ),
     }
-    documents["health"]["checked_at"] = "phase-4-shell-regression"
+    documents["health"]["checked_at"] = "2026-08-17T00:00:00Z"
     for name, document in documents.items():
         path = tmp_path / f"{name}.json"
         path.write_text(json.dumps(document), encoding="utf-8")

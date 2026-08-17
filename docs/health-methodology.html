@@ -35,6 +35,30 @@
 <h1 id="health-methodology">Health methodology</h1>
 <p>DataPulse MY reports evidence, not a promise that upstream data is
 correct.</p>
+<h2 id="trust-score-methodology">Trust score methodology</h2>
+<p>The unsigned <code>datapulse/v1/trust-scores</code> artifact uses
+methodology version 3. Each dataset retains numeric
+<code>components</code> and adds a sibling
+<code>component_availability</code> map with exactly the same keys.
+Freshness, reliability, trend, drift, and cross-source agreement have
+weights 30%, 30%, 20%, 10%, and 10%. Only entries whose availability is
+true count; remaining weights are renormalized.</p>
+<p>Availability reasons are <code>measured</code>,
+<code>classified</code>, <code>insufficient_history</code>,
+<code>not_applicable</code>, <code>missing_record</code>, and
+<code>unknown_status</code>. <code>measured</code> and
+<code>classified</code> count at their assigned numeric value, including
+a genuine value of 50. All other reasons are excluded.
+Browser-dependent, unknown, unknown-freshness, reference, and
+discontinued freshness statuses are explicit classifications and count.
+Single-source reconciliation is not applicable.</p>
+<p>The coupled invariant is
+<code>available == (reason in {measured, classified})</code>. The
+25-point floor and the 30-point cap for a dataset confirmed stale for at
+least 365 days apply after weighted averaging. Dated artifacts retain
+the methodology under which they were generated; consumers must read
+<code>methodology_version</code> rather than assume all dates share one
+methodology.</p>
 <h2 id="schema-version">Schema version</h2>
 <!-- BEGIN EXTRACTED: schema-version -->
 

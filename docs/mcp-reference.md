@@ -447,7 +447,7 @@ Input schema:
 
 ### `trust_verdict`
 
-Return the published signed facts, unsigned methodology-versioned trust score, and existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately.
+Return the published signed facts, unsigned methodology-versioned trust score, numeric components, and component_availability reasons, plus existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately.
 
 Input schema:
 

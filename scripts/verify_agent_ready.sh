@@ -149,7 +149,11 @@ if [[ -f "$agent_root/attestations/latest/index.json" ]]; then
   jq -e --argjson expected "$manifest_count" '.schema == "datapulse/v1/probe-key-registry" and (.keys | length > 0)' "$key_registry" >/dev/null
   jq -e --argjson expected "$manifest_count" '.schema == "datapulse/v1/attestation-index" and (.attestations | length == $expected)' "$index" >/dev/null
   jq -e --argjson expected "$manifest_count" '.schema == "datapulse/v1/daily-chain-head-envelope" and (.dataset_links | length == $expected) and (.chain_head | test("^[0-9a-f]{64}$"))' "$head" >/dev/null
-  jq -e --argjson expected "$manifest_count" '.schema == "datapulse/v1/trust-scores" and (.datasets | length == $expected)' "$scores" >/dev/null
+  jq -e --argjson expected "$manifest_count" '
+    .schema == "datapulse/v1/trust-scores" and .methodology_version == 3 and (.datasets | length == $expected) and
+    all(.datasets[]; .methodology_version == 3 and ((.components | keys) == (.component_availability | keys)) and
+      all(.component_availability[]; (.available | type) == "boolean" and (.reason | IN("measured", "classified", "insufficient_history", "not_applicable", "missing_record", "unknown_status")) and (.available == (.reason | IN("measured", "classified")))))
+  ' "$scores" >/dev/null
   first_ref="$(jq -er '.attestations | to_entries[0].value' "$index")"
   jq -e '.schema == "datapulse/v1/probe-attestation-envelope" and (.payload.key_id | type == "string") and (.chain_link | test("^[0-9a-f]{64}$"))' "$agent_root/$first_ref" >/dev/null
   printf 'Attestation artifacts discoverable: %s signed datasets.\n' "$manifest_count"

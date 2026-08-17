@@ -92,7 +92,7 @@ def install_attestation_fixture(monkeypatch: pytest.MonkeyPatch, *, tamper: str 
     head_value = hashlib.sha256(bytes.fromhex(previous) + canonical(head_payload)).hexdigest()
     head = {"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":base64.b64encode(private.sign(canonical(head_payload))).decode(),"chain_head":head_value,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}
     index = {"schema":"datapulse/v1/attestation-index","date":"2026-08-15","chain_head_ref":"attestations/2026-08-15/chain_head.json","attestations":{"sample":"attestations/2026-08-15/sample.json"}}
-    scores = {"schema":"datapulse/v1/trust-scores","methodology_version":1,"datasets":[{"dataset_id":"sample","methodology_version":1,"score":90.0,"components":{},"observed_at":payload["observed_at"]}]}
+    scores = {"schema":"datapulse/v1/trust-scores","methodology_version":3,"datasets":[{"dataset_id":"sample","methodology_version":3,"score":90.0,"components":{"freshness":90},"component_availability":{"freshness":{"available":True,"reason":"classified"}},"observed_at":payload["observed_at"]}]}
     registry = {"schema":"datapulse/v1/probe-key-registry","keys":[{"key_id":"ed25519-test","algorithm":"Ed25519","public_key_base64":public64,"not_before":"2026-01-01T00:00:00Z","not_after":"2027-01-01T00:00:00Z","status":"active"}]}
     chain_index = {"schema":"datapulse/v1/chain-index","heads":{head_value:"attestations/2026-08-15/chain_head.json"},"anchors":({head_value:{"tag":"v0.8.0","commit":"a"*40}} if anchored else {})}
     async def load_attestations(): return index, head, scores
@@ -130,7 +130,9 @@ async def test_trust_verdict_is_join_only(monkeypatch: pytest.MonkeyPatch) -> No
     async def recon(): return {"groups":[]}
     monkeypatch.setattr(server, "_load_catalogue", catalogue); monkeypatch.setattr(server, "_load_trends", trends); monkeypatch.setattr(server, "_load_drift", drift); monkeypatch.setattr(server, "_load_reconciliation", recon)
     result = await server.trust_verdict("sample")
-    assert result["score"]["methodology_version"] == 1 and result["verified_live_at"] is None
+    assert result["score"]["methodology_version"] == 3
+    assert result["score"]["component_availability"] == {"freshness":{"available":True,"reason":"classified"}}
+    assert result["verified_live_at"] is None
 
 
 async def test_find_schema_drift_filters_limits_and_ranks(monkeypatch: pytest.MonkeyPatch) -> None:

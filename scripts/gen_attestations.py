@@ -33,37 +33,52 @@ TREND_SCORE = {"recovering":100,"stable":75,"deteriorating":25,"insufficient_dat
 DRIFT_SCORE = {"stable":100,"record_count_drift":40,"drift_detected":0,"insufficient_data":50}
 RECON_SCORE = {"agree":100,"different_granularity":50,"discrepancy":0,"insufficient_data":50,"single_source":50}
 
-# methodology_version 2 changes (from 1):
-# 1. Missing-signal components are weighted out of the denominator instead of defaulting to 50.
-#    This prevents 89% of single-source datasets from being artificially dragged into the
-#    25-49 score bucket by their absent cross_source_agreement signal.
-# 2. Reference-status datasets cap at 90 (was 100). Reference = stable-by-design, not current.
-# Score interpretation unchanged: 0-100, higher = more trustworthy. Use methodology_version
-# to detect schema drift if a consumer's downstream pipeline caches old scores.
+# methodology_version 3 separates component availability from numeric values.
 # A score has a 25-point floor, while datasets stale for at least a year are capped at 30:
 # a lone observed component must not produce an absolute-zero verdict or mask confirmed staleness.
-DEFAULT_COMPONENT_SCORES = {"freshness":50,"reliability":50,"trend":50,"drift":50,"cross_source_agreement":50}
 SCORE_WEIGHTS = {"freshness":.30,"reliability":.30,"trend":.20,"drift":.10,"cross_source_agreement":.10}
+CLASSIFIED_FRESHNESS_STATUSES = {"browser-dependent", "unknown", "unknown-freshness", "reference", "discontinued"}
+AVAILABILITY_REASONS = {"measured", "classified", "insufficient_history", "not_applicable", "missing_record", "unknown_status"}
 
-def _is_default(value: float, component: str) -> bool:
-    """Return whether a component has its fallback value for missing signal."""
-    return value == DEFAULT_COMPONENT_SCORES[component]
+def _availability(available: bool, reason: str) -> dict:
+    assert reason in AVAILABILITY_REASONS
+    return {"available": available, "reason": reason}
+
+def component_values_and_availability(did: str, h: dict | None, t: dict | None, d: dict | None, reconciliation_verdict: str | None) -> tuple[dict, dict]:
+    h_status = h.get("status") if h else None
+    trend = t.get("trend") if t else None
+    drift_verdict = d.get("verdict") if d else None
+    reliability = t.get("publish_on_time_pct") if t else None
+    numeric_reliability = isinstance(reliability, (int, float)) and not isinstance(reliability, bool)
+    components = {"freshness": STATUS_SCORE.get(h_status, 50), "reliability": reliability if numeric_reliability else 50, "trend": TREND_SCORE.get(trend, 50), "drift": DRIFT_SCORE.get(drift_verdict, 50), "cross_source_agreement": RECON_SCORE.get(reconciliation_verdict or "single_source", 50)}
+    availability = {
+        "freshness": _availability(False, "missing_record") if h is None else _availability(True, "classified") if h_status in CLASSIFIED_FRESHNESS_STATUSES else _availability(True, "measured") if h_status in STATUS_SCORE else _availability(False, "unknown_status"),
+        "reliability": _availability(True, "measured") if numeric_reliability else _availability(False, "missing_record") if t is None or reliability is None else _availability(False, "unknown_status"),
+        "trend": _availability(False, "missing_record") if t is None else _availability(False, "insufficient_history") if trend == "insufficient_data" else _availability(True, "measured") if trend in TREND_SCORE else _availability(False, "unknown_status"),
+        "drift": _availability(False, "missing_record") if d is None else _availability(False, "insufficient_history") if drift_verdict == "insufficient_data" else _availability(True, "measured") if drift_verdict in DRIFT_SCORE else _availability(False, "unknown_status"),
+        "cross_source_agreement": _availability(False, "not_applicable") if reconciliation_verdict is None else _availability(False, "insufficient_history") if reconciliation_verdict == "insufficient_data" else _availability(True, "measured") if reconciliation_verdict in RECON_SCORE else _availability(False, "unknown_status"),
+    }
+    assert components.keys() == availability.keys()
+    return components, availability
+
+def load_score_inputs(root: Path) -> tuple[dict, dict, dict, dict, dict]:
+    return tuple(load(root / path) for path in ("datapulse.json", "health/latest.json", "health/trends.json", "health/drift.json", "health/reconciliation.json"))
 
 def score_rows(manifest: dict, health: dict, trends: dict, drift: dict, recon: dict, generated_at: str) -> dict:
     hs={r["dataset_id"]:r for r in health["datasets"]}; ts={r["dataset_id"]:r for r in trends["datasets"]}; ds={r["dataset_id"]:r for r in drift["datasets"]}; rs={m["id"]:g["verdict"] for g in recon["groups"] for m in g["members"]}; rows=[]
     for entry in manifest["datasets"]:
-        did=entry["id"]; h=hs.get(did,{}); t=ts.get(did,{}); d=ds.get(did,{}); reliability=t.get("publish_on_time_pct")
-        components={"freshness":STATUS_SCORE.get(h.get("status"),50),"reliability":reliability if isinstance(reliability,(int,float)) else 50,"trend":TREND_SCORE.get(t.get("trend"),50),"drift":DRIFT_SCORE.get(d.get("verdict"),50),"cross_source_agreement":RECON_SCORE.get(rs.get(did,"single_source"),50)}
-        present_components={name:value for name,value in components.items() if not _is_default(value,name)}
+        did=entry["id"]; h=hs.get(did); t=ts.get(did); d=ds.get(did)
+        components, component_availability = component_values_and_availability(did, h, t, d, rs.get(did))
+        present_components={name:value for name,value in components.items() if component_availability[name]["available"]}
         present_weight_sum=sum(SCORE_WEIGHTS[name] for name in present_components)
         value=round(sum(SCORE_WEIGHTS[name]/present_weight_sum*value for name,value in present_components.items()),1) if present_weight_sum else 50.0
         value=max(value,25.0)
-        if h.get("status")=="stale" and (h.get("staleness_days") or 0)>=365: value=min(value,30.0)
-        rows.append({"dataset_id":did,"methodology_version":2,"score":value,"components":components,"observed_at":h.get("last_checked")})
-    return {"schema":"datapulse/v1/trust-scores","generated_at":generated_at,"methodology_version":2,"datasets":rows}
+        if h and h.get("status")=="stale" and (h.get("staleness_days") or 0)>=365: value=min(value,30.0)
+        rows.append({"dataset_id":did,"methodology_version":3,"score":value,"components":components,"component_availability":component_availability,"observed_at":h.get("last_checked") if h else None})
+    return {"schema":"datapulse/v1/trust-scores","generated_at":generated_at,"methodology_version":3,"datasets":rows}
 
 def generate(root: Path, key_path: Path, now: datetime) -> None:
-    manifest=load(root/"datapulse.json"); health=load(root/"health/latest.json"); trends=load(root/"health/trends.json"); drift=load(root/"health/drift.json"); recon=load(root/"health/reconciliation.json"); key=load(key_path)
+    manifest, health, trends, drift, recon = load_score_inputs(root); key=load(key_path)
     private=Ed25519PrivateKey.from_private_bytes(base64.b64decode(key["private_key_base64"])); public=base64.b64decode(key["public_key_base64"])
     if private.public_key().public_bytes(Encoding.Raw,PublicFormat.Raw)!=public: raise ValueError("private and public key do not match")
     registry=load(root/"docs/.well-known/datapulse-probe-keys.json"); row=next((r for r in registry["keys"] if r["key_id"]==key["key_id"]),None)
@@ -79,7 +94,7 @@ def generate(root: Path, key_path: Path, now: datetime) -> None:
     if latest.exists(): shutil.rmtree(latest)
     latest.mkdir(parents=True)
     for filename in ("chain_head.json","index.json","scores.json"): shutil.copy2(dated/filename,latest/filename)
-    for entry in manifest["datasets"]: entry["attestation_ref"]=refs[entry["id"]]; entry["methodology_version"]=2
+    for entry in manifest["datasets"]: entry["attestation_ref"]=refs[entry["id"]]; entry["methodology_version"]=3
     dump(root/"datapulse.json",manifest)
 
 def main() -> int:
