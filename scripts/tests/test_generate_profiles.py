@@ -349,6 +349,14 @@ def test_release_build_runs_in_clean_fixture(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert all(result.outputs[path] is not None for path in RELEASE_OUTPUTS)
+    dashboard = result.outputs["docs/index.html"].decode("utf-8")
+    assert dashboard.count("<!-- BEGIN changelog-strip -->") == 1
+    assert dashboard.count("<!-- END changelog-strip -->") == 1
+    dataset_count = len(
+        json.loads((result.workdir / "datapulse.json").read_text(encoding="utf-8"))["datasets"]
+    )
+    assert f"{dataset_count} datasets tracked" in dashboard
+    assert 'href="/health/latest.json"' in dashboard
     archives = list((result.workdir / ".archives").glob("health-*.jsonl.gz"))
     assert archives, "release-build must archive expired history inside its workdir"
 
@@ -367,6 +375,19 @@ def test_deterministic_second_run(tmp_path: Path) -> None:
         _runner(tmp_path, "health-cycle"),
         list(PROFILE_INPUTS),
         list(HEALTH_OUTPUTS),
+    )
+
+    assert first.returncode == second.returncode == 0, first.stderr or second.stderr
+    assert all(diff.values())
+
+
+def test_release_build_is_deterministic_on_second_run(tmp_path: Path) -> None:
+    source = _stage_source(tmp_path)
+    first, second, diff = run_generator_twice(
+        source,
+        _runner(tmp_path, "release-build"),
+        list(PROFILE_INPUTS),
+        list(RELEASE_OUTPUTS),
     )
 
     assert first.returncode == second.returncode == 0, first.stderr or second.stderr

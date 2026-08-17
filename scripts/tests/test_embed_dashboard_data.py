@@ -3,7 +3,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts import embed_dashboard_data
+
+
+def _strip() -> str:
+    return (
+        "<!-- BEGIN changelog-strip -->\n"
+        "old changelog\n"
+        "<!-- END changelog-strip -->"
+    )
 
 
 def test_embed_replaces_existing_data_block_with_all_dashboard_inputs(
@@ -11,12 +21,16 @@ def test_embed_replaces_existing_data_block_with_all_dashboard_inputs(
 ) -> None:
     html_path = tmp_path / "index.html"
     html_path.write_text(
-        '<body><script id="embedded-data">old</script></body>\n', encoding="utf-8"
+        f'<body>{_strip()}<script id="embedded-data">old</script></body>\n',
+        encoding="utf-8",
     )
     inputs = {}
     for name, document in {
         "manifest": {"datasets": [{"id": "alpha"}]},
-        "health": {"datasets": [{"dataset_id": "alpha"}]},
+        "health": {
+            "checked_at": "2026-08-17T03:30:56Z",
+            "datasets": [{"dataset_id": "alpha"}],
+        },
         "filters": {"namespaces": [{"key": "all", "count": 1}]},
         "sections": {"generated_at": "now", "sections": [{"key": "other"}]},
     }.items():
@@ -38,15 +52,22 @@ def test_embed_replaces_existing_data_block_with_all_dashboard_inputs(
     assert "dashboardSections:" in html
     assert '"generated_at":"now"' in html
     assert "old" not in html
+    assert "2026-08-17</time> · 1 datasets tracked" in html
 
 
 def test_embed_escapes_script_end_sequences(tmp_path: Path) -> None:
     html_path = tmp_path / "index.html"
-    html_path.write_text("<body></body>\n", encoding="utf-8")
+    html_path.write_text(f"<body>{_strip()}</body>\n", encoding="utf-8")
     paths = []
-    for index in range(4):
+    documents = [
+        {"datasets": [], "value": "</script>"},
+        {"checked_at": "2026-08-17T03:30:56Z", "value": "</script>"},
+        {"value": "</script>"},
+        {"value": "</script>"},
+    ]
+    for index, document in enumerate(documents):
         path = tmp_path / f"input-{index}.json"
-        path.write_text(json.dumps({"value": "</script>"}), encoding="utf-8")
+        path.write_text(json.dumps(document), encoding="utf-8")
         paths.append(path)
 
     embed_dashboard_data.embed(html_path, *paths)
@@ -61,7 +82,7 @@ def test_embed_derives_dashboard_dataset_counts_from_trust_summary(
 ) -> None:
     html_path = tmp_path / "index.html"
     html_path.write_text(
-        "<body>"
+        f"<body>{_strip()}"
         "We probe 42 official datasets. "
         "<a>42 datasets verified</a>. "
         "Tools over the 42-dataset catalogue."
@@ -70,7 +91,10 @@ def test_embed_derives_dashboard_dataset_counts_from_trust_summary(
     )
     documents = [
         {"datasets": [{"id": "alpha"}, {"id": "beta"}, {"id": "gamma"}]},
-        {"_trust_summary": {"datasets_total": 3, "by_status": {}}},
+        {
+            "checked_at": "2026-08-17T03:30:56Z",
+            "_trust_summary": {"datasets_total": 3, "by_status": {}},
+        },
         {"namespaces": []},
         {"sections": []},
     ]
@@ -87,3 +111,50 @@ def test_embed_derives_dashboard_dataset_counts_from_trust_summary(
     assert "3 datasets verified" in html
     assert "the 3-dataset catalogue" in html
     assert "42" not in html
+
+
+def test_embed_updates_changelog_strip_idempotently(tmp_path: Path) -> None:
+    html_path = tmp_path / "index.html"
+    html_path.write_text(f"<body>{_strip()}</body>\n", encoding="utf-8")
+    documents = [
+        {"datasets": [{"id": "alpha"}, {"id": "beta"}]},
+        {"checked_at": "2026-08-18T01:02:03+08:00"},
+        {},
+        {},
+    ]
+    paths = []
+    for index, document in enumerate(documents):
+        path = tmp_path / f"strip-{index}.json"
+        path.write_text(json.dumps(document), encoding="utf-8")
+        paths.append(path)
+
+    embed_dashboard_data.embed(html_path, *paths)
+    first = html_path.read_bytes()
+    embed_dashboard_data.embed(html_path, *paths)
+
+    html = html_path.read_text(encoding="utf-8")
+    assert html_path.read_bytes() == first
+    assert html.count(embed_dashboard_data.CHANGELOG_BEGIN) == 1
+    assert html.count(embed_dashboard_data.CHANGELOG_END) == 1
+    assert '<time datetime="2026-08-17">2026-08-17</time>' in html
+    assert "2 datasets tracked" in html
+    assert 'href="/health/latest.json"' in html
+
+
+def test_embed_rejects_missing_changelog_markers(tmp_path: Path) -> None:
+    html_path = tmp_path / "index.html"
+    html_path.write_text("<body></body>\n", encoding="utf-8")
+    documents = [
+        {"datasets": []},
+        {"checked_at": "2026-08-17T03:30:56Z"},
+        {},
+        {},
+    ]
+    paths = []
+    for index, document in enumerate(documents):
+        path = tmp_path / f"missing-{index}.json"
+        path.write_text(json.dumps(document), encoding="utf-8")
+        paths.append(path)
+
+    with pytest.raises(embed_dashboard_data.EmbedError, match="exactly one complete"):
+        embed_dashboard_data.embed(html_path, *paths)

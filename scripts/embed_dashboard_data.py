@@ -5,13 +5,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import stat
 import sys
+import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 
 class EmbedError(RuntimeError):
     """Raised when dashboard data cannot be embedded safely."""
+
+
+CHANGELOG_BEGIN = "<!-- BEGIN changelog-strip -->"
+CHANGELOG_END = "<!-- END changelog-strip -->"
 
 
 def _load(path: Path) -> object:
@@ -29,6 +37,70 @@ def _dump(document: object) -> str:
     return json.dumps(document, ensure_ascii=False, separators=(",", ":")).replace(
         "</", "<\\/"
     )
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.", dir=path.parent
+    )
+    try:
+        os.fchmod(descriptor, stat.S_IMODE(path.stat().st_mode))
+        with os.fdopen(
+            descriptor, "w", encoding="utf-8", newline="\n"
+        ) as temporary_file:
+            temporary_file.write(content)
+            temporary_file.flush()
+            os.fsync(temporary_file.fileno())
+        os.replace(temporary_name, path)
+    except BaseException:
+        try:
+            os.unlink(temporary_name)
+        except FileNotFoundError:
+            pass
+        raise
+
+
+def update_changelog_strip(html: str, manifest: object, health: object) -> str:
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("datasets"), list):
+        raise EmbedError("manifest must contain a datasets array")
+    if not isinstance(health, dict) or not isinstance(health.get("checked_at"), str):
+        raise EmbedError("health checked_at must be an ISO-8601 string")
+
+    checked_at = health["checked_at"]
+    try:
+        observed_at = datetime.fromisoformat(checked_at.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise EmbedError("health checked_at must be an ISO-8601 string") from error
+    if observed_at.tzinfo is None:
+        raise EmbedError("health checked_at must include a UTC offset")
+
+    shipped_date = observed_at.astimezone(timezone.utc).date().isoformat()
+    dataset_count = len(manifest["datasets"])
+    replacement = (
+        f"{CHANGELOG_BEGIN}\n"
+        '    <aside class="changelog-strip" aria-label="Recently shipped">\n'
+        "      <strong>Recently shipped</strong>\n"
+        f'      <span><time datetime="{shipped_date}">{shipped_date}</time> · '
+        f"{dataset_count} datasets tracked</span>\n"
+        '      <a href="/catalog-snapshot.json">Machine-readable catalog snapshot</a>\n'
+        '      <a href="/health/latest.json">Latest trust snapshot →</a>\n'
+        '      <a href="/release-verification.md">Reproducible build proof</a>\n'
+        '      <a class="chip" href="/trust-layer-notebook.ipynb" '
+        'title="Open the canonical Colab notebook: verify before you use">Trust Layer notebook</a>\n'
+        '      <a class="chip" href="#camofox">Browser-dependent</a>\n'
+        '      <a class="chip" href="#legal">Legal</a>\n'
+        "    </aside>\n"
+        f"    {CHANGELOG_END}"
+    )
+    pattern = re.compile(
+        rf"{re.escape(CHANGELOG_BEGIN)}.*?{re.escape(CHANGELOG_END)}", re.DOTALL
+    )
+    updated, replacements = pattern.subn(replacement, html)
+    if replacements != 1:
+        raise EmbedError(
+            "dashboard must contain exactly one complete changelog-strip marker block"
+        )
+    return updated
 
 
 DATASET_COUNT_PATTERNS = (
@@ -69,13 +141,15 @@ def embed(
     except (OSError, UnicodeError) as error:
         raise EmbedError(f"cannot read {html_path}: {error}") from error
 
+    manifest = _load(manifest_path)
     health = _load(health_path)
+    html = update_changelog_strip(html, manifest, health)
     html = _replace_dataset_counts(html, health)
     data = (
         '<script id="embedded-data">\n'
         "    window.__DATAPULSE_DATA__ = {"
         f"health: {_dump(health)}, "
-        f"manifest: {_dump(_load(manifest_path))}, "
+        f"manifest: {_dump(manifest)}, "
         f"dashboardFilters: {_dump(_load(filters_path))}, "
         f"dashboardSections: {_dump(_load(sections_path))}, "
         f"attestations: {_dump(_load_optional(attestations_path))}"
@@ -96,7 +170,7 @@ def embed(
         raise EmbedError(f"{html_path}: cannot find embedded-data block or </body>")
 
     try:
-        html_path.write_text(html, encoding="utf-8", newline="\n")
+        _atomic_write_text(html_path, html)
     except (OSError, UnicodeError) as error:
         raise EmbedError(f"cannot write {html_path}: {error}") from error
 
