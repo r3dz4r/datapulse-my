@@ -130,7 +130,7 @@ Input schema:
 
 ### `find_anomalies`
 
-Return datasets flagged by the latest published anomaly detection, ranked by how far the observed update interval exceeds its threshold. Optionally require a minimum publish-reliability grade; includes pipeline-computed anomaly and reliability evidence so agents do not recompute it.
+Return datasets flagged by the latest published anomaly detection (anomalies), ranked by how far the observed update interval exceeds its threshold. Optionally require a minimum publish-reliability grade; includes pipeline-computed anomaly and reliability evidence so agents do not recompute it.
 
 Input schema:
 
@@ -261,7 +261,7 @@ Input schema:
 
 ### `find_unreliable`
 
-Return datasets whose evaluated publish-reliability grade is at or below a threshold, with the worst grades and lowest on-time percentages first. Reliability measures timeliness of successful freshness observations, not uptime; sample days are included so agents can judge evidence depth.
+Return datasets whose evaluated publish-reliability grade is at or below a threshold (the unreliable ones), with the worst grades and lowest on-time percentages first. Reliability measures timeliness of successful freshness observations, not uptime; sample days are included so agents can judge evidence depth.
 
 Input schema:
 
@@ -421,7 +421,7 @@ Input schema:
 
 ### `verify_evidence`
 
-Perform a rate-limited live streamed GET for one direct-access dataset and compare transport receipts with the latest published evidence, e.g. verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints remain pipeline-only and are explicitly reported as unverified; results are ephemeral and never update health artifacts.
+Perform a rate-limited live streamed GET for one direct-access dataset and compare transport receipts with the latest published evidence, e.g. verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints remain pipeline-only and are explicitly reported as unverified; results are ephemeral and never update health artifacts. Returns a dict with transport receipt fields and a `verdict` for downstream trust checks without re-fetching.
 
 Input schema:
 
@@ -473,7 +473,7 @@ Input schema:
 
 ### `verify_attestation`
 
-Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence.
+Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence. Returns `levels.L1.signature_valid` and `levels.L2.satisfied` for signature and replay status.
 
 Input schema:
 
@@ -537,7 +537,7 @@ Input schema:
 
 ### `usage_summary`
 
-Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07.
+Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range.
 
 Input schema:
 

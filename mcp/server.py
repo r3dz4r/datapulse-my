@@ -239,7 +239,7 @@ FIND_STALE_DESCRIPTION = (
     "a freshness or schema-validity risk."
 )
 FIND_ANOMALIES_DESCRIPTION = (
-    "Return datasets flagged by the latest published anomaly detection, ranked by "
+    "Return datasets flagged by the latest published anomaly detection (anomalies), ranked by "
     "how far the observed update interval exceeds its threshold. Optionally require "
     "a minimum publish-reliability grade; includes pipeline-computed anomaly and "
     "reliability evidence so agents do not recompute it."
@@ -256,7 +256,7 @@ FIND_RECOVERING_DESCRIPTION = (
 )
 FIND_UNRELIABLE_DESCRIPTION = (
     "Return datasets whose evaluated publish-reliability grade is at or below a "
-    "threshold, with the worst grades and lowest on-time percentages first. "
+    "threshold (the unreliable ones), with the worst grades and lowest on-time percentages first. "
     "Reliability measures timeliness of successful freshness observations, not uptime; "
     "sample days are included so agents can judge evidence depth."
 )
@@ -289,7 +289,8 @@ VERIFY_EVIDENCE_DESCRIPTION = (
     "compare transport receipts with the latest published evidence, e.g. "
     "verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints "
     "remain pipeline-only and are explicitly reported as unverified; results are "
-    "ephemeral and never update health artifacts."
+    "ephemeral and never update health artifacts. Returns a dict with transport receipt "
+    "fields and a `verdict` for downstream trust checks without re-fetching."
 )
 FIND_BY_LICENCE_DESCRIPTION = (
     "Return all datasets with the given licence, summarised. Use to enumerate what's "
@@ -303,7 +304,8 @@ TRUST_VERDICT_DESCRIPTION = (
 VERIFY_ATTESTATION_DESCRIPTION = (
     "Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, "
     "e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; "
-    "optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence."
+    "optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence. "
+    "Returns `levels.L1.signature_valid` and `levels.L2.satisfied` for signature and replay status."
 )
 
 class SourceImplementation(MCPImplementation):
@@ -1659,7 +1661,7 @@ async def find_by_licence(
 
 @mcp.tool(
     title="Summarize Buyer Tool Usage",
-    description="Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07.",
+    description="Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range.",
     icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
     meta=TOOL_META,

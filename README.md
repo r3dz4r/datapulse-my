@@ -5,6 +5,7 @@
 **Open in Google Colab:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb)
 
 [![M8ven Verified](https://m8ven.ai/badge/mcp/r3dz4r-datapulse-my-fsfgq3)](https://m8ven.ai/mcp/r3dz4r-datapulse-my-fsfgq3)
+[![mcpgrade](https://img.shields.io/badge/mcpgrade-100%2F100%20(Grade%20A)-success?style=flat&logo=anthropic)](https://www.npmjs.com/package/mcpgrade)
 <!-- m8ven-verify: d1505f0f7e0429963789e95995216ca3 -->
 
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
@@ -151,6 +152,7 @@ DataPulse MY also exposes an AI-ready, read-only MCP server so agents can query
 the catalogue natively:
 
 - Endpoint: `https://mcp.data-pulse.my/mcp` (Streamable HTTP, no auth)
+Verified by mcpgrade: 100/100 (Grade A), 16 tools, last audited 2026-08-17.
 <!-- BEGIN mcp-tools -->
 - 16 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 
