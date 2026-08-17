@@ -20,6 +20,7 @@ STAGES = {
     "validate",
     "publish",
     "mcp-sync",
+    "attestation-score",
 }
 STATUSES = {"success", "fail", "skipped"}
 
