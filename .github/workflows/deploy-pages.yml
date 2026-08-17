@@ -60,7 +60,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  classify_push:
+    name: Classify deploy input
+    runs-on: ubuntu-latest
+    outputs:
+      heartbeat_only: ${{ steps.classify.outputs.heartbeat_only }}
+    steps:
+      - name: Check out push history
+        if: github.event_name == 'push'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect heartbeat-only push
+        id: classify
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          HEAD_MESSAGE: ${{ github.event.head_commit.message }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "heartbeat_only=false" >> "$GITHUB_OUTPUT"
+
+          [[ "$HEAD_MESSAGE" == *"[skip deploy]" ]] || exit 0
+          git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null || exit 0
+          [[ "$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA")" == "health/latest.json" ]] || exit 0
+
+          compare_dir="$(mktemp -d)"
+          trap 'rm -rf "$compare_dir"' EXIT
+          git show "${BEFORE_SHA}:health/latest.json" > "$compare_dir/before.json" || exit 0
+          git show "${AFTER_SHA}:health/latest.json" > "$compare_dir/after.json" || exit 0
+
+          before_heartbeat="$(jq -er '._trust_summary.pipeline_heartbeat_at | select(type == "string")' "$compare_dir/before.json")" || exit 0
+          after_heartbeat="$(jq -er '._trust_summary.pipeline_heartbeat_at | select(type == "string")' "$compare_dir/after.json")" || exit 0
+          [[ "$before_heartbeat" != "$after_heartbeat" ]] || exit 0
+
+          jq -S 'del(._trust_summary.pipeline_heartbeat_at)' "$compare_dir/before.json" > "$compare_dir/before.normalized.json"
+          jq -S 'del(._trust_summary.pipeline_heartbeat_at)' "$compare_dir/after.json" > "$compare_dir/after.normalized.json"
+          cmp -s "$compare_dir/before.normalized.json" "$compare_dir/after.normalized.json" || exit 0
+
+          echo "heartbeat_only=true" >> "$GITHUB_OUTPUT"
+
   deploy:
+    needs: classify_push
     # Full deploy job. Both fast-path (timer chore(health)) and full-path
     # (manual/dispatch/weekly) runs land here; the fast path skips the heavy
     # release-build regeneration because the timer already generated and
@@ -70,10 +114,13 @@ jobs:
     #
     # Trigger gating:
     #   - workflow_run: only run when the upstream health check succeeded
-    #   - push: always run (both timer fast-path and manual full-path)
+    #   - push: suppress only a verified heartbeat-only range
     # The per-step `if:` on the release-build step distinguishes the two paths.
     if: >-
-      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+      !cancelled()
+      && needs.classify_push.outputs.heartbeat_only != 'true'
+      && (github.event_name != 'workflow_run'
+          || github.event.workflow_run.conclusion == 'success')
     environment:
       name: github-pages
       url: >-

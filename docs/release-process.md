@@ -44,9 +44,9 @@ and successful completion of the weekly health workflow. `workflow_run` is
 required because the health workflow commits generated files after its initial
 checkout; a normal same-workflow deploy would publish the old SHA.
 
-Timer-driven health commits carry a `[skip deploy]` trailer so their pushes do
-not rebuild Pages. The trailer gates only `push` events; manual `workflow_dispatch`
-and successful `workflow_run` events continue through the deployment workflow.
+Timer-driven health commits carry a `[skip deploy]` trailer. The `classify_push`
+job suppresses a `push` deployment only after verifying the change is heartbeat-only;
+manual `workflow_dispatch` and successful `workflow_run` events continue through the deployment workflow.
 
 The workflow injects embedded health/manifest data, assembles `_site`, deploys
 with GitHub Pages, then runs post-deploy invariants against the public host.
