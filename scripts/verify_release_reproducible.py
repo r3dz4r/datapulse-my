@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,12 +25,16 @@ CATEGORY_ORDER = (
     "badges/",
     "feed.xml",
     "README.md (trust-summary)",
+    "README.md (MCP tools)",
+    "llms.txt (MCP tools)",
     "catalog-snapshot.json",
     "catalog-graph.json",
     "data/json/",
     "data/jsonld/",
     "docs/mcp-reference.md",
     "mcp.json",
+    "agent.json",
+    "docs/mcp-deploy.md (MCP tools)",
     "docs/.dashboard_filters.json",
     "docs/.dashboard_sections.json",
     "docs/index.html",
@@ -166,6 +171,21 @@ def _readme_summary(path: Path) -> bytes:
     return b"".join(lines[start:end])
 
 
+def _mcp_tools_block(path: Path) -> bytes:
+    try:
+        payload = path.read_bytes()
+    except OSError as error:
+        raise VerificationFailure(f"could not read {path}: {error}") from error
+    matches = re.findall(
+        rb"<!-- BEGIN mcp-tools -->\n.*?\n<!-- END mcp-tools -->",
+        payload,
+        flags=re.DOTALL,
+    )
+    if len(matches) != 1:
+        raise VerificationFailure(f"{path}: expected exactly one MCP tools block")
+    return matches[0]
+
+
 def _regular_files(directory: Path) -> tuple[Path, ...]:
     if not directory.is_dir():
         raise VerificationFailure(f"required output directory is missing: {directory}")
@@ -186,6 +206,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "catalog-graph.json": root / "catalog-graph.json",
         "docs/mcp-reference.md": root / "docs/mcp-reference.md",
         "mcp.json": root / "mcp.json",
+        "agent.json": root / "agent.json",
         "docs/.dashboard_filters.json": root / "docs/.dashboard_filters.json",
         "docs/.dashboard_sections.json": root / "docs/.dashboard_sections.json",
         "docs/index.html": root / "docs/index.html",
@@ -208,12 +229,16 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "badges/": _expected_badge_count(source, identifiers),
         "feed.xml": 1,
         "README.md (trust-summary)": 1,
+        "README.md (MCP tools)": 1,
+        "llms.txt (MCP tools)": 1,
         "catalog-snapshot.json": 1,
         "catalog-graph.json": 1,
         "data/json/": len(non_gtfs),
         "data/jsonld/": len(identifiers) + 1,
         "docs/mcp-reference.md": 1,
         "mcp.json": 1,
+        "agent.json": 1,
+        "docs/mcp-deploy.md (MCP tools)": 1,
         "docs/.dashboard_filters.json": 1,
         "docs/.dashboard_sections.json": 1,
         "docs/index.html": 1,
@@ -229,6 +254,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "data/jsonld/": jsonld,
         "docs/mcp-reference.md": (singleton_paths["docs/mcp-reference.md"],),
         "mcp.json": (singleton_paths["mcp.json"],),
+        "agent.json": (singleton_paths["agent.json"],),
         "docs/.dashboard_filters.json": (
             singleton_paths["docs/.dashboard_filters.json"],
         ),
@@ -241,6 +267,9 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         category: len(paths) for category, paths in category_paths.items()
     }
     actual_counts["README.md (trust-summary)"] = 1
+    actual_counts["README.md (MCP tools)"] = 1
+    actual_counts["llms.txt (MCP tools)"] = 1
+    actual_counts["docs/mcp-deploy.md (MCP tools)"] = 1
     count_errors = [
         f"{category}: expected {expected_counts[category]}, found {actual_counts[category]}"
         for category in CATEGORY_ORDER
@@ -266,6 +295,13 @@ def _capture(root: Path, source: Path) -> BuildCapture:
     readme_key = "README.md#trust-summary"
     hashes[readme_key] = hashlib.sha256(_readme_summary(root / "README.md")).hexdigest()
     categories["README.md (trust-summary)"] = (readme_key,)
+    for category, key, path in (
+        ("README.md (MCP tools)", "README.md#mcp-tools", root / "README.md"),
+        ("llms.txt (MCP tools)", "llms.txt#mcp-tools", root / "llms.txt"),
+        ("docs/mcp-deploy.md (MCP tools)", "docs/mcp-deploy.md#mcp-tools", root / "docs/mcp-deploy.md"),
+    ):
+        hashes[key] = hashlib.sha256(_mcp_tools_block(path)).hexdigest()
+        categories[category] = (key,)
     return BuildCapture(hashes=dict(sorted(hashes.items())), categories=categories, workdir=root)
 
 

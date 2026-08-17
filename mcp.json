@@ -481,6 +481,43 @@
         ],
         "type": "object"
       }
+    },
+    {
+      "name": "usage_summary",
+      "description": "Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "buyer_id": {
+            "description": "Buyer identifier, e.g. 'pro-default' or 'anonymous'.",
+            "examples": [
+              "pro-default"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "since": {
+            "description": "Inclusive ISO start date YYYY-MM-DD, e.g. '2026-08-01'.",
+            "examples": [
+              "2026-08-01"
+            ],
+            "type": "string"
+          },
+          "until": {
+            "description": "Inclusive ISO end date YYYY-MM-DD, e.g. '2026-08-07'.",
+            "examples": [
+              "2026-08-07"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "buyer_id",
+          "since",
+          "until"
+        ],
+        "type": "object"
+      }
     }
   ],
   "resources": [

@@ -535,6 +535,48 @@ Input schema:
 }
 ```
 
+### `usage_summary`
+
+Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07.
+
+Input schema:
+
+```json
+{
+  "additionalProperties": false,
+  "properties": {
+    "buyer_id": {
+      "description": "Buyer identifier, e.g. 'pro-default' or 'anonymous'.",
+      "examples": [
+        "pro-default"
+      ],
+      "minLength": 1,
+      "type": "string"
+    },
+    "since": {
+      "description": "Inclusive ISO start date YYYY-MM-DD, e.g. '2026-08-01'.",
+      "examples": [
+        "2026-08-01"
+      ],
+      "type": "string"
+    },
+    "until": {
+      "description": "Inclusive ISO end date YYYY-MM-DD, e.g. '2026-08-07'.",
+      "examples": [
+        "2026-08-07"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "buyer_id",
+    "since",
+    "until"
+  ],
+  "type": "object"
+}
+```
+
 ## Resources
 
 - `datapulse://index` — Read first; lightweight list of all DataPulse MY dataset ids with current status, title, source, licence, and namespace.
@@ -604,4 +646,5 @@ Install `mcp/requirements.txt`, then run:
 python3 scripts/gen_mcp_reference.py
 ```
 
-The command updates this file and the tool schemas in `mcp.json`.
+The command updates this file, `mcp.json`, `llms.txt`, `README.md`,
+`agent.json`, and `docs/mcp-deploy.md`.

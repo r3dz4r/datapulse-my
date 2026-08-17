@@ -23,12 +23,16 @@ OWNED_CATEGORIES = (
     "badges/",
     "feed.xml",
     "README.md (trust-summary)",
+    "README.md (MCP tools)",
+    "llms.txt (MCP tools)",
     "catalog-snapshot.json",
     "catalog-graph.json",
     "data/json/",
     "data/jsonld/",
     "docs/mcp-reference.md",
     "mcp.json",
+    "agent.json",
+    "docs/mcp-deploy.md (MCP tools)",
     "docs/.dashboard_filters.json",
     "docs/.dashboard_sections.json",
     "docs/index.html",
@@ -132,6 +136,8 @@ def test_first_build_produces_expected_outputs(
         "badges/beta.svg",
         "feed.xml",
         "README.md#trust-summary",
+        "README.md#mcp-tools",
+        "llms.txt#mcp-tools",
         "catalog-snapshot.json",
         "catalog-graph.json",
         "data/json/alpha.json",
@@ -141,6 +147,8 @@ def test_first_build_produces_expected_outputs(
         "data/jsonld/catalog.json",
         "docs/mcp-reference.md",
         "mcp.json",
+        "agent.json",
+        "docs/mcp-deploy.md#mcp-tools",
         "docs/.dashboard_filters.json",
         "docs/.dashboard_sections.json",
         "docs/index.html",
@@ -153,7 +161,7 @@ def test_first_build_produces_expected_outputs(
     assert len(retained_builds) == 1
     physical_outputs = _capture_outputs(
         retained_builds[0],
-        sorted(path for path in expected if path != "README.md#trust-summary"),
+        sorted(path for path in expected if "#" not in path),
     )
     assert all(payload is not None for payload in physical_outputs.values())
 

@@ -121,7 +121,14 @@ def test_deploy_pages_publishes_and_verifies_trends_and_drift() -> None:
     assert "datapulse/v1/dataset-drift" in workflow
     assert 'fetch "reconciliation snapshot"' in workflow
     assert "datapulse/v1/dataset-reconciliation" in workflow
-    assert "expected 15 tools" in workflow
+    assert '.tools | type == "array" and length > 0' in workflow
+    assert "all(.[];" in workflow
+    assert '.inputSchema | type == "object"' in workflow
+    assert "<!-- BEGIN mcp-tools -->" in workflow
+    assert "<!-- END mcp-tools -->" in workflow
+    assert "expected 15 tools" not in workflow
+    assert "for tool in search_datasets" not in workflow
+    assert "[.tools[].name] == [" not in workflow
 
 
 def test_deploy_workflow_permissions_not_broadened() -> None:

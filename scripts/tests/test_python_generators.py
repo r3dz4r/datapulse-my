@@ -5,6 +5,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from scripts.tests.generator_harness import (
     GeneratorRun,
     run_generator,
@@ -18,6 +20,7 @@ FIXTURE = ROOT / "scripts/tests/fixtures/generator/python_release"
 CHANGELOG_GENERATOR = ROOT / "scripts/gen_catalog_snapshot.py"
 JSONLD_GENERATOR = ROOT / "scripts/gen_jsonld_catalog.py"
 MCP_GENERATOR = ROOT / "scripts/gen_mcp_reference.py"
+BEGIN_MCP_TOOLS = "<!-- BEGIN mcp-tools -->"
 
 CHANGELOG_INPUTS = ["datapulse.json", "health/latest.json"]
 CHANGELOG_OUTPUTS = ["catalog-snapshot.json", "changelog.json"]
@@ -28,8 +31,14 @@ JSONLD_OUTPUTS = [
     "data/jsonld/beta.json",
     "docs/index.html",
 ]
-MCP_INPUTS = ["datapulse.json", "mcp.json", "mcp/server.py", "docs"]
-MCP_OUTPUTS = ["docs/mcp-reference.md", "mcp.json"]
+MCP_INPUTS = [
+    "datapulse.json", "mcp.json", "mcp/server.py", "docs",
+    "llms.txt", "README.md", "agent.json",
+]
+MCP_OUTPUTS = [
+    "docs/mcp-reference.md", "mcp.json", "llms.txt", "README.md",
+    "agent.json", "docs/mcp-deploy.md",
+]
 
 EXPECTED_TOOL_NAMES = (
     "search_datasets",
@@ -334,6 +343,37 @@ def test_mcp_reference_json_matches_runtime_schema() -> None:
     assert tuple(generated) == EXPECTED_TOOL_NAMES
     assert len(discovery["tools"]) == 5
     assert generated == runtime
+
+
+def test_mcp_inventory_surfaces_match_runtime_order() -> None:
+    result = _run(MCP_GENERATOR, MCP_INPUTS, MCP_OUTPUTS)
+
+    assert result.returncode == 0, result.stderr
+    runtime_names = EXPECTED_TOOL_NAMES
+    llms = result.outputs["llms.txt"]
+    readme = result.outputs["README.md"]
+    deploy = result.outputs["docs/mcp-deploy.md"]
+    assert llms is not None and readme is not None and deploy is not None
+    documented = re.findall(r"^\| `([a-z][a-z0-9_]*)\(", llms.decode(), re.MULTILINE)
+    assert tuple(documented) == runtime_names
+    assert f"- {len(runtime_names)} tools:" in readme.decode()
+    assert all(f"`{name}`" in deploy.decode() for name in runtime_names)
+    assert _json_output(result, "agent.json")["capabilities"]["mcp_server"]["tools"] == len(runtime_names)
+
+
+@pytest.mark.parametrize("replacement", ["", f"{BEGIN_MCP_TOOLS}\n{BEGIN_MCP_TOOLS}"])
+def test_mcp_reference_rejects_invalid_tool_markers(replacement: str, tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    shutil.copytree(FIXTURE, source)
+    target = source / "llms.txt"
+    target.write_text(
+        target.read_text(encoding="utf-8").replace(BEGIN_MCP_TOOLS, replacement, 1),
+        encoding="utf-8",
+    )
+    result = _run(MCP_GENERATOR, MCP_INPUTS, MCP_OUTPUTS, source_root=source)
+
+    assert result.returncode != 0
+    assert "expected exactly one" in result.stderr
 
 
 def test_mcp_reference_handles_missing_server() -> None:

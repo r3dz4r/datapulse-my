@@ -306,9 +306,10 @@ with (work / "llms-urls.txt").open("w", encoding="utf-8") as output:
 print(f"release metadata assertions: PASS ({expected_count} datasets)")
 PY
 
-PYTHONPATH=mcp python3 - "$work_dir/mcp.json" <<'PY'
+PYTHONPATH=mcp python3 - "$work_dir/mcp.json" "$work_dir/llms.txt" <<'PY'
 import asyncio
 import json
+import re
 import sys
 
 import server
@@ -323,6 +324,16 @@ async def main() -> None:
         for tool in runtime_tools
     ]
     assert advertised_tools == expected_tools
+    llms = open(sys.argv[2], encoding="utf-8").read()
+    blocks = re.findall(
+        r"<!-- BEGIN mcp-tools -->\n(.*?)\n<!-- END mcp-tools -->",
+        llms,
+        flags=re.DOTALL,
+    )
+    assert len(blocks) == 1, "llms.txt must contain exactly one MCP tools block"
+    documented_tools = re.findall(r"^\| `([a-z][a-z0-9_]*)\(", blocks[0], re.MULTILINE)
+    runtime_names = [tool.name for tool in runtime_tools]
+    assert documented_tools == runtime_names
 
     advertised_resources = [resource["uri"] for resource in advertised_document["resources"]]
     runtime_resources = await server.mcp.list_resources()
@@ -330,7 +341,6 @@ async def main() -> None:
     expected_resources = [str(resource.uri) for resource in runtime_resources]
     expected_resources.extend(template.uri_template for template in runtime_templates)
     assert advertised_resources == expected_resources
-    assert len(runtime_tools) == 15
     assert len(runtime_resources) == 8
     assert len(runtime_templates) == 1
     print(

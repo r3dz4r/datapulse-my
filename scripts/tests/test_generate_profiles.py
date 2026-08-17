@@ -114,6 +114,8 @@ RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "data/jsonld/catalog.json",
     "docs/mcp-reference.md",
     "mcp.json",
+    "agent.json",
+    "docs/mcp-deploy.md",
     "docs/.dashboard_filters.json",
     "docs/.dashboard_sections.json",
     "docs/index.html",
@@ -127,6 +129,7 @@ PROFILE_INPUTS = (
     "README.md",
     "llms.txt",
     "docs",
+    "agent.json",
     "mcp.json",
     "mcp",
     "scripts",
@@ -201,10 +204,22 @@ def _stage_source(tmp_path: Path) -> Path:
     )
 
     shutil.copy2(SHELL_FIXTURE / "README.md", source / "README.md")
+    with (source / "README.md").open("a", encoding="utf-8") as output:
+        output.write(
+            "\n<!-- BEGIN mcp-tools -->\n"
+            "- 0 tools:\n\n"
+            "The public endpoint is live and serves all 0 read-only tools over the\n"
+            "0-dataset catalogue.\n"
+            "<!-- END mcp-tools -->\n"
+        )
     (source / "llms.txt").write_text(
         "> a machine-readable manifest of 42 official datasets\n"
         "Agents can query the 42-dataset catalogue natively.\n"
-        "The endpoint serves tools over the 42-dataset catalogue.\n",
+        "The endpoint serves tools over the 42-dataset catalogue.\n\n"
+        "<!-- BEGIN mcp-tools -->\n"
+        "### Tools\n\n"
+        "| Tool | Use when |\n|---|---|\n"
+        "<!-- END mcp-tools -->\n",
         encoding="utf-8",
     )
     (source / "docs").mkdir()
@@ -215,7 +230,13 @@ def _stage_source(tmp_path: Path) -> Path:
         RELEASE_FIXTURE / "docs/health-methodology.md",
         source / "docs/health-methodology.md",
     )
+    shutil.copy2(
+        RELEASE_FIXTURE / "docs/mcp-reference.md",
+        source / "docs/mcp-reference.md",
+    )
     shutil.copy2(RELEASE_FIXTURE / "mcp.json", source / "mcp.json")
+    shutil.copy2(RELEASE_FIXTURE / "agent.json", source / "agent.json")
+    shutil.copy2(RELEASE_FIXTURE / "docs/mcp-deploy.md", source / "docs/mcp-deploy.md")
     shutil.copytree(RELEASE_FIXTURE / "mcp", source / "mcp")
 
     metrics_cache = source / ".cache/datapulse/metrics_dataset_cumul.json"

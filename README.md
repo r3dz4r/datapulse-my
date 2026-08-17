@@ -151,11 +151,13 @@ DataPulse MY also exposes an AI-ready, read-only MCP server so agents can query
 the catalogue natively:
 
 - Endpoint: `https://mcp.data-pulse.my/mcp` (Streamable HTTP, no auth)
-- 15 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`
-- 8 resources plus 1 resource template, including `datapulse://attestations` and the signed daily probe-attestation index.
+<!-- BEGIN mcp-tools -->
+- 16 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 
-The public endpoint is live and serves all 15 read-only tools over the
+The public endpoint is live and serves all 16 read-only tools over the
 389-dataset catalogue.
+<!-- END mcp-tools -->
+- 8 resources plus 1 resource template, including `datapulse://attestations` and the signed daily probe-attestation index.
 
 `get_evidence` exposes pipeline receipts; `verify_evidence` performs cached
 transport-only live checks and does not update health.

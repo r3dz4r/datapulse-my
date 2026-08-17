@@ -26,7 +26,7 @@ DataPulse MY exposes a **read-only MCP server** so AI agents (Claude Desktop, Cu
 
 - **MCP endpoint:** https://mcp.data-pulse.my/mcp
 - **Transport:** Streamable HTTP (POST-only, single endpoint)
-- **Auth:** none required (all 15 tools are read-only)
+- **Auth:** none required (all advertised tools are read-only)
 - **Source:** reads the same `datapulse.json` + `health/latest.json` + `health/trends.json` + `health/drift.json` + `health/reconciliation.json` served from this repository; no separate API
 
 ### Agent discovery endpoints
@@ -45,23 +45,28 @@ For AI agents that look up canonical discovery paths before fetching:
 > paths from the artifact, so `/.well-known/` would silently not deploy
 > without a workflow change.
 
+<!-- BEGIN mcp-tools -->
 ### Tools
 
 | Tool | Use when |
 |---|---|
-| `search_datasets(query, licence?, source?, limit?)` | Find datasets by topic, agency, or licence |
-| `get_dataset(dataset_id)` | Full detail + health for one dataset |
-| `find_stale(max_age_hours?)` | Find datasets whose health is not green |
-| `find_anomalies(limit?, mode?, min_reliability?)` | Find datasets flagged by the latest anomaly detection, ranked by severity |
-| `find_deteriorating(limit?, min_anomaly_rate?)` | Find datasets with a published deteriorating freshness trend |
-| `find_recovering(limit?)` | Find datasets with a published recovering freshness trend |
-| `find_unreliable(limit?, at_or_below_grade?)` | Find datasets with evaluated low publish reliability |
-| `find_schema_drift(limit?, min_change_count?)` | Find published structural or record-count drift evidence |
-| `check_reconciliation(dataset_name)` | Return cross-source reconciliation evidence; discrepancies require human review |
-| `get_provenance(dataset_ids[])` | Citation-ready metadata for one or many datasets |
-| `get_evidence(dataset_id)` | Complete pipeline-published evidence receipt |
-| `verify_evidence(dataset_id)` | Cached, ephemeral transport-only live check; browser-dependent sources are refused |
-| `find_by_licence(licence)` | Enumerate what's available under a given licence |
+| `search_datasets(query, licence?, source?, limit?)` | Search DataPulse MY's 389 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence. |
+| `get_dataset(dataset_id)` | Return full detail for one dataset id, including its latest health status and last-verified timestamp, content_freshness_date, and freshness_signal_source (last_modified, content_parse, or none). Use to fetch the provenance/citation metadata for a dataset found via search_datasets and distinguish unknown-freshness from proven stale data. |
+| `find_stale(max_age_hours?)` | Return datasets whose status is aging, stale, or degraded, plus datasets missing from the latest health snapshot. Use when an agent needs to know which data has a freshness or schema-validity risk. |
+| `find_anomalies(limit?, mode?, min_reliability?)` | Return datasets flagged by the latest published anomaly detection, ranked by how far the observed update interval exceeds its threshold. Optionally require a minimum publish-reliability grade; includes pipeline-computed anomaly and reliability evidence so agents do not recompute it. |
+| `find_deteriorating(limit?, min_anomaly_rate?)` | Return datasets whose published freshness trend is deteriorating, ranked by staleness slope. Optionally require a minimum historical anomaly rate; includes pipeline-computed trend and reliability evidence so agents do not recompute it. |
+| `find_recovering(limit?)` | Return datasets whose published freshness trend is recovering, with the fastest staleness reductions first. Includes pipeline-computed trend and publish-reliability evidence. |
+| `find_unreliable(limit?, at_or_below_grade?)` | Return datasets whose evaluated publish-reliability grade is at or below a threshold, with the worst grades and lowest on-time percentages first. Reliability measures timeliness of successful freshness observations, not uptime; sample days are included so agents can judge evidence depth. |
+| `find_schema_drift(limit?, min_change_count?)` | Return datasets with published structural or record-count drift evidence, ranked with structural changes first. Optionally require a minimum number of structural transitions; includes pipeline-computed evidence so agents do not infer drift from freshness alone. |
+| `check_reconciliation(dataset_name)` | Return the published cross-source reconciliation group for a dataset name or id, including per-member counts, dates, statuses, tolerances, and contextual deltas. A discrepancy requires human review and does not prove either source is wrong. |
+| `get_provenance(dataset_ids[])` | Return citation-ready provenance metadata for the listed dataset ids, plus compact pipeline-published evidence receipts: row probe time, HTTP status, request URL, access dependency, freshness source, content date, record count, shape fingerprint, anomaly flag, and status. Use when an agent must cite data and show the evidence behind the trust claim without recomputing it. |
+| `get_evidence(dataset_id)` | Return the complete pipeline-published evidence receipt for one dataset id, including probe time, transport, access dependency, freshness, record-count, shape, tolerance, status, and anomaly fields. Use for a deep audit, e.g. get_evidence('fuelprice'); values are presented without MCP-side recomputation. |
+| `verify_evidence(dataset_id)` | Perform a rate-limited live streamed GET for one direct-access dataset and compare transport receipts with the latest published evidence, e.g. verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints remain pipeline-only and are explicitly reported as unverified; results are ephemeral and never update health artifacts. |
+| `trust_verdict(dataset_id)` | Return the published signed facts, unsigned methodology-versioned trust score, and existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately. |
+| `verify_attestation(reference, replay_chain?)` | Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence. |
+| `find_by_licence(licence)` | Return all datasets with the given licence, summarised. Use to enumerate what's available under a specific licence for compliance/reuse scoping. |
+| `usage_summary(buyer_id, since, until)` | Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. |
+<!-- END mcp-tools -->
 
 ### Resources (read-only context)
 

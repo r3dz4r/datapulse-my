@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import re
+import stat
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -14,6 +17,142 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "mcp"))
 
 import server  # noqa: E402
+
+
+BEGIN_MCP_TOOLS = "<!-- BEGIN mcp-tools -->"
+END_MCP_TOOLS = "<!-- END mcp-tools -->"
+
+
+class GenerationError(Exception):
+    """Raised when an owned artifact does not satisfy the generator contract."""
+
+
+def atomic_write(path: Path, content: str) -> None:
+    """Replace a file atomically while preserving its permission bits."""
+    try:
+        mode = stat.S_IMODE(path.stat().st_mode)
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", dir=path.parent,
+            prefix=f".{path.name}.", delete=False,
+        ) as output:
+            temporary = Path(output.name)
+            output.write(content)
+            output.flush()
+            os.fsync(output.fileno())
+        os.chmod(temporary, mode)
+        os.replace(temporary, path)
+    except (OSError, UnicodeError) as error:
+        if "temporary" in locals():
+            temporary.unlink(missing_ok=True)
+        raise GenerationError(f"cannot write {path}: {error}") from error
+
+
+def read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise GenerationError(f"cannot read {path}: {error}") from error
+
+
+def tool_block_pattern() -> re.Pattern[str]:
+    return re.compile(
+        rf"{re.escape(BEGIN_MCP_TOOLS)}\n.*?\n{re.escape(END_MCP_TOOLS)}",
+        re.DOTALL,
+    )
+
+
+def validate_tool_block(path: Path) -> None:
+    original = read_text(path)
+    matches = tool_block_pattern().findall(original)
+    if (
+        original.count(BEGIN_MCP_TOOLS) != 1
+        or original.count(END_MCP_TOOLS) != 1
+        or len(matches) != 1
+    ):
+        raise GenerationError(
+            f"{path}: expected exactly one {BEGIN_MCP_TOOLS!r}/"
+            f"{END_MCP_TOOLS!r} block, found {len(matches)}"
+        )
+
+
+def replace_tool_block(path: Path, body: str) -> None:
+    original = read_text(path)
+    pattern = tool_block_pattern()
+    matches = pattern.findall(original)
+    if (
+        original.count(BEGIN_MCP_TOOLS) != 1
+        or original.count(END_MCP_TOOLS) != 1
+        or len(matches) != 1
+    ):
+        raise GenerationError(
+            f"{path}: expected exactly one {BEGIN_MCP_TOOLS!r}/"
+            f"{END_MCP_TOOLS!r} block, found {len(matches)}"
+        )
+    replacement = f"{BEGIN_MCP_TOOLS}\n{body.rstrip()}\n{END_MCP_TOOLS}"
+    updated = pattern.sub(lambda _: replacement, original, count=1)
+    if updated != original:
+        atomic_write(path, updated)
+
+
+def tool_signature(tool: object) -> str:
+    schema = tool.parameters
+    properties = schema.get("properties", {})
+    required = set(schema.get("required", []))
+    arguments = []
+    for name, parameter in properties.items():
+        array_suffix = "[]" if parameter.get("type") == "array" else ""
+        optional_suffix = "" if name in required else "?"
+        arguments.append(f"{name}{array_suffix}{optional_suffix}")
+    return f"{tool.name}({', '.join(arguments)})"
+
+
+def markdown_cell(value: str) -> str:
+    return value.replace("|", r"\|").replace("\n", " ")
+
+
+def update_llms(tools: list[object]) -> None:
+    rows = ["### Tools", "", "| Tool | Use when |", "|---|---|"]
+    rows.extend(
+        f"| `{tool_signature(tool)}` | {markdown_cell(tool.description or '')} |"
+        for tool in tools
+    )
+    replace_tool_block(ROOT / "llms.txt", "\n".join(rows))
+
+
+def update_readme(tools: list[object]) -> None:
+    names = ", ".join(f"`{tool.name}`" for tool in tools)
+    body = (
+        f"- {len(tools)} tools: {names}\n\n"
+        f"The public endpoint is live and serves all {len(tools)} read-only tools over the\n"
+        f"{server.DATASET_COUNT}-dataset catalogue."
+    )
+    replace_tool_block(ROOT / "README.md", body)
+
+
+def load_agent() -> dict:
+    path = ROOT / "agent.json"
+    try:
+        document = json.loads(read_text(path))
+        document["capabilities"]["mcp_server"]["tools"]
+    except (json.JSONDecodeError, KeyError, TypeError) as error:
+        raise GenerationError(f"{path}: invalid mcp_server contract: {error}") from error
+    return document
+
+
+def update_agent(tool_count: int, document: dict) -> None:
+    document["capabilities"]["mcp_server"]["tools"] = tool_count
+    atomic_write(ROOT / "agent.json", json.dumps(document, indent=2, ensure_ascii=False) + "\n")
+
+
+def update_deploy_doc(tools: list[object]) -> None:
+    names = ", ".join(f"`{tool.name}`" for tool in tools)
+    body = (
+        "The stable public endpoint is live at `https://mcp.data-pulse.my/mcp`. It has\n"
+        f"been verified end to end: `tools/list` returns {len(tools)} tools over the "
+        f"{server.DATASET_COUNT}-dataset\ncatalogue.\n\n"
+        f"The current read-only contract is {names}; it also publishes the concrete resources"
+    )
+    replace_tool_block(ROOT / "docs/mcp-deploy.md", body)
 
 
 LIVE_VERIFICATION = """## Live verification
@@ -68,6 +207,10 @@ async def generate() -> None:
     resources = await server.mcp.list_resources()
     templates = await server.mcp.list_resource_templates()
 
+    for path in (ROOT / "llms.txt", ROOT / "README.md", ROOT / "docs/mcp-deploy.md"):
+        validate_tool_block(path)
+    agent = load_agent()
+
     discovery_path = ROOT / "mcp.json"
     discovery = json.loads(discovery_path.read_text(encoding="utf-8"))
     discovery["server"]["source_commit_sha"] = server.SOURCE_COMMIT_SHA
@@ -109,9 +252,7 @@ async def generate() -> None:
         }
         for template in templates
     ]
-    discovery_path.write_text(
-        json.dumps(discovery, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    atomic_write(discovery_path, json.dumps(discovery, indent=2, ensure_ascii=False) + "\n")
 
     lines = [
         "# MCP reference",
@@ -168,16 +309,30 @@ async def generate() -> None:
             "python3 scripts/gen_mcp_reference.py",
             "```",
             "",
-            "The command updates this file and the tool schemas in `mcp.json`.",
+            "The command updates this file, `mcp.json`, `llms.txt`, `README.md`,",
+            "`agent.json`, and `docs/mcp-deploy.md`.",
             "",
         ]
     )
-    (ROOT / "docs/mcp-reference.md").write_text("\n".join(lines), encoding="utf-8")
+    atomic_write(ROOT / "docs/mcp-reference.md", "\n".join(lines))
+    update_llms(tools)
+    update_readme(tools)
+    update_agent(len(tools), agent)
+    update_deploy_doc(tools)
     print(
         f"Generated {len(tools)} tools, {len(resources)} resources, "
         f"and {len(templates)} resource templates"
     )
 
 
+def main() -> int:
+    try:
+        asyncio.run(generate())
+    except GenerationError as error:
+        print(f"gen_mcp_reference.py: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
 if __name__ == "__main__":
-    asyncio.run(generate())
+    raise SystemExit(main())
