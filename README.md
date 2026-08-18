@@ -11,7 +11,7 @@
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
 > any MCP-compatible client with one config block. Your agent gets **389 official
 > Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
-> BAS.MY)** — with declared licences and an honest nine-status trust taxonomy
+> BAS.MY)** — with declared licences and an honest ten-status trust taxonomy
 > instead of a blanket green checkmark.
 >
 > → [Connect your AI agent in 30 seconds](#ai-agent-ready--what-it-means-for-you)
@@ -145,6 +145,18 @@ RAG systems, and internal knowledge tools to consume.
 assessed with the honest ten-status trust taxonomy.** Each entry retains its
 human-readable `steward` and supplies a stable `custodian` ID resolved through
 [`custodians.json`](custodians.json) for publisher-level provenance.
+
+**Why this matters now.** AI agents are increasingly the buyers of structured
+public data — they retrieve and act on resources at machine speed, and the
+proportion of traffic that hits the human web from agents is already
+displacing the old "crawl → index → human visits → ad impression" bargain
+that funded open publishers. The workloads that survive that shift are the
+ones that publish clean, attested, licence-clear resources an agent can
+consume without re-deriving trust from scratch. DataPulse MY is built for
+that: one self-describing index, one MCP endpoint, ten honest health
+statuses, and signed probe attestations — so an agent can answer a question
+about Malaysian public data without first having to verify the data
+exists, is current, and is licensed for the use it is about to make of it.
 
 ### MCP server (read-only)
 
