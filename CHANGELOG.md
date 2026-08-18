@@ -4,6 +4,51 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## [0.9.0](https://github.com/r3dz4r/datapulse-my/compare/v0.8.0...v0.9.0) (2026-08-18)
+
+
+### Features
+
+* **attestation:** publish real Ed25519 key registry + first daily digests ([05081da](https://github.com/r3dz4r/datapulse-my/commit/05081da271dabc632ea3dbb804ca16ea13839f2c))
+* **attestation:** signed probe attestation chain + trust_verdict + verify_attestation (the alpha) ([e27b1e8](https://github.com/r3dz4r/datapulse-my/commit/e27b1e82d1bf58c8300f42b53af02e11ad4d816d))
+* **drift:** add schema/content drift detection, expose via MCP ([280ddef](https://github.com/r3dz4r/datapulse-my/commit/280ddefaa96b5ca1d0e4a94fc013fe8fa4db2d00))
+* **embed:** self-heal changelog-strip in docs/index.html ([d7c9381](https://github.com/r3dz4r/datapulse-my/commit/d7c9381a49151b8925217025502661965dc33a3a))
+* **evidence:** evidence receipts + verify_evidence live check — completes trust-layer moat plan ([c01aaf0](https://github.com/r3dz4r/datapulse-my/commit/c01aaf0f88811b27ca7b0176a3f81913eb730a90))
+* **generator:** own MCP inventory in llms.txt, README.md, agent.json, docs/mcp-deploy.md ([b39e728](https://github.com/r3dz4r/datapulse-my/commit/b39e728c0a67b06bb2985133dfdd61e92c34a3bc))
+* **mcp:** observability foundation — per-buyer JSONL usage sink + usage_summary tool ([4ee851a](https://github.com/r3dz4r/datapulse-my/commit/4ee851a5847ad198179d2cfd8acae2a1edb41900))
+* **mcp:** polish tool descriptions and publish score ([79f586c](https://github.com/r3dz4r/datapulse-my/commit/79f586c62e377835b3c027061d1b6475e47e8ec0))
+* **methodology:** self-healing page — extract from code, keep prose ([babc03b](https://github.com/r3dz4r/datapulse-my/commit/babc03b9e5c04eeaf18df34e9f409d2ced3c51c9))
+* **nav:** self-healing site nav from assets/site-nav.html partial ([8b4877f](https://github.com/r3dz4r/datapulse-my/commit/8b4877fe05602b37eebc391f81f6023a08003cf1))
+* **reconciliation:** cross-source duplicate detection + MCP exposure ([2aba9ec](https://github.com/r3dz4r/datapulse-my/commit/2aba9ec869a613c1eaa5b60e7a4310db3e666f4b))
+* **reliability:** expose reliability scoring — find_unreliable + min_reliability filter + resource ([9b6b732](https://github.com/r3dz4r/datapulse-my/commit/9b6b7323cad834160962aeaae757524f724f3d6e))
+* **scoring:** methodology v2 — missing-signal weighting + reference cap ([be3fcae](https://github.com/r3dz4r/datapulse-my/commit/be3fcae5d38389907358b55694f95a83ae0d0e3c))
+* **scoring:** methodology_version 3 with explicit component availability ([57002f1](https://github.com/r3dz4r/datapulse-my/commit/57002f1fcd085203d27185ea786651aaf0ce54c3))
+* **theme:** uniform prose typography across all pages ([6b61e1c](https://github.com/r3dz4r/datapulse-my/commit/6b61e1cb915eb324a2771ad0ebacee68a8193a24))
+
+
+### Bug Fixes
+
+* **ci:** bind DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE secret to deploy step ([d8af2f1](https://github.com/r3dz4r/datapulse-my/commit/d8af2f1871143170963ab4e707c7f7327814e2da))
+* **ci:** copy .attestations/ to _site for chain_head.json access ([ada4ca1](https://github.com/r3dz4r/datapulse-my/commit/ada4ca1f16620b1fd268b8d10781b7c47930188c))
+* **ci:** deterministic-safety-net green — archives dir + history fixture ([eaab5a6](https://github.com/r3dz4r/datapulse-my/commit/eaab5a608336ea752e6676430eec93869bb486d8))
+* **ci:** freshness workflow checks pipeline-liveness, not data freshness ([2c68852](https://github.com/r3dz4r/datapulse-my/commit/2c6885247c3c3daf1af6fcf35e4d3129b42fc07f))
+* **ci:** release-please concurrency block — cancel in-flight runs on new push ([aa72932](https://github.com/r3dz4r/datapulse-my/commit/aa72932781fc66ce7d759f868ba89d75c32caa1f))
+* **ci:** use GITHUB_TOKEN for attestation anchor injection ([677218e](https://github.com/r3dz4r/datapulse-my/commit/677218e49efe4f7b15748753bb5b6fe99be7b151))
+* **ci:** wire DATAPULSE_ARCHIVES_DIR through harness + defensive generate.sh fallback ([36ce9e6](https://github.com/r3dz4r/datapulse-my/commit/36ce9e6d23018454280a0346b444fa91f6c87317))
+* **ci:** write the attestation key to a temp file before gen runs ([eaa2cc2](https://github.com/r3dz4r/datapulse-my/commit/eaa2cc2cc83589864958e44a82eeb26a1902fbea))
+* **dashboard:** clarify ODIN [#1](https://github.com/r3dz4r/datapulse-my/issues/1) claim with freshness gap framing ([0af9882](https://github.com/r3dz4r/datapulse-my/commit/0af98825022d4e8aec66e790eda821add6dce951))
+* **generator:** substitute dataset count in agent.json description ([e85e6c4](https://github.com/r3dz4r/datapulse-my/commit/e85e6c43d0f4ef710a11f8f9d0cd953dcce2d478))
+* **health:** audit + reduce 32 unknown-freshness to 0 ([371bf43](https://github.com/r3dz4r/datapulse-my/commit/371bf432d8ac18df3bd5ed7ab4d12e1c5f0f6096))
+* **invariants:** include tool annotations in MCP expected_tools ([988f29d](https://github.com/r3dz4r/datapulse-my/commit/988f29db77c2c92d82d9d5624854c588f5b86a20))
+* **llms.txt:** correct tool count 15 → 16 in prose paragraph ([d48f3cb](https://github.com/r3dz4r/datapulse-my/commit/d48f3cbfa0a0fb7df3196475feb00d8bf66aed67))
+* **mcp:** serialize tool annotations into mcp.json; add PRIVACY.md ([16cfe7b](https://github.com/r3dz4r/datapulse-my/commit/16cfe7b1b83e966130a4738d3834046362bf2853))
+* **methodology:** defensive timer read for CI / non-systemd environments ([40fdc81](https://github.com/r3dz4r/datapulse-my/commit/40fdc816f2f81050dc7d645c962a7ef9ecece6a7))
+* **methodology:** render with shared datapulse.css + site-nav ([2f1956f](https://github.com/r3dz4r/datapulse-my/commit/2f1956f8b09311a8f169c63a26f6318f3a45390f))
+* **migrations:** trim-history single-pass partition (was O(n²)) ([5ad1225](https://github.com/r3dz4r/datapulse-my/commit/5ad1225bad91bc0019718c911ea5b0838728de5a))
+* **nav:** eliminate wrapped-row gap between nav links on mobile ([1aa7578](https://github.com/r3dz4r/datapulse-my/commit/1aa75782c91cea85c58dc2fa79f934bc5d5bfa93))
+* **telemetry:** add attestation-score to allowed stages ([38bb5dd](https://github.com/r3dz4r/datapulse-my/commit/38bb5dde5bfea27113867ef662fb0617b0356a05))
+* **workflow:** suppress Pages deploy on heartbeat-only pushes ([d15dda2](https://github.com/r3dz4r/datapulse-my/commit/d15dda20292479a94ca81db053ac1055f2b88615))
+
 ## [0.8.0](https://github.com/r3dz4r/datapulse-my/compare/v0.7.0...v0.8.0) (2026-08-15)
 
 
