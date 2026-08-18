@@ -4,7 +4,7 @@
 
 **Open in Google Colab:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb)
 
-[![M8ven Verified](https://m8ven.ai/badge/mcp/r3dz4r-datapulse-my-fsfgq3)](https://m8ven.ai/mcp/r3dz4r-datapulse-my-fsfgq3)
+[![M8ven Verified](https://m8ven.ai/badge/mcp/r3dz4r-datapulse-my-fsfgq3?variant=verified)](https://m8ven.ai/mcp/r3dz4r-datapulse-my-fsfgq3)
 [![mcpgrade](https://img.shields.io/badge/mcpgrade-100%2F100%20(Grade%20A)-success?style=flat&logo=anthropic)](https://www.npmjs.com/package/mcpgrade)
 <!-- m8ven-verify: d1505f0f7e0429963789e95995216ca3 -->
 
