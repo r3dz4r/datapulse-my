@@ -12,6 +12,17 @@ on:
       - "feed.xml"
       - "data/**"
 
+# Cancel in-flight runs when a new push lands. Without this, a burst of
+# timer pushes (every ~5 min) spawns parallel release-please runs that
+# all hit the GitHub App installation rate limit simultaneously
+# (~60 req/hr per install). 12 of 31 recent runs failed with
+# "API rate limit exceeded for installation" because of this
+# amplification; with cancel-in-progress only one run is in-flight at
+# a time and the limit is rarely hit.
+concurrency:
+  group: release-please
+  cancel-in-progress: true
+
 permissions:
   contents: write
   pull-requests: write
