@@ -1,0 +1,73 @@
+# CODEOWNERS — DataPulse MY
+#
+# Pull-request review routing. GitHub auto-assigns the listed owners as
+# required reviewers when a PR touches a matching path. Defaults to
+# unicast match (last matching rule wins), so place broad rules first
+# and narrow rules below.
+#
+# Owner handles:
+#   @r3dz4r — sole operator; required reviewer for any change that
+#             touches the trust layer's trust claim.
+
+# ─── Default ────────────────────────────────────────────────────────────
+# Everything else needs the operator to review.
+/                                          @r3dz4r
+
+# ─── Trust-claim surfaces (strictest) ────────────────────────────────────
+# Any change to the read-only contract, attestation chain, or methodo
+# logy is a public-facing trust-claim change. Two-reviewer requirement
+# is not yet enabled (single-owner repo), so use a comment-style reminder
+# instead. Add `[trust-claim]` to the PR title when these change.
+/mcp/server.py                              @r3dz4r
+/.attestations/                             @r3dz4r
+/scripts/gen_attestations.py                @r3dz4r
+/scripts/gen_health_methodology.py          @r3dz4r
+/health.schema.json                         @r3dz4r
+/datapulse.schema.json                      @r3dz4r
+
+# ─── Pipeline outputs and infrastructure ────────────────────────────────
+# Generated files (timer pipeline owns). Operator review is a sanity
+# check, not a blocker.
+/datapulse.json                             @r3dz4r
+/health/                                    @r3dz4r
+/record-evidence/                           @r3dz4r
+/catalog-snapshot.json                      @r3dz4r
+/changelog.json                             @r3dz4r
+
+# ─── MCP tool registration ──────────────────────────────────────────────
+# All four MCP-spec hints are mandatory per /mcp/AGENTS.md rule 2. Touching
+# these without re-running the M8ven audit is a regression.
+/mcp.json                                   @r3dz4r
+/docs/mcp-reference.md                      @r3dz4r
+
+# ─── Public-facing copy ──────────────────────────────────────────────────
+# README + landing copy are part of the trust claim. Operator review.
+/README.md                                  @r3dz4r
+/docs/index.html                            @r3dz4r
+/docs/landing.html                          @r3dz4r
+/docs/npra.html                             @r3dz4r
+
+# ─── Workflows that deploy or attest ────────────────────────────────────
+/.github/workflows/deploy-pages.yml         @r3dz4r
+/.github/workflows/release-please.yml        @r3dz4r
+/.github/workflows/attest.yml                @r3dz4r
+/.github/workflows/ci.yml                    @r3dz4r
+
+# ─── Workflow output directories (operator-monitored, not blocked) ──────
+# /docs/.dashboard_*.json and /docs/.well-known/ are regenerated artifacts.
+
+# ─── Agent guidance ─────────────────────────────────────────────────────
+# AGENTS.md / CLAUDE.md changes are part of the trust claim (they
+# document how agents must behave). Operator review.
+/AGENTS.md                                  @r3dz4r
+/CLAUDE.md                                  @r3dz4r
+/mcp/AGENTS.md                              @r3dz4r
+/scripts/AGENTS.md                          @r3dz4r
+/.attestations/AGENTS.md                    @r3dz4r
+/docs/AGENTS.md                             @r3dz4r
+/docs/trust-layer-notebook.AGENTS.md        @r3dz4r
+
+# ─── Operator-only surface (no PR auto-merge) ────────────────────────────
+# The dotfiles repo is where hooks, wrappers, and preflight gates live.
+# Cross-repo changes here are Mermaid-style coordination; PRs are
+# informational, not auto-merged.
