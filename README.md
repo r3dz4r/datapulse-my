@@ -55,7 +55,7 @@ counts missing freshness and row-count signals.
 frozen at the last known content date. This is not a freshness failure — it's a
 publisher decision.
 
-Current distribution (`_trust_summary`): [91 fresh](badges/status-fresh.svg) · [132 aging](badges/status-aging.svg) · [149 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [11 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [90 fresh](badges/status-fresh.svg) · [132 aging](badges/status-aging.svg) · [149 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [1 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [11 reference](badges/status-reference.svg)
 
 <!--
 Statuses with zero count are omitted. Full per-dataset health is in
