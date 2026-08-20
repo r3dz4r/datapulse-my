@@ -33,6 +33,10 @@ def test_canonical_partial_is_well_formed_and_contains_expected_nav_links() -> N
     assert 'class="nav-links"' in partial
     assert 'href="/health-methodology.html"' in partial
     assert ">Methodology</a>" in partial
+    assert partial.count("<img") == 1
+    assert '<a class="brand" href="/landing" aria-label="DataPulse home"><img class="brand-logo" src="/assets/brand/datapulse-horizontal-full-color.svg" alt="DataPulse"></a>' in partial
+    assert "[DATA]" not in partial
+    assert "DataPulse MY" not in partial
 
 
 def test_inject_all_replaces_only_whitelisted_existing_nav_blocks(tmp_path: Path) -> None:
