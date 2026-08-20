@@ -4,6 +4,14 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## [0.9.1](https://github.com/r3dz4r/datapulse-my/compare/v0.9.0...v0.9.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **ci:** use github token for anchor attestation ([#20](https://github.com/r3dz4r/datapulse-my/issues/20)) ([83fa749](https://github.com/r3dz4r/datapulse-my/commit/83fa7499845552e7f75939f7f44afafd57f869d1))
+* **nginx:** correct MCP vhost hostname ([#19](https://github.com/r3dz4r/datapulse-my/issues/19)) ([1fbe7db](https://github.com/r3dz4r/datapulse-my/commit/1fbe7db4483c1b9c1ebb80c3a703dec6439590ae))
+
 ## [0.9.0](https://github.com/r3dz4r/datapulse-my/compare/v0.8.0...v0.9.0) (2026-08-18)
 
 
