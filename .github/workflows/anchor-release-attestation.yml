@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       - run: python -m pip install cryptography==50.0.0
       - name: Fetch and verify latest signed head
@@ -49,7 +49,7 @@ jobs:
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
       - name: Add anchor trailer to PR body
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -Eeuo pipefail
           head="$(jq -er .chain_head .attestations/chain_head.json)"
