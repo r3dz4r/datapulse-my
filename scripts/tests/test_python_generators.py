@@ -345,6 +345,30 @@ def test_mcp_reference_json_matches_runtime_schema() -> None:
     assert generated == runtime
 
 
+def test_mcp_reference_uses_fixture_server_version_and_is_idempotent() -> None:
+    result = _run(MCP_GENERATOR, MCP_INPUTS, MCP_OUTPUTS)
+
+    assert result.returncode == 0, result.stderr
+    fixture_tree = ast.parse(
+        (FIXTURE / "mcp/server.py").read_text(encoding="utf-8")
+    )
+    declared_versions = [
+        ast.literal_eval(node.value)
+        for node in fixture_tree.body
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name) and target.id == "FASTMCP_VERSION"
+            for target in node.targets
+        )
+    ]
+    assert len(declared_versions) == 1
+    assert _json_output(result, "mcp.json")["server"]["version"] == declared_versions[0]
+
+    second = _run(MCP_GENERATOR, MCP_INPUTS, MCP_OUTPUTS)
+    assert second.returncode == 0, second.stderr
+    assert result.outputs == second.outputs
+
+
 def test_mcp_inventory_surfaces_match_runtime_order() -> None:
     result = _run(MCP_GENERATOR, MCP_INPUTS, MCP_OUTPUTS)
 

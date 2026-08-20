@@ -134,7 +134,7 @@ def test_verify_script_detects_mismatch() -> None:
                         "capabilities": {},
                         "serverInfo": {
                             "name": "DataPulse MY",
-                            "version": "v3.4.5+0000000",
+                            "version": "v3.4.7+0000000",
                             "source_commit_sha": self.source_commit_sha,
                             "source_commit_date": "2026-08-09",
                         },
