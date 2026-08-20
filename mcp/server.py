@@ -34,14 +34,15 @@ from typing_extensions import Annotated
 # T29 (2026-08-09): source version marker. Set by `scripts/bump_mcp_source_version.py`
 # at the start of each release build. The deployed service exposes this via the
 # JSON-RPC `initialize` response's `serverInfo.version` field, alongside (or
-# replacing) the legacy "v3.4.5" hand-maintained version. The verify script
+# replacing) the legacy stable FastMCP version. The verify script
 # reads this field and compares to the current repo HEAD to detect drift.
+FASTMCP_VERSION = "3.4.7"
 SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "669668c147a4ac431a9e3bf17eec82162bc3b4a2")
 SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "2026-08-16")
 SOURCE_VERSION_STRING = (
-    f"v3.4.5+{SOURCE_COMMIT_SHA[:7]}"
+    f"v{FASTMCP_VERSION}+{SOURCE_COMMIT_SHA[:7]}"
     if SOURCE_COMMIT_SHA != "dev"
-    else "v3.4.5-dev"
+    else f"v{FASTMCP_VERSION}-dev"
 )
 
 DATA_BASE = os.getenv("DATA_BASE", "https://r3dz4r.github.io/datapulse-my").rstrip("/")

@@ -50,14 +50,14 @@ concurrency:
   #   - pages-fast    ← timer chore(health) pushes (fast path: embed + assemble + deploy)
   #   - pages-deploy  ← full release-build deploys (manual, dispatch, workflow_run)
   #
-  # `cancel-in-progress: false` on both — concurrent pushes do NOT cancel each
-  # other; they queue. Without this, every 15-min timer race would kill an
-  # 8–13 min in-flight manual deploy, and vice-versa.
+  # Normal pushes supersede an older full deploy in pages-deploy, preventing
+  # queued deploys from accumulating. Trailer-tagged health pushes stay in
+  # pages-fast and never cancel a run; manual dispatches also never cancel.
   group: >-
     ${{ (github.event_name == 'push'
           && endsWith(github.event.head_commit.message, '[skip deploy]'))
         && 'pages-fast' || 'pages-deploy' }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip deploy]') }}
 
 jobs:
   classify_push:

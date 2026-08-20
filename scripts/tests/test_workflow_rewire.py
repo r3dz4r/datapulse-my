@@ -141,6 +141,36 @@ def test_deploy_workflow_permissions_not_broadened() -> None:
     }
 
 
+def test_deploy_pages_concurrency_cancels_only_normal_pushes() -> None:
+    """Keep heartbeat pushes isolated while normal pushes shed queued deploys."""
+    deploy = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+    concurrency = deploy["concurrency"]
+
+    assert "endsWith(github.event.head_commit.message, '[skip deploy]')" in concurrency[
+        "group"
+    ]
+    assert concurrency["cancel-in-progress"] == (
+        "${{ github.event_name == 'push' && !contains("
+        "github.event.head_commit.message, '[skip deploy]') }}"
+    )
+
+    def policy(event_name: str, message: str = "") -> tuple[str, bool]:
+        group = (
+            "pages-fast"
+            if event_name == "push" and message.endswith("[skip deploy]")
+            else "pages-deploy"
+        )
+        cancel = event_name == "push" and "[skip deploy]" not in message
+        return group, cancel
+
+    assert policy("push", "fix: refresh dashboard") == ("pages-deploy", True)
+    assert policy("push", "chore(health): update [skip deploy]") == (
+        "pages-fast",
+        False,
+    )
+    assert policy("workflow_dispatch") == ("pages-deploy", False)
+
+
 def test_generate_sh_profiles_match_workflow_invocations() -> None:
     profiles = {
         "release-build": DEPLOY_WORKFLOW,

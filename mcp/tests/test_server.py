@@ -8,6 +8,7 @@ import hashlib
 import sys
 import httpx
 from datetime import datetime, timezone
+from importlib.metadata import version as package_version
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -75,6 +76,19 @@ EXPECTED_TOOL_TITLES = {
     "find_by_licence": "Scope Reusable Data by Licence",
     "usage_summary": "Summarize Buyer Tool Usage",
 }
+
+
+def test_pinned_fastmcp_and_mcp_protocol_versions() -> None:
+    assert package_version("fastmcp") == server.FASTMCP_VERSION == "3.4.7"
+    mcp_version = package_version("mcp")
+    assert mcp_version == "1.29.0"
+    assert int(mcp_version.split(".", 1)[0]) < 2
+
+    from mcp.shared.version import SUPPORTED_PROTOCOL_VERSIONS
+    from mcp.types import LATEST_PROTOCOL_VERSION
+
+    assert "2026-07-28" not in SUPPORTED_PROTOCOL_VERSIONS
+    assert LATEST_PROTOCOL_VERSION == "2025-11-25"
 
 
 def install_attestation_fixture(monkeypatch: pytest.MonkeyPatch, *, tamper: str | None = None, anchored: bool = True) -> None:
