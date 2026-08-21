@@ -65,8 +65,10 @@ def _approved_offer(data: dict[str, Any]) -> bool:
     price = items[0].get("price")
     if not isinstance(price, dict):
         return False
-    product = price.get("product")
-    product_id = product.get("id") if isinstance(product, dict) else product
+    product_id = price.get("product_id")
+    if product_id is None:
+        product = price.get("product")
+        product_id = product.get("id") if isinstance(product, dict) else product
     return price.get("id") == SANDBOX_PRICE_ID and product_id == SANDBOX_PRODUCT_ID
 
 

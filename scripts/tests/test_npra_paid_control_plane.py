@@ -72,6 +72,26 @@ def adjustment_payload(
 
 
 class PaddleContractTest(unittest.TestCase):
+    def test_transaction_completed_accepts_verified_flat_product_id(self) -> None:
+        raw = json.dumps(
+            {
+                "event_id": "evt_transaction_completed_flat_product",
+                "event_type": "transaction.completed",
+                "occurred_at": "2026-01-01T00:00:00Z",
+                "data": {
+                    "id": "txn_flat_product",
+                    "items": [{"price": {"id": SANDBOX_PRICE_ID, "product_id": SANDBOX_PRODUCT_ID}}],
+                },
+            },
+            separators=(",", ":"),
+        ).encode()
+
+        event_id, event_type, data, _ = parse_approved_event(raw)
+
+        self.assertEqual(event_id, "evt_transaction_completed_flat_product")
+        self.assertEqual(event_type, "transaction.completed")
+        self.assertEqual(data["id"], "txn_flat_product")
+
     def test_signature_is_exact_body_and_timestamp_bound(self) -> None:
         raw, secret, timestamp = payload(), "fake-webhook-secret", 1_700_000_000
         signature = hmac.new(secret.encode(), str(timestamp).encode() + b":" + raw, hashlib.sha256).hexdigest()
