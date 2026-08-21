@@ -461,13 +461,77 @@ def test_checkout_shell_is_safe_idempotent_and_preserves_existing_token() -> Non
     preserved = _npra_checkout_shell(output)
     assert preserved.count("<!-- NPRA-PADDLE-CHECKOUT -->") == 1
     assert "\\u003c/script\\u003e\\u0026" in output
-    assert "maxRedeemAttempts = 10" in output
+    assert output.count("Paddle.Initialize({ token, eventCallback })") == 1
+    assert "Paddle.EventCallback" not in output
+    assert "maxRedeemAttempts" not in output
+    assert "checkoutState" not in output
+    assert "redemptionInFlight" not in output
+    assert "confirmationDeadlineAt" not in output
     assert "result.error.code === 'redemption_pending'" in output
-    assert "response.status === 409) return setTimeout" not in output
+    assert "confirmationDeadline = Date.now() + 15 * 60 * 1000;" in output
+    assert "let retryTimer = null;" in output
+    assert "let requestInFlight = false;" in output
+    assert "response.headers.get('Retry-After')" in output
+    assert "result.error.retry_after_s" in output
+    assert "Number.isFinite(suppliedDelay)" in output
+    assert "Math.min(Math.max(suppliedDelay, 1), 30)" in output
+    assert "Date.now() + delay * 1000 >= confirmationDeadline" in output
+    assert "const scheduleRetry = (response, result) =>" in output
+    assert "const confirmActivation = async () =>" in output
+    assert "confirmActivation();" in output
+    assert "if (!redemptionNonce || requestInFlight || state === 'active' || state === 'needs_support') return;" in output
+    assert output.count("Paddle.Checkout.open") == 1
+    assert "retryButton.addEventListener('click', () => { confirmActivation(); });" in output
+    assert "try {" in output
+    assert "let state = 'idle';" in output
+    assert "state = 'checkout_open';" in output
+    assert "state = 'confirming';" in output
+    assert "state = 'waiting_manual';" in output
+    assert "state = 'active';" in output
+    assert "state = 'needs_support';" in output
+    assert "let redemptionNonce = '';" in output
+    assert "let issuedKey = '';" in output
     assert "localStorage" not in output
+    assert "sessionStorage" not in output
+    assert "URLSearchParams" not in output
+    assert "location." not in output
+    assert "document.cookie" not in output
+    assert "console." not in output
+    assert "let redemptionNonce = ''" in output
+    assert "if (state !== 'idle') return;" in output
+    assert "id=\"npra-pro-retry\"" in output
+    assert "Retry activation" in output
+    assert "if (state === 'checkout_open')" in output
+    assert "event.name === 'checkout.completed'" in output
+    assert "event.name === 'checkout.closed'" in output
+    assert "button.disabled = true;" in output
+    assert "window.prompt('Copy your API key for this session.', issuedKey);" in output
+    assert "will not be shown again" not in output
+    assert "cannot be shown again" not in output
+    assert "https://api.data-pulse.my/api/v1/keys/me" in output
+    assert "'X-API-Key': issuedKey" in output
+    assert "verification.status === 200" in output
+    assert "verificationResult.data.tier === 'pro'" in output
+    assert "verificationResult.data.status === 'active'" in output
+    assert "Array.isArray(verificationResult.data.scopes)" in output
+    assert "verificationResult.data.scopes.includes('npra.read')" in output
+    assert "Do not pay again. Retain your receipt. Contact the operator privately." in output
+    assert "const needsSupport = message =>" in output
+    assert "button.disabled = true;" in output
+    assert "start a fresh checkout" not in output
+    assert "Paddle.Environment.set('sandbox');" in output
+    assert "const priceId = 'pri_01m0fvdratkz274ker6v7y70x3';" in output
     assert "PADDLE_SANDBOX_WEBHOOK_SECRET" not in output
     assert "PADDLE_SANDBOX_API_KEY" not in output
     assert "window.PADDLE_SANDBOX_CLIENT_TOKEN" in preserved
+    tracked_page = Path(__file__).resolve().parents[2] / "docs" / "npra.html"
+    tracked_html = tracked_page.read_text(encoding="utf-8")
+    regenerated = _npra_checkout_shell(tracked_html)
+    marker = "<!-- NPRA-PADDLE-CHECKOUT -->"
+    end_marker = "<!-- END NPRA-PADDLE-CHECKOUT -->"
+    tracked_block = tracked_html[tracked_html.index(marker):tracked_html.index(end_marker) + len(end_marker)]
+    generated_block = regenerated[regenerated.index(marker):regenerated.index(end_marker) + len(end_marker)]
+    assert generated_block == tracked_block
 
 
 def test_npra_freshness_uses_health_checked_at_separately_from_source_update() -> None:

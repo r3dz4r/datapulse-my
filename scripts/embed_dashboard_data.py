@@ -123,10 +123,135 @@ def _npra_checkout_shell(html: str, client_token: str | None = None) -> str:
         else ""
     )
     shell = f'''<!-- NPRA-PADDLE-CHECKOUT -->
-    <section id="npra-pro" aria-labelledby="npra-pro-title"><div class="wrap"><p class="eyebrow">NPRA PRO</p><h2 id="npra-pro-title">100,000 NPRA queries per billing period</h2><p>USD 25/month. Your API key is issued only after Paddle's signed webhook confirms payment.</p><button class="button button-primary" id="npra-pro-checkout" type="button">Start secure checkout</button><p id="npra-pro-status" aria-live="polite"></p></div></section>
+    <section id="npra-pro" aria-labelledby="npra-pro-title"><div class="wrap"><p class="eyebrow">NPRA PRO</p><h2 id="npra-pro-title">100,000 NPRA queries per billing period</h2><p>USD 25/month. Your API key is issued only after Paddle's signed webhook confirms payment.</p><button class="button button-primary" id="npra-pro-checkout" type="button">Start secure checkout</button><button class="button" id="npra-pro-retry" type="button" hidden>Retry activation</button><p id="npra-pro-status" aria-live="polite"></p></div></section>
     <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
     <script>
-    {token_assignment}(() => {{ const priceId = 'pri_01m0fvdratkz274ker6v7y70x3'; const token = window.PADDLE_SANDBOX_CLIENT_TOKEN; const button = document.getElementById('npra-pro-checkout'); const status = document.getElementById('npra-pro-status'); const maxRedeemAttempts = 10; let redemptionNonce = ''; if (!token || !window.Paddle) {{ button.disabled = true; status.textContent = 'Checkout is temporarily unavailable.'; return; }} Paddle.Environment.set('sandbox'); Paddle.Initialize({{ token }}); Paddle.EventCallback(event => {{ if (event.name === 'checkout.completed' && redemptionNonce) {{ status.textContent = 'Payment received. Waiting for secure confirmation.'; const redeem = async attempt => {{ const response = await fetch('https://api.data-pulse.my/api/v1/paddle/redeem', {{ method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{redemption_token: redemptionNonce}}) }}); if (response.status === 409) {{ const result = await response.json(); if (result.error && result.error.code === 'redemption_pending' && attempt < maxRedeemAttempts) {{ setTimeout(() => redeem(attempt + 1), 2000); return; }} status.textContent = result.error && result.error.code === 'redemption_pending' ? 'Confirmation is still pending; please retry shortly.' : 'This redemption token is no longer available.'; return; }} if (!response.ok) {{ status.textContent = 'Confirmation is pending; please retry shortly.'; return; }} const result = await response.json(); window.prompt('Copy your API key now. It will not be shown again.', result.data.api_key); status.textContent = 'API key issued.'; }}; redeem(1); }} }}); button.addEventListener('click', () => {{ const bytes = new Uint8Array(32); crypto.getRandomValues(bytes); redemptionNonce = btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', ''); Paddle.Checkout.open({{ items: [{{ priceId, quantity: 1 }}], customData: {{ dp_nonce: redemptionNonce }} }}); }}); }})();
+    {token_assignment}(() => {{
+      const priceId = 'pri_01m0fvdratkz274ker6v7y70x3';
+      const token = window.PADDLE_SANDBOX_CLIENT_TOKEN;
+      const button = document.getElementById('npra-pro-checkout');
+      const retryButton = document.getElementById('npra-pro-retry');
+      const status = document.getElementById('npra-pro-status');
+      let state = 'idle';
+      let redemptionNonce = '';
+      let issuedKey = '';
+      let confirmationDeadline = 0;
+      let retryTimer = null;
+      let requestInFlight = false;
+      const supportGuidance = 'Do not pay again. Retain your receipt. Contact the operator privately.';
+      const clearRetry = () => {{
+        if (retryTimer !== null) {{ clearTimeout(retryTimer); retryTimer = null; }}
+      }};
+      const waitingManual = message => {{
+        clearRetry();
+        state = 'waiting_manual';
+        button.disabled = true;
+        retryButton.hidden = false;
+        retryButton.disabled = false;
+        status.dataset.state = 'waiting_manual';
+        status.textContent = message || `Confirmation is still pending. Keep this tab open, then use Retry activation. ${{supportGuidance}}`;
+      }};
+      const needsSupport = message => {{
+        clearRetry();
+        state = 'needs_support';
+        button.disabled = true;
+        retryButton.hidden = true;
+        retryButton.disabled = true;
+        status.dataset.state = 'needs_support';
+        status.textContent = `${{message}} ${{supportGuidance}}`;
+      }};
+      const scheduleRetry = (response, result) => {{
+        if (Date.now() >= confirmationDeadline) {{ waitingManual(); return; }}
+        const retryAfterHeader = response.headers.get('Retry-After');
+        let suppliedDelay = Number(retryAfterHeader);
+        if (!Number.isFinite(suppliedDelay)) suppliedDelay = Number(result && result.error && result.error.retry_after_s);
+        if (!Number.isFinite(suppliedDelay)) suppliedDelay = 2;
+        const delay = Math.min(Math.max(suppliedDelay, 1), 30);
+        if (Date.now() + delay * 1000 >= confirmationDeadline) {{ waitingManual(); return; }}
+        state = 'confirming';
+        retryButton.hidden = true;
+        retryTimer = setTimeout(() => {{ retryTimer = null; confirmActivation(); }}, delay * 1000);
+      }};
+      if (!token || !window.Paddle) {{ button.disabled = true; status.textContent = 'Checkout is temporarily unavailable.'; return; }}
+      Paddle.Environment.set('sandbox');
+      const eventCallback = event => {{
+        if (event.name === 'checkout.completed') {{
+          if (state === 'checkout_open' && redemptionNonce) {{
+            confirmationDeadline = Date.now() + 15 * 60 * 1000;
+            state = 'confirming';
+            button.disabled = true;
+            status.dataset.state = 'confirming';
+            status.textContent = 'Payment received. Waiting for secure confirmation; keep this tab open.';
+            confirmActivation();
+          }}
+        }}
+        if (event.name === 'checkout.closed') {{
+          if (state === 'checkout_open') {{
+            redemptionNonce = '';
+            state = 'idle';
+            button.disabled = false;
+            retryButton.hidden = true;
+            status.dataset.state = 'idle';
+            status.textContent = 'Checkout was closed before payment.';
+          }}
+        }}
+      }};
+      Paddle.Initialize({{ token, eventCallback }});
+      const confirmActivation = async () => {{
+        if (!redemptionNonce || requestInFlight || state === 'active' || state === 'needs_support') return;
+        if (Date.now() >= confirmationDeadline) {{ waitingManual(); return; }}
+        clearRetry();
+        requestInFlight = true;
+        state = 'confirming';
+        retryButton.disabled = true;
+        try {{
+          if (!issuedKey) {{
+            const response = await fetch('https://api.data-pulse.my/api/v1/paddle/redeem', {{ method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{redemption_token: redemptionNonce}}) }});
+            const result = await response.json().catch(() => ({{}}));
+            if (response.status === 409 && result.error && result.error.code === 'redemption_pending') {{ scheduleRetry(response, result); return; }}
+            if (response.status >= 500) {{ scheduleRetry(response, result); return; }}
+            if (response.status !== 201 || !result.data || !result.data.api_key) {{ needsSupport('Activation could not be completed.'); return; }}
+            issuedKey = result.data.api_key;
+            window.prompt('Copy your API key for this session.', issuedKey);
+          }}
+          const verification = await fetch('https://api.data-pulse.my/api/v1/keys/me', {{ headers: {{'X-API-Key': issuedKey}} }});
+          const verificationResult = await verification.json().catch(() => ({{}}));
+          if (verification.status >= 500) {{ scheduleRetry(verification, verificationResult); return; }}
+          if (verification.status === 200 && verificationResult.data && verificationResult.data.tier === 'pro' && verificationResult.data.status === 'active' && Array.isArray(verificationResult.data.scopes) && verificationResult.data.scopes.includes('npra.read')) {{
+            clearRetry();
+            state = 'active';
+            button.disabled = true;
+            retryButton.hidden = true;
+            status.dataset.state = 'active';
+            status.textContent = 'API key is active for NPRA Pro.';
+            return;
+          }}
+          needsSupport('The issued key could not be verified as active.');
+        }} catch (_) {{
+          scheduleRetry({{headers: new Headers()}}, {{}});
+        }} finally {{
+          requestInFlight = false;
+        }}
+      }};
+      retryButton.addEventListener('click', () => {{ confirmActivation(); }});
+      button.addEventListener('click', () => {{
+        if (state !== 'idle') return;
+        state = 'checkout_open';
+        button.disabled = true;
+        try {{
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        redemptionNonce = btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+          Paddle.Checkout.open({{ items: [{{ priceId, quantity: 1 }}], customData: {{ dp_nonce: redemptionNonce }} }});
+        }} catch (_) {{
+          redemptionNonce = '';
+          state = 'idle';
+          button.disabled = false;
+          status.dataset.state = 'idle';
+          status.textContent = 'Checkout is temporarily unavailable.';
+        }}
+      }});
+    }})();
     </script>
     {NPRA_CHECKOUT_END}'''
     if NPRA_CHECKOUT_MARKER in html:

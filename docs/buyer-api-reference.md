@@ -54,6 +54,15 @@ custom data and submitted to redeem only after checkout completion. The signed
 webhook stores only its hash and never returns it. Never put an API key or nonce
 in a URL or browser storage.
 
+Customers pay once and keep the checkout tab open while the signed
+`transaction.completed` webhook is confirmed. The browser retries confirmation
+of that same nonce for up to 15 minutes. If activation remains pending, use
+**Retry activation**; it reuses the same redemption nonce and does not open
+another checkout. A `201` key is verified through `/keys/me` as `tier: pro`,
+`status: active`, with the `npra.read` scope before it becomes active. Never pay
+again while activation is pending or has failed: retain your receipt and contact
+the operator privately.
+
 | Endpoint | Description |
 | --- | --- |
 | `POST /api/v1/paddle/webhook` | Paddle-signed lifecycle webhook; no browser provisioning. |
