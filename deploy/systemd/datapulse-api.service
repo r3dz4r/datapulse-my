@@ -1,6 +1,6 @@
 [Unit]
 Description=DataPulse MY authenticated buyer API
-After=network-online.target
+After=network-online.target pharma-engine.service
 Wants=network-online.target
 
 [Service]
@@ -8,10 +8,13 @@ Type=simple
 User=redza
 Group=redza
 WorkingDirectory=/home/redza/datapulse-my
+EnvironmentFile=/etc/datapulse/pharma-engine.env
+EnvironmentFile=/etc/datapulse/buyer-api.env
 ExecStart=/usr/bin/python3 -m api.server --bind 127.0.0.1:8791
 Environment=DATAPULSE_API_ROOT=/home/redza/datapulse-my
 Environment=DATAPULSE_API_KEYS_FILE=/home/redza/datapulse-my/var/api_keys.json
 Environment=DATAPULSE_API_AUDIT_LOG=/home/redza/datapulse-my/var/log/buyer-api-audit.jsonl
+Environment=PHARMA_ENGINE_URL=http://127.0.0.1:8001
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=yes

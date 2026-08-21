@@ -10,7 +10,7 @@ import re
 import stat
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -20,6 +20,124 @@ class EmbedError(RuntimeError):
 
 CHANGELOG_BEGIN = "<!-- BEGIN changelog-strip -->"
 CHANGELOG_END = "<!-- END changelog-strip -->"
+NPRA_CHECKOUT_MARKER = "<!-- NPRA-PADDLE-CHECKOUT -->"
+NPRA_CHECKOUT_END = "<!-- END NPRA-PADDLE-CHECKOUT -->"
+NPRA_DATASET_IDS = {
+    "pharmaceutical_products",
+    "pharmaceutical_importers",
+    "pharmaceutical_manufacturers",
+    "pharmaceutical_wholesalers",
+    "pharmaceutical_products_cancelled",
+    "cosmetic_notifications",
+    "cosmetic_notifications_cancelled",
+    "cosmetics_manufacturers",
+}
+
+
+def _format_myt(value: str) -> str:
+    """Format an ISO timestamp for the NPRA page's visible Malaysian time."""
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise EmbedError("NPRA timestamp must include a UTC offset")
+    local = parsed.astimezone(timezone.utc).astimezone(
+        timezone(timedelta(hours=8))
+    )
+    return f"{local.strftime('%-d %b %Y, %-I:%M')} {local.strftime('%p').lower()} MYT"
+
+
+def _npra_freshness(html: str, health: object) -> str:
+    """Render probe freshness separately from upstream source modification time."""
+    if not isinstance(health, dict) or not isinstance(health.get("checked_at"), str):
+        raise EmbedError("health checked_at must be an ISO-8601 string")
+    records = health.get("datasets")
+    if not isinstance(records, list):
+        raise EmbedError("health datasets must be an array")
+    npra_records = [
+        row for row in records
+        if isinstance(row, dict) and row.get("dataset_id") in NPRA_DATASET_IDS
+    ]
+    fresh = sum(row.get("status") == "fresh" for row in npra_records)
+    stale = sum(row.get("status") == "stale" for row in npra_records)
+    source_updates = sorted(
+        row["last_modified"] for row in npra_records
+        if isinstance(row.get("last_modified"), str)
+    )
+    content = (
+        f"{len(npra_records)} datasets · {fresh} fresh · {stale} stale · "
+        f"last checked {_format_myt(health['checked_at'])}"
+    )
+    if source_updates:
+        content += f" · Latest source update: {_format_myt(source_updates[-1])}"
+    pattern = re.compile(r'(<span data-npra-cfd=")[^"]*(">).*?(</span>)')
+    updated, replacements = pattern.subn(
+        lambda match: f'{match.group(1)}{health["checked_at"]}{match.group(2)}{content}{match.group(3)}',
+        html,
+        count=1,
+    )
+    if replacements != 1:
+        raise EmbedError("NPRA page must contain one freshness marker")
+    updated = updated.replace(
+        "          return records;",
+        "          return payload;",
+        1,
+    ).replace(
+        "      const render = records => {\n"
+        "        const counts = records.reduce",
+        "      const render = payload => {\n"
+        "        const records = payload.datasets.filter(row => plainObject(row) && ids.includes(row.dataset_id));\n"
+        "        const counts = records.reduce",
+        1,
+    ).replace(
+        "        const checkedDate = latest ? new Date(latest) : null;",
+        "        const checkedDate = new Date(payload.checked_at);",
+        1,
+    ).replace(
+        "        document.querySelector('[data-npra-cfd]').textContent = `${records.length} datasets · ${counts.fresh || 0} fresh · ${counts.stale || 0} stale · last checked ${checked} MYT`;",
+        "        const sourceUpdate = latest ? ` · Latest source update: ${new Intl.DateTimeFormat('en-MY', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kuala_Lumpur' }).format(new Date(latest))} MYT` : '';\n"
+        "        document.querySelector('[data-npra-cfd]').textContent = `${records.length} datasets · ${counts.fresh || 0} fresh · ${counts.stale || 0} stale · last checked ${checked} MYT${sourceUpdate}`;",
+        1,
+    ).replace(
+        "      health().then(records => { if (records) render(records); });",
+        "      health().then(payload => { if (payload) render(payload); });",
+        1,
+    )
+    return updated
+
+
+def _npra_checkout_shell(html: str, client_token: str | None = None) -> str:
+    """Inject one checkout shell; only Paddle's public client token may be embedded."""
+    if client_token is None:
+        client_token = os.environ.get("PADDLE_SANDBOX_CLIENT_TOKEN")
+        if not client_token:
+            existing = re.search(
+                r"window\.PADDLE_SANDBOX_CLIENT_TOKEN\s*=\s*(\"(?:[^\"\\]|\\.)*\")\s*;",
+                html,
+            )
+            if existing:
+                client_token = json.loads(existing.group(1))
+    token_assignment = (
+        "window.PADDLE_SANDBOX_CLIENT_TOKEN = "
+        + json.dumps(client_token).replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
+        + ";"
+        if client_token
+        else ""
+    )
+    shell = f'''<!-- NPRA-PADDLE-CHECKOUT -->
+    <section id="npra-pro" aria-labelledby="npra-pro-title"><div class="wrap"><p class="eyebrow">NPRA PRO</p><h2 id="npra-pro-title">100,000 NPRA queries per billing period</h2><p>USD 25/month. Your API key is issued only after Paddle's signed webhook confirms payment.</p><button class="button button-primary" id="npra-pro-checkout" type="button">Start secure checkout</button><p id="npra-pro-status" aria-live="polite"></p></div></section>
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+    <script>
+    {token_assignment}(() => {{ const priceId = 'pri_01m0fvdratkz274ker6v7y70x3'; const token = window.PADDLE_SANDBOX_CLIENT_TOKEN; const button = document.getElementById('npra-pro-checkout'); const status = document.getElementById('npra-pro-status'); const maxRedeemAttempts = 10; let redemptionNonce = ''; if (!token || !window.Paddle) {{ button.disabled = true; status.textContent = 'Checkout is temporarily unavailable.'; return; }} Paddle.Environment.set('sandbox'); Paddle.Initialize({{ token }}); Paddle.EventCallback(event => {{ if (event.name === 'checkout.completed' && redemptionNonce) {{ status.textContent = 'Payment received. Waiting for secure confirmation.'; const redeem = async attempt => {{ const response = await fetch('https://api.data-pulse.my/api/v1/paddle/redeem', {{ method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{redemption_token: redemptionNonce}}) }}); if (response.status === 409) {{ const result = await response.json(); if (result.error && result.error.code === 'redemption_pending' && attempt < maxRedeemAttempts) {{ setTimeout(() => redeem(attempt + 1), 2000); return; }} status.textContent = result.error && result.error.code === 'redemption_pending' ? 'Confirmation is still pending; please retry shortly.' : 'This redemption token is no longer available.'; return; }} if (!response.ok) {{ status.textContent = 'Confirmation is pending; please retry shortly.'; return; }} const result = await response.json(); window.prompt('Copy your API key now. It will not be shown again.', result.data.api_key); status.textContent = 'API key issued.'; }}; redeem(1); }} }}); button.addEventListener('click', () => {{ const bytes = new Uint8Array(32); crypto.getRandomValues(bytes); redemptionNonce = btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', ''); Paddle.Checkout.open({{ items: [{{ priceId, quantity: 1 }}], customData: {{ dp_nonce: redemptionNonce }} }}); }}); }})();
+    </script>
+    {NPRA_CHECKOUT_END}'''
+    if NPRA_CHECKOUT_MARKER in html:
+        # Old generated pages had no closing marker and may contain duplicate scripts.
+        # The checkout shell is the final main child, so replace that whole tail atomically.
+        pattern = re.compile(rf"{re.escape(NPRA_CHECKOUT_MARKER)}.*?\s*</main>", re.DOTALL)
+        updated, replacements = pattern.subn(lambda _match: shell + "\n  </main>", html, count=1)
+        if replacements != 1:
+            raise EmbedError("NPRA checkout marker is not followed by </main>")
+        return updated
+    return html.replace("</main>", shell + "\n  </main>", 1)
 
 
 def _load(path: Path) -> object:
@@ -143,8 +261,12 @@ def embed(
 
     manifest = _load(manifest_path)
     health = _load(health_path)
-    html = update_changelog_strip(html, manifest, health)
+    if html_path.name == "index.html":
+        html = update_changelog_strip(html, manifest, health)
     html = _replace_dataset_counts(html, health)
+    if html_path.name == "npra.html":
+        html = _npra_freshness(html, health)
+        html = _npra_checkout_shell(html)
     data = (
         '<script id="embedded-data">\n'
         "    window.__DATAPULSE_DATA__ = {"

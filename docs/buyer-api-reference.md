@@ -1,7 +1,7 @@
 # Buyer API reference
 
 The buyer API is separate from the public, unauthenticated MCP endpoint. It is
-available through the private Tailscale frontend at `/api/v1/` and serves the
+available at `https://api.data-pulse.my/api/v1/` and serves the
 same published health artifacts with authenticated operational policy.
 
 ## Authentication and limits
@@ -13,8 +13,8 @@ curl -H "X-API-Key: $DATAPULSE_API_KEY" https://api.datapulse-my.my/api/v1/healt
 ```
 
 Keys are issued by `python3 scripts/api_keys.py add --label acme-prod --scope datasets.read,deltas.read`.
-Only SHA-256 hashes are persisted. The default limit is 100 requests per key per
-60-second window (configured by `DATAPULSE_API_RATE_LIMIT`, capped at 1000).
+Only SHA-256 hashes are persisted. Free API keys are limited to 100 requests per
+key in each 60-second window (configured by `DATAPULSE_API_RATE_LIMIT`, capped at 1000).
 `429` responses include `Retry-After` and `error.retry_after_s`.
 
 All errors have this stable envelope:
@@ -43,3 +43,29 @@ List responses use `{"data": [...], "pagination": {"limit": 50,
 All successful calls, failed authentication attempts, and rate-limit responses
 are append-only audit records with key label/hash, client IP, user agent, path,
 status and latency.
+
+## NPRA Pro
+
+NPRA Pro is USD 25 per month with 100,000 queries for each Paddle billing
+period. Its allowance is separate from the free-key 60-second policy. Checkout is sandbox-only and the browser
+uses the public Paddle client token and creates a high-entropy nonce at checkout.
+That nonce is the short-lived, single-use redemption token: it is sent as Paddle
+custom data and submitted to redeem only after checkout completion. The signed
+webhook stores only its hash and never returns it. Never put an API key or nonce
+in a URL or browser storage.
+
+| Endpoint | Description |
+| --- | --- |
+| `POST /api/v1/paddle/webhook` | Paddle-signed lifecycle webhook; no browser provisioning. |
+| `POST /api/v1/paddle/redeem` | Exchanges the checkout nonce (the single-use redemption token) for a newly issued key. |
+| `GET /api/v1/keys/me` | Pro tier, status, scopes, quota remaining and reset timestamp. |
+| `GET /api/v1/npra/health` | NPRA engine health (active Pro, `npra.read`). |
+| `GET /api/v1/npra/changes` | NPRA changes (active Pro, `npra.read`). |
+| `GET /api/v1/npra/product/{id}` | NPRA product lookup. |
+| `GET /api/v1/npra/manufacturer/{id}` | NPRA manufacturer lookup. |
+| `GET /api/v1/npra/importer/{id}` | NPRA importer lookup. |
+
+NPRA dispatches are charged atomically. Transport, oversized, malformed or
+non-JSON upstream responses, and upstream 5xx failures are refunded. An
+upstream 4xx response is returned to the caller and remains billable; a depleted
+billing period returns `403` with `quota_exhausted`.

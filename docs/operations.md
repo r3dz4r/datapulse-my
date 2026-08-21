@@ -38,9 +38,17 @@ separate read-only runtime owned by `redza`. Its installed command uses
 `/home/redza/.local/share/datapulse-mcp/venv/bin/python` to run
 `/home/redza/.local/share/datapulse-mcp/server.py`, with `Restart=on-failure`.
 The separate system-installed `datapulse-api.service` runs the authenticated
-buyer API on `127.0.0.1:8791`; nginx's `datapulse-api.conf` exposes it only on
-the Tailscale listener. Its durable key, rate-limit, and audit state is under
+buyer API on `127.0.0.1:8791`; the public API origin is
+`https://api.data-pulse.my`. Its durable key, rate-limit, entitlement, and audit state is under
 `/home/redza/datapulse-my/var/`.
+
+The NPRA Pro control plane verifies Paddle signatures over the raw webhook body,
+uses an inter-process lock plus atomic replacement for durable entitlement state,
+and forwards only its internal engine credential to `127.0.0.1:8001`. No public
+route exposes that engine directly. The webhook secret and internal credential
+remain environment-only and must never be logged or copied into page assets.
+The browser's checkout nonce is its single-use redemption token; webhook state
+stores only its hash and webhook responses never include it.
 
 ## Paths and logs
 
