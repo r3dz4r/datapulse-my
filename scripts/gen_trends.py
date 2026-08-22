@@ -17,6 +17,7 @@ from gen_anomaly import cadence_days, historical_delta, parse_time
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_HISTORY = ROOT / "health/history.jsonl"
+DEFAULT_DAILY = ROOT / "health/history_daily.json"
 DEFAULT_MANIFEST = ROOT / "datapulse.json"
 DEFAULT_OUTPUT = ROOT / "health/trends.json"
 SCHEMA = "datapulse/v1/dataset-trends"
@@ -62,12 +63,46 @@ def reliability_grade(percent: float | None) -> str:
     return "F"
 
 
+def _daily_evaluable_rows(daily: Path, *, generated_at: datetime) -> list[dict[str, Any]]:
+    """Read only retained, explicitly successful freshness evidence."""
+    try:
+        payload = json.loads(daily.read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return []
+    if not isinstance(payload, dict) or payload.get("schema") != "datapulse/v1/health-history-daily":
+        return []
+    aggregates = payload.get("aggregates")
+    if not isinstance(aggregates, list):
+        return []
+    cutoff = generated_at.date() - timedelta(days=WINDOW_DAYS - 1)
+    rows: list[dict[str, Any]] = []
+    for aggregate in aggregates:
+        if not isinstance(aggregate, dict) or not isinstance(aggregate.get("dataset_id"), str):
+            continue
+        evidence = aggregate.get("latest_successful_evaluable_observation")
+        if not isinstance(evidence, dict) or evidence.get("probe_outcome") != "success":
+            continue
+        row = evidence | {"dataset_id": aggregate["dataset_id"]}
+        observed = parse_time(row.get("observed_at"))
+        if observed is None or not (cutoff <= observed.date() <= generated_at.date()):
+            continue
+        delta = historical_delta(row)
+        if delta is not None:
+            rows.append(row | {"_staleness_days": delta})
+    return rows
+
+
 def latest_daily_rows(
-    history: Path, *, generated_at: datetime
+    history: Path, *, generated_at: datetime, daily: Path | None = None
 ) -> dict[str, list[dict[str, Any]]]:
     """Keep the latest successful freshness-evaluable row on each UTC day."""
     cutoff = generated_at.date() - timedelta(days=WINDOW_DAYS - 1)
-    latest: dict[str, dict[object, tuple[datetime, dict[str, Any]]]] = {}
+    latest: dict[str, dict[object, tuple[datetime, dict[str, Any], bool]]] = {}
+    for row in _daily_evaluable_rows(daily or history.with_name("history_daily.json"), generated_at=generated_at):
+        observed = parse_time(row.get("observed_at"))
+        if observed is None:
+            continue
+        latest.setdefault(row["dataset_id"], {})[observed.date()] = (observed, row, False)
     try:
         source = history.open(encoding="utf-8")
     except FileNotFoundError:
@@ -88,15 +123,16 @@ def latest_daily_rows(
                 continue
             daily = latest.setdefault(row["dataset_id"], {})
             previous = daily.get(observed.date())
-            if previous is None or observed > previous[0]:
-                daily[observed.date()] = (observed, row | {"_staleness_days": delta})
+            # Raw history is the authoritative detail when compaction overlaps a day.
+            if previous is None or not previous[2] or observed > previous[0]:
+                daily[observed.date()] = (observed, row | {"_staleness_days": delta}, True)
     return {
         dataset_id: [daily[day][1] for day in sorted(daily)]
         for dataset_id, daily in latest.items()
     }
 
 
-def history_end(history: Path) -> datetime:
+def history_end(history: Path, daily: Path | None = None) -> datetime:
     """Find the latest valid observation timestamp without trusting file order."""
     latest: datetime | None = None
     try:
@@ -114,6 +150,10 @@ def history_end(history: Path) -> datetime:
             observed = parse_time(row.get("observed_at"))
             if observed is not None and (latest is None or observed > latest):
                 latest = observed
+    for row in _daily_evaluable_rows(daily or history.with_name("history_daily.json"), generated_at=datetime.max.replace(tzinfo=latest.tzinfo if latest else None)):
+        observed = parse_time(row.get("observed_at"))
+        if observed is not None and (latest is None or observed > latest):
+            latest = observed
     if latest is None:
         raise ValueError("history contains no valid observed_at timestamps")
     return latest
@@ -211,9 +251,10 @@ def dataset_trend(entry: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str
     }
 
 
-def generate(manifest: dict[str, Any], history: Path, now: datetime | None = None) -> dict[str, Any]:
-    generated_at = now or history_end(history)
-    daily = latest_daily_rows(history, generated_at=generated_at)
+def generate(manifest: dict[str, Any], history: Path, now: datetime | None = None, daily: Path | None = None) -> dict[str, Any]:
+    daily_path = daily or history.with_name("history_daily.json")
+    generated_at = now or history_end(history, daily_path)
+    daily = latest_daily_rows(history, generated_at=generated_at, daily=daily_path)
     datasets = [
         dataset_trend(entry, daily.get(entry["id"], []))
         for entry in manifest.get("datasets", [])
@@ -263,6 +304,7 @@ def write_atomic(path: Path, document: dict[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--history", type=Path, default=DEFAULT_HISTORY)
+    parser.add_argument("--daily", type=Path, default=DEFAULT_DAILY)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--now", help="Explicit UTC timestamp for deterministic tests.")
@@ -271,7 +313,7 @@ def main() -> int:
     now = parse_time(args.now) if args.now else None
     if args.now and now is None:
         raise SystemExit("--now must be an ISO 8601 timestamp")
-    write_atomic(args.output, generate(manifest, args.history, now))
+    write_atomic(args.output, generate(manifest, args.history, now, args.daily))
     return 0
 
 

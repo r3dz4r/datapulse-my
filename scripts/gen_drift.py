@@ -16,6 +16,7 @@ from gen_anomaly import parse_time
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_HISTORY = ROOT / "health/history.jsonl"
+DEFAULT_DAILY = ROOT / "health/history_daily.json"
 DEFAULT_MANIFEST = ROOT / "datapulse.json"
 DEFAULT_LATEST = ROOT / "health/latest.json"
 DEFAULT_OUTPUT = ROOT / "health/drift.json"
@@ -32,34 +33,80 @@ def is_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-def read_history(path: Path, *, generated_at: datetime) -> dict[str, list[dict[str, Any]]]:
+def _daily_observations(path: Path, *, generated_at: datetime) -> list[dict[str, Any]]:
+    """Return retained daily evidence; legacy aggregates supply no observations."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return []
+    if (
+        not isinstance(payload, dict)
+        or payload.get("schema") != "datapulse/v1/health-history-daily"
+        or not isinstance(payload.get("aggregates"), list)
+    ):
+        return []
+
+    rows: list[dict[str, Any]] = []
+    for aggregate in payload["aggregates"]:
+        if not isinstance(aggregate, dict):
+            continue
+        dataset_id = aggregate.get("dataset_id")
+        evidence = aggregate.get("latest_observation")
+        if not isinstance(dataset_id, str) or not isinstance(evidence, dict):
+            continue
+        observed = parse_time(evidence.get("observed_at"))
+        if observed is None or observed > generated_at:
+            continue
+        rows.append(evidence | {"dataset_id": dataset_id})
+    return rows
+
+
+def read_history(
+    path: Path, *, generated_at: datetime, daily: Path | None = None
+) -> dict[str, list[dict[str, Any]]]:
     cutoff = generated_at - timedelta(days=WINDOW_DAYS)
     current: dict[str, dict[tuple[str, str], dict[str, Any]]] = {}
     baseline: dict[str, tuple[datetime, dict[str, Any]]] = {}
+    raw_days: set[tuple[str, object]] = set()
+
+    def add(row: dict[str, Any]) -> None:
+        observed = parse_time(row.get("observed_at"))
+        if observed is None or observed > generated_at:
+            return
+        prepared = row | {"_observed": observed, "_in_window": observed >= cutoff}
+        dataset_id = row["dataset_id"]
+        if observed < cutoff:
+            previous = baseline.get(dataset_id)
+            if previous is None or observed > previous[0]:
+                baseline[dataset_id] = (observed, prepared)
+            return
+        key = (row.get("observed_at", ""), row.get("cycle", ""))
+        current.setdefault(dataset_id, {})[key] = prepared
+
     try:
         source = path.open(encoding="utf-8")
     except FileNotFoundError:
-        return {}
-    with source:
-        for line in source:
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if not isinstance(row, dict) or not isinstance(row.get("dataset_id"), str):
-                continue
-            observed = parse_time(row.get("observed_at"))
-            if observed is None or observed > generated_at:
-                continue
-            prepared = row | {"_observed": observed, "_in_window": observed >= cutoff}
-            dataset_id = row["dataset_id"]
-            if observed < cutoff:
-                previous = baseline.get(dataset_id)
-                if previous is None or observed > previous[0]:
-                    baseline[dataset_id] = (observed, prepared)
-                continue
-            key = (row.get("observed_at", ""), row.get("cycle", ""))
-            current.setdefault(dataset_id, {})[key] = prepared
+        source = None
+    if source is not None:
+        with source:
+            for line in source:
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(row, dict) or not isinstance(row.get("dataset_id"), str):
+                    continue
+                observed = parse_time(row.get("observed_at"))
+                if observed is None:
+                    continue
+                raw_days.add((row["dataset_id"], observed.date()))
+                add(row)
+    for row in _daily_observations(
+        daily or path.with_name("history_daily.json"), generated_at=generated_at
+    ):
+        observed = parse_time(row.get("observed_at"))
+        if observed is not None and (row["dataset_id"], observed.date()) not in raw_days:
+            add(row)
     result: dict[str, list[dict[str, Any]]] = {}
     for dataset_id in set(current) | set(baseline):
         rows = list(current.get(dataset_id, {}).values())
@@ -160,15 +207,17 @@ def dataset_drift(entry: dict[str, Any], latest: dict[str, Any], rows: list[dict
     }
 
 
-def generate(manifest: dict[str, Any], history: Path, latest: dict[str, Any]) -> dict[str, Any]:
+def generate(
+    manifest: dict[str, Any], history: Path, latest: dict[str, Any], daily: Path | None = None
+) -> dict[str, Any]:
     generated_at = parse_time(latest.get("checked_at"))
     if generated_at is None:
         raise ValueError("health snapshot has no valid checked_at timestamp")
     health_by_id = {row["dataset_id"]: row for row in latest.get("datasets", []) if isinstance(row, dict) and isinstance(row.get("dataset_id"), str)}
-    history_by_id = read_history(history, generated_at=generated_at)
+    history_by_id = read_history(history, generated_at=generated_at, daily=daily)
     datasets = [dataset_drift(entry, health_by_id.get(entry["id"], {}), history_by_id.get(entry["id"], [])) for entry in manifest.get("datasets", []) if isinstance(entry, dict) and isinstance(entry.get("id"), str) and isinstance(entry.get("name"), str)]
     counts = Counter(row["verdict"] for row in datasets)
-    return {"schema": SCHEMA, "generated_at": generated_at.isoformat().replace("+00:00", "Z"), "window_days": WINDOW_DAYS, "methodology": {"shape_signal": "adjacent versioned shape_hash transitions", "column_signal": "adjacent numeric column_count transitions", "window_baseline": "latest valid observation before the window", "record_daily_sample": "latest successful numeric observation per UTC day", "minimum_record_sample_days": MIN_RECORD_SAMPLE_DAYS, "minimum_record_span_days": MIN_RECORD_SPAN_DAYS, "record_trend_threshold_pct": RECORD_TREND_THRESHOLD_PCT, "record_count_tolerance_ratio": RECORD_COUNT_TOLERANCE_RATIO, "verdict_precedence": list(VERDICTS)}, "summary": {"datasets_total": len(datasets), "by_verdict": {name: counts[name] for name in VERDICTS}}, "datasets": datasets}
+    return {"schema": SCHEMA, "generated_at": generated_at.isoformat().replace("+00:00", "Z"), "window_days": WINDOW_DAYS, "methodology": {"shape_signal": "adjacent versioned shape_hash transitions", "column_signal": "adjacent numeric column_count transitions", "window_baseline": "latest valid observation before the window", "daily_compaction_evidence": "latest retained observation per compacted UTC day; raw history takes precedence on overlap", "record_daily_sample": "latest successful numeric observation per UTC day", "minimum_record_sample_days": MIN_RECORD_SAMPLE_DAYS, "minimum_record_span_days": MIN_RECORD_SPAN_DAYS, "record_trend_threshold_pct": RECORD_TREND_THRESHOLD_PCT, "record_count_tolerance_ratio": RECORD_COUNT_TOLERANCE_RATIO, "verdict_precedence": list(VERDICTS)}, "summary": {"datasets_total": len(datasets), "by_verdict": {name: counts[name] for name in VERDICTS}}, "datasets": datasets}
 
 
 def write_atomic(path: Path, document: dict[str, Any]) -> None:
@@ -188,11 +237,12 @@ def write_atomic(path: Path, document: dict[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--history", type=Path, default=DEFAULT_HISTORY)
+    parser.add_argument("--daily", type=Path, default=DEFAULT_DAILY)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--latest", type=Path, default=DEFAULT_LATEST)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
-    write_atomic(args.output, generate(json.loads(args.manifest.read_text()), args.history, json.loads(args.latest.read_text())))
+    write_atomic(args.output, generate(json.loads(args.manifest.read_text()), args.history, json.loads(args.latest.read_text()), args.daily))
     return 0
 
 

@@ -153,6 +153,15 @@ def test_history_retention(tmp_path: Path) -> None:
 
 def test_history_compaction_shape(tmp_path: Path) -> None:
     snapshot = _snapshot(tmp_path, count=1, checked_at="2026-05-01T00:00:05Z")
+    payload = json.loads(snapshot.read_text(encoding="utf-8"))
+    payload["datasets"][0].update(
+        {
+            "anomaly_detected": True,
+            "first_row_hash": "shape-v1:fixture",
+            "column_count": 7,
+        }
+    )
+    snapshot.write_text(json.dumps(payload) + "\n", encoding="utf-8")
 
     result = _run(tmp_path, snapshot, compact=True, retention_days=1)
 
@@ -172,6 +181,9 @@ def test_history_compaction_shape(tmp_path: Path) -> None:
         "availability_percent",
         "record_count",
         "latency_ms",
+        "latest_observation",
+        "latest_successful_observation",
+        "latest_successful_evaluable_observation",
     }
     assert aggregate["record_count"] == {
         "min": 0,
@@ -181,12 +193,19 @@ def test_history_compaction_shape(tmp_path: Path) -> None:
         "sum": 0,
     }
     assert aggregate["latency_ms"] == {"mean": None, "samples": 0, "sum": 0}
+    assert aggregate["latest_observation"]["probe_outcome"] == "success"
+    assert aggregate["latest_observation"]["anomaly_detected"] is True
+    assert aggregate["latest_observation"]["shape_hash"] == "shape-v1:fixture"
+    assert aggregate["latest_observation"]["column_count"] == 7
+    # Future freshness metadata is not evidence for this historical observation.
+    assert aggregate["latest_successful_evaluable_observation"] is None
 
 
 def test_history_compaction_is_idempotent(tmp_path: Path) -> None:
     snapshot = _snapshot(tmp_path, count=2, checked_at="2026-05-01T00:00:05Z")
     first = _run(tmp_path, snapshot, compact=True, retention_days=1)
     assert first.returncode == 0, first.stderr
+    first_daily = (tmp_path / "history_daily.json").read_bytes()
 
     second = _run(tmp_path, snapshot, compact=True, retention_days=1)
 
@@ -195,6 +214,7 @@ def test_history_compaction_is_idempotent(tmp_path: Path) -> None:
     assert daily["compacted_cycles"] == ["2026-08-12T18:00"]
     assert sum(row["observations"] for row in daily["aggregates"]) == 2
     assert _history(tmp_path) == []
+    assert (tmp_path / "history_daily.json").read_bytes() == first_daily
 
 
 def test_archives_expired_rows(tmp_path: Path) -> None:

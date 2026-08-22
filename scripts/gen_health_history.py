@@ -273,9 +273,50 @@ def _mean_summary(values: list[int | float]) -> dict[str, Any]:
     return {key: summary[key] for key in ("mean", "samples", "sum")}
 
 
+EVIDENCE_FIELDS = (
+    "observed_at", "cycle", "status", "freshness_signal", "last_modified",
+    "content_date", "record_count", "latency_ms", "probe_outcome", "message",
+    "shape_hash", "column_count", "anomaly_detected",
+)
+
+
+def evidence_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Keep one real observation; omitted fields remain absent evidence."""
+    return {field: row[field] for field in EVIDENCE_FIELDS if field in row}
+
+
+def _observed_key(row: dict[str, Any]) -> datetime:
+    return parse_datetime(row["observed_at"], field="observed_at").astimezone(UTC)
+
+
+def _freshness_evaluable(row: dict[str, Any]) -> bool:
+    if row.get("probe_outcome") != "success":
+        return False
+    observed = _observed_key(row)
+    for field in ("last_modified", "content_date"):
+        value = row.get(field)
+        if isinstance(value, str):
+            try:
+                timestamp = (
+                    parse_datetime(f"{value}T00:00:00+00:00", field=field)
+                    if len(value) == 10
+                    else parse_datetime(value, field=field)
+                )
+                if timestamp.astimezone(UTC) <= observed:
+                    return True
+            except ValueError:
+                continue
+    return False
+
+
+def _latest_evidence(rows: list[dict[str, Any]], predicate: Any) -> dict[str, Any] | None:
+    eligible = [row for row in rows if predicate(row)]
+    return evidence_row(max(eligible, key=_observed_key)) if eligible else None
+
+
 def aggregate_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    first = min(rows, key=lambda row: row["observed_at"])
-    last = max(rows, key=lambda row: row["observed_at"])
+    first = min(rows, key=_observed_key)
+    last = max(rows, key=_observed_key)
     statuses = Counter(row["status"] for row in rows)
     outcomes = Counter(row["probe_outcome"] for row in rows)
     counts = [
@@ -290,7 +331,7 @@ def aggregate_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         if isinstance(row.get("latency_ms"), (int, float))
         and not isinstance(row.get("latency_ms"), bool)
     ]
-    return {
+    aggregate = {
         "dataset_id": first["dataset_id"],
         "date": parse_datetime(first["observed_at"], field="observed_at").date().isoformat(),
         "first_observed_at": first["observed_at"],
@@ -304,6 +345,14 @@ def aggregate_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "record_count": _numeric_summary(counts),
         "latency_ms": _mean_summary(latencies),
     }
+    aggregate["latest_observation"] = evidence_row(last)
+    aggregate["latest_successful_observation"] = _latest_evidence(
+        rows, lambda row: row.get("probe_outcome") == "success"
+    )
+    aggregate["latest_successful_evaluable_observation"] = _latest_evidence(
+        rows, _freshness_evaluable
+    )
+    return aggregate
 
 
 def merge_aggregates(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
@@ -332,7 +381,7 @@ def merge_aggregates(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]
     latency_samples = old_latency["samples"] + new_latency["samples"]
     latency_sum = old_latency["sum"] + new_latency["sum"]
 
-    return {
+    merged = {
         "dataset_id": old["dataset_id"],
         "date": old["date"],
         "first_observed_at": min(old["first_observed_at"], new["first_observed_at"]),
@@ -354,6 +403,14 @@ def merge_aggregates(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]
             "sum": latency_sum,
         },
     }
+    for field, predicate in (
+        ("latest_observation", lambda row: True),
+        ("latest_successful_observation", lambda row: row.get("probe_outcome") == "success"),
+        ("latest_successful_evaluable_observation", _freshness_evaluable),
+    ):
+        candidates = [candidate for candidate in (old.get(field), new.get(field)) if isinstance(candidate, dict) and isinstance(candidate.get("observed_at"), str)]
+        merged[field] = _latest_evidence(candidates, predicate)
+    return merged
 
 
 def compact_history(

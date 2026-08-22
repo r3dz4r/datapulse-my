@@ -28,6 +28,16 @@ def _history(tmp_path: Path, rows: list[dict]) -> Path:
     return path
 
 
+def _daily(tmp_path: Path, aggregates: list[dict]) -> Path:
+    path = tmp_path / "history_daily.json"
+    path.write_text(json.dumps({"schema": "datapulse/v1/health-history-daily", "aggregates": aggregates}), encoding="utf-8")
+    return path
+
+
+def _daily_observation(dataset_id: str, day: int, **fields: object) -> dict:
+    return {"dataset_id": dataset_id, "date": f"2026-08-{day:02d}", "latest_observation": {"observed_at": f"2026-08-{day:02d}T12:00:00Z", "probe_outcome": "success", **fields}, "latest_successful_observation": {"observed_at": f"2026-08-{day:02d}T12:00:00Z", "probe_outcome": "success", **fields}}
+
+
 def _manifest() -> dict:
     return {"datasets": [{"id": "shape", "name": "Shape"}, {"id": "record", "name": "Record", "expected_record_count": 100}, {"id": "stable", "name": "Stable"}, {"id": "short", "name": "Short"}]}
 
@@ -69,6 +79,45 @@ def test_pre_window_baseline_counts_first_in_window_change(tmp_path: Path) -> No
     assert result["last_shape_change_at"] == "2026-08-02T12:00:00Z"
 
 
+def test_daily_structural_boundary_change_and_legacy_absence(tmp_path: Path) -> None:
+    manifest = {"datasets": [{"id": "x", "name": "X"}, {"id": "legacy", "name": "Legacy"}]}
+    latest = {"checked_at": "2026-08-12T12:00:00Z", "datasets": [{"dataset_id": "x", "content_shape_changed": False}, {"dataset_id": "legacy", "content_shape_changed": False}]}
+    history = _history(tmp_path, [_row("x", 12, shape_hash="shape-v1:new", column_count=3)])
+    _daily(tmp_path, [
+        _daily_observation("x", 10, shape_hash="shape-v1:old", column_count=2, record_count=100),
+        {"dataset_id": "legacy", "date": "2026-08-10", "record_count": {"mean": 100}},
+    ])
+    by_id = {row["dataset_id"]: row for row in MODULE.generate(manifest, history, latest)["datasets"]}
+    assert by_id["x"]["verdict"] == "drift_detected"
+    assert by_id["x"]["shape_change_count"] == 1
+    assert by_id["legacy"]["verdict"] == "insufficient_data"
+
+
+def test_daily_record_count_evidence_contributes_to_trend(tmp_path: Path) -> None:
+    manifest = {"datasets": [{"id": "x", "name": "X", "expected_record_count": 100}]}
+    latest = {"checked_at": "2026-08-12T12:00:00Z", "datasets": [{"dataset_id": "x", "record_count": 40}]}
+    history = _history(tmp_path, [_row("x", 12, record_count=40)])
+    _daily(tmp_path, [_daily_observation("x", 10, record_count=100)])
+
+    result = MODULE.generate(manifest, history, latest)["datasets"][0]
+
+    assert result["verdict"] == "record_count_drift"
+    assert result["record_trend"] == "shrinking"
+    assert result["record_sample_days"] == 2
+
+
+def test_raw_history_takes_precedence_over_daily_overlap(tmp_path: Path) -> None:
+    manifest = {"datasets": [{"id": "x", "name": "X"}]}
+    latest = {"checked_at": "2026-08-12T12:00:00Z", "datasets": [{"dataset_id": "x"}]}
+    history = _history(tmp_path, [_row("x", 12, shape_hash="shape-v1:new")])
+    _daily(tmp_path, [_daily_observation("x", 12, shape_hash="shape-v1:old")])
+
+    result = MODULE.generate(manifest, history, latest)["datasets"][0]
+
+    assert result["verdict"] == "insufficient_data"
+    assert result["shape_sample_count"] == 1
+
+
 def test_cli_writes_complete_artifact_and_skips_malformed_lines(tmp_path: Path) -> None:
     manifest = tmp_path / "datapulse.json"
     manifest.write_text(json.dumps({"datasets": [{"id": "x", "name": "X"}]}), encoding="utf-8")
@@ -82,3 +131,7 @@ def test_cli_writes_complete_artifact_and_skips_malformed_lines(tmp_path: Path) 
     payload = json.loads(destination.read_text(encoding="utf-8"))
     assert payload["schema"] == "datapulse/v1/dataset-drift"
     assert payload["summary"]["datasets_total"] == 1
+    first = destination.read_bytes()
+    second = subprocess.run(completed.args, capture_output=True, text=True, check=False)
+    assert second.returncode == 0, second.stderr
+    assert destination.read_bytes() == first

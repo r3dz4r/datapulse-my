@@ -37,6 +37,27 @@ def _history(tmp_path: Path, rows: list[dict]) -> Path:
     return path
 
 
+def _daily(tmp_path: Path, aggregates: list[dict]) -> Path:
+    path = tmp_path / "history_daily.json"
+    path.write_text(json.dumps({"schema": "datapulse/v1/health-history-daily", "aggregates": aggregates}), encoding="utf-8")
+    return path
+
+
+def _daily_evaluable(dataset_id: str, day: int, staleness: int, **extra: object) -> dict:
+    observed_day = 10 + day
+    return {
+        "dataset_id": dataset_id,
+        "date": f"2026-08-{observed_day:02d}",
+        "latest_successful_evaluable_observation": {
+            "observed_at": f"2026-08-{observed_day:02d}T12:00:00Z",
+            "status": extra.pop("status", "fresh"),
+            "probe_outcome": extra.pop("probe_outcome", "success"),
+            "content_date": f"2026-08-{observed_day - staleness:02d}T12:00:00Z",
+            **extra,
+        },
+    }
+
+
 def _manifest() -> dict:
     return {
         "datasets": [
@@ -125,6 +146,37 @@ def test_daily_dedup_uses_latest_successful_evaluable_row(tmp_path: Path) -> Non
     assert daily["x"][0]["_staleness_days"] == 2 + 8 / 24
 
 
+def test_daily_older_evidence_is_used_and_raw_wins_same_day(tmp_path: Path) -> None:
+    history = _history(tmp_path, [_row("x", 2, 0)])
+    _daily(tmp_path, [
+        _daily_evaluable("x", 0, 0),
+        _daily_evaluable("x", 1, 1),
+        _daily_evaluable("x", 2, 99),
+    ])
+    result = MODULE.generate(
+        {"datasets": [{"id": "x", "name": "X", "refresh_frequency": "daily"}]},
+        history,
+        MODULE.parse_time("2026-08-12T12:00:00Z"),
+    )["datasets"][0]
+    assert result["trend_sample_days"] == 3
+    assert result["latest_staleness_days"] == 0.0
+    assert result["trend"] == "stable"
+
+
+def test_legacy_and_failed_daily_evidence_are_not_freshness_evaluable(tmp_path: Path) -> None:
+    history = _history(tmp_path, [])
+    _daily(tmp_path, [
+        {"dataset_id": "legacy", "date": "2026-08-10", "record_count": {"mean": 1}},
+        {"dataset_id": "failed", "date": "2026-08-10", "latest_successful_evaluable_observation": {"observed_at": "2026-08-10T12:00:00Z", "probe_outcome": "timeout", "content_date": "2026-08-10"}},
+    ])
+    result = MODULE.generate(
+        {"datasets": [{"id": "legacy", "name": "Legacy", "refresh_frequency": "daily"}, {"id": "failed", "name": "Failed", "refresh_frequency": "daily"}]},
+        history,
+        MODULE.parse_time("2026-08-12T12:00:00Z"),
+    )
+    assert all(row["trend"] == "insufficient_data" for row in result["datasets"])
+
+
 def test_cli_writes_complete_artifact_and_skips_malformed_lines(tmp_path: Path) -> None:
     manifest = tmp_path / "datapulse.json"
     manifest.write_text(
@@ -158,3 +210,8 @@ def test_cli_writes_complete_artifact_and_skips_malformed_lines(tmp_path: Path) 
     assert payload["schema"] == "datapulse/v1/dataset-trends"
     assert payload["generated_at"] == "2026-08-12T12:00:00Z"
     assert payload["summary"]["datasets_total"] == 1
+    first = destination.read_bytes()
+    assert completed.returncode == 0
+    second = subprocess.run(completed.args, capture_output=True, text=True, check=False)
+    assert second.returncode == 0, second.stderr
+    assert destination.read_bytes() == first
