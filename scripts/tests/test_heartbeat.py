@@ -33,6 +33,28 @@ def test_heartbeat_writes_structured_line(tmp_path: Path) -> None:
     datetime.fromisoformat(row["ts"].replace("Z", "+00:00"))
 
 
+def test_evidence_stage_writes_structured_line(tmp_path: Path) -> None:
+    log = tmp_path / "stages.jsonl"
+    _append(
+        log,
+        "--stage",
+        "evidence",
+        "--duration",
+        "5678",
+        "--status",
+        "success",
+        "--extra-json",
+        '{"fixture":true}',
+    )
+    row = json.loads(log.read_text(encoding="utf-8"))
+    assert set(row) == {"ts", "stage", "duration_ms", "status", "cycle", "extra"}
+    assert row["stage"] == "evidence"
+    assert row["duration_ms"] == 5678
+    assert row["status"] == "success"
+    assert row["extra"] == {"fixture": True}
+    datetime.fromisoformat(row["ts"].replace("Z", "+00:00"))
+
+
 def test_heartbeat_rotates_daily(tmp_path: Path) -> None:
     log = tmp_path / "stages.jsonl"
     old = (datetime.now(UTC) - timedelta(days=2)).isoformat().replace("+00:00", "Z")
