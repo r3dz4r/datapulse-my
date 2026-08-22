@@ -4,6 +4,30 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## [0.10.0](https://github.com/r3dz4r/datapulse-my/compare/v0.9.1...v0.10.0) (2026-08-22)
+
+
+### Features
+
+* **brand:** replace dashboard placeholder logo ([b16caa5](https://github.com/r3dz4r/datapulse-my/commit/b16caa5b9d0563c099dd19791418742c42ebb2e5))
+* **health:** consume compacted history evidence ([d51d72f](https://github.com/r3dz4r/datapulse-my/commit/d51d72ff9352085c7f8773e12edac64e8f0893fd))
+* **mcp:** adopt FastMCP 4 modern protocol ([3347a66](https://github.com/r3dz4r/datapulse-my/commit/3347a6602fa5a1909488a1e297d0cb079d7e576d))
+* **npra:** add verified Paddle Pro buyer control plane ([4a46cac](https://github.com/r3dz4r/datapulse-my/commit/4a46cac021d8b36ce09f614987a28bc36b0423c6))
+
+
+### Bug Fixes
+
+* **brand:** give dashboard logo explicit width ([98984d5](https://github.com/r3dz4r/datapulse-my/commit/98984d50b30070e5fd43b90b1e95ac29ebf90b80))
+* **ci:** preserve MCP annotation wire aliases ([2ca9a33](https://github.com/r3dz4r/datapulse-my/commit/2ca9a33b66407161af13c77aac34085f7977b4a3))
+* **mcp:** retain sync script executable mode ([bfae42d](https://github.com/r3dz4r/datapulse-my/commit/bfae42db540233899ab9127a8b5ee19559991841))
+* **mcp:** verify FastMCP 4 deployment identity ([5c22421](https://github.com/r3dz4r/datapulse-my/commit/5c2242128cf6016309d1516e1df9a351f953c94b))
+* **npra:** make paid activation retryable ([19a8862](https://github.com/r3dz4r/datapulse-my/commit/19a8862f5d0ac1779fe0a4fd155b9e9ee255bef1))
+* **npra:** register Paddle checkout event callback ([4a7c467](https://github.com/r3dz4r/datapulse-my/commit/4a7c46789b9b60ab12990e2d87c555936804d476))
+* **paddle:** accept product_id in completed transactions ([a7833dc](https://github.com/r3dz4r/datapulse-my/commit/a7833dcaad39c2f20f75ded8e067006b9b9a7d12))
+* **rekor:** preserve entry identity for cosign bundles ([cb27f6a](https://github.com/r3dz4r/datapulse-my/commit/cb27f6a0a555e6f7e8ea9ac0ab22314a34a2f047))
+* **rekor:** wait for private log inclusion ([9d495e3](https://github.com/r3dz4r/datapulse-my/commit/9d495e3b7853aea8ae3577a4e198919f6e77fc77))
+* **telemetry:** record evidence stage ([69a861a](https://github.com/r3dz4r/datapulse-my/commit/69a861aff049e965516c44dcdd1602498de3617c))
+
 ## [0.9.1](https://github.com/r3dz4r/datapulse-my/compare/v0.9.0...v0.9.1) (2026-08-20)
 
 
