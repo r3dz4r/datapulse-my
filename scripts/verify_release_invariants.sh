@@ -334,7 +334,7 @@ async def main() -> None:
             "description": tool.description,
             "inputSchema": tool.parameters,
             **(
-                {"annotations": tool.annotations.model_dump(exclude_none=True)}
+                {"annotations": tool.annotations.model_dump(by_alias=True, exclude_none=True)}
                 if getattr(tool, "annotations", None) is not None
                 else {}
             ),
