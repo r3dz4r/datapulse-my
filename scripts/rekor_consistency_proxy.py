@@ -60,23 +60,27 @@ def _post_entry(body: bytes) -> tuple[str, dict[str, Any]]:
     return uuid, entry
 
 
-def _proof_ready(body: bytes, uuid: str, submitted: dict[str, Any]) -> bool:
+def _proof_response(body: bytes, uuid: str, submitted: dict[str, Any]) -> bytes | None:
     document = _json(body)
     # Rekor deployments may return a direct entry or a UUID-keyed entry.  A
     # keyed response must name the submitted UUID; a direct response is bound
     # to it by the GET URL and must still match the immutable log metadata.
     if isinstance(document, dict) and uuid in document:
         if len(document) != 1 or not isinstance(document[uuid], dict):
-            return False
+            return None
         entry = document[uuid]
     elif isinstance(document, dict):
         entry = document
     else:
-        return False
+        return None
     verification = entry.get("verification")
     if not isinstance(verification, dict) or not isinstance(verification.get("inclusionProof"), dict):
-        return False
-    return entry.get("logID") == submitted.get("logID") and entry.get("logIndex") == submitted.get("logIndex") and "logID" in submitted and "logIndex" in submitted
+        return None
+    if entry.get("logID") != submitted.get("logID") or entry.get("logIndex") != submitted.get("logIndex") or "logID" not in submitted or "logIndex" not in submitted:
+        return None
+    # Cosign/Rekor clients expect the create response to be UUID-keyed even
+    # when this Rekor deployment serves a direct entry from the UUID endpoint.
+    return json.dumps({uuid: entry}, separators=(",", ":")).encode()
 
 
 class RekorProxyHandler(BaseHTTPRequestHandler):
@@ -125,7 +129,7 @@ class RekorProxyHandler(BaseHTTPRequestHandler):
     def _consistent_response(self, status: int, headers: Any, body: bytes) -> None:
         try:
             uuid, submitted = _post_entry(body)
-            attempts = self.server.wait_for_proof(uuid, submitted)
+            attempts, proof_body = self.server.wait_for_proof(uuid, submitted)
         except TimeoutError:
             LOG.info("method=POST path=%s uuid=%s attempts=%s outcome=timeout", self.path, locals().get("uuid", "unknown"), locals().get("attempts", 0))
             self._error(504, "Rekor inclusion proof did not become readable before timeout")
@@ -135,7 +139,7 @@ class RekorProxyHandler(BaseHTTPRequestHandler):
             self._error(502, str(exc))
             return
         LOG.info("method=POST path=%s uuid=%s attempts=%s outcome=ready", self.path, uuid, attempts)
-        self._send(status, headers, body)
+        self._send(status, {"Content-Type": "application/json", "ETag": uuid}, proof_body)
 
     def _error(self, status: int, message: str) -> None:
         encoded = json.dumps({"error": message}).encode()
@@ -172,7 +176,7 @@ class RekorProxyServer(ThreadingHTTPServer):
         except (URLError, OSError) as exc:
             raise UpstreamFailure("upstream request failed") from exc
 
-    def wait_for_proof(self, uuid: str, submitted: dict[str, Any]) -> int:
+    def wait_for_proof(self, uuid: str, submitted: dict[str, Any]) -> tuple[int, bytes]:
         deadline = time.monotonic() + self.config.timeout
         delay = self.config.poll_interval
         attempts = 0
@@ -180,8 +184,10 @@ class RekorProxyServer(ThreadingHTTPServer):
             attempts += 1
             try:
                 status, _headers, body = self.request("GET", f"{ENTRY_PATH}/{uuid}", b"", {})
-                if status == 200 and _proof_ready(body, uuid, submitted):
-                    return attempts
+                if status == 200:
+                    proof_body = _proof_response(body, uuid, submitted)
+                    if proof_body is not None:
+                        return attempts, proof_body
             except UpstreamFailure:
                 pass
             remaining = deadline - time.monotonic()

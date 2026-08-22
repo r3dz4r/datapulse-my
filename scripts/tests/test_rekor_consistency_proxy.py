@@ -16,6 +16,7 @@ from scripts.rekor_consistency_proxy import Config, RekorProxyServer
 
 UUID = "a" * 64
 ENTRY = {"logID": "log-1", "logIndex": 7, "verification": {"inclusionProof": {"rootHash": "ok"}}}
+POST_ENTRY = {"logID": "log-1", "logIndex": 7}
 
 
 class FakeRekor(ThreadingHTTPServer):
@@ -39,14 +40,22 @@ def fake_handle(server: FakeRekor, handler: FakeHandler) -> None:
     server.received.append((handler.command, handler.path, body, dict(handler.headers)))
     if handler.command == "POST" and handler.path == "/api/v1/log/entries":
         server.posts += 1
-        status, payload = 201, {UUID: ENTRY}
+        status, payload = 201, {UUID: POST_ENTRY}
     elif handler.command == "GET" and handler.path == f"/api/v1/log/entries/{UUID}":
         server.gets += 1
         status, payload = server.responses.pop(0) if server.responses else (200, ENTRY)
     else:
         status, payload = 202, {"path": handler.path, "method": handler.command}
     encoded = json.dumps(payload).encode()
-    handler.send_response(status); handler.send_header("Content-Type", "application/json"); handler.send_header("Content-Length", str(len(encoded))); handler.end_headers(); handler.wfile.write(encoded)
+    handler.send_response(status)
+    handler.send_header("Content-Type", "application/json")
+    if handler.command == "POST" and handler.path == "/api/v1/log/entries":
+        handler.send_header("ETag", UUID)
+    elif handler.command == "GET" and handler.path == f"/api/v1/log/entries/{UUID}":
+        handler.send_header("ETag", "wrong-get-header")
+    handler.send_header("Content-Length", str(len(encoded)))
+    handler.end_headers()
+    handler.wfile.write(encoded)
 
 
 @pytest.fixture
@@ -68,12 +77,28 @@ def call(proxy: RekorProxyServer, method: str, path: str, body: bytes = b"", hea
         return exc.code, exc.headers, exc.read()
 
 
-def test_post_waits_for_delayed_inclusion_and_preserves_original_response(servers):
+def test_post_returns_proof_enriched_get_representation_after_delayed_inclusion(servers):
     upstream, proxy = servers
     upstream.responses = [(404, {"error": "pending"}), (200, {**ENTRY, "verification": {}}), (200, ENTRY)]
     status, headers, body = call(proxy, "POST", "/api/v1/log/entries", b'{"signedEntryTimestamp":"secret"}')
-    assert status == 201 and json.loads(body) == {UUID: ENTRY} and headers["Content-Type"] == "application/json"
+    assert status == 201
+    assert json.loads(body) == {UUID: ENTRY}
+    assert json.loads(body) != {UUID: POST_ENTRY}
+    assert "inclusionProof" in json.loads(body)[UUID]["verification"]
+    assert headers["Content-Type"] == "application/json"
+    assert headers["ETag"] == UUID
+    assert int(headers["Content-Length"]) == len(body)
     assert upstream.posts == 1 and upstream.gets == 3
+
+
+@pytest.mark.parametrize("proof_response", [ENTRY, {UUID: ENTRY}])
+def test_post_normalizes_direct_and_uuid_keyed_proof_responses(servers, proof_response):
+    upstream, proxy = servers
+    upstream.responses = [(200, proof_response)]
+    status, _, body = call(proxy, "POST", "/api/v1/log/entries")
+    assert status == 201
+    assert json.loads(body) == {UUID: ENTRY}
+    assert upstream.posts == 1 and upstream.gets == 1
 
 
 def test_bounded_backoff_has_multiple_delayed_attempts(servers):
@@ -81,6 +106,15 @@ def test_bounded_backoff_has_multiple_delayed_attempts(servers):
     upstream.responses = [(200, {**ENTRY, "verification": {}})] * 20
     start = time.monotonic(); status, _, _ = call(proxy, "POST", "/api/v1/log/entries"); elapsed = time.monotonic() - start
     assert status == 504 and upstream.posts == 1 and upstream.gets >= 3 and elapsed >= 0.06
+
+
+@pytest.mark.parametrize("response", ["not-an-entry", {"b" * 64: ENTRY}])
+def test_malformed_or_uuid_mismatched_proof_response_fails_closed(servers, response):
+    upstream, proxy = servers
+    upstream.responses = [(200, response)] * 20
+    status, _, _ = call(proxy, "POST", "/api/v1/log/entries")
+    assert status == 504
+    assert upstream.posts == 1 and upstream.gets >= 3
 
 
 @pytest.mark.parametrize("payload", [b"not-json", json.dumps({}).encode(), json.dumps({UUID: ENTRY, "b" * 64: ENTRY}).encode()])
