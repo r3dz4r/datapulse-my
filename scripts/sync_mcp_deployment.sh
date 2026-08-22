@@ -133,6 +133,19 @@ if match is None:
 print(match.group(1))
 PY
 )" || fail "could not read SOURCE_COMMIT_SHA from $source_path"
+expected_fastmcp_version="$(python3 - "$source_path" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+match = re.search(r'FASTMCP_VERSION\s*=\s*["\']([^"\']+)["\']', text)
+if match is None:
+    raise SystemExit("FASTMCP_VERSION marker not found")
+print(match.group(1))
+PY
+)" || fail "could not read FASTMCP_VERSION from $source_path"
+expected_source_version="v${expected_fastmcp_version}+${expected_source_sha:0:7}"
 
 readonly drop_in_content='[Service]
 # The deployed file is authoritative; stale manual environment overrides must not
@@ -236,11 +249,25 @@ if [[ -z "$session_id" ]]; then
   fail 'initialize response omitted Mcp-Session-Id'
 fi
 awk '/^data: / {sub(/^data: /, ""); print; exit}' "$work_dir/initialize" > "$work_dir/initialize.json"
-if ! jq -e --arg sha "$expected_source_sha" '.result.serverInfo.source_commit_sha == $sha' \
-    "$work_dir/initialize.json" >/dev/null; then
+identity_surface=""
+if identity_surface="$(jq -er \
+    --arg sha "$expected_source_sha" \
+    --arg source_version "$expected_source_version" \
+    '(.result.serverInfo // {}) as $info
+     | if $info.source_commit_sha == $sha and $info.version == $source_version
+       then "legacy serverInfo.source_commit_sha"
+       elif ($info.source_commit_sha == null or $info.source_commit_sha == "")
+            and $info.version == $source_version
+       then "FastMCP serverInfo.version source marker"
+       else false
+       end' \
+    "$work_dir/initialize.json" 2>/dev/null)"; then
+  :
+else
   live_sha="$(jq -r '.result.serverInfo.source_commit_sha // "<missing>"' "$work_dir/initialize.json" 2>/dev/null || printf '<invalid>')"
+  live_version="$(jq -r '.result.serverInfo.version // "<missing>"' "$work_dir/initialize.json" 2>/dev/null || printf '<invalid>')"
   rollback
-  fail "live source SHA mismatch: expected=$expected_source_sha live=$live_sha"
+  fail "live identity mismatch: checked=legacy serverInfo.source_commit_sha or FastMCP serverInfo.version expected_version=$expected_source_version expected_sha=$expected_source_sha live_version=$live_version live_sha=$live_sha"
 fi
 
 if ! curl -fsS --connect-timeout 2 --max-time 5 "$endpoint" \
@@ -275,4 +302,5 @@ fi
 tool_count="$(jq -r '.result.tools | length' "$work_dir/tools.json")"
 write_result deployed
 log "verified endpoint=$endpoint source_commit_sha=$expected_source_sha tools=$tool_count annotations=complete"
+log "identity surface=$identity_surface expected_version=$expected_source_version"
 log 'deployment complete'
