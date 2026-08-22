@@ -79,16 +79,53 @@ EXPECTED_TOOL_TITLES = {
 
 
 def test_pinned_fastmcp_and_mcp_protocol_versions() -> None:
-    assert package_version("fastmcp") == server.FASTMCP_VERSION == "3.4.7"
+    assert package_version("fastmcp") == server.FASTMCP_VERSION == "4.0.0b3"
     mcp_version = package_version("mcp")
-    assert mcp_version == "1.29.0"
-    assert int(mcp_version.split(".", 1)[0]) < 2
+    assert int(mcp_version.split(".", 1)[0]) >= 2
 
-    from mcp.shared.version import SUPPORTED_PROTOCOL_VERSIONS
-    from mcp.types import LATEST_PROTOCOL_VERSION
+    from mcp_types.version import (
+        HANDSHAKE_PROTOCOL_VERSIONS,
+        LATEST_PROTOCOL_VERSION,
+        MODERN_PROTOCOL_VERSIONS,
+    )
 
-    assert "2026-07-28" not in SUPPORTED_PROTOCOL_VERSIONS
-    assert LATEST_PROTOCOL_VERSION == "2025-11-25"
+    assert LATEST_PROTOCOL_VERSION == "2026-07-28"
+    assert MODERN_PROTOCOL_VERSIONS == ("2026-07-28",)
+    assert "2025-11-25" in HANDSHAKE_PROTOCOL_VERSIONS
+
+
+def test_generated_mcp_catalogue_uses_current_protocol_and_wire_annotations() -> None:
+    discovery = json.loads((REPO_DIR / "mcp.json").read_text(encoding="utf-8"))
+
+    assert discovery["mcp_version"] == "2026-07-28"
+    assert {tool["name"] for tool in discovery["tools"]} == set(TOOL_PARAMETERS)
+    assert all(
+        tool.get("annotations") == EXPECTED_TOOL_ANNOTATIONS
+        for tool in discovery["tools"]
+    )
+
+
+async def test_modern_and_legacy_clients_preserve_discovery_surface_and_cache_hints() -> None:
+    async with Client(server.mcp) as modern:
+        tools = await modern.list_tools_mcp()
+        resources = await modern.list_resources_mcp()
+        templates = await modern.list_resource_templates_mcp()
+        index = await modern.read_resource_mcp("datapulse://index")
+
+        assert modern.protocol_version == "2026-07-28"
+        for result in (tools, resources, templates, index):
+            assert result.ttl_ms == 300_000
+            assert result.cache_scope == "public"
+
+        assert len(tools.tools) == 16
+        assert len(resources.resources) == 8
+        assert len(templates.resource_templates) == 1
+
+    async with Client(server.mcp, mode="legacy") as legacy:
+        assert legacy.protocol_version == "2025-11-25"
+        assert len(await legacy.list_tools()) == 16
+        assert len(await legacy.list_resources()) == 8
+        assert len(await legacy.list_resource_templates()) == 1
 
 
 def install_attestation_fixture(monkeypatch: pytest.MonkeyPatch, *, tamper: str | None = None, anchored: bool = True) -> None:
@@ -332,7 +369,7 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
         assert "required" in schema
         assert set(schema["properties"]) == parameter_names
         assert (
-            tools[tool_name].annotations.model_dump(exclude_none=True)
+            tools[tool_name].annotations.model_dump(by_alias=True, exclude_none=True)
             == EXPECTED_TOOL_ANNOTATIONS
         )
         for parameter in schema["properties"].values():

@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "mcp"))
 
 import server  # noqa: E402
+from mcp.types import LATEST_PROTOCOL_VERSION  # noqa: E402
 
 
 BEGIN_MCP_TOOLS = "<!-- BEGIN mcp-tools -->"
@@ -220,6 +221,7 @@ async def generate() -> None:
 
     discovery_path = ROOT / "mcp.json"
     discovery = json.loads(discovery_path.read_text(encoding="utf-8"))
+    discovery["mcp_version"] = LATEST_PROTOCOL_VERSION
     discovery["server"]["version"] = server.FASTMCP_VERSION
     discovery["server"]["source_commit_sha"] = server.SOURCE_COMMIT_SHA
     discovery["server"]["source_commit_date"] = server.SOURCE_COMMIT_DATE
@@ -241,7 +243,7 @@ async def generate() -> None:
             "description": tool.description,
             "inputSchema": tool.parameters,
             **(
-                {"annotations": tool.annotations.model_dump(exclude_none=True)}
+                {"annotations": tool.annotations.model_dump(by_alias=True, exclude_none=True)}
                 if getattr(tool, "annotations", None) is not None
                 else {}
             ),
