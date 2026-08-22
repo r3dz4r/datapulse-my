@@ -4965,40 +4965,40 @@
 
       <div class="terminal query-demo" aria-label="MCP query example">
         <pre><code><span class="command">$ curl -s https://mcp.data-pulse.my/mcp ...</span>
-# → 11 read-only tools over 389 licence-declared datasets</code></pre>
+# → Read-only catalogue context with provenance and publication signals.</code></pre>
       </div>
     </section>
 
     <section class="landing-section" aria-labelledby="problem-heading">
       <div class="section-intro">
-        <p class="eyebrow">The problem</p>
-        <h2 id="problem-heading">Malaysian open data is silently breaking</h2>
-        <p>Malaysia just topped the global Open Data Inventory — 99/100 for openness, #1 of 198 countries. World-class supply. But the ranking measures availability, not truth. Here’s what “published” actually hides:</p>
+        <p class="eyebrow">Public-service companion layer</p>
+        <h2 id="problem-heading">Making published data easier to review and reuse</h2>
+        <p>Malaysian agencies and public institutions publish data for public use. DataPulse adds independent, read-only observations of availability, freshness signals, provenance, and licence or reuse context; official publishers remain the source of record.</p>
       </div>
       <div class="pain-grid">
         <article class="pain-card">
           <span class="pain-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/></svg></span>
-          <h3>Stale by default</h3>
-          <p>Many official datasets are published once and never updated. Without verification, “available” looks like “fresh”.</p>
+          <h3>Publication timing can be hard to see</h3>
+          <p>Publication schedules and update timing may be documented in different places. DataPulse records observable timing signals alongside the published dataset.</p>
         </article>
         <article class="pain-card">
           <span class="pain-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M18 15v6m-3-3h6"/></svg></span>
-          <h3>No freshness signal</h3>
-          <p>Most endpoints don’t send Last-Modified headers. You can’t tell a 2-day-old file from a 2-year-old one.</p>
+          <h3>Freshness signals vary by source</h3>
+          <p>Sources expose different combinations of headers, content dates, and page information. DataPulse records which observable signals are available for review.</p>
         </article>
         <article class="pain-card">
           <span class="pain-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v5h5M10 13h6M10 17h4"/></svg></span>
-          <h3>Licences unclear</h3>
-          <p>Reuse rules are scattered across catalogue pages. Agents can’t cite what they can’t licence.</p>
+          <h3>Reuse context should travel with the data</h3>
+          <p>Licence and reuse details can accompany a catalogue entry rather than the downloaded file. DataPulse preserves the available context in machine-readable form.</p>
         </article>
       </div>
     </section>
 
     <section class="landing-section" aria-labelledby="mechanism-heading">
       <div class="section-intro">
-        <p class="eyebrow">The mechanism</p>
+        <p class="eyebrow">How DataPulse supports review</p>
         <h2 id="mechanism-heading">How one dataset gets its status</h2>
-        <p>Probing is the mechanism; an honest status is the outcome. Every cycle follows the same inspectable path.</p>
+        <p>Each cycle documents observable signals through the same inspectable path, supporting review alongside the publisher’s own information.</p>
       </div>
       <ol class="workflow">
         <li class="workflow-step">
@@ -5014,7 +5014,7 @@
         <li class="workflow-step">
           <span class="step-number" aria-hidden="true">03</span>
           <h3>Classify</h3>
-          <p>One of ten honest statuses — never a blanket “healthy”. If we can’t prove freshness, we say so.</p>
+          <p>One of ten statuses based on the available observations. When freshness cannot be established from those signals, that evidence gap is recorded.</p>
         </li>
         <li class="workflow-step">
           <span class="step-number" aria-hidden="true">04</span>
@@ -5038,26 +5038,24 @@
 
     <section class="landing-section" aria-labelledby="comparison-heading">
       <div class="section-intro">
-        <p class="eyebrow">The comparison</p>
-        <h2 id="comparison-heading">The honest difference</h2>
-        <p>DataPulse adds verification and machine-readable context while keeping official publishers as the source of record.</p>
+        <p class="eyebrow">A complementary layer around official data</p>
+        <h2 id="comparison-heading">A complementary layer around official data</h2>
+        <p>Official publishers remain the source of record. DataPulse contributes read-only, independently observed context that can support review, documentation, and reuse.</p>
       </div>
       <div class="surface-table-wrap">
         <table class="comparison-table">
           <thead>
-            <tr><th scope="col">Capability</th><th scope="col">DataPulse MY</th><th scope="col">data.gov.my direct</th><th scope="col">Wrapped-data resellers</th></tr>
+            <tr><th scope="col">Context</th><th scope="col">What DataPulse adds</th></tr>
           </thead>
           <tbody>
-            <tr><th scope="row">Freshness</th><td>Verified every 15 min</td><td>Declared, not verified</td><td>Opaque</td></tr>
-            <tr><th scope="row">Status honesty</th><td>10-status, never false-green</td><td>n/a</td><td>n/a</td></tr>
-            <tr><th scope="row">Licence clarity</th><td>Per-dataset, machine-readable</td><td>Present, scattered</td><td>Often unclear</td></tr>
-            <tr><th scope="row">Agent access</th><td>Read-only MCP, no key</td><td>Scraping required</td><td>Paid API</td></tr>
-            <tr><th scope="row">Schema drift detection</th><td>Yes</td><td>No</td><td>Rarely</td></tr>
-            <tr><th scope="row">History / dataset deltas</th><td>Machine-readable</td><td>No</td><td>No</td></tr>
+            <tr><th scope="row">Publication signals</th><td>Observed timestamps and availability signals, with explicit evidence gaps where signals are unavailable.</td></tr>
+            <tr><th scope="row">Provenance and reuse</th><td>Machine-readable provenance and licence or reuse context that accompanies the catalogue record.</td></tr>
+            <tr><th scope="row">Agent access</th><td>Read-only catalogue context for agents, without changing the published source.</td></tr>
+            <tr><th scope="row">Structural observations</th><td>Published observations of schema shape, record counts, history, and dataset deltas.</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="section-lead">You can’t get data we don’t track; we document gaps, not fill them.</p>
+      <p class="section-lead">DataPulse documents observed context and evidence gaps; it does not replace the published source.</p>
     </section>
 
     <section class="landing-section" id="camofox" aria-labelledby="camofox-heading">
