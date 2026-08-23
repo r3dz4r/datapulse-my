@@ -40,15 +40,17 @@ def test_local_gate_does_not_require_current_release_proof() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
 
     proof_fetch = re.search(
-        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md docs/release-verification\.md\n^fi\n",
+        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n^fi\n",
         script,
     )
+
+    assert "fetch release-verification.md docs/release-verification.md" not in script
+    assert proof_fetch is not None
     proof_validation = re.search(
         r"(?ms)^if ! \$local_mode; then\npython3 - \"\$work_dir/release-verification\.md\".*?^PY\n^fi\n",
         script,
     )
 
-    assert proof_fetch is not None
     assert proof_validation is not None
     assert "source_sha" in proof_validation.group(0)
 

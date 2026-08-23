@@ -71,7 +71,7 @@ fetch mcp.json mcp.json
 # A pre-generation checkout has no proof for the source it is about to build.
 # Generated and served modes still fetch and validate the current proof below.
 if ! $local_mode; then
-  fetch release-verification.md docs/release-verification.md
+  fetch release-verification.md release-verification.md
 fi
 fetch llms.txt llms.txt
 fetch attestation-keys.json .well-known/datapulse-probe-keys.json
