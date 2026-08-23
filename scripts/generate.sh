@@ -2,8 +2,8 @@
 #
 # DataPulse MY generation profiles.
 #
-# health-cycle: 13 steps for artifacts derived from the live health snapshot.
-# release-build: source stamp plus 21 steps for the complete public-site artifact set.
+# health-cycle: 14 steps for artifacts derived from the live health snapshot.
+# release-build: source stamp plus 26 steps for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
 # It never commits, pushes, or deploys; release-build embeds dashboard data locally.
@@ -86,6 +86,7 @@ case "$profile" in
       "gen_attestations.py"
       "gen_dataset_deltas.py"
       "gen_record_evidence.py"
+      "gen_evidence_coverage.py"
       "gen_catalog_graph.py"
     )
     outputs=(
@@ -101,6 +102,7 @@ case "$profile" in
       "attestations/<date>/{<id>.json,index.json,chain_head.json,binding.json,scores.json}; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
+      "health/evidence-coverage.json"
       "catalog-graph.json"
     )
     ;;
@@ -123,6 +125,7 @@ case "$profile" in
       "gen_attestations.py"
       "gen_dataset_deltas.py"
       "gen_record_evidence.py"
+      "gen_evidence_coverage.py"
       "gen_catalog_graph.py"
       "gen_json_envelope.py"
       "gen_jsonld_catalog.py"
@@ -151,6 +154,7 @@ case "$profile" in
       "attestations/<date>/{<id>.json,index.json,chain_head.json,binding.json,scores.json}; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
+      "health/evidence-coverage.json"
       "catalog-graph.json"
       "data/json/<id>.json"
       "data/jsonld/<id>.json; data/jsonld/catalog.json"

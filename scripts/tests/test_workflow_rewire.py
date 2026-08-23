@@ -516,3 +516,7 @@ def test_canonical_pipeline_stages_and_validates_record_evidence() -> None:
         pipeline,
     )
     assert "validate_record_evidence(envelope, full=False)" in pipeline
+    assert re.search(
+        r"gen_record_evidence\.py\n\s+\$\{PYTHON_BIN\}\s+scripts/gen_evidence_coverage\.py",
+        pipeline,
+    )

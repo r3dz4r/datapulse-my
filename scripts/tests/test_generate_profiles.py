@@ -36,6 +36,7 @@ GENERATORS = (
     "gen_reconciliation.py",
     "gen_dataset_deltas.py",
     "gen_record_evidence.py",
+    "gen_evidence_coverage.py",
     "gen_catalog_graph.py",
     "gen_trust_snapshot.py",
     "gen_json_envelope.py",
@@ -64,6 +65,7 @@ HEALTH_STEPS = (
     "gen_reconciliation.py",
     "gen_dataset_deltas.py",
     "gen_record_evidence.py",
+    "gen_evidence_coverage.py",
     "gen_catalog_graph.py",
 )
 RELEASE_STEPS = (
@@ -104,6 +106,7 @@ HEALTH_OUTPUTS = (
     "health/trends.json",
     "health/drift.json",
     "health/reconciliation.json",
+    "health/evidence-coverage.json",
     "deltas/2026-08-08T00:00.json",
     "catalog-graph.json",
 )
@@ -323,13 +326,14 @@ def test_clean_fixture_stages_attestation_binding_helper(tmp_path: Path) -> None
     assert (source / "scripts/verify_attestation_binding.py").is_file()
 
 
-def test_record_evidence_runs_immediately_after_deltas(tmp_path: Path) -> None:
+def test_evidence_coverage_runs_after_record_evidence(tmp_path: Path) -> None:
     result = _run_profile(tmp_path, "health-cycle", list_mode=True)
 
     assert result.returncode == 0, result.stderr
     assert (
         result.stdout.index("gen_dataset_deltas.py")
         < result.stdout.index("gen_record_evidence.py")
+        < result.stdout.index("gen_evidence_coverage.py")
         < result.stdout.index("gen_catalog_graph.py")
     )
 
