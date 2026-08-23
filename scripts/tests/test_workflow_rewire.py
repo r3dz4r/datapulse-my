@@ -273,15 +273,111 @@ cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
         "rekor_witnessed": False,
         "source_truth_verified": False,
     }
+    (checkout / "attestations/latest/binding.json").unlink()
+    unattested = subprocess.run(
+        [
+            "python3",
+            "scripts/verify_attestation_binding.py",
+            "--root",
+            str(checkout),
+            "--allow-unattested-health",
+        ],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert unattested.returncode == 0, unattested.stderr
+    assert json.loads(unattested.stdout)["claims"] == {
+        "artifact_signed": False,
+        "rekor_witnessed": False,
+        "source_truth_verified": False,
+    }
 
 
 def test_fast_path_fails_closed_when_served_binding_cannot_be_preserved() -> None:
     script = _fast_path_preservation_script()
     assert "python3 scripts/verify_attestation_binding.py --root \"$preserved_root\"" in script
+    assert "Run a full release-build deployment to heal the public trust plane." in script
     workflow = _read(DEPLOY_WORKFLOW)
     assert "cp -R health deltas record-evidence badges samples data _site/" in workflow
     assert "rm -rf _site/attestations" in workflow
     assert 'cp -R "$RUNNER_TEMP/preserved-attestations/attestations" _site/' in workflow
+    assert 'rm -f _site/attestations/latest/binding.json' in workflow
+    assert workflow.index("Preserve served attestation plane (fast path)") < workflow.index(
+        "Assemble Pages artifact"
+    )
+
+
+def test_fast_path_requires_a_full_release_to_recover_an_inconsistent_served_plane() -> None:
+    """A fast path must stop before assembly when served health and binding diverge."""
+    script = _fast_path_preservation_script()
+
+    assert 'if ! python3 scripts/verify_attestation_binding.py --root "$preserved_root"; then' in script
+    assert 'fail "served health/binding plane is inconsistent; Run a full release-build deployment to heal the public trust plane."' in script
+
+
+def test_fast_path_stops_with_recovery_diagnostic_for_mismatched_served_plane(
+    tmp_path: Path,
+) -> None:
+    """A served binding cannot authenticate newer served health bytes."""
+    served_root, key = fixture_root(tmp_path / "served")
+    now = datetime.now(timezone.utc)
+    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
+    health["checked_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    health["datasets"][0]["last_checked"] = health["checked_at"]
+    write(served_root / "health/latest.json", health)
+    ga.generate(served_root, key, now)
+    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
+    health["datasets"][0]["status"] = "aging"
+    write(served_root / "health/latest.json", health)
+
+    checkout = tmp_path / "checkout"
+    shutil.copytree(served_root, checkout)
+    (checkout / "scripts").mkdir()
+    shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", checkout / "scripts")
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_curl = fake_bin / "curl"
+    fake_curl.write_text(
+        """#!/usr/bin/env bash
+set -Eeuo pipefail
+output=""
+url=""
+while (( $# > 0 )); do
+  case "$1" in
+    --output) output="$2"; shift 2 ;;
+    *) url="$1"; shift ;;
+  esac
+done
+path="${url#https://data-pulse.my/}"
+[[ "$path" == .well-known/* ]] && path="docs/$path"
+[[ "$path" != "$url" && -f "${MOCK_SERVED_ROOT:?}/$path" ]] || exit 22
+mkdir -p "$(dirname "$output")"
+cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
+""",
+        encoding="utf-8",
+    )
+    fake_curl.chmod(0o755)
+
+    environment = os.environ.copy()
+    environment.update(
+        PATH=f"{fake_bin}:{environment['PATH']}",
+        MOCK_SERVED_ROOT=str(served_root),
+        RUNNER_TEMP=str(tmp_path / "runner-temp"),
+    )
+    completed = subprocess.run(
+        ["bash", "-c", _fast_path_preservation_script()],
+        cwd=checkout,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode != 0
+    assert "health digest/count/time binding does not match served health" in completed.stdout
+    assert "Run a full release-build deployment to heal the public trust plane." in completed.stdout
 
 
 @pytest.mark.parametrize("failure_mode", ["404", "503"])
