@@ -68,7 +68,11 @@ fetch catalog.json data/jsonld/catalog.json
 fetch catalog-snapshot.json catalog-snapshot.json
 fetch catalog-graph.json catalog-graph.json
 fetch mcp.json mcp.json
-fetch release-verification.md docs/release-verification.md
+# A pre-generation checkout has no proof for the source it is about to build.
+# Generated and served modes still fetch and validate the current proof below.
+if ! $local_mode; then
+  fetch release-verification.md docs/release-verification.md
+fi
 fetch llms.txt llms.txt
 fetch attestation-keys.json .well-known/datapulse-probe-keys.json
 fetch attestation-index.json attestations/latest/index.json
@@ -117,6 +121,7 @@ dataset_count="$(
     "$work_dir/health.json"
 )"
 
+if ! $local_mode; then
 python3 - "$work_dir/release-verification.md" "$work_dir/health.json" "$work_dir/mcp.json" <<'PY'
 import json
 import subprocess
@@ -140,6 +145,7 @@ proof = proof_path.read_text(encoding="utf-8")
 missing = [line for line in required if line not in proof]
 assert not missing, "release proof drift: " + "; ".join(missing)
 PY
+fi
 
 python3 -m jsonschema -i "$work_dir/manifest.json" datapulse.schema.json
 

@@ -35,6 +35,41 @@ def test_local_gate_accepts_pre_generation_source_without_binding() -> None:
     assert "Local pre-generation attestation structure: PASS" in completed.stdout
 
 
+def test_local_gate_does_not_require_current_release_proof() -> None:
+    """Local source validation must not read stale or absent generated proof."""
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+
+    proof_fetch = re.search(
+        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md docs/release-verification\.md\n^fi\n",
+        script,
+    )
+    proof_validation = re.search(
+        r"(?ms)^if ! \$local_mode; then\npython3 - \"\$work_dir/release-verification\.md\".*?^PY\n^fi\n",
+        script,
+    )
+
+    assert proof_fetch is not None
+    assert proof_validation is not None
+    assert "source_sha" in proof_validation.group(0)
+
+
+def test_served_gate_keeps_release_proof_drift_validation_strict() -> None:
+    """Served validation must still reject proof metadata drift."""
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+    proof_validation = re.search(
+        r"(?ms)^if ! \$local_mode; then\npython3 - \"\$work_dir/release-verification\.md\".*?^PY\n^fi\n",
+        script,
+    )
+
+    assert proof_validation is not None
+    validation = proof_validation.group(0)
+    assert '"- Status: `current generated release proof`"' in validation
+    assert 'f"- Source SHA: `{source_sha}`"' in validation
+    assert 'f"- Health checked at: `{health[\'checked_at\']}`"' in validation
+    assert 'f"- MCP tool count: `{len(tools)}`"' in validation
+    assert '"release proof drift: "' in validation
+
+
 def test_generated_contract_still_rejects_a_missing_binding(tmp_path: Path) -> None:
     """The source exception must not let a generated artifact skip its binding."""
     root, key = fixture_root(tmp_path)
