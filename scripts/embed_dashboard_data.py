@@ -405,10 +405,29 @@ def _replace_dataset_counts(html: str, health: object) -> str:
     return html
 
 
+def _reproducibility_verification_time() -> datetime | None:
+    """Return the verifier clock only inside its isolated build subprocesses."""
+    if os.environ.get("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD") != "1":
+        return None
+    value = os.environ.get("DATAPULSE_REPRODUCIBILITY_VERIFY_AT")
+    if not value:
+        raise EmbedError("isolated reproducibility build is missing its verification time")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise EmbedError("isolated reproducibility verification time must be ISO-8601") from error
+    if parsed.tzinfo is None:
+        raise EmbedError("isolated reproducibility verification time must include a UTC offset")
+    return parsed.astimezone(timezone.utc)
+
+
 def _attestation_verification(root: Path) -> dict:
     """Embed only claims verified against the exact health bytes being rendered."""
+    verification_time = _reproducibility_verification_time()
     try:
-        return verify_contract(root)
+        if verification_time is None:
+            return verify_contract(root)
+        return verify_contract(root, now=verification_time)
     except ContractError:
         return {
             "schema": "datapulse/v1/attestation-verification-result",

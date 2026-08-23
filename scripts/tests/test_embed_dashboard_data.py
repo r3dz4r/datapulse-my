@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,52 @@ def _strip() -> str:
         "old changelog\n"
         "<!-- END changelog-strip -->"
     )
+
+
+def test_attestation_verification_uses_an_isolated_reproducibility_clock(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_verify_contract(root: Path, **kwargs: object) -> dict[str, object]:
+        captured["root"] = root
+        captured["kwargs"] = kwargs
+        return {"freshness": {"status": "current"}}
+
+    monkeypatch.setenv(
+        "DATAPULSE_REPRODUCIBILITY_VERIFY_AT", "2026-08-23T10:06:30Z"
+    )
+    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+    monkeypatch.setattr(embed_dashboard_data, "verify_contract", fake_verify_contract)
+
+    assert embed_dashboard_data._attestation_verification(tmp_path) == {
+        "freshness": {"status": "current"}
+    }
+    assert captured == {
+        "root": tmp_path,
+        "kwargs": {"now": datetime(2026, 8, 23, 10, 6, 30, tzinfo=timezone.utc)},
+    }
+
+
+def test_attestation_verification_keeps_the_real_time_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_verify_contract(root: Path, **kwargs: object) -> dict[str, object]:
+        captured["root"] = root
+        captured["kwargs"] = kwargs
+        return {"freshness": {"status": "current"}}
+
+    monkeypatch.setenv(
+        "DATAPULSE_REPRODUCIBILITY_VERIFY_AT", "2026-08-23T10:06:30Z"
+    )
+    monkeypatch.delenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", raising=False)
+    monkeypatch.setattr(embed_dashboard_data, "verify_contract", fake_verify_contract)
+
+    embed_dashboard_data._attestation_verification(tmp_path)
+
+    assert captured == {"root": tmp_path, "kwargs": {}}
 
 
 def test_embed_replaces_existing_data_block_with_all_dashboard_inputs(

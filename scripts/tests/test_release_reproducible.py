@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -115,11 +116,73 @@ def test_build_sets_archives_dir_inside_isolated_workdir(
         lambda root, source: verifier.BuildCapture({}, {}, root),
     )
 
-    verifier._build(ROOT, workdir, "/tmp/fake-git-dir")
+    verifier._build(ROOT, workdir, "/tmp/fake-git-dir", "2026-08-23T10:06:30Z")
 
     environment = captured["env"]
     assert isinstance(environment, dict)
     assert environment["DATAPULSE_ARCHIVES_DIR"] == str(workdir / ".archives")
+    assert environment["DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD"] == "1"
+
+
+def test_build_forwards_the_captured_reproducibility_verification_time(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workdir = tmp_path / "isolated-build"
+    captured: dict[str, object] = {}
+
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured.update(kwargs)
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(verifier, "_copy_source", lambda destination: None)
+    monkeypatch.setattr(verifier.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        verifier,
+        "_capture",
+        lambda root, source: verifier.BuildCapture({}, {}, root),
+    )
+
+    verifier._build(
+        ROOT,
+        workdir,
+        "/tmp/fake-git-dir",
+        "2026-08-23T10:06:30Z",
+    )
+
+    environment = captured["env"]
+    assert isinstance(environment, dict)
+    assert environment["DATAPULSE_REPRODUCIBILITY_VERIFY_AT"] == "2026-08-23T10:06:30Z"
+    assert environment["DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD"] == "1"
+
+
+def test_verify_passes_one_captured_time_to_both_isolated_builds(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created: list[Path] = []
+    captured_times: list[str] = []
+
+    def fake_workdir(root: Path, prefix: str) -> Path:
+        path = root / f"{prefix}{len(created)}"
+        path.mkdir()
+        created.append(path)
+        return path
+
+    def fake_build(
+        source: Path, workdir: Path, git_dir: str, verification_time: str
+    ) -> verifier.BuildCapture:
+        captured_times.append(verification_time)
+        return verifier.BuildCapture({}, {}, workdir)
+
+    monkeypatch.setattr(verifier, "_run_git", lambda *arguments: "/tmp/fake-git-dir")
+    monkeypatch.setattr(verifier, "_workdir", fake_workdir)
+    monkeypatch.setattr(verifier, "_build", fake_build)
+    monkeypatch.setattr(verifier, "_write_hash_table", lambda path, hashes: None)
+    monkeypatch.setattr(verifier, "_summary", lambda *args: "proof\n")
+
+    assert verifier.verify(tmp_path, tmp_path / "proof.md", "reproduce") == 0
+    assert len(captured_times) == 2
+    assert captured_times[0] == captured_times[1]
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00", captured_times[0])
 
 
 def test_build_forwards_attestation_key_path_without_key_contents(
@@ -146,7 +209,7 @@ def test_build_forwards_attestation_key_path_without_key_contents(
         lambda root, source: verifier.BuildCapture({}, {}, root),
     )
 
-    verifier._build(ROOT, workdir, "/tmp/fake-git-dir")
+    verifier._build(ROOT, workdir, "/tmp/fake-git-dir", "2026-08-23T10:06:30Z")
 
     environment = captured["env"]
     assert isinstance(environment, dict)
@@ -154,6 +217,8 @@ def test_build_forwards_attestation_key_path_without_key_contents(
         "PATH",
         "GIT_DIR",
         "DATAPULSE_ARCHIVES_DIR",
+        "DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD",
+        "DATAPULSE_REPRODUCIBILITY_VERIFY_AT",
         "DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE",
     }
     assert environment["DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"] == str(key_path)

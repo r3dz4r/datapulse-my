@@ -315,12 +315,18 @@ def _write_hash_table(path: Path, hashes: dict[str, str]) -> None:
         raise SetupFailure(f"could not write metadata {path}: {error}") from error
 
 
-def _build(source: Path, workdir: Path, git_dir: str) -> BuildCapture:
+def _build(
+    source: Path, workdir: Path, git_dir: str, verification_time: str
+) -> BuildCapture:
     _copy_source(workdir)
     environment = {
         "PATH": os.environ.get("PATH", os.defpath),
         "GIT_DIR": git_dir,
         "DATAPULSE_ARCHIVES_DIR": str(workdir / ".archives"),
+        # This clock is deliberately scoped to the two isolated subprocesses.
+        # Served-state generation receives no override and remains fail-closed.
+        "DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD": "1",
+        "DATAPULSE_REPRODUCIBILITY_VERIFY_AT": verification_time,
     }
     key_path = os.environ.get("DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE")
     if key_path:
@@ -464,9 +470,10 @@ def verify(workdir_root: Path, output: Path, reproduction: str) -> int:
 
     source_sha = _run_git("rev-parse", "HEAD")
     git_dir = _run_git("rev-parse", "--absolute-git-dir")
+    verification_time = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     metadata = _workdir(workdir_root, "datapulse-release-meta-")
     first_workdir = _workdir(workdir_root, "datapulse-release-A-")
-    first = _build(ROOT, first_workdir, git_dir)
+    first = _build(ROOT, first_workdir, git_dir, verification_time)
     _write_hash_table(metadata / "first_run.json", first.hashes)
 
     try:
@@ -475,7 +482,7 @@ def verify(workdir_root: Path, output: Path, reproduction: str) -> int:
         raise SetupFailure(f"could not wipe first workdir {first_workdir}: {error}") from error
 
     second_workdir = _workdir(workdir_root, "datapulse-release-B-")
-    second = _build(ROOT, second_workdir, git_dir)
+    second = _build(ROOT, second_workdir, git_dir, verification_time)
     _write_hash_table(metadata / "second_run.json", second.hashes)
 
     summary = _summary(source_sha, first, second, reproduction, ROOT)
