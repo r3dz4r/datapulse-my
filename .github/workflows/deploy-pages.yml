@@ -161,6 +161,64 @@ jobs:
         if: github.event_name == 'push' && endsWith(github.event.head_commit.message, '[skip deploy]')
         run: python3 scripts/embed_dashboard_data.py
 
+      - name: Preserve served attestation plane (fast path)
+        if: github.event_name == 'push' && endsWith(github.event.head_commit.message, '[skip deploy]')
+        run: |
+          set -Eeuo pipefail
+
+          # A health-only checkout can lag a completed release. Its attestation
+          # files are therefore not an authority: preserve the currently served,
+          # fully verified plane or stop before we upload any Pages artifact.
+          preserved_root="$RUNNER_TEMP/preserved-attestations"
+          rm -rf "$preserved_root"
+          mkdir -p "$preserved_root/health" \
+            "$preserved_root/attestations/latest" \
+            "$preserved_root/docs/.well-known"
+
+          fetch_public() {
+            local path="$1"
+            local output="$2"
+            mkdir -p "$(dirname "$output")"
+            curl --fail --silent --show-error --proto '=https' \
+              --connect-timeout 10 --max-time 30 \
+              "https://data-pulse.my/$path" --output "$output"
+          }
+
+          fail() {
+            echo "::error title=Fast-path attestation preservation failed::$1"
+            exit 1
+          }
+
+          fetch_public health/latest.json "$preserved_root/health/latest.json"
+          fetch_public .well-known/datapulse-probe-keys.json "$preserved_root/docs/.well-known/datapulse-probe-keys.json"
+          fetch_public attestations/latest/index.json "$preserved_root/attestations/latest/index.json"
+          fetch_public attestations/latest/chain_head.json "$preserved_root/attestations/latest/chain_head.json"
+          fetch_public attestations/latest/scores.json "$preserved_root/attestations/latest/scores.json"
+          fetch_public attestations/latest/binding.json "$preserved_root/attestations/latest/binding.json"
+          fetch_public attestations/chain-index.json "$preserved_root/attestations/chain-index.json"
+
+          binding_date="$(jq -er '.payload.date | select(type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$preserved_root/attestations/latest/binding.json")" || fail "served binding date is invalid"
+          jq -e --arg date "$binding_date" '
+            .schema == "datapulse/v1/attestation-index"
+            and .date == $date
+            and .chain_head_ref == ("attestations/" + $date + "/chain_head.json")
+            and (.attestations | type == "object" and length > 0)
+          ' "$preserved_root/attestations/latest/index.json" >/dev/null || fail "served index is invalid"
+
+          fetch_public "attestations/$binding_date/binding.json" "$preserved_root/attestations/$binding_date/binding.json"
+          fetch_public "attestations/$binding_date/chain_head.json" "$preserved_root/attestations/$binding_date/chain_head.json"
+          while IFS= read -r reference; do
+            [[ "$reference" =~ ^attestations/${binding_date}/[A-Za-z0-9_.-]+\.json$ ]] || fail "served attestation reference is unsafe: $reference"
+            fetch_public "$reference" "$preserved_root/$reference"
+          done < <(jq -r '.attestations | to_entries[] | .value' "$preserved_root/attestations/latest/index.json")
+          while IFS= read -r reference; do
+            [[ -z "$reference" ]] && continue
+            [[ "$reference" =~ ^attestations/${binding_date}/[A-Za-z0-9_.-]+\.json$ ]] || fail "served Rekor reference is unsafe: $reference"
+            fetch_public "$reference" "$preserved_root/$reference"
+          done < <(jq -r '.rekor // {} | [.reference_ref, .bundle_ref] | .[] // empty' "$preserved_root/attestations/latest/binding.json")
+
+          python3 scripts/verify_attestation_binding.py --root "$preserved_root"
+
       - name: Run release-build generation profile (full path)
         if: github.event_name != 'push' || !endsWith(github.event.head_commit.message, '[skip deploy]')
         env:
@@ -189,10 +247,20 @@ jobs:
           cp -R docs/. _site/
           cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
           cp -R health deltas record-evidence badges samples data _site/
-          cp -R attestations _site/
+          if [[ -d "$RUNNER_TEMP/preserved-attestations" ]]; then
+            # Do not overlay stale checkout proofs onto the verified served plane.
+            rm -rf _site/attestations
+            cp -R "$RUNNER_TEMP/preserved-attestations/attestations" _site/
+          else
+            cp -R attestations _site/
+          fi
           cp -R .attestations _site/ 2>/dev/null || true
           mkdir -p _site/.well-known
-          cp docs/.well-known/datapulse-probe-keys.json _site/.well-known/
+          if [[ -d "$RUNNER_TEMP/preserved-attestations" ]]; then
+            cp "$RUNNER_TEMP/preserved-attestations/docs/.well-known/datapulse-probe-keys.json" _site/.well-known/
+          else
+            cp docs/.well-known/datapulse-probe-keys.json _site/.well-known/
+          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

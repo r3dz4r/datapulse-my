@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
+import shutil
 import subprocess
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 import yaml
+
+from scripts import gen_attestations as ga
+from scripts.embed_dashboard_data import _attestation_verification
+from scripts.tests.test_attestations import fixture_root, write
+from scripts.verify_attestation_binding import verify_contract
 
 ROOT = Path(__file__).resolve().parents[2]
 SYSTEMD_UNIT = ROOT / "deploy/systemd/datapulse-health.service"
@@ -111,6 +119,132 @@ def test_deploy_pages_workflow_preserves_post_deploy_invariants() -> None:
         'fetch "reconciliation snapshot"',
     ):
         assert surface in invariants
+
+
+def _fast_path_preservation_script() -> str:
+    workflow = _read(DEPLOY_WORKFLOW)
+    match = re.search(
+        r"(?ms)^      - name: Preserve served attestation plane \(fast path\)\n"
+        r".*?^        run: \|\n(.*?)(?=^      - name: Run release-build)",
+        workflow,
+    )
+    assert match is not None, "fast path must preserve the served attestation plane"
+    return match.group(1)
+
+
+def test_fast_path_preserves_a_newer_valid_served_attestation_plane(tmp_path: Path) -> None:
+    """A health-only artifact keeps the served P1 plane, never checkout's stale plane."""
+    served_root, key = fixture_root(tmp_path / "served")
+    first = datetime(2026, 8, 22, 1, tzinfo=timezone.utc)
+    second = first + timedelta(days=1)
+    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
+    health["checked_at"] = "2026-08-22T00:00:00Z"
+    health["datasets"][0]["last_checked"] = health["checked_at"]
+    write(served_root / "health/latest.json", health)
+    ga.generate(served_root, key, first)
+    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
+    health["checked_at"] = "2026-08-23T00:00:00Z"
+    health["datasets"][0]["last_checked"] = health["checked_at"]
+    write(served_root / "health/latest.json", health)
+    ga.generate(served_root, key, second)
+    assert verify_contract(served_root, now=second + timedelta(hours=1))["claims"][
+        "artifact_signed"
+    ] is True
+
+    checkout = tmp_path / "checkout"
+    shutil.copytree(served_root, checkout)
+    (checkout / "scripts").mkdir()
+    shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", checkout / "scripts")
+    stale = checkout / "attestations"
+    shutil.rmtree(stale)
+    shutil.copytree(served_root / "attestations/2026-08-22", stale / "2026-08-22")
+    shutil.copytree(served_root / "attestations/latest", stale / "latest")
+    (stale / "latest/index.json").write_bytes(
+        (served_root / "attestations/2026-08-22/index.json").read_bytes()
+    )
+    (stale / "latest/chain_head.json").write_bytes(
+        (served_root / "attestations/2026-08-22/chain_head.json").read_bytes()
+    )
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_curl = fake_bin / "curl"
+    fake_curl.write_text(
+        """#!/usr/bin/env bash
+set -Eeuo pipefail
+output=""
+url=""
+while (( $# > 0 )); do
+  case "$1" in
+    --output) output="$2"; shift 2 ;;
+    *) url="$1"; shift ;;
+  esac
+done
+path="${url#https://data-pulse.my/}"
+[[ "$path" == .well-known/* ]] && path="docs/$path"
+[[ "$path" != "$url" && -f "${MOCK_SERVED_ROOT:?}/$path" ]] || {
+  printf 'missing %s\n' "$url" >&2
+  exit 22
+}
+mkdir -p "$(dirname "$output")"
+cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
+""",
+        encoding="utf-8",
+    )
+    fake_curl.chmod(0o755)
+
+    environment = os.environ.copy()
+    environment.update(
+        PATH=f"{fake_bin}:{environment['PATH']}",
+        MOCK_SERVED_ROOT=str(served_root),
+        RUNNER_TEMP=str(tmp_path / "runner-temp"),
+    )
+    completed = subprocess.run(
+        ["bash", "-c", _fast_path_preservation_script()],
+        cwd=checkout,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    preserved = tmp_path / "runner-temp/preserved-attestations"
+    assert (preserved / "attestations/latest/binding.json").read_bytes() == (
+        served_root / "attestations/latest/binding.json"
+    ).read_bytes()
+    assert (preserved / "attestations/latest/chain_head.json").read_bytes() == (
+        served_root / "attestations/latest/chain_head.json"
+    ).read_bytes()
+    assert (preserved / "attestations/2026-08-23/sample.json").is_file()
+    assert not (preserved / "attestations/2026-08-22/sample.json").exists()
+
+    # The fast health update has no matching P1 binding, so it must not inherit
+    # a claim from the preserved (older) served health bytes.
+    shutil.rmtree(checkout / "attestations")
+    shutil.copytree(preserved / "attestations", checkout / "attestations")
+    shutil.copy2(
+        preserved / "docs/.well-known/datapulse-probe-keys.json",
+        checkout / "docs/.well-known/datapulse-probe-keys.json",
+    )
+    health = json.loads((checkout / "health/latest.json").read_text(encoding="utf-8"))
+    health["checked_at"] = "2026-08-24T00:00:00Z"
+    health["datasets"][0]["last_checked"] = health["checked_at"]
+    write(checkout / "health/latest.json", health)
+    assert _attestation_verification(checkout)["claims"] == {
+        "artifact_signed": False,
+        "rekor_witnessed": False,
+        "source_truth_verified": False,
+    }
+
+
+def test_fast_path_fails_closed_when_served_binding_cannot_be_preserved() -> None:
+    script = _fast_path_preservation_script()
+    assert "python3 scripts/verify_attestation_binding.py --root \"$preserved_root\"" in script
+    workflow = _read(DEPLOY_WORKFLOW)
+    assert "cp -R health deltas record-evidence badges samples data _site/" in workflow
+    assert "rm -rf _site/attestations" in workflow
+    assert 'cp -R "$RUNNER_TEMP/preserved-attestations/attestations" _site/' in workflow
 
 
 def test_deploy_pages_publishes_and_verifies_trends_and_drift() -> None:
