@@ -1,0 +1,12 @@
+{
+  "ed25519_envelope": {
+    "schema": "datapulse/v1/probe-attestation-envelope",
+    "payload": {"schema": "datapulse/v1/probe-attestation"},
+    "signature_base64": "fixture-only-no-key-material-no-cryptographic-verification",
+    "chain_link": "e56e5788f96cfb7f82441f211ff8b277a6320912b413e408007043ee36fc5512",
+    "verification_level": "L1-capable",
+    "git_tag_anchor": {"tag": "v0.8.0", "commit": "0123456789abcdef0123456789abcdef01234567"}
+  },
+  "ed25519_verification": {"satisfied": true},
+  "sigstore_verification": {"attempted": true, "satisfied": false, "reason": "verifier backend unavailable; fail closed"}
+}

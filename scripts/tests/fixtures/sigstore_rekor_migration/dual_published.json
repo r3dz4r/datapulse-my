@@ -1,0 +1,18 @@
+{
+  "canonical_daily_artifact": {"canonical_json": "{\"date\":\"2026-08-22\",\"schema\":\"datapulse/v1/daily-chain-head\"}", "sha256": "sha256:bb295e71006d14139b5fd070cbbfbcd0ab8ee300421d6d90a765e51a15853ab1"},
+  "ed25519_envelope": {
+    "schema": "datapulse/v1/probe-attestation-envelope",
+    "payload": {"schema": "datapulse/v1/probe-attestation"},
+    "signature_base64": "fixture-only-no-key-material-no-cryptographic-verification",
+    "payload_digest": "sha256:bb295e71006d14139b5fd070cbbfbcd0ab8ee300421d6d90a765e51a15853ab1",
+    "chain_link": "e56e5788f96cfb7f82441f211ff8b277a6320912b413e408007043ee36fc5512",
+    "verification_level": "L1-capable",
+    "git_tag_anchor": {"tag": "v0.8.0", "commit": "0123456789abcdef0123456789abcdef01234567"}
+  },
+  "cosign_bundle": {
+    "media_type": "application/vnd.dev.cosign.bundle.v0+json",
+    "artifact_digest": "sha256:bb295e71006d14139b5fd070cbbfbcd0ab8ee300421d6d90a765e51a15853ab1",
+    "signing_identity": {"kms_uri": "openbao://transit/keys/datapulse-daily"},
+    "rekor_inclusion": {"log_id": "self-hosted-rekor-fixture-log", "log_index": 42, "inclusion_proof": "fixture-proof", "signed_entry_timestamp": "fixture-set"}
+  }
+}
