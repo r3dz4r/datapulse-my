@@ -122,6 +122,47 @@ def test_build_sets_archives_dir_inside_isolated_workdir(
     assert environment["DATAPULSE_ARCHIVES_DIR"] == str(workdir / ".archives")
 
 
+def test_build_forwards_attestation_key_path_without_key_contents(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    workdir = tmp_path / "isolated-build"
+    key_path = tmp_path / "attestation-key.json"
+    secret_contents = "private-key-material-must-not-leak"
+    key_path.write_text(secret_contents, encoding="utf-8")
+    captured: dict[str, object] = {}
+
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured.update(kwargs)
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setenv("DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE", str(key_path))
+    monkeypatch.setattr(verifier, "_copy_source", lambda destination: None)
+    monkeypatch.setattr(verifier.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        verifier,
+        "_capture",
+        lambda root, source: verifier.BuildCapture({}, {}, root),
+    )
+
+    verifier._build(ROOT, workdir, "/tmp/fake-git-dir")
+
+    environment = captured["env"]
+    assert isinstance(environment, dict)
+    assert set(environment) == {
+        "PATH",
+        "GIT_DIR",
+        "DATAPULSE_ARCHIVES_DIR",
+        "DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE",
+    }
+    assert environment["DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"] == str(key_path)
+    assert secret_contents not in repr(environment)
+    captured_output = capsys.readouterr()
+    assert secret_contents not in captured_output.out
+    assert secret_contents not in captured_output.err
+
+
 def test_first_build_produces_expected_outputs(
     verification_run: VerificationRun,
 ) -> None:

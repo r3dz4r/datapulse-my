@@ -322,6 +322,9 @@ def _build(source: Path, workdir: Path, git_dir: str) -> BuildCapture:
         "GIT_DIR": git_dir,
         "DATAPULSE_ARCHIVES_DIR": str(workdir / ".archives"),
     }
+    key_path = os.environ.get("DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE")
+    if key_path:
+        environment["DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"] = key_path
     try:
         completed = subprocess.run(
             ["bash", "scripts/generate.sh", "release-build"],
