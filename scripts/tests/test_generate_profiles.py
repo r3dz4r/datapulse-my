@@ -257,6 +257,7 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(ROOT / "scripts/generate.sh", scripts / "generate.sh")
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
+    shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", scripts)
     shutil.copy2(ROOT / "scripts/gen_anomaly.py", scripts / "gen_anomaly.py")
     subprocess.run(["git", "init", "-q"], cwd=source, check=True)
     subprocess.run(
@@ -314,6 +315,12 @@ def test_release_build_lists_all_twenty_one_steps(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     for step in RELEASE_STEPS:
         assert step in result.stdout
+
+
+def test_clean_fixture_stages_attestation_binding_helper(tmp_path: Path) -> None:
+    source = _stage_source(tmp_path)
+
+    assert (source / "scripts/verify_attestation_binding.py").is_file()
 
 
 def test_record_evidence_runs_immediately_after_deltas(tmp_path: Path) -> None:
