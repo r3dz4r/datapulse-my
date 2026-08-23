@@ -245,8 +245,15 @@ jobs:
           bash scripts/generate.sh release-build
 
       - name: Generate current release reproducibility proof
+        env:
+          DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
         run: |
           set -Eeuo pipefail
+          if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then
+            echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json
+            chmod 600 /tmp/datapulse-attestation-key.json
+            export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json
+          fi
           python3 scripts/verify_release_reproducible.py \
             --workdir-root "$RUNNER_TEMP" \
             --output docs/release-verification.md

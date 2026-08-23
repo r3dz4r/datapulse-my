@@ -90,6 +90,30 @@ def test_deploy_pages_workflow_uses_release_build() -> None:
     )
 
 
+def test_release_proof_reuses_protected_attestation_key_setup() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    setup_lines = (
+        "          DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}",
+        '          if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then',
+        '            echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json',
+        "            chmod 600 /tmp/datapulse-attestation-key.json",
+        "            export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json",
+        "          fi",
+    )
+
+    release_step = workflow.split(
+        "      - name: Run release-build generation profile (full path)\n", 1
+    )[1].split("      - name: Generate current release reproducibility proof\n", 1)[0]
+    proof_step = workflow.split(
+        "      - name: Generate current release reproducibility proof\n", 1
+    )[1].split("      - name: Assemble Pages artifact\n", 1)[0]
+
+    for line in setup_lines:
+        assert line in release_step
+        assert line in proof_step
+    assert "--verify-proof docs/release-verification.md" in proof_step
+
+
 def test_deploy_pages_workflow_paths_trigger_includes_generate_sh() -> None:
     workflow = _read(DEPLOY_WORKFLOW)
     paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[
