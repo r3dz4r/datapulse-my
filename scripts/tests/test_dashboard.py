@@ -119,6 +119,17 @@ def test_embedded_data_contract_includes_dashboard_sections() -> None:
     assert "dashboardSections:" in html
 
 
+def test_dashboard_distinguishes_signature_witness_and_source_truth() -> None:
+    html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
+
+    assert 'addFact(facts, "Artifact signature"' in html
+    assert 'addFact(facts, "Rekor witness"' in html
+    assert 'addFact(facts, "Source truth"' in html
+    assert "attestationVerification" in html
+    assert 'addFact(facts, "Signed"' not in html
+    assert "dataset.attestation_ref === signedRef" not in html
+
+
 def test_hero_uses_the_canonical_ten_status_taxonomy() -> None:
     html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
     hero_start = html.index('<div class="hero-stats"')

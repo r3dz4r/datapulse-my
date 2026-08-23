@@ -71,7 +71,7 @@ EXPECTED_TOOL_TITLES = {
     "get_provenance": "Build Citation-Ready Provenance",
     "get_evidence": "Inspect Published Evidence Receipts",
     "verify_evidence": "Re-verify Source Transport Evidence",
-    "trust_verdict": "Aggregate a Signed Trust Verdict",
+    "trust_verdict": "Aggregate a Published Trust Verdict",
     "verify_attestation": "Verify a Signed Probe Attestation",
     "find_by_licence": "Scope Reusable Data by Licence",
     "usage_summary": "Summarize Buyer Tool Usage",

@@ -9,10 +9,27 @@ acquires `/tmp/datapulse-health.lock`, probes due datasets with
 moves it to `health/latest.json`. A successful probe then invokes
 `bash scripts/generate.sh health-cycle`.
 
-The health cycle signs daily probe facts with the protected Ed25519 key referenced by
+The release-build signs daily probe facts with the protected Ed25519 key referenced by
 `DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE`; private keys remain outside the checkout.
 It publishes immutable dated envelopes plus `attestations/latest/` and a public key
 registry at `.well-known/datapulse-probe-keys.json`.
+
+The additive attestation binding signs the exact `health/latest.json` SHA-256,
+dataset count and identifier-set hash, observation time, publication time, active key,
+and daily chain head. A Rekor reference may be attached only when its Cosign bundle
+names that same health digest and carries a matching LogID, index, UUID, inclusion
+proof, and signed entry timestamp. These are three separate claims: an Ed25519
+signature proves the published artifact binding, Rekor proves transparency-log
+witnessing, and neither proves that an upstream source is true.
+
+Sigstore/Rekor remains additive. If no complete Rekor evidence is available, legacy
+health publication continues and the public contract reports `rekor_witnessed: false`.
+If metadata claims `rekor_witnessed: true`, generation and postdeploy verification fail
+closed on a missing or invalid proof. A fast health-only deploy may publish a newer
+snapshot without a matching binding only when the dashboard exposes all three trust
+claims as false; even in that mode, a malformed legacy signature, superseded key, or
+ambiguous daily head remains a deployment failure. Full release builds require current
+health/signature/key/count/time parity.
 
 `scripts/check.sh --due` maps refresh frequencies to probe tiers:
 

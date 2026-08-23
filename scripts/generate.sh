@@ -98,7 +98,7 @@ case "$profile" in
       "health/trends.json"
       "health/drift.json"
       "health/reconciliation.json"
-      "attestations/<date>/{<id>.json,index.json,chain_head.json,scores.json}; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
+      "attestations/<date>/{<id>.json,index.json,chain_head.json,binding.json,scores.json}; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "catalog-graph.json"
@@ -148,7 +148,7 @@ case "$profile" in
       "health/trends.json"
       "health/drift.json"
       "health/reconciliation.json"
-      "attestations/<date>/{<id>.json,index.json,chain_head.json,scores.json}; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
+      "attestations/<date>/{<id>.json,index.json,chain_head.json,binding.json,scores.json}; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "catalog-graph.json"
@@ -245,8 +245,12 @@ for index in "${!generators[@]}"; do
         printf 'attestation generation skipped: no published key registry in this fixture\n'
         continue
       fi
+      attestation_args=(--private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE")
+      if [[ -n "${DATAPULSE_SIGSTORE_REKOR_REFERENCE:-}" ]]; then
+        attestation_args+=(--rekor-reference "$DATAPULSE_SIGSTORE_REKOR_REFERENCE")
+      fi
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" \
-        python3 "scripts/$generator" --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"
+        python3 "scripts/$generator" "${attestation_args[@]}"
       ;;
     *.py)
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \

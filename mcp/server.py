@@ -298,7 +298,7 @@ FIND_BY_LICENCE_DESCRIPTION = (
     "available under a specific licence for compliance/reuse scoping."
 )
 TRUST_VERDICT_DESCRIPTION = (
-    "Return the published signed facts, unsigned methodology-versioned trust score, "
+    "Return published attestation facts, the unsigned methodology-versioned trust score, "
     "numeric components, and component_availability reasons, plus existing "
     "health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. "
     "This tool does not re-probe or verify the signature; call verify_attestation separately."
@@ -1535,11 +1535,11 @@ async def trust_verdict(
         "citation_text": f"{entry['name']} — {entry['source']}; observed {envelope['payload']['observed_at']}; DataPulse MY attestation {ref}.",
         "observed_at": envelope["payload"]["observed_at"],
         "verified_live_at": _latest_live_verification(dataset_id),
-        "validity_notice": "Score reflects data as of observed_at; call verify_evidence for production use.",
+        "validity_notice": "Attestation publication is not signature verification or source-truth verification; call verify_attestation and verify_evidence for production use.",
     }
 
 
-_trust_verdict_tool = FunctionTool.from_function(trust_verdict, title="Aggregate a Signed Trust Verdict", description=TRUST_VERDICT_DESCRIPTION, icons=TOOL_ICONS, annotations=READ_ONLY_TOOL_ANNOTATIONS, meta=TOOL_META)
+_trust_verdict_tool = FunctionTool.from_function(trust_verdict, title="Aggregate a Published Trust Verdict", description=TRUST_VERDICT_DESCRIPTION, icons=TOOL_ICONS, annotations=READ_ONLY_TOOL_ANNOTATIONS, meta=TOOL_META)
 _trust_verdict_tool.parameters.setdefault("required", [])
 mcp.add_tool(_trust_verdict_tool)
 

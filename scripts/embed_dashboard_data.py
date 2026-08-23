@@ -13,6 +13,11 @@ import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+try:
+    from scripts.verify_attestation_binding import ContractError, verify_contract
+except ModuleNotFoundError:  # Direct script execution puts scripts/ on sys.path.
+    from verify_attestation_binding import ContractError, verify_contract
+
 
 class EmbedError(RuntimeError):
     """Raised when dashboard data cannot be embedded safely."""
@@ -371,6 +376,44 @@ def _replace_dataset_counts(html: str, health: object) -> str:
     return html
 
 
+def _attestation_verification(root: Path) -> dict:
+    """Embed only claims verified against the exact health bytes being rendered."""
+    try:
+        return verify_contract(root)
+    except ContractError:
+        return {
+            "schema": "datapulse/v1/attestation-verification-result",
+            "claims": {
+                "artifact_signed": False,
+                "rekor_witnessed": False,
+                "source_truth_verified": False,
+            },
+            "freshness": {"status": "unavailable"},
+            "reason": "no current verified contract for this health snapshot",
+        }
+
+
+def _replace_attestation_ui(html: str) -> str:
+    old = '''        const signedRef = window.__DATAPULSE_DATA__?.attestations?.attestations?.[dataset.id];
+        const signed = dataset.attestation_ref === signedRef;
+        addFact(facts, "Signed", signed ? `yes — ${dataset.attestation_ref || signedRef}` : "no");'''
+    new = '''        const signedRef = window.__DATAPULSE_DATA__?.attestations?.attestations?.[dataset.id];
+        const verification = window.__DATAPULSE_DATA__?.attestationVerification || {};
+        const claims = verification.claims || {};
+        const artifactSigned = claims.artifact_signed === true;
+        addFact(facts, "Artifact signature", artifactSigned ? "verified for this health snapshot" : "not verified for this health snapshot");
+        addFact(facts, "Rekor witness", claims.rekor_witnessed === true ? "verified inclusion proof" : "not published or not verified");
+        addFact(facts, "Source truth", "not verified by attestation");'''
+    if old in html:
+        html = html.replace(old, new, 1)
+    html = html.replace(
+        '        if (signed) links.append(makeLink("Signed attestation", `${REPO}${signedRef}`));',
+        '        if (artifactSigned && signedRef) links.append(makeLink("Verified attestation proof", `${REPO}${signedRef}`));',
+        1,
+    )
+    return html
+
+
 def embed(
     html_path: Path,
     manifest_path: Path,
@@ -378,6 +421,7 @@ def embed(
     filters_path: Path,
     sections_path: Path,
     attestations_path: Path | None = None,
+    binding_path: Path | None = None,
 ) -> None:
     try:
         html = html_path.read_text(encoding="utf-8")
@@ -388,6 +432,7 @@ def embed(
     health = _load(health_path)
     if html_path.name == "index.html":
         html = update_changelog_strip(html, manifest, health)
+        html = _replace_attestation_ui(html)
     html = _replace_dataset_counts(html, health)
     if html_path.name == "npra.html":
         html = _npra_freshness(html, health)
@@ -399,7 +444,9 @@ def embed(
         f"manifest: {_dump(manifest)}, "
         f"dashboardFilters: {_dump(_load(filters_path))}, "
         f"dashboardSections: {_dump(_load(sections_path))}, "
-        f"attestations: {_dump(_load_optional(attestations_path))}"
+        f"attestations: {_dump(_load_optional(attestations_path))}, "
+        f"attestationBinding: {_dump(_load_optional(binding_path))}, "
+        f"attestationVerification: {_dump(_attestation_verification(manifest_path.parent))}"
         "};\n"
         "  </script>"
     )
@@ -437,13 +484,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--attestations", type=Path, default=root / "attestations/latest/index.json"
     )
+    parser.add_argument(
+        "--attestation-binding", type=Path, default=root / "attestations/latest/binding.json"
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
-        embed(args.html, args.manifest, args.health, args.filters, args.sections, args.attestations)
+        embed(args.html, args.manifest, args.health, args.filters, args.sections, args.attestations, args.attestation_binding)
     except EmbedError as error:
         print(f"embed_dashboard_data.py: {error}", file=sys.stderr)
         return 1

@@ -25,7 +25,7 @@ def fixture_root(tmp_path: Path) -> tuple[Path, Path]:
     key_id = "ed25519-test"
     key = tmp_path / "private.json"
     write(key, {"key_id": key_id, "private_key_base64": base64.b64encode(raw).decode(), "public_key_base64": base64.b64encode(pub).decode()})
-    write(tmp_path / "docs/.well-known/datapulse-probe-keys.json", {"schema":"datapulse/v1/probe-key-registry", "keys":[{"key_id":key_id,"public_key_base64":base64.b64encode(pub).decode(),"not_before":"2026-01-01T00:00:00Z","not_after":"2027-01-01T00:00:00Z","status":"active"}]})
+    write(tmp_path / "docs/.well-known/datapulse-probe-keys.json", {"schema":"datapulse/v1/probe-key-registry", "current_key_id":key_id, "keys":[{"key_id":key_id,"public_key_base64":base64.b64encode(pub).decode(),"not_before":"2026-01-01T00:00:00Z","not_after":"2027-01-01T00:00:00Z","status":"active"}]})
     write(tmp_path / "datapulse.json", {"datasets":[{"id":"sample","name":"Sample","source":"Agency","url":"https://example.test/data","refresh_frequency":"daily"}]})
     write(tmp_path / "health/latest.json", {"checked_at":"2026-08-15T00:00:00Z","datasets":[{"dataset_id":"sample","last_checked":"2026-08-15T00:00:00Z","request_url":"https://example.test/data","access_dependency":"direct","status":"fresh","staleness_days":0,"first_row_hash":"shape-v1:"+"a"*64}]})
     write(tmp_path / "health/trends.json", {"datasets":[{"dataset_id":"sample","publish_on_time_pct":100,"trend":"stable"}]})

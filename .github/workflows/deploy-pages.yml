@@ -258,6 +258,7 @@ jobs:
             jq -er '.datasets | select(type == "array" and length > 0) | length' \
               health/latest.json
           )" || fail "checked-out health/latest.json has no dataset array"
+          allow_unattested_health="${{ (github.event_name == 'push' && endsWith(github.event.head_commit.message, '[skip deploy]')) && '1' || '0' }}"
 
           sleep 30
           smoke_dir="$(mktemp -d)"
@@ -269,6 +270,10 @@ jobs:
           card_count="$(grep -o '"health_report":' "$smoke_dir/index.html" | wc -l || true)"
           [[ "$card_count" -eq "$expected_dataset_count" ]] || \
             fail "dashboard embeds $card_count dataset cards; expected $expected_dataset_count"
+          if [[ "$allow_unattested_health" == "1" ]]; then
+            grep -Fq '"claims":{"artifact_signed":false,"rekor_witnessed":false,"source_truth_verified":false}' "$smoke_dir/index.html" || \
+              fail "unattested health deploy does not expose all trust claims as false"
+          fi
 
           fetch "llms.txt" "https://data-pulse.my/llms.txt" "$smoke_dir/llms.txt"
           grep -Eq "$expected_dataset_count (official )?datasets|$expected_dataset_count-dataset" "$smoke_dir/llms.txt" || \
@@ -358,5 +363,6 @@ jobs:
             fail "verify_agent_ready.sh rejected the deployed agent surfaces"
 
           DATAPULSE_RELEASE_BASE_URL="https://data-pulse.my" \
+            DATAPULSE_ALLOW_UNATTESTED_HEALTH="$allow_unattested_health" \
             bash scripts/verify_release_invariants.sh || \
             fail "verify_release_invariants.sh rejected the deployed release"

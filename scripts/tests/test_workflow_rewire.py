@@ -99,6 +99,8 @@ def test_deploy_pages_workflow_preserves_post_deploy_invariants() -> None:
     assert "DEPLOYED_SHA" in invariants
     assert "bash scripts/verify_agent_ready.sh" in invariants
     assert "bash scripts/verify_release_invariants.sh" in invariants
+    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" in invariants
+    assert '"artifact_signed":false,"rekor_witnessed":false,"source_truth_verified":false' in invariants
     for surface in (
         'fetch "dashboard"',
         'fetch "llms.txt"',

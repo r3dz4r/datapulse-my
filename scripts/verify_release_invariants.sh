@@ -28,6 +28,7 @@ trap 'rm -rf "$work_dir"' EXIT
 
 fetch() {
   local name="$1" path="$2"
+  mkdir -p "$(dirname "$work_dir/$name")"
   if $local_mode; then
     if [[ "$path" == ".well-known/"* ]]; then
       path="docs/$path"
@@ -41,6 +42,19 @@ fetch() {
   fi
   curl --fail --location --silent --show-error \
     --retry 12 --retry-delay 15 --retry-all-errors \
+    --connect-timeout 10 --max-time 30 \
+    "$base_url/$path" --output "$work_dir/$name"
+}
+
+fetch_optional() {
+  local name="$1" path="$2"
+  mkdir -p "$(dirname "$work_dir/$name")"
+  if $local_mode; then
+    [[ -f "$path" ]] || return 1
+    cp "$path" "$work_dir/$name"
+    return 0
+  fi
+  curl --fail --location --silent --show-error \
     --connect-timeout 10 --max-time 30 \
     "$base_url/$path" --output "$work_dir/$name"
 }
@@ -59,6 +73,34 @@ fetch attestation-keys.json .well-known/datapulse-probe-keys.json
 fetch attestation-index.json attestations/latest/index.json
 fetch attestation-head.json attestations/latest/chain_head.json
 fetch attestation-scores.json attestations/latest/scores.json
+fetch_optional attestation-binding.json attestations/latest/binding.json || true
+
+contract_root="$work_dir/contract-root"
+mkdir -p "$contract_root/health" "$contract_root/attestations/latest" "$contract_root/docs/.well-known"
+cp "$work_dir/health.json" "$contract_root/health/latest.json"
+cp "$work_dir/attestation-index.json" "$contract_root/attestations/latest/index.json"
+cp "$work_dir/attestation-head.json" "$contract_root/attestations/latest/chain_head.json"
+cp "$work_dir/attestation-keys.json" "$contract_root/docs/.well-known/datapulse-probe-keys.json"
+fetch "contract-root/attestations/chain-index.json" attestations/chain-index.json
+
+if [[ -f "$work_dir/attestation-binding.json" ]]; then
+  cp "$work_dir/attestation-binding.json" "$contract_root/attestations/latest/binding.json"
+  binding_date="$(jq -er '.payload.date | select(test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$work_dir/attestation-binding.json")"
+  fetch "contract-root/attestations/$binding_date/binding.json" "attestations/$binding_date/binding.json"
+  fetch "contract-root/attestations/$binding_date/chain_head.json" "attestations/$binding_date/chain_head.json"
+  while IFS= read -r reference; do
+    [[ -z "$reference" ]] && continue
+    [[ "$reference" =~ ^attestations/${binding_date}/[A-Za-z0-9_.-]+\.json$ ]] \
+      || { printf 'Unsafe Rekor proof reference: %s\n' "$reference" >&2; exit 1; }
+    fetch "contract-root/$reference" "$reference"
+  done < <(jq -r '.rekor // {} | [.reference_ref, .bundle_ref] | .[] // empty' "$work_dir/attestation-binding.json")
+fi
+
+binding_args=(--root "$contract_root" --head-only)
+if [[ "${DATAPULSE_ALLOW_UNATTESTED_HEALTH:-0}" == "1" ]]; then
+  binding_args+=(--allow-unattested-health)
+fi
+python3 scripts/verify_attestation_binding.py "${binding_args[@]}" >/dev/null
 
 vertical_ids=()
 while IFS= read -r dataset_id; do
