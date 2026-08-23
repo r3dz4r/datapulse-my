@@ -5,11 +5,57 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+import pytest
+
+from scripts import gen_attestations as ga
+from scripts.tests.test_attestations import fixture_root
+from scripts.verify_attestation_binding import ContractError, verify_contract
 
 
 ROOT = Path(__file__).resolve().parents[2]
 VERIFY_SCRIPT = ROOT / "scripts/verify_release_invariants.sh"
+
+
+def test_local_gate_accepts_pre_generation_source_without_binding() -> None:
+    """CI validates source contracts before release-build creates a binding."""
+    assert not (ROOT / "attestations/latest/binding.json").exists()
+
+    completed = subprocess.run(
+        ["bash", str(VERIFY_SCRIPT), "--local"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "Local pre-generation attestation structure: PASS" in completed.stdout
+
+
+def test_generated_contract_still_rejects_a_missing_binding(tmp_path: Path) -> None:
+    """The source exception must not let a generated artifact skip its binding."""
+    root, key = fixture_root(tmp_path)
+    now = datetime(2026, 8, 15, 1, tzinfo=timezone.utc)
+    ga.generate(root, key, now)
+    (root / "attestations/latest/binding.json").unlink()
+
+    with pytest.raises(ContractError, match="latest binding is missing or invalid"):
+        verify_contract(root, now=now + timedelta(hours=1))
+
+
+def test_served_mode_keeps_binding_verification_outside_the_local_exception() -> None:
+    """Only source validation may omit the generated binding contract."""
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+    served_contract = re.search(
+        r"(?ms)^if ! \$local_mode; then\n(.*?)^fi\n\nvertical_ids=", script
+    )
+
+    assert served_contract is not None
+    assert 'python3 scripts/verify_attestation_binding.py "${binding_args[@]}"' in served_contract.group(1)
+    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" in served_contract.group(1)
 
 
 def test_fetch_retries_http_404_with_pages_budget(tmp_path: Path) -> None:

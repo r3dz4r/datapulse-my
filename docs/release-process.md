@@ -135,5 +135,12 @@ python3 scripts/verify_repository_contract.py
 bash scripts/verify_release_invariants.sh --local
 ```
 
+`--local` is a source, pre-generation contract: it validates the checked-in
+schemas, catalog, MCP advertisement, and legacy attestation structure, but does
+not claim that the checkout has a current signed health binding. Release-build
+and post-deploy verification run without `--local` and require the full binding
+contract; `DATAPULSE_ALLOW_UNATTESTED_HEALTH=1` remains the explicit
+health-only deployment exception.
+
 Commit generated changes with their source change. Never push from a manual
 regeneration session; the operator reviews and pushes explicitly.

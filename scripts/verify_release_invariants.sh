@@ -75,32 +75,34 @@ fetch attestation-head.json attestations/latest/chain_head.json
 fetch attestation-scores.json attestations/latest/scores.json
 fetch_optional attestation-binding.json attestations/latest/binding.json || true
 
-contract_root="$work_dir/contract-root"
-mkdir -p "$contract_root/health" "$contract_root/attestations/latest" "$contract_root/docs/.well-known"
-cp "$work_dir/health.json" "$contract_root/health/latest.json"
-cp "$work_dir/attestation-index.json" "$contract_root/attestations/latest/index.json"
-cp "$work_dir/attestation-head.json" "$contract_root/attestations/latest/chain_head.json"
-cp "$work_dir/attestation-keys.json" "$contract_root/docs/.well-known/datapulse-probe-keys.json"
-fetch "contract-root/attestations/chain-index.json" attestations/chain-index.json
+if ! $local_mode; then
+  contract_root="$work_dir/contract-root"
+  mkdir -p "$contract_root/health" "$contract_root/attestations/latest" "$contract_root/docs/.well-known"
+  cp "$work_dir/health.json" "$contract_root/health/latest.json"
+  cp "$work_dir/attestation-index.json" "$contract_root/attestations/latest/index.json"
+  cp "$work_dir/attestation-head.json" "$contract_root/attestations/latest/chain_head.json"
+  cp "$work_dir/attestation-keys.json" "$contract_root/docs/.well-known/datapulse-probe-keys.json"
+  fetch "contract-root/attestations/chain-index.json" attestations/chain-index.json
 
-if [[ -f "$work_dir/attestation-binding.json" ]]; then
-  cp "$work_dir/attestation-binding.json" "$contract_root/attestations/latest/binding.json"
-  binding_date="$(jq -er '.payload.date | select(test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$work_dir/attestation-binding.json")"
-  fetch "contract-root/attestations/$binding_date/binding.json" "attestations/$binding_date/binding.json"
-  fetch "contract-root/attestations/$binding_date/chain_head.json" "attestations/$binding_date/chain_head.json"
-  while IFS= read -r reference; do
-    [[ -z "$reference" ]] && continue
-    [[ "$reference" =~ ^attestations/${binding_date}/[A-Za-z0-9_.-]+\.json$ ]] \
-      || { printf 'Unsafe Rekor proof reference: %s\n' "$reference" >&2; exit 1; }
-    fetch "contract-root/$reference" "$reference"
-  done < <(jq -r '.rekor // {} | [.reference_ref, .bundle_ref] | .[] // empty' "$work_dir/attestation-binding.json")
-fi
+  if [[ -f "$work_dir/attestation-binding.json" ]]; then
+    cp "$work_dir/attestation-binding.json" "$contract_root/attestations/latest/binding.json"
+    binding_date="$(jq -er '.payload.date | select(test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$work_dir/attestation-binding.json")"
+    fetch "contract-root/attestations/$binding_date/binding.json" "attestations/$binding_date/binding.json"
+    fetch "contract-root/attestations/$binding_date/chain_head.json" "attestations/$binding_date/chain_head.json"
+    while IFS= read -r reference; do
+      [[ -z "$reference" ]] && continue
+      [[ "$reference" =~ ^attestations/${binding_date}/[A-Za-z0-9_.-]+\.json$ ]] \
+        || { printf 'Unsafe Rekor proof reference: %s\n' "$reference" >&2; exit 1; }
+      fetch "contract-root/$reference" "$reference"
+    done < <(jq -r '.rekor // {} | [.reference_ref, .bundle_ref] | .[] // empty' "$work_dir/attestation-binding.json")
+  fi
 
-binding_args=(--root "$contract_root" --head-only)
-if [[ "${DATAPULSE_ALLOW_UNATTESTED_HEALTH:-0}" == "1" ]]; then
-  binding_args+=(--allow-unattested-health)
+  binding_args=(--root "$contract_root" --head-only)
+  if [[ "${DATAPULSE_ALLOW_UNATTESTED_HEALTH:-0}" == "1" ]]; then
+    binding_args+=(--allow-unattested-health)
+  fi
+  python3 scripts/verify_attestation_binding.py "${binding_args[@]}" >/dev/null
 fi
-python3 scripts/verify_attestation_binding.py "${binding_args[@]}" >/dev/null
 
 vertical_ids=()
 while IFS= read -r dataset_id; do
@@ -153,6 +155,12 @@ assert attestation_keys["schema"] == "datapulse/v1/probe-key-registry"
 assert attestation_index["schema"] == "datapulse/v1/attestation-index"
 assert len(attestation_index["attestations"]) == expected_count
 assert attestation_head["schema"] == "datapulse/v1/daily-chain-head-envelope"
+head_payload = attestation_head["payload"]
+assert isinstance(head_payload, dict)
+assert head_payload["schema"] == "datapulse/v1/daily-chain-head"
+assert attestation_index["date"] == head_payload["date"]
+assert attestation_index["chain_head_ref"] == f"attestations/{head_payload['date']}/chain_head.json"
+assert head_payload["dataset_count"] == expected_count
 assert len(attestation_head["dataset_links"]) == expected_count
 assert re.fullmatch(r"[0-9a-f]{64}", attestation_head["chain_head"])
 assert attestation_scores["schema"] == "datapulse/v1/trust-scores"
@@ -445,6 +453,7 @@ check_url_file() {
 }
 
 if $local_mode; then
+  printf 'Local pre-generation attestation structure: PASS\n'
   printf 'Local JSON-LD/report files: PASS (%s checked)\n' "$dataset_count"
   printf 'Local llms.txt format: PASS\n'
 else
