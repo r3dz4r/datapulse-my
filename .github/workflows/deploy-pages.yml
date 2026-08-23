@@ -244,6 +244,15 @@ jobs:
           fi
           bash scripts/generate.sh release-build
 
+      - name: Generate current release reproducibility proof
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify_release_reproducible.py \
+            --workdir-root "$RUNNER_TEMP" \
+            --output docs/release-verification.md
+          python3 scripts/verify_release_reproducible.py \
+            --verify-proof docs/release-verification.md
+
       - name: Assemble Pages artifact
         run: |
           # GitHub Pages CDN serves `Cache-Control: max-age=600` for all artifacts.
@@ -356,6 +365,8 @@ jobs:
               fail "unattested health deploy does not expose all trust claims as false"
           fi
 
+          fetch "release reproducibility proof" "https://data-pulse.my/release-verification.md" "$smoke_dir/release-verification.md"
+
           fetch "llms.txt" "https://data-pulse.my/llms.txt" "$smoke_dir/llms.txt"
           grep -Eq "$expected_dataset_count (official )?datasets|$expected_dataset_count-dataset" "$smoke_dir/llms.txt" || \
             fail "llms.txt does not contain '$expected_dataset_count datasets'"
@@ -383,6 +394,28 @@ jobs:
             )
           ' "$smoke_dir/mcp.json" >/dev/null || \
             fail "mcp.json has no structurally valid non-empty tool inventory"
+          python3 - "$smoke_dir/release-verification.md" "$DEPLOYED_SHA" "$expected_dataset_count" "$smoke_dir/mcp.json" health/latest.json <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          proof, source_sha, dataset_count, mcp_path, health_path = sys.argv[1:]
+          health = json.loads(Path(health_path).read_text(encoding="utf-8"))
+          tools = json.loads(Path(mcp_path).read_text(encoding="utf-8"))["tools"]
+          required = (
+              "<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->",
+              "- Status: `current generated release proof`",
+              f"- Source SHA: `{source_sha}`",
+              f"- Health checked at: `{health['checked_at']}`",
+              f"- Dataset count: `{dataset_count}`",
+              f"- MCP tool count: `{len(tools)}`",
+              "- Protocol result: `byte-identical isolated release-build runs`",
+          )
+          contents = Path(proof).read_text(encoding="utf-8")
+          missing = [line for line in required if line not in contents]
+          if missing:
+              raise SystemExit("release proof drift: " + "; ".join(missing))
+          PY
           jq -e '
             [.resources[].uri] == [
               "datapulse://index", "datapulse://anomalies", "datapulse://trends", "datapulse://reliability",

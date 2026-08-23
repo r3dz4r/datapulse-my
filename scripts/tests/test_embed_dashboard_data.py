@@ -113,6 +113,33 @@ def test_embed_derives_dashboard_dataset_counts_from_trust_summary(
     assert "42" not in html
 
 
+def test_embed_replaces_inflated_all_dataset_cadence_claims(tmp_path: Path) -> None:
+    html_path = tmp_path / "index.html"
+    html_path.write_text(
+        f"<body>{_strip()}We probe 42 official datasets every 5 minutes. "
+        "A 5-minute timer fetches each dataset. "
+        "Yes — 42 datasets probed every 5 minutes.</body>",
+        encoding="utf-8",
+    )
+    paths = []
+    for index, document in enumerate((
+        {"datasets": [{"id": "alpha"}]},
+        {"checked_at": "2026-08-17T03:30:56Z", "datasets": []},
+        {},
+        {},
+    )):
+        path = tmp_path / f"cadence-{index}.json"
+        path.write_text(json.dumps(document), encoding="utf-8")
+        paths.append(path)
+
+    embed_dashboard_data.embed(html_path, *paths)
+
+    html = html_path.read_text(encoding="utf-8")
+    assert "42 official datasets every 5 minutes" not in html
+    assert "42 datasets probed every 5 minutes" not in html
+    assert "probes only datasets due under their tiered cadence" in html
+
+
 def test_embed_updates_changelog_strip_idempotently(tmp_path: Path) -> None:
     html_path = tmp_path / "index.html"
     html_path.write_text(f"<body>{_strip()}</body>\n", encoding="utf-8")

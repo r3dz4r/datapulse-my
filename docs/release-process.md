@@ -9,7 +9,7 @@ that snapshot and the manifest:
 
 - `health-cycle` owns `data/<id>.md`, `badges/`, the README trust-summary block,
   `feed.xml`, `catalog-snapshot.json`, its temporary `changelog.json` alias,
-  `health/history*`, `health/trends.json`, `health/drift.json`, `health/reconciliation.json`, and `deltas/`. The 15-minute timer and weekly health
+  `health/history*`, `health/trends.json`, `health/drift.json`, `health/reconciliation.json`, and `deltas/`. The five-minute scheduler (which probes only due tiered datasets) and weekly health
   workflow invoke it after a successful probe.
 - `release-build` owns the `health-cycle` paths plus
   `data/json/<id>.json`, `data/jsonld/`, `docs/mcp-reference.md`, `mcp.json`,
@@ -27,7 +27,7 @@ then run the owning profile instead of patching an output directly.
 
 Two named profiles in `scripts/generate.sh` orchestrate the generators in reviewed order:
 
-- `health-cycle` — invoked by the 15-minute timer / weekly GH Actions fallback after a `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `catalog-snapshot.json` plus the deprecated `changelog.json` alias, `health/history*`, `health/trends.json`, `health/drift.json`, `health/reconciliation.json`, signed `attestations/`, methodology-v1 scores, `datapulse.json` attestation refs, and `deltas/`.
+- `health-cycle` — invoked by the five-minute scheduler for datasets due under the tiered cadence (or by the weekly GH Actions fallback) after `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `catalog-snapshot.json` plus the deprecated `changelog.json` alias, `health/history*`, `health/trends.json`, `health/drift.json`, `health/reconciliation.json`, signed `attestations/`, methodology-v1 scores, `datapulse.json` attestation refs, and `deltas/`.
 - `release-build` — invoked by the Pages deploy workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), dashboard filters (`docs/.dashboard_filters.json`), and the date-stamped trust snapshot (`docs/trust-snapshot-<date>.{md,json}`).
 
 `release-build` numbers the source stamp as Step 0, followed by twenty-one artifact
@@ -50,6 +50,9 @@ manual `workflow_dispatch` and successful `workflow_run` events continue through
 
 The workflow injects embedded health/manifest data, assembles `_site`, deploys
 with GitHub Pages, then runs post-deploy invariants against the public host.
+Repository workflow checks prove only what the workflow ran. GitHub branch protection
+must separately require the CI status check before changes reach `main`; see the
+operator handoff in this release work for the control-plane setting.
 
 ## Release invariants
 

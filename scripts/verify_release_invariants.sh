@@ -68,6 +68,7 @@ fetch catalog.json data/jsonld/catalog.json
 fetch catalog-snapshot.json catalog-snapshot.json
 fetch catalog-graph.json catalog-graph.json
 fetch mcp.json mcp.json
+fetch release-verification.md docs/release-verification.md
 fetch llms.txt llms.txt
 fetch attestation-keys.json .well-known/datapulse-probe-keys.json
 fetch attestation-index.json attestations/latest/index.json
@@ -115,6 +116,30 @@ dataset_count="$(
   jq -er '.datasets | select(type == "array" and length > 0) | length' \
     "$work_dir/health.json"
 )"
+
+python3 - "$work_dir/release-verification.md" "$work_dir/health.json" "$work_dir/mcp.json" <<'PY'
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+proof_path, health_path, mcp_path = map(Path, sys.argv[1:])
+health = json.loads(health_path.read_text(encoding="utf-8"))
+tools = json.loads(mcp_path.read_text(encoding="utf-8"))["tools"]
+source_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+required = (
+    "<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->",
+    "- Status: `current generated release proof`",
+    f"- Source SHA: `{source_sha}`",
+    f"- Health checked at: `{health['checked_at']}`",
+    f"- Dataset count: `{len(health['datasets'])}`",
+    f"- MCP tool count: `{len(tools)}`",
+    "- Protocol result: `byte-identical isolated release-build runs`",
+)
+proof = proof_path.read_text(encoding="utf-8")
+missing = [line for line in required if line not in proof]
+assert not missing, "release proof drift: " + "; ".join(missing)
+PY
 
 python3 -m jsonschema -i "$work_dir/manifest.json" datapulse.schema.json
 

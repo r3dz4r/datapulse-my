@@ -83,6 +83,9 @@ def _copy_ignore(directory: str, names: list[str]) -> set[str]:
         for name in names
         if name in {".git", "__pycache__", ".pytest_cache", "_site"}
         or name.endswith(".pyc")
+        # Isolated builds consume repository sources, never local credentials or
+        # host-owned files that happen to be present in an operational checkout.
+        or not os.access(ROOT / relative / name, os.R_OK)
     }
     if relative == Path("data/health"):
         ignored.update(
@@ -369,14 +372,28 @@ def _summary(
     first: BuildCapture,
     second: BuildCapture,
     reproduction: str,
+    source: Path = ROOT,
 ) -> str:
     timestamp = dt.datetime.now().astimezone().isoformat(timespec="seconds")
+    health = _load_json(source / "health/latest.json")
+    datasets = health.get("datasets")
+    tools = _load_json(source / "mcp.json").get("tools")
+    if not isinstance(datasets, list) or not isinstance(health.get("checked_at"), str):
+        raise VerificationFailure("health/latest.json must contain datasets and checked_at")
+    if not isinstance(tools, list):
+        raise VerificationFailure("mcp.json must contain a tools array")
     total = len(first.hashes)
     lines = [
         "# Release reproducibility verification",
         "",
-        f"- Verified at: `{timestamp}`",
+        "<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->",
+        f"- Generated at: `{timestamp}`",
+        "- Status: `current generated release proof`",
         f"- Source SHA: `{source_sha}`",
+        f"- Health checked at: `{health['checked_at']}`",
+        f"- Dataset count: `{len(datasets)}`",
+        f"- MCP tool count: `{len(tools)}`",
+        "- Protocol result: `byte-identical isolated release-build runs`",
         "- Profile result: `bash scripts/generate.sh release-build` exited 0 in both isolated runs",
         f"- Total files built: **{total}**",
         "",
@@ -403,6 +420,26 @@ def _summary(
         ]
     )
     return "\n".join(lines)
+
+
+def validate_proof(path: Path, source_sha: str, dataset_count: int, tool_count: int, checked_at: str) -> None:
+    """Reject a generated proof that is stale or detached from the release inputs."""
+    try:
+        proof = path.read_text(encoding="utf-8")
+    except OSError as error:
+        raise VerificationFailure(f"could not read release proof {path}: {error}") from error
+    required = (
+        "<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->",
+        "- Status: `current generated release proof`",
+        f"- Source SHA: `{source_sha}`",
+        f"- Health checked at: `{checked_at}`",
+        f"- Dataset count: `{dataset_count}`",
+        f"- MCP tool count: `{tool_count}`",
+        "- Protocol result: `byte-identical isolated release-build runs`",
+    )
+    missing = [line for line in required if line not in proof]
+    if missing:
+        raise VerificationFailure("release proof drift: " + "; ".join(missing))
 
 
 def _workdir(root: Path, prefix: str) -> Path:
@@ -438,7 +475,7 @@ def verify(workdir_root: Path, output: Path, reproduction: str) -> int:
     second = _build(ROOT, second_workdir, git_dir)
     _write_hash_table(metadata / "second_run.json", second.hashes)
 
-    summary = _summary(source_sha, first, second, reproduction)
+    summary = _summary(source_sha, first, second, reproduction, ROOT)
     try:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(summary, encoding="utf-8")
@@ -463,12 +500,23 @@ def main() -> int:
     parser.add_argument(
         "--output", type=Path, default=Path("docs/release-verification.md")
     )
+    parser.add_argument("--verify-proof", type=Path)
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
     reproduction = shlex.join(
         ["python3", "scripts/verify_release_reproducible.py", *sys.argv[1:]]
     )
     try:
+        if args.verify_proof:
+            health = _load_json(ROOT / "health/latest.json")
+            datasets = health.get("datasets")
+            tools = _load_json(ROOT / "mcp.json").get("tools")
+            if not isinstance(datasets, list) or not isinstance(tools, list) or not isinstance(health.get("checked_at"), str):
+                raise VerificationFailure("release inputs cannot validate the proof")
+            proof = args.verify_proof if args.verify_proof.is_absolute() else ROOT / args.verify_proof
+            validate_proof(proof, _run_git("rev-parse", "HEAD"), len(datasets), len(tools), health["checked_at"])
+            print(f"OK: release proof matches current source and release inputs: {proof}")
+            return 0
         return verify(args.workdir_root.resolve(), output.resolve(), reproduction)
     except VerificationFailure as error:
         print(f"ERROR: {error}", file=sys.stderr)

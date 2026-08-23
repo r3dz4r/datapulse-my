@@ -194,6 +194,26 @@ def test_release_verification_md_includes_source_sha(
     assert source_sha in verification_run.summary.read_text(encoding="utf-8")
 
 
+def test_release_verification_md_records_current_release_inputs(
+    verification_run: VerificationRun,
+) -> None:
+    assert verification_run.result.returncode == 0, verification_run.result.stderr
+    proof = verification_run.summary.read_text(encoding="utf-8")
+    health = json.loads((verification_run.source / "health/latest.json").read_text())
+    tools = json.loads((verification_run.source / "mcp.json").read_text())["tools"]
+    assert "current generated release proof" in proof
+    assert f"Health checked at: `{health['checked_at']}`" in proof
+    assert f"Dataset count: `{len(health['datasets'])}`" in proof
+    assert f"MCP tool count: `{len(tools)}`" in proof
+
+
+def test_proof_validator_rejects_stale_source_or_counts(tmp_path: Path) -> None:
+    proof = tmp_path / "release-verification.md"
+    proof.write_text("# Release reproducibility verification\n", encoding="utf-8")
+    with pytest.raises(verifier.VerificationFailure, match="release proof drift"):
+        verifier.validate_proof(proof, "a" * 40, 389, 16, "2026-08-23T10:06:30Z")
+
+
 def test_hash_table_covers_all_owned_paths(
     verification_run: VerificationRun,
 ) -> None:

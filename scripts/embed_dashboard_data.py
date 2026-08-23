@@ -361,6 +361,35 @@ DATASET_COUNT_PATTERNS = (
     r"(?<=Five of )\d+(?= datasets\b)",
 )
 
+SCHEDULER_CLAIM = (
+    "The scheduler wakes every 5 minutes and probes only datasets due under "
+    "their tiered cadence"
+)
+
+
+def _replace_scheduler_claims(html: str) -> str:
+    """Replace legacy all-datasets-per-tick claims with the due-tier contract."""
+    replacements = {
+        r"We monitor official datasets; the scheduler wakes every 5 minutes and probes only datasets due under their tiered cadence\.": (
+            "We monitor official datasets. " + SCHEDULER_CLAIM
+        ),
+        r"We monitor official datasets\. The scheduler wakes every 5 minutes and probes only datasets due under their tiered cadence\.": (
+            "We monitor official datasets. " + SCHEDULER_CLAIM
+        ),
+        r"We probe \d+ official datasets every 5 minutes": (
+            "We monitor official datasets. " + SCHEDULER_CLAIM
+        ),
+        r"A 5-minute timer fetches each dataset": (
+            "A 5-minute scheduler wakes and probes datasets due under their tiered cadence"
+        ),
+        r"\d+ datasets probed every 5 minutes": (
+            "Datasets are probed when due under their tiered cadence"
+        ),
+    }
+    for pattern, replacement in replacements.items():
+        html = re.sub(pattern, replacement, html)
+    return html
+
 
 def _replace_dataset_counts(html: str, health: object) -> str:
     if not isinstance(health, dict):
@@ -433,6 +462,7 @@ def embed(
     if html_path.name == "index.html":
         html = update_changelog_strip(html, manifest, health)
         html = _replace_attestation_ui(html)
+        html = _replace_scheduler_claims(html)
     html = _replace_dataset_counts(html, health)
     if html_path.name == "npra.html":
         html = _npra_freshness(html, health)
