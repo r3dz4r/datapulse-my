@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -161,6 +163,43 @@ def test_daily_older_evidence_is_used_and_raw_wins_same_day(tmp_path: Path) -> N
     assert result["trend_sample_days"] == 3
     assert result["latest_staleness_days"] == 0.0
     assert result["trend"] == "stable"
+
+
+def test_compacted_daily_history_sets_history_end_and_generation_time(tmp_path: Path) -> None:
+    history = _history(tmp_path, [])
+    _daily(tmp_path, [
+        _daily_evaluable("x", 0, 2),
+        _daily_evaluable("x", 1, 1),
+        _daily_evaluable("x", 2, 0),
+    ])
+
+    expected_end = MODULE.parse_time("2026-08-12T12:00:00Z")
+    assert MODULE.history_end(history) == expected_end
+
+    result = MODULE.generate(
+        {"datasets": [{"id": "x", "name": "X", "refresh_frequency": "daily"}]},
+        history,
+    )
+    assert result["generated_at"] == "2026-08-12T12:00:00Z"
+    assert result["datasets"][0]["trend_sample_days"] == 3
+
+
+def test_history_end_rejects_empty_or_invalid_raw_and_daily_history(tmp_path: Path) -> None:
+    history = _history(tmp_path, [])
+    _daily(tmp_path, [
+        {"dataset_id": "legacy", "date": "2026-08-10", "record_count": {"mean": 1}},
+        {
+            "dataset_id": "invalid",
+            "latest_successful_evaluable_observation": {
+                "observed_at": "not-a-timestamp",
+                "probe_outcome": "success",
+                "content_date": "2026-08-10",
+            },
+        },
+    ])
+
+    with pytest.raises(ValueError, match="history contains no valid observed_at timestamps"):
+        MODULE.history_end(history)
 
 
 def test_legacy_and_failed_daily_evidence_are_not_freshness_evaluable(tmp_path: Path) -> None:

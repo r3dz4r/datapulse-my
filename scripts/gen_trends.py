@@ -63,7 +63,9 @@ def reliability_grade(percent: float | None) -> str:
     return "F"
 
 
-def _daily_evaluable_rows(daily: Path, *, generated_at: datetime) -> list[dict[str, Any]]:
+def _daily_evaluable_rows(
+    daily: Path, *, generated_at: datetime | None, within_window: bool = True
+) -> list[dict[str, Any]]:
     """Read only retained, explicitly successful freshness evidence."""
     try:
         payload = json.loads(daily.read_text(encoding="utf-8"))
@@ -74,7 +76,11 @@ def _daily_evaluable_rows(daily: Path, *, generated_at: datetime) -> list[dict[s
     aggregates = payload.get("aggregates")
     if not isinstance(aggregates, list):
         return []
-    cutoff = generated_at.date() - timedelta(days=WINDOW_DAYS - 1)
+    cutoff = (
+        generated_at.date() - timedelta(days=WINDOW_DAYS - 1)
+        if within_window and generated_at is not None
+        else None
+    )
     rows: list[dict[str, Any]] = []
     for aggregate in aggregates:
         if not isinstance(aggregate, dict) or not isinstance(aggregate.get("dataset_id"), str):
@@ -84,7 +90,10 @@ def _daily_evaluable_rows(daily: Path, *, generated_at: datetime) -> list[dict[s
             continue
         row = evidence | {"dataset_id": aggregate["dataset_id"]}
         observed = parse_time(row.get("observed_at"))
-        if observed is None or not (cutoff <= observed.date() <= generated_at.date()):
+        if observed is None or (
+            cutoff is not None
+            and not (cutoff <= observed.date() <= generated_at.date())
+        ):
             continue
         delta = historical_delta(row)
         if delta is not None:
@@ -150,7 +159,11 @@ def history_end(history: Path, daily: Path | None = None) -> datetime:
             observed = parse_time(row.get("observed_at"))
             if observed is not None and (latest is None or observed > latest):
                 latest = observed
-    for row in _daily_evaluable_rows(daily or history.with_name("history_daily.json"), generated_at=datetime.max.replace(tzinfo=latest.tzinfo if latest else None)):
+    for row in _daily_evaluable_rows(
+        daily or history.with_name("history_daily.json"),
+        generated_at=None,
+        within_window=False,
+    ):
         observed = parse_time(row.get("observed_at"))
         if observed is not None and (latest is None or observed > latest):
             latest = observed
