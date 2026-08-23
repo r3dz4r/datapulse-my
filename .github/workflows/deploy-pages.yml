@@ -178,10 +178,23 @@ jobs:
           fetch_public() {
             local path="$1"
             local output="$2"
+            local attempt status
+            local max_attempts=3
+            local backoff_seconds=1
             mkdir -p "$(dirname "$output")"
-            curl --fail --silent --show-error --proto '=https' \
-              --connect-timeout 10 --max-time 30 \
-              "https://data-pulse.my/$path" --output "$output"
+            for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+              if status="$(curl --fail --silent --show-error --proto '=https' \
+                --connect-timeout 10 --max-time 30 --write-out '%{http_code}' \
+                "https://data-pulse.my/$path" --output "$output")"; then
+                return 0
+              fi
+              rm -f "$output"
+              if [[ ! "$status" =~ ^(000|429|5[0-9]{2})$ || "$attempt" -eq "$max_attempts" ]]; then
+                return 1
+              fi
+              sleep "$backoff_seconds"
+              backoff_seconds=$((backoff_seconds * 2))
+            done
           }
 
           fail() {

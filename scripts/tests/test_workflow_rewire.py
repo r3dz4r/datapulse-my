@@ -182,6 +182,14 @@ while (( $# > 0 )); do
 done
 path="${url#https://data-pulse.my/}"
 [[ "$path" == .well-known/* ]] && path="docs/$path"
+if [[ -n "${MOCK_CURL_CALLS:-}" ]]; then
+  printf '%s\n' "$path" >> "$MOCK_CURL_CALLS"
+fi
+if [[ "$path" == "${MOCK_TRANSIENT_PATH:-}" ]] \
+  && [[ "$(grep -Fxc "$path" "$MOCK_CURL_CALLS")" -eq 1 ]]; then
+  printf '503'
+  exit 22
+fi
 [[ "$path" != "$url" && -f "${MOCK_SERVED_ROOT:?}/$path" ]] || {
   printf 'missing %s\n' "$url" >&2
   exit 22
@@ -198,6 +206,8 @@ cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
         PATH=f"{fake_bin}:{environment['PATH']}",
         MOCK_SERVED_ROOT=str(served_root),
         RUNNER_TEMP=str(tmp_path / "runner-temp"),
+        MOCK_TRANSIENT_PATH="attestations/2026-08-23/sample.json",
+        MOCK_CURL_CALLS=str(tmp_path / "curl-calls"),
     )
     completed = subprocess.run(
         ["bash", "-c", _fast_path_preservation_script()],
@@ -209,6 +219,9 @@ cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
     )
 
     assert completed.returncode == 0, completed.stderr
+    assert (tmp_path / "curl-calls").read_text(encoding="utf-8").splitlines().count(
+        "attestations/2026-08-23/sample.json"
+    ) == 2
     preserved = tmp_path / "runner-temp/preserved-attestations"
     assert (preserved / "attestations/latest/binding.json").read_bytes() == (
         served_root / "attestations/latest/binding.json"
@@ -245,6 +258,54 @@ def test_fast_path_fails_closed_when_served_binding_cannot_be_preserved() -> Non
     assert "cp -R health deltas record-evidence badges samples data _site/" in workflow
     assert "rm -rf _site/attestations" in workflow
     assert 'cp -R "$RUNNER_TEMP/preserved-attestations/attestations" _site/' in workflow
+
+
+@pytest.mark.parametrize("failure_mode", ["404", "503"])
+def test_fast_path_stops_before_artifact_assembly_when_served_proof_fetch_fails(
+    tmp_path: Path, failure_mode: str
+) -> None:
+    """A missing or exhausted served proof must abort preservation before assembly."""
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_curl = fake_bin / "curl"
+    fake_curl.write_text(
+        """#!/usr/bin/env bash
+set -Eeuo pipefail
+url=""
+while (( $# > 0 )); do
+  case "$1" in
+    --output|--write-out) shift 2 ;;
+    *) url="$1"; shift ;;
+  esac
+done
+printf '%s\\n' "${url#https://data-pulse.my/}" >> "${MOCK_CURL_CALLS:?}"
+printf '%s\\n' "${MOCK_FAILURE_STATUS:?}"
+exit 22
+""",
+        encoding="utf-8",
+    )
+    fake_curl.chmod(0o755)
+
+    environment = os.environ.copy()
+    environment.update(
+        PATH=f"{fake_bin}:{environment['PATH']}",
+        RUNNER_TEMP=str(tmp_path / "runner-temp"),
+        MOCK_FAILURE_STATUS=failure_mode,
+        MOCK_CURL_CALLS=str(tmp_path / "curl-calls"),
+    )
+    completed = subprocess.run(
+        ["bash", "-c", _fast_path_preservation_script()],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode != 0
+    assert not (tmp_path / "runner-temp/preserved-attestations/attestations/latest/index.json").exists()
+    expected_attempts = 1 if failure_mode == "404" else 3
+    assert len((tmp_path / "curl-calls").read_text(encoding="utf-8").splitlines()) == expected_attempts
 
 
 def test_deploy_pages_publishes_and_verifies_trends_and_drift() -> None:
