@@ -1,6 +1,6 @@
 {
   "schema": "datapulse/v1/dataset-drift",
-  "generated_at": "2026-08-23T06:11:54Z",
+  "generated_at": "2026-08-23T06:25:42Z",
   "window_days": 30,
   "methodology": {
     "shape_signal": "adjacent versioned shape_hash transitions",
@@ -22,9 +22,9 @@
   "summary": {
     "datasets_total": 389,
     "by_verdict": {
-      "drift_detected": 0,
+      "drift_detected": 2,
       "record_count_drift": 0,
-      "stable": 230,
+      "stable": 228,
       "insufficient_data": 159
     }
   },
@@ -8504,8 +8504,8 @@
     {
       "dataset_id": "bnm_interest_rate",
       "name": "Interest Rates: Banking Institutions",
-      "verdict": "stable",
-      "shape_changed_recently": false,
+      "verdict": "drift_detected",
+      "shape_changed_recently": true,
       "shape_change_count": 0,
       "last_shape_change_at": null,
       "shape_sample_count": 1,
@@ -8522,14 +8522,14 @@
       "column_count": 8,
       "expected_record_count": 3,
       "record_count_within_tolerance": true,
-      "content_shape_changed_latest": false,
-      "reason": "no structural transition or record-count tolerance failure was detected"
+      "content_shape_changed_latest": true,
+      "reason": "latest health snapshot reports a structural comparison change"
     },
     {
       "dataset_id": "bnm_interest_volume",
       "name": "Interest Volume: Banking Institutions",
-      "verdict": "stable",
-      "shape_changed_recently": false,
+      "verdict": "drift_detected",
+      "shape_changed_recently": true,
       "shape_change_count": 0,
       "last_shape_change_at": null,
       "shape_sample_count": 1,
@@ -8546,8 +8546,8 @@
       "column_count": 9,
       "expected_record_count": 3,
       "record_count_within_tolerance": true,
-      "content_shape_changed_latest": false,
-      "reason": "no structural transition or record-count tolerance failure was detected"
+      "content_shape_changed_latest": true,
+      "reason": "latest health snapshot reports a structural comparison change"
     },
     {
       "dataset_id": "bnm_interbank_swap",
