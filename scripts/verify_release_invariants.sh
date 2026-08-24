@@ -525,32 +525,47 @@ PY
 
 check_url_file() {
   local label="$1" url_file="$2"
-  local attempt=0 failures=""
-  # Retry the whole batch up to 3 times with backoff. GH Pages CDN
-  # propagation can momentarily 5xx right after a deploy; a transient
-  # 502/503 on any URL should not fail the release.
-  while (( attempt < 3 )); do
-    if failures="$(xargs -r -n1 -P12 bash -c '
-      url="$1"
-      code="$(curl --location --silent --show-error --retry 2 \
-        --connect-timeout 10 --max-time 30 --output /dev/null \
-        --write-out "%{http_code}" "$url")" || exit 1
-      case "$code" in
-        2??|3??|400|401|403|405|406|415) ;;
-        *) printf "%s %s\n" "$code" "$url" >&2; exit 1 ;;
-      esac
-    ' _ < "$url_file")"; then
-      printf '%s URLs: PASS (%s checked)\n' "$label" "$(wc -l < "$url_file")"
-      return 0
-    fi
-    attempt=$((attempt + 1))
-    if (( attempt < 3 )); then
-      printf '%s URL validation transient failure (attempt %s/3), retrying...\n' "$label" "$attempt" >&2
-      sleep 5
-    fi
-  done
-  printf '%s URL validation failed\n' "$label" >&2
-  printf '%s\n' "$failures" >&2
+  local url code curl_rc curl_detail failures="" checked=0
+  local probe_dir status_file error_file
+  probe_dir="$(mktemp -d)"
+
+  while IFS= read -r url || [[ -n "$url" ]]; do
+    [[ -z "$url" ]] && continue
+    checked=$((checked + 1))
+    status_file="$probe_dir/status"
+    error_file="$probe_dir/error"
+    : > "$status_file"
+    : > "$error_file"
+    curl_rc=0
+    curl --fail --location --silent --show-error \
+      --retry 2 --retry-delay 5 --retry-all-errors \
+      --connect-timeout 10 --max-time 30 --output /dev/null \
+      --write-out "%{http_code}" "$url" \
+      > "$status_file" 2> "$error_file" || curl_rc=$?
+    code="$(<"$status_file")"
+    curl_detail="$(<"$error_file")"
+
+    case "$code" in
+      2??|3??|400|401|403|405|406|415) ;;
+      *)
+        if [[ -z "$code" ]]; then
+          code="curl exit $curl_rc"
+        fi
+        failures+="${label}: HTTP ${code}: ${url}"
+        if [[ -n "$curl_detail" ]]; then
+          failures+="; curl: ${curl_detail}"
+        fi
+        failures+=$'\n'
+        ;;
+    esac
+  done < "$url_file"
+
+  rm -rf "$probe_dir"
+  if [[ -z "$failures" ]]; then
+    printf '%s URLs: PASS (%s checked)\n' "$label" "$checked"
+    return 0
+  fi
+  printf '%s URL validation failed\n%s' "$label" "$failures" >&2
   exit 1
 }
 

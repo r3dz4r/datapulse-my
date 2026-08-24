@@ -188,6 +188,98 @@ exit 22
     assert (tmp_path / "result.txt").read_text(encoding="utf-8") == "propagated\n"
 
 
+def _url_audit_function() -> str:
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+    match = re.search(r"(?ms)^check_url_file\(\) \{\n.*?^\}\n", script)
+    assert match is not None
+    return match.group(0)
+
+
+def _run_url_audit(tmp_path: Path, statuses: str, *, label: str = "JSON-LD/report") -> subprocess.CompletedProcess[str]:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_curl = fake_bin / "curl"
+    fake_curl.write_text(
+        """#!/usr/bin/env bash
+set -euo pipefail
+url="${@: -1}"
+state_file="${MOCK_CURL_STATE:?}/$(printf '%s' "$url" | sha256sum | cut -d' ' -f1)"
+attempt=0
+if [[ -f "$state_file" ]]; then
+  attempt=$(<"$state_file")
+fi
+attempt=$((attempt + 1))
+printf '%s\n' "$attempt" > "$state_file"
+read -r -a statuses <<< "${MOCK_CURL_STATUSES:?}"
+has_all_errors=false
+has_retry_delay=false
+for arg in "$@"; do
+  [[ "$arg" == "--retry-all-errors" ]] && has_all_errors=true
+  [[ "$arg" == "--retry-delay" ]] && has_retry_delay=true
+done
+if [[ "$has_all_errors" == true && "$has_retry_delay" == true && "${#statuses[@]}" -gt 1 ]]; then
+  printf '%s\n' "${statuses[1]}"
+else
+  printf '%s\n' "${statuses[0]:-500}"
+fi
+printf 'fake curl diagnostic for %s (attempt %s)\n' "$url" "$attempt" >&2
+""",
+        encoding="utf-8",
+    )
+    fake_curl.chmod(0o755)
+
+    url_file = tmp_path / "urls.txt"
+    exact_url = "https://example.invalid/data/report.json"
+    url_file.write_text(f"{exact_url}\n", encoding="utf-8")
+    state_dir = tmp_path / "state"
+    state_dir.mkdir()
+    environment = os.environ.copy()
+    environment["PATH"] = f"{fake_bin}:{environment['PATH']}"
+    environment["MOCK_CURL_STATE"] = str(state_dir)
+    environment["MOCK_CURL_STATUSES"] = statuses
+    command = "\n".join(
+        (
+            "set -Eeuo pipefail",
+            _url_audit_function(),
+            f"check_url_file {label!r} {str(url_file)!r}",
+        )
+    )
+    return subprocess.run(
+        ["bash", "-c", command],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+@pytest.mark.parametrize("transient_status", ["404", "503"])
+def test_url_audit_recovers_transient_pages_errors_and_records_curl_retry_flags(
+    tmp_path: Path, transient_status: str
+) -> None:
+    completed = _run_url_audit(tmp_path, f"{transient_status} 200")
+
+    assert completed.returncode == 0, completed.stderr
+    assert "JSON-LD/report URLs: PASS (1 checked)" in completed.stdout
+
+
+def test_url_audit_reports_exact_url_status_and_stderr_on_persistent_failure(tmp_path: Path) -> None:
+    completed = _run_url_audit(tmp_path, "404 404 404")
+
+    assert completed.returncode != 0
+    assert "JSON-LD/report URL validation failed" in completed.stderr
+    assert "HTTP 404: https://example.invalid/data/report.json" in completed.stderr
+    assert "fake curl diagnostic" in completed.stderr
+
+
+@pytest.mark.parametrize("status", ["406", "415"])
+def test_url_audit_accepts_documented_non_success_statuses(tmp_path: Path, status: str) -> None:
+    completed = _run_url_audit(tmp_path, status)
+
+    assert completed.returncode == 0, completed.stderr
+
+
 def test_gate_8_fetches_public_methodology_path() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
     assert 'fetch "health-methodology.html" "health-methodology.html"' in script
