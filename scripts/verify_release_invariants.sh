@@ -11,11 +11,6 @@ if (( $# > 0 )); then
   exit 2
 fi
 
-base_url="${DATAPULSE_RELEASE_BASE_URL:-https://data-pulse.my}"
-base_url="${base_url%/}"
-canonical_base_url="${DATAPULSE_CANONICAL_BASE_URL:-https://data-pulse.my}"
-canonical_base_url="${canonical_base_url%/}"
-
 for command in curl jq python3; do
   command -v "$command" >/dev/null 2>&1 || {
     printf 'Required command not found: %s\n' "$command" >&2
@@ -23,16 +18,25 @@ for command in curl jq python3; do
   }
 done
 
+configured_base_url="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)"
+base_url="${DATAPULSE_RELEASE_BASE_URL:-$configured_base_url}"
+base_url="${base_url%/}"
+canonical_base_url="${DATAPULSE_CANONICAL_BASE_URL:-$configured_base_url}"
+canonical_base_url="${canonical_base_url%/}"
+
 work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
 
 fetch() {
   local name="$1" path="$2"
+  local url status_file error_file curl_rc code curl_detail
   mkdir -p "$(dirname "$work_dir/$name")"
   if $local_mode; then
-    if [[ "$path" == ".well-known/"* ]]; then
-      path="docs/$path"
-    fi
+    case "$path" in
+      index.html|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)
+        path="docs/$path"
+        ;;
+    esac
     if [[ "$path" == "health/latest.json" && -n "${DATAPULSE_LOCAL_HEALTH_FILE:-}" ]]; then
       cp "$DATAPULSE_LOCAL_HEALTH_FILE" "$work_dir/$name"
     else
@@ -40,10 +44,33 @@ fetch() {
     fi
     return
   fi
-  curl --fail --location --silent --show-error \
-    --retry 12 --retry-delay 15 --retry-all-errors \
-    --connect-timeout 10 --max-time 30 \
-    "$base_url/$path" --output "$work_dir/$name"
+
+  url="$base_url/$path"
+  if [[ -z "$path" || "$path" == /docs/* || "$path" == docs/* ]]; then
+    printf 'PAGES_FETCH_FAILURE surface=%s final=invalid_path url=%s curl_detail=served paths must not use docs/\n' \
+      "$name" "$url" >&2
+    return 1
+  fi
+
+  status_file="$work_dir/$name.status"
+  error_file="$work_dir/$name.curl"
+  : > "$status_file"
+  : > "$error_file"
+  curl_rc=0
+  curl --fail --location --silent --show-error --proto '=https' \
+    --retry 3 --retry-delay 5 --retry-all-errors \
+    --connect-timeout 10 --max-time 30 --write-out '%{http_code}' \
+    "$url" --output "$work_dir/$name" > "$status_file" 2> "$error_file" || curl_rc=$?
+  code="$(<"$status_file")"
+  curl_detail="$(<"$error_file")"
+  if [[ "$curl_rc" -ne 0 || ! "$code" =~ ^2[0-9]{2}$ ]]; then
+    [[ -n "$code" ]] || code="curl_exit_${curl_rc}"
+    curl_detail="${curl_detail//$'\n'/\\n}"
+    curl_detail="${curl_detail//$'\r'/\\r}"
+    printf 'PAGES_FETCH_FAILURE surface=%s final=HTTP_%s url=%s curl_detail=%s\n' \
+      "$name" "$code" "$url" "${curl_detail:-none}" >&2
+    return 1
+  fi
 }
 
 fetch_optional() {
@@ -54,9 +81,7 @@ fetch_optional() {
     cp "$path" "$work_dir/$name"
     return 0
   fi
-  curl --fail --location --silent --show-error \
-    --connect-timeout 10 --max-time 30 \
-    "$base_url/$path" --output "$work_dir/$name"
+  fetch "$name" "$path"
 }
 
 fetch manifest.json datapulse.json
@@ -72,9 +97,9 @@ fetch mcp.json mcp.json
 # Generated and served modes still fetch and validate the current proof below.
 if ! $local_mode; then
   fetch release-verification.md release-verification.md
-  fetch index.html docs/index.html
-  fetch npra.html docs/npra.html
-  fetch buyer-api-reference.md docs/buyer-api-reference.md
+  fetch index.html index.html
+  fetch npra.html npra.html
+  fetch buyer-api-reference.md buyer-api-reference.md
 fi
 fetch llms.txt llms.txt
 fetch attestation-keys.json .well-known/datapulse-probe-keys.json
@@ -583,6 +608,8 @@ else
   if (( url_audit_failed )); then
     exit 1
   fi
+  url_audit_total="$(sed '/^$/d' "$work_dir/artifact-urls.txt" "$work_dir/llms-urls.txt" | wc -l)"
+  printf 'Dynamic served URL audit: PASS (%s total; accepted statuses=2xx,3xx,400,401,403,405,406,415)\n' "$url_audit_total"
 fi
 
 printf 'Post-deploy release invariants: PASS\n'

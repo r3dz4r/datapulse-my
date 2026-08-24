@@ -40,7 +40,7 @@ def test_local_gate_does_not_require_current_release_proof() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
 
     proof_fetch = re.search(
-        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n  fetch index\.html docs/index\.html\n  fetch npra\.html docs/npra\.html\n  fetch buyer-api-reference\.md docs/buyer-api-reference\.md\n^fi\n",
+        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n  fetch index\.html index\.html\n  fetch npra\.html npra\.html\n  fetch buyer-api-reference\.md buyer-api-reference\.md\n^fi\n",
         script,
     )
 
@@ -81,9 +81,10 @@ def test_local_gate_skips_only_generated_p5b_surface_parity() -> None:
         script,
     )
     assert generated_fetches is not None
-    assert 'fetch index.html docs/index.html' in generated_fetches.group(0)
-    assert 'fetch npra.html docs/npra.html' in generated_fetches.group(0)
-    assert 'fetch buyer-api-reference.md docs/buyer-api-reference.md' in generated_fetches.group(0)
+    assert 'fetch index.html index.html' in generated_fetches.group(0)
+    assert 'fetch npra.html npra.html' in generated_fetches.group(0)
+    assert 'fetch buyer-api-reference.md buyer-api-reference.md' in generated_fetches.group(0)
+    assert not re.search(r'^\s*fetch\s+\S+\s+/?docs/', generated_fetches.group(0), re.MULTILINE)
 
     p5b_validation = re.search(
         r"(?ms)^if ! \$local_mode; then\npython3 - \"\$work_dir\" <<'PY'.*?^fi\n\nPYTHONPATH=mcp",
@@ -149,9 +150,10 @@ while (( $# > 0 )); do
   esac
 done
 printf '404\n' >> "${MOCK_CURL_ATTEMPTS:?}"
-if [[ "$retry" == 12 && "$delay" == 15 && "$all_errors" == true ]]; then
+if [[ "$retry" == 3 && "$delay" == 5 && "$all_errors" == true ]]; then
   printf '200\n' >> "$MOCK_CURL_ATTEMPTS"
   printf 'propagated\n' > "$output"
+  printf '200'
   exit 0
 fi
 exit 22
@@ -186,6 +188,45 @@ exit 22
     assert completed.returncode == 0, completed.stderr
     assert attempts.read_text(encoding="utf-8").splitlines() == ["404", "200"]
     assert (tmp_path / "result.txt").read_text(encoding="utf-8") == "propagated\n"
+
+
+def test_served_fetch_rejects_docs_prefix_and_reports_persistent_failure(tmp_path: Path) -> None:
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+    match = re.search(r"(?ms)^fetch\(\) \{\n.*?^\}\n", script)
+    assert match is not None
+
+    command = "\n".join(
+        (
+            "set -Eeuo pipefail",
+            "local_mode=false",
+            f"work_dir={tmp_path!s}",
+            'base_url="https://example.invalid"',
+            match.group(0),
+            'fetch dashboard "docs/index.html"',
+        )
+    )
+    completed = subprocess.run(
+        ["bash", "-c", command], cwd=ROOT, capture_output=True, text=True, check=False
+    )
+
+    assert completed.returncode != 0
+    assert "PAGES_FETCH_FAILURE surface=dashboard final=invalid_path" in completed.stderr
+    assert "url=https://example.invalid/docs/index.html" in completed.stderr
+
+
+def test_local_mode_maps_canonical_pages_to_docs_sources() -> None:
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+
+    assert 'index.html|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)' in script
+    assert 'path="docs/$path"' in script
+
+
+def test_served_fetch_call_sites_never_request_docs_paths() -> None:
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+    fetch_calls = re.findall(r"(?m)^\s*fetch\s+\S+\s+(\S+)", script)
+
+    assert fetch_calls
+    assert not [path for path in fetch_calls if path.lstrip('"').startswith("docs/")]
 
 
 def _url_audit_function() -> str:

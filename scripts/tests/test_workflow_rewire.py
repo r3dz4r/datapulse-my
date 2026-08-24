@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import subprocess
+import textwrap
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -31,6 +32,109 @@ DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-pages.yml"
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def _post_deploy_invariants_step() -> str:
+    workflow = _read(DEPLOY_WORKFLOW)
+    return workflow.split("      - name: Post-deploy release invariants\n", 1)[1]
+
+
+def test_post_deploy_fetches_use_one_bounded_diagnostic_helper() -> None:
+    step = _post_deploy_invariants_step()
+
+    assert step.count("curl ") == 1
+    assert "fetch() {" in step
+    for flag in ("--proto '=https'", "--retry 3", "--retry-delay 5", "--retry-all-errors", "--connect-timeout 10", "--max-time 30"):
+        assert flag in step
+    assert "PAGES_FETCH_FAILURE surface=%s final=HTTP_%s url=%s curl_detail=%s" in step
+    assert '"${curl_detail:-none}"' in step
+    assert 'fetch "dashboard" "${website_origin}/"' in step
+    assert 'fetch "MCP advertisement" "${website_origin}/mcp.json"' in step
+    assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in step
+    assert "/docs/" not in step
+
+
+def test_llms_owned_blocks_do_not_publish_legacy_or_docs_urls() -> None:
+    contents = _read(ROOT / "llms.txt")
+    owned_blocks = re.findall(r"(?ms)<!-- BEGIN [^>]+ -->(.*?)<!-- END [^>]+ -->", contents)
+
+    assert owned_blocks
+    owned = "\n".join(owned_blocks)
+    assert "github.io" not in owned
+    assert not re.search(r"https?://[^/]+/docs(?:/|\b)", owned)
+
+
+def _post_deploy_fetch_helper() -> str:
+    match = re.search(r"(?ms)^          fetch\(\) \{\n.*?^          \}\n", _post_deploy_invariants_step())
+    assert match is not None
+    return textwrap.dedent(match.group(0))
+
+
+def _run_post_deploy_fetch(
+    tmp_path: Path, statuses: str, *, url: str = "https://example.invalid/health/latest.json"
+) -> subprocess.CompletedProcess[str]:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_curl = fake_bin / "curl"
+    fake_curl.write_text(
+        """#!/usr/bin/env bash
+set -euo pipefail
+output=""
+retry=false
+while (( $# > 0 )); do
+  case "$1" in
+    --output) output="$2"; shift 2 ;;
+    --retry) retry=true; shift 2 ;;
+    --retry-delay|--connect-timeout|--max-time|--write-out) shift 2 ;;
+    *) shift ;;
+  esac
+done
+read -r -a statuses <<< "${MOCK_CURL_STATUSES:?}"
+status="${statuses[0]}"
+if [[ "$retry" == true && "${#statuses[@]}" -gt 1 ]]; then
+  status="${statuses[1]}"
+fi
+printf 'fake curl detail status=%s\\n' "$status" >&2
+printf '%s' "$status"
+if [[ "$status" =~ ^2[0-9]{2}$ ]]; then
+  printf 'ok\\n' > "$output"
+  exit 0
+fi
+exit 22
+""",
+        encoding="utf-8",
+    )
+    fake_curl.chmod(0o755)
+    environment = os.environ.copy()
+    environment.update(PATH=f"{fake_bin}:{environment['PATH']}", MOCK_CURL_STATUSES=statuses)
+    command = "\n".join(("set -Eeuo pipefail", _post_deploy_fetch_helper(), f'fetch dashboard {url!r} {str(tmp_path / "out")!r}'))
+    return subprocess.run(["bash", "-c", command], cwd=ROOT, env=environment, capture_output=True, text=True, check=False)
+
+
+@pytest.mark.parametrize("transient_status", ["404", "503"])
+def test_post_deploy_fetch_recovers_transient_pages_status(tmp_path: Path, transient_status: str) -> None:
+    completed = _run_post_deploy_fetch(tmp_path, f"{transient_status} 200")
+
+    assert completed.returncode == 0, completed.stderr
+    assert (tmp_path / "out").read_text(encoding="utf-8") == "ok\n"
+
+
+@pytest.mark.parametrize("status", ["404", "503"])
+def test_post_deploy_fetch_keeps_persistent_pages_status_fatal(tmp_path: Path, status: str) -> None:
+    completed = _run_post_deploy_fetch(tmp_path, status)
+
+    assert completed.returncode != 0
+    assert f"PAGES_FETCH_FAILURE surface=dashboard final=HTTP_{status}" in completed.stderr
+    assert "url=https://example.invalid/health/latest.json" in completed.stderr
+    assert f"fake curl detail status={status}" in completed.stderr
+
+
+@pytest.mark.parametrize("url", ["", "http://example.invalid/not-https", "not-a-url"])
+def test_post_deploy_fetch_rejects_malformed_url(tmp_path: Path, url: str) -> None:
+    completed = _run_post_deploy_fetch(tmp_path, "200", url=url)
+
+    assert completed.returncode != 0
+    assert "PAGES_FETCH_FAILURE surface=dashboard final=invalid_url" in completed.stderr
 
 
 def _exec_start(unit: str) -> str:
