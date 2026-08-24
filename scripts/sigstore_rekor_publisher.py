@@ -18,6 +18,7 @@ import logging
 import os
 import subprocess
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Any, Protocol
 from urllib.parse import urlsplit
@@ -37,11 +38,48 @@ class PublishError(RuntimeError):
     """Publishing did not produce independently verifiable evidence."""
 
 
+class WitnessState(str, Enum):
+    """Internal lifecycle state; it is never a public trust claim."""
+
+    PENDING = "pending"
+    PUBLISHED = "published"
+    VERIFIED = "verified"
+    FAILED = "failed"
+    OPERATOR_RECONCILIATION_REQUIRED = "operator-reconciliation-required"
+
+
+class WitnessOutcome(str, Enum):
+    """Transport/result classification for the replaceable external lane."""
+
+    TRANSIENT_TRANSPORT = "transient_transport"
+    CONFIRMED_REJECTION = "confirmed_rejection"
+    SUCCESSFUL_INCLUSION = "successful_inclusion"
+    AMBIGUOUS = "ambiguous"
+
+
+@dataclass(frozen=True)
+class WitnessStatus:
+    """Evidence actually established by one non-retrying witness attempt."""
+
+    state: WitnessState
+    artifact_sha256: str | None
+    run_id: str
+    artifact_signed: bool = False
+    bundle_locally_verified: bool = False
+    rekor_inclusion_witnessed: bool = False
+    source_truth_verified: bool = False
+    operator_reconciliation_required: bool = False
+    outcome: WitnessOutcome | None = None
+
+
 @dataclass(frozen=True)
 class ProcessResult:
     returncode: int
     stdout: str
     stderr: str
+    # A runner that can distinguish a POST result must provide this.  A
+    # subprocess failure alone cannot prove that no publication occurred.
+    outcome: str = "ambiguous"
 
 
 class Runtime(Protocol):
@@ -155,6 +193,7 @@ class Publisher:
         self.run_id = run_id
         self.cosign = cosign
         self.runtime = runtime or SubprocessRuntime()
+        self.last_status = WitnessStatus(WitnessState.PENDING, None, run_id)
 
     def _config(self) -> tuple[str, str, str, frozenset[str], str, str]:
         rekor = _read_json(self.rekor_config, "Rekor")
@@ -196,7 +235,11 @@ class Publisher:
             raise PublishError("canonical artifact is unavailable")
         manifest = _read_json(self.run_manifest, "run manifest")
         digest = _sha256(self.artifact)
-        if manifest.get("run_id") != self.run_id or manifest.get("artifact_sha256") != digest:
+        if (
+            manifest.get("run_id") != self.run_id
+            or manifest.get("artifact_sha256") != digest
+            or self.run_id != f"health-{digest}"
+        ):
             raise PublishError("canonical artifact does not match run manifest")
         return digest
 
@@ -208,12 +251,92 @@ class Publisher:
         if self.bundle_out.exists() or self.reference_out.exists():
             raise PublishError("additive bundle/reference output already exists")
 
-    def _run_or_fail(self, command: list[str], phase: str) -> None:
+    def _run_or_fail(
+        self,
+        command: list[str],
+        phase: str,
+        digest: str,
+        *,
+        artifact_signed: bool = False,
+        bundle_locally_verified: bool = False,
+        is_post_attempt: bool = False,
+    ) -> None:
         result = self.runtime.run(command)
         if result.returncode != 0:
             # Do not include stdout/stderr: KMS providers can place credential
             # context in diagnostics.
+            try:
+                outcome = WitnessOutcome(result.outcome)
+            except ValueError:
+                outcome = WitnessOutcome.AMBIGUOUS
+            ambiguous = is_post_attempt and outcome is WitnessOutcome.AMBIGUOUS
+            self.last_status = WitnessStatus(
+                WitnessState.OPERATOR_RECONCILIATION_REQUIRED if ambiguous else WitnessState.FAILED,
+                digest,
+                self.run_id,
+                artifact_signed=artifact_signed,
+                bundle_locally_verified=bundle_locally_verified,
+                operator_reconciliation_required=ambiguous,
+                outcome=outcome,
+            )
             raise PublishError(f"Cosign {phase} failed")
+
+    def _mark_reconciliation_required(
+        self,
+        digest: str,
+        *,
+        artifact_signed: bool = False,
+        bundle_locally_verified: bool = False,
+    ) -> None:
+        self.last_status = WitnessStatus(
+            WitnessState.OPERATOR_RECONCILIATION_REQUIRED,
+            digest,
+            self.run_id,
+            artifact_signed=artifact_signed,
+            bundle_locally_verified=bundle_locally_verified,
+            operator_reconciliation_required=True,
+            outcome=WitnessOutcome.AMBIGUOUS,
+        )
+
+    def _write_reference(self, digest: str, rekor: dict[str, Any]) -> None:
+        _atomic_json(self.reference_out, {
+            "artifact": "health/latest.json",
+            "artifact_sha256": digest,
+            "bundle": self.bundle_out.name,
+            "run_id": self.run_id,
+            "schema": "datapulse/v1/sigstore-rekor-reference",
+            "rekor": rekor,
+        })
+
+    def _verify_persisted_outputs(self, digest: str, log_ids: frozenset[str], trusted_root: str, verification_key: str) -> None:
+        """Read final paths back; a temporary bundle is never witness evidence."""
+        try:
+            rekor = self._bundle_digest_and_proof(self.bundle_out, digest, log_ids)
+            self._run_or_fail(
+                [self.cosign, "verify-blob", "--bundle", str(self.bundle_out), "--trusted-root", trusted_root, "--key", verification_key, str(self.artifact)],
+                "read-after-write verification",
+                digest,
+                artifact_signed=True,
+                bundle_locally_verified=True,
+                is_post_attempt=True,
+            )
+            reference = _read_json(self.reference_out, "Sigstore reference")
+            expected = {
+                "artifact": "health/latest.json",
+                "artifact_sha256": digest,
+                "bundle": self.bundle_out.name,
+                "run_id": self.run_id,
+                "schema": "datapulse/v1/sigstore-rekor-reference",
+                "rekor": rekor,
+            }
+            if reference != expected:
+                raise PublishError("read-after-write reference does not match verified bundle")
+        except Exception:
+            # Once additive outputs exist, even a classified verification
+            # failure can follow a successful publication.  Preserve the
+            # evidence and require operator reconciliation.
+            self._mark_reconciliation_required(digest, artifact_signed=True, bundle_locally_verified=True)
+            raise
 
     @staticmethod
     def _bundle_digest_and_proof(bundle_path: Path, expected_digest: str, log_ids: frozenset[str]) -> dict[str, Any]:
@@ -251,18 +374,14 @@ class Publisher:
             "signed_entry_timestamp": True,
         }
 
-    def publish(self) -> None:
-        endpoint, proxy, trusted_root, log_ids, cosign_config, verification_key = self._config()
+    def publish(self) -> WitnessStatus:
+        _endpoint, _proxy, trusted_root, log_ids, cosign_config, verification_key = self._config()
         digest = self._fresh_digest()
+        self.last_status = WitnessStatus(WitnessState.PENDING, digest, self.run_id)
         self._assert_output_paths()
-        try:
-            self.runtime.get(endpoint)
-            if proxy != endpoint:
-                self.runtime.get(proxy)
-        except OSError as exc:
-            raise PublishError("private Rekor endpoint unavailable") from exc
         version = self.runtime.run([self.cosign, "version"])
         if version.returncode != 0 or COSIGN_VERSION not in version.stdout:
+            self.last_status = WitnessStatus(WitnessState.FAILED, digest, self.run_id)
             raise PublishError("required Cosign v3.1.3 is unavailable")
 
         signing = _read_json(self.signing_config, "signing")
@@ -270,21 +389,35 @@ class Publisher:
         temporary_bundle.unlink(missing_ok=True)
         try:
             # v3.1.3 uses a signing-config rather than a --rekor-url override.
-            self._run_or_fail([self.cosign, "sign-blob", "--bundle", str(temporary_bundle), "--signing-config", cosign_config, "--key", signing["key_ref"], "--trusted-root", trusted_root, "--yes", str(self.artifact)], "signing")
+            self._run_or_fail(
+                [self.cosign, "sign-blob", "--bundle", str(temporary_bundle), "--signing-config", cosign_config, "--key", signing["key_ref"], "--trusted-root", trusted_root, "--yes", str(self.artifact)],
+                "signing",
+                digest,
+                is_post_attempt=True,
+            )
+            self.last_status = WitnessStatus(WitnessState.PENDING, digest, self.run_id, artifact_signed=True)
             if _sha256(self.artifact) != digest:
                 raise PublishError("canonical artifact changed while publishing")
-            rekor = self._bundle_digest_and_proof(temporary_bundle, digest, log_ids)
-            self._run_or_fail([self.cosign, "verify-blob", "--bundle", str(temporary_bundle), "--trusted-root", trusted_root, "--key", verification_key, str(self.artifact)], "verification")
+            self._bundle_digest_and_proof(temporary_bundle, digest, log_ids)
+            self._run_or_fail([self.cosign, "verify-blob", "--bundle", str(temporary_bundle), "--trusted-root", trusted_root, "--key", verification_key, str(self.artifact)], "local verification", digest, artifact_signed=True)
+            self.last_status = WitnessStatus(WitnessState.PENDING, digest, self.run_id, artifact_signed=True, bundle_locally_verified=True)
             if _sha256(self.artifact) != digest:
                 raise PublishError("canonical artifact changed while publishing")
             os.replace(temporary_bundle, self.bundle_out)
-            artifact_ref = "health/latest.json" if self.run_id == f"health-{digest}" else str(self.artifact)
-            _atomic_json(self.reference_out, {"artifact": artifact_ref, "artifact_sha256": digest, "bundle": self.bundle_out.name, "run_id": self.run_id, "schema": "datapulse/v1/sigstore-rekor-reference", "rekor": rekor})
+            rekor = self._bundle_digest_and_proof(self.bundle_out, digest, log_ids)
+            self._write_reference(digest, rekor)
+            self.last_status = WitnessStatus(WitnessState.PUBLISHED, digest, self.run_id, artifact_signed=True, bundle_locally_verified=True)
+            self._verify_persisted_outputs(digest, log_ids, trusted_root, verification_key)
+            self.last_status = WitnessStatus(WitnessState.VERIFIED, digest, self.run_id, artifact_signed=True, bundle_locally_verified=True, rekor_inclusion_witnessed=True, outcome=WitnessOutcome.SUCCESSFUL_INCLUSION)
             LOG.info("published additive Sigstore bundle for run_id=%s", self.run_id)
+            return self.last_status
         except Exception:
             temporary_bundle.unlink(missing_ok=True)
-            self.bundle_out.unlink(missing_ok=True)
-            self.reference_out.unlink(missing_ok=True)
+            if self.last_status.state is not WitnessState.OPERATOR_RECONCILIATION_REQUIRED:
+                self.bundle_out.unlink(missing_ok=True)
+                self.reference_out.unlink(missing_ok=True)
+            if self.last_status.state is WitnessState.PENDING:
+                self.last_status = WitnessStatus(WitnessState.FAILED, digest, self.run_id)
             raise
 
 

@@ -8,7 +8,15 @@ from typing import Any
 
 import pytest
 
-from scripts.sigstore_rekor_publisher import ConfigError, ProcessResult, PublishError, Publisher, publisher_from_args
+from scripts.sigstore_rekor_publisher import (
+    ConfigError,
+    ProcessResult,
+    PublishError,
+    Publisher,
+    WitnessOutcome,
+    WitnessState,
+    publisher_from_args,
+)
 
 
 LOG_ID = "a" * 64
@@ -75,8 +83,15 @@ def publisher(tmp_path: Path, runtime: FakeRuntime | None = None) -> tuple[Publi
 
 def test_success_writes_additive_bundle_and_reference_with_shared_digest(tmp_path: Path) -> None:
     subject, bundle, reference = publisher(tmp_path)
-    subject.publish()
+    result = subject.publish()
     assert bundle.exists() and reference.exists()
+    assert result.state is WitnessState.VERIFIED
+    assert result.artifact_signed is True
+    assert result.bundle_locally_verified is True
+    assert result.rekor_inclusion_witnessed is True
+    assert result.source_truth_verified is False
+    assert result.operator_reconciliation_required is False
+    assert result.outcome is WitnessOutcome.SUCCESSFUL_INCLUSION
     assert json.loads(reference.read_text())["artifact_sha256"] == hashlib.sha256(b"daily evidence").hexdigest()
     assert json.loads(reference.read_text())["artifact"] == "health/latest.json"
     assert json.loads(reference.read_text())["bundle"] == "bundle.json"
@@ -150,6 +165,19 @@ def test_rejects_stale_or_mismatched_run_identity_before_network(tmp_path: Path)
     assert subject.runtime.gets == []  # type: ignore[attr-defined]
 
 
+def test_rejects_a_run_id_that_is_not_bound_to_the_canonical_digest(tmp_path: Path) -> None:
+    source, manifest, rekor, signing, bundle = config_files(tmp_path)
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    manifest.write_text(json.dumps({"run_id": "other-run", "artifact_sha256": digest}), encoding="utf-8")
+    runtime = FakeRuntime()
+    subject = Publisher(source, bundle, tmp_path / "reference.json", manifest, rekor, signing, "other-run", "/opt/cosign", runtime)
+
+    with pytest.raises(PublishError, match="run manifest"):
+        subject.publish()
+
+    assert runtime.calls == []
+
+
 def test_rejects_artifact_mutation_after_signing(tmp_path: Path) -> None:
     runtime = FakeRuntime()
     subject, bundle, reference = publisher(tmp_path, runtime)
@@ -164,12 +192,14 @@ def test_rejects_artifact_mutation_after_signing(tmp_path: Path) -> None:
     assert not bundle.exists() and not reference.exists()
 
 
-def test_unavailable_endpoint_fails_before_cosign(tmp_path: Path) -> None:
+def test_private_endpoint_preflight_is_not_part_of_the_witness_contract(tmp_path: Path) -> None:
     runtime = FakeRuntime(); runtime.get = lambda url: (_ for _ in ()).throw(OSError("private-secret"))  # type: ignore[method-assign]
-    subject, _bundle, _reference = publisher(tmp_path, runtime)
-    with pytest.raises(PublishError, match="endpoint unavailable"):
-        subject.publish()
-    assert runtime.calls == []
+    subject, bundle, reference = publisher(tmp_path, runtime)
+    assert subject.last_status.state is WitnessState.PENDING
+    result = subject.publish()
+    assert result.state is WitnessState.VERIFIED
+    assert bundle.exists() and reference.exists()
+    assert runtime.gets == []
 
 
 def test_cosign_error_is_not_retried_or_leaked(tmp_path: Path) -> None:
@@ -177,7 +207,63 @@ def test_cosign_error_is_not_retried_or_leaked(tmp_path: Path) -> None:
     with pytest.raises(PublishError) as error: subject.publish()
     assert "private-signing-secret" not in str(error.value)
     assert len([call for call in runtime.calls if call[1] == "sign-blob"]) == 1
+    assert subject.last_status.state is WitnessState.OPERATOR_RECONCILIATION_REQUIRED
+    assert subject.last_status.operator_reconciliation_required is True
+    assert subject.last_status.outcome is WitnessOutcome.AMBIGUOUS
     assert not bundle.exists() and not reference.exists()
+
+
+@pytest.mark.parametrize(
+    ("outcome", "expected_state", "requires_reconciliation"),
+    [
+        ("transient_transport", WitnessState.FAILED, False),
+        ("confirmed_rejection", WitnessState.FAILED, False),
+        ("ambiguous", WitnessState.OPERATOR_RECONCILIATION_REQUIRED, True),
+    ],
+)
+def test_failed_witness_attempts_are_classified_without_retry(
+    tmp_path: Path, outcome: str, expected_state: WitnessState, requires_reconciliation: bool
+) -> None:
+    runtime = FakeRuntime(fail_sign=True)
+    subject, bundle, reference = publisher(tmp_path, runtime)
+    original = runtime.run
+
+    def fail_with_classification(command: list[str]) -> ProcessResult:
+        result = original(command)
+        if command[1] == "sign-blob":
+            return ProcessResult(result.returncode, result.stdout, result.stderr, outcome)
+        return result
+
+    runtime.run = fail_with_classification  # type: ignore[method-assign]
+    with pytest.raises(PublishError):
+        subject.publish()
+
+    assert subject.last_status is not None
+    assert subject.last_status.state is expected_state
+    assert subject.last_status.operator_reconciliation_required is requires_reconciliation
+    assert subject.last_status.outcome is WitnessOutcome(outcome)
+    assert len([call for call in runtime.calls if call[1] == "sign-blob"]) == 1
+    assert not bundle.exists() and not reference.exists()
+
+
+def test_read_after_write_rejects_a_reference_that_no_longer_matches_the_bundle(tmp_path: Path) -> None:
+    runtime = FakeRuntime()
+    subject, bundle, reference = publisher(tmp_path, runtime)
+    original_atomic = subject._write_reference
+
+    def write_mismatched_reference(digest: str, rekor: dict[str, Any]) -> None:
+        original_atomic(digest, rekor)
+        document = json.loads(reference.read_text(encoding="utf-8"))
+        document["run_id"] = "health-" + "0" * 64
+        reference.write_text(json.dumps(document), encoding="utf-8")
+
+    subject._write_reference = write_mismatched_reference  # type: ignore[method-assign]
+    with pytest.raises(PublishError, match="read-after-write"):
+        subject.publish()
+    assert subject.last_status.state is WitnessState.OPERATOR_RECONCILIATION_REQUIRED
+    assert subject.last_status.operator_reconciliation_required is True
+    assert subject.last_status.outcome is WitnessOutcome.AMBIGUOUS
+    assert bundle.exists() and reference.exists()
 
 
 @pytest.mark.parametrize("bundle", [valid_bundle(b"daily evidence", verificationMaterial={"tlogEntries": [{"logId": {"keyId": LOG_ID}, "logIndex": 3}]}), valid_bundle(b"daily evidence", verificationMaterial={"tlogEntries": [{"logId": {"keyId": "0" * 64}, "logIndex": 3, "inclusionProof": {"x": 1}}]})])
