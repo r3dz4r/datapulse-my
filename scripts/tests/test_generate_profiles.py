@@ -237,6 +237,8 @@ def _stage_source(tmp_path: Path) -> Path:
         "### Tools\n\n"
         "| Tool | Use when |\n|---|---|\n"
         "<!-- END mcp-tools -->\n\n"
+        "<!-- BEGIN public-artifacts -->\n"
+        "<!-- END public-artifacts -->\n\n"
         "<!-- BEGIN featured-datasets -->\nold featured\n<!-- END featured-datasets -->\n",
         encoding="utf-8",
     )

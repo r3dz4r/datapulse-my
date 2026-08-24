@@ -12,6 +12,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.public_surface_generation import GenerationError, load_json, load_public_surfaces, publish_text_outputs, replace_owned_block
 
 
+PUBLIC_SURFACE_LINKS = {
+    "/": ("Live dashboard", "Human-readable dataset status cards with embedded health and manifest data."),
+    "/landing.html": ("Landing page", "Public DataPulse MY overview."),
+    "/npra.html": ("NPRA page", "Public NPRA dataset surface."),
+    "/health-methodology.html": ("Health methodology", "Published status and freshness methodology."),
+    "/buyer-api-reference.md": ("Buyer API reference", "Read-only buyer API contract and examples."),
+    "/llms.txt": ("LLM index", "Machine-readable discovery index for agents."),
+    "/datapulse.json": ("Dataset manifest", "Full machine-readable dataset manifest."),
+    "/datapulse.schema.json": ("Manifest JSON Schema", "Machine-readable schema for the dataset manifest."),
+    "/health/latest.json": ("Latest health snapshot", "Current published dataset health evidence."),
+    "/health/trends.json": ("Published trends", "Per-dataset freshness trend and reliability evidence."),
+    "/health/drift.json": ("Published drift", "Published structural and record-count drift evidence."),
+    "/health/reconciliation.json": ("Published reconciliation", "Cross-source publication differences for human review."),
+    "/feed.xml": ("RSS feed", "Dataset health changes with status-tagged entries."),
+    "/changelog.json": ("Changelog", "Machine-readable release-by-release summary."),
+    "/agent.json": ("Agent manifest", "Machine-readable agent capability manifest."),
+    "/mcp.json": ("MCP advertisement", "Machine-readable MCP server advertisement."),
+    "/data/jsonld/catalog.json": ("JSON-LD catalog", "Schema.org JSON-LD dataset catalog."),
+    "/badges/": ("Status badges", "Per-dataset SVG health badges."),
+}
+
+
 def generate(root: Path, *, check: bool = False, validate_only: bool = False) -> bool:
     """Render catalogue summary and curated datasets without broad substitutions."""
     config = load_public_surfaces(root)
@@ -22,6 +44,19 @@ def generate(root: Path, *, check: bool = False, validate_only: bool = False) ->
     missing = [dataset_id for dataset_id in config["featured_dataset_ids"] if dataset_id not in by_id]
     if missing:
         raise GenerationError(f"featured dataset id(s) missing from manifest: {', '.join(missing)}")
+    configured_paths = set(config["pages"]) | set(config["artifacts"])
+    missing_paths = set(PUBLIC_SURFACE_LINKS) - configured_paths
+    if missing_paths:
+        raise GenerationError(
+            "required llms public surface path(s) absent from public-surfaces.json: "
+            + ", ".join(sorted(missing_paths))
+        )
+    unknown_paths = configured_paths - set(PUBLIC_SURFACE_LINKS)
+    if unknown_paths:
+        raise GenerationError(
+            "public-surfaces.json path(s) have no llms.txt rendering: "
+            + ", ".join(sorted(unknown_paths))
+        )
     path = root / "llms.txt"
     try:
         original = path.read_text(encoding="utf-8")
@@ -39,8 +74,13 @@ def generate(root: Path, *, check: bool = False, validate_only: bool = False) ->
         f"{by_id[dataset_id].get('licence', 'Licence not stated')}; {by_id[dataset_id].get('refresh_frequency', 'cadence not stated')}."
         for dataset_id in config["featured_dataset_ids"]
     )
+    public_artifacts = "\n".join(
+        f"- [{PUBLIC_SURFACE_LINKS[path][0]}]({website}{path}): {PUBLIC_SURFACE_LINKS[path][1]}"
+        for path in [*config["pages"], *config["artifacts"]]
+    )
     updated = replace_owned_block(original, "catalog-summary", summary)
     updated = replace_owned_block(updated, "featured-datasets", featured)
+    updated = replace_owned_block(updated, "public-artifacts", public_artifacts)
     if validate_only:
         return False
     return publish_text_outputs({path: updated}, check=check)

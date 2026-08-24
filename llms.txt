@@ -95,35 +95,6 @@ transport filtering.
 
 The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 16 read-only tools over the 389-dataset catalogue. `trust_verdict` joins published signed facts and unsigned score rows; `verify_attestation` performs L1 signature/key checks and optional L2 tag-anchor replay. Deployment and service details for `datapulse-mcp` are in [`mcp-deploy.md`](https://data-pulse.my/mcp-deploy.md).
 
-## Manifest
-
-- [datapulse.json](https://r3dz4r.github.io/datapulse-my/datapulse.json): Full manifest — official URL, licence, attribution, refresh cadence, geographic coverage, namespace, and health-report link. Machine-readable.
-- [JSON Schema](https://r3dz4r.github.io/datapulse-my/datapulse.schema.json): Machine-readable schema for the manifest.
-
-## Health
-
-- [Latest health snapshot](https://r3dz4r.github.io/datapulse-my/health/latest.json): Every dataset's current status, HTTP status, Last-Modified metadata, parsed content freshness date, freshness signal source, record counts, and check time. Machine-readable.
-- [Published trends](https://r3dz4r.github.io/datapulse-my/health/trends.json): Per-dataset freshness trends, OLS slopes, publish-on-time reliability, and anomaly sampling evidence. Machine-readable.
-- [Published drift](https://r3dz4r.github.io/datapulse-my/health/drift.json): Structural fingerprint, column-count, and record-count drift evidence. Machine-readable.
-- [Published reconciliation](https://r3dz4r.github.io/datapulse-my/health/reconciliation.json): Cross-source publication differences for human review; not proof either source is wrong. Machine-readable.
-- [RSS feed](https://r3dz4r.github.io/datapulse-my/feed.xml): Dataset health changes with status-tagged entries and RFC 822 publication dates.
-
-## Trust posture
-
-DataPulse MY distinguishes between:
-
-- HTTP reachability (URL returns any response)
-- Browser-required access (Camofox needed to render the page)
-- Schema validity (record count within expected tolerance)
-- Freshness (Last-Modified header or parsed content date within declared cadence)
-- Discontinued data (`discontinued`) when the source has stopped publishing and the data is frozen at its last known content date; this is a publisher decision, not a freshness failure
-- Unknown freshness (`unknown-freshness`) when HTTP and content shape pass but neither freshness signal is available
-- Reference data (`reference`) when a versioned lookup table is reachable and countable but date-based freshness does not apply
-
-A time-series dataset is marked `fresh` only when the applicable direct-access,
-schema, and freshness signals pass. See `health/latest.json` `_trust_summary` for the current
-distribution and the count of signals that could not be extracted.
-
 ## Datasets
 
 <!-- BEGIN featured-datasets -->
@@ -144,8 +115,41 @@ distribution and the count of signals that could not be extracted.
 - [OpenDOSM Annual Real GDP by State & Sector](https://data-pulse.my/data/dosm_gdp_state_real_supply.md): Creative Commons Attribution 4.0; annual.
 <!-- END featured-datasets -->
 
-## Optional
+## Current public artifacts
 
-- [Live dashboard](https://r3dz4r.github.io/datapulse-my/): Human-readable dataset status cards with embedded health and manifest data.
-- [GitHub repository](https://github.com/r3dz4r/datapulse-my): Source, samples, contribution guide, and project documentation.
-- [Status badges](https://r3dz4r.github.io/datapulse-my/badges/): Per-dataset SVG health badges.
+<!-- BEGIN public-artifacts -->
+- [Live dashboard](https://data-pulse.my/): Human-readable dataset status cards with embedded health and manifest data.
+- [Landing page](https://data-pulse.my/landing.html): Public DataPulse MY overview.
+- [NPRA page](https://data-pulse.my/npra.html): Public NPRA dataset surface.
+- [Health methodology](https://data-pulse.my/health-methodology.html): Published status and freshness methodology.
+- [Buyer API reference](https://data-pulse.my/buyer-api-reference.md): Read-only buyer API contract and examples.
+- [LLM index](https://data-pulse.my/llms.txt): Machine-readable discovery index for agents.
+- [Dataset manifest](https://data-pulse.my/datapulse.json): Full machine-readable dataset manifest.
+- [Manifest JSON Schema](https://data-pulse.my/datapulse.schema.json): Machine-readable schema for the dataset manifest.
+- [Latest health snapshot](https://data-pulse.my/health/latest.json): Current published dataset health evidence.
+- [Published trends](https://data-pulse.my/health/trends.json): Per-dataset freshness trend and reliability evidence.
+- [Published drift](https://data-pulse.my/health/drift.json): Published structural and record-count drift evidence.
+- [Published reconciliation](https://data-pulse.my/health/reconciliation.json): Cross-source publication differences for human review.
+- [RSS feed](https://data-pulse.my/feed.xml): Dataset health changes with status-tagged entries.
+- [Changelog](https://data-pulse.my/changelog.json): Machine-readable release-by-release summary.
+- [Agent manifest](https://data-pulse.my/agent.json): Machine-readable agent capability manifest.
+- [MCP advertisement](https://data-pulse.my/mcp.json): Machine-readable MCP server advertisement.
+- [JSON-LD catalog](https://data-pulse.my/data/jsonld/catalog.json): Schema.org JSON-LD dataset catalog.
+- [Status badges](https://data-pulse.my/badges/): Per-dataset SVG health badges.
+<!-- END public-artifacts -->
+
+## Trust posture
+
+DataPulse MY distinguishes between:
+
+- HTTP reachability (URL returns any response)
+- Browser-required access (Camofox needed to render the page)
+- Schema validity (record count within expected tolerance)
+- Freshness (Last-Modified header or parsed content date within declared cadence)
+- Discontinued data (`discontinued`) when the source has stopped publishing and the data is frozen at its last known content date; this is a publisher decision, not a freshness failure
+- Unknown freshness (`unknown-freshness`) when HTTP and content shape pass but neither freshness signal is available
+- Reference data (`reference`) when a versioned lookup table is reachable and countable but date-based freshness does not apply
+
+A time-series dataset is marked `fresh` only when the applicable direct-access,
+schema, and freshness signals pass. See `health/latest.json` `_trust_summary` for the current
+distribution and the count of signals that could not be extracted.

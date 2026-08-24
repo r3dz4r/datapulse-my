@@ -530,7 +530,11 @@ check_url_file() {
   probe_dir="$(mktemp -d)"
 
   while IFS= read -r url || [[ -n "$url" ]]; do
-    [[ -z "$url" ]] && continue
+    if [[ -z "$url" || ! "$url" =~ ^https://[^[:space:]]+$ ]]; then
+      failures+="URL_AUDIT_FAILURE label=${label} final=invalid_url url=${url:-<empty>} curl_detail=invalid URL input"
+      failures+=$'\n'
+      continue
+    fi
     checked=$((checked + 1))
     status_file="$probe_dir/status"
     error_file="$probe_dir/error"
@@ -551,10 +555,9 @@ check_url_file() {
         if [[ -z "$code" ]]; then
           code="curl exit $curl_rc"
         fi
-        failures+="${label}: HTTP ${code}: ${url}"
-        if [[ -n "$curl_detail" ]]; then
-          failures+="; curl: ${curl_detail}"
-        fi
+        curl_detail="${curl_detail//$'\n'/\\n}"
+        curl_detail="${curl_detail//$'\r'/\\r}"
+        failures+="URL_AUDIT_FAILURE label=${label} final=HTTP_${code} url=${url} curl_detail=${curl_detail:-none}"
         failures+=$'\n'
         ;;
     esac
@@ -566,7 +569,7 @@ check_url_file() {
     return 0
   fi
   printf '%s URL validation failed\n%s' "$label" "$failures" >&2
-  exit 1
+  return 1
 }
 
 if $local_mode; then
@@ -574,8 +577,12 @@ if $local_mode; then
   printf 'Local JSON-LD/report files: PASS (%s checked)\n' "$dataset_count"
   printf 'Local llms.txt format: PASS\n'
 else
-  check_url_file "JSON-LD/report" "$work_dir/artifact-urls.txt"
-  check_url_file "llms.txt" "$work_dir/llms-urls.txt"
+  url_audit_failed=0
+  check_url_file "JSON-LD/report" "$work_dir/artifact-urls.txt" || url_audit_failed=1
+  check_url_file "llms.txt" "$work_dir/llms-urls.txt" || url_audit_failed=1
+  if (( url_audit_failed )); then
+    exit 1
+  fi
 fi
 
 printf 'Post-deploy release invariants: PASS\n'

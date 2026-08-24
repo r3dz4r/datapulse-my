@@ -24,7 +24,22 @@ def _write_public_surface_fixture(root: Path, featured_dataset_id: str) -> None:
                 "repository": "https://github.com/r3dz4r/datapulse-my",
             },
             "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html"],
-            "artifacts": ["/buyer-api-reference.md", "/llms.txt"],
+            "artifacts": [
+                "/buyer-api-reference.md",
+                "/llms.txt",
+                "/datapulse.json",
+                "/datapulse.schema.json",
+                "/health/latest.json",
+                "/health/trends.json",
+                "/health/drift.json",
+                "/health/reconciliation.json",
+                "/feed.xml",
+                "/changelog.json",
+                "/agent.json",
+                "/mcp.json",
+                "/data/jsonld/catalog.json",
+                "/badges/",
+            ],
             "featured_dataset_ids": [featured_dataset_id],
         }) + "\n",
         encoding="utf-8",
@@ -73,6 +88,10 @@ def _write_fixture(root: Path, *, count: int = 3, include_mcp_line: bool = True)
         "<!-- BEGIN featured-datasets -->\n",
         "- stale featured dataset\n",
         "<!-- END featured-datasets -->\n",
+        "<!-- BEGIN public-artifacts -->\n",
+        "- [Stale manifest](https://r3dz4r.github.io/datapulse-my/datapulse.json)\n",
+        "- [Stale docs path](https://data-pulse.my/docs/health/latest.json)\n",
+        "<!-- END public-artifacts -->\n",
     ]
     if not include_mcp_line:
         lines[-1] = "<!-- END wrong-marker -->\n"
@@ -100,6 +119,11 @@ def test_updates_count_from_manifest(tmp_path: Path) -> None:
     assert "> DataPulse MY publishes a machine-readable manifest of 3 official datasets." in output
     assert "Unrelated content stays byte-identical." in output
     assert "dataset-0" in output
+    artifacts = output.split("<!-- BEGIN public-artifacts -->", 1)[1].split("<!-- END public-artifacts -->", 1)[0]
+    assert "https://data-pulse.my/datapulse.json" in artifacts
+    assert "https://data-pulse.my/health/latest.json" in artifacts
+    assert "r3dz4r.github.io" not in artifacts
+    assert "/docs/" not in artifacts
 
 
 def test_idempotent_second_run(tmp_path: Path) -> None:
@@ -135,9 +159,12 @@ def test_removes_per_dataset_bullets_absent_from_manifest(tmp_path: Path) -> Non
                 "- [Current](https://example.test/data/current.md)",
                 "- [Legacy](https://example.test/data/legacy.md)",
                 "- [Stale](https://example.test/data/removed.md)",
-                "- stale featured dataset",
-                "<!-- END featured-datasets -->",
-                "",
+                    "- stale featured dataset",
+                    "<!-- END featured-datasets -->",
+                    "<!-- BEGIN public-artifacts -->",
+                    "- stale public artifact",
+                    "<!-- END public-artifacts -->",
+                    "",
             ]
         ),
         encoding="utf-8",
@@ -159,6 +186,33 @@ def test_missing_pattern_fails(tmp_path: Path) -> None:
 
     assert result.returncode != 0
     assert "marker" in result.stderr
+
+
+def test_missing_public_artifact_marker_fails(tmp_path: Path) -> None:
+    _write_fixture(tmp_path)
+    path = tmp_path / "llms.txt"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace("<!-- END public-artifacts -->", "<!-- END wrong-artifacts -->"),
+        encoding="utf-8",
+    )
+
+    result = _run(tmp_path)
+
+    assert result.returncode != 0
+    assert "marker" in result.stderr
+
+
+def test_missing_declared_artifact_fails(tmp_path: Path) -> None:
+    _write_fixture(tmp_path)
+    config_path = tmp_path / "config/public-surfaces.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["artifacts"].remove("/feed.xml")
+    config_path.write_text(json.dumps(config) + "\n", encoding="utf-8")
+
+    result = _run(tmp_path)
+
+    assert result.returncode != 0
+    assert "/feed.xml" in result.stderr
 
 
 def test_rejects_invalid_root(tmp_path: Path) -> None:

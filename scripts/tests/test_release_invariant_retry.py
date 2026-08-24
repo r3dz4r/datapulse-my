@@ -195,7 +195,7 @@ def _url_audit_function() -> str:
     return match.group(0)
 
 
-def _run_url_audit(tmp_path: Path, statuses: str, *, label: str = "JSON-LD/report") -> subprocess.CompletedProcess[str]:
+def _run_url_audit(tmp_path: Path, statuses: str, *, label: str = "JSON-LD/report", url_content: str | None = None) -> subprocess.CompletedProcess[str]:
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
     fake_curl = fake_bin / "curl"
@@ -230,7 +230,7 @@ printf 'fake curl diagnostic for %s (attempt %s)\n' "$url" "$attempt" >&2
 
     url_file = tmp_path / "urls.txt"
     exact_url = "https://example.invalid/data/report.json"
-    url_file.write_text(f"{exact_url}\n", encoding="utf-8")
+    url_file.write_text(url_content if url_content is not None else f"{exact_url}\n", encoding="utf-8")
     state_dir = tmp_path / "state"
     state_dir.mkdir()
     environment = os.environ.copy()
@@ -269,8 +269,16 @@ def test_url_audit_reports_exact_url_status_and_stderr_on_persistent_failure(tmp
 
     assert completed.returncode != 0
     assert "JSON-LD/report URL validation failed" in completed.stderr
-    assert "HTTP 404: https://example.invalid/data/report.json" in completed.stderr
+    assert "URL_AUDIT_FAILURE label=JSON-LD/report final=HTTP_404 url=https://example.invalid/data/report.json" in completed.stderr
     assert "fake curl diagnostic" in completed.stderr
+
+
+@pytest.mark.parametrize("url_content", ["\n", "not-a-url\n", "ftp://example.invalid/report.json\n"])
+def test_url_audit_rejects_empty_or_malformed_input(tmp_path: Path, url_content: str) -> None:
+    completed = _run_url_audit(tmp_path, "200", url_content=url_content)
+
+    assert completed.returncode != 0
+    assert "invalid URL input" in completed.stderr
 
 
 @pytest.mark.parametrize("status", ["406", "415"])
