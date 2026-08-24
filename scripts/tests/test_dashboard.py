@@ -1,9 +1,12 @@
 import json
+import re
 import subprocess
 import sys
 from collections import Counter
 from html.parser import HTMLParser
 from pathlib import Path
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,6 +23,13 @@ CANONICAL_KEYS = [
     "transport",
     "weather",
 ]
+
+# Measured 2026-08-24 baseline: 1,188,958 homepage bytes and 943,505
+# embedded-data bytes. These temporary headroom ceilings should be revised
+# deliberately after a later dashboard component-breakdown optimization.
+MAX_HOMEPAGE_BYTES = 1_248_406
+MAX_EMBEDDED_DATA_BYTES = 1_000_115
+EMBEDDED_DATA_BLOCK = re.compile(rb'<script id="embedded-data">.*?</script>', re.DOTALL)
 
 
 class CategoryFilterParser(HTMLParser):
@@ -56,6 +66,20 @@ def generate_filters(manifest: Path, output: Path) -> dict:
     return json.loads(output.read_text(encoding="utf-8"))
 
 
+def assert_dashboard_payload_within_budget(document: bytes) -> None:
+    embedded_data = EMBEDDED_DATA_BLOCK.search(document)
+    assert embedded_data is not None, "generated dashboard is missing embedded-data block"
+
+    assert len(document) <= MAX_HOMEPAGE_BYTES, (
+        f"homepage HTML is {len(document)} bytes; maximum is {MAX_HOMEPAGE_BYTES} bytes"
+    )
+    embedded_bytes = len(embedded_data.group(0))
+    assert embedded_bytes <= MAX_EMBEDDED_DATA_BYTES, (
+        "embedded-data block is "
+        f"{embedded_bytes} bytes; maximum is {MAX_EMBEDDED_DATA_BYTES} bytes"
+    )
+
+
 def test_fixture_generates_all_count_and_zero_canonical_counts(tmp_path: Path) -> None:
     result = generate_filters(FIXTURE_MANIFEST, tmp_path / "dashboard-filters.json")
 
@@ -84,6 +108,31 @@ def test_namespace_order_is_all_then_alphabetical(tmp_path: Path) -> None:
     result = generate_filters(ROOT / "datapulse.json", tmp_path / "dashboard-filters.json")
 
     assert [row["key"] for row in result["namespaces"]] == CANONICAL_KEYS
+
+
+def test_generated_dashboard_payload_stays_within_budget() -> None:
+    document = (ROOT / "docs/index.html").read_bytes()
+
+    assert_dashboard_payload_within_budget(document)
+
+
+@pytest.mark.parametrize("budget", ["homepage", "embedded-data"])
+def test_dashboard_payload_budget_rejects_synthetic_overage(
+    tmp_path: Path, budget: str
+) -> None:
+    if budget == "homepage":
+        fixture = b'<script id="embedded-data"></script>' + b"x" * MAX_HOMEPAGE_BYTES
+        maximum = MAX_HOMEPAGE_BYTES
+    else:
+        prefix = b'<script id="embedded-data">'
+        suffix = b"</script>"
+        fixture = prefix + b"x" * (MAX_EMBEDDED_DATA_BYTES - len(prefix) - len(suffix) + 1) + suffix
+        maximum = MAX_EMBEDDED_DATA_BYTES
+    fixture_path = tmp_path / "index.html"
+    fixture_path.write_bytes(fixture)
+
+    with pytest.raises(AssertionError, match=rf"actual|maximum|{maximum}"):
+        assert_dashboard_payload_within_budget(fixture_path.read_bytes())
 
 
 def test_dashboard_filter_container_is_populated_only_at_runtime() -> None:
