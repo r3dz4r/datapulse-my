@@ -154,32 +154,52 @@ def test_stale_cache_is_used_when_refresh_fails(tmp_path: Path) -> None:
     assert fetched_at == "2026-08-10T08:00:00Z"
 
 
-def test_isolated_build_forwards_verification_time_to_metrics_loader(
+def test_isolated_build_reuses_stale_cache_without_network(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    readme = tmp_path / "README.md"
-    manifest = tmp_path / "datapulse.json"
-    output = tmp_path / "sections.json"
     cache = tmp_path / "metrics.json"
-    readme.write_text("", encoding="utf-8")
-    manifest.write_text(json.dumps({"datasets": []}), encoding="utf-8")
-    captured: dict[str, object] = {}
+    cache.write_text(
+        json.dumps(
+            {
+                "fetched_at": "2026-08-10T08:00:00Z",
+                "datasets": [{"id": "stale", "views": 10}],
+            }
+        ),
+        encoding="utf-8",
+    )
 
-    def fake_load_metrics(path: Path, **kwargs: object) -> tuple[list[dict], str]:
-        captured["path"] = path
-        captured.update(kwargs)
-        return [], "2026-08-23T10:06:30Z"
+    def unexpected_network(_request: object, timeout: int) -> object:
+        pytest.fail(f"network called with timeout={timeout}")
 
     monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
     monkeypatch.setenv(
         "DATAPULSE_REPRODUCIBILITY_VERIFY_AT", "2026-08-23T10:06:30Z"
     )
-    monkeypatch.setattr(sections, "load_metrics", fake_load_metrics)
 
-    sections.generate(readme, manifest, output, cache)
+    metrics, fetched_at = sections.load_metrics(
+        cache,
+        now=dt.datetime(2026, 8, 23, 10, 6, 30, tzinfo=dt.UTC),
+        opener=unexpected_network,
+    )
 
-    assert captured["path"] == cache
-    assert captured["now"] == dt.datetime(2026, 8, 23, 10, 6, 30, tzinfo=dt.UTC)
+    assert metrics == [{"id": "stale", "views": 10}]
+    assert fetched_at == "2026-08-10T08:00:00Z"
+
+
+@pytest.mark.parametrize("cache_contents", [None, "not-json", json.dumps({"datasets": []})])
+def test_isolated_build_fails_when_cache_is_missing_or_malformed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cache_contents: str | None,
+) -> None:
+    cache = tmp_path / "metrics.json"
+    if cache_contents is not None:
+        cache.write_text(cache_contents, encoding="utf-8")
+
+    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+
+    with pytest.raises(sections.GenerationError, match="isolated reproducibility"):
+        sections.load_metrics(cache)
 
 
 @pytest.mark.parametrize("value", [None, "not-a-timestamp", "2026-08-23T10:06:30"])

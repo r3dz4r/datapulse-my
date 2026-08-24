@@ -145,6 +145,14 @@ def load_metrics(
     opener: Callable[..., object] = urllib.request.urlopen,
 ) -> tuple[list[dict], str]:
     """Load metrics from a one-hour cache, refreshing with stale fallback."""
+    if os.environ.get("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD") == "1":
+        cached = _read_cache(cache_path)
+        if cached is None:
+            raise GenerationError(
+                "isolated reproducibility build requires a valid metrics cache"
+            )
+        return cached[0], cached[1]
+
     now = (now or dt.datetime.now(dt.UTC)).astimezone(dt.UTC)
     cached = _read_cache(cache_path)
     if cached and now - cached[2] < CACHE_TTL:
