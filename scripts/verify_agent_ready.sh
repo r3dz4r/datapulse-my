@@ -33,13 +33,27 @@ manifest_file="$work_dir/datapulse.json"
 health_file="$work_dir/health.json"
 trap 'rm -rf "$work_dir"' EXIT
 
+public_fetch_retry_count=12
+public_fetch_retry_delay=15
+
+fetch_public() {
+  local label="$1" url="$2" output="$3"
+  if ! curl --fail --location --silent --show-error \
+    --retry "$public_fetch_retry_count" --retry-delay "$public_fetch_retry_delay" --retry-all-errors \
+    --connect-timeout 10 --max-time 30 \
+    "$url" --output "$output"; then
+    printf 'Failed to fetch %s from %s after %s attempts\n' \
+      "$label" "$url" "$((public_fetch_retry_count + 1))" >&2
+    return 1
+  fi
+}
+
 if $local_mode; then
   printf 'Reading local agent index: %s/llms.txt\n' "$agent_root"
   cp "$agent_root/llms.txt" "$llms_file"
 else
   printf 'Fetching agent index: %s/llms.txt\n' "$base_url"
-  curl --fail --location --silent --show-error \
-    "$base_url/llms.txt" --output "$llms_file"
+  fetch_public 'agent index' "$base_url/llms.txt" "$llms_file"
 fi
 
 if ! discovered_urls="$(python3 - "$llms_file" <<'PY'
@@ -97,9 +111,9 @@ if $local_mode; then
   cp "$agent_root/health/latest.json" "$health_file"
 else
   printf 'Following manifest link: %s\n' "$manifest_url"
-  curl --fail --location --silent --show-error "$manifest_url" --output "$manifest_file"
+  fetch_public 'manifest' "$manifest_url" "$manifest_file"
   printf 'Following health link: %s\n' "$health_url"
-  curl --fail --location --silent --show-error "$health_url" --output "$health_file"
+  fetch_public 'health snapshot' "$health_url" "$health_file"
 fi
 
 if ! jq -e '

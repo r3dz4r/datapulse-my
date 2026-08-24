@@ -71,3 +71,90 @@ output="$(
 grep -Fq '2 manifest datasets match 2 health records' <<<"$output"
 grep -Fq 'Fresh datasets (status=fresh): 1/2' <<<"$output"
 printf 'verify_agent_ready local derived-count test: PASS\n'
+
+public_fixture_root="$fixture_root/public"
+mkdir -p "$public_fixture_root/health"
+cp "$fixture_root/llms.txt" "$public_fixture_root/llms.txt"
+cp "$fixture_root/datapulse.json" "$public_fixture_root/datapulse.json"
+cp "$fixture_root/health/latest.json" "$public_fixture_root/health/latest.json"
+
+fake_bin="$fixture_root/bin"
+mkdir -p "$fake_bin"
+cat > "$fake_bin/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+output=""
+url=""
+retry=""
+delay=""
+all_errors=false
+while (( $# > 0 )); do
+  case "$1" in
+    --retry) retry="$2"; shift 2 ;;
+    --retry-delay) delay="$2"; shift 2 ;;
+    --retry-all-errors) all_errors=true; shift ;;
+    --connect-timeout|--max-time) shift 2 ;;
+    --output) output="$2"; shift 2 ;;
+    *) url="$1"; shift ;;
+  esac
+done
+[[ "$retry" == "12" && "$delay" == "15" && "$all_errors" == true ]]
+path="${url#https://example.invalid/}"
+for ((attempt = 1; attempt <= retry + 1; attempt++)); do
+  printf '%s %s\n' "$path" "$attempt" >> "$MOCK_CURL_LOG"
+  if [[ "$MOCK_CURL_MODE" != "fail" && "$attempt" -ge 3 ]]; then
+    break
+  fi
+  if (( attempt == 1 )); then printf '404\n' >&2; else printf '503\n' >&2; fi
+done
+if [[ "$MOCK_CURL_MODE" == "fail" ]]; then
+  exit 22
+fi
+case "$path" in
+  llms.txt) cp "$MOCK_CURL_FIXTURE_ROOT/llms.txt" "$output" ;;
+  datapulse.json) cp "$MOCK_CURL_FIXTURE_ROOT/datapulse.json" "$output" ;;
+  health/latest.json) cp "$MOCK_CURL_FIXTURE_ROOT/health/latest.json" "$output" ;;
+  *) exit 1 ;;
+esac
+EOF
+chmod +x "$fake_bin/curl"
+
+retry_state="$fixture_root/retry-state"
+retry_log="$fixture_root/retry.log"
+mkdir -p "$retry_state"
+retry_output="$(
+  PATH="$fake_bin:$PATH" \
+    MOCK_CURL_FIXTURE_ROOT="$public_fixture_root" \
+    MOCK_CURL_LOG="$retry_log" \
+    MOCK_CURL_STATE_DIR="$retry_state" \
+    MOCK_CURL_MODE=recover \
+    DATAPULSE_AGENT_ROOT="$fixture_root" \
+    DATAPULSE_AGENT_BASE_URL="https://example.invalid" \
+    bash "$repo_root/scripts/verify_agent_ready.sh"
+)" || {
+  cat "$retry_log" >&2
+  exit 1
+}
+grep -Fq '2 manifest datasets match 2 health records' <<<"$retry_output"
+grep -Fq 'llms.txt 1' "$retry_log"
+grep -Fq 'llms.txt 3' "$retry_log"
+grep -Fq 'datapulse.json 3' "$retry_log"
+grep -Fq 'health/latest.json 3' "$retry_log"
+printf 'verify_agent_ready public 404/503 recovery test: PASS\n'
+
+failure_state="$fixture_root/failure-state"
+failure_log="$fixture_root/failure.log"
+mkdir -p "$failure_state"
+if PATH="$fake_bin:$PATH" \
+  MOCK_CURL_FIXTURE_ROOT="$public_fixture_root" \
+  MOCK_CURL_LOG="$failure_log" \
+  MOCK_CURL_STATE_DIR="$failure_state" \
+  MOCK_CURL_MODE=fail \
+  DATAPULSE_AGENT_BASE_URL="https://example.invalid" \
+  bash "$repo_root/scripts/verify_agent_ready.sh" >"$fixture_root/failure.out" 2>"$fixture_root/failure.err"; then
+  printf 'verify_agent_ready persistent public failure unexpectedly passed\n' >&2
+  exit 1
+fi
+grep -Fq 'Failed to fetch agent index from https://example.invalid/llms.txt after 13 attempts' "$fixture_root/failure.err"
+[[ "$(wc -l < "$failure_log")" -eq 13 ]]
+printf 'verify_agent_ready persistent retry exhaustion test: PASS\n'
