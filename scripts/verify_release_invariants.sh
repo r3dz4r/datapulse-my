@@ -72,6 +72,9 @@ fetch mcp.json mcp.json
 # Generated and served modes still fetch and validate the current proof below.
 if ! $local_mode; then
   fetch release-verification.md release-verification.md
+  fetch index.html docs/index.html
+  fetch npra.html docs/npra.html
+  fetch buyer-api-reference.md docs/buyer-api-reference.md
 fi
 fetch llms.txt llms.txt
 fetch attestation-keys.json .well-known/datapulse-probe-keys.json
@@ -157,6 +160,7 @@ from collections import Counter
 from pathlib import Path
 
 from scripts.gen_record_evidence import validate_record_evidence
+from scripts.public_surface_generation import load_public_surfaces
 
 work = Path(sys.argv[1])
 base = sys.argv[2]
@@ -172,6 +176,11 @@ attestation_scores = json.loads((work / "attestation-scores.json").read_text())
 catalog = json.loads((work / "catalog.json").read_text())
 catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 catalog_graph = json.loads((work / "catalog-graph.json").read_text())
+surfaces = load_public_surfaces(Path.cwd())
+
+assert surfaces["pages"] == ["/", "/landing.html", "/npra.html", "/health-methodology.html"]
+assert "/buyer-api-reference.md" in surfaces["artifacts"]
+website, mcp_origin, api_origin = (surfaces["origins"][key] for key in ("website", "mcp", "api"))
 
 manifest_ids = [row["id"] for row in manifest["datasets"]]
 health_ids = [row["dataset_id"] for row in health["datasets"]]
@@ -395,6 +404,61 @@ with (work / "llms-urls.txt").open("w", encoding="utf-8") as output:
 
 print(f"release metadata assertions: PASS ({expected_count} datasets)")
 PY
+
+if ! $local_mode; then
+python3 - "$work_dir" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+from scripts.public_surface_generation import load_public_surfaces
+
+work = Path(sys.argv[1])
+surfaces = load_public_surfaces(Path.cwd())
+website, mcp_origin, api_origin = (surfaces["origins"][key] for key in ("website", "mcp", "api"))
+health = json.loads((work / "health.json").read_text(encoding="utf-8"))
+manifest = json.loads((work / "manifest.json").read_text(encoding="utf-8"))
+
+def owned(path: Path, marker: str) -> str:
+    source = path.read_text(encoding="utf-8")
+    expression = rf"<!-- BEGIN {re.escape(marker)} -->\n(.*?)\n<!-- END {re.escape(marker)} -->"
+    matches = re.findall(expression, source, flags=re.DOTALL)
+    assert len(matches) == 1, f"{path}: expected one {marker} marker"
+    return matches[0]
+
+dashboard_summary = owned(work / "index.html", "dashboard-summary")
+dashboard_trust = owned(work / "index.html", "dashboard-trust-facts")
+dashboard_browser = owned(work / "index.html", "dashboard-browser-facts")
+assert f'{len(manifest["datasets"])} Malaysian public datasets' in dashboard_summary
+assert f'{website}/health/latest.json' in dashboard_trust
+assert f'{len(manifest["datasets"])} datasets verified' in dashboard_trust
+assert f'{health["_trust_summary"]["by_status"]["browser_dependent"]} of {len(manifest["datasets"])} datasets' in dashboard_browser
+npra_freshness = owned(work / "npra.html", "npra-freshness")
+npra_records = [row for row in health["datasets"] if row["dataset_id"] in {
+    "pharmaceutical_products", "pharmaceutical_importers", "pharmaceutical_manufacturers",
+    "pharmaceutical_wholesalers", "pharmaceutical_products_cancelled",
+    "cosmetic_notifications", "cosmetic_notifications_cancelled", "cosmetics_manufacturers",
+}]
+assert health["checked_at"] in npra_freshness
+assert f'{len(npra_records)} datasets' in npra_freshness
+assert f'{sum(row["status"] == "fresh" for row in npra_records)} fresh' in npra_freshness
+assert f'{sum(row["status"] == "stale" for row in npra_records)} stale' in npra_freshness
+assert f'{mcp_origin}/mcp' in owned(work / "npra.html", "npra-connect")
+assert website in owned(work / "npra.html", "npra-surfaces")
+npra_source = (work / "npra.html").read_text(encoding="utf-8")
+assert f"{api_origin}/api/v1/paddle/redeem" in npra_source
+assert f"{api_origin}/api/v1/keys/me" in npra_source
+buyer_blocks = "\n".join(
+    owned(work / "buyer-api-reference.md", marker) for marker in (
+        "buyer-api-host", "buyer-api-quickstart", "buyer-api-limits",
+        "buyer-api-endpoints", "buyer-api-pagination",
+    )
+)
+assert api_origin in buyer_blocks
+print("P5B generated surface assertions: PASS")
+PY
+fi
 
 PYTHONPATH=mcp python3 - "$work_dir/mcp.json" "$work_dir/llms.txt" health.schema.json agent.json <<'PY'
 import asyncio

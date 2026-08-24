@@ -457,8 +457,9 @@ def test_checkout_shell_is_safe_idempotent_and_preserves_existing_token() -> Non
     from scripts.embed_dashboard_data import _npra_checkout_shell
 
     fake_token = "test_public_</script>&_token"
-    output = _npra_checkout_shell("<main></main>", fake_token)
-    preserved = _npra_checkout_shell(output)
+    api_origin = "https://api.data-pulse.my"
+    output = _npra_checkout_shell("<main></main>", api_origin, fake_token)
+    preserved = _npra_checkout_shell(output, api_origin)
     assert preserved.count("<!-- NPRA-PADDLE-CHECKOUT -->") == 1
     assert "\\u003c/script\\u003e\\u0026" in output
     assert output.count("Paddle.Initialize({ token, eventCallback })") == 1
@@ -526,7 +527,7 @@ def test_checkout_shell_is_safe_idempotent_and_preserves_existing_token() -> Non
     assert "window.PADDLE_SANDBOX_CLIENT_TOKEN" in preserved
     tracked_page = Path(__file__).resolve().parents[2] / "docs" / "npra.html"
     tracked_html = tracked_page.read_text(encoding="utf-8")
-    regenerated = _npra_checkout_shell(tracked_html)
+    regenerated = _npra_checkout_shell(tracked_html, api_origin)
     marker = "<!-- NPRA-PADDLE-CHECKOUT -->"
     end_marker = "<!-- END NPRA-PADDLE-CHECKOUT -->"
     tracked_block = tracked_html[tracked_html.index(marker):tracked_html.index(end_marker) + len(end_marker)]
@@ -537,7 +538,11 @@ def test_checkout_shell_is_safe_idempotent_and_preserves_existing_token() -> Non
 def test_npra_freshness_uses_health_checked_at_separately_from_source_update() -> None:
     from scripts.embed_dashboard_data import _npra_freshness
 
-    html = '<span data-npra-cfd="old">old</span>'
+    html = (
+        "<!-- BEGIN npra-freshness -->\n"
+        '<span data-npra-cfd="old">old</span>\n'
+        "<!-- END npra-freshness -->"
+    )
     health = {
         "checked_at": "2026-08-20T15:55:29Z",
         "datasets": [

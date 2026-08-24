@@ -46,6 +46,7 @@ GENERATORS = (
     "gen_dashboard_filters.py",
     "gen_dashboard_sections.py",
     "embed_dashboard_data.py",
+    "gen_api_reference.py",
     "check_url_drift.py",
     "gen_health_methodology_html.py",
     "gen_health_methodology.py",
@@ -92,6 +93,7 @@ RELEASE_STEPS = (
     "gen_jsonld_catalog.py",
     "gen_dashboard_filters.py",
     "embed_dashboard_data.py",
+    "gen_api_reference.py",
     "check_url_drift.py",
     "gen_trust_snapshot.py",
     "gen_health_methodology_html.py",
@@ -127,6 +129,7 @@ RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "docs/.dashboard_filters.json",
     "docs/.dashboard_sections.json",
     "docs/index.html",
+    "docs/buyer-api-reference.md",
     "docs/health-methodology.html",
 )
 PROFILE_INPUTS = (
@@ -141,6 +144,7 @@ PROFILE_INPUTS = (
     "mcp.json",
     "mcp",
     "config",
+    "api",
     "health.schema.json",
     "agent.schema.json",
     "mcp.schema.json",
@@ -239,7 +243,8 @@ def _stage_source(tmp_path: Path) -> Path:
     (source / "docs").mkdir()
     (source / "docs/assets").mkdir()
     shutil.copy2(ROOT / "docs/assets/site-nav.html", source / "docs/assets/site-nav.html")
-    shutil.copy2(RELEASE_FIXTURE / "docs/index.html", source / "docs/index.html")
+    shutil.copy2(ROOT / "docs/index.html", source / "docs/index.html")
+    shutil.copy2(ROOT / "docs/buyer-api-reference.md", source / "docs/buyer-api-reference.md")
     shutil.copy2(
         RELEASE_FIXTURE / "docs/health-methodology.md",
         source / "docs/health-methodology.md",
@@ -254,8 +259,24 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(RELEASE_FIXTURE / "mcp.schema.json", source / "mcp.schema.json")
     shutil.copy2(RELEASE_FIXTURE / "health.schema.json", source / "health.schema.json")
     shutil.copytree(RELEASE_FIXTURE / "config", source / "config")
+    surfaces = json.loads((source / "config/public-surfaces.json").read_text(encoding="utf-8"))
+    surfaces["pages"] = ["/", "/landing.html", "/npra.html", "/health-methodology.html"]
+    if "/buyer-api-reference.md" not in surfaces["artifacts"]:
+        surfaces["artifacts"].append("/buyer-api-reference.md")
+    _write_json(source / "config/public-surfaces.json", surfaces)
+    schema = json.loads((source / "config/public-surfaces.schema.json").read_text(encoding="utf-8"))
+    origins = schema["properties"]["origins"]
+    required = origins.setdefault("required", ["website", "mcp", "repository"])
+    if "api" not in required:
+        required.append("api")
+    origins["properties"]["api"] = {"const": "https://api.data-pulse.my"}
+    _write_json(source / "config/public-surfaces.schema.json", schema)
+    shutil.copytree(ROOT / "api", source / "api")
     shutil.copy2(RELEASE_FIXTURE / "robots.txt", source / "robots.txt")
     shutil.copy2(RELEASE_FIXTURE / "docs/mcp-deploy.md", source / "docs/mcp-deploy.md")
+    shutil.copy2(ROOT / "docs/landing.html", source / "docs/landing.html")
+    shutil.copy2(ROOT / "docs/npra.html", source / "docs/npra.html")
+    shutil.copy2(ROOT / "docs/health-methodology.html", source / "docs/health-methodology.html")
     shutil.copytree(RELEASE_FIXTURE / "mcp", source / "mcp")
 
     metrics_cache = source / ".cache/datapulse/metrics_dataset_cumul.json"

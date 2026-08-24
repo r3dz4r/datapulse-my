@@ -15,10 +15,11 @@ def _stage(root: Path) -> None:
         "origins": {
             "website": "https://data-pulse.my",
             "mcp": "https://mcp.data-pulse.my",
+            "api": "https://api.data-pulse.my",
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
-        "pages": ["/", "/npra.html"],
-        "artifacts": ["/llms.txt", "/agent.json", "/mcp.json"],
+        "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html"],
+        "artifacts": ["/buyer-api-reference.md", "/llms.txt", "/agent.json", "/mcp.json"],
         "featured_dataset_ids": ["alpha"],
     }
     (root / "config").mkdir()
@@ -27,8 +28,9 @@ def _stage(root: Path) -> None:
         "properties": {"origins": {"properties": {
             "website": {"const": "https://data-pulse.my"},
             "mcp": {"const": "https://mcp.data-pulse.my"},
+            "api": {"const": "https://api.data-pulse.my"},
             "repository": {"const": "https://github.com/r3dz4r/datapulse-my"},
-        }, "additionalProperties": False}},
+        }, "required": ["website", "mcp", "api", "repository"], "additionalProperties": False}},
         "additionalProperties": False,
     }) + "\n")
     (root / "README.md").write_text(
@@ -56,7 +58,10 @@ def test_generation_is_deterministic_and_preserves_unowned_prose(tmp_path: Path)
     locations = [node.text for node in root.findall("{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
     assert locations == [
         "https://data-pulse.my/",
+        "https://data-pulse.my/landing.html",
         "https://data-pulse.my/npra.html",
+        "https://data-pulse.my/health-methodology.html",
+        "https://data-pulse.my/buyer-api-reference.md",
         "https://data-pulse.my/llms.txt",
         "https://data-pulse.my/agent.json",
         "https://data-pulse.my/mcp.json",

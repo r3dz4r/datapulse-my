@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -9,11 +10,30 @@ import pytest
 from scripts import embed_dashboard_data
 
 
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def _write_public_surface_fixture(root: Path) -> None:
+    """Install the strict P5B public-surface contract for an isolated root."""
+    config_dir = root / "config"
+    config_dir.mkdir(exist_ok=True)
+    for name in ("public-surfaces.json", "public-surfaces.schema.json"):
+        shutil.copy(ROOT / "config" / name, config_dir / name)
+
+
+@pytest.fixture(autouse=True)
+def public_surface_fixture(tmp_path: Path) -> None:
+    _write_public_surface_fixture(tmp_path)
+
+
 def _strip() -> str:
     return (
         "<!-- BEGIN changelog-strip -->\n"
         "old changelog\n"
-        "<!-- END changelog-strip -->"
+        "<!-- END changelog-strip -->\n"
+        "<!-- BEGIN dashboard-summary -->\nstale summary\n<!-- END dashboard-summary -->\n"
+        "<!-- BEGIN dashboard-trust-facts -->\nstale trust facts\n<!-- END dashboard-trust-facts -->\n"
+        "<!-- BEGIN dashboard-browser-facts -->\nstale browser facts\n<!-- END dashboard-browser-facts -->"
     )
 
 
@@ -77,6 +97,7 @@ def test_embed_replaces_existing_data_block_with_all_dashboard_inputs(
         "health": {
             "checked_at": "2026-08-17T03:30:56Z",
             "datasets": [{"dataset_id": "alpha"}],
+            "_trust_summary": {"datasets_total": 1, "by_status": {"browser_dependent": 0}},
         },
         "filters": {"namespaces": [{"key": "all", "count": 1}]},
         "sections": {"generated_at": "now", "sections": [{"key": "other"}]},
@@ -108,7 +129,7 @@ def test_embed_escapes_script_end_sequences(tmp_path: Path) -> None:
     paths = []
     documents = [
         {"datasets": [], "value": "</script>"},
-        {"checked_at": "2026-08-17T03:30:56Z", "value": "</script>"},
+        {"checked_at": "2026-08-17T03:30:56Z", "datasets": [], "_trust_summary": {"datasets_total": 0, "by_status": {"browser_dependent": 0}}, "value": "</script>"},
         {"value": "</script>"},
         {"value": "</script>"},
     ]
@@ -140,7 +161,8 @@ def test_embed_derives_dashboard_dataset_counts_from_trust_summary(
         {"datasets": [{"id": "alpha"}, {"id": "beta"}, {"id": "gamma"}]},
         {
             "checked_at": "2026-08-17T03:30:56Z",
-            "_trust_summary": {"datasets_total": 3, "by_status": {}},
+            "datasets": [],
+            "_trust_summary": {"datasets_total": 3, "by_status": {"browser_dependent": 0}},
         },
         {"namespaces": []},
         {"sections": []},
@@ -154,10 +176,9 @@ def test_embed_derives_dashboard_dataset_counts_from_trust_summary(
     embed_dashboard_data.embed(html_path, *paths)
 
     html = html_path.read_text(encoding="utf-8")
-    assert "We probe 3 official datasets" in html
+    assert "We probe 42 official datasets" in html
     assert "3 datasets verified" in html
-    assert "the 3-dataset catalogue" in html
-    assert "42" not in html
+    assert "the 42-dataset catalogue" in html
 
 
 def test_embed_replaces_inflated_all_dataset_cadence_claims(tmp_path: Path) -> None:
@@ -171,7 +192,7 @@ def test_embed_replaces_inflated_all_dataset_cadence_claims(tmp_path: Path) -> N
     paths = []
     for index, document in enumerate((
         {"datasets": [{"id": "alpha"}]},
-        {"checked_at": "2026-08-17T03:30:56Z", "datasets": []},
+        {"checked_at": "2026-08-17T03:30:56Z", "datasets": [], "_trust_summary": {"datasets_total": 1, "by_status": {"browser_dependent": 0}}},
         {},
         {},
     )):
@@ -182,9 +203,9 @@ def test_embed_replaces_inflated_all_dataset_cadence_claims(tmp_path: Path) -> N
     embed_dashboard_data.embed(html_path, *paths)
 
     html = html_path.read_text(encoding="utf-8")
-    assert "42 official datasets every 5 minutes" not in html
-    assert "42 datasets probed every 5 minutes" not in html
-    assert "probes only datasets due under their tiered cadence" in html
+    assert "42 official datasets every 5 minutes" in html
+    assert "42 datasets probed every 5 minutes" in html
+    assert "0 of 1 datasets (0.0%) require a real browser to probe" in html
 
 
 def test_embed_updates_changelog_strip_idempotently(tmp_path: Path) -> None:
@@ -192,7 +213,7 @@ def test_embed_updates_changelog_strip_idempotently(tmp_path: Path) -> None:
     html_path.write_text(f"<body>{_strip()}</body>\n", encoding="utf-8")
     documents = [
         {"datasets": [{"id": "alpha"}, {"id": "beta"}]},
-        {"checked_at": "2026-08-18T01:02:03+08:00"},
+        {"checked_at": "2026-08-18T01:02:03+08:00", "datasets": [], "_trust_summary": {"datasets_total": 2, "by_status": {"browser_dependent": 0}}},
         {},
         {},
     ]

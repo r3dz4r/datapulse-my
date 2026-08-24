@@ -20,10 +20,11 @@ def _write_public_surface_fixture(root: Path, featured_dataset_id: str) -> None:
             "origins": {
                 "website": "https://data-pulse.my",
                 "mcp": "https://mcp.data-pulse.my",
+                "api": "https://api.data-pulse.my",
                 "repository": "https://github.com/r3dz4r/datapulse-my",
             },
-            "pages": ["/"],
-            "artifacts": ["/llms.txt"],
+            "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html"],
+            "artifacts": ["/buyer-api-reference.md", "/llms.txt"],
             "featured_dataset_ids": [featured_dataset_id],
         }) + "\n",
         encoding="utf-8",
@@ -36,10 +37,11 @@ def _write_public_surface_fixture(root: Path, featured_dataset_id: str) -> None:
                 "schema": {"const": "datapulse/v1/public-surfaces"},
                 "origins": {
                     "type": "object",
-                    "required": ["website", "mcp", "repository"],
+                    "required": ["website", "mcp", "api", "repository"],
                     "properties": {
                         "website": {"const": "https://data-pulse.my"},
                         "mcp": {"const": "https://mcp.data-pulse.my"},
+                        "api": {"const": "https://api.data-pulse.my"},
                         "repository": {"const": "https://github.com/r3dz4r/datapulse-my"},
                     },
                     "additionalProperties": False,

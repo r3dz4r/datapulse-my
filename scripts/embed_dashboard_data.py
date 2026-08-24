@@ -15,8 +15,20 @@ from pathlib import Path
 
 try:
     from scripts.verify_attestation_binding import ContractError, verify_contract
+    from scripts.public_surface_generation import (
+        GenerationError,
+        load_public_surfaces,
+        publish_text_outputs,
+        replace_owned_block,
+    )
 except ModuleNotFoundError:  # Direct script execution puts scripts/ on sys.path.
     from verify_attestation_binding import ContractError, verify_contract
+    from public_surface_generation import (
+        GenerationError,
+        load_public_surfaces,
+        publish_text_outputs,
+        replace_owned_block,
+    )
 
 
 class EmbedError(RuntimeError):
@@ -27,6 +39,12 @@ CHANGELOG_BEGIN = "<!-- BEGIN changelog-strip -->"
 CHANGELOG_END = "<!-- END changelog-strip -->"
 NPRA_CHECKOUT_MARKER = "<!-- NPRA-PADDLE-CHECKOUT -->"
 NPRA_CHECKOUT_END = "<!-- END NPRA-PADDLE-CHECKOUT -->"
+DASHBOARD_SUMMARY_MARKER = "dashboard-summary"
+DASHBOARD_TRUST_FACTS_MARKER = "dashboard-trust-facts"
+DASHBOARD_BROWSER_FACTS_MARKER = "dashboard-browser-facts"
+NPRA_FRESHNESS_MARKER = "npra-freshness"
+NPRA_CONNECT_MARKER = "npra-connect"
+NPRA_SURFACES_MARKER = "npra-surfaces"
 NPRA_DATASET_IDS = {
     "pharmaceutical_products",
     "pharmaceutical_importers",
@@ -73,15 +91,16 @@ def _npra_freshness(html: str, health: object) -> str:
     )
     if source_updates:
         content += f" · Latest source update: {_format_myt(source_updates[-1])}"
-    pattern = re.compile(r'(<span data-npra-cfd=")[^"]*(">).*?(</span>)')
-    updated, replacements = pattern.subn(
-        lambda match: f'{match.group(1)}{health["checked_at"]}{match.group(2)}{content}{match.group(3)}',
+    return replace_owned_block(
         html,
-        count=1,
+        NPRA_FRESHNESS_MARKER,
+        f'<span data-npra-cfd="{health["checked_at"]}">{content}</span>',
     )
-    if replacements != 1:
-        raise EmbedError("NPRA page must contain one freshness marker")
-    updated = updated.replace(
+
+
+def _npra_runtime_script(html: str) -> str:
+    """Keep the browser's live-health enhancement aligned with the static fallback."""
+    return html.replace(
         "          return records;",
         "          return payload;",
         1,
@@ -106,10 +125,12 @@ def _npra_freshness(html: str, health: object) -> str:
         "      health().then(payload => { if (payload) render(payload); });",
         1,
     )
-    return updated
+    return html
 
 
-def _npra_checkout_shell(html: str, client_token: str | None = None) -> str:
+def _npra_checkout_shell(
+    html: str, api_origin: str, client_token: str | None = None
+) -> str:
     """Inject one checkout shell; only Paddle's public client token may be embedded."""
     if client_token is None:
         client_token = os.environ.get("PADDLE_SANDBOX_CLIENT_TOKEN")
@@ -211,7 +232,7 @@ def _npra_checkout_shell(html: str, client_token: str | None = None) -> str:
         retryButton.disabled = true;
         try {{
           if (!issuedKey) {{
-            const response = await fetch('https://api.data-pulse.my/api/v1/paddle/redeem', {{ method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{redemption_token: redemptionNonce}}) }});
+            const response = await fetch('{api_origin}/api/v1/paddle/redeem', {{ method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{redemption_token: redemptionNonce}}) }});
             const result = await response.json().catch(() => ({{}}));
             if (response.status === 409 && result.error && result.error.code === 'redemption_pending') {{ scheduleRetry(response, result); return; }}
             if (response.status >= 500) {{ scheduleRetry(response, result); return; }}
@@ -219,7 +240,7 @@ def _npra_checkout_shell(html: str, client_token: str | None = None) -> str:
             issuedKey = result.data.api_key;
             window.prompt('Copy your API key for this session.', issuedKey);
           }}
-          const verification = await fetch('https://api.data-pulse.my/api/v1/keys/me', {{ headers: {{'X-API-Key': issuedKey}} }});
+          const verification = await fetch('{api_origin}/api/v1/keys/me', {{ headers: {{'X-API-Key': issuedKey}} }});
           const verificationResult = await verification.json().catch(() => ({{}}));
           if (verification.status >= 500) {{ scheduleRetry(verification, verificationResult); return; }}
           if (verification.status === 200 && verificationResult.data && verificationResult.data.tier === 'pro' && verificationResult.data.status === 'active' && Array.isArray(verificationResult.data.scopes) && verificationResult.data.scopes.includes('npra.read')) {{
@@ -351,58 +372,79 @@ def update_changelog_strip(html: str, manifest: object, health: object) -> str:
     return updated
 
 
-DATASET_COUNT_PATTERNS = (
-    r"\b\d+(?= Malaysian public datasets\b)",
-    r"\b\d+(?= official datasets\b)",
-    r"\b\d+(?= datasets verified\b)",
-    r"\b\d+(?= licence-declared datasets\b)",
-    r"\b\d+(?=-dataset catalogue\b)",
-    r"\b\d+(?= datasets probed\b)",
-    r"(?<=Five of )\d+(?= datasets\b)",
-)
-
-SCHEDULER_CLAIM = (
-    "The scheduler wakes every 5 minutes and probes only datasets due under "
-    "their tiered cadence"
-)
-
-
-def _replace_scheduler_claims(html: str) -> str:
-    """Replace legacy all-datasets-per-tick claims with the due-tier contract."""
-    replacements = {
-        r"We monitor official datasets; the scheduler wakes every 5 minutes and probes only datasets due under their tiered cadence\.": (
-            "We monitor official datasets. " + SCHEDULER_CLAIM
-        ),
-        r"We monitor official datasets\. The scheduler wakes every 5 minutes and probes only datasets due under their tiered cadence\.": (
-            "We monitor official datasets. " + SCHEDULER_CLAIM
-        ),
-        r"We probe \d+ official datasets every 5 minutes": (
-            "We monitor official datasets. " + SCHEDULER_CLAIM
-        ),
-        r"A 5-minute timer fetches each dataset": (
-            "A 5-minute scheduler wakes and probes datasets due under their tiered cadence"
-        ),
-        r"\d+ datasets probed every 5 minutes": (
-            "Datasets are probed when due under their tiered cadence"
-        ),
-    }
-    for pattern, replacement in replacements.items():
-        html = re.sub(pattern, replacement, html)
-    return html
-
-
-def _replace_dataset_counts(html: str, health: object) -> str:
-    if not isinstance(health, dict):
-        return html
+def _dashboard_facts(html: str, manifest: object, health: object, website: str) -> str:
+    """Render only explicit dashboard facts; editorial prose remains untouched."""
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("datasets"), list):
+        raise EmbedError("manifest must contain a datasets array")
+    if not isinstance(health, dict) or not isinstance(health.get("checked_at"), str):
+        raise EmbedError("health checked_at must be an ISO-8601 string")
     summary = health.get("_trust_summary")
-    if not isinstance(summary, dict) or "datasets_total" not in summary:
-        return html
-    count = summary["datasets_total"]
-    if isinstance(count, bool) or not isinstance(count, int) or count < 0:
-        raise EmbedError("health _trust_summary.datasets_total must be a non-negative integer")
-    for pattern in DATASET_COUNT_PATTERNS:
-        html = re.sub(pattern, str(count), html)
-    return html
+    if not isinstance(summary, dict) or summary.get("datasets_total") != len(manifest["datasets"]):
+        raise EmbedError("health _trust_summary.datasets_total must match the manifest")
+    total = len(manifest["datasets"])
+    records = health.get("datasets")
+    if not isinstance(records, list):
+        raise EmbedError("health datasets must be an array")
+    by_status = summary.get("by_status")
+    browser_dependent = by_status.get("browser_dependent", 0) if isinstance(by_status, dict) else None
+    if (
+        not isinstance(by_status, dict)
+        or isinstance(browser_dependent, bool)
+        or not isinstance(browser_dependent, int)
+        or browser_dependent < 0
+        or browser_dependent > total
+    ):
+        raise EmbedError(
+            "health _trust_summary.by_status.browser_dependent must be a count between zero and the manifest total"
+        )
+    html = replace_owned_block(
+        html,
+        DASHBOARD_SUMMARY_MARKER,
+        f'<meta name="description" content="Live health for {total} Malaysian public datasets tracked by DataPulse MY.">',
+    )
+    html = replace_owned_block(
+        html,
+        DASHBOARD_TRUST_FACTS_MARKER,
+        f'<li><a href="{website}/health/latest.json">{total} datasets verified</a></li>',
+    )
+    percentage = browser_dependent / total * 100 if total else 0
+    return replace_owned_block(
+        html,
+        DASHBOARD_BROWSER_FACTS_MARKER,
+        f"""<p>{browser_dependent} of {total} datasets ({percentage:.1f}%) require a real browser to probe because their
+      source pages render client-side JavaScript: <code>eperolehan-diklankan</code>,
+      <code>doe_apims</code>, <code>doe_rqims</code>, <code>doe_mqims</code>, and <code>kkm_idengue</code>.</p>""",
+    )
+
+
+def _npra_links(html: str, origins: dict[str, str]) -> str:
+    """Render NPRA public links from the sole canonical origin contract."""
+    html = replace_owned_block(
+        html,
+        NPRA_CONNECT_MARKER,
+        """<div class="mcp-layout">
+          <div class="code-wrap"><pre><code>{
+  "mcpServers": {
+    "datapulse-my": {
+      "transport": "streamable-http",
+      "url": "%s/mcp"
+    }
+  }
+}</code></pre></div>
+          <div><p class="section-lead">The read-only MCP surface gives AI systems cited NPRA catalogue context for search, freshness, drift, reconciliation, provenance, and evidence review. It complements the official source rather than replacing it.</p><a class="inline-arrow" href="https://modelcontextprotocol.io/docs/tools/inspector">Try it in MCP Inspector <span aria-hidden="true">→</span></a><p class="endpoint">Endpoint: <a href="%s/mcp">%s/mcp</a></p></div>
+        </div>""" % (origins["mcp"], origins["mcp"], origins["mcp"]),
+    )
+    return replace_owned_block(
+        html,
+        NPRA_SURFACES_MARKER,
+        """<div class="surface-table-wrap"><table><caption class="visually-hidden">NPRA catalogue programmatic surfaces</caption><thead><tr><th scope="col">Surface</th><th scope="col">URL</th></tr></thead><tbody>
+            <tr><td>Manifest</td><td><a class="surface-url" href="%s/datapulse.json">%s/datapulse.json</a></td></tr>
+            <tr><td>MCP server</td><td><a class="surface-url" href="%s/mcp">%s/mcp</a></td></tr>
+            <tr><td>Status badges</td><td><a class="surface-url" href="%s/badges/status-fresh.svg">/badges/&lt;id&gt;.svg</a></td></tr>
+            <tr><td>Live health</td><td><a class="surface-url" href="%s/health/latest.json">%s/health/latest.json</a></td></tr>
+            <tr><td>JSON-LD catalogue</td><td><a class="surface-url" href="%s/data/jsonld/catalog.json">/data/jsonld/catalog.json</a></td></tr>
+          </tbody></table></div>""" % (origins["website"], origins["website"], origins["mcp"], origins["mcp"], origins["website"], origins["website"], origins["website"], origins["website"]),
+    )
 
 
 def _reproducibility_verification_time() -> datetime | None:
@@ -462,7 +504,7 @@ def _replace_attestation_ui(html: str) -> str:
     return html
 
 
-def embed(
+def _render_page(
     html_path: Path,
     manifest_path: Path,
     health_path: Path,
@@ -470,7 +512,8 @@ def embed(
     sections_path: Path,
     attestations_path: Path | None = None,
     binding_path: Path | None = None,
-) -> None:
+    public_surfaces_path: Path | None = None,
+) -> str:
     try:
         html = html_path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as error:
@@ -478,14 +521,20 @@ def embed(
 
     manifest = _load(manifest_path)
     health = _load(health_path)
+    root = (public_surfaces_path or manifest_path.parent).resolve()
+    try:
+        surfaces = load_public_surfaces(root)
+    except GenerationError as error:
+        raise EmbedError(str(error)) from error
     if html_path.name == "index.html":
         html = update_changelog_strip(html, manifest, health)
         html = _replace_attestation_ui(html)
-        html = _replace_scheduler_claims(html)
-    html = _replace_dataset_counts(html, health)
+        html = _dashboard_facts(html, manifest, health, surfaces["origins"]["website"])
     if html_path.name == "npra.html":
         html = _npra_freshness(html, health)
-        html = _npra_checkout_shell(html)
+        html = _npra_runtime_script(html)
+        html = _npra_links(html, surfaces["origins"])
+        html = _npra_checkout_shell(html, surfaces["origins"]["api"])
     data = (
         '<script id="embedded-data">\n'
         "    window.__DATAPULSE_DATA__ = {"
@@ -512,16 +561,57 @@ def embed(
     else:
         raise EmbedError(f"{html_path}: cannot find embedded-data block or </body>")
 
+    return html
+
+
+def embed(
+    html_path: Path,
+    manifest_path: Path,
+    health_path: Path,
+    filters_path: Path,
+    sections_path: Path,
+    attestations_path: Path | None = None,
+    binding_path: Path | None = None,
+    public_surfaces_path: Path | None = None,
+) -> None:
+    """Render and atomically publish one explicitly requested page."""
+    rendered = _render_page(
+        html_path, manifest_path, health_path, filters_path, sections_path,
+        attestations_path, binding_path, public_surfaces_path,
+    )
     try:
-        _atomic_write_text(html_path, html)
-    except (OSError, UnicodeError) as error:
-        raise EmbedError(f"cannot write {html_path}: {error}") from error
+        publish_text_outputs({html_path: rendered})
+    except GenerationError as error:
+        raise EmbedError(str(error)) from error
+
+
+def embed_all(
+    html_paths: tuple[Path, ...], manifest_path: Path, health_path: Path,
+    filters_path: Path, sections_path: Path, attestations_path: Path | None,
+    binding_path: Path | None, public_surfaces_path: Path,
+) -> None:
+    """Validate and render all dashboard targets before publishing any one of them."""
+    try:
+        rendered = {
+            path: _render_page(
+                path, manifest_path, health_path, filters_path, sections_path,
+                attestations_path, binding_path, public_surfaces_path,
+            )
+            for path in html_paths
+        }
+    except GenerationError as error:
+        raise EmbedError(str(error)) from error
+    try:
+        publish_text_outputs(rendered)
+    except GenerationError as error:
+        raise EmbedError(str(error)) from error
 
 
 def parse_args() -> argparse.Namespace:
     root = Path(__file__).resolve().parent.parent
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--html", type=Path, default=root / "docs/index.html")
+    parser.add_argument("--npra", type=Path, default=root / "docs/npra.html")
     parser.add_argument("--manifest", type=Path, default=root / "datapulse.json")
     parser.add_argument("--health", type=Path, default=root / "health/latest.json")
     parser.add_argument(
@@ -536,13 +626,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--attestation-binding", type=Path, default=root / "attestations/latest/binding.json"
     )
+    parser.add_argument(
+        "--public-surfaces", type=Path, default=root / "config"
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
-        embed(args.html, args.manifest, args.health, args.filters, args.sections, args.attestations, args.attestation_binding)
+        embed_all(
+            (args.html, args.npra), args.manifest, args.health, args.filters,
+            args.sections, args.attestations, args.attestation_binding,
+            args.public_surfaces.parent,
+        )
     except EmbedError as error:
         print(f"embed_dashboard_data.py: {error}", file=sys.stderr)
         return 1

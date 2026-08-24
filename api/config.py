@@ -6,6 +6,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+# Public metadata only.  These values intentionally mirror the existing
+# runtime fallbacks and caps without reading an effective environment.
+PAGINATION_DEFAULT = 50
+PAGINATION_MAXIMUM = 1000
+RATE_LIMIT_DEFAULT = 100
+RATE_LIMIT_MAXIMUM = 1000
+
+
 def _bounded_int(name: str, default: int, maximum: int) -> int:
     try:
         value = int(os.getenv(name, str(default)))
@@ -40,9 +48,9 @@ class Config:
         port = _bounded_int("DATAPULSE_API_BIND_PORT", 8791, 65535)
         return cls(root, path("DATAPULSE_API_KEYS_FILE", "var/api_keys.json"),
                    path("DATAPULSE_API_RATE_STATE", "var/rate_limit.json"),
-                   _bounded_int("DATAPULSE_API_RATE_LIMIT", 100, 1000), host, port,
+                   _bounded_int("DATAPULSE_API_RATE_LIMIT", RATE_LIMIT_DEFAULT, RATE_LIMIT_MAXIMUM), host, port,
                    path("DATAPULSE_API_AUDIT_LOG", "var/log/buyer-api-audit.jsonl"),
-                   _bounded_int("DATAPULSE_API_PAGINATION_MAX", 200, 1000),
+                   _bounded_int("DATAPULSE_API_PAGINATION_MAX", 200, PAGINATION_MAXIMUM),
                    os.getenv("DATAPULSE_API_KEY_SALT", "datapulse-api-v1"),
                    path("DATAPULSE_API_ENTITLEMENTS_FILE", "var/entitlements.json"),
                    os.getenv("PADDLE_SANDBOX_WEBHOOK_SECRET", ""),

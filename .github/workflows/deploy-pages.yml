@@ -155,9 +155,9 @@ jobs:
 
       # Fast path (timer chore(health) pushes): the timer already generated and
       # committed health/latest.json + history/deltas + badges + RSS + catalog snapshot + README summary.
-      # We only need to re-embed the fresh dashboard data into docs/index.html,
+      # We only need to re-embed the fresh dashboard and NPRA public facts,
       # then assemble + deploy. This is ~2-3 min vs 8-13 min for full release-build.
-      - name: Embed fresh dashboard data (fast path)
+      - name: Embed fresh dashboard and NPRA data (fast path)
         if: github.event_name == 'push' && endsWith(github.event.head_commit.message, '[skip deploy]')
         run: python3 scripts/embed_dashboard_data.py
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import shutil
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -20,6 +21,13 @@ class _TagCollector(HTMLParser):
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self.tags.append(tag)
+
+
+def _write_public_surface_fixture(root: Path) -> None:
+    config_dir = root / "config"
+    config_dir.mkdir(exist_ok=True)
+    for name in ("public-surfaces.json", "public-surfaces.schema.json"):
+        shutil.copy(ROOT / "config" / name, config_dir / name)
 
 
 def test_canonical_partial_is_well_formed_and_contains_expected_nav_links() -> None:
@@ -40,6 +48,7 @@ def test_canonical_partial_is_well_formed_and_contains_expected_nav_links() -> N
 
 
 def test_inject_all_replaces_only_whitelisted_existing_nav_blocks(tmp_path: Path) -> None:
+    _write_public_surface_fixture(tmp_path)
     docs = tmp_path / "docs"
     assets = docs / "assets"
     assets.mkdir(parents=True)

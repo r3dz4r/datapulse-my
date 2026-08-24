@@ -1,21 +1,29 @@
 # Buyer API reference
 
 The buyer API is separate from the public, unauthenticated MCP endpoint. It is
-available at `https://api.data-pulse.my/api/v1/` and serves the
+available at <!-- BEGIN buyer-api-host -->
+`https://api.data-pulse.my/api/v1/`
+<!-- END buyer-api-host --> and serves the
 same published health artifacts with authenticated operational policy.
 
 ## Authentication and limits
 
 Pass a currently active token on every request:
 
+<!-- BEGIN buyer-api-quickstart -->
 ```sh
-curl -H "X-API-Key: $DATAPULSE_API_KEY" https://api.datapulse-my.my/api/v1/health
+curl -H "X-API-Key: $DATAPULSE_API_KEY" https://api.data-pulse.my/api/v1/health
 ```
+<!-- END buyer-api-quickstart -->
 
 Keys are issued by `python3 scripts/api_keys.py add --label acme-prod --scope datasets.read,deltas.read`.
 Only SHA-256 hashes are persisted. Free API keys are limited to 100 requests per
 key in each 60-second window (configured by `DATAPULSE_API_RATE_LIMIT`, capped at 1000).
 `429` responses include `Retry-After` and `error.retry_after_s`.
+
+<!-- BEGIN buyer-api-limits -->
+List endpoints default `limit` to 50 and cap it at 1000. `cursor` defaults to `0`; dataset history `days` defaults to 30 and caps at 3650.
+<!-- END buyer-api-limits -->
 
 All errors have this stable envelope:
 
@@ -28,18 +36,29 @@ Possible status codes are `401` (missing/invalid key), `404` (unknown resource),
 
 ## Endpoints
 
+<!-- BEGIN buyer-api-endpoints -->
 | Endpoint | Description |
 | --- | --- |
-| `GET /api/v1/health` | Service status and source health-cycle timestamp. |
-| `GET /api/v1/datasets?limit=50&cursor=0` | Paginated rows from `health/latest.json`. |
-| `GET /api/v1/datasets/{id}` | One current health row. |
-| `GET /api/v1/datasets/{id}/history?days=30&limit=50&cursor=0` | Paginated history rows in the requested trailing window. |
-| `GET /api/v1/deltas?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=50&cursor=0` | Paginated available delta cycles. |
-| `GET /api/v1/deltas/{cycle}` | Full delta artifact, for example `2026-08-12T19:00`. |
-| `GET /api/v1/snapshot` | Current `catalog-snapshot.json`. |
+| `GET /api/v1/health` | health route. |
+| `GET /api/v1/datasets?limit=…&cursor=…` | datasets route. |
+| `GET /api/v1/datasets/{id}` | datasets route. |
+| `GET /api/v1/datasets/{id}/history?days=…&limit=…&cursor=…` | dataset history route. |
+| `GET /api/v1/deltas?from=…&to=…&limit=…&cursor=…` | deltas route. |
+| `GET /api/v1/deltas/{cycle}` | deltas route. |
+| `GET /api/v1/snapshot` | snapshot route. |
+| `POST /api/v1/paddle/webhook` | paddle route. |
+| `POST /api/v1/paddle/redeem` | paddle route. |
+| `GET /api/v1/keys/me` | keys route. |
+| `GET /api/v1/npra/health` | npra route. |
+| `GET /api/v1/npra/changes` | npra route. |
+| `GET /api/v1/npra/product/{id}` | npra route. |
+| `GET /api/v1/npra/manufacturer/{id}` | npra route. |
+| `GET /api/v1/npra/importer/{id}` | npra route. |
+<!-- END buyer-api-endpoints -->
 
-List responses use `{"data": [...], "pagination": {"limit": 50,
-"next_cursor": "50", "total": 375}}`; `next_cursor` is `null` at the end.
+<!-- BEGIN buyer-api-pagination -->
+List responses use `{"data": [...], "pagination": {"limit": 50, "next_cursor": "50", "total": 389}}`; `next_cursor` is `null` at the end.
+<!-- END buyer-api-pagination -->
 All successful calls, failed authentication attempts, and rate-limit responses
 are append-only audit records with key label/hash, client IP, user agent, path,
 status and latency.

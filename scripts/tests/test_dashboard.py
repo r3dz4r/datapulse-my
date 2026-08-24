@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from scripts.embed_dashboard_data import EmbedError, _dashboard_facts, embed_all
+
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_MANIFEST = (
@@ -214,3 +216,90 @@ def test_release_build_generates_and_embeds_dashboard_data_before_deploy() -> No
     assert filters < injector
     assert "bash scripts/generate.sh release-build" in workflow
     assert "Inject embedded data" not in workflow
+
+
+def test_dashboard_and_npra_facts_are_explicit_marker_owned() -> None:
+    index = (ROOT / "docs/index.html").read_text(encoding="utf-8")
+    npra = (ROOT / "docs/npra.html").read_text(encoding="utf-8")
+
+    for marker in ("dashboard-summary", "dashboard-trust-facts", "dashboard-browser-facts", "changelog-strip"):
+        assert f"<!-- BEGIN {marker} -->" in index
+        assert f"<!-- END {marker} -->" in index
+    for marker in ("npra-freshness", "npra-connect", "npra-surfaces"):
+        assert f"<!-- BEGIN {marker} -->" in npra
+        assert f"<!-- END {marker} -->" in npra
+    generator = (ROOT / "scripts/embed_dashboard_data.py").read_text(encoding="utf-8")
+    assert "DATASET_COUNT_PATTERNS" not in generator
+    assert "_replace_dataset_counts" not in generator
+
+
+def test_browser_fact_uses_canonical_summary_for_hyphenated_record_status() -> None:
+    html = (
+        "<!-- BEGIN dashboard-summary -->old<!-- END dashboard-summary -->"
+        "<!-- BEGIN dashboard-trust-facts -->old<!-- END dashboard-trust-facts -->"
+        "<!-- BEGIN dashboard-browser-facts -->old<!-- END dashboard-browser-facts -->"
+    )
+    manifest = {"datasets": [{"dataset_id": str(index)} for index in range(5)]}
+    health = {
+        "checked_at": "2026-08-24T00:00:00Z",
+        "datasets": [{"dataset_id": "browser", "status": "browser-dependent"}],
+        "_trust_summary": {
+            "datasets_total": 5,
+            "by_status": {"browser_dependent": 1},
+        },
+    }
+
+    rendered = _dashboard_facts(html, manifest, health, "https://data-pulse.my")
+
+    assert "1 of 5 datasets (20.0%)" in rendered
+
+
+@pytest.mark.parametrize("browser_count", [True, -1, 6, "1"])
+def test_browser_fact_rejects_malformed_canonical_summary(browser_count: object) -> None:
+    html = (
+        "<!-- BEGIN dashboard-summary -->old<!-- END dashboard-summary -->"
+        "<!-- BEGIN dashboard-trust-facts -->old<!-- END dashboard-trust-facts -->"
+        "<!-- BEGIN dashboard-browser-facts -->old<!-- END dashboard-browser-facts -->"
+    )
+    manifest = {"datasets": [{"dataset_id": str(index)} for index in range(5)]}
+    health = {
+        "checked_at": "2026-08-24T00:00:00Z",
+        "datasets": [],
+        "_trust_summary": {
+            "datasets_total": 5,
+            "by_status": {"browser_dependent": browser_count},
+        },
+    }
+
+    with pytest.raises(EmbedError, match="browser_dependent"):
+        _dashboard_facts(html, manifest, health, "https://data-pulse.my")
+
+
+def test_marker_failure_preserves_all_dashboard_targets(tmp_path: Path) -> None:
+    config = tmp_path / "config"
+    config.mkdir()
+    (config / "public-surfaces.json").write_text(json.dumps({
+        "schema": "datapulse/v1/public-surfaces",
+        "origins": {"website": "https://data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"},
+        "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html"],
+        "artifacts": ["/buyer-api-reference.md"], "featured_dataset_ids": ["alpha"],
+    }) + "\n", encoding="utf-8")
+    (config / "public-surfaces.schema.json").write_text(json.dumps({
+        "properties": {"origins": {"required": ["website", "mcp", "api", "repository"], "properties": {key: {"const": value} for key, value in {"website": "https://data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}.items()}, "additionalProperties": False}}, "additionalProperties": False,
+    }) + "\n", encoding="utf-8")
+    manifest = tmp_path / "datapulse.json"
+    health = tmp_path / "health.json"
+    manifest.write_text(json.dumps({"datasets": []}), encoding="utf-8")
+    health.write_text(json.dumps({"checked_at": "2026-08-23T10:06:30Z", "datasets": [], "_trust_summary": {"datasets_total": 0}}), encoding="utf-8")
+    filters, sections = tmp_path / "filters.json", tmp_path / "sections.json"
+    filters.write_text("{}", encoding="utf-8")
+    sections.write_text("{}", encoding="utf-8")
+    index, npra = tmp_path / "index.html", tmp_path / "npra.html"
+    index.write_text("<!-- BEGIN dashboard-summary -->\nold\n<!-- END dashboard-summary -->\n<!-- BEGIN dashboard-trust-facts -->\nold\n<!-- END dashboard-trust-facts -->\n<!-- BEGIN changelog-strip -->\nold\n<!-- END changelog-strip --><body></body>", encoding="utf-8")
+    npra.write_text("<body><!-- BEGIN npra-freshness -->\nold\n<!-- END npra-freshness --></body>", encoding="utf-8")
+    before = {path: path.read_bytes() for path in (index, npra)}
+
+    with pytest.raises(EmbedError):
+        embed_all((index, npra), manifest, health, filters, sections, None, None, tmp_path)
+
+    assert {path: path.read_bytes() for path in (index, npra)} == before

@@ -441,6 +441,10 @@
     "sources": [
       "config/public-surfaces.json",
       "config/public-surfaces.schema.json",
+      "api/public_contract.py",
+      "api/config.py",
+      "scripts/gen_api_reference.py",
+      "scripts/embed_dashboard_data.py",
       "datapulse.json",
       "health.schema.json",
       "mcp/server.py"
@@ -449,17 +453,25 @@
       "mcp.json",
       "agent.json",
       "sitemap.xml",
-      "docs/mcp-reference.md"
+      "docs/mcp-reference.md",
+      "docs/buyer-api-reference.md"
     ],
     "owned_markers": {
       "README.md": ["mcp-tools", "public-discovery"],
       "llms.txt": ["catalog-summary", "mcp-tools", "public-discovery", "featured-datasets"],
       "robots.txt": ["public-discovery"],
-      "docs/mcp-deploy.md": ["mcp-tools"]
+      "docs/mcp-deploy.md": ["mcp-tools"],
+      "docs/buyer-api-reference.md": ["buyer-api-host", "buyer-api-quickstart", "buyer-api-limits", "buyer-api-endpoints", "buyer-api-pagination"],
+      "docs/index.html": ["dashboard-summary", "dashboard-trust-facts", "dashboard-browser-facts", "changelog-strip"],
+      "docs/npra.html": ["npra-freshness", "npra-connect", "npra-surfaces"]
     },
     "prohibited_unowned_patterns": [
       "8-status health taxonomy",
-      "https://r3dz4r.github.io/datapulse-my"
+      "https://r3dz4r.github.io/datapulse-my",
+      "https://api.datapulse-my.my",
+      "\"total\": 375",
+      "DATASET_COUNT_PATTERNS",
+      "_replace_dataset_counts"
     ]
   },
   "generated_artifacts": [

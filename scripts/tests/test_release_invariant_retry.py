@@ -40,7 +40,7 @@ def test_local_gate_does_not_require_current_release_proof() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
 
     proof_fetch = re.search(
-        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n^fi\n",
+        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n  fetch index\.html docs/index\.html\n  fetch npra\.html docs/npra\.html\n  fetch buyer-api-reference\.md docs/buyer-api-reference\.md\n^fi\n",
         script,
     )
 
@@ -70,6 +70,34 @@ def test_served_gate_keeps_release_proof_drift_validation_strict() -> None:
     assert 'f"- Health checked at: `{health[\'checked_at\']}`"' in validation
     assert 'f"- MCP tool count: `{len(tools)}`"' in validation
     assert '"release proof drift: "' in validation
+
+
+def test_local_gate_skips_only_generated_p5b_surface_parity() -> None:
+    """Local mode keeps source contracts while deferring generated page parity."""
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+
+    generated_fetches = re.search(
+        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md.*?^fi\n",
+        script,
+    )
+    assert generated_fetches is not None
+    assert 'fetch index.html docs/index.html' in generated_fetches.group(0)
+    assert 'fetch npra.html docs/npra.html' in generated_fetches.group(0)
+    assert 'fetch buyer-api-reference.md docs/buyer-api-reference.md' in generated_fetches.group(0)
+
+    p5b_validation = re.search(
+        r"(?ms)^if ! \$local_mode; then\npython3 - \"\$work_dir\" <<'PY'.*?^fi\n\nPYTHONPATH=mcp",
+        script,
+    )
+    assert p5b_validation is not None
+    assert "P5B generated surface assertions: PASS" in p5b_validation.group(0)
+    assert "dashboard-summary" in p5b_validation.group(0)
+    assert "buyer-api-pagination" in p5b_validation.group(0)
+
+    common_source = script.split('if ! $local_mode; then\npython3 - "$work_dir" <<\'PY\'', 1)[0]
+    assert 'load_public_surfaces(Path.cwd())' in common_source
+    assert 'assert surfaces["pages"]' in common_source
+    assert 'dashboard-summary' not in common_source
 
 
 def test_generated_contract_still_rejects_a_missing_binding(tmp_path: Path) -> None:

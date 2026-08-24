@@ -8,9 +8,14 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
+SCRIPT_ROOT = Path(__file__).resolve().parents[1]
+if str(SCRIPT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_ROOT))
+
+from scripts.public_surface_generation import GenerationError, atomic_write_text, load_public_surfaces
+
 
 ROOT = Path(__file__).resolve().parents[1]
-PAGES = ("index.html", "landing.html", "npra.html", "health-methodology.html")
 BEGIN_MARKER = "<!-- BEGIN SITE-NAV (generated from assets/site-nav.html) -->"
 END_MARKER = "<!-- END SITE-NAV -->"
 
@@ -87,7 +92,7 @@ def render_injected(source: str, nav: str) -> str:
     """Replace one existing site-nav block, retaining all other page content."""
     bounds = find_site_nav(source)
     if bounds is None:
-        return source
+        raise ValueError("page is missing its complete site-nav block")
     start, end = bounds
     line_start = source.rfind("\n", 0, start) + 1
     nav_prefix = source[line_start:start]
@@ -116,18 +121,20 @@ def inject_nav(path: Path, nav: str | None = None) -> bool:
     rendered = render_injected(source, nav if nav is not None else canonical_nav())
     if rendered == source:
         return False
-    path.write_text(rendered, encoding="utf-8")
+    atomic_write_text(path, rendered)
     return True
 
 
 def inject_all(root: Path = ROOT, *, check: bool = False) -> list[Path]:
     """Inject the canonical nav into the whitelisted pages beneath ``root``."""
     nav = canonical_nav(root)
+    surfaces = load_public_surfaces(root)
     changed: list[Path] = []
-    for name in PAGES:
+    for declared in surfaces["pages"]:
+        name = "index.html" if declared == "/" else declared.removeprefix("/")
         path = root / "docs" / name
         if not path.is_file():
-            continue
+            raise ValueError(f"declared navigation target is missing: {path}")
         source = path.read_text(encoding="utf-8")
         if render_injected(source, nav) == source:
             continue
@@ -143,7 +150,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         changed = inject_all(check=args.check)
-    except (OSError, UnicodeError, ValueError) as error:
+    except (GenerationError, OSError, UnicodeError, ValueError) as error:
         print(f"Unable to inject site navigation: {error}", file=sys.stderr)
         return 1
     if args.check:
