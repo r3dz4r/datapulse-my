@@ -159,15 +159,24 @@ def _fast_path_preservation_script() -> str:
 def test_fast_path_preserves_a_newer_valid_served_attestation_plane(tmp_path: Path) -> None:
     """A health-only artifact keeps the served P1 plane, never checkout's stale plane."""
     served_root, key = fixture_root(tmp_path / "served")
-    first = datetime(2026, 8, 22, 1, tzinfo=timezone.utc)
-    second = first + timedelta(days=1)
+    test_clock = datetime.now(timezone.utc).replace(microsecond=0)
+    first = test_clock - timedelta(days=1)
+    second = test_clock
+    first_day = first.date().isoformat()
+    second_day = second.date().isoformat()
+    first_checked_at = first.replace(hour=0, minute=0, second=0).isoformat().replace(
+        "+00:00", "Z"
+    )
+    second_checked_at = second.replace(hour=0, minute=0, second=0).isoformat().replace(
+        "+00:00", "Z"
+    )
     health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
-    health["checked_at"] = "2026-08-22T00:00:00Z"
+    health["checked_at"] = first_checked_at
     health["datasets"][0]["last_checked"] = health["checked_at"]
     write(served_root / "health/latest.json", health)
     ga.generate(served_root, key, first)
     health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
-    health["checked_at"] = "2026-08-23T00:00:00Z"
+    health["checked_at"] = second_checked_at
     health["datasets"][0]["last_checked"] = health["checked_at"]
     write(served_root / "health/latest.json", health)
     ga.generate(served_root, key, second)
@@ -181,13 +190,13 @@ def test_fast_path_preserves_a_newer_valid_served_attestation_plane(tmp_path: Pa
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", checkout / "scripts")
     stale = checkout / "attestations"
     shutil.rmtree(stale)
-    shutil.copytree(served_root / "attestations/2026-08-22", stale / "2026-08-22")
+    shutil.copytree(served_root / f"attestations/{first_day}", stale / first_day)
     shutil.copytree(served_root / "attestations/latest", stale / "latest")
     (stale / "latest/index.json").write_bytes(
-        (served_root / "attestations/2026-08-22/index.json").read_bytes()
+        (served_root / f"attestations/{first_day}/index.json").read_bytes()
     )
     (stale / "latest/chain_head.json").write_bytes(
-        (served_root / "attestations/2026-08-22/chain_head.json").read_bytes()
+        (served_root / f"attestations/{first_day}/chain_head.json").read_bytes()
     )
 
     fake_bin = tmp_path / "bin"
@@ -230,7 +239,7 @@ cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
         PATH=f"{fake_bin}:{environment['PATH']}",
         MOCK_SERVED_ROOT=str(served_root),
         RUNNER_TEMP=str(tmp_path / "runner-temp"),
-        MOCK_TRANSIENT_PATH="attestations/2026-08-23/sample.json",
+        MOCK_TRANSIENT_PATH=f"attestations/{second_day}/sample.json",
         MOCK_CURL_CALLS=str(tmp_path / "curl-calls"),
     )
     completed = subprocess.run(
@@ -244,7 +253,7 @@ cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
 
     assert completed.returncode == 0, completed.stderr
     assert (tmp_path / "curl-calls").read_text(encoding="utf-8").splitlines().count(
-        "attestations/2026-08-23/sample.json"
+        f"attestations/{second_day}/sample.json"
     ) == 2
     preserved = tmp_path / "runner-temp/preserved-attestations"
     assert (preserved / "attestations/latest/binding.json").read_bytes() == (
@@ -253,8 +262,8 @@ cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
     assert (preserved / "attestations/latest/chain_head.json").read_bytes() == (
         served_root / "attestations/latest/chain_head.json"
     ).read_bytes()
-    assert (preserved / "attestations/2026-08-23/sample.json").is_file()
-    assert not (preserved / "attestations/2026-08-22/sample.json").exists()
+    assert (preserved / f"attestations/{second_day}/sample.json").is_file()
+    assert not (preserved / f"attestations/{first_day}/sample.json").exists()
 
     # The fast health update has no matching P1 binding, so it must not inherit
     # a claim from the preserved (older) served health bytes.
@@ -265,7 +274,9 @@ cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
         checkout / "docs/.well-known/datapulse-probe-keys.json",
     )
     health = json.loads((checkout / "health/latest.json").read_text(encoding="utf-8"))
-    health["checked_at"] = "2026-08-24T00:00:00Z"
+    health["checked_at"] = (second + timedelta(days=1)).replace(
+        hour=0, minute=0, second=0
+    ).isoformat().replace("+00:00", "Z")
     health["datasets"][0]["last_checked"] = health["checked_at"]
     write(checkout / "health/latest.json", health)
     assert _attestation_verification(checkout)["claims"] == {

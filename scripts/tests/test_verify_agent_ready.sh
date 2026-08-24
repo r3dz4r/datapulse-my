@@ -13,8 +13,8 @@ cat > "$fixture_root/llms.txt" <<'EOF'
 
 ## Machine-readable surfaces
 
-- [Manifest](https://r3dz4r.github.io/datapulse-my/datapulse.json)
-- [Health](https://r3dz4r.github.io/datapulse-my/health/latest.json)
+- [Manifest](https://data-pulse.my/datapulse.json)
+- [Health](https://data-pulse.my/health/latest.json)
 EOF
 
 cat > "$fixture_root/datapulse.json" <<'EOF'
@@ -141,6 +141,26 @@ grep -Fq 'llms.txt 3' "$retry_log"
 grep -Fq 'datapulse.json 3' "$retry_log"
 grep -Fq 'health/latest.json 3' "$retry_log"
 printf 'verify_agent_ready public 404/503 recovery test: PASS\n'
+
+rejected_fixture_root="$fixture_root/rejected-public"
+mkdir -p "$rejected_fixture_root"
+sed 's#https://data-pulse.my#https://r3dz4r.github.io/datapulse-my#g' \
+  "$public_fixture_root/llms.txt" > "$rejected_fixture_root/llms.txt"
+rejected_log="$fixture_root/rejected.log"
+if PATH="$fake_bin:$PATH" \
+  MOCK_CURL_FIXTURE_ROOT="$rejected_fixture_root" \
+  MOCK_CURL_LOG="$rejected_log" \
+  MOCK_CURL_MODE=recover \
+  DATAPULSE_AGENT_ROOT="$fixture_root" \
+  DATAPULSE_AGENT_BASE_URL="https://example.invalid" \
+  bash "$repo_root/scripts/verify_agent_ready.sh" >"$fixture_root/rejected.out" 2>"$fixture_root/rejected.err"; then
+  printf 'verify_agent_ready retired Pages host unexpectedly passed\n' >&2
+  exit 1
+fi
+grep -Fq 'Discovered URLs are outside the canonical DataPulse MY host' "$fixture_root/rejected.err"
+[[ "$(grep -c '^llms.txt ' "$rejected_log")" -eq 3 ]]
+! grep -Eq '^(datapulse.json|health/latest.json) ' "$rejected_log"
+printf 'verify_agent_ready non-canonical host rejection test: PASS\n'
 
 failure_state="$fixture_root/failure-state"
 failure_log="$fixture_root/failure.log"
