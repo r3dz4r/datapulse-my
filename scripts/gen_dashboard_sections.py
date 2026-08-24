@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -115,6 +116,26 @@ def _read_cache(cache_path: Path) -> tuple[list[dict], str, dt.datetime] | None:
 
 def _format_timestamp(value: dt.datetime) -> str:
     return value.astimezone(dt.UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def _reproducibility_now() -> dt.datetime | None:
+    """Return the isolated verifier clock, failing closed when it is invalid."""
+    if os.environ.get("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD") != "1":
+        return None
+    value = os.environ.get("DATAPULSE_REPRODUCIBILITY_VERIFY_AT")
+    if not value:
+        raise GenerationError("isolated reproducibility build is missing its verification time")
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise GenerationError(
+            "isolated reproducibility verification time must be ISO-8601"
+        ) from error
+    if parsed.tzinfo is None:
+        raise GenerationError(
+            "isolated reproducibility verification time must include a UTC offset"
+        )
+    return parsed.astimezone(dt.UTC)
 
 
 def load_metrics(
@@ -240,7 +261,11 @@ def generate(
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise GenerationError(f"cannot read dashboard section input: {error}") from error
 
-    metrics, fetched_at = load_metrics(cache_path)
+    verification_time = _reproducibility_now()
+    if verification_time is None:
+        metrics, fetched_at = load_metrics(cache_path)
+    else:
+        metrics, fetched_at = load_metrics(cache_path, now=verification_time)
     rows = manifest.get("datasets", []) if isinstance(manifest, dict) else []
     manifest_ids = {
         row.get("id") for row in rows if isinstance(row, dict) and isinstance(row.get("id"), str)

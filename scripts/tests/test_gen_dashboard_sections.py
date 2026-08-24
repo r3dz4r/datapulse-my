@@ -152,3 +152,49 @@ def test_stale_cache_is_used_when_refresh_fails(tmp_path: Path) -> None:
 
     assert metrics == [{"id": "stale", "views": 10}]
     assert fetched_at == "2026-08-10T08:00:00Z"
+
+
+def test_isolated_build_forwards_verification_time_to_metrics_loader(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    readme = tmp_path / "README.md"
+    manifest = tmp_path / "datapulse.json"
+    output = tmp_path / "sections.json"
+    cache = tmp_path / "metrics.json"
+    readme.write_text("", encoding="utf-8")
+    manifest.write_text(json.dumps({"datasets": []}), encoding="utf-8")
+    captured: dict[str, object] = {}
+
+    def fake_load_metrics(path: Path, **kwargs: object) -> tuple[list[dict], str]:
+        captured["path"] = path
+        captured.update(kwargs)
+        return [], "2026-08-23T10:06:30Z"
+
+    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+    monkeypatch.setenv(
+        "DATAPULSE_REPRODUCIBILITY_VERIFY_AT", "2026-08-23T10:06:30Z"
+    )
+    monkeypatch.setattr(sections, "load_metrics", fake_load_metrics)
+
+    sections.generate(readme, manifest, output, cache)
+
+    assert captured["path"] == cache
+    assert captured["now"] == dt.datetime(2026, 8, 23, 10, 6, 30, tzinfo=dt.UTC)
+
+
+@pytest.mark.parametrize("value", [None, "not-a-timestamp", "2026-08-23T10:06:30"])
+def test_isolated_build_rejects_missing_or_malformed_verification_time(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, value: str | None
+) -> None:
+    readme = tmp_path / "README.md"
+    manifest = tmp_path / "datapulse.json"
+    readme.write_text("", encoding="utf-8")
+    manifest.write_text(json.dumps({"datasets": []}), encoding="utf-8")
+    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+    if value is None:
+        monkeypatch.delenv("DATAPULSE_REPRODUCIBILITY_VERIFY_AT", raising=False)
+    else:
+        monkeypatch.setenv("DATAPULSE_REPRODUCIBILITY_VERIFY_AT", value)
+
+    with pytest.raises(sections.GenerationError, match="reproducibility"):
+        sections.generate(readme, manifest, tmp_path / "sections.json", tmp_path / "metrics.json")
