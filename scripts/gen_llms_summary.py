@@ -1,112 +1,68 @@
 #!/usr/bin/env python3
-"""Derive the dataset-count references in llms.txt from datapulse.json."""
+"""Render marker-owned LLM catalogue facts from canonical local inputs."""
 
 from __future__ import annotations
 
 import argparse
-import json
-import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-MANIFEST_PATTERN = r"a machine-readable manifest of \d+ official datasets"
-CATALOGUE_PATTERN = r"the \d+-dataset catalogue"
-PROVENANCE_PATTERN = r"Each manifest entry retains a human-readable `steward` and provides a stable\n`custodian` publisher ID resolved through `custodians\.json`\."
-ANOMALY_PATTERN = r"Health rows expose `anomaly_detected` plus `anomaly_detection` to explain\nfreshness-delta outliers; this signal does not add or change statuses\."
-DATASET_BULLET_PATTERN = re.compile(
-    r"^- \[[^]]+\]\((?:https?://[^)\s]+/)?data/([^)/\s]+)\.md\)"
-)
+from scripts.public_surface_generation import GenerationError, load_json, load_public_surfaces, publish_text_outputs, replace_owned_block
 
 
-class GenerationError(Exception):
-    """Raised when inputs do not satisfy the generator contract."""
-
-
-def generate(root: Path) -> None:
-    manifest_path = root / "datapulse.json"
-    llms_path = root / "llms.txt"
-
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
-        raise GenerationError(f"cannot read {manifest_path}: {error}") from error
-
-    datasets = manifest.get("datasets") if isinstance(manifest, dict) else None
-    if not isinstance(datasets, list):
-        raise GenerationError(f"{manifest_path}: 'datasets' must be an array")
-    count = len(datasets)
-    valid_ids = {entry["id"] for entry in datasets} | {
-        entry["canonical_id"] for entry in datasets if entry.get("canonical_id")
-    }
-
-    try:
-        original = llms_path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as error:
-        raise GenerationError(f"cannot read {llms_path}: {error}") from error
-
-    updated, manifest_matches = re.subn(
-        MANIFEST_PATTERN,
-        f"a machine-readable manifest of {count} official datasets",
-        original,
-    )
-    updated, catalogue_matches = re.subn(
-        CATALOGUE_PATTERN,
-        f"the {count}-dataset catalogue",
-        updated,
-    )
-    updated, provenance_matches = re.subn(
-        PROVENANCE_PATTERN,
-        "Each manifest entry retains a human-readable `steward` and provides a stable\n"
-        "`custodian` publisher ID resolved through `custodians.json`.",
-        updated,
-    )
-    updated, anomaly_matches = re.subn(
-        ANOMALY_PATTERN,
-        "Health rows expose `anomaly_detected` plus `anomaly_detection` to explain\n"
-        "freshness-delta outliers; this signal does not add or change statuses.",
-        updated,
-    )
-    updated = "".join(
-        line
-        for line in updated.splitlines(keepends=True)
-        if not (
-            (match := DATASET_BULLET_PATTERN.match(line))
-            and match.group(1) not in valid_ids
-        )
-    )
-
-    missing = []
-    if manifest_matches < 1:
-        missing.append(f"{MANIFEST_PATTERN!r} (expected 1, found 0)")
-    if catalogue_matches < 2:
-        missing.append(
-            f"{CATALOGUE_PATTERN!r} (expected 2, found {catalogue_matches})"
-        )
-    if any(entry.get("custodian") for entry in datasets) and provenance_matches != 1:
-        missing.append(f"{PROVENANCE_PATTERN!r} (expected 1, found {provenance_matches})")
-    if any(entry.get("custodian") for entry in datasets) and anomaly_matches != 1:
-        missing.append(f"{ANOMALY_PATTERN!r} (expected 1, found {anomaly_matches})")
+def generate(root: Path, *, check: bool = False, validate_only: bool = False) -> bool:
+    """Render catalogue summary and curated datasets without broad substitutions."""
+    config = load_public_surfaces(root)
+    datasets = load_json(root / "datapulse.json").get("datasets")
+    if not isinstance(datasets, list) or not all(isinstance(row, dict) and isinstance(row.get("id"), str) for row in datasets):
+        raise GenerationError("datapulse.json: datasets must be an array of objects with ids")
+    by_id = {row["id"]: row for row in datasets}
+    missing = [dataset_id for dataset_id in config["featured_dataset_ids"] if dataset_id not in by_id]
     if missing:
-        raise GenerationError("missing llms.txt count pattern(s): " + ", ".join(missing))
-
-    if updated != original:
-        llms_path.write_text(updated, encoding="utf-8")
+        raise GenerationError(f"featured dataset id(s) missing from manifest: {', '.join(missing)}")
+    path = root / "llms.txt"
+    try:
+        original = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise GenerationError(f"cannot read {path}: {error}") from error
+    count = len(datasets)
+    summary = (
+        f"> DataPulse MY publishes a machine-readable manifest of {count} official datasets.\n\n"
+        "Each manifest entry retains its human-readable `steward` and stable `custodian` publisher ID. "
+        "Health anomaly fields explain freshness-delta outliers without adding statuses."
+    )
+    website = config["origins"]["website"]
+    featured = "\n".join(
+        f"- [{by_id[dataset_id].get('name', dataset_id)}]({website}/data/{dataset_id}.md): "
+        f"{by_id[dataset_id].get('licence', 'Licence not stated')}; {by_id[dataset_id].get('refresh_frequency', 'cadence not stated')}."
+        for dataset_id in config["featured_dataset_ids"]
+    )
+    updated = replace_owned_block(original, "catalog-summary", summary)
+    updated = replace_owned_block(updated, "featured-datasets", featured)
+    if validate_only:
+        return False
+    return publish_text_outputs({path: updated}, check=check)
 
 
 def parse_args() -> argparse.Namespace:
-    default_root = Path(__file__).resolve().parent.parent
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=default_root)
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--validate-only", action="store_true")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
-        generate(args.root)
+        changed = generate(args.root, check=args.check, validate_only=args.validate_only)
     except GenerationError as error:
         print(f"gen_llms_summary.py: {error}", file=sys.stderr)
+        return 1
+    if args.check and changed:
+        print("gen_llms_summary.py: outputs are stale", file=sys.stderr)
         return 1
     return 0
 

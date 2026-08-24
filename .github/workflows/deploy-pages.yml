@@ -239,6 +239,8 @@ jobs:
         env:
           DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
         run: |
+          export DATAPULSE_SOURCE_COMMIT_SHA="$GITHUB_SHA"
+          export DATAPULSE_SOURCE_COMMIT_DATE="$(git show -s --format=%cs "$GITHUB_SHA")"
           if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then
             echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json
             chmod 600 /tmp/datapulse-attestation-key.json
@@ -276,7 +278,7 @@ jobs:
           # https://data-pulse.my/foo.md, etc. URLs in the landing page and
           # README should NOT include the `docs/` prefix.
           cp -R docs/. _site/
-          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
+          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
           cp -R health deltas record-evidence badges samples data _site/
           if [[ -d "$RUNNER_TEMP/preserved-attestations" ]]; then
             # Keep verified historical evidence, but a new health snapshot cannot
@@ -380,6 +382,13 @@ jobs:
           fetch "release reproducibility proof" "https://data-pulse.my/release-verification.md" "$smoke_dir/release-verification.md"
 
           fetch "llms.txt" "https://data-pulse.my/llms.txt" "$smoke_dir/llms.txt"
+          cmp -s llms.txt "$smoke_dir/llms.txt" || fail "served llms.txt differs from staged artifact"
+          fetch "robots.txt" "https://data-pulse.my/robots.txt" "$smoke_dir/robots.txt"
+          cmp -s robots.txt "$smoke_dir/robots.txt" || fail "served robots.txt differs from staged artifact"
+          fetch "sitemap.xml" "https://data-pulse.my/sitemap.xml" "$smoke_dir/sitemap.xml"
+          cmp -s sitemap.xml "$smoke_dir/sitemap.xml" || fail "served sitemap.xml differs from staged artifact"
+          fetch "agent manifest" "https://data-pulse.my/agent.json" "$smoke_dir/agent.json"
+          cmp -s agent.json "$smoke_dir/agent.json" || fail "served agent.json differs from staged artifact"
           grep -Eq "$expected_dataset_count (official )?datasets|$expected_dataset_count-dataset" "$smoke_dir/llms.txt" || \
             fail "llms.txt does not contain '$expected_dataset_count datasets'"
           grep -Fq "MCP" "$smoke_dir/llms.txt" || \
@@ -396,6 +405,7 @@ jobs:
             fail "JSON-LD catalog is invalid or does not contain $expected_dataset_count datasets"
 
           fetch "MCP advertisement" "https://data-pulse.my/mcp.json" "$smoke_dir/mcp.json"
+          cmp -s mcp.json "$smoke_dir/mcp.json" || fail "served mcp.json differs from staged artifact"
           jq -e '
             .tools | type == "array" and length > 0 and
             all(.[];
@@ -429,12 +439,10 @@ jobs:
               raise SystemExit("release proof drift: " + "; ".join(missing))
           PY
           jq -e '
-            [.resources[].uri] == [
-              "datapulse://index", "datapulse://anomalies", "datapulse://trends", "datapulse://reliability",
-              "datapulse://drift", "datapulse://reconciliation", "datapulse://attestations", "datapulse://licences",
-              "datapulse://{dataset_id}"
-            ]
-          ' "$smoke_dir/mcp.json" >/dev/null || fail "mcp.json does not advertise 8 concrete resources plus 1 template"
+            (.resources | type == "array") and
+            (.resource_templates | type == "array") and
+            all(.tools[]; (.annotations | keys | sort) == ["destructiveHint", "idempotentHint", "openWorldHint", "readOnlyHint"])
+          ' "$smoke_dir/mcp.json" >/dev/null || fail "mcp.json inventory or tool annotations are incomplete"
 
           fetch "probe key registry" "https://data-pulse.my/.well-known/datapulse-probe-keys.json" "$smoke_dir/keys.json"
           fetch "latest attestation index" "https://data-pulse.my/attestations/latest/index.json" "$smoke_dir/attestation-index.json"

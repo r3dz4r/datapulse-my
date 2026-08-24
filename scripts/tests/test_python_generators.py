@@ -32,7 +32,7 @@ JSONLD_OUTPUTS = [
     "docs/index.html",
 ]
 MCP_INPUTS = [
-    "datapulse.json", "mcp.json", "mcp/server.py", "docs",
+    "datapulse.json", "health.schema.json", "config", "mcp.schema.json", "agent.schema.json", "mcp.json", "mcp/server.py", "docs",
     "llms.txt", "README.md", "agent.json",
 ]
 MCP_OUTPUTS = [
@@ -343,6 +343,27 @@ def test_mcp_reference_json_matches_runtime_schema() -> None:
     assert tuple(generated) == EXPECTED_TOOL_NAMES
     assert len(discovery["tools"]) == 5
     assert generated == runtime
+    assert len(discovery["taxonomy"]) == 10
+    assert "10-status health taxonomy" in discovery["server"]["description"]
+    assert discovery["server"]["source_commit_sha"] == "0123456789abcdef0123456789abcdef01234567"
+    assert discovery["resources"] == [
+        {"uri": "datapulse://index", "name": "dataset_index", "description": "Read first; lightweight list of all DataPulse MY dataset ids with current status, title, source, licence, and namespace.", "mimeType": "application/json"},
+        {"uri": "datapulse://licences", "name": "licence_summary", "description": "Live count of DataPulse MY datasets grouped by licence.", "mimeType": "application/json"},
+    ]
+    assert [item["uriTemplate"] for item in discovery["resource_templates"]] == ["datapulse://{dataset_id}"]
+    assert all(set(tool["annotations"]) == {"readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"} for tool in discovery["tools"])
+
+
+def test_mcp_taxonomy_changes_with_schema_fixture(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    shutil.copytree(FIXTURE, source)
+    schema = json.loads((source / "health.schema.json").read_text())
+    schema["properties"]["datasets"]["items"]["properties"]["status"]["enum"] = ["fresh", "stale", "reference"]
+    (source / "health.schema.json").write_text(json.dumps(schema) + "\n")
+    result = _run(MCP_GENERATOR, MCP_INPUTS, MCP_OUTPUTS, source_root=source)
+    assert result.returncode == 0, result.stderr
+    assert _json_output(result, "mcp.json")["taxonomy"] == ["fresh", "stale", "reference"]
+    assert "3-status health taxonomy" in _json_output(result, "mcp.json")["server"]["description"]
 
 
 def test_mcp_reference_uses_fixture_server_version_and_is_idempotent() -> None:
@@ -397,7 +418,7 @@ def test_mcp_reference_rejects_invalid_tool_markers(replacement: str, tmp_path: 
     result = _run(MCP_GENERATOR, MCP_INPUTS, MCP_OUTPUTS, source_root=source)
 
     assert result.returncode != 0
-    assert "expected exactly one" in result.stderr
+    assert "marker" in result.stderr
 
 
 def test_mcp_reference_handles_missing_server() -> None:

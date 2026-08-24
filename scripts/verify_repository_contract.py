@@ -195,6 +195,43 @@ def _verify_scoped_contract(
         for name in sorted(unexpected):
             errors.append(f"{directory}/{name}: unowned generated artifact")
 
+    public = scope.get("public_surfaces", {})
+    if not isinstance(public, dict):
+        errors.append("scripts/contract-scope.json:public_surfaces: expected object")
+        return
+    for relative_path in public.get("sources", []) + public.get("full_outputs", []):
+        if not isinstance(relative_path, str) or not (root / relative_path).is_file():
+            errors.append(f"{relative_path}: declared public-surface path is missing")
+    owned_blocks: list[tuple[str, str, str]] = []
+    markers = public.get("owned_markers", {})
+    if not isinstance(markers, dict):
+        errors.append("scripts/contract-scope.json:public_surfaces.owned_markers: expected object")
+        markers = {}
+    for relative_path, names in markers.items():
+        try:
+            text = (root / relative_path).read_text(encoding="utf-8")
+        except OSError as exc:
+            errors.append(f"{relative_path}: cannot read marker-owned surface: {exc}")
+            continue
+        for name in names if isinstance(names, list) else []:
+            begin = f"<!-- BEGIN {name} -->"
+            end = f"<!-- END {name} -->"
+            if text.count(begin) != 1 or text.count(end) != 1 or text.index(begin) > text.index(end):
+                errors.append(f"{relative_path}: expected one ordered {name} marker pair")
+                continue
+            owned_blocks.append((relative_path, name, text[text.index(begin):text.index(end) + len(end)]))
+    prohibited = public.get("prohibited_unowned_patterns", [])
+    full_payloads = []
+    for relative_path in public.get("full_outputs", []):
+        try:
+            full_payloads.append((relative_path, (root / relative_path).read_text(encoding="utf-8")))
+        except OSError:
+            pass
+    for pattern in prohibited if isinstance(prohibited, list) else []:
+        for relative_path, payload in [*full_payloads, *((path, block) for path, _, block in owned_blocks)]:
+            if isinstance(pattern, str) and pattern in payload:
+                errors.append(f"{relative_path}: prohibited stale public-surface fact: {pattern!r}")
+
 
 def verify_repository_contract(root: Path) -> list[str]:
     """Return actionable invariant failures for ``root``; never mutate it."""
@@ -207,9 +244,15 @@ def verify_repository_contract(root: Path) -> list[str]:
     scope = _load_json(root, "scripts/contract-scope.json", errors)
     probe_policy = _load_json(root, "scripts/probe-policy.json", errors)
     probe_policy_schema = _load_json(root, "scripts/probe-policy.schema.json", errors)
+    public_config = _load_json(root, "config/public-surfaces.json", errors)
+    public_schema = _load_json(root, "config/public-surfaces.schema.json", errors)
+    agent = _load_json(root, "agent.json", errors)
+    agent_schema = _load_json(root, "agent.schema.json", errors)
+    mcp = _load_json(root, "mcp.json", errors)
+    mcp_schema = _load_json(root, "mcp.schema.json", errors)
     if any(
         document is None
-        for document in (schema, manifest, custodians, health, scope, probe_policy, probe_policy_schema)
+        for document in (schema, manifest, custodians, health, scope, probe_policy, probe_policy_schema, public_config, public_schema, agent, agent_schema, mcp, mcp_schema)
     ):
         return errors
 
@@ -220,6 +263,18 @@ def verify_repository_contract(root: Path) -> list[str]:
             errors.append(f"datapulse.json:{location}: schema violation: {failure.message}")
     except Exception as exc:  # invalid schemas should be reported as contract failures
         errors.append(f"datapulse.schema.json: invalid schema: {exc}")
+    for label, document, document_schema in (
+        ("config/public-surfaces.json", public_config, public_schema),
+        ("agent.json", agent, agent_schema),
+        ("mcp.json", mcp, mcp_schema),
+    ):
+        try:
+            validator = Draft202012Validator(document_schema, format_checker=FormatChecker())
+            for failure in sorted(validator.iter_errors(document), key=lambda item: list(item.path)):
+                location = ".".join(str(part) for part in failure.absolute_path) or "<root>"
+                errors.append(f"{label}:{location}: schema violation: {failure.message}")
+        except Exception as exc:
+            errors.append(f"{label}: invalid schema contract: {exc}")
 
     manifest_rows = manifest.get("datasets", []) if isinstance(manifest, dict) else []
     registry = custodians.get("custodians", {}) if isinstance(custodians, dict) else {}

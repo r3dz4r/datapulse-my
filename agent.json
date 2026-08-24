@@ -1,71 +1,36 @@
 {
+  "$schema": "https://data-pulse.my/agent.schema.json",
+  "schema": "datapulse/v1/agent-manifest",
   "@context": "https://schema.org/docs/jsonldcontext.jsonld",
   "@type": "WebSite",
   "@id": "https://data-pulse.my/#agent",
   "name": "DataPulse MY",
-  "alternateName": "DataPulse Malaysia",
-  "description": "Open-source trust layer for Malaysian public data. Machine-readable manifest of 389 official datasets from data.gov.my, BNM, DOSM, DOE, KKM, KPDN, and MET Malaysia, with continuous health monitoring, licence metadata, and agent-native discovery.",
+  "description": "Open-source trust layer for Malaysian public data with 389 official datasets and agent-native discovery.",
   "url": "https://data-pulse.my/",
-  "inLanguage": [
-    "en",
-    "ms"
-  ],
-  "operatingRegion": {
-    "@type": "Country",
-    "name": "Malaysia"
-  },
   "capabilities": {
     "data_access": {
       "read": true,
-      "write": false,
-      "note": "Read-only by design. Sources are upstream Malaysian government datasets; DataPulse MY does not host authoritative copies."
-    },
-    "machine_readable": {
-      "manifest": "https://data-pulse.my/datapulse.json",
-      "health": "https://data-pulse.my/health/latest.json",
-      "trends": "https://data-pulse.my/health/trends.json",
-      "drift": "https://data-pulse.my/health/drift.json",
-      "reconciliation": "https://data-pulse.my/health/reconciliation.json",
-      "attestation_keys": "https://data-pulse.my/.well-known/datapulse-probe-keys.json",
-      "attestations": "https://data-pulse.my/attestations/latest/index.json",
-      "llms_txt": "https://data-pulse.my/llms.txt",
-      "feed": "https://data-pulse.my/feed.xml"
+      "write": false
     },
     "mcp_server": {
       "endpoint": "https://mcp.data-pulse.my/mcp",
       "transport": "streamable-http",
       "tools": 16,
-      "resources": 8
-    },
-    "structured_metadata": {
-      "json_ld": true,
-      "schema_org": [
-        "Dataset",
-        "Organization",
-        "BreadcrumbList"
-      ],
-      "note": "JSON-LD injected on dashboard and per-dataset pages (Phase 2)"
+      "resources": 8,
+      "resource_templates": 1
     }
   },
-  "agent_resources": {
-    "llms_txt": "https://data-pulse.my/llms.txt",
-    "well_known_mcp_json": "https://data-pulse.my/mcp.json",
-    "well_known_agent_json": "https://data-pulse.my/agent.json",
-    "robots_txt": "https://data-pulse.my/robots.txt",
-    "sitemap_xml": "https://data-pulse.my/sitemap.xml",
-    "changelog_json": "https://data-pulse.my/changelog.json",
-    "jsonld_catalog": "https://data-pulse.my/data/jsonld/catalog.json"
+  "resources": {
+    "manifest": "https://data-pulse.my/datapulse.json",
+    "health": "https://data-pulse.my/health/latest.json",
+    "llms": "https://data-pulse.my/llms.txt",
+    "mcp": "https://data-pulse.my/mcp.json",
+    "robots": "https://data-pulse.my/robots.txt",
+    "sitemap": "https://data-pulse.my/sitemap.xml"
   },
-  "contact": {
-    "@type": "Organization",
-    "name": "DataPulse MY",
-    "url": "https://github.com/r3dz4r/datapulse-my",
-    "issue_tracker": "https://github.com/r3dz4r/datapulse-my/issues"
+  "source": {
+    "commit_sha": "669668c147a4ac431a9e3bf17eec82162bc3b4a2",
+    "commit_date": "2026-08-16"
   },
-  "license": {
-    "@type": "CreativeWork",
-    "name": "MIT (code) + CC BY 4.0 (data manifest)",
-    "url": "https://github.com/r3dz4r/datapulse-my/blob/main/LICENSE"
-  },
-  "last_updated": "2026-08-04"
+  "last_updated": "2026-08-16"
 }

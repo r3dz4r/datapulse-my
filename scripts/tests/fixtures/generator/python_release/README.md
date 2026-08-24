@@ -1,5 +1,9 @@
 # Fixture
 
+<!-- BEGIN public-discovery -->
+old discovery
+<!-- END public-discovery -->
+
 <!-- BEGIN mcp-tools -->
 - 0 tools:
 

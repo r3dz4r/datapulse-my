@@ -25,7 +25,13 @@ OWNED_CATEGORIES = (
     "feed.xml",
     "README.md (trust-summary)",
     "README.md (MCP tools)",
+    "README.md (public discovery)",
     "llms.txt (MCP tools)",
+    "llms.txt (catalog summary)",
+    "llms.txt (featured datasets)",
+    "llms.txt (public discovery)",
+    "robots.txt (public discovery)",
+    "sitemap.xml",
     "catalog-snapshot.json",
     "catalog-graph.json",
     "data/json/",
@@ -168,7 +174,8 @@ def test_verify_passes_one_captured_time_to_both_isolated_builds(
         return path
 
     def fake_build(
-        source: Path, workdir: Path, git_dir: str, verification_time: str
+        source: Path, workdir: Path, git_dir: str, verification_time: str,
+        source_sha: str, source_date: str,
     ) -> verifier.BuildCapture:
         captured_times.append(verification_time)
         return verifier.BuildCapture({}, {}, workdir)
@@ -219,6 +226,8 @@ def test_build_forwards_attestation_key_path_without_key_contents(
         "DATAPULSE_ARCHIVES_DIR",
         "DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD",
         "DATAPULSE_REPRODUCIBILITY_VERIFY_AT",
+        "DATAPULSE_SOURCE_COMMIT_SHA",
+        "DATAPULSE_SOURCE_COMMIT_DATE",
         "DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE",
     }
     assert environment["DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"] == str(key_path)
@@ -243,7 +252,13 @@ def test_first_build_produces_expected_outputs(
         "feed.xml",
         "README.md#trust-summary",
         "README.md#mcp-tools",
+        "README.md#public-discovery",
         "llms.txt#mcp-tools",
+        "llms.txt#catalog-summary",
+        "llms.txt#featured-datasets",
+        "llms.txt#public-discovery",
+        "robots.txt#public-discovery",
+        "sitemap.xml",
         "catalog-snapshot.json",
         "catalog-graph.json",
         "data/json/alpha.json",

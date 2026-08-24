@@ -26,7 +26,13 @@ CATEGORY_ORDER = (
     "feed.xml",
     "README.md (trust-summary)",
     "README.md (MCP tools)",
+    "README.md (public discovery)",
     "llms.txt (MCP tools)",
+    "llms.txt (catalog summary)",
+    "llms.txt (featured datasets)",
+    "llms.txt (public discovery)",
+    "robots.txt (public discovery)",
+    "sitemap.xml",
     "catalog-snapshot.json",
     "catalog-graph.json",
     "data/json/",
@@ -39,7 +45,6 @@ CATEGORY_ORDER = (
     "docs/.dashboard_sections.json",
     "docs/index.html",
 )
-STATUS_BADGE_COUNT = 10
 
 
 class SetupFailure(RuntimeError):
@@ -152,7 +157,13 @@ def _expected_badge_count(source: Path, identifiers: tuple[str, ...]) -> int:
                 if path.stem in identifiers_set or path.name.startswith("status-"):
                     continue
             auxiliary += 1
-    return len(identifiers) + STATUS_BADGE_COUNT + auxiliary
+    try:
+        taxonomy = _load_json(source / "health.schema.json")["properties"]["datasets"]["items"]["properties"]["status"]["enum"]
+    except (KeyError, TypeError) as error:
+        raise VerificationFailure(f"health.schema.json: missing status enum: {error}") from error
+    if not isinstance(taxonomy, list):
+        raise VerificationFailure("health.schema.json: status enum must be an array")
+    return len(identifiers) + len(taxonomy) + auxiliary
 
 
 def _readme_summary(path: Path) -> bytes:
@@ -189,6 +200,21 @@ def _mcp_tools_block(path: Path) -> bytes:
     return matches[0]
 
 
+def _owned_block(path: Path, name: str) -> bytes:
+    try:
+        payload = path.read_bytes()
+    except OSError as error:
+        raise VerificationFailure(f"could not read {path}: {error}") from error
+    matches = re.findall(
+        rb"<!-- BEGIN " + re.escape(name.encode()) + rb" -->\n.*?\n<!-- END " + re.escape(name.encode()) + rb" -->",
+        payload,
+        flags=re.DOTALL,
+    )
+    if len(matches) != 1:
+        raise VerificationFailure(f"{path}: expected exactly one {name} block")
+    return matches[0]
+
+
 def _regular_files(directory: Path) -> tuple[Path, ...]:
     if not directory.is_dir():
         raise VerificationFailure(f"required output directory is missing: {directory}")
@@ -210,6 +236,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/mcp-reference.md": root / "docs/mcp-reference.md",
         "mcp.json": root / "mcp.json",
         "agent.json": root / "agent.json",
+        "sitemap.xml": root / "sitemap.xml",
         "docs/.dashboard_filters.json": root / "docs/.dashboard_filters.json",
         "docs/.dashboard_sections.json": root / "docs/.dashboard_sections.json",
         "docs/index.html": root / "docs/index.html",
@@ -233,7 +260,13 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "feed.xml": 1,
         "README.md (trust-summary)": 1,
         "README.md (MCP tools)": 1,
+        "README.md (public discovery)": 1,
         "llms.txt (MCP tools)": 1,
+        "llms.txt (catalog summary)": 1,
+        "llms.txt (featured datasets)": 1,
+        "llms.txt (public discovery)": 1,
+        "robots.txt (public discovery)": 1,
+        "sitemap.xml": 1,
         "catalog-snapshot.json": 1,
         "catalog-graph.json": 1,
         "data/json/": len(non_gtfs),
@@ -258,6 +291,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/mcp-reference.md": (singleton_paths["docs/mcp-reference.md"],),
         "mcp.json": (singleton_paths["mcp.json"],),
         "agent.json": (singleton_paths["agent.json"],),
+        "sitemap.xml": (singleton_paths["sitemap.xml"],),
         "docs/.dashboard_filters.json": (
             singleton_paths["docs/.dashboard_filters.json"],
         ),
@@ -271,7 +305,12 @@ def _capture(root: Path, source: Path) -> BuildCapture:
     }
     actual_counts["README.md (trust-summary)"] = 1
     actual_counts["README.md (MCP tools)"] = 1
+    actual_counts["README.md (public discovery)"] = 1
     actual_counts["llms.txt (MCP tools)"] = 1
+    actual_counts["llms.txt (catalog summary)"] = 1
+    actual_counts["llms.txt (featured datasets)"] = 1
+    actual_counts["llms.txt (public discovery)"] = 1
+    actual_counts["robots.txt (public discovery)"] = 1
     actual_counts["docs/mcp-deploy.md (MCP tools)"] = 1
     count_errors = [
         f"{category}: expected {expected_counts[category]}, found {actual_counts[category]}"
@@ -305,6 +344,15 @@ def _capture(root: Path, source: Path) -> BuildCapture:
     ):
         hashes[key] = hashlib.sha256(_mcp_tools_block(path)).hexdigest()
         categories[category] = (key,)
+    for category, key, path, marker in (
+        ("README.md (public discovery)", "README.md#public-discovery", root / "README.md", "public-discovery"),
+        ("llms.txt (catalog summary)", "llms.txt#catalog-summary", root / "llms.txt", "catalog-summary"),
+        ("llms.txt (featured datasets)", "llms.txt#featured-datasets", root / "llms.txt", "featured-datasets"),
+        ("llms.txt (public discovery)", "llms.txt#public-discovery", root / "llms.txt", "public-discovery"),
+        ("robots.txt (public discovery)", "robots.txt#public-discovery", root / "robots.txt", "public-discovery"),
+    ):
+        hashes[key] = hashlib.sha256(_owned_block(path, marker)).hexdigest()
+        categories[category] = (key,)
     return BuildCapture(hashes=dict(sorted(hashes.items())), categories=categories, workdir=root)
 
 
@@ -316,7 +364,9 @@ def _write_hash_table(path: Path, hashes: dict[str, str]) -> None:
 
 
 def _build(
-    source: Path, workdir: Path, git_dir: str, verification_time: str
+    source: Path, workdir: Path, git_dir: str, verification_time: str,
+    source_sha: str = "0123456789abcdef0123456789abcdef01234567",
+    source_date: str = "2026-08-08",
 ) -> BuildCapture:
     _copy_source(workdir)
     environment = {
@@ -327,6 +377,8 @@ def _build(
         # Served-state generation receives no override and remains fail-closed.
         "DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD": "1",
         "DATAPULSE_REPRODUCIBILITY_VERIFY_AT": verification_time,
+        "DATAPULSE_SOURCE_COMMIT_SHA": source_sha,
+        "DATAPULSE_SOURCE_COMMIT_DATE": source_date,
     }
     key_path = os.environ.get("DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE")
     if key_path:
@@ -469,11 +521,12 @@ def verify(workdir_root: Path, output: Path, reproduction: str) -> int:
         raise SetupFailure(f"could not prepare workdir root {workdir_root}: {error}") from error
 
     source_sha = _run_git("rev-parse", "HEAD")
+    source_date = _run_git("show", "-s", "--format=%cs", source_sha)
     git_dir = _run_git("rev-parse", "--absolute-git-dir")
     verification_time = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     metadata = _workdir(workdir_root, "datapulse-release-meta-")
     first_workdir = _workdir(workdir_root, "datapulse-release-A-")
-    first = _build(ROOT, first_workdir, git_dir, verification_time)
+    first = _build(ROOT, first_workdir, git_dir, verification_time, source_sha, source_date)
     _write_hash_table(metadata / "first_run.json", first.hashes)
 
     try:
@@ -482,7 +535,7 @@ def verify(workdir_root: Path, output: Path, reproduction: str) -> int:
         raise SetupFailure(f"could not wipe first workdir {first_workdir}: {error}") from error
 
     second_workdir = _workdir(workdir_root, "datapulse-release-B-")
-    second = _build(ROOT, second_workdir, git_dir, verification_time)
+    second = _build(ROOT, second_workdir, git_dir, verification_time, source_sha, source_date)
     _write_hash_table(metadata / "second_run.json", second.hashes)
 
     summary = _summary(source_sha, first, second, reproduction, ROOT)

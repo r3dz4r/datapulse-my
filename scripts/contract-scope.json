@@ -432,11 +432,35 @@
   "literal_detection": {
     "paths": [
       "README.md",
-      "llms.txt",
-      "docs/mcp-reference.md"
+      "llms.txt"
     ],
     "pattern": "\\b[0-9]+\\s+(?:datasets?|healthy)\\b",
     "exclusions": []
+  },
+  "public_surfaces": {
+    "sources": [
+      "config/public-surfaces.json",
+      "config/public-surfaces.schema.json",
+      "datapulse.json",
+      "health.schema.json",
+      "mcp/server.py"
+    ],
+    "full_outputs": [
+      "mcp.json",
+      "agent.json",
+      "sitemap.xml",
+      "docs/mcp-reference.md"
+    ],
+    "owned_markers": {
+      "README.md": ["mcp-tools", "public-discovery"],
+      "llms.txt": ["catalog-summary", "mcp-tools", "public-discovery", "featured-datasets"],
+      "robots.txt": ["public-discovery"],
+      "docs/mcp-deploy.md": ["mcp-tools"]
+    },
+    "prohibited_unowned_patterns": [
+      "8-status health taxonomy",
+      "https://r3dz4r.github.io/datapulse-my"
+    ]
   },
   "generated_artifacts": [
     {

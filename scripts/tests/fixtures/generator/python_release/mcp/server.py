@@ -12,6 +12,7 @@ from typing import Any
 
 import httpx
 from fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 from pydantic import Field
 from fastmcp.tools import FunctionTool
 from typing_extensions import Annotated
@@ -97,6 +98,12 @@ mcp = FastMCP(
     "DataPulse MY",
     instructions="Read-only access to DataPulse MY's Malaysian public dataset catalogue.",
 )
+READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=True,
+)
 
 
 async def _fetch_json(path: str) -> dict[str, Any]:
@@ -143,7 +150,7 @@ def _search_score(entry: dict[str, Any], query: str) -> int:
     return score
 
 
-@mcp.tool(description=SEARCH_DESCRIPTION)
+@mcp.tool(description=SEARCH_DESCRIPTION, annotations=READ_ONLY_TOOL_ANNOTATIONS)
 async def search_datasets(
     query: Annotated[
         str,
@@ -222,7 +229,7 @@ async def search_datasets(
     return matches[:limit]
 
 
-@mcp.tool(description=GET_DATASET_DESCRIPTION)
+@mcp.tool(description=GET_DATASET_DESCRIPTION, annotations=READ_ONLY_TOOL_ANNOTATIONS)
 async def get_dataset(
     dataset_id: Annotated[
         str,
@@ -354,13 +361,13 @@ async def find_stale(
 
 
 _find_stale_tool = FunctionTool.from_function(
-    find_stale, description=FIND_STALE_DESCRIPTION
+    find_stale, description=FIND_STALE_DESCRIPTION, annotations=READ_ONLY_TOOL_ANNOTATIONS
 )
 _find_stale_tool.parameters.setdefault("required", [])
 mcp.add_tool(_find_stale_tool)
 
 
-@mcp.tool(description=GET_PROVENANCE_DESCRIPTION)
+@mcp.tool(description=GET_PROVENANCE_DESCRIPTION, annotations=READ_ONLY_TOOL_ANNOTATIONS)
 async def get_provenance(
     dataset_ids: Annotated[
         list[str],
@@ -403,7 +410,7 @@ async def get_provenance(
     return provenance
 
 
-@mcp.tool(description=FIND_BY_LICENCE_DESCRIPTION)
+@mcp.tool(description=FIND_BY_LICENCE_DESCRIPTION, annotations=READ_ONLY_TOOL_ANNOTATIONS)
 async def find_by_licence(
     licence: Annotated[
         str,

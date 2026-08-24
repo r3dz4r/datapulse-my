@@ -28,6 +28,7 @@ GENERATORS = (
     "gen_status_legend.sh",
     "gen_readme_summary.sh",
     "gen_llms_summary.py",
+    "gen_public_discovery.py",
     "gen_rss.sh",
     "gen_catalog_snapshot.py",
     "gen_health_history.py",
@@ -69,12 +70,15 @@ HEALTH_STEPS = (
     "gen_catalog_graph.py",
 )
 RELEASE_STEPS = (
+    "gen_mcp_reference.py --validate-only",
+    "gen_mcp_reference.py",
+    "gen_llms_summary.py",
+    "gen_public_discovery.py",
     "gen_dashboard_sections.py",
     "gen_data_reports.sh",
     "gen_health_methodology.py",
     "gen_badges.sh",
     "gen_readme_summary.sh",
-    "gen_llms_summary.py",
     "gen_rss.sh",
     "gen_catalog_snapshot.py",
     "gen_health_history.py",
@@ -86,7 +90,6 @@ RELEASE_STEPS = (
     "gen_catalog_graph.py",
     "gen_json_envelope.py",
     "gen_jsonld_catalog.py",
-    "gen_mcp_reference.py",
     "gen_dashboard_filters.py",
     "embed_dashboard_data.py",
     "check_url_drift.py",
@@ -112,6 +115,8 @@ HEALTH_OUTPUTS = (
 )
 RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "llms.txt",
+    "robots.txt",
+    "sitemap.xml",
     "data/json/alpha.json",
     "data/jsonld/alpha.json",
     "data/jsonld/catalog.json",
@@ -135,6 +140,11 @@ PROFILE_INPUTS = (
     "agent.json",
     "mcp.json",
     "mcp",
+    "config",
+    "health.schema.json",
+    "agent.schema.json",
+    "mcp.schema.json",
+    "robots.txt",
     "scripts",
     ".cache",
 )
@@ -209,6 +219,7 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(SHELL_FIXTURE / "README.md", source / "README.md")
     with (source / "README.md").open("a", encoding="utf-8") as output:
         output.write(
+            "\n<!-- BEGIN public-discovery -->\nold discovery\n<!-- END public-discovery -->\n"
             "\n<!-- BEGIN mcp-tools -->\n"
             "- 0 tools:\n\n"
             "The public endpoint is live and serves all 0 read-only tools over the\n"
@@ -216,13 +227,13 @@ def _stage_source(tmp_path: Path) -> Path:
             "<!-- END mcp-tools -->\n"
         )
     (source / "llms.txt").write_text(
-        "> a machine-readable manifest of 42 official datasets\n"
-        "Agents can query the 42-dataset catalogue natively.\n"
-        "The endpoint serves tools over the 42-dataset catalogue.\n\n"
+        "<!-- BEGIN catalog-summary -->\nold summary\n<!-- END catalog-summary -->\n\n"
+        "<!-- BEGIN public-discovery -->\nold discovery\n<!-- END public-discovery -->\n\n"
         "<!-- BEGIN mcp-tools -->\n"
         "### Tools\n\n"
         "| Tool | Use when |\n|---|---|\n"
-        "<!-- END mcp-tools -->\n",
+        "<!-- END mcp-tools -->\n\n"
+        "<!-- BEGIN featured-datasets -->\nold featured\n<!-- END featured-datasets -->\n",
         encoding="utf-8",
     )
     (source / "docs").mkdir()
@@ -239,6 +250,11 @@ def _stage_source(tmp_path: Path) -> Path:
     )
     shutil.copy2(RELEASE_FIXTURE / "mcp.json", source / "mcp.json")
     shutil.copy2(RELEASE_FIXTURE / "agent.json", source / "agent.json")
+    shutil.copy2(RELEASE_FIXTURE / "agent.schema.json", source / "agent.schema.json")
+    shutil.copy2(RELEASE_FIXTURE / "mcp.schema.json", source / "mcp.schema.json")
+    shutil.copy2(RELEASE_FIXTURE / "health.schema.json", source / "health.schema.json")
+    shutil.copytree(RELEASE_FIXTURE / "config", source / "config")
+    shutil.copy2(RELEASE_FIXTURE / "robots.txt", source / "robots.txt")
     shutil.copy2(RELEASE_FIXTURE / "docs/mcp-deploy.md", source / "docs/mcp-deploy.md")
     shutil.copytree(RELEASE_FIXTURE / "mcp", source / "mcp")
 
@@ -258,6 +274,7 @@ def _stage_source(tmp_path: Path) -> Path:
     scripts.mkdir()
     shutil.copytree(ROOT / "scripts/templates", scripts / "templates")
     shutil.copy2(ROOT / "scripts/generate.sh", scripts / "generate.sh")
+    shutil.copy2(ROOT / "scripts/public_surface_generation.py", scripts / "public_surface_generation.py")
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", scripts)

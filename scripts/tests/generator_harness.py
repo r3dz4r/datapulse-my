@@ -128,6 +128,11 @@ def run_generator(
         isolated_generator = _generator_destination(
             generator_path, source_root, workdir
         )
+        shared_generation = Path(__file__).resolve().parents[1] / "public_surface_generation.py"
+        if shared_generation.is_file():
+            shared_destination = workdir / "scripts/public_surface_generation.py"
+            if not shared_destination.exists():
+                shutil.copy2(shared_generation, shared_destination)
 
         started = time.monotonic()
         validation_error = _validate_canonical_json_inputs(workdir, inputs)
@@ -147,6 +152,8 @@ def run_generator(
             environment = os.environ.copy()
             environment["DATAPULSE_REPO_ROOT"] = str(workdir)
             environment["DATAPULSE_ARCHIVES_DIR"] = str(workdir / ".archives")
+            environment.setdefault("DATAPULSE_SOURCE_COMMIT_SHA", "0123456789abcdef0123456789abcdef01234567")
+            environment.setdefault("DATAPULSE_SOURCE_COMMIT_DATE", "2026-08-08")
             completed = subprocess.run(
                 command,
                 cwd=workdir,

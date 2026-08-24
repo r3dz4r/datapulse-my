@@ -396,7 +396,7 @@ with (work / "llms-urls.txt").open("w", encoding="utf-8") as output:
 print(f"release metadata assertions: PASS ({expected_count} datasets)")
 PY
 
-PYTHONPATH=mcp python3 - "$work_dir/mcp.json" "$work_dir/llms.txt" <<'PY'
+PYTHONPATH=mcp python3 - "$work_dir/mcp.json" "$work_dir/llms.txt" health.schema.json agent.json <<'PY'
 import asyncio
 import json
 import re
@@ -407,6 +407,8 @@ import server
 
 async def main() -> None:
     advertised_document = json.load(open(sys.argv[1], encoding="utf-8"))
+    health_schema = json.load(open(sys.argv[3], encoding="utf-8"))
+    agent_document = json.load(open(sys.argv[4], encoding="utf-8"))
     advertised_tools = advertised_document["tools"]
     runtime_tools = await server.mcp.list_tools()
     expected_tools = [
@@ -423,6 +425,9 @@ async def main() -> None:
         for tool in runtime_tools
     ]
     assert advertised_tools == expected_tools
+    taxonomy = health_schema["properties"]["datasets"]["items"]["properties"]["status"]["enum"]
+    assert advertised_document["taxonomy"] == taxonomy
+    assert f"{len(taxonomy)}-status health taxonomy" in advertised_document["server"]["description"]
     llms = open(sys.argv[2], encoding="utf-8").read()
     blocks = re.findall(
         r"<!-- BEGIN mcp-tools -->\n(.*?)\n<!-- END mcp-tools -->",
@@ -435,13 +440,15 @@ async def main() -> None:
     assert documented_tools == runtime_names
 
     advertised_resources = [resource["uri"] for resource in advertised_document["resources"]]
+    advertised_templates = [template["uriTemplate"] for template in advertised_document["resource_templates"]]
     runtime_resources = await server.mcp.list_resources()
     runtime_templates = await server.mcp.list_resource_templates()
     expected_resources = [str(resource.uri) for resource in runtime_resources]
-    expected_resources.extend(template.uri_template for template in runtime_templates)
     assert advertised_resources == expected_resources
-    assert len(runtime_resources) == 8
-    assert len(runtime_templates) == 1
+    assert advertised_templates == [template.uri_template for template in runtime_templates]
+    assert agent_document["capabilities"]["mcp_server"]["tools"] == len(runtime_tools)
+    assert agent_document["capabilities"]["mcp_server"]["resources"] == len(runtime_resources)
+    assert agent_document["capabilities"]["mcp_server"]["resource_templates"] == len(runtime_templates)
     print(
         "MCP runtime schema assertion: PASS "
         f"({len(runtime_tools)} tools, {len(runtime_resources)} concrete resources, "

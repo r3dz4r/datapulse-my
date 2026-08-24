@@ -1,350 +1,281 @@
 #!/usr/bin/env python3
-"""Generate MCP discovery schemas and reference docs from mcp/server.py."""
+"""Generate MCP discovery documents and reference text from canonical local inputs."""
 
 from __future__ import annotations
 
+import argparse
 import asyncio
-import json
 import os
 import re
-import stat
 import sys
-import tempfile
 from pathlib import Path
+from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("DATAPULSE_REPO_ROOT", Path(__file__).resolve().parents[1])).resolve()
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "mcp"))
 
 import server  # noqa: E402
+from jsonschema import Draft202012Validator, FormatChecker  # noqa: E402
 from mcp.types import LATEST_PROTOCOL_VERSION  # noqa: E402
 
+from scripts.public_surface_generation import (  # noqa: E402
+    GenerationError,
+    load_json,
+    load_public_surfaces,
+    publish_text_outputs,
+    replace_owned_block,
+    serialize_json,
+)
 
-BEGIN_MCP_TOOLS = "<!-- BEGIN mcp-tools -->"
-END_MCP_TOOLS = "<!-- END mcp-tools -->"
+
+REQUIRED_ANNOTATIONS = ("readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint")
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
-class GenerationError(Exception):
-    """Raised when an owned artifact does not satisfy the generator contract."""
+def _source_identity(sha: str | None, date: str | None) -> tuple[str, str]:
+    resolved_sha = sha or os.environ.get("DATAPULSE_SOURCE_COMMIT_SHA")
+    resolved_date = date or os.environ.get("DATAPULSE_SOURCE_COMMIT_DATE")
+    if not resolved_sha or not SHA_RE.fullmatch(resolved_sha):
+        raise GenerationError("source commit SHA must be explicitly injected as 40 lowercase hex characters")
+    if not resolved_date or not DATE_RE.fullmatch(resolved_date):
+        raise GenerationError("source commit date must be explicitly injected as YYYY-MM-DD")
+    return resolved_sha, resolved_date
 
 
-def atomic_write(path: Path, content: str) -> None:
-    """Replace a file atomically while preserving its permission bits."""
+def _manifest(root: Path) -> list[dict[str, Any]]:
+    datasets = load_json(root / "datapulse.json").get("datasets")
+    if not isinstance(datasets, list) or not datasets or not all(isinstance(row, dict) and isinstance(row.get("id"), str) for row in datasets):
+        raise GenerationError("datapulse.json: datasets must be a non-empty array of objects with ids")
+    ids = [row["id"] for row in datasets]
+    if len(ids) != len(set(ids)):
+        raise GenerationError("datapulse.json: dataset ids must be unique")
+    return datasets
+
+
+def _taxonomy(root: Path) -> list[str]:
     try:
-        mode = stat.S_IMODE(path.stat().st_mode)
-        with tempfile.NamedTemporaryFile(
-            "w", encoding="utf-8", dir=path.parent,
-            prefix=f".{path.name}.", delete=False,
-        ) as output:
-            temporary = Path(output.name)
-            output.write(content)
-            output.flush()
-            os.fsync(output.fileno())
-        os.chmod(temporary, mode)
-        os.replace(temporary, path)
-    except (OSError, UnicodeError) as error:
-        if "temporary" in locals():
-            temporary.unlink(missing_ok=True)
-        raise GenerationError(f"cannot write {path}: {error}") from error
+        value = load_json(root / "health.schema.json")["properties"]["datasets"]["items"]["properties"]["status"]["enum"]
+    except (KeyError, TypeError) as error:
+        raise GenerationError(f"health.schema.json: missing status enum: {error}") from error
+    if not isinstance(value, list) or not value or not all(isinstance(item, str) for item in value) or len(value) != len(set(value)):
+        raise GenerationError("health.schema.json: status enum must be a unique non-empty string array")
+    return value
 
 
-def read_text(path: Path) -> str:
-    try:
-        return path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as error:
-        raise GenerationError(f"cannot read {path}: {error}") from error
+def _annotations(tool: object) -> dict[str, bool]:
+    annotations = getattr(tool, "annotations", None)
+    if annotations is None:
+        raise GenerationError(f"MCP tool {tool.name!r} is missing all four required annotations")
+    value = annotations.model_dump(by_alias=True, exclude_none=True)
+    missing = [name for name in REQUIRED_ANNOTATIONS if name not in value]
+    if missing:
+        raise GenerationError(f"MCP tool {tool.name!r} is missing annotations: {', '.join(missing)}")
+    return {name: bool(value[name]) for name in REQUIRED_ANNOTATIONS}
 
 
-def tool_block_pattern() -> re.Pattern[str]:
-    return re.compile(
-        rf"{re.escape(BEGIN_MCP_TOOLS)}\n.*?\n{re.escape(END_MCP_TOOLS)}",
-        re.DOTALL,
-    )
+def _resource(resource: object, *, template: bool = False) -> dict[str, Any]:
+    uri = resource.uri_template if template else str(resource.uri)
+    return {
+        "uriTemplate" if template else "uri": uri,
+        "name": getattr(resource, "name", uri),
+        "description": resource.description,
+        "mimeType": getattr(resource, "mime_type", "application/json"),
+    }
 
 
-def validate_tool_block(path: Path) -> None:
-    original = read_text(path)
-    matches = tool_block_pattern().findall(original)
-    if (
-        original.count(BEGIN_MCP_TOOLS) != 1
-        or original.count(END_MCP_TOOLS) != 1
-        or len(matches) != 1
-    ):
-        raise GenerationError(
-            f"{path}: expected exactly one {BEGIN_MCP_TOOLS!r}/"
-            f"{END_MCP_TOOLS!r} block, found {len(matches)}"
-        )
+def render_mcp_document(
+    *, config: dict[str, Any], datasets: list[dict[str, Any]], taxonomy: list[str],
+    tools: list[object], resources: list[object], templates: list[object],
+    source_sha: str, source_date: str,
+) -> dict[str, Any]:
+    """Render the complete MCP advertisement in public insertion order."""
+    website = config["origins"]["website"]
+    repository = config["origins"]["repository"]
+    return {
+        "$schema": f"{website}/mcp.schema.json",
+        "schema": "datapulse/v1/mcp-advertisement",
+        "mcp_version": LATEST_PROTOCOL_VERSION,
+        "server": {
+            "name": "DataPulse MY",
+            "version": server.FASTMCP_VERSION,
+            "source_commit_sha": source_sha,
+            "source_commit_date": source_date,
+            "description": (
+                "Read-only access to DataPulse MY's Malaysian public dataset catalogue "
+                f"({len(datasets)} datasets, {len(taxonomy)}-status health taxonomy, licence/attribution metadata)."
+            ),
+            "vendor": "DataPulse MY (open source)",
+            "homepage": f"{website}/",
+            "repository": repository,
+        },
+        "endpoint": {
+            "url": f"{config['origins']['mcp']}/mcp",
+            "transport": "streamable-http",
+            "method": "POST",
+            "auth_required": False,
+        },
+        "taxonomy": list(taxonomy),
+        "tools": [
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "inputSchema": tool.parameters,
+                "annotations": _annotations(tool),
+            }
+            for tool in tools
+        ],
+        "resources": [_resource(resource) for resource in resources],
+        "resource_templates": [_resource(template, template=True) for template in templates],
+    }
 
 
-def replace_tool_block(path: Path, body: str) -> None:
-    original = read_text(path)
-    pattern = tool_block_pattern()
-    matches = pattern.findall(original)
-    if (
-        original.count(BEGIN_MCP_TOOLS) != 1
-        or original.count(END_MCP_TOOLS) != 1
-        or len(matches) != 1
-    ):
-        raise GenerationError(
-            f"{path}: expected exactly one {BEGIN_MCP_TOOLS!r}/"
-            f"{END_MCP_TOOLS!r} block, found {len(matches)}"
-        )
-    replacement = f"{BEGIN_MCP_TOOLS}\n{body.rstrip()}\n{END_MCP_TOOLS}"
-    updated = pattern.sub(lambda _: replacement, original, count=1)
-    if updated != original:
-        atomic_write(path, updated)
+def render_agent_document(
+    *, config: dict[str, Any], datasets: list[dict[str, Any]], tools: list[object],
+    resources: list[object], templates: list[object], source_sha: str, source_date: str,
+) -> dict[str, Any]:
+    """Render the complete agent manifest without retaining stale JSON fields."""
+    website = config["origins"]["website"]
+    return {
+        "$schema": f"{website}/agent.schema.json",
+        "schema": "datapulse/v1/agent-manifest",
+        "@context": "https://schema.org/docs/jsonldcontext.jsonld",
+        "@type": "WebSite",
+        "@id": f"{website}/#agent",
+        "name": "DataPulse MY",
+        "description": f"Open-source trust layer for Malaysian public data with {len(datasets)} official datasets and agent-native discovery.",
+        "url": f"{website}/",
+        "capabilities": {
+            "data_access": {"read": True, "write": False},
+            "mcp_server": {
+                "endpoint": f"{config['origins']['mcp']}/mcp",
+                "transport": "streamable-http",
+                "tools": len(tools),
+                "resources": len(resources),
+                "resource_templates": len(templates),
+            },
+        },
+        "resources": {
+            "manifest": f"{website}/datapulse.json",
+            "health": f"{website}/health/latest.json",
+            "llms": f"{website}/llms.txt",
+            "mcp": f"{website}/mcp.json",
+            "robots": f"{website}/robots.txt",
+            "sitemap": f"{website}/sitemap.xml",
+        },
+        "source": {"commit_sha": source_sha, "commit_date": source_date},
+        "last_updated": source_date,
+    }
 
 
-def tool_signature(tool: object) -> str:
-    schema = tool.parameters
-    properties = schema.get("properties", {})
-    required = set(schema.get("required", []))
-    arguments = []
-    for name, parameter in properties.items():
-        array_suffix = "[]" if parameter.get("type") == "array" else ""
-        optional_suffix = "" if name in required else "?"
-        arguments.append(f"{name}{array_suffix}{optional_suffix}")
+def _signature(tool: object) -> str:
+    properties = tool.parameters.get("properties", {})
+    required = set(tool.parameters.get("required", []))
+    arguments = [f"{name}{'[]' if item.get('type') == 'array' else ''}{'' if name in required else '?'}" for name, item in properties.items()]
     return f"{tool.name}({', '.join(arguments)})"
 
 
-def markdown_cell(value: str) -> str:
-    return value.replace("|", r"\|").replace("\n", " ")
-
-
-def update_llms(tools: list[object]) -> None:
+def _mcp_block(tools: list[object]) -> str:
     rows = ["### Tools", "", "| Tool | Use when |", "|---|---|"]
-    rows.extend(
-        f"| `{tool_signature(tool)}` | {markdown_cell(tool.description or '')} |"
-        for tool in tools
-    )
-    replace_tool_block(ROOT / "llms.txt", "\n".join(rows))
+    for tool in tools:
+        description = (tool.description or "").replace("|", "\\|").replace("\n", " ")
+        rows.append(f"| `{_signature(tool)}` | {description} |")
+    return "\n".join(rows)
 
 
-def update_readme(tools: list[object]) -> None:
-    names = ", ".join(f"`{tool.name}`" for tool in tools)
-    body = (
-        f"- {len(tools)} tools: {names}\n\n"
-        f"The public endpoint is live and serves all {len(tools)} read-only tools over the\n"
-        f"{server.DATASET_COUNT}-dataset catalogue."
-    )
-    replace_tool_block(ROOT / "README.md", body)
-
-
-def load_agent() -> dict:
-    path = ROOT / "agent.json"
-    try:
-        document = json.loads(read_text(path))
-        document["capabilities"]["mcp_server"]["tools"]
-    except (json.JSONDecodeError, KeyError, TypeError) as error:
-        raise GenerationError(f"{path}: invalid mcp_server contract: {error}") from error
-    return document
-
-
-def update_agent(tool_count: int, document: dict) -> None:
-    document["capabilities"]["mcp_server"]["tools"] = tool_count
-    description = document.get("description")
-    if isinstance(description, str):
-        document["description"] = re.sub(
-            r"\d+ official datasets",
-            f"{server.DATASET_COUNT} official datasets",
-            description,
-        )
-    atomic_write(ROOT / "agent.json", json.dumps(document, indent=2, ensure_ascii=False) + "\n")
-
-
-def update_deploy_doc(tools: list[object]) -> None:
-    names = ", ".join(f"`{tool.name}`" for tool in tools)
-    body = (
-        "The stable public endpoint is live at `https://mcp.data-pulse.my/mcp`. It has\n"
-        f"been verified end to end: `tools/list` returns {len(tools)} tools over the "
-        f"{server.DATASET_COUNT}-dataset\ncatalogue.\n\n"
-        f"The current read-only contract is {names}; it also publishes the concrete resources"
-    )
-    replace_tool_block(ROOT / "docs/mcp-deploy.md", body)
-
-
-LIVE_VERIFICATION = """## Live verification
-
-Run before merging any change that touches the manifest, probe policy, or MCP
-source. The live `datapulse://index` resource is the catalogue returned by the
-MCP server, so its array length must equal the current manifest length.
-
-```bash
-verify_dir=$(mktemp -d /tmp/datapulse-mcp-live.XXXXXX)
-endpoint=https://mcp.data-pulse.my/mcp
-
-curl -sS -D "$verify_dir/headers" -o "$verify_dir/initialize" \\
-  "$endpoint" \\
-  -H 'Accept: application/json, text/event-stream' \\
-  -H 'Content-Type: application/json' \\
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"live-count-gate","version":"1"}}}'
-
-session_id=$(awk 'tolower($1)=="mcp-session-id:" {gsub("\\\\r", "", $2); print $2}' \\
-  "$verify_dir/headers")
-
-curl -sS "$endpoint" \\
-  -H 'Accept: application/json, text/event-stream' \\
-  -H 'Content-Type: application/json' \\
-  -H "Mcp-Session-Id: $session_id" \\
-  -d '{"jsonrpc":"2.0","method":"notifications/initialized"}' >/dev/null
-
-live_count=$(curl -sS "$endpoint" \\
-  -H 'Accept: application/json, text/event-stream' \\
-  -H 'Content-Type: application/json' \\
-  -H "Mcp-Session-Id: $session_id" \\
-  -d '{"jsonrpc":"2.0","id":2,"method":"resources/read","params":{"uri":"datapulse://index"}}' \\
-  | sed -n 's/^data: //p' \\
-  | jq -r '.result.contents[0].text | fromjson | length')
-head_count=$(jq '.datasets | length' datapulse.json)
-
-printf 'live=%s head=%s\\n' "$live_count" "$head_count"
-test "$live_count" -eq "$head_count"
-```
-
-The expected count at this revision is `DATASET_COUNT`. If the assertion fails, do not
-merge: the MCP server is stale and the manifest-count claim is false.
-""".replace("DATASET_COUNT", str(server.DATASET_COUNT))
-
-
-def json_block(value: dict) -> str:
-    return "```json\n" + json.dumps(value, indent=2, ensure_ascii=False) + "\n```"
-
-
-async def generate() -> None:
-    tools = await server.mcp.list_tools()
-    resources = await server.mcp.list_resources()
-    templates = await server.mcp.list_resource_templates()
-
-    for path in (ROOT / "llms.txt", ROOT / "README.md", ROOT / "docs/mcp-deploy.md"):
-        validate_tool_block(path)
-    agent = load_agent()
-
-    discovery_path = ROOT / "mcp.json"
-    discovery = json.loads(discovery_path.read_text(encoding="utf-8"))
-    discovery["mcp_version"] = LATEST_PROTOCOL_VERSION
-    discovery["server"]["version"] = server.FASTMCP_VERSION
-    discovery["server"]["source_commit_sha"] = server.SOURCE_COMMIT_SHA
-    discovery["server"]["source_commit_date"] = server.SOURCE_COMMIT_DATE
-    discovery["server"]["description"] = re.sub(
-        r"\(\d+ datasets,",
-        f"({server.DATASET_COUNT} datasets,",
-        discovery["server"]["description"],
-    )
-    for resource in discovery.get("resources", []):
-        if resource.get("uri") == "datapulse://index":
-            resource["description"] = re.sub(
-                r"all \d+ datasets",
-                f"all {server.DATASET_COUNT} datasets",
-                resource["description"],
-            )
-    discovery["tools"] = [
-        {
-            "name": tool.name,
-            "description": tool.description,
-            "inputSchema": tool.parameters,
-            **(
-                {"annotations": tool.annotations.model_dump(by_alias=True, exclude_none=True)}
-                if getattr(tool, "annotations", None) is not None
-                else {}
-            ),
-        }
-        for tool in tools
-    ]
-    discovery["resources"] = [
-        {
-            "uri": str(resource.uri),
-            "name": getattr(resource, "name", str(resource.uri)),
-            "description": resource.description,
-            "mimeType": getattr(resource, "mime_type", "application/json"),
-        }
-        for resource in resources
-    ] + [
-        {
-            "uri": template.uri_template,
-            "name": getattr(template, "name", template.uri_template),
-            "description": template.description,
-            "mimeType": getattr(template, "mime_type", "application/json"),
-        }
-        for template in templates
-    ]
-    atomic_write(discovery_path, json.dumps(discovery, indent=2, ensure_ascii=False) + "\n")
-
+def _reference(config: dict[str, Any], datasets: list[dict[str, Any]], taxonomy: list[str], tools: list[object], resources: list[object], templates: list[object]) -> str:
     lines = [
-        "# MCP reference",
-        "",
-        "<!-- Generated by scripts/gen_mcp_reference.py from mcp/server.py. -->",
-        "",
-        "DataPulse MY exposes a read-only Streamable HTTP endpoint at",
-        "`https://mcp.data-pulse.my/mcp`. It requires no authentication.",
-        "",
-        "Clients must send `Accept: application/json, text/event-stream` and use the",
-        "session ID returned by the initialize response for subsequent calls.",
-        "",
-        "## Tools",
-        "",
+        "# MCP reference", "", "<!-- Generated by scripts/gen_mcp_reference.py from canonical local inputs. -->", "",
+        f"DataPulse MY exposes {len(tools)} read-only tools over {len(datasets)} datasets and the {len(taxonomy)}-status health taxonomy at",
+        f"`{config['origins']['mcp']}/mcp`.", "", "## Tools", "",
     ]
     for tool in tools:
-        lines.extend(
-            [
-                f"### `{tool.name}`",
-                "",
-                tool.description or "",
-                "",
-                "Input schema:",
-                "",
-                json_block(tool.parameters),
-                "",
-            ]
-        )
-
+        lines.extend([f"### `{tool.name}`", "", tool.description or "", "", "Input schema:", "", "```json", serialize_json(tool.parameters).rstrip(), "```", ""])
     lines.extend(["## Resources", ""])
-    for resource in resources:
-        lines.extend(
-            [
-                f"- `{resource.uri}` — {resource.description}",
-                "",
-            ]
-        )
-    for template in templates:
-        lines.extend(
-            [
-                f"- `{template.uri_template}` — {template.description}",
-                "",
-            ]
-        )
+    lines.extend(f"- `{resource.uri}` — {resource.description}" for resource in resources)
+    lines.extend(["", "## Resource templates", ""])
+    lines.extend(f"- `{template.uri_template}` — {template.description}" for template in templates)
+    return "\n".join(lines).rstrip() + "\n"
 
-    lines.extend(LIVE_VERIFICATION.splitlines() + [""])
-    lines.extend(
-        [
-            "## Regenerate",
-            "",
-            "Install `mcp/requirements.txt`, then run:",
-            "",
-            "```sh",
-            "python3 scripts/gen_mcp_reference.py",
-            "```",
-            "",
-            "The command updates this file, `mcp.json`, `llms.txt`, `README.md`,",
-            "`agent.json`, and `docs/mcp-deploy.md`.",
-            "",
-        ]
+
+async def generate(root: Path, *, source_sha: str | None = None, source_date: str | None = None, check: bool = False, validate_only: bool = False) -> bool:
+    """Validate and render every MCP-owned output before publishing any of them."""
+    config = load_public_surfaces(root)
+    schemas: dict[str, dict[str, Any]] = {}
+    for schema_name in ("mcp.schema.json", "agent.schema.json"):
+        schema = load_json(root / schema_name)
+        if schema.get("additionalProperties") is not False:
+            raise GenerationError(f"{schema_name}: root additionalProperties must be false")
+        schemas[schema_name] = schema
+    datasets = _manifest(root)
+    taxonomy = _taxonomy(root)
+    featured = set(config["featured_dataset_ids"])
+    missing_featured = featured - {row["id"] for row in datasets}
+    if missing_featured:
+        raise GenerationError(f"featured dataset id(s) missing from manifest: {', '.join(sorted(missing_featured))}")
+    resolved_sha, resolved_date = _source_identity(source_sha, source_date)
+    tools = list(await server.mcp.list_tools())
+    resources = list(await server.mcp.list_resources())
+    templates = list(await server.mcp.list_resource_templates())
+    for tool in tools:
+        _annotations(tool)
+
+    mcp_document = render_mcp_document(config=config, datasets=datasets, taxonomy=taxonomy, tools=tools, resources=resources, templates=templates, source_sha=resolved_sha, source_date=resolved_date)
+    agent_document = render_agent_document(config=config, datasets=datasets, tools=tools, resources=resources, templates=templates, source_sha=resolved_sha, source_date=resolved_date)
+    for label, document, schema in (
+        ("mcp.json", mcp_document, schemas["mcp.schema.json"]),
+        ("agent.json", agent_document, schemas["agent.schema.json"]),
+    ):
+        failures = sorted(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(document), key=lambda item: list(item.path))
+        if failures:
+            failure = failures[0]
+            location = ".".join(str(part) for part in failure.absolute_path) or "<root>"
+            raise GenerationError(f"{label}:{location}: schema violation: {failure.message}")
+    outputs: dict[Path, str] = {
+        root / "mcp.json": serialize_json(mcp_document),
+        root / "agent.json": serialize_json(agent_document),
+        root / "docs/mcp-reference.md": _reference(config, datasets, taxonomy, tools, resources, templates),
+    }
+    block = _mcp_block(tools)
+    readme_body = f"- {len(tools)} tools: " + ", ".join(f"`{tool.name}`" for tool in tools) + f"\n\nThe public endpoint serves all {len(tools)} read-only tools over the\n{len(datasets)}-dataset catalogue."
+    deploy_body = (
+        f"The stable public endpoint is `{config['origins']['mcp']}/mcp`. Its local contract registers "
+        f"{len(tools)} tools ({', '.join(f'`{tool.name}`' for tool in tools)}), "
+        f"{len(resources)} concrete resources, and {len(templates)} resource templates."
     )
-    atomic_write(ROOT / "docs/mcp-reference.md", "\n".join(lines))
-    update_llms(tools)
-    update_readme(tools)
-    update_agent(len(tools), agent)
-    update_deploy_doc(tools)
-    print(
-        f"Generated {len(tools)} tools, {len(resources)} resources, "
-        f"and {len(templates)} resource templates"
-    )
+    for relative, body in (("llms.txt", block), ("README.md", readme_body), ("docs/mcp-deploy.md", deploy_body)):
+        path = root / relative
+        try:
+            original = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as error:
+            raise GenerationError(f"cannot read {path}: {error}") from error
+        outputs[path] = replace_owned_block(original, "mcp-tools", body)
+    if validate_only:
+        return False
+    return publish_text_outputs(outputs, check=check)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument("--source-commit-sha")
+    parser.add_argument("--source-commit-date")
+    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--validate-only", action="store_true")
+    return parser.parse_args()
 
 
 def main() -> int:
+    args = parse_args()
     try:
-        asyncio.run(generate())
+        changed = asyncio.run(generate(args.root.resolve(), source_sha=args.source_commit_sha, source_date=args.source_commit_date, check=args.check, validate_only=args.validate_only))
     except GenerationError as error:
         print(f"gen_mcp_reference.py: {error}", file=sys.stderr)
+        return 1
+    if args.check and changed:
+        print("gen_mcp_reference.py: outputs are stale", file=sys.stderr)
         return 1
     return 0
 

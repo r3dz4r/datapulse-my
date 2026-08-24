@@ -168,7 +168,7 @@ Verified by mcpgrade: 100/100 (Grade A), 16 tools, last audited 2026-08-17.
 <!-- BEGIN mcp-tools -->
 - 16 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 
-The public endpoint is live and serves all 16 read-only tools over the
+The public endpoint serves all 16 read-only tools over the
 389-dataset catalogue.
 <!-- END mcp-tools -->
 - 8 resources plus 1 resource template, including `datapulse://attestations` and the signed daily probe-attestation index.
@@ -203,36 +203,13 @@ details.
 
 ### How to consume the data
 
-Verify access:
-
-```sh
-curl -s https://r3dz4r.github.io/datapulse-my/llms.txt
-```
-
-- [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) — curated dataset index
-- [`datapulse.json`](https://r3dz4r.github.io/datapulse-my/datapulse.json) — manifest with a declared `$schema`
-- [`health/latest.json`](https://r3dz4r.github.io/datapulse-my/health/latest.json) — latest freshness snapshot
-- [`health/trends.json`](https://r3dz4r.github.io/datapulse-my/health/trends.json) — published freshness trends and publish-reliability evidence
-- [`health/drift.json`](https://r3dz4r.github.io/datapulse-my/health/drift.json) — published structural and record-count drift evidence
-- [`health/reconciliation.json`](https://r3dz4r.github.io/datapulse-my/health/reconciliation.json) — cross-source publication differences requiring human review, not proof either source is wrong
-- [`feed.xml`](https://r3dz4r.github.io/datapulse-my/feed.xml) — dataset health change feed
-- [`datapulse.schema.json`](https://r3dz4r.github.io/datapulse-my/datapulse.schema.json) — manifest schema
-
-To consume the portfolio:
-
-1. Fetch [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) for the curated index.
-2. Fetch [`datapulse.json`](https://r3dz4r.github.io/datapulse-my/datapulse.json)
-   for the machine-readable manifest, including licence, refresh cadence, and
-   geographic coverage.
-3. Fetch [`health/latest.json`](https://r3dz4r.github.io/datapulse-my/health/latest.json)
-   to check freshness before use.
-4. Fetch [`health/trends.json`](https://r3dz4r.github.io/datapulse-my/health/trends.json) for published trend and reliability evidence.
-5. Fetch [`health/reconciliation.json`](https://r3dz4r.github.io/datapulse-my/health/reconciliation.json) for cross-source differences; treat discrepancies as requiring human review, not proof either source is wrong.
-6. Cite each dataset according to its licence and attribution requirements.
-
-[`robots.txt`](https://r3dz4r.github.io/datapulse-my/robots.txt) allows all agents;
-[`scripts/verify_agent_ready.sh`](https://github.com/r3dz4r/datapulse-my/blob/main/scripts/verify_agent_ready.sh)
-is the agent-consumer self-test.
+<!-- BEGIN public-discovery -->
+- [LLM index](https://data-pulse.my/llms.txt)
+- [Agent manifest](https://data-pulse.my/agent.json)
+- [MCP advertisement](https://data-pulse.my/mcp.json)
+- [Sitemap](https://data-pulse.my/sitemap.xml)
+- [MCP endpoint](https://mcp.data-pulse.my/mcp)
+<!-- END public-discovery -->
 
 **For humans wiring their own agents:** see the [MCP server](#mcp-server-read-only)
 section below for the Claude Desktop / Cursor / Cline config block, or the full

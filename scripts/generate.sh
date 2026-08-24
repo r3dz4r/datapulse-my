@@ -3,7 +3,7 @@
 # DataPulse MY generation profiles.
 #
 # health-cycle: 14 steps for artifacts derived from the live health snapshot.
-# release-build: source stamp plus 26 steps for the complete public-site artifact set.
+# release-build: validated deterministic generation for the complete public-site artifact set.
 #
 # This script orchestrates local artifact generation in reviewed order.
 # It never commits, pushes, or deploys; release-build embeds dashboard data locally.
@@ -13,6 +13,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage: ./scripts/generate.sh <profile> [--list] [--env KEY=VAL]
+       ./scripts/generate.sh --list-owned-outputs <profile>
 
 Profiles:
   health-cycle   Regenerate artifacts derived from a fresh health/latest.json.
@@ -30,8 +31,19 @@ if (( $# == 0 )); then
   exit 0
 fi
 
-profile="$1"
-shift
+list_owned_outputs=false
+if [[ "$1" == "--list-owned-outputs" ]]; then
+  if (( $# != 2 )); then
+    printf 'generate.sh: --list-owned-outputs requires one profile\n' >&2
+    exit 2
+  fi
+  list_owned_outputs=true
+  profile="$2"
+  shift 2
+else
+  profile="$1"
+  shift
+fi
 
 if [[ "$profile" == "--help" || "$profile" == "-h" ]]; then
   usage
@@ -109,13 +121,15 @@ case "$profile" in
   release-build)
     description="Regenerate health-cycle plus public discovery, JSON-LD, MCP, envelope, and dashboard artifacts."
     generators=(
-      "bump_mcp_source_version.py"
+      "public_surface_preflight"
+      "gen_mcp_reference.py"
+      "gen_llms_summary.py"
+      "gen_public_discovery.py"
       "gen_dashboard_sections.py"
       "gen_data_reports.sh"
       "gen_health_methodology.py"
       "gen_badges.sh"
       "gen_readme_summary.sh"
-      "gen_llms_summary.py"
       "gen_rss.sh"
       "gen_catalog_snapshot.py"
       "gen_health_history.py"
@@ -129,7 +143,6 @@ case "$profile" in
       "gen_catalog_graph.py"
       "gen_json_envelope.py"
       "gen_jsonld_catalog.py"
-      "gen_mcp_reference.py"
       "gen_dashboard_filters.py"
       "embed_dashboard_data.py"
       "check_url_drift.py"
@@ -138,13 +151,15 @@ case "$profile" in
       "gen_site_nav.py"
     )
     outputs=(
-      "mcp/server.py (SOURCE_COMMIT_SHA/SOURCE_COMMIT_DATE constants); mcp.json (source_commit_sha/source_commit_date fields)"
+      "validation only (config, schemas, source identity, and all P5A markers)"
+      "mcp.json; agent.json; docs/mcp-reference.md; llms.txt MCP tools block; README.md MCP tools block; docs/mcp-deploy.md MCP tools block"
+      "llms.txt catalog-summary and featured-datasets blocks"
+      "sitemap.xml; robots.txt public-discovery block; README.md public-discovery block; llms.txt public-discovery block"
       "docs/.dashboard_sections.json"
       "data/<id>.md"
       "docs/health-methodology.md"
       "badges/<id>.svg; badges/status-*.svg; badges/index.svg"
       "README.md (dataset counts, trust-summary block, and MCP tools block)"
-      "llms.txt (dataset-count references and MCP tools block)"
       "feed.xml"
       "catalog-snapshot.json; changelog.json (deprecated alias)"
       "health/history.jsonl; health/history_daily.json"
@@ -158,7 +173,6 @@ case "$profile" in
       "catalog-graph.json"
       "data/json/<id>.json"
       "data/jsonld/<id>.json; data/jsonld/catalog.json"
-      "mcp.json; docs/mcp-reference.md; llms.txt MCP tools block; README.md MCP tools block; agent.json mcp_server.tools; docs/mcp-deploy.md MCP tools block"
       "docs/.dashboard_filters.json"
       "docs/index.html (embedded manifest, health, filters, and sections)"
       "URL drift and cadence audit"
@@ -174,11 +188,19 @@ case "$profile" in
     ;;
 esac
 
+if [[ "$list_owned_outputs" == true ]]; then
+  for output in "${outputs[@]}"; do
+    printf '%s\n' "$output"
+  done
+  exit 0
+fi
+
 printf 'Profile: %s\n' "$profile"
 printf 'Purpose: %s\n' "$description"
 
 command_for() {
   case "$1" in
+    public_surface_preflight) printf 'python3 scripts/gen_mcp_reference.py --validate-only && python3 scripts/gen_llms_summary.py --validate-only && python3 scripts/gen_public_discovery.py --validate-only' ;;
     *.sh)
       printf 'DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" bash scripts/%s' "$1"
       ;;
@@ -217,6 +239,11 @@ for index in "${!generators[@]}"; do
   printf '\n'
 
   case "$generator" in
+    public_surface_preflight)
+      DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" python3 scripts/gen_mcp_reference.py --validate-only
+      DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" python3 scripts/gen_llms_summary.py --validate-only
+      DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" python3 scripts/gen_public_discovery.py --validate-only
+      ;;
     *.sh)
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
         env "${environment[@]}" \
