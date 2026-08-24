@@ -1,0 +1,17 @@
+{
+  "$schema": "https://data-pulse.my/agent.schema.json",
+  "schema": "datapulse/v1/agent-manifest",
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "https://data-pulse.my/",
+  "name": "DataPulse MY",
+  "description": "Fixture agent manifest",
+  "url": "https://data-pulse.my/",
+  "capabilities": {
+    "data_access": {"read": true, "write": false},
+    "mcp_server": {"endpoint": "https://mcp.data-pulse.my/mcp", "transport": "streamable-http", "tools": 0, "resources": 0, "resource_templates": 0}
+  },
+  "resources": {},
+  "source": {"commit_sha": "0000000000000000000000000000000000000000", "commit_date": "2026-08-08"},
+  "last_updated": "2026-08-08"
+}

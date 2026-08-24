@@ -121,6 +121,7 @@ case "$profile" in
   release-build)
     description="Regenerate health-cycle plus public discovery, JSON-LD, MCP, envelope, and dashboard artifacts."
     generators=(
+      "bump_mcp_source_version.py"
       "public_surface_preflight"
       "gen_mcp_reference.py"
       "gen_llms_summary.py"
@@ -151,6 +152,7 @@ case "$profile" in
       "gen_site_nav.py"
     )
     outputs=(
+      "mcp/server.py source identity and mcp.json provenance"
       "validation only (config, schemas, source identity, and all P5A markers)"
       "mcp.json; agent.json; docs/mcp-reference.md; llms.txt MCP tools block; README.md MCP tools block; docs/mcp-deploy.md MCP tools block"
       "llms.txt catalog-summary and featured-datasets blocks"

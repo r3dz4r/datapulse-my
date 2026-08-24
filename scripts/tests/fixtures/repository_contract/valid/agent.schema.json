@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["$schema", "schema", "@context", "@type", "@id", "name", "description", "url", "capabilities", "resources", "source", "last_updated"],
+  "properties": {
+    "$schema": {"type": "string"}, "schema": {"const": "datapulse/v1/agent-manifest"},
+    "@context": {"type": "string"}, "@type": {"const": "WebSite"}, "@id": {"type": "string"},
+    "name": {"const": "DataPulse MY"}, "description": {"type": "string"}, "url": {"type": "string"},
+    "capabilities": {"type": "object"}, "resources": {"type": "object"},
+    "source": {"type": "object", "required": ["commit_sha", "commit_date"]},
+    "last_updated": {"type": "string"}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema", "origins", "pages", "artifacts", "featured_dataset_ids"],
+  "properties": {
+    "schema": {"const": "datapulse/v1/public-surfaces"},
+    "origins": {
+      "type": "object",
+      "required": ["website", "mcp", "repository"],
+      "properties": {
+        "website": {"const": "https://data-pulse.my"},
+        "mcp": {"const": "https://mcp.data-pulse.my"},
+        "repository": {"const": "https://github.com/r3dz4r/datapulse-my"}
+      },
+      "additionalProperties": false
+    },
+    "pages": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "artifacts": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "featured_dataset_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true}
+  },
+  "additionalProperties": false
+}
