@@ -148,6 +148,28 @@ def test_native_pages_installs_release_dependencies_before_generation() -> None:
     assert install_step["run"] == "python -m pip install jsonschema --requirement mcp/requirements.txt"
 
 
+def test_native_pages_installs_pinned_pandoc_before_non_health_release_build() -> None:
+    parsed = yaml.safe_load(_workflow())
+    steps = parsed["jobs"]["deploy"]["steps"]
+    pandoc_index = next(
+        index for index, step in enumerate(steps) if step.get("name") == "Install Pandoc"
+    )
+    release_build_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "Run release-build generation profile (non-health path)"
+    )
+    pandoc_step = steps[pandoc_index]
+
+    assert pandoc_index < release_build_index
+    assert pandoc_step["if"] == "needs.classify.outputs.health_only != 'true'"
+    assert pandoc_step["run"].splitlines() == [
+        "sudo apt-get update",
+        "sudo apt-get install -y pandoc=3.1.3+ds-2",
+        "pandoc --version | sed -n '1p'",
+    ]
+
+
 def test_native_pages_scopes_attestation_key_setup_to_non_health_release_build() -> None:
     parsed = yaml.safe_load(_workflow())
     steps = parsed["jobs"]["deploy"]["steps"]
