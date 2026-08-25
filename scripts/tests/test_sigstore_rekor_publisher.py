@@ -105,6 +105,20 @@ def test_success_writes_additive_bundle_and_reference_with_shared_digest(tmp_pat
     }
 
 
+def test_published_state_precedes_independent_read_after_write_verification(tmp_path: Path) -> None:
+    subject, _bundle, _reference = publisher(tmp_path)
+    observed: list[WitnessState] = []
+    original = subject._verify_persisted_outputs
+
+    def observe_published(*args: Any) -> None:
+        observed.append(subject.last_status.state)
+        original(*args)
+
+    subject._verify_persisted_outputs = observe_published  # type: ignore[method-assign]
+    assert subject.publish().state is WitnessState.VERIFIED
+    assert observed == [WitnessState.PUBLISHED]
+
+
 def test_signs_with_openbao_key_ref_and_verifies_with_static_public_key(tmp_path: Path) -> None:
     runtime = FakeRuntime()
     subject, _bundle, _reference = publisher(tmp_path, runtime)
@@ -154,6 +168,29 @@ def test_invalid_cosign_v3_bundle_digest_is_rejected_before_outputs(tmp_path: Pa
     subject, output, reference = publisher(tmp_path, FakeRuntime(bundle))
     with pytest.raises(PublishError, match="digest"):
         subject.publish()
+    assert not output.exists() and not reference.exists()
+
+
+@pytest.mark.parametrize(
+    "bundle",
+    [
+        valid_bundle(b"daily evidence", mediaType="application/json"),
+        valid_bundle(b"daily evidence", verificationMaterial={"tlogEntries": [
+            valid_bundle(b"daily evidence")["verificationMaterial"]["tlogEntries"][0],
+            valid_bundle(b"daily evidence")["verificationMaterial"]["tlogEntries"][0],
+        ]}),
+        valid_bundle(b"daily evidence", verificationMaterial={"tlogEntries": [{
+            **valid_bundle(b"daily evidence")["verificationMaterial"]["tlogEntries"][0],
+            "inclusionProof": {"rootHash": "not-base64", "hashes": [], "treeSize": 1},
+        }]}),
+    ],
+)
+def test_malformed_or_ambiguous_cosign_v3_bundle_is_rejected_before_outputs(tmp_path: Path, bundle: dict[str, Any]) -> None:
+    subject, output, reference = publisher(tmp_path, FakeRuntime(bundle))
+
+    with pytest.raises(PublishError, match="bundle"):
+        subject.publish()
+
     assert not output.exists() and not reference.exists()
 
 
@@ -312,9 +349,75 @@ def test_public_or_different_tlog_url_in_signing_config_is_rejected(tmp_path: Pa
         Publisher(source, bundle, tmp_path / "ref", manifest, rekor, signing, RUN_ID, "/opt/cosign", FakeRuntime()).publish()
 
 
+@pytest.mark.parametrize("endpoint", ["http://localhost:9301", "http://127.0.0.1", "http://127.0.0.1:9301?redirect=http://attacker.test"])
+def test_rekor_endpoints_must_be_unambiguous_ip_literal_loopback_urls(tmp_path: Path, endpoint: str) -> None:
+    subject, _bundle, _reference = publisher(tmp_path)
+    document = json.loads(subject.rekor_config.read_text(encoding="utf-8"))
+    document["endpoint"] = endpoint
+    subject.rekor_config.write_text(json.dumps(document), encoding="utf-8")
+
+    with pytest.raises(ConfigError, match="loopback-only"):
+        subject.publish()
+
+
+def test_malformed_trusted_root_and_duplicate_log_id_fail_before_signing(tmp_path: Path) -> None:
+    subject, _bundle, _reference = publisher(tmp_path)
+    root = Path(json.loads(subject.rekor_config.read_text(encoding="utf-8"))["trusted_root"])
+    root.write_text("not JSON", encoding="utf-8")
+
+    with pytest.raises(ConfigError, match="trusted root"):
+        subject.publish()
+
+    root.write_text("{}", encoding="utf-8")
+    document = json.loads(subject.rekor_config.read_text(encoding="utf-8"))
+    document["trusted_log_ids"] = [LOG_ID, LOG_ID]
+    subject.rekor_config.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(ConfigError, match="LogIDs"):
+        subject.publish()
+
+    assert not [call for call in subject.runtime.calls if call[1] == "sign-blob"]  # type: ignore[attr-defined]
+
+
 def test_existing_output_is_never_replaced_or_deleted(tmp_path: Path) -> None:
     subject, bundle, _reference = publisher(tmp_path)
     bundle.write_text("legacy evidence", encoding="utf-8")
     with pytest.raises(PublishError, match="already exists"):
         subject.publish()
     assert bundle.read_text(encoding="utf-8") == "legacy evidence"
+
+
+def test_concurrent_bundle_output_is_never_overwritten_or_deleted(tmp_path: Path) -> None:
+    runtime = FakeRuntime()
+    subject, bundle, reference = publisher(tmp_path, runtime)
+    original = runtime.run
+
+    def create_competing_output(command: list[str]) -> ProcessResult:
+        result = original(command)
+        if command[1] == "sign-blob":
+            bundle.write_text("concurrent evidence", encoding="utf-8")
+        return result
+
+    runtime.run = create_competing_output  # type: ignore[method-assign]
+    with pytest.raises(PublishError, match="already exists"):
+        subject.publish()
+
+    assert bundle.read_text(encoding="utf-8") == "concurrent evidence"
+    assert not reference.exists()
+    assert subject.last_status.state is WitnessState.OPERATOR_RECONCILIATION_REQUIRED
+
+
+def test_concurrent_reference_output_is_never_overwritten_or_deleted(tmp_path: Path) -> None:
+    subject, bundle, reference = publisher(tmp_path)
+    original = subject._write_reference
+
+    def create_competing_reference(digest: str, rekor: dict[str, Any]) -> None:
+        reference.write_text("concurrent reference", encoding="utf-8")
+        original(digest, rekor)
+
+    subject._write_reference = create_competing_reference  # type: ignore[method-assign]
+    with pytest.raises(PublishError, match="already exists"):
+        subject.publish()
+
+    assert bundle.exists()
+    assert reference.read_text(encoding="utf-8") == "concurrent reference"
+    assert subject.last_status.state is WitnessState.OPERATOR_RECONCILIATION_REQUIRED

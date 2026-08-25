@@ -27,6 +27,7 @@ from urllib.request import urlopen
 
 LOG = logging.getLogger(__name__)
 COSIGN_VERSION = "v3.1.3"
+COSIGN_V3_BUNDLE_MEDIA_TYPE = "application/vnd.dev.sigstore.bundle.v0.3+json"
 ALLOWED_CREDENTIAL_ENVS = frozenset({"OPENBAO_TOKEN", "VAULT_TOKEN"})
 
 
@@ -122,8 +123,20 @@ def _sha256(path: Path) -> str:
 def _safe_private_endpoint(value: object) -> str:
     if not isinstance(value, str):
         raise ConfigError("private Rekor endpoint is required")
-    parsed = urlsplit(value)
-    if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "::1", "localhost"} or parsed.username or parsed.password:
+    try:
+        parsed = urlsplit(value)
+        port = parsed.port
+    except ValueError as exc:
+        raise ConfigError("Rekor endpoint must be loopback-only HTTP") from exc
+    if (
+        parsed.scheme != "http"
+        or parsed.hostname not in {"127.0.0.1", "::1"}
+        or port is None
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+    ):
         raise ConfigError("Rekor endpoint must be loopback-only HTTP")
     return value.rstrip("/")
 
@@ -170,12 +183,27 @@ def _normalise_bundle_digest(value: object) -> str | None:
     return decoded.hex()
 
 
-def _atomic_json(path: Path, content: dict[str, Any]) -> None:
+def _is_sha256_base64(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        decoded = base64.b64decode(value, validate=True)
+    except (ValueError, UnicodeEncodeError):
+        return False
+    return len(decoded) == hashlib.sha256().digest_size
+
+
+def _publish_new_file(temporary: Path, path: Path) -> None:
+    """Atomically publish a new output without replacing another writer's file."""
+    os.link(temporary, path)
+
+
+def _create_json(path: Path, content: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")
     try:
         temporary.write_text(json.dumps(content, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
-        os.replace(temporary, path)
+        _publish_new_file(temporary, path)
     finally:
         temporary.unlink(missing_ok=True)
 
@@ -200,6 +228,7 @@ class Publisher:
         endpoint = _safe_private_endpoint(rekor.get("endpoint"))
         proxy = _safe_private_endpoint(rekor.get("consistency_proxy_endpoint"))
         root = _nonempty_path(rekor.get("trusted_root"), "trusted root")
+        _read_json(Path(root), "trusted root")
         log_ids_value = rekor.get("trusted_log_ids")
         if not isinstance(log_ids_value, list) or not log_ids_value:
             raise ConfigError("trusted Rekor LogIDs are required")
@@ -207,7 +236,7 @@ class Publisher:
             log_ids = frozenset(_normalise_log_id(log_id) for log_id in log_ids_value)
         except ConfigError as exc:
             raise ConfigError("trusted Rekor LogIDs must be non-zero SHA-256 identifiers") from exc
-        if any(log_id == "0" * 64 for log_id in log_ids):
+        if len(log_ids) != len(log_ids_value) or any(log_id == "0" * 64 for log_id in log_ids):
             raise ConfigError("trusted Rekor LogIDs must be non-zero SHA-256 identifiers")
         signing = _read_json(self.signing_config, "signing")
         key_ref = signing.get("key_ref")
@@ -299,7 +328,7 @@ class Publisher:
         )
 
     def _write_reference(self, digest: str, rekor: dict[str, Any]) -> None:
-        _atomic_json(self.reference_out, {
+        _create_json(self.reference_out, {
             "artifact": "health/latest.json",
             "artifact_sha256": digest,
             "bundle": self.bundle_out.name,
@@ -342,14 +371,21 @@ class Publisher:
     def _bundle_digest_and_proof(bundle_path: Path, expected_digest: str, log_ids: frozenset[str]) -> dict[str, Any]:
         try:
             bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+            if bundle["mediaType"] != COSIGN_V3_BUNDLE_MEDIA_TYPE:
+                raise ValueError("unexpected media type")
             signature = bundle["messageSignature"]["messageDigest"]
             entries = bundle["verificationMaterial"]["tlogEntries"]
+            if not isinstance(entries, list) or len(entries) != 1:
+                raise ValueError("ambiguous tlog entries")
             entry = entries[0]
             log_id = _normalise_log_id(entry["logId"]["keyId"])
             proof = entry["inclusionProof"]
             promise = entry["inclusionPromise"]["signedEntryTimestamp"]
             canonicalized_body = base64.b64decode(entry["canonicalizedBody"], validate=True)
             log_index = entry["logIndex"]
+            root_hash = proof["rootHash"]
+            hashes = proof["hashes"]
+            tree_size = proof["treeSize"]
         except (OSError, json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError, ConfigError) as exc:
             raise PublishError("Cosign bundle is incomplete") from exc
         if signature.get("algorithm") != "SHA2_256" or _normalise_bundle_digest(signature.get("digest")) != expected_digest:
@@ -358,12 +394,23 @@ class Publisher:
             log_id not in log_ids
             or not isinstance(proof, dict)
             or not proof
+            or not _is_sha256_base64(root_hash)
+            or not isinstance(hashes, list)
+            or any(
+                not isinstance(item, str)
+                or not _is_sha256_base64(item)
+                for item in hashes
+            )
+            or isinstance(tree_size, bool)
+            or not isinstance(tree_size, int)
+            or tree_size <= 0
             or not isinstance(promise, str)
             or not promise
             or not canonicalized_body
             or isinstance(log_index, bool)
             or not isinstance(log_index, int)
             or log_index < 0
+            or log_index >= tree_size
         ):
             raise PublishError("Cosign bundle lacks trusted Rekor inclusion proof")
         return {
@@ -387,6 +434,8 @@ class Publisher:
         signing = _read_json(self.signing_config, "signing")
         temporary_bundle = self.bundle_out.with_name(f".{self.bundle_out.name}.tmp")
         temporary_bundle.unlink(missing_ok=True)
+        bundle_published = False
+        reference_published = False
         try:
             # v3.1.3 uses a signing-config rather than a --rekor-url override.
             self._run_or_fail(
@@ -403,9 +452,19 @@ class Publisher:
             self.last_status = WitnessStatus(WitnessState.PENDING, digest, self.run_id, artifact_signed=True, bundle_locally_verified=True)
             if _sha256(self.artifact) != digest:
                 raise PublishError("canonical artifact changed while publishing")
-            os.replace(temporary_bundle, self.bundle_out)
+            try:
+                _publish_new_file(temporary_bundle, self.bundle_out)
+                bundle_published = True
+            except FileExistsError as exc:
+                self._mark_reconciliation_required(digest, artifact_signed=True, bundle_locally_verified=True)
+                raise PublishError("additive bundle/reference output already exists") from exc
             rekor = self._bundle_digest_and_proof(self.bundle_out, digest, log_ids)
-            self._write_reference(digest, rekor)
+            try:
+                self._write_reference(digest, rekor)
+                reference_published = True
+            except FileExistsError as exc:
+                self._mark_reconciliation_required(digest, artifact_signed=True, bundle_locally_verified=True)
+                raise PublishError("additive bundle/reference output already exists") from exc
             self.last_status = WitnessStatus(WitnessState.PUBLISHED, digest, self.run_id, artifact_signed=True, bundle_locally_verified=True)
             self._verify_persisted_outputs(digest, log_ids, trusted_root, verification_key)
             self.last_status = WitnessStatus(WitnessState.VERIFIED, digest, self.run_id, artifact_signed=True, bundle_locally_verified=True, rekor_inclusion_witnessed=True, outcome=WitnessOutcome.SUCCESSFUL_INCLUSION)
@@ -414,8 +473,10 @@ class Publisher:
         except Exception:
             temporary_bundle.unlink(missing_ok=True)
             if self.last_status.state is not WitnessState.OPERATOR_RECONCILIATION_REQUIRED:
-                self.bundle_out.unlink(missing_ok=True)
-                self.reference_out.unlink(missing_ok=True)
+                if bundle_published:
+                    self.bundle_out.unlink(missing_ok=True)
+                if reference_published:
+                    self.reference_out.unlink(missing_ok=True)
             if self.last_status.state is WitnessState.PENDING:
                 self.last_status = WitnessStatus(WitnessState.FAILED, digest, self.run_id)
             raise
