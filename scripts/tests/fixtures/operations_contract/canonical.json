@@ -1,0 +1,17 @@
+{
+  "health_service": {
+    "user": "redza",
+    "group": "redza",
+    "working_directory": "/home/redza/datapulse-my"
+  },
+  "health_timer": {
+    "cadence": "OnCalendar=*:0/5",
+    "due_command": "scripts/check.sh --due"
+  },
+  "p6_isolation": {
+    "production_stack": "absent",
+    "disposable_lab_stack": "absent",
+    "real_lab_marker_path": "/etc/datapulse-sigstore/real-lab-gate.passed",
+    "real_lab_marker": "absent"
+  }
+}

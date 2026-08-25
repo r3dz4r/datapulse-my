@@ -3,11 +3,25 @@
 ## Scheduling and ownership
 
 `datapulse-health.timer` wakes every 5 minutes (`OnCalendar=*:0/5`) and starts
-the root-owned `/etc/systemd/system/datapulse-health.service`. The service
+the `/etc/systemd/system/datapulse-health.service` service running as
+`redza:redza`. Its working directory is `/home/redza/datapulse-my`. The service
 acquires `/tmp/datapulse-health.lock`, probes due datasets with
 `scripts/check.sh --due`, validates the temporary snapshot, and atomically
 moves it to `health/latest.json`. A successful probe then invokes
 `bash scripts/generate.sh health-cycle`.
+
+## P6 stack isolation
+
+The P6 production and disposable lab stacks are definitions only; neither is
+running in the current operational state:
+
+- P6 production stack: **absent**
+- P6 disposable lab stack: **absent**
+- real-lab marker `/etc/datapulse-sigstore/real-lab-gate.passed`: **absent**
+
+No P6 stack is active. Do not infer production or lab readiness from the
+source-controlled Compose definitions, and do not treat the missing real-lab
+marker as permission to provision or sign.
 
 The release-build signs daily probe facts with the protected Ed25519 key referenced by
 `DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE`; private keys remain outside the checkout.
@@ -88,7 +102,7 @@ stops the unit and must be resolved in the operational clone.
 
 **Three operational units, distinct responsibilities:**
 
-1. **`datapulse-health.timer` / `.service`** — owned by root.
+1. **`datapulse-health.timer` / `.service`** — the service runs as `redza:redza`.
    Atomic probe writes + `health-cycle` artifacts. Pushes
    `chore(health): ...` commits automatically when artifacts change.
    Failure here manifests as missing/old `health/latest.json`, `health/trends.json`, `health/drift.json`, `health/reconciliation.json`, or
