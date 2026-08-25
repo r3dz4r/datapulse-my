@@ -126,10 +126,17 @@ jobs:
 
       - name: Run release-build generation profile (non-health path)
         if: needs.classify.outputs.health_only != 'true'
+        env:
+          DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
         run: |
           set -Eeuo pipefail
           export DATAPULSE_SOURCE_COMMIT_SHA="$GITHUB_SHA"
           export DATAPULSE_SOURCE_COMMIT_DATE="$(git show -s --format=%cs "$GITHUB_SHA")"
+          if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then
+            echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json
+            chmod 600 /tmp/datapulse-attestation-key.json
+            export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json
+          fi
           bash scripts/generate.sh release-build
 
       - name: Verify full release contract (non-health path)

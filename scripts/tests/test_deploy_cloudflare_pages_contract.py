@@ -148,6 +148,39 @@ def test_native_pages_installs_release_dependencies_before_generation() -> None:
     assert install_step["run"] == "python -m pip install jsonschema --requirement mcp/requirements.txt"
 
 
+def test_native_pages_scopes_attestation_key_setup_to_non_health_release_build() -> None:
+    parsed = yaml.safe_load(_workflow())
+    steps = parsed["jobs"]["deploy"]["steps"]
+    health_step = next(
+        step for step in steps if step.get("name") == "Embed canonical health dashboard (health-only path)"
+    )
+    release_step = next(
+        step for step in steps if step.get("name") == "Run release-build generation profile (non-health path)"
+    )
+
+    secret_expression = "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}"
+    release_run = release_step["run"]
+    assert release_step["if"] == "needs.classify.outputs.health_only != 'true'"
+    assert release_step["env"] == {
+        "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT": secret_expression,
+    }
+    assert secret_expression not in release_run
+    assert secret_expression not in health_step.get("run", "")
+    assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" not in health_step
+    assert _workflow().count(secret_expression) == 1
+
+    setup = (
+        'if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then',
+        'echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json',
+        "chmod 600 /tmp/datapulse-attestation-key.json",
+        "export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json",
+    )
+    positions = [release_run.index(line) for line in setup]
+    assert positions == sorted(positions)
+    assert release_run.index("bash scripts/generate.sh release-build") > positions[-1]
+    assert "-----BEGIN" not in _workflow()
+
+
 def test_native_pages_uses_only_cloudflare_secrets_and_project() -> None:
     workflow = _workflow()
     parsed = yaml.safe_load(workflow)
@@ -157,7 +190,7 @@ def test_native_pages_uses_only_cloudflare_secrets_and_project() -> None:
     assert "pages deploy _site --project-name=datapulse-p4b-preview --branch=main" in workflow
     assert "secrets.CLOUDFLARE_API_TOKEN" in workflow
     assert "secrets.CLOUDFLARE_ACCOUNT_ID" in workflow
-    assert "secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" not in workflow
+    assert "secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" in workflow
     assert "actions/deploy-pages" not in workflow
     assert "pages: write" not in workflow
 
