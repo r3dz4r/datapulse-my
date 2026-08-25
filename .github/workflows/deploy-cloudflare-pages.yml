@@ -1,0 +1,214 @@
+name: Deploy canonical dashboard to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "health/**"
+      - "deltas/**"
+      - "record-evidence/**"
+      - "attestations/**"
+      - ".attestations/**"
+      - "badges/**"
+      - "samples/**"
+      - "data/**"
+      - "*.json"
+      - "*.xml"
+      - "*.txt"
+      - "scripts/**"
+      - "mcp/**"
+      - "config/public-surfaces.json"
+      - ".github/workflows/deploy-cloudflare-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: >-
+    ${{ github.event_name == 'push'
+        && endsWith(github.event.head_commit.message, '[skip deploy]')
+        && 'cloudflare-pages-health' || 'cloudflare-pages-release' }}
+  cancel-in-progress: ${{ github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip deploy]') }}
+
+jobs:
+  classify:
+    name: Classify native Pages input
+    runs-on: ubuntu-latest
+    outputs:
+      health_only: ${{ steps.classify.outputs.health_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: classify
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          HEAD_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -Eeuo pipefail
+          echo "health_only=false" >> "$GITHUB_OUTPUT"
+          [[ "${GITHUB_EVENT_NAME}" == "push" ]] || exit 0
+          [[ "$HEAD_MESSAGE" == *"[skip deploy]" ]] || exit 0
+          git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null || exit 0
+          changed="$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA")"
+          # Health-cycle generators own: health/**, record-evidence/**/latest.json,
+          # attestations/latest/**, .attestations/latest/**, .attestations/chain_head.json,
+          # and the catalog, changelog, and feed root outputs below. Any other path,
+          # including a source or workflow change, must use the release profile.
+          if HEALTH_CYCLE_CHANGED_PATHS="$changed" python3 - <<'PY'
+          from __future__ import annotations
+
+          import os
+
+
+          paths = [path for path in os.environ["HEALTH_CYCLE_CHANGED_PATHS"].splitlines() if path]
+          root_outputs = {
+              "catalog-graph.json",
+              "catalog-snapshot.json",
+              "changelog.json",
+              "feed.xml",
+          }
+
+
+          def is_health_cycle_output(path: str) -> bool:
+              parts = path.split("/")
+              if any(part in {"", ".", ".."} for part in parts):
+                  return False
+              if path.startswith("health/"):
+                  return True
+              if len(parts) >= 3 and parts[0] == "record-evidence" and parts[-1] == "latest.json":
+                  return True
+              if path.startswith("attestations/latest/"):
+                  return True
+              if path == ".attestations/chain_head.json" or path.startswith(".attestations/latest/"):
+                  return True
+              return path in root_outputs
+
+
+          raise SystemExit(
+              0
+              if "health/latest.json" in paths and paths and all(is_health_cycle_output(path) for path in paths)
+              else 1
+          )
+          PY
+          then
+            echo "health_only=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: classify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate canonical health snapshot
+        run: |
+          set -Eeuo pipefail
+          jq -e '
+            .checked_at | type == "string" and length > 0
+          ' health/latest.json >/dev/null
+          jq -e '
+            .datasets | type == "array" and length > 0
+          ' health/latest.json >/dev/null
+
+      - name: Embed canonical health dashboard (health-only path)
+        if: needs.classify.outputs.health_only == 'true'
+        run: python3 scripts/embed_dashboard_data.py --health health/latest.json
+
+      - name: Run release-build generation profile (non-health path)
+        if: needs.classify.outputs.health_only != 'true'
+        run: |
+          set -Eeuo pipefail
+          export DATAPULSE_SOURCE_COMMIT_SHA="$GITHUB_SHA"
+          export DATAPULSE_SOURCE_COMMIT_DATE="$(git show -s --format=%cs "$GITHUB_SHA")"
+          bash scripts/generate.sh release-build
+
+      - name: Verify full release contract (non-health path)
+        if: needs.classify.outputs.health_only != 'true'
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify_release_reproducible.py \
+            --workdir-root "$RUNNER_TEMP" \
+            --output docs/release-verification.md
+          python3 scripts/verify_release_reproducible.py \
+            --verify-proof docs/release-verification.md
+          bash scripts/verify_release_invariants.sh --local
+
+      - name: Assemble canonical Pages artifact
+        run: |
+          set -Eeuo pipefail
+          rm -rf _site
+          mkdir -p _site/.well-known
+          cp -R docs/. _site/
+          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
+          cp -R health deltas record-evidence badges samples data _site/
+          cp -R attestations _site/
+          cp -R .attestations _site/
+          cp docs/.well-known/datapulse-probe-keys.json _site/.well-known/
+          test -s _site/index.html
+          test -s _site/health/latest.json
+
+      - name: Deploy canonical Cloudflare Pages artifact
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy _site --project-name=datapulse-p4b-preview --branch=main
+
+      - name: Verify canonical served surface
+        run: |
+          set -Eeuo pipefail
+          fail() { echo "::error title=Cloudflare Pages contract failed::$1"; exit 1; }
+          website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)" || fail "invalid website origin"
+          smoke_dir="$(mktemp -d)"
+          trap 'rm -rf "$smoke_dir"' EXIT
+          fetch() {
+            local surface="$1" url="$2" output="$3"
+            [[ "$url" =~ ^https://[^[:space:]]+$ ]] || fail "invalid URL for $surface"
+            mkdir -p "$(dirname "$output")"
+            curl --fail --location --silent --show-error --proto '=https' \
+              --retry 3 --retry-delay 5 --retry-all-errors \
+              --connect-timeout 10 --max-time 30 "$url" --output "$output" || \
+              fail "missing or stale served surface: $surface"
+          }
+          # Allow the custom-domain edge to observe the just-created Pages deployment.
+          sleep 30
+          fetch "dashboard" "${website_origin}/" "$smoke_dir/index.html"
+          fetch "health snapshot" "${website_origin}/health/latest.json" "$smoke_dir/health/latest.json"
+          mapfile -t pages < <(jq -er '.pages[]' config/public-surfaces.json)
+          mapfile -t artifacts < <(jq -er '.artifacts[]' config/public-surfaces.json)
+          for path in "${pages[@]}" "${artifacts[@]}"; do
+            [[ "$path" == "/" || "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "unsafe declared public path: $path"
+            if [[ "$path" == */ ]]; then
+              declared_file="$(find "_site${path}" -type f -print -quit)" || fail "declared collection is missing: $path"
+              [[ -n "$declared_file" ]] || fail "declared collection is empty: $path"
+              path="/${declared_file#_site/}"
+            fi
+            fetch "declared public surface $path" "${website_origin}${path}" "$smoke_dir/surfaces${path%/}/index"
+          done
+          python3 - "$smoke_dir/index.html" "$smoke_dir/health/latest.json" <<'PY'
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          dashboard = Path(sys.argv[1]).read_text(encoding="utf-8")
+          health = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+          match = re.search(r"window\.__DATAPULSE_DATA__\s*=\s*\{health:\s*", dashboard)
+          if match is None:
+              raise SystemExit("dashboard has no embedded health payload")
+          decoder = json.JSONDecoder()
+          embedded_health, _ = decoder.raw_decode(dashboard[match.end():])
+          if embedded_health["checked_at"] != health["checked_at"]:
+              raise SystemExit("embedded dashboard checked_at differs from served health/latest.json")
+          if len(embedded_health["datasets"]) != len(health["datasets"]):
+              raise SystemExit("embedded dashboard dataset count differs from served health/latest.json")
+          if dashboard.count('"health_report":') != len(health["datasets"]):
+              raise SystemExit("dashboard dataset-card count differs from served health/latest.json")
+          PY

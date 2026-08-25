@@ -39,17 +39,20 @@ with their operational owner.
 
 ## Pages deployment
 
-`.github/workflows/deploy-pages.yml` runs on relevant pushes, manual dispatch,
-and successful completion of the weekly health workflow. `workflow_run` is
-required because the health workflow commits generated files after its initial
-checkout; a normal same-workflow deploy would publish the old SHA.
+`.github/workflows/deploy-cloudflare-pages.yml` is the canonical native Pages
+publisher. It runs on relevant pushes and manual dispatch. A health-only commit
+with the `[skip deploy]` trailer takes its fast path: it treats
+`health/latest.json` as the canonical health input, regenerates the dashboard
+embed, assembles `_site`, deploys to the existing Cloudflare Pages project, and
+then compares the served dashboard payload with served `health/latest.json`.
+The workflow rejects a missing health snapshot, timestamp or dataset-count
+drift, and any missing declared public surface.
 
-Timer-driven health commits carry a `[skip deploy]` trailer. The `classify_push`
-job suppresses a `push` deployment only after verifying the change is heartbeat-only;
-manual `workflow_dispatch` and successful `workflow_run` events continue through the deployment workflow.
-
-The workflow injects embedded health/manifest data, assembles `_site`, deploys
-with GitHub Pages, then runs post-deploy invariants against the public host.
+Non-health releases retain the full `release-build` and release-invariant path
+before the same `_site` assembly and native Pages deployment. The legacy
+`.github/workflows/deploy-pages.yml` GitHub Pages workflow remains unchanged as
+the rollback path until an operator explicitly retires it; this native workflow
+does not change GitHub Pages settings or routing.
 Repository workflow checks prove only what the workflow ran. GitHub branch protection
 must separately require the CI status check before changes reach `main`; see the
 operator handoff in this release work for the control-plane setting.
