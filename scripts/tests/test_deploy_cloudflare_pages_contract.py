@@ -179,17 +179,26 @@ def test_native_pages_scopes_attestation_key_setup_to_non_health_release_build()
     release_step = next(
         step for step in steps if step.get("name") == "Run release-build generation profile (non-health path)"
     )
+    verify_step = next(
+        step for step in steps if step.get("name") == "Verify full release contract (non-health path)"
+    )
 
     secret_expression = "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}"
     release_run = release_step["run"]
+    verify_run = verify_step["run"]
     assert release_step["if"] == "needs.classify.outputs.health_only != 'true'"
+    assert verify_step["if"] == "needs.classify.outputs.health_only != 'true'"
     assert release_step["env"] == {
         "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT": secret_expression,
     }
+    assert verify_step["env"] == {
+        "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT": secret_expression,
+    }
     assert secret_expression not in release_run
+    assert secret_expression not in verify_run
     assert secret_expression not in health_step.get("run", "")
     assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" not in health_step
-    assert _workflow().count(secret_expression) == 1
+    assert _workflow().count(secret_expression) == 2
 
     setup = (
         'if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then',
@@ -200,6 +209,13 @@ def test_native_pages_scopes_attestation_key_setup_to_non_health_release_build()
     positions = [release_run.index(line) for line in setup]
     assert positions == sorted(positions)
     assert release_run.index("bash scripts/generate.sh release-build") > positions[-1]
+    verify_positions = [verify_run.index(line) for line in setup]
+    assert verify_positions == sorted(verify_positions)
+    invocations = (
+        "python3 scripts/verify_release_reproducible.py",
+        "bash scripts/verify_release_invariants.sh --local",
+    )
+    assert all(verify_run.index(invocation) > verify_positions[-1] for invocation in invocations)
     assert "-----BEGIN" not in _workflow()
 
 
