@@ -22,6 +22,7 @@ STAGES = {
     "mcp-sync",
     "attestation-score",
     "evidence",
+    "sigstore-request",
 }
 STATUSES = {"success", "fail", "skipped"}
 
