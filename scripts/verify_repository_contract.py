@@ -34,6 +34,128 @@ def _format_ids(values: set[str] | list[str]) -> str:
     return ", ".join(sorted(values))
 
 
+def _profile_generators(generate_script: Path, errors: list[str]) -> dict[str, set[str]]:
+    """Read profile membership without running any generator or shell code."""
+    try:
+        source = generate_script.read_text(encoding="utf-8")
+    except OSError as exc:
+        errors.append(f"scripts/generate.sh: cannot read profile contract: {exc}")
+        return {}
+    profiles: dict[str, set[str]] = {}
+    for profile in ("health-cycle", "release-build"):
+        match = re.search(
+            rf"^  {re.escape(profile)}\)\n.*?^    generators=\(\n(?P<body>.*?)^    \)",
+            source,
+            re.MULTILINE | re.DOTALL,
+        )
+        if match is None:
+            errors.append(f"scripts/generate.sh: {profile} generator list is missing")
+            continue
+        profiles[profile] = set(re.findall(r'^      "([^"\n]+)"$', match.group("body"), re.MULTILINE))
+    return profiles
+
+
+def _verify_runtime_derived_surfaces(
+    root: Path, scope: dict[str, Any], public: dict[str, Any], errors: list[str]
+) -> None:
+    """Require one complete ownership record for every declared public surface."""
+    records = scope.get("runtime_derived_surfaces")
+    if not isinstance(records, list):
+        errors.append("scripts/contract-scope.json:runtime_derived_surfaces: expected array")
+        return
+
+    declared_markers = {
+        (path, marker)
+        for path, markers in public.get("owned_markers", {}).items()
+        if isinstance(path, str) and isinstance(markers, list)
+        for marker in markers
+        if isinstance(marker, str)
+    }
+    declared_full = {
+        path for path in public.get("full_outputs", []) if isinstance(path, str)
+    }
+    mapped_markers: set[tuple[str, str]] = set()
+    mapped_full: set[str] = set()
+    profile_generators = _profile_generators(root / "scripts/generate.sh", errors)
+    allowed_ownership = {"marker-owned", "full-output", "full-output-and-markers"}
+
+    for index, record in enumerate(records):
+        label = f"scripts/contract-scope.json:runtime_derived_surfaces.{index}"
+        if not isinstance(record, dict):
+            errors.append(f"{label}: expected object")
+            continue
+        required = ("surface", "markers", "canonical_inputs", "generator", "profiles", "ownership", "fixture", "invariant")
+        missing = [key for key in required if key not in record]
+        if missing:
+            errors.append(f"{label}: missing required field(s): {', '.join(missing)}")
+            continue
+        surface = record["surface"]
+        markers = record["markers"]
+        inputs = record["canonical_inputs"]
+        generator = record["generator"]
+        profiles = record["profiles"]
+        ownership = record["ownership"]
+        fixture = record["fixture"]
+        invariant = record["invariant"]
+        if not isinstance(surface, str) or not (root / surface).is_file():
+            errors.append(f"{label}.surface: required public path is missing")
+            continue
+        if not isinstance(markers, list) or not all(isinstance(item, str) for item in markers):
+            errors.append(f"{label}.markers: expected string array")
+            continue
+        if len(markers) != len(set(markers)):
+            errors.append(f"{label}.markers: duplicate marker declaration")
+        if not isinstance(inputs, list) or not inputs or not all(isinstance(item, str) for item in inputs):
+            errors.append(f"{label}.canonical_inputs: expected non-empty string array")
+        else:
+            for input_path in inputs:
+                if not (root / input_path).is_file():
+                    errors.append(f"{label}.canonical_inputs: missing canonical input {input_path}")
+        if not isinstance(generator, str) or not (root / generator).is_file():
+            errors.append(f"{label}.generator: declared generator is missing")
+        if not isinstance(profiles, list) or not profiles or not all(isinstance(item, str) for item in profiles):
+            errors.append(f"{label}.profiles: expected non-empty string array")
+        else:
+            for profile in profiles:
+                if profile not in profile_generators:
+                    errors.append(f"{label}.profiles: unknown profile {profile!r}")
+                elif Path(generator).name not in profile_generators[profile]:
+                    errors.append(f"{label}: {generator} is not declared by {profile}")
+        if ownership not in allowed_ownership:
+            errors.append(f"{label}.ownership: expected marker-owned, full-output, or full-output-and-markers")
+        if not isinstance(fixture, str) or not fixture.startswith("scripts/tests/"):
+            errors.append(f"{label}.fixture: expected scripts/tests/ fixture reference")
+        if not isinstance(invariant, str) or not invariant.strip():
+            errors.append(f"{label}.invariant: expected non-empty invariant")
+
+        for marker in markers:
+            key = (surface, marker)
+            if key not in declared_markers:
+                errors.append(f"{label}: marker {marker!r} is not declared for {surface}")
+            elif key in mapped_markers:
+                errors.append(f"{label}: duplicate runtime ownership for {surface} {marker}")
+            mapped_markers.add(key)
+        if ownership in {"full-output", "full-output-and-markers"}:
+            if surface not in declared_full:
+                errors.append(f"{label}: {surface} is not a declared full output")
+            elif surface in mapped_full:
+                errors.append(f"{label}: duplicate full-output ownership for {surface}")
+            mapped_full.add(surface)
+
+    missing_markers = declared_markers - mapped_markers
+    if missing_markers:
+        errors.append(
+            "scripts/contract-scope.json: runtime ownership omits marker surface(s): "
+            + ", ".join(f"{path}:{marker}" for path, marker in sorted(missing_markers))
+        )
+    missing_full = declared_full - mapped_full
+    if missing_full:
+        errors.append(
+            "scripts/contract-scope.json: runtime ownership omits full output(s): "
+            + _format_ids(missing_full)
+        )
+
+
 def _verify_scoped_contract(
     root: Path,
     scope: dict[str, Any],
@@ -231,6 +353,8 @@ def _verify_scoped_contract(
         for relative_path, payload in [*full_payloads, *((path, block) for path, _, block in owned_blocks)]:
             if isinstance(pattern, str) and pattern in payload:
                 errors.append(f"{relative_path}: prohibited stale public-surface fact: {pattern!r}")
+    if "public_surfaces" in scope:
+        _verify_runtime_derived_surfaces(root, scope, public, errors)
 
 
 def verify_repository_contract(root: Path) -> list[str]:

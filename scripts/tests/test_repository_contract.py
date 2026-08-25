@@ -4,10 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from scripts.verify_repository_contract import verify_repository_contract
+from scripts.verify_repository_contract import _verify_runtime_derived_surfaces, verify_repository_contract
 
 
 FIXTURE = Path(__file__).parent / "fixtures/repository_contract/valid"
+ROOT = Path(__file__).resolve().parents[2]
 
 
 @pytest.fixture
@@ -117,3 +118,42 @@ def test_unknown_probe_policy_id_reports_the_id(repository: Path) -> None:
     errors = verify_repository_contract(repository)
 
     assert any("probe-policy.json" in error and "rogue_probe" in error for error in errors)
+
+
+def test_checked_in_runtime_surface_inventory_is_complete() -> None:
+    errors = verify_repository_contract(ROOT)
+
+    assert not [error for error in errors if "runtime ownership" in error or "runtime_derived_surfaces" in error]
+
+
+def test_runtime_ownership_contract_rejects_missing_and_duplicate_marker_records(tmp_path: Path) -> None:
+    (tmp_path / "README.md").write_text(
+        "<!-- BEGIN facts -->\nold\n<!-- END facts -->\n", encoding="utf-8"
+    )
+    (tmp_path / "input.json").write_text("{}\n", encoding="utf-8")
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "gen_fixture.py").write_text("# fixture\n", encoding="utf-8")
+    (scripts / "generate.sh").write_text(
+        "  release-build)\n    generators=(\n      \"gen_fixture.py\"\n    )\n",
+        encoding="utf-8",
+    )
+    public = {"owned_markers": {"README.md": ["facts"]}, "full_outputs": []}
+    record = {
+        "surface": "README.md", "markers": ["facts"], "canonical_inputs": ["input.json"],
+        "generator": "scripts/gen_fixture.py", "profiles": ["release-build"],
+        "ownership": "marker-owned", "fixture": "scripts/tests/test_fixture.py",
+        "invariant": "fixture marker parity",
+    }
+
+    missing_errors: list[str] = []
+    _verify_runtime_derived_surfaces(
+        tmp_path, {"runtime_derived_surfaces": [{**record, "markers": []}]}, public, missing_errors
+    )
+    duplicate_errors: list[str] = []
+    _verify_runtime_derived_surfaces(
+        tmp_path, {"runtime_derived_surfaces": [record, record]}, public, duplicate_errors
+    )
+
+    assert any("omits marker surface" in error for error in missing_errors)
+    assert any("duplicate runtime ownership" in error for error in duplicate_errors)

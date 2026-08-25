@@ -360,6 +360,35 @@ def test_release_build_lists_all_twenty_one_steps(tmp_path: Path) -> None:
         assert step in result.stdout
 
 
+def test_runtime_ownership_listing_matches_release_profile_steps() -> None:
+    scope = json.loads((ROOT / "scripts/contract-scope.json").read_text(encoding="utf-8"))
+    expected = [
+        record
+        for record in scope["runtime_derived_surfaces"]
+        if "release-build" in record["profiles"]
+    ]
+    completed = subprocess.run(
+        ["bash", "scripts/generate.sh", "--list-runtime-ownership", "release-build"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == expected
+    listed_steps = subprocess.run(
+        ["bash", "scripts/generate.sh", "release-build", "--list"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert listed_steps.returncode == 0, listed_steps.stderr
+    for record in expected:
+        assert Path(record["generator"]).name in listed_steps.stdout
+
+
 def test_clean_fixture_stages_attestation_binding_helper(tmp_path: Path) -> None:
     source = _stage_source(tmp_path)
 

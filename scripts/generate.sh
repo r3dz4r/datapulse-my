@@ -14,6 +14,7 @@ usage() {
   cat <<'EOF'
 Usage: ./scripts/generate.sh <profile> [--list] [--env KEY=VAL]
        ./scripts/generate.sh --list-owned-outputs <profile>
+       ./scripts/generate.sh --list-runtime-ownership <profile>
 
 Profiles:
   health-cycle   Regenerate artifacts derived from a fresh health/latest.json.
@@ -32,12 +33,17 @@ if (( $# == 0 )); then
 fi
 
 list_owned_outputs=false
-if [[ "$1" == "--list-owned-outputs" ]]; then
+list_runtime_ownership=false
+if [[ "$1" == "--list-owned-outputs" || "$1" == "--list-runtime-ownership" ]]; then
   if (( $# != 2 )); then
-    printf 'generate.sh: --list-owned-outputs requires one profile\n' >&2
+    printf 'generate.sh: %s requires one profile\n' "$1" >&2
     exit 2
   fi
-  list_owned_outputs=true
+  if [[ "$1" == "--list-owned-outputs" ]]; then
+    list_owned_outputs=true
+  else
+    list_runtime_ownership=true
+  fi
   profile="$2"
   shift 2
 else
@@ -196,6 +202,23 @@ if [[ "$list_owned_outputs" == true ]]; then
   for output in "${outputs[@]}"; do
     printf '%s\n' "$output"
   done
+  exit 0
+fi
+
+if [[ "$list_runtime_ownership" == true ]]; then
+  python3 - "$profile" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+profile = sys.argv[1]
+scope = json.loads(Path("scripts/contract-scope.json").read_text(encoding="utf-8"))
+records = scope.get("runtime_derived_surfaces", [])
+if not isinstance(records, list):
+    raise SystemExit("generate.sh: runtime ownership contract is malformed")
+owned = [record for record in records if profile in record.get("profiles", [])]
+print(json.dumps(owned, ensure_ascii=False, indent=2, sort_keys=True))
+PY
   exit 0
 fi
 

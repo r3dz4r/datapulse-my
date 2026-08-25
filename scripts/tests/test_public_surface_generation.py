@@ -8,6 +8,7 @@ import pytest
 
 from scripts.public_surface_generation import (
     GenerationError,
+    atomic_write_json,
     atomic_write_text,
     load_public_surfaces,
     replace_owned_block,
@@ -104,3 +105,18 @@ def test_atomic_write_preserves_mode_and_rejects_symlink(tmp_path: Path) -> None
     with pytest.raises(GenerationError, match="symlink"):
         atomic_write_text(link, "bad\n")
     assert target.read_text(encoding="utf-8") == "new\n"
+
+
+def test_atomic_json_output_is_byte_stable_and_preserves_declared_key_order(tmp_path: Path) -> None:
+    target = tmp_path / "surface.json"
+    payload = {"schema": "datapulse/test", "zeta": 2, "alpha": {"second": 2, "first": 1}}
+
+    atomic_write_json(target, payload)
+    first = target.read_bytes()
+    atomic_write_json(target, payload)
+
+    assert target.read_bytes() == first
+    assert first == (
+        b'{\n  "schema": "datapulse/test",\n  "zeta": 2,\n  "alpha": {\n'
+        b'    "second": 2,\n    "first": 1\n  }\n}\n'
+    )
