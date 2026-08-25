@@ -132,6 +132,22 @@ def test_native_pages_preserves_full_release_build_and_surface_contract() -> Non
         assert copy in workflow
 
 
+def test_native_pages_installs_release_dependencies_before_generation() -> None:
+    parsed = yaml.safe_load(_workflow())
+    steps = parsed["jobs"]["deploy"]["steps"]
+    install_index = next(
+        index for index, step in enumerate(steps) if step.get("name") == "Install release verification dependencies"
+    )
+    release_build_index = next(
+        index for index, step in enumerate(steps) if step.get("name") == "Run release-build generation profile (non-health path)"
+    )
+    install_step = steps[install_index]
+
+    assert install_index < release_build_index
+    assert install_step["if"] == "needs.classify.outputs.health_only != 'true'"
+    assert install_step["run"] == "python -m pip install jsonschema --requirement mcp/requirements.txt"
+
+
 def test_native_pages_uses_only_cloudflare_secrets_and_project() -> None:
     workflow = _workflow()
     parsed = yaml.safe_load(workflow)
