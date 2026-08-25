@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 from datetime import datetime, timedelta
@@ -54,50 +55,6 @@ GENERATORS = (
     "gen_health_methodology_content.py",
     "health_policy.py",
     "check.sh",
-)
-HEALTH_STEPS = (
-    "gen_data_reports.sh",
-    "gen_badges.sh",
-    "gen_readme_summary.sh",
-    "gen_rss.sh",
-    "gen_catalog_snapshot.py",
-    "gen_health_history.py",
-    "gen_trends.py",
-    "gen_drift.py",
-    "gen_reconciliation.py",
-    "gen_dataset_deltas.py",
-    "gen_record_evidence.py",
-    "gen_evidence_coverage.py",
-    "gen_catalog_graph.py",
-)
-RELEASE_STEPS = (
-    "gen_mcp_reference.py --validate-only",
-    "gen_mcp_reference.py",
-    "gen_llms_summary.py",
-    "gen_public_discovery.py",
-    "gen_dashboard_sections.py",
-    "gen_data_reports.sh",
-    "gen_health_methodology.py",
-    "gen_badges.sh",
-    "gen_readme_summary.sh",
-    "gen_rss.sh",
-    "gen_catalog_snapshot.py",
-    "gen_health_history.py",
-    "gen_trends.py",
-    "gen_drift.py",
-    "gen_reconciliation.py",
-    "gen_dataset_deltas.py",
-    "gen_record_evidence.py",
-    "gen_catalog_graph.py",
-    "gen_json_envelope.py",
-    "gen_jsonld_catalog.py",
-    "gen_dashboard_filters.py",
-    "embed_dashboard_data.py",
-    "gen_api_reference.py",
-    "check_url_drift.py",
-    "gen_trust_snapshot.py",
-    "gen_health_methodology_html.py",
-    "gen_site_nav.py",
 )
 HEALTH_OUTPUTS = (
     "README.md",
@@ -344,49 +301,82 @@ def _run_profile(
     )
 
 
-def test_health_cycle_lists_twelve_steps(tmp_path: Path) -> None:
-    result = _run_profile(tmp_path, "health-cycle", list_mode=True)
+def _run_listing(option: str, profile: str) -> subprocess.CompletedProcess[str]:
+    arguments = ["bash", "scripts/generate.sh"]
+    if option in {"--list-owned-outputs", "--list-runtime-ownership"}:
+        arguments.extend((option, profile))
+    else:
+        arguments.append(profile)
+        if option:
+            arguments.append(option)
+    return subprocess.run(
+        arguments,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert result.returncode == 0, result.stderr
-    for step in HEALTH_STEPS:
-        assert step in result.stdout
+
+def _listed_steps(output: str) -> list[str]:
+    return [line for line in output.splitlines() if re.match(r"^\d+\. ", line)]
 
 
-def test_release_build_lists_all_twenty_one_steps(tmp_path: Path) -> None:
-    result = _run_profile(tmp_path, "release-build", list_mode=True)
+def test_profile_listings_are_deterministic_and_array_consistent() -> None:
+    for profile in ("health-cycle", "release-build"):
+        first = _run_listing("--list", profile)
+        second = _run_listing("--list", profile)
+        owned_first = _run_listing("--list-owned-outputs", profile)
+        owned_second = _run_listing("--list-owned-outputs", profile)
 
-    assert result.returncode == 0, result.stderr
-    for step in RELEASE_STEPS:
-        assert step in result.stdout
+        assert first.returncode == second.returncode == 0, first.stderr
+        assert owned_first.returncode == owned_second.returncode == 0, owned_first.stderr
+        assert first.stdout == second.stdout
+        assert owned_first.stdout == owned_second.stdout
+
+        steps = _listed_steps(first.stdout)
+        outputs = [line for line in owned_first.stdout.splitlines() if line]
+        assert steps
+        assert len(steps) == len(outputs)
+        assert first.stdout.count("\n   owns: ") == len(steps)
+
+
+def test_profile_help_descriptions_match_runtime_purposes() -> None:
+    help_result = _run_listing("", "--help")
+    assert help_result.returncode == 0, help_result.stderr
+
+    for profile in ("health-cycle", "release-build"):
+        listed = _run_listing("--list", profile)
+        purpose = next(
+            line.removeprefix("Purpose: ")
+            for line in listed.stdout.splitlines()
+            if line.startswith("Purpose: ")
+        )
+        help_line = next(
+            line for line in help_result.stdout.splitlines() if line.strip().startswith(profile)
+        )
+        assert help_line.strip().split(None, 1) == [profile, purpose]
 
 
 def test_runtime_ownership_listing_matches_release_profile_steps() -> None:
     scope = json.loads((ROOT / "scripts/contract-scope.json").read_text(encoding="utf-8"))
-    expected = [
-        record
-        for record in scope["runtime_derived_surfaces"]
-        if "release-build" in record["profiles"]
-    ]
-    completed = subprocess.run(
-        ["bash", "scripts/generate.sh", "--list-runtime-ownership", "release-build"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    for profile in ("health-cycle", "release-build"):
+        expected = [
+            record
+            for record in scope["runtime_derived_surfaces"]
+            if profile in record["profiles"]
+        ]
+        completed = _run_listing("--list-runtime-ownership", profile)
+        repeated = _run_listing("--list-runtime-ownership", profile)
 
-    assert completed.returncode == 0, completed.stderr
-    assert json.loads(completed.stdout) == expected
-    listed_steps = subprocess.run(
-        ["bash", "scripts/generate.sh", "release-build", "--list"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert listed_steps.returncode == 0, listed_steps.stderr
-    for record in expected:
-        assert Path(record["generator"]).name in listed_steps.stdout
+        assert completed.returncode == 0, completed.stderr
+        assert repeated.returncode == 0, repeated.stderr
+        assert completed.stdout == repeated.stdout
+        assert json.loads(completed.stdout) == expected
+        listed_steps = _run_listing("--list", profile)
+        assert listed_steps.returncode == 0, listed_steps.stderr
+        for record in expected:
+            assert Path(record["generator"]).name in listed_steps.stdout
 
 
 def test_clean_fixture_stages_attestation_binding_helper(tmp_path: Path) -> None:

@@ -2,13 +2,18 @@
 #
 # DataPulse MY generation profiles.
 #
-# health-cycle: 14 steps for artifacts derived from the live health snapshot.
-# release-build: validated deterministic generation for the complete public-site artifact set.
-#
 # This script orchestrates local artifact generation in reviewed order.
 # It never commits, pushes, or deploys; release-build embeds dashboard data locally.
 #
 set -euo pipefail
+
+profile_description() {
+  case "$1" in
+    health-cycle) printf 'Regenerate artifacts derived from a fresh health/latest.json after a health check.' ;;
+    release-build) printf 'Regenerate health-cycle plus public discovery, JSON-LD, MCP, envelope, and dashboard artifacts.' ;;
+    *) return 1 ;;
+  esac
+}
 
 usage() {
   cat <<'EOF'
@@ -17,8 +22,10 @@ Usage: ./scripts/generate.sh <profile> [--list] [--env KEY=VAL]
        ./scripts/generate.sh --list-runtime-ownership <profile>
 
 Profiles:
-  health-cycle   Regenerate artifacts derived from a fresh health/latest.json.
-  release-build  Regenerate health-cycle plus public discovery artifacts.
+EOF
+  printf '  health-cycle   %s\n' "$(profile_description health-cycle)"
+  printf '  release-build  %s\n' "$(profile_description release-build)"
+  cat <<'EOF'
 
 Options:
   --list         Print ordered commands and owned paths without running them.
@@ -90,7 +97,7 @@ done
 
 case "$profile" in
   health-cycle)
-    description="Regenerate artifacts derived from a fresh health/latest.json after a health check."
+    description="$(profile_description "$profile")"
     generators=(
       "gen_data_reports.sh"
       "gen_badges.sh"
@@ -125,7 +132,7 @@ case "$profile" in
     )
     ;;
   release-build)
-    description="Regenerate health-cycle plus public discovery, JSON-LD, MCP, envelope, and dashboard artifacts."
+    description="$(profile_description "$profile")"
     generators=(
       "bump_mcp_source_version.py"
       "public_surface_preflight"
@@ -197,6 +204,12 @@ case "$profile" in
     exit 2
     ;;
 esac
+
+if (( ${#generators[@]} != ${#outputs[@]} )); then
+  printf 'generate.sh: profile %s has %d generators but %d output entries\n' \
+    "$profile" "${#generators[@]}" "${#outputs[@]}" >&2
+  exit 1
+fi
 
 if [[ "$list_owned_outputs" == true ]]; then
   for output in "${outputs[@]}"; do
