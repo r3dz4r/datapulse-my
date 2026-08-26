@@ -1,6 +1,6 @@
 {
   "schema": "datapulse/v1/dataset-drift",
-  "generated_at": "2026-08-26T15:55:54Z",
+  "generated_at": "2026-08-26T16:00:56Z",
   "window_days": 30,
   "methodology": {
     "shape_signal": "adjacent versioned shape_hash transitions",
@@ -22,10 +22,10 @@
   "summary": {
     "datasets_total": 389,
     "by_verdict": {
-      "drift_detected": 2,
+      "drift_detected": 0,
       "record_count_drift": 0,
       "stable": 230,
-      "insufficient_data": 157
+      "insufficient_data": 159
     }
   },
   "datasets": [
@@ -104,8 +104,8 @@
     {
       "dataset_id": "exchangerates_daily_0900",
       "name": "BNM Daily Exchange Rates (0900)",
-      "verdict": "drift_detected",
-      "shape_changed_recently": true,
+      "verdict": "insufficient_data",
+      "shape_changed_recently": false,
       "shape_change_count": 0,
       "last_shape_change_at": null,
       "shape_sample_count": 1,
@@ -122,8 +122,8 @@
       "column_count": 29,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "content_shape_changed_latest": true,
-      "reason": "latest health snapshot reports a structural comparison change"
+      "content_shape_changed_latest": false,
+      "reason": "requires two comparable structural or record-count observations, or an evaluable expected count"
     },
     {
       "dataset_id": "exchangerates_daily_1130",
@@ -152,8 +152,8 @@
     {
       "dataset_id": "exchangerates_daily_1200",
       "name": "BNM Daily Exchange Rates (1200)",
-      "verdict": "drift_detected",
-      "shape_changed_recently": true,
+      "verdict": "insufficient_data",
+      "shape_changed_recently": false,
       "shape_change_count": 0,
       "last_shape_change_at": null,
       "shape_sample_count": 1,
@@ -170,8 +170,8 @@
       "column_count": 29,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "content_shape_changed_latest": true,
-      "reason": "latest health snapshot reports a structural comparison change"
+      "content_shape_changed_latest": false,
+      "reason": "requires two comparable structural or record-count observations, or an evaluable expected count"
     },
     {
       "dataset_id": "exchangerates_daily_1700",
