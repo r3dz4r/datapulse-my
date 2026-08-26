@@ -1,8 +1,8 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-08-25T23:56:13Z",
+  "checked_at": "2026-08-26T00:00:52Z",
   "_trust_summary": {
-    "checked_at": "2026-08-25T23:56:13Z",
+    "checked_at": "2026-08-26T00:00:52Z",
     "datasets_total": 389,
     "by_status": {
       "fresh": 93,
@@ -571,7 +571,7 @@
         "days_since_modified": 8
       }
     ],
-    "pipeline_heartbeat_at": "2026-08-25T23:57:53Z"
+    "pipeline_heartbeat_at": "2026-08-26T00:02:39Z"
   },
   "datasets": [
     {
@@ -1109,12 +1109,12 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": 0,
-      "staleness_status": "fresh",
+      "staleness_days": 1,
+      "staleness_status": "stale",
       "access_dependency": "browser",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -1122,7 +1122,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.125,
-        "latest_days": 0.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       }
     },
@@ -1170,12 +1170,12 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": 0,
-      "staleness_status": "fresh",
+      "staleness_days": 1,
+      "staleness_status": "stale",
       "access_dependency": "browser",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -1183,7 +1183,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.125,
-        "latest_days": 0.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       }
     },
