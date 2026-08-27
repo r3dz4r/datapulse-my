@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -19,6 +20,21 @@ from scripts.public_surface_generation import (
 
 
 MARKER = "public-discovery"
+
+# Hand-authored prose may still reference the retired apex or GitHub Pages
+# origins in markdown link targets; those links are current-origin facts and
+# are rewritten to the canonical website origin on every regeneration.
+STALE_ORIGIN_LINK_RE = re.compile(
+    r"\]\(https://(?:data-pulse\.my|r3dz4r\.github\.io/datapulse-my)"
+    r"(?P<path>/[^)\s]*)?\)"
+)
+
+
+def canonicalize_origin_links(text: str, website: str) -> str:
+    """Rewrite stale website-origin markdown link targets to the canonical origin."""
+    return STALE_ORIGIN_LINK_RE.sub(
+        lambda match: f"]({website}{match.group('path') or ''})", text
+    )
 
 
 def _url(origin: str, path: str) -> str:
@@ -62,6 +78,9 @@ def generate(root: Path, *, check: bool = False, validate_only: bool = False) ->
         except (OSError, UnicodeError) as error:
             raise GenerationError(f"cannot read {path}: {error}") from error
         outputs[path] = replace_owned_block(original, MARKER, render_discovery_block(config, relative))
+    website = config["origins"]["website"]
+    for relative in ("README.md", "llms.txt"):
+        outputs[root / relative] = canonicalize_origin_links(outputs[root / relative], website)
     if validate_only:
         return False
     return publish_text_outputs(outputs, check=check)

@@ -136,6 +136,7 @@ case "$profile" in
     generators=(
       "bump_mcp_source_version.py"
       "public_surface_preflight"
+      "stamp_manifest_origin.py"
       "gen_mcp_reference.py"
       "gen_llms_summary.py"
       "gen_public_discovery.py"
@@ -169,6 +170,7 @@ case "$profile" in
     outputs=(
       "mcp/server.py source identity and mcp.json provenance"
       "validation only (config, schemas, source identity, and all P5A markers)"
+      'datapulse.json $schema canonical origin stamp'
       "mcp.json; agent.json; docs/mcp-reference.md; llms.txt MCP tools block; README.md MCP tools block; docs/mcp-deploy.md MCP tools block"
       "llms.txt catalog-summary and featured-datasets blocks"
       "sitemap.xml; robots.txt public-discovery block; README.md public-discovery block; llms.txt public-discovery block"

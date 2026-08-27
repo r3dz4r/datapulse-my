@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from scripts.gen_public_discovery import GenerationError, generate
+from scripts.public_surface_generation import load_public_surfaces
 
 
 def _stage(root: Path) -> None:
@@ -79,3 +80,83 @@ def test_marker_failure_changes_no_output(tmp_path: Path) -> None:
     assert (tmp_path / "llms.txt").read_bytes() == before["llms.txt"]
     assert (tmp_path / "robots.txt").read_bytes() == failed_before
     assert not (tmp_path / "sitemap.xml").exists()
+
+
+def _stage_stale_links(root: Path) -> None:
+    _stage(root)
+    (root / "README.md").write_text(
+        "readme-before\n"
+        "See [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) and\n"
+        "the [NPRA engine page](https://data-pulse.my/npra.html) plus the\n"
+        "[bare apex](https://data-pulse.my) origin; MCP stays\n"
+        "`https://mcp.data-pulse.my/mcp` and plain text\n"
+        "https://data-pulse.my/npra.html is not a markdown link target.\n"
+        "<!-- BEGIN public-discovery -->\nold\n<!-- END public-discovery -->\n"
+        "readme-after\n"
+    )
+    (root / "llms.txt").write_text(
+        "llms-before\n"
+        "The [NPRA engine page](https://data-pulse.my/npra.html) and\n"
+        "[`mcp-deploy.md`](https://data-pulse.my/mcp-deploy.md) are public.\n"
+        "The MCP endpoint `https://mcp.data-pulse.my/mcp` is unchanged.\n"
+        "<!-- BEGIN public-discovery -->\nold\n<!-- END public-discovery -->\n"
+        "llms-after\n"
+    )
+    (root / "robots.txt").write_text(
+        "robots-before\n"
+        "Stale [link](https://data-pulse.my/npra.html) outside canonicalization scope.\n"
+        "<!-- BEGIN public-discovery -->\nold\n<!-- END public-discovery -->\n"
+        "robots-after\n"
+    )
+
+
+def test_stale_origin_links_in_markdown_targets_are_rewritten(tmp_path: Path) -> None:
+    _stage_stale_links(tmp_path)
+    website = load_public_surfaces(tmp_path)["origins"]["website"]
+
+    generate(tmp_path)
+
+    readme = (tmp_path / "README.md").read_text(encoding="utf-8")
+    assert f"]({website}/llms.txt)" in readme
+    assert f"]({website}/npra.html)" in readme
+    assert f"](https://www.data-pulse.my)" in readme or f"]({website})" in readme
+    assert "r3dz4r.github.io/datapulse-my" not in readme
+    assert "https://mcp.data-pulse.my/mcp" in readme
+    assert "https://data-pulse.my/npra.html is not a markdown link target" in readme
+    assert readme.startswith("readme-before\n")
+    assert readme.endswith("readme-after\n")
+
+    llms = (tmp_path / "llms.txt").read_text(encoding="utf-8")
+    assert f"]({website}/npra.html)" in llms
+    assert f"]({website}/mcp-deploy.md)" in llms
+    assert "https://mcp.data-pulse.my/mcp" in llms
+    assert llms.startswith("llms-before\n")
+    assert llms.endswith("llms-after\n")
+
+    robots = (tmp_path / "robots.txt").read_text(encoding="utf-8")
+    assert "](https://data-pulse.my/npra.html)" in robots
+
+
+def test_origin_canonicalization_is_idempotent(tmp_path: Path) -> None:
+    _stage_stale_links(tmp_path)
+    generate(tmp_path)
+    first = {name: (tmp_path / name).read_bytes() for name in ("README.md", "llms.txt", "robots.txt")}
+    generate(tmp_path)
+    second = {name: (tmp_path / name).read_bytes() for name in first}
+    assert first == second
+
+
+def test_check_mode_reports_stale_origin_links(tmp_path: Path) -> None:
+    _stage_stale_links(tmp_path)
+    generate(tmp_path)
+    assert generate(tmp_path, check=True) is False
+    current = (tmp_path / "README.md").read_text(encoding="utf-8")
+    (tmp_path / "README.md").write_text(
+        current.replace(
+            "](https://www.data-pulse.my/npra.html)",
+            "](https://data-pulse.my/npra.html)",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    assert generate(tmp_path, check=True) is True

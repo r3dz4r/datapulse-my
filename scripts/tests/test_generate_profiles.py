@@ -30,6 +30,7 @@ GENERATORS = (
     "gen_readme_summary.sh",
     "gen_llms_summary.py",
     "gen_public_discovery.py",
+    "stamp_manifest_origin.py",
     "gen_rss.sh",
     "gen_catalog_snapshot.py",
     "gen_health_history.py",
