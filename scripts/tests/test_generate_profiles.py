@@ -53,6 +53,7 @@ GENERATORS = (
     "gen_health_methodology.py",
     "gen_site_nav.py",
     "gen_health_methodology_content.py",
+    "gen_landing_page.py",
     "health_policy.py",
     "check.sh",
 )
@@ -88,6 +89,7 @@ RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "docs/index.html",
     "docs/buyer-api-reference.md",
     "docs/health-methodology.html",
+    "docs/landing.html",
 )
 PROFILE_INPUTS = (
     ".git",
@@ -218,6 +220,7 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(RELEASE_FIXTURE / "mcp.schema.json", source / "mcp.schema.json")
     shutil.copy2(RELEASE_FIXTURE / "health.schema.json", source / "health.schema.json")
     shutil.copytree(RELEASE_FIXTURE / "config", source / "config")
+    shutil.copy2(ROOT / "config/landing-page.json", source / "config/landing-page.json")
     surfaces = json.loads((source / "config/public-surfaces.json").read_text(encoding="utf-8"))
     surfaces["pages"] = ["/", "/landing.html", "/npra.html", "/health-methodology.html"]
     if "/buyer-api-reference.md" not in surfaces["artifacts"]:

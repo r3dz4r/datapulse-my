@@ -317,7 +317,7 @@ while (( $# > 0 )); do
     *) url="$1"; shift ;;
   esac
 done
-path="${url#https://data-pulse.my/}"
+path="${url#https://www.data-pulse.my/}"
 [[ "$path" == .well-known/* ]] && path="docs/$path"
 if [[ -n "${MOCK_CURL_CALLS:-}" ]]; then
   printf '%s\n' "$path" >> "$MOCK_CURL_CALLS"
@@ -465,7 +465,7 @@ while (( $# > 0 )); do
     *) url="$1"; shift ;;
   esac
 done
-path="${url#https://data-pulse.my/}"
+path="${url#https://www.data-pulse.my/}"
 [[ "$path" == .well-known/* ]] && path="docs/$path"
 [[ "$path" != "$url" && -f "${MOCK_SERVED_ROOT:?}/$path" ]] || exit 22
 mkdir -p "$(dirname "$output")"
@@ -513,7 +513,7 @@ while (( $# > 0 )); do
     *) url="$1"; shift ;;
   esac
 done
-printf '%s\\n' "${url#https://data-pulse.my/}" >> "${MOCK_CURL_CALLS:?}"
+printf '%s\\n' "${url#https://www.data-pulse.my/}" >> "${MOCK_CURL_CALLS:?}"
 printf '%s\\n' "${MOCK_FAILURE_STATUS:?}"
 exit 22
 """,

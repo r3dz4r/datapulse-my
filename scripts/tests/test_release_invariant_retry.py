@@ -40,7 +40,7 @@ def test_local_gate_does_not_require_current_release_proof() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
 
     proof_fetch = re.search(
-        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n  fetch index\.html index\.html\n  fetch npra\.html npra\.html\n  fetch buyer-api-reference\.md buyer-api-reference\.md\n^fi\n",
+        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n  fetch index\.html index\.html\n  fetch landing\.html landing\.html\n  fetch npra\.html npra\.html\n  fetch buyer-api-reference\.md buyer-api-reference\.md\n^fi\n",
         script,
     )
 
@@ -82,6 +82,7 @@ def test_local_gate_skips_only_generated_p5b_surface_parity() -> None:
     )
     assert generated_fetches is not None
     assert 'fetch index.html index.html' in generated_fetches.group(0)
+    assert 'fetch landing.html landing.html' in generated_fetches.group(0)
     assert 'fetch npra.html npra.html' in generated_fetches.group(0)
     assert 'fetch buyer-api-reference.md buyer-api-reference.md' in generated_fetches.group(0)
     assert not re.search(r'^\s*fetch\s+\S+\s+/?docs/', generated_fetches.group(0), re.MULTILINE)
@@ -217,7 +218,7 @@ def test_served_fetch_rejects_docs_prefix_and_reports_persistent_failure(tmp_pat
 def test_local_mode_maps_canonical_pages_to_docs_sources() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
 
-    assert 'index.html|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)' in script
+    assert 'index.html|landing.html|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)' in script
     assert 'path="docs/$path"' in script
 
 

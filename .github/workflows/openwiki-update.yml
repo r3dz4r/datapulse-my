@@ -4,10 +4,25 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 8 * * 1"
+  push:
+    branches: [main]
+    paths:
+      - "config/public-surfaces.json"
+      - "datapulse.json"
+      - "health/latest.json"
+      - "mcp.json"
+      - "README.md"
+      - "llms.txt"
+      - ".github/workflows/*.yml"
+      - "!openwiki/**"
 
 permissions:
   contents: write
   pull-requests: write
+
+concurrency:
+  group: openwiki-update
+  cancel-in-progress: false
 
 jobs:
   update:
@@ -16,52 +31,42 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Node.js
+      - name: Set up locked Node runtime
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tools/openwiki/package-lock.json
 
-      - name: Install OpenWiki
-        run: npm install -g openwiki
+      - name: Install project-local OpenWiki
+        run: npm ci --prefix tools/openwiki
 
-      # OpenWiki reads credentials from ~/.openwiki/.env in non-interactive mode.
-      # The README's example workflow writes that file before invoking openwiki.
-      # See https://github.com/langchain-ai/openwiki/blob/main/openwiki/operations/credentials-and-updates.md
-      - name: Write OpenWiki credentials
+      - name: Generate derivative OpenWiki documentation
         env:
+          OPENWIKI_PROVIDER: openrouter
+          OPENWIKI_MODEL_ID: z-ai/glm-5.2
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: |
-          mkdir -p ~/.openwiki
-          # Use printf so the secret is expanded by the shell, not the heredoc.
-          printf 'OPENWIKI_PROVIDER=openrouter\nOPENROUTER_API_KEY=%s\nOPENWIKI_MODEL_ID=z-ai/glm-5.2\n' "$OPENROUTER_API_KEY" > ~/.openwiki/.env
-          chmod 600 ~/.openwiki/.env
-
-      - name: Run OpenWiki
-        run: |
-          set -a
-          source ~/.openwiki/.env
-          set +a
-          openwiki code --update --print
-        env:
-          # Telemetry off per repo owner preference.
           OPENWIKI_TELEMETRY_DISABLED: "1"
+        run: npm exec --prefix tools/openwiki -- openwiki code --update --print
 
-      - name: Commit and push if changed
-        # openwiki sometimes re-renders its own .github/workflows/openwiki-update.yml
-        # and may emit AGENTS.md/CLAUDE.md marker files. Stage only OpenWiki-owned
-        # paths (openwiki/ + datapulse.json) and ignore any other pending changes
-        # (workflow self-rewrites + marker files) so the auto-commit still passes
-        # cleanly when OpenWiki produced no content diff.
-        run: |
-          git add openwiki/ 2>/dev/null || true
-          git add datapulse.json 2>/dev/null || true
-          # Count only the paths we actually stage; if nothing in those two paths
-          # changed, exit cleanly without pushing an empty commit.
-          if [[ -n "$(git status --porcelain -- openwiki/ datapulse.json)" ]]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "docs: openwiki weekly refresh ($(date -u +%Y-%m-%d))"
-            git push
-          else
-            echo "No changes to commit (workflow self-rewrite or markers ignored)"
-          fi
+      - name: Validate generated facts and ownership
+        run: python3 scripts/verify_openwiki.py --generated --changed-from HEAD
+
+      - name: Create or update OpenWiki pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: openwiki/update
+          delete-branch: true
+          commit-message: "docs: refresh OpenWiki derivative documentation"
+          title: "docs: refresh OpenWiki derivative documentation"
+          body: |
+            Generated with the project-local, locked OpenWiki 0.4.3 runtime.
+            The normal deterministic-safety-net must pass before merge.
+          add-paths: |
+            openwiki/quickstart.md
+            openwiki/datasets.md
+            openwiki/mcp.md
+            openwiki/operations.md
+            openwiki/.last-update.json
+            AGENTS.md
+            CLAUDE.md
