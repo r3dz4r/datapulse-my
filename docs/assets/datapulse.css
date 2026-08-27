@@ -110,6 +110,11 @@
     .code-wrap, .terminal-wrap { position: relative; min-width: 0; }
     pre { max-width: 100%; margin: 0; padding: 24px; overflow: auto; color: var(--color-fg); background: var(--color-muted); font: 400 14px/1.6 "JetBrains Mono", monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
     code { font: inherit; }
+    /* Long inline code (paths, script names) in prose content must wrap on
+       narrow/mobile viewports instead of overflowing and being clipped by
+       body { overflow-x: hidden }. Scoped to the methodology content section
+       so it does not affect the dashboard's compact code columns. */
+    #health-methodology-content code { overflow-wrap: anywhere; word-break: break-word; }
     .copy-button { position: absolute; top: 8px; right: 8px; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-border); color: var(--color-accent); background: var(--color-bg); opacity: 0.7; transition: background-color 150ms ease-out, opacity 150ms ease-out; }
     .copy-button:hover, .copy-button:focus-visible { opacity: 1; background: var(--color-muted); }
     .copy-button svg { width: 18px; height: 18px; }
