@@ -34,7 +34,7 @@ Runs on a daily cron (`0 8 * * *`, every day 08:00 UTC) and on
 `workflow_dispatch`. The workflow checks out the repo, sets up Node.js 22,
 installs the `openwiki` npm package globally, and runs
 `openwiki code --update --print` with the `openai-chatgpt` provider (ChatGPT
-OAuth login) and the `gpt-5.6-luna` preset model. Provider credentials are
+OAuth login) and the `gpt-5.6-terra` preset model. Provider credentials are
 passed directly via the step's `env:` (`OPENWIKI_PROVIDER`,
 `OPENWIKI_MODEL_ID`, `OPENWIKI_TELEMETRY_DISABLED`, plus the six ChatGPT
 OAuth variables `OPENAI_CHATGPT_ACCESS_TOKEN`, `OPENAI_CHATGPT_REFRESH_TOKEN`,
