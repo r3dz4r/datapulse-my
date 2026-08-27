@@ -204,7 +204,13 @@ jobs:
           }
           # Allow the custom-domain edge to observe the just-created Pages deployment.
           sleep 30
-          fetch "dashboard" "${website_origin}/" "$smoke_dir/index.html"
+          fetch "landing" "${website_origin}/" "$smoke_dir/landing.html"
+          grep -q "Verify Malaysian data before your AI agent uses it" "$smoke_dir/landing.html" \
+            || fail "origin root is not the landing page"
+          if grep -q "__DATAPULSE_DATA__" "$smoke_dir/landing.html"; then
+            fail "origin root unexpectedly serves the dashboard; landing expected"
+          fi
+          fetch "dashboard" "${website_origin}/dashboard" "$smoke_dir/index.html"
           fetch "health snapshot" "${website_origin}/health/latest.json" "$smoke_dir/health/latest.json"
           mapfile -t pages < <(jq -er '.pages[]' config/public-surfaces.json)
           mapfile -t artifacts < <(jq -er '.artifacts[]' config/public-surfaces.json)

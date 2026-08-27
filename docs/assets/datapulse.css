@@ -30,12 +30,24 @@
       max-width: 52rem;
       padding-block: 2.5rem;
       line-height: 1.7;
+      color: var(--color-fg);
     }
     .prose h1,
     .prose h2,
     .prose h3 {
       margin-top: 1.5em;
       margin-bottom: 0.5em;
+      color: var(--color-fg);
+    }
+    .prose h1 {
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      letter-spacing: -0.02em;
+    }
+    .prose h2 {
+      font-size: 1.5rem;
+    }
+    .prose h3 {
+      font-size: 1.2rem;
     }
     .prose h1:first-child,
     .prose h2:first-child,
@@ -44,6 +56,11 @@
     }
     .prose p {
       margin: 0 0 1em;
+      color: var(--color-fg);
+    }
+    .prose p code,
+    .prose li code {
+      color: var(--color-fg);
     }
     .prose ul,
     .prose ol {
