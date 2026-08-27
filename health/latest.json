@@ -1,8 +1,8 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-08-27T07:53:42Z",
+  "checked_at": "2026-08-27T07:55:59Z",
   "_trust_summary": {
-    "checked_at": "2026-08-27T07:53:42Z",
+    "checked_at": "2026-08-27T07:55:59Z",
     "datasets_total": 389,
     "by_status": {
       "fresh": 93,
@@ -599,7 +599,7 @@
         "days_since_modified": 4
       }
     ],
-    "pipeline_heartbeat_at": "2026-08-27T07:55:29Z"
+    "pipeline_heartbeat_at": "2026-08-27T07:57:51Z"
   },
   "datasets": [
     {
@@ -1095,17 +1095,17 @@
     },
     {
       "dataset_id": "doe_apims",
-      "last_checked": "2026-08-27T03:31:27Z",
+      "last_checked": "2026-08-27T07:55:59Z",
       "namespace": "environment",
       "url": "https://eqms.doe.gov.my/APIMS/main",
       "status": "browser-dependent",
-      "message": "Camofox snapshot failed",
+      "message": "Browser check succeeded",
       "request_url": null,
       "access_method": "Camofox",
       "http_status": null,
       "content_length": null,
       "last_modified": null,
-      "content_freshness_date": "2026-08-26",
+      "content_freshness_date": "2026-08-27",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -1113,10 +1113,10 @@
       "invalid_registration_count": null,
       "guidance_structure_compatible": null,
       "appendix_resource_count": null,
-      "wait_seconds": null,
-      "stations": null,
-      "timestamp": null,
-      "snapshot_chars": null,
+      "wait_seconds": 30,
+      "stations": 15,
+      "timestamp": "27/08/2026, 00:55",
+      "snapshot_chars": 26247,
       "record_count": null,
       "estimated_record_count": null,
       "record_count_estimated": false,
@@ -1137,12 +1137,12 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": 1,
-      "staleness_status": "stale",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "browser",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -1150,7 +1150,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.125,
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mode": "cadence_fallback"
       }
     },
