@@ -33,13 +33,17 @@ deploys.
 Runs on a daily cron (`0 8 * * *`, every day 08:00 UTC) and on
 `workflow_dispatch`. The workflow checks out the repo, sets up Node.js 22,
 installs the `openwiki` npm package globally, and runs
-`openwiki code --update --print` with the OpenRouter provider and the
-`z-ai/glm-5.2` model. Provider credentials and tracing config are passed
-directly via the step's `env:` (`OPENWIKI_PROVIDER`, `OPENROUTER_API_KEY`,
-`OPENWIKI_MODEL_ID`, plus `LANGSMITH_API_KEY` / `LANGCHAIN_PROJECT` /
-`LANGCHAIN_TRACING_V2` for LangSmith tracing) — no `~/.openwiki/.env` file
-is written. Requires `secrets.OPENROUTER_API_KEY` and
-`secrets.LANGSMITH_API_KEY`.
+`openwiki code --update --print` with the `openai-chatgpt` provider (ChatGPT
+OAuth login) and the `gpt-5.6-luna` preset model. Provider credentials are
+passed directly via the step's `env:` (`OPENWIKI_PROVIDER`,
+`OPENWIKI_MODEL_ID`, `OPENWIKI_TELEMETRY_DISABLED`, plus the six ChatGPT
+OAuth variables `OPENAI_CHATGPT_ACCESS_TOKEN`, `OPENAI_CHATGPT_REFRESH_TOKEN`,
+`OPENAI_CHATGPT_EXPIRES_AT`, `OPENAI_CHATGPT_ACCOUNT_ID`,
+`OPENAI_CHATGPT_EMAIL`, and `OPENAI_CHATGPT_PLAN`) — no `~/.openwiki/.env`
+file is written. Requires the six secrets `secrets.OPENAI_CHATGPT_ACCESS_TOKEN`,
+`secrets.OPENAI_CHATGPT_REFRESH_TOKEN`, `secrets.OPENAI_CHATGPT_EXPIRES_AT`,
+`secrets.OPENAI_CHATGPT_ACCOUNT_ID`, `secrets.OPENAI_CHATGPT_EMAIL`, and
+`secrets.OPENAI_CHATGPT_PLAN`.
 
 Instead of committing directly to `main`, the workflow uses
 `peter-evans/create-pull-request@v7` to open an `openwiki/update` branch PR
