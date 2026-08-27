@@ -33,7 +33,7 @@ fetch() {
   mkdir -p "$(dirname "$work_dir/$name")"
   if $local_mode; then
     case "$path" in
-      index.html|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)
+      index.html|landing.html|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)
         path="docs/$path"
         ;;
     esac
@@ -98,6 +98,7 @@ fetch mcp.json mcp.json
 if ! $local_mode; then
   fetch release-verification.md release-verification.md
   fetch index.html index.html
+  fetch landing.html landing.html
   fetch npra.html npra.html
   fetch buyer-api-reference.md buyer-api-reference.md
 fi
@@ -474,6 +475,12 @@ assert website in owned(work / "npra.html", "npra-surfaces")
 npra_source = (work / "npra.html").read_text(encoding="utf-8")
 assert f"{api_origin}/api/v1/paddle/redeem" in npra_source
 assert f"{api_origin}/api/v1/keys/me" in npra_source
+landing = (work / "landing.html").read_text(encoding="utf-8")
+assert landing.startswith("<!doctype html>\n<!-- generated: scripts/gen_landing_page.py;")
+assert f'{mcp_origin}/mcp' in landing
+assert "fetch('/health/latest.json', {cache: 'no-store'" in landing
+assert "universal trust score" not in landing.lower()
+assert "webmcp" not in landing.lower()
 buyer_blocks = "\n".join(
     owned(work / "buyer-api-reference.md", marker) for marker in (
         "buyer-api-host", "buyer-api-quickstart", "buyer-api-limits",

@@ -1,0 +1,47 @@
+{
+  "schema": "datapulse/v1/landing-page",
+  "title": "DataPulse MY — Source verification for Malaysian public data",
+  "description": "A source-verification layer for AI agents using Malaysian public data.",
+  "hero": {
+    "heading": "Verify Malaysian data before your AI agent uses it.",
+    "copy": "DataPulse records observed source identity, freshness, provenance, licence and reuse context, structural evidence, and limitations so people and agents can make an evidence-qualified decision alongside the official publisher.",
+    "primary_cta": {"label": "Inspect one evidence receipt", "href": "/data/fuelprice.md"},
+    "secondary_cta": {"label": "Connect via MCP", "href": "mcp:/mcp"}
+  },
+  "example": {
+    "dataset_id": "fuelprice",
+    "workflow": ["Discover", "Inspect", "Check evidence", "Use, warn, or stop", "Cite"],
+    "receipt_fields": ["Source identity", "Publisher", "Licence and reuse context", "Observed time", "Content date", "Freshness state", "Schema or record signal", "Evidence reference", "Claim scope", "Limitations"],
+    "receipt_preview": {
+      "mode": "schema_preview",
+      "label": "Receipt schema preview — not verified evidence",
+      "copy": "These field names show the review schema only. Open the published dataset surface for its current observations, evidence, and limitations."
+    }
+  },
+  "rails": [
+    {"name": "Readable", "copy": "Concise human and machine-readable dataset context."},
+    {"name": "Discoverable", "copy": "Canonical discovery files and a public catalogue."},
+    {"name": "Callable", "copy": "Read-only MCP access to structured public-data context."},
+    {"name": "Verifiable", "copy": "Observed freshness, provenance, licence, structural evidence, drift, reconciliation, and limitations."},
+    {"name": "Payable", "copy": "Future and conditional: no payment product is offered on this surface.", "future": true}
+  ],
+  "machine_surfaces": [
+    {"label": "Agent capability discovery", "href": "/agent.json"},
+    {"label": "MCP advertisement and schemas", "href": "/mcp.json"},
+    {"label": "Agent-readable orientation", "href": "/llms.txt"},
+    {"label": "Dataset manifest", "href": "/datapulse.json"},
+    {"label": "Current published observation", "href": "/health/latest.json"},
+    {"label": "JSON-LD catalogue", "href": "/data/jsonld/catalog.json"}
+  ],
+  "boundaries": [
+    "DataPulse is read-only; official publishers remain the source of record.",
+    "Integrity, provenance, freshness, and structural checks do not establish substantive truth.",
+    "Unknown, stale, degraded, inaccessible, and conflicting signals remain visible.",
+    "Agents and humans decide whether the available evidence is fit for a particular use."
+  ],
+  "vertical": {"label": "See the NPRA example", "href": "/npra.html", "copy": "Domain products can sit downstream of this public source-verification layer without replacing its evidence boundaries."},
+  "final_ctas": [
+    {"label": "Inspect one dataset", "href": "/data/fuelprice.md"},
+    {"label": "Connect your agent", "href": "mcp:/mcp"}
+  ]
+}

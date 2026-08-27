@@ -163,6 +163,7 @@ case "$profile" in
       "check_url_drift.py"
       "gen_trust_snapshot.py"
       "gen_health_methodology_html.py"
+      "gen_landing_page.py"
       "gen_site_nav.py"
     )
     outputs=(
@@ -195,6 +196,7 @@ case "$profile" in
       "URL drift and cadence audit"
       "docs/trust-snapshot-<date>.{md,json}"
       "docs/health-methodology.html"
+      "docs/landing.html (canonical source-verification page)"
       "docs/{index,landing,npra,health-methodology}.html site navigation"
     )
     ;;

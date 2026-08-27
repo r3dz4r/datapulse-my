@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- generated: scripts/gen_landing_page.py; inputs: config/landing-page.json, config/public-surfaces.json, scripts/templates/landing.html.tmpl, docs/assets/site-nav.html; do not hand-edit -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{description}}">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/assets/datapulse.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <!-- BEGIN SITE-NAV (generated from assets/site-nav.html) -->
+{{site_nav}}
+  <!-- END SITE-NAV -->
+  <main id="main-content">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="wrap">
+        <p class="eyebrow">SOURCE VERIFICATION FOR AGENT-CONSUMED PUBLIC DATA</p>
+        <h1 id="hero-title">{{hero_heading}}</h1>
+        <p class="hero-copy">{{hero_copy}}</p>
+        <div class="actions">
+          <a class="button button-primary" href="{{hero_primary_href}}">{{hero_primary_label}}</a>
+          <a class="button button-secondary" href="{{hero_secondary_href}}">{{hero_secondary_label}}</a>
+        </div>
+        <p id="runtime-observation" class="data-strip" aria-live="polite">Current published observation: loading; if unavailable, treat it as unknown.</p>
+      </div>
+    </section>
+    <section aria-labelledby="workflow-title"><div class="wrap">
+      <p class="eyebrow">EVIDENCE PREFLIGHT</p><h2 id="workflow-title">Make the decision from the receipt.</h2>
+      <p class="section-lead">For the configured example dataset, follow the evidence before using or citing a source.</p>
+      <ol class="landing-flow">{{workflow}}</ol>
+      <article class="receipt" aria-labelledby="receipt-title"><p class="receipt-label">{{receipt_preview_label}}</p><h3 id="receipt-title">Evidence receipt</h3><p>{{receipt_preview_copy}}</p><dl>{{receipt_fields}}</dl><a class="inline-arrow" href="{{example_href}}">Open the example evidence surface</a></article>
+    </div></section>
+    <section aria-labelledby="rails-title"><div class="wrap"><p class="eyebrow">SUPPORTING RAILS</p><h2 id="rails-title">From readable context to verifiable decisions.</h2><div class="landing-grid">{{rails}}</div></div></section>
+    <section id="mcp" aria-labelledby="machine-title"><div class="wrap"><p class="eyebrow">MACHINE ACCESS</p><h2 id="machine-title">Canonical surfaces, not a copied capability catalogue.</h2><p class="section-lead">Use the canonical documents for discovery and schemas. The MCP endpoint is read-only.</p><ul class="surface-list">{{machine_surfaces}}</ul><p class="endpoint"><a href="{{mcp_endpoint}}">{{mcp_endpoint}}</a></p></div></section>
+    <section aria-labelledby="boundaries-title"><div class="wrap"><p class="eyebrow">CLAIM BOUNDARIES</p><h2 id="boundaries-title">Evidence is not a universal truth verdict.</h2><ul class="boundary-list">{{boundaries}}</ul></div></section>
+    <section aria-labelledby="vertical-title"><div class="wrap"><h2 id="vertical-title">One domain example.</h2><p class="section-lead">{{vertical_copy}}</p><a class="inline-arrow" href="{{vertical_href}}">{{vertical_label}}</a></div></section>
+    <section aria-labelledby="final-title"><div class="wrap"><h2 id="final-title">Start with the evidence.</h2><div class="actions">{{final_ctas}}</div></div></section>
+  </main>
+  <script>
+    (() => {
+      const target = document.getElementById('runtime-observation');
+      const unknown = 'Current published observation: unavailable; treat freshness as unknown and inspect the evidence directly.';
+      fetch('{{health_href}}', {cache: 'no-store', headers: {Accept: 'application/json'}})
+        .then(response => response.ok ? response.json() : Promise.reject(new Error('unavailable')))
+        .then(health => {
+          if (!Array.isArray(health.datasets) || typeof health.checked_at !== 'string') throw new Error('malformed');
+          target.textContent = `Current published observation: ${health.checked_at}. Inspect the evidence receipt before use.`;
+        }).catch(() => { target.textContent = unknown; });
+    })();
+  </script>
+</body>
+</html>

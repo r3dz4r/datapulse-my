@@ -44,6 +44,7 @@ CATEGORY_ORDER = (
     "docs/.dashboard_filters.json",
     "docs/.dashboard_sections.json",
     "docs/index.html",
+    "docs/landing.html",
     "docs/npra.html",
     "docs/buyer-api-reference.md",
     "P5B public markers",
@@ -251,6 +252,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/.dashboard_filters.json": root / "docs/.dashboard_filters.json",
         "docs/.dashboard_sections.json": root / "docs/.dashboard_sections.json",
         "docs/index.html": root / "docs/index.html",
+        "docs/landing.html": root / "docs/landing.html",
         "docs/npra.html": root / "docs/npra.html",
         "docs/buyer-api-reference.md": root / "docs/buyer-api-reference.md",
     }
@@ -291,6 +293,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/.dashboard_filters.json": 1,
         "docs/.dashboard_sections.json": 1,
         "docs/index.html": 1,
+        "docs/landing.html": 1,
         "docs/npra.html": 1,
         "docs/buyer-api-reference.md": 1,
         "P5B public markers": sum(len(markers) for markers in P5B_MARKERS.values()),
@@ -315,6 +318,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
             singleton_paths["docs/.dashboard_sections.json"],
         ),
         "docs/index.html": (singleton_paths["docs/index.html"],),
+        "docs/landing.html": (singleton_paths["docs/landing.html"],),
         "docs/npra.html": (singleton_paths["docs/npra.html"],),
         "docs/buyer-api-reference.md": (singleton_paths["docs/buyer-api-reference.md"],),
     }
