@@ -2,28 +2,6 @@
 
 DataPulse MY reports evidence, not a promise that upstream data is correct.
 
-## Trust score methodology
-
-The unsigned `datapulse/v1/trust-scores` artifact uses methodology version 3.
-Each dataset retains numeric `components` and adds a sibling
-`component_availability` map with exactly the same keys. Freshness,
-reliability, trend, drift, and cross-source agreement have weights 30%, 30%,
-20%, 10%, and 10%. Only entries whose availability is true count; remaining
-weights are renormalized.
-
-Availability reasons are `measured`, `classified`, `insufficient_history`,
-`not_applicable`, `missing_record`, and `unknown_status`. `measured` and
-`classified` count at their assigned numeric value, including a genuine value
-of 50. All other reasons are excluded. Browser-dependent, unknown,
-unknown-freshness, reference, and discontinued freshness statuses are explicit
-classifications and count. Single-source reconciliation is not applicable.
-
-The coupled invariant is `available == (reason in {measured, classified})`.
-The 25-point floor and the 30-point cap for a dataset confirmed stale for at
-least 365 days apply after weighted averaging. Dated artifacts retain the
-methodology under which they were generated; consumers must read
-`methodology_version` rather than assume all dates share one methodology.
-
 ## Schema version
 
 <!-- BEGIN EXTRACTED: schema-version -->
@@ -37,7 +15,19 @@ The schema identifier is a top-level field. `_trust_summary` does not duplicate 
 <!-- BEGIN EXTRACTED: history-schema -->
 Each `health/history.jsonl` row contains:
 
-  `dataset_id`, `observed_at`, `cycle`, `status`, `freshness_signal`, `last_modified`, `content_date`, `record_count`, `record_count_estimated`, `http_status`, `latency_ms`, `probe_outcome`, `message`
+- `dataset_id`
+- `observed_at`
+- `cycle`
+- `status`
+- `freshness_signal`
+- `last_modified`
+- `content_date`
+- `record_count`
+- `record_count_estimated`
+- `http_status`
+- `latency_ms`
+- `probe_outcome`
+- `message`
 
 `probe_outcome` is one of `success`, `error`, `timeout`. The optional
 fields `name`, `url`, `shape_hash`, `column_count`, and `anomaly_detected`

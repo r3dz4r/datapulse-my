@@ -148,7 +148,7 @@ def history_schema(history: dict[str, object]) -> str:
     return section(
         "history-schema",
         "Each `health/history.jsonl` row contains:\n\n"
-        f"  {', '.join(f'`{field}`' for field in fields)}\n\n"
+        + "\n".join(f"- `{field}`" for field in fields) + "\n\n"
         "`probe_outcome` is one of `success`, `error`, `timeout`. The optional\n"
         "fields `name`, `url`, `shape_hash`, `column_count`, and `anomaly_detected`\n"
         "are written only when the corresponding source data is available.\n\n"
