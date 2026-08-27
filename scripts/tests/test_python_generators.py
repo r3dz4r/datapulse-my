@@ -1,5 +1,6 @@
 import ast
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -321,12 +322,55 @@ def test_jsonld_urls_use_canonical_host() -> None:
     catalog = graph["@graph"][0]
     assert catalog["@id"] == "https://www.data-pulse.my/#catalog"
     assert catalog["url"] == "https://www.data-pulse.my/"
+    assert catalog["sameAs"] == "https://github.com/r3dz4r/datapulse-my"
+    assert catalog["license"] == (
+        "https://github.com/r3dz4r/datapulse-my/blob/main/LICENSE"
+    )
+    assert catalog["publisher"] == {
+        "@type": "Organization",
+        "@id": "https://www.data-pulse.my/#org",
+        "name": "DataPulse MY",
+    }
     if "distribution" in catalog:
         assert [item["contentUrl"] for item in catalog["distribution"]] == [
             "https://www.data-pulse.my/datapulse.json",
             "https://www.data-pulse.my/health/latest.json",
             "https://www.data-pulse.my/llms.txt",
         ]
+
+
+def test_jsonld_site_metadata_is_generated_from_public_surfaces() -> None:
+    result = _run(JSONLD_GENERATOR, JSONLD_INPUTS, JSONLD_OUTPUTS)
+
+    assert result.returncode == 0, result.stderr
+    dashboard = result.outputs["docs/index.html"]
+    assert dashboard is not None
+    graph = json.loads(
+        dashboard.decode("utf-8")
+        .split(JSONLD_SCRIPT_OPEN, 1)[1]
+        .split(JSONLD_SCRIPT_CLOSE, 1)[0]
+    )
+    # The fixture dashboard ships stale apex/Pages site nodes; regeneration must
+    # replace them wholesale with nodes derived from the canonical www origin.
+    assert [node["@type"] for node in graph["@graph"]] == [
+        "Dataset",
+        "Organization",
+        "WebSite",
+        "BreadcrumbList",
+    ]
+    organization, website, breadcrumb = graph["@graph"][1:]
+    assert organization["@id"] == "https://www.data-pulse.my/#org"
+    assert organization["url"] == "https://www.data-pulse.my/"
+    assert organization["sameAs"] == ["https://github.com/r3dz4r/datapulse-my"]
+    assert website["@id"] == "https://www.data-pulse.my/#site"
+    assert website["url"] == "https://www.data-pulse.my/"
+    assert website["publisher"] == {"@id": "https://www.data-pulse.my/#org"}
+    assert website["potentialAction"]["target"]["urlTemplate"] == (
+        "https://mcp.data-pulse.my/mcp"
+    )
+    assert breadcrumb["itemListElement"][0]["item"] == "https://www.data-pulse.my/"
+    assert "https://data-pulse.my/" not in json.dumps(graph)
+    assert "r3dz4r.github.io/datapulse-my" not in json.dumps(graph)
 
 
 def test_jsonld_removes_obsolete_per_id_files(tmp_path: Path) -> None:
@@ -375,7 +419,12 @@ def test_mcp_reference_json_matches_runtime_schema() -> None:
     assert generated == runtime
     assert len(discovery["taxonomy"]) == 10
     assert "10-status health taxonomy" in discovery["server"]["description"]
-    assert discovery["server"]["source_commit_sha"] == "0123456789abcdef0123456789abcdef01234567"
+    # Mirror the harness injection contract (generator_harness.py setdefault):
+    # the explicitly injected fixture SHA wins, else the established default.
+    assert discovery["server"]["source_commit_sha"] == os.environ.get(
+        "DATAPULSE_SOURCE_COMMIT_SHA",
+        "0123456789abcdef0123456789abcdef01234567",
+    )
     assert discovery["resources"] == [
         {"uri": "datapulse://index", "name": "dataset_index", "description": "Read first; lightweight list of all DataPulse MY dataset ids with current status, title, source, licence, and namespace.", "mimeType": "application/json"},
         {"uri": "datapulse://licences", "name": "licence_summary", "description": "Live count of DataPulse MY datasets grouped by licence.", "mimeType": "application/json"},

@@ -120,3 +120,22 @@ def test_atomic_json_output_is_byte_stable_and_preserves_declared_key_order(tmp_
         b'{\n  "schema": "datapulse/test",\n  "zeta": 2,\n  "alpha": {\n'
         b'    "second": 2,\n    "first": 1\n  }\n}\n'
     )
+
+
+def test_manifest_schema_contract_derives_from_canonical_website_origin() -> None:
+    root = Path(__file__).resolve().parents[2]
+    website = load_public_surfaces(root)["origins"]["website"]
+    schema = json.loads((root / "datapulse.schema.json").read_text(encoding="utf-8"))
+
+    # The schema's own $id is a current public surface (config/public-surfaces
+    # artifacts include /datapulse.schema.json) and must live at the www origin.
+    assert schema["$id"] == f"{website}/datapulse.schema.json"
+    # The manifest $schema contract accepts the canonical identifier first and
+    # keeps exactly one documented legacy value for already-published manifests
+    # whose $schema field is not republished yet.
+    contract = schema["properties"]["$schema"]
+    assert contract["enum"] == [
+        f"{website}/datapulse.schema.json",
+        "https://r3dz4r.github.io/datapulse-my/datapulse.schema.json",
+    ]
+    assert "legacy" in contract["description"]

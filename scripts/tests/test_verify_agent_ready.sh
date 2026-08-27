@@ -13,8 +13,8 @@ cat > "$fixture_root/llms.txt" <<'EOF'
 
 ## Machine-readable surfaces
 
-- [Manifest](https://data-pulse.my/datapulse.json)
-- [Health](https://data-pulse.my/health/latest.json)
+- [Manifest](https://www.data-pulse.my/datapulse.json)
+- [Health](https://www.data-pulse.my/health/latest.json)
 EOF
 
 cat > "$fixture_root/datapulse.json" <<'EOF'
@@ -144,7 +144,9 @@ printf 'verify_agent_ready public 404/503 recovery test: PASS\n'
 
 rejected_fixture_root="$fixture_root/rejected-public"
 mkdir -p "$rejected_fixture_root"
-sed 's#https://data-pulse.my#https://r3dz4r.github.io/datapulse-my#g' \
+# Negative fixture by purpose: inject the retired GitHub Pages host into the
+# otherwise-canonical index and prove the verifier rejects non-canonical hosts.
+sed 's#https://www.data-pulse.my#https://r3dz4r.github.io/datapulse-my#g' \
   "$public_fixture_root/llms.txt" > "$rejected_fixture_root/llms.txt"
 rejected_log="$fixture_root/rejected.log"
 if PATH="$fake_bin:$PATH" \

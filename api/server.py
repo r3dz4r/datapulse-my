@@ -21,6 +21,12 @@ from api.paddle import PaddleError, parse_approved_event, verify_signature
 from api.pharma_proxy import fetch as pharma_fetch
 
 
+# The canonical website origin is https://www.data-pulse.my (config/public-surfaces.json).
+# The bare apex remains an allowed *legacy client origin* only: browsers that first
+# loaded the dashboard from https://data-pulse.my keep sending that Origin header.
+# It is compatibility surface, never a canonical DataPulse URL.
+ALLOWED_CORS_ORIGINS = frozenset({"https://www.data-pulse.my", "https://data-pulse.my"})
+
 def _utcnow() -> datetime: return datetime.now(timezone.utc)
 def _iso() -> str: return _utcnow().isoformat().replace("+00:00", "Z")
 def _json(path: Path) -> Any: return json.loads(path.read_text(encoding="utf-8"))
@@ -80,7 +86,7 @@ class Handler(BaseHTTPRequestHandler):
         encoded = json.dumps(body, separators=(",", ":")).encode(); self.send_response(status); self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(encoded)))
         origin = self.headers.get("Origin")
-        if origin in {"https://data-pulse.my", "https://www.data-pulse.my"}:
+        if origin in ALLOWED_CORS_ORIGINS:
             self.send_header("Access-Control-Allow-Origin", origin); self.send_header("Vary", "Origin")
         for key, value in (headers or {}).items(): self.send_header(key, value)
         self.end_headers(); self.wfile.write(encoded)
@@ -95,7 +101,7 @@ class Handler(BaseHTTPRequestHandler):
         end = start + size
         return {"data": values[start:end], "pagination": {"limit": size, "next_cursor": str(end) if end < len(values) else None, "total": len(values)}}
     def do_OPTIONS(self) -> None:
-        if self.headers.get("Origin") not in {"https://data-pulse.my", "https://www.data-pulse.my"}: self.send_response(403); self.end_headers(); return
+        if self.headers.get("Origin") not in ALLOWED_CORS_ORIGINS: self.send_response(403); self.end_headers(); return
         self.send_response(204); self.send_header("Access-Control-Allow-Origin", self.headers["Origin"]); self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); self.send_header("Access-Control-Allow-Headers", "X-API-Key, Content-Type"); self.send_header("Vary", "Origin"); self.end_headers()
     def _body(self) -> bytes:
         try: length = int(self.headers.get("Content-Length", "0"))

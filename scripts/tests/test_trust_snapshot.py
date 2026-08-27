@@ -10,6 +10,19 @@ from scripts.gen_trust_snapshot import source_level_staleness
 SCRIPT = Path(__file__).parents[1] / "gen_trust_snapshot.py"
 FAKE_DATE = "2026-08-09"
 
+PUBLIC_SURFACES = {
+    "schema": "datapulse/v1/public-surfaces",
+    "origins": {
+        "website": "https://www.data-pulse.my",
+        "mcp": "https://mcp.data-pulse.my",
+        "api": "https://api.data-pulse.my",
+        "repository": "https://github.com/r3dz4r/datapulse-my",
+    },
+    "pages": ["/"],
+    "artifacts": ["/llms.txt"],
+    "featured_dataset_ids": ["alpha"],
+}
+
 
 def _git(repo: Path, *args: str, date: str | None = None) -> str:
     env = os.environ.copy()
@@ -73,6 +86,29 @@ def _make_repo(tmp_path: Path, *, short_history: bool = False) -> Path:
     repo.mkdir()
     (repo / "docs").mkdir()
     (repo / "data").mkdir()
+    config = repo / "config"
+    config.mkdir()
+    (config / "public-surfaces.json").write_text(
+        json.dumps(PUBLIC_SURFACES) + "\n", encoding="utf-8"
+    )
+    (config / "public-surfaces.schema.json").write_text(
+        json.dumps(
+            {
+                "properties": {
+                    "origins": {
+                        "properties": {
+                            key: {"const": value}
+                            for key, value in PUBLIC_SURFACES["origins"].items()
+                        },
+                        "additionalProperties": False,
+                    }
+                },
+                "additionalProperties": False,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     _git(repo, "init", "-q")
     _git(repo, "config", "user.name", "Test")
     _git(repo, "config", "user.email", "test@example.com")
@@ -152,11 +188,19 @@ def test_handles_short_history(tmp_path: Path) -> None:
 
 
 def test_reproducibility_footer_present(tmp_path: Path) -> None:
-    markdown_path, _ = _run(_make_repo(tmp_path))
+    markdown_path, json_path = _run(_make_repo(tmp_path))
     markdown = markdown_path.read_text(encoding="utf-8")
+    snapshot = json.loads(json_path.read_text(encoding="utf-8"))
 
     assert "## Reproducibility" in markdown
-    assert "https://data-pulse.my/trust-snapshot-2026-08-09.md" in markdown
+    # The citation URL is derived from the public-surfaces website origin,
+    # never a hardcoded host.
+    assert snapshot["reproducibility"]["cite"] == (
+        "https://www.data-pulse.my/trust-snapshot-2026-08-09.md"
+    )
+    assert "https://www.data-pulse.my/trust-snapshot-2026-08-09.md" in markdown
+    assert "https://data-pulse.my/" not in markdown
+    assert "r3dz4r.github.io/datapulse-my" not in markdown
 
 
 def test_surfaces_digital_services_source_level_staleness(tmp_path: Path) -> None:

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://r3dz4r.github.io/datapulse-my/datapulse.schema.json",
+  "$id": "https://www.data-pulse.my/datapulse.schema.json",
   "title": "DataPulse MY dataset manifest",
   "type": "object",
   "required": [
@@ -9,7 +9,11 @@
   ],
   "properties": {
     "$schema": {
-      "const": "https://r3dz4r.github.io/datapulse-my/datapulse.schema.json"
+      "description": "Canonical manifest schema identifier, published at the www website origin. The retired GitHub Pages identifier stays accepted only so already-published manifests keep validating until their owner republishes; it is legacy compatibility, not a canonical URL.",
+      "enum": [
+        "https://www.data-pulse.my/datapulse.schema.json",
+        "https://r3dz4r.github.io/datapulse-my/datapulse.schema.json"
+      ]
     },
     "datasets": {
       "type": "array",

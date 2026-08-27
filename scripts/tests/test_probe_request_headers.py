@@ -117,3 +117,29 @@ printf '200'
     assert rows["bnm_opr"]["http_status"] == 200
     assert rows["bnm_opr"]["content_freshness_date"] == "2026-08-10"
     assert rows["plain_dataset"]["http_status"] == 200
+
+
+def test_operational_identity_templates_use_canonical_website_origin() -> None:
+    """Probe/ops templates that identify DataPulse derive from the www origin."""
+    check_script = (ROOT / "scripts/check.sh").read_text(encoding="utf-8")
+    env_example = (ROOT / "mcp/.env.example").read_text(encoding="utf-8")
+    service_unit = (ROOT / "deploy/systemd/datapulse-mcp.service").read_text(encoding="utf-8")
+    mcp_server = (ROOT / "mcp/server.py").read_text(encoding="utf-8")
+
+    canonical_ua = "DataPulseMY/1.0 (+https://www.data-pulse.my/about)"
+    assert f'DATAPULSE_USER_AGENT:-{canonical_ua}}}' in check_script
+    assert "DATA_BASE=https://www.data-pulse.my" in env_example
+    assert "Environment=DATA_BASE=https://www.data-pulse.my" in service_unit
+    # The templates mirror the MCP server's own canonical default, so the
+    # deployed unit and the checked-in server can never disagree.
+    assert 'DATA_BASE = os.getenv("DATA_BASE", "https://www.data-pulse.my")' in mcp_server
+
+    for label, text in (
+        ("scripts/check.sh", check_script),
+        ("mcp/.env.example", env_example),
+        ("deploy/systemd/datapulse-mcp.service", service_unit),
+    ):
+        assert "r3dz4r.github.io/datapulse-my" not in text, label
+        assert "https://data-pulse.my" not in text.replace(
+            "https://www.data-pulse.my", "<canonical>"
+        ), label

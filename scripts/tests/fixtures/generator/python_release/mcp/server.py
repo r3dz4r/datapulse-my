@@ -22,7 +22,7 @@ SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "dev")
 SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "unreleased")
 FASTMCP_VERSION = "fixture-3.4.7"
 
-DATA_BASE = os.getenv("DATA_BASE", "https://r3dz4r.github.io/datapulse-my").rstrip("/")
+DATA_BASE = os.getenv("DATA_BASE", "https://www.data-pulse.my").rstrip("/")
 MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
 MCP_PORT = int(os.getenv("MCP_PORT", "8788"))
 REQUEST_TIMEOUT_SECONDS = 30.0

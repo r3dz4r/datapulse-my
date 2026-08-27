@@ -303,3 +303,68 @@ def test_marker_failure_preserves_all_dashboard_targets(tmp_path: Path) -> None:
         embed_all((index, npra), manifest, health, filters, sections, None, None, tmp_path)
 
     assert {path: path.read_bytes() for path in (index, npra)} == before
+
+
+def test_embed_preserves_canonical_jsonld_site_metadata(tmp_path: Path) -> None:
+    """Embed regeneration must never rewrite the generator-owned JSON-LD block."""
+    config = tmp_path / "config"
+    config.mkdir()
+    (config / "public-surfaces.json").write_text(json.dumps({
+        "schema": "datapulse/v1/public-surfaces",
+        "origins": {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"},
+        "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html"],
+        "artifacts": ["/buyer-api-reference.md"], "featured_dataset_ids": ["alpha"],
+    }) + "\n", encoding="utf-8")
+    (config / "public-surfaces.schema.json").write_text(json.dumps({
+        "properties": {"origins": {"required": ["website", "mcp", "api", "repository"], "properties": {key: {"const": value} for key, value in {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}.items()}, "additionalProperties": False}}, "additionalProperties": False,
+    }) + "\n", encoding="utf-8")
+    manifest = tmp_path / "datapulse.json"
+    health = tmp_path / "health.json"
+    manifest.write_text(json.dumps({"datasets": [{"id": "alpha"}]}), encoding="utf-8")
+    health.write_text(json.dumps({
+        "checked_at": "2026-08-23T10:06:30Z",
+        "datasets": [{"dataset_id": "alpha", "status": "fresh"}],
+        "_trust_summary": {"datasets_total": 1, "by_status": {"fresh": 1, "browser_dependent": 0}},
+    }), encoding="utf-8")
+    filters, sections = tmp_path / "filters.json", tmp_path / "sections.json"
+    filters.write_text("{}", encoding="utf-8")
+    sections.write_text("{}", encoding="utf-8")
+    jsonld = (
+        '  <script type="application/ld+json">\n'
+        "{\n"
+        '  "@context": "https://schema.org",\n'
+        '  "@graph": [\n'
+        '    {"@type": "Dataset", "@id": "https://www.data-pulse.my/#catalog", "url": "https://www.data-pulse.my/", "publisher": {"@id": "https://www.data-pulse.my/#org"}},\n'
+        '    {"@type": "Organization", "@id": "https://www.data-pulse.my/#org", "url": "https://www.data-pulse.my/"},\n'
+        '    {"@type": "WebSite", "@id": "https://www.data-pulse.my/#site", "url": "https://www.data-pulse.my/", "publisher": {"@id": "https://www.data-pulse.my/#org"}},\n'
+        '    {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "DataPulse MY", "item": "https://www.data-pulse.my/"}]}\n'
+        "  ]\n"
+        "}\n"
+        "  </script>"
+    )
+    index = tmp_path / "index.html"
+    index.write_text(
+        "<head>\n"
+        + jsonld
+        + "\n</head><body>\n"
+        "<!-- BEGIN dashboard-summary -->\nold\n<!-- END dashboard-summary -->\n"
+        "<!-- BEGIN dashboard-trust-facts -->\nold\n<!-- END dashboard-trust-facts -->\n"
+        "<!-- BEGIN dashboard-browser-facts -->\nold\n<!-- END dashboard-browser-facts -->\n"
+        "<!-- BEGIN changelog-strip -->\nold\n<!-- END changelog-strip -->\n"
+        "</body>",
+        encoding="utf-8",
+    )
+    npra = tmp_path / "npra.html"
+    npra.write_text(
+        "<body><!-- BEGIN npra-freshness -->\nold\n<!-- END npra-freshness -->\n"
+        "<!-- BEGIN npra-connect -->\nold\n<!-- END npra-connect -->\n"
+        "<!-- BEGIN npra-surfaces -->\nold\n<!-- END npra-surfaces --></body>",
+        encoding="utf-8",
+    )
+
+    embed_all((index, npra), manifest, health, filters, sections, None, None, tmp_path)
+
+    rendered = index.read_text(encoding="utf-8")
+    assert jsonld in rendered
+    assert "https://data-pulse.my/" not in rendered
+    assert "r3dz4r.github.io/datapulse-my" not in rendered

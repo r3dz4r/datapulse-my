@@ -98,3 +98,20 @@ def test_header_values_with_newlines_fail(schema: dict, policy: dict) -> None:
     }
 
     assert errors_for(schema, configured)
+
+
+def test_probe_identity_and_schema_origin_are_canonical() -> None:
+    policy_text = POLICY_PATH.read_text(encoding="utf-8")
+    schema_text = SCHEMA_PATH.read_text(encoding="utf-8")
+
+    # The probe User-Agent and the schema $id identify DataPulse itself, so
+    # they must carry the canonical www website origin and no retired host.
+    assert "Mozilla/5.0 (compatible; DataPulseMY/1.0; +https://www.data-pulse.my)" in policy_text
+    assert "https://data-pulse.my" not in policy_text
+    assert "r3dz4r.github.io/datapulse-my" not in policy_text
+    assert json.loads(schema_text)["$id"] == (
+        "https://www.data-pulse.my/schemas/internal/probe-policy.schema.json"
+    )
+    assert "https://data-pulse.my" not in schema_text.replace(
+        "https://www.data-pulse.my", ""
+    )

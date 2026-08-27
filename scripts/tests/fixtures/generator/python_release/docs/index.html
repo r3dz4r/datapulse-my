@@ -11,7 +11,61 @@
       "@type": "Dataset",
       "@id": "https://data-pulse.my/#catalog",
       "name": "Fixture catalog",
+      "url": "https://data-pulse.my/",
+      "sameAs": "https://r3dz4r.github.io/datapulse-my",
+      "license": "https://r3dz4r.github.io/datapulse-my/blob/main/LICENSE",
+      "publisher": {
+        "@type": "Organization",
+        "@id": "https://github.com/r3dz4r#org",
+        "name": "DataPulse MY (open source)",
+        "url": "https://r3dz4r.github.io/datapulse-my"
+      },
+      "distribution": [
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "application/json",
+          "contentUrl": "https://data-pulse.my/datapulse.json",
+          "name": "Machine-readable dataset manifest"
+        },
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "application/json",
+          "contentUrl": "https://data-pulse.my/health/latest.json",
+          "name": "Current health signals for all tracked datasets"
+        },
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "text/markdown",
+          "contentUrl": "https://data-pulse.my/llms.txt",
+          "name": "LLM agent index"
+        }
+      ],
       "hasPart": []
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://data-pulse.my/#org",
+      "name": "DataPulse MY",
+      "url": "https://data-pulse.my/",
+      "sameAs": ["https://github.com/r3dz4r/datapulse-my"]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://data-pulse.my/#site",
+      "name": "DataPulse MY",
+      "url": "https://data-pulse.my/",
+      "publisher": {"@id": "https://data-pulse.my/#org"}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "DataPulse MY",
+          "item": "https://data-pulse.my/"
+        }
+      ]
     }
   ]
 }

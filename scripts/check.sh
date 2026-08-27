@@ -187,7 +187,7 @@ probe_policy_headers() {
 respect_robots_txt() {
   local dataset_id="$1"
   local url="$2"
-  local ua="${DATAPULSE_USER_AGENT:-DataPulseMY/1.0 (+https://data-pulse.my/about)}"
+  local ua="${DATAPULSE_USER_AGENT:-DataPulseMY/1.0 (+https://www.data-pulse.my/about)}"
   local origin robots_url robots_body
 
   origin="$(printf '%s' "$url" | awk -F/ '{print $1"//"$3}')"
