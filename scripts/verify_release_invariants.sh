@@ -657,8 +657,15 @@ fi
   printf 'Health methodology: rendered HTML is missing or empty\n' >&2
   exit 1
 }
-grep -Fq ">$expected_methodology_title<" "$methodology_file" || {
-  printf 'Health methodology: rendered HTML does not contain source title\n' >&2
+# The page-level <h1> (source title) was moved into the shared dashboard hero
+# (h1 id="hero-title") and the Pandoc body h1 is stripped, so assert the
+# rendered body carries a stable methodology content heading instead.
+if ! grep -Fq "Schema version" "$methodology_file"; then
+  printf 'Health methodology: rendered HTML does not contain methodology body\n' >&2
   exit 1
-}
+fi
+if ! grep -Fq "<title>Health methodology | DataPulse MY</title>" "$methodology_file"; then
+  printf 'Health methodology: rendered HTML does not retain the page title\n' >&2
+  exit 1
+fi
 printf 'Health methodology HTML: PASS\n'

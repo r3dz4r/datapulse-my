@@ -237,7 +237,10 @@ def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() ->
     workflow = _workflow()
     verify = workflow.split("      - name: Verify canonical served surface\n", 1)[1]
 
-    assert 'fetch "dashboard" "${website_origin}/"' in verify
+    assert 'fetch "landing" "${website_origin}/" "$smoke_dir/landing.html"' in verify
+    assert 'fetch "dashboard" "${website_origin}/dashboard" "$smoke_dir/index.html"' in verify
+    assert 'Verify Malaysian data before your AI agent uses it' in verify
+    assert 'origin root unexpectedly serves the dashboard; landing expected' in verify
     assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in verify
     assert 'for path in "${pages[@]}" "${artifacts[@]}"' in verify
     assert "embedded dashboard checked_at differs from served health/latest.json" in verify
