@@ -124,7 +124,7 @@ RAG systems, and internal knowledge tools to consume.
 **What being AI-ready gives you**
 
 - **Zero integration work:** an AI agent or LLM/RAG system fetches one
-  [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) and can use the
+  [`llms.txt`](https://www.data-pulse.my/llms.txt) and can use the
   entire portfolio immediately — no scraping, API-key setup, or data-format
   reverse-engineering.
 - **Honest freshness signals:** a 5-minute timer probes datasets when their
@@ -189,7 +189,7 @@ Connect from Claude Desktop:
 }
 ```
 
-See [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) for the full
+See [`llms.txt`](https://www.data-pulse.my/llms.txt) for the full
 discovery index, and [`docs/mcp-deploy.md`](./docs/mcp-deploy.md) for the
 deployment architecture.
 
@@ -204,10 +204,10 @@ details.
 ### How to consume the data
 
 <!-- BEGIN public-discovery -->
-- [LLM index](https://data-pulse.my/llms.txt)
-- [Agent manifest](https://data-pulse.my/agent.json)
-- [MCP advertisement](https://data-pulse.my/mcp.json)
-- [Sitemap](https://data-pulse.my/sitemap.xml)
+- [LLM index](https://www.data-pulse.my/llms.txt)
+- [Agent manifest](https://www.data-pulse.my/agent.json)
+- [MCP advertisement](https://www.data-pulse.my/mcp.json)
+- [Sitemap](https://www.data-pulse.my/sitemap.xml)
 - [MCP endpoint](https://mcp.data-pulse.my/mcp)
 <!-- END public-discovery -->
 
