@@ -454,19 +454,29 @@ async def test_tools_list_exposes_display_and_publisher_metadata() -> None:
         assert payload["title"] == expected_title
         assert payload["icons"] == [
             {
-                "src": "https://data-pulse.my/badges/status-fresh.svg",
+                "src": "https://www.data-pulse.my/badges/status-fresh.svg",
                 "mimeType": "image/svg+xml",
                 "sizes": ["110x20"],
             }
         ]
         assert payload["_meta"] == {
             "publisher": "DataPulse MY",
-            "publisher_url": "https://data-pulse.my/",
+            "publisher_url": "https://www.data-pulse.my/",
             "version": server.SOURCE_VERSION_STRING,
             "repository_url": "https://github.com/r3dz4r/datapulse-my",
             "dataset_count": server.DATASET_COUNT,
             "fastmcp": {"tags": []},
         }
+
+
+def test_website_origin_defaults_match_public_surface_contract() -> None:
+    website = json.loads(
+        (REPO_DIR / "config/public-surfaces.json").read_text(encoding="utf-8")
+    )["origins"]["website"]
+
+    assert server.DATA_BASE == website
+    assert server.TOOL_ICONS[0].src == f"{website}/badges/status-fresh.svg"
+    assert server.TOOL_META["publisher_url"] == f"{website}/"
 
 
 def test_dataset_count_is_derived_from_manifest(tmp_path: Path) -> None:

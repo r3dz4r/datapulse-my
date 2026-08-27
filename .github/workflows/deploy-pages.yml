@@ -185,7 +185,7 @@ jobs:
             for ((attempt = 1; attempt <= max_attempts; attempt++)); do
               if status="$(curl --fail --silent --show-error --proto '=https' \
                 --connect-timeout 10 --max-time 30 --write-out '%{http_code}' \
-                "https://data-pulse.my/$path" --output "$output")"; then
+                "https://www.data-pulse.my/$path" --output "$output")"; then
                 return 0
               fi
               rm -f "$output"
@@ -274,8 +274,8 @@ jobs:
           mkdir -p _site
           # All files inside docs/ are copied to the site ROOT (the `docs/`
           # prefix is stripped by `cp -R docs/. _site/`). So docs/index.html
-          # becomes https://data-pulse.my/index.html, docs/foo.md becomes
-          # https://data-pulse.my/foo.md, etc. URLs in the landing page and
+          # becomes https://www.data-pulse.my/index.html, docs/foo.md becomes
+          # https://www.data-pulse.my/foo.md, etc. URLs in the landing page and
           # README should NOT include the `docs/` prefix.
           cp -R docs/. _site/
           cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
@@ -333,7 +333,7 @@ jobs:
       - name: Post-deploy release invariants
         env:
           DEPLOYED_SHA: ${{ steps.source.outputs.sha }}
-          DATAPULSE_AGENT_BASE_URL: https://data-pulse.my
+          DATAPULSE_AGENT_BASE_URL: https://www.data-pulse.my
         run: |
           set -Eeuo pipefail
 
@@ -522,7 +522,7 @@ jobs:
           bash scripts/verify_agent_ready.sh || \
             fail "verify_agent_ready.sh rejected the deployed agent surfaces"
 
-          DATAPULSE_RELEASE_BASE_URL="https://data-pulse.my" \
+          DATAPULSE_RELEASE_BASE_URL="https://www.data-pulse.my" \
             DATAPULSE_ALLOW_UNATTESTED_HEALTH="$allow_unattested_health" \
             bash scripts/verify_release_invariants.sh || \
             fail "verify_release_invariants.sh rejected the deployed release"

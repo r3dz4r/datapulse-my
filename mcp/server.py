@@ -45,7 +45,7 @@ SOURCE_VERSION_STRING = (
     else f"v{FASTMCP_VERSION}-dev"
 )
 
-DATA_BASE = os.getenv("DATA_BASE", "https://r3dz4r.github.io/datapulse-my").rstrip("/")
+DATA_BASE = os.getenv("DATA_BASE", "https://www.data-pulse.my").rstrip("/")
 MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
 MCP_PORT = int(os.getenv("MCP_PORT", "8788"))
 REQUEST_TIMEOUT_SECONDS = 30.0
@@ -345,14 +345,14 @@ READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
 
 TOOL_ICONS = [
     Icon(
-        src="https://data-pulse.my/badges/status-fresh.svg",
+        src="https://www.data-pulse.my/badges/status-fresh.svg",
         mimeType="image/svg+xml",
         sizes=["110x20"],
     )
 ]
 TOOL_META = {
     "publisher": "DataPulse MY",
-    "publisher_url": "https://data-pulse.my/",
+    "publisher_url": "https://www.data-pulse.my/",
     "version": SOURCE_VERSION_STRING,
     "repository_url": "https://github.com/r3dz4r/datapulse-my",
     "dataset_count": DATASET_COUNT,
@@ -514,7 +514,7 @@ async def _fetch_live_receipts(source_url: str) -> dict[str, Any]:
         headers={
             "Accept": "*/*",
             "Accept-Encoding": "identity",
-            "User-Agent": "DataPulseMY/1.0 (+https://data-pulse.my/about)",
+            "User-Agent": "DataPulseMY/1.0 (+https://www.data-pulse.my/about)",
         },
     ) as client:
         for redirect_count in range(VERIFY_MAX_REDIRECTS + 1):

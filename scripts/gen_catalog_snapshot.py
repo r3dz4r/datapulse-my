@@ -11,6 +11,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from public_surface_generation import load_public_surfaces
+
 ROOT = Path(__file__).resolve().parents[1]
 STATUSES = (
     "fresh",
@@ -56,7 +58,7 @@ def atomic_write(path: Path, content: bytes) -> None:
         raise
 
 
-def build_snapshot(manifest: dict[str, Any], health: dict[str, Any]) -> dict[str, Any]:
+def build_snapshot(manifest: dict[str, Any], health: dict[str, Any], *, website: str) -> dict[str, Any]:
     entries = manifest["datasets"]
     health_rows = health["datasets"]
     health_by_id = {row["dataset_id"]: row for row in health_rows}
@@ -65,7 +67,7 @@ def build_snapshot(manifest: dict[str, Any], health: dict[str, Any]) -> dict[str
         "version": "2.0.0",
         "generated_at": health["checked_at"],
         "site": {
-            "url": "https://data-pulse.my/",
+            "url": website + "/",
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
         "manifest": {
@@ -118,7 +120,9 @@ def main() -> None:
     try:
         manifest = read_json(args.manifest)
         health = read_json(args.health)
-        document = build_snapshot(manifest, health)
+        document = build_snapshot(
+            manifest, health, website=load_public_surfaces(ROOT)["origins"]["website"]
+        )
         content = (json.dumps(document, ensure_ascii=False, indent=2) + "\n").encode()
         atomic_write(args.output, content)
         atomic_write(args.legacy_alias, content)

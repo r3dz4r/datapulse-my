@@ -25,8 +25,9 @@ jobs:
         run: |
           set -Eeuo pipefail
           work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
-          curl -fsSL https://data-pulse.my/attestations/latest/chain_head.json -o "$work/head.json"
-          curl -fsSL https://data-pulse.my/.well-known/datapulse-probe-keys.json -o "$work/keys.json"
+          website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)"
+          curl -fsSL "$website_origin/attestations/latest/chain_head.json" -o "$work/head.json"
+          curl -fsSL "$website_origin/.well-known/datapulse-probe-keys.json" -o "$work/keys.json"
           python3 - "$work/head.json" "$work/keys.json" <<'PY'
           import base64, json, sys
           from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey

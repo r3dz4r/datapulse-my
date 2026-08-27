@@ -21,10 +21,23 @@ CHANGELOG_GENERATOR = ROOT / "scripts/gen_catalog_snapshot.py"
 JSONLD_GENERATOR = ROOT / "scripts/gen_jsonld_catalog.py"
 MCP_GENERATOR = ROOT / "scripts/gen_mcp_reference.py"
 BEGIN_MCP_TOOLS = "<!-- BEGIN mcp-tools -->"
+JSONLD_SCRIPT_OPEN = '  <script type="application/ld+json">\n'
+JSONLD_SCRIPT_CLOSE = "\n  </script>"
 
-CHANGELOG_INPUTS = ["datapulse.json", "health/latest.json"]
+CHANGELOG_INPUTS = [
+    "datapulse.json",
+    "health/latest.json",
+    "config/public-surfaces.json",
+    "config/public-surfaces.schema.json",
+]
 CHANGELOG_OUTPUTS = ["catalog-snapshot.json", "changelog.json"]
-JSONLD_INPUTS = ["datapulse.json", "health/latest.json", "docs/index.html"]
+JSONLD_INPUTS = [
+    "datapulse.json",
+    "health/latest.json",
+    "docs/index.html",
+    "config/public-surfaces.json",
+    "config/public-surfaces.schema.json",
+]
 JSONLD_OUTPUTS = [
     "data/jsonld/catalog.json",
     "data/jsonld/alpha.json",
@@ -290,13 +303,30 @@ def test_jsonld_urls_use_canonical_host() -> None:
     assert result.returncode == 0, result.stderr
     for dataset_id in ("alpha", "beta"):
         dataset = _json_output(result, f"data/jsonld/{dataset_id}.json")
-        assert dataset["@id"].startswith("https://data-pulse.my/")
-        assert dataset["url"].startswith("https://data-pulse.my/")
-        assert dataset["publisher"]["@id"].startswith("https://data-pulse.my/")
+        assert dataset["@id"].startswith("https://www.data-pulse.my/")
+        assert dataset["url"].startswith("https://www.data-pulse.my/")
+        assert dataset["publisher"]["@id"].startswith("https://www.data-pulse.my/")
         assert dataset["distribution"][0]["contentUrl"].startswith(
-            "https://data-pulse.my/"
+            "https://www.data-pulse.my/"
         )
         assert "r3dz4r.github.io" not in json.dumps(dataset)
+
+    dashboard = result.outputs["docs/index.html"]
+    assert dashboard is not None
+    graph = json.loads(
+        dashboard.decode("utf-8")
+        .split(JSONLD_SCRIPT_OPEN, 1)[1]
+        .split(JSONLD_SCRIPT_CLOSE, 1)[0]
+    )
+    catalog = graph["@graph"][0]
+    assert catalog["@id"] == "https://www.data-pulse.my/#catalog"
+    assert catalog["url"] == "https://www.data-pulse.my/"
+    if "distribution" in catalog:
+        assert [item["contentUrl"] for item in catalog["distribution"]] == [
+            "https://www.data-pulse.my/datapulse.json",
+            "https://www.data-pulse.my/health/latest.json",
+            "https://www.data-pulse.my/llms.txt",
+        ]
 
 
 def test_jsonld_removes_obsolete_per_id_files(tmp_path: Path) -> None:

@@ -249,7 +249,7 @@ def test_browser_fact_uses_canonical_summary_for_hyphenated_record_status() -> N
         },
     }
 
-    rendered = _dashboard_facts(html, manifest, health, "https://data-pulse.my")
+    rendered = _dashboard_facts(html, manifest, health, "https://www.data-pulse.my")
 
     assert "1 of 5 datasets (20.0%)" in rendered
 
@@ -272,7 +272,7 @@ def test_browser_fact_rejects_malformed_canonical_summary(browser_count: object)
     }
 
     with pytest.raises(EmbedError, match="browser_dependent"):
-        _dashboard_facts(html, manifest, health, "https://data-pulse.my")
+        _dashboard_facts(html, manifest, health, "https://www.data-pulse.my")
 
 
 def test_marker_failure_preserves_all_dashboard_targets(tmp_path: Path) -> None:
@@ -280,12 +280,12 @@ def test_marker_failure_preserves_all_dashboard_targets(tmp_path: Path) -> None:
     config.mkdir()
     (config / "public-surfaces.json").write_text(json.dumps({
         "schema": "datapulse/v1/public-surfaces",
-        "origins": {"website": "https://data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"},
+        "origins": {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"},
         "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html"],
         "artifacts": ["/buyer-api-reference.md"], "featured_dataset_ids": ["alpha"],
     }) + "\n", encoding="utf-8")
     (config / "public-surfaces.schema.json").write_text(json.dumps({
-        "properties": {"origins": {"required": ["website", "mcp", "api", "repository"], "properties": {key: {"const": value} for key, value in {"website": "https://data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}.items()}, "additionalProperties": False}}, "additionalProperties": False,
+        "properties": {"origins": {"required": ["website", "mcp", "api", "repository"], "properties": {key: {"const": value} for key, value in {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}.items()}, "additionalProperties": False}}, "additionalProperties": False,
     }) + "\n", encoding="utf-8")
     manifest = tmp_path / "datapulse.json"
     health = tmp_path / "health.json"

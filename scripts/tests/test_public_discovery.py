@@ -13,7 +13,7 @@ def _stage(root: Path) -> None:
     config = {
         "schema": "datapulse/v1/public-surfaces",
         "origins": {
-            "website": "https://data-pulse.my",
+            "website": "https://www.data-pulse.my",
             "mcp": "https://mcp.data-pulse.my",
             "api": "https://api.data-pulse.my",
             "repository": "https://github.com/r3dz4r/datapulse-my",
@@ -26,7 +26,7 @@ def _stage(root: Path) -> None:
     (root / "config/public-surfaces.json").write_text(json.dumps(config) + "\n")
     (root / "config/public-surfaces.schema.json").write_text(json.dumps({
         "properties": {"origins": {"properties": {
-            "website": {"const": "https://data-pulse.my"},
+            "website": {"const": "https://www.data-pulse.my"},
             "mcp": {"const": "https://mcp.data-pulse.my"},
             "api": {"const": "https://api.data-pulse.my"},
             "repository": {"const": "https://github.com/r3dz4r/datapulse-my"},
@@ -57,14 +57,14 @@ def test_generation_is_deterministic_and_preserves_unowned_prose(tmp_path: Path)
     root = ET.fromstring(first["sitemap.xml"])
     locations = [node.text for node in root.findall("{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
     assert locations == [
-        "https://data-pulse.my/",
-        "https://data-pulse.my/landing.html",
-        "https://data-pulse.my/npra.html",
-        "https://data-pulse.my/health-methodology.html",
-        "https://data-pulse.my/buyer-api-reference.md",
-        "https://data-pulse.my/llms.txt",
-        "https://data-pulse.my/agent.json",
-        "https://data-pulse.my/mcp.json",
+        "https://www.data-pulse.my/",
+        "https://www.data-pulse.my/landing.html",
+        "https://www.data-pulse.my/npra.html",
+        "https://www.data-pulse.my/health-methodology.html",
+        "https://www.data-pulse.my/buyer-api-reference.md",
+        "https://www.data-pulse.my/llms.txt",
+        "https://www.data-pulse.my/agent.json",
+        "https://www.data-pulse.my/mcp.json",
     ]
 
 

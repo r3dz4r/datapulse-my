@@ -6,6 +6,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from public_surface_generation import load_public_surfaces
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "datapulse.json"
@@ -14,15 +16,14 @@ CATALOG_PATH = ROOT / "data/jsonld/catalog.json"
 DASHBOARD_PATH = ROOT / "docs/index.html"
 SCRIPT_OPEN = '  <script type="application/ld+json">\n'
 SCRIPT_CLOSE = "\n  </script>"
-BASE_URL = "https://data-pulse.my"
 
 
 def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def dataset_object(entry: dict, health: dict) -> dict:
-    report_url = f"{BASE_URL}/{entry['health_report']}"
+def dataset_object(entry: dict, health: dict, *, base_url: str) -> dict:
+    report_url = f"{base_url}/{entry['health_report']}"
     record_count = health.get("record_count")
     return {
         "@context": "https://schema.org",
@@ -40,7 +41,7 @@ def dataset_object(entry: dict, health: dict) -> dict:
         "creator": {"@type": "Organization", "name": entry["steward"]},
         "publisher": {
             "@type": "Organization",
-            "@id": f"{BASE_URL}/#org",
+            "@id": f"{base_url}/#org",
             "name": "DataPulse MY",
         },
         "spatialCoverage": {"@type": "Place", "name": entry["geo_coverage"]},
@@ -85,10 +86,11 @@ def dashboard_part(dataset: dict) -> dict:
 
 def main() -> None:
     manifest = read_json(MANIFEST_PATH)
+    base_url = load_public_surfaces(ROOT)["origins"]["website"]
     health = read_json(HEALTH_PATH)
     health_by_id = {row["dataset_id"]: row for row in health["datasets"]}
     datasets = [
-        dataset_object(entry, health_by_id.get(entry["id"], {}))
+        dataset_object(entry, health_by_id.get(entry["id"], {}), base_url=base_url)
         for entry in manifest["datasets"]
     ]
 
@@ -103,9 +105,9 @@ def main() -> None:
     catalog = {
         "@context": "https://schema.org",
         "@type": "DatasetCatalog",
-        "@id": f"{BASE_URL}/data/jsonld/catalog.json",
+        "@id": f"{base_url}/data/jsonld/catalog.json",
         "name": "DataPulse MY — All Datasets (JSON-LD)",
-        "url": f"{BASE_URL}/data/jsonld/catalog.json",
+        "url": f"{base_url}/data/jsonld/catalog.json",
         "dataset": datasets,
     }
     CATALOG_PATH.write_text(
@@ -117,6 +119,19 @@ def main() -> None:
     end = dashboard.index(SCRIPT_CLOSE, start)
     graph = json.loads(dashboard[start:end])
     catalog_node = graph["@graph"][0]
+    catalog_node["@id"] = f"{base_url}/#catalog"
+    catalog_node["url"] = f"{base_url}/"
+    distributions = catalog_node.get("distribution")
+    if distributions is not None:
+        paths = ("/datapulse.json", "/health/latest.json", "/llms.txt")
+        if (
+            not isinstance(distributions, list)
+            or len(distributions) != len(paths)
+            or not all(isinstance(item, dict) for item in distributions)
+        ):
+            raise ValueError("dashboard catalog graph must contain the three canonical distributions")
+        for distribution, path in zip(distributions, paths, strict=True):
+            distribution["contentUrl"] = f"{base_url}{path}"
     catalog_node["hasPart"] = [dashboard_part(dataset) for dataset in datasets]
     replacement = json.dumps(graph, ensure_ascii=False, indent=2)
     DASHBOARD_PATH.write_text(

@@ -18,7 +18,7 @@ def _write_public_surface_fixture(root: Path, featured_dataset_id: str) -> None:
         json.dumps({
             "schema": "datapulse/v1/public-surfaces",
             "origins": {
-                "website": "https://data-pulse.my",
+                "website": "https://www.data-pulse.my",
                 "mcp": "https://mcp.data-pulse.my",
                 "api": "https://api.data-pulse.my",
                 "repository": "https://github.com/r3dz4r/datapulse-my",
@@ -54,7 +54,7 @@ def _write_public_surface_fixture(root: Path, featured_dataset_id: str) -> None:
                     "type": "object",
                     "required": ["website", "mcp", "api", "repository"],
                     "properties": {
-                        "website": {"const": "https://data-pulse.my"},
+                        "website": {"const": "https://www.data-pulse.my"},
                         "mcp": {"const": "https://mcp.data-pulse.my"},
                         "api": {"const": "https://api.data-pulse.my"},
                         "repository": {"const": "https://github.com/r3dz4r/datapulse-my"},
@@ -120,8 +120,8 @@ def test_updates_count_from_manifest(tmp_path: Path) -> None:
     assert "Unrelated content stays byte-identical." in output
     assert "dataset-0" in output
     artifacts = output.split("<!-- BEGIN public-artifacts -->", 1)[1].split("<!-- END public-artifacts -->", 1)[0]
-    assert "https://data-pulse.my/datapulse.json" in artifacts
-    assert "https://data-pulse.my/health/latest.json" in artifacts
+    assert "https://www.data-pulse.my/datapulse.json" in artifacts
+    assert "https://www.data-pulse.my/health/latest.json" in artifacts
     assert "r3dz4r.github.io" not in artifacts
     assert "/docs/" not in artifacts
 

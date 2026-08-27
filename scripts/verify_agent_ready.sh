@@ -11,7 +11,7 @@ if (( $# > 0 )); then
   exit 2
 fi
 
-canonical_base_url="https://data-pulse.my"
+canonical_base_url="https://www.data-pulse.my"
 base_url="${DATAPULSE_AGENT_BASE_URL:-$canonical_base_url}"
 base_url="${base_url%/}"
 agent_root="${DATAPULSE_AGENT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

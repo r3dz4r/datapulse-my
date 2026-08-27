@@ -19,7 +19,7 @@ def _config() -> dict:
     return {
         "schema": "datapulse/v1/public-surfaces",
         "origins": {
-            "website": "https://data-pulse.my",
+            "website": "https://www.data-pulse.my",
             "mcp": "https://mcp.data-pulse.my",
             "api": "https://api.data-pulse.my",
             "repository": "https://github.com/r3dz4r/datapulse-my",
@@ -36,7 +36,7 @@ def _write_config(root: Path, document: dict) -> None:
     path.write_text(json.dumps(document) + "\n", encoding="utf-8")
     (root / "config/public-surfaces.schema.json").write_text(json.dumps({
         "properties": {"origins": {"properties": {
-            "website": {"const": "https://data-pulse.my"},
+            "website": {"const": "https://www.data-pulse.my"},
             "mcp": {"const": "https://mcp.data-pulse.my"},
             "api": {"const": "https://api.data-pulse.my"},
             "repository": {"const": "https://github.com/r3dz4r/datapulse-my"},
@@ -47,7 +47,7 @@ def _write_config(root: Path, document: dict) -> None:
 
 def test_load_public_surfaces_accepts_strict_config(tmp_path: Path) -> None:
     _write_config(tmp_path, _config())
-    assert load_public_surfaces(tmp_path)["origins"]["website"] == "https://data-pulse.my"
+    assert load_public_surfaces(tmp_path)["origins"]["website"] == "https://www.data-pulse.my"
 
 
 @pytest.mark.parametrize(
