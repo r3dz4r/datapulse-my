@@ -41,7 +41,11 @@ def test_rendered_page_has_title_body_and_is_deterministic() -> None:
     assert first.returncode == second.returncode == 0, first.stderr or second.stderr
     page = renderer.OUTPUT.read_text(encoding="utf-8")
     assert "<title>Health methodology | DataPulse MY</title>" in page
-    assert "<h1 id=\"health-methodology\">Health methodology</h1>" in page
+    # The hero carries the single <h1>; the Pandoc page heading is stripped.
+    assert '<main id="main-content">' in page
+    assert '<h1 id="hero-title">' in page
+    assert 'id="health-methodology">Health methodology</h1>' not in page
+    assert 'id="health-methodology-content"' in page
     assert "Schema version" in page
     assert first_page == renderer.OUTPUT.read_bytes()
 

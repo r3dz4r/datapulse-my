@@ -77,5 +77,9 @@ def test_methodology_html_retains_rendered_structure(tmp_path: Path) -> None:
     assert "5 minutes" in page
     assert "assets/datapulse.css" in page
     assert ":where(main) > :where(p)" in css
-    assert '<main id="main-content" class="wrap prose">' in page
+    assert '<main id="main-content">' in page
+    assert '<section class="hero"' in page
+    assert '<h1 id="hero-title">' in page
+    assert 'id="health-methodology-content"' in page
+    assert "class=\"wrap prose\"" not in page
     assert 'style="max-width:52rem; padding-block:2.5rem"' not in page

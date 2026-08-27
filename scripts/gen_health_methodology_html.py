@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -44,6 +45,20 @@ def pandoc_command(pandoc: str, source: Path, template: Path, output: Path, titl
     ]
 
 
+# The hero now carries the single page ``<h1>``. Pandoc still emits the
+# document title as a leading ``<h1 id="health-methodology">...``; strip that
+# duplicate heading (and the blank line around it) so the body starts at the
+# first ``<h2>`` section, exactly like NPRA/dashboard content sections.
+_PAGE_HEADING_PATTERN = re.compile(
+    r'\s*<h1 id="health-methodology">[^<]*</h1>\s*', re.IGNORECASE
+)
+
+
+def strip_page_heading(html: str) -> str:
+    """Remove the leading Pandoc page heading that duplicates the hero h1."""
+    return _PAGE_HEADING_PATTERN.sub("", html, count=1)
+
+
 def main() -> int:
     for label, path in (("source", SOURCE), ("template", TEMPLATE)):
         if not path.is_file():
@@ -71,6 +86,9 @@ def main() -> int:
         subprocess.run(
             pandoc_command(pandoc, SOURCE, TEMPLATE, temporary, title), check=True
         )
+        body = temporary.read_text(encoding="utf-8")
+        body = strip_page_heading(body)
+        temporary.write_text(body, encoding="utf-8")
         os.replace(temporary, OUTPUT)
     except subprocess.CalledProcessError as error:
         print(f"Pandoc failed while rendering {SOURCE}: {error}", file=sys.stderr)
