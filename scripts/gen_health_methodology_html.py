@@ -59,6 +59,19 @@ def strip_page_heading(html: str) -> str:
     return _PAGE_HEADING_PATTERN.sub("", html, count=1)
 
 
+# The methodology tables (probe-cadence, status-taxonomy, freshness-baselines)
+# are wider than the mobile viewport. Render each balanced ``<table>`` inside a
+# scrollable ``.table-wrap`` container so the page itself never overflows on
+# phones (body{overflow-x:hidden} would otherwise clip them). The tables are
+# flat/non-nested, so a single non-greedy regex over balanced pairs is safe.
+_TABLE_PATTERN = re.compile(r"(<table>.*?</table>)", re.DOTALL)
+
+
+def _wrap_tables(html: str) -> str:
+    """Wrap every rendered table in a horizontal-scroll container."""
+    return _TABLE_PATTERN.sub(r'<div class="table-wrap">\1</div>', html)
+
+
 def main() -> int:
     for label, path in (("source", SOURCE), ("template", TEMPLATE)):
         if not path.is_file():
@@ -88,6 +101,7 @@ def main() -> int:
         )
         body = temporary.read_text(encoding="utf-8")
         body = strip_page_heading(body)
+        body = _wrap_tables(body)
         temporary.write_text(body, encoding="utf-8")
         os.replace(temporary, OUTPUT)
     except subprocess.CalledProcessError as error:
