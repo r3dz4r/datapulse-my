@@ -115,6 +115,28 @@
        body { overflow-x: hidden }. Scoped to the methodology content section
        so it does not affect the dashboard's compact code columns. */
     #health-methodology-content code { overflow-wrap: anywhere; word-break: break-word; }
+    /* Methodology prose is nested 2 levels below <main> (<section> > <div class="wrap"> > h2/p),
+       so the `:where(main) > :where(h2)` direct-child rules don't reach it and it falls back
+       to the global h1/h2/h3/p { margin:0 } reset — collapsing all vertical rhythm. Restore
+       the same spacing the direct-child rules provide, scoped to this section only so the
+       dashboard/NPRA component layouts are unaffected. */
+    #health-methodology-content h2,
+    #health-methodology-content h3,
+    #health-methodology-content h4 {
+      margin-block: 2em 0.75em;
+      padding-top: 0.25em;
+    }
+    #health-methodology-content h2 {
+      border-top: 1px solid var(--color-border);
+      font-size: 1.625rem;
+      letter-spacing: -0.02em;
+    }
+    #health-methodology-content h3 { font-size: 1.25rem; border-top: 0; }
+    #health-methodology-content h4 { font-size: 1.05rem; border-top: 0; }
+    #health-methodology-content p { margin-block: 0.75em 1em; line-height: 1.7; }
+    #health-methodology-content ul,
+    #health-methodology-content ol { margin-block: 1em; padding-inline-start: 1.5em; }
+    #health-methodology-content li { margin-block: 0.4em; line-height: 1.6; }
     .copy-button { position: absolute; top: 8px; right: 8px; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-border); color: var(--color-accent); background: var(--color-bg); opacity: 0.7; transition: background-color 150ms ease-out, opacity 150ms ease-out; }
     .copy-button:hover, .copy-button:focus-visible { opacity: 1; background: var(--color-muted); }
     .copy-button svg { width: 18px; height: 18px; }
