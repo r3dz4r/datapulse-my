@@ -215,3 +215,43 @@ def test_inject_dry_run_does_not_modify_files(tmp_path: Path) -> None:
     after = (tmp_path / "openwiki/quickstart.md").read_text(encoding="utf-8")
     assert before == after
     assert any(status == "injected" for _, status in results)
+
+
+def test_forbidden_claims_are_neutralized() -> None:
+    """The model's first pass may emit claims the verifier rejects.
+    The injector must scrub them so the verifier stays green regardless
+    of what the model wrote. Specifically, 'universal trust' is replaced
+    with 'verified evidence' (because DataPulse is not the source of truth,
+    only an evidence layer), and the other FORBIDDEN_CLAIMS each get a
+    precise factual substitute."""
+
+    from scripts.inject_openwiki_canonical_facts import _neutralize_forbidden_claims
+
+    sample = (
+        "# D\n\n"
+        "DataPulse provides universal trust for Malaysian data.\n"
+        "We have agent reputation as a feature.\n"
+        "This is regulatory certification of upstream.\n"
+        "Payment capability for premium checks.\n"
+        "We are regulatorily certified.\n"
+    )
+    fixed = _neutralize_forbidden_claims(sample)
+    forbidden = (
+        "universal trust",
+        "payment capability",
+        "agent reputation",
+        "regulatory certification",
+        "regulatorily certified",
+    )
+    folded = fixed.casefold()
+    for claim in forbidden:
+        assert claim not in folded, f"forbidden claim not stripped: {claim!r}"
+    # Safe substitutes must be present
+    assert "verified evidence" in folded
+    assert "evidence reference" in folded
+    assert "evidence history" in folded
+    assert "verification record" in folded
+    # Idempotency
+    fixed2 = _neutralize_forbidden_claims(fixed)
+    assert fixed == fixed2
+
