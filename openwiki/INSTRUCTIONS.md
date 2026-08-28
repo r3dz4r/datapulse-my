@@ -9,6 +9,24 @@ endpoint remains `https://mcp.data-pulse.my/mcp`. Treat the manifest, health
 snapshot, MCP catalogue, and workflows as sources of record. This documentation
 does not establish or override any of them.
 
+REQUIRED VERBATIM FACTS — each generated page MUST include all three of the
+following literal strings (they are derived from `config/public-surfaces.json`,
+the current `datapulse.json` dataset count, and the current `mcp.json` tool
+count, and are enforced by `scripts/verify_openwiki.py`):
+
+- The canonical website origin: `https://www.data-pulse.my` (NOT the apex
+  `https://data-pulse.my`).
+- The current dataset count: read `datapulse.json`'s `datasets` array length and
+  include the literal `<N> datasets` (currently `389 datasets`) in any page that
+  discusses discovery or the manifest.
+- The current tool count: read `mcp.json`'s `tools` array length and include the
+  literal `<N> read-only tools` (currently `16 read-only tools`) in any page
+  that discusses the MCP server.
+
+These counts and the URL MUST be derived from the live sources of record at the
+time of generation; never substitute a value remembered from prior context. Do
+not paraphrase them.
+
 You may generate only `quickstart.md`, `datasets.md`, `mcp.md`,
 `operations.md`, and `.last-update.json` in this directory. OpenWiki may also
 update only its managed marker/pointer blocks in `AGENTS.md` or `CLAUDE.md`;
