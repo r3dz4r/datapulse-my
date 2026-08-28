@@ -22,7 +22,7 @@ On top of these per-dataset artifacts, the project publishes three aggregate
 layers:
 
 - **`health/latest.json`** — a weekly machine-readable freshness snapshot of all
-  122 datasets, produced by [`scripts/check.sh`](../scripts/check.sh).
+  389 datasets, produced by [`scripts/check.sh`](../scripts/check.sh).
 - **Status badges** (`badges/<id>.svg`) and an **RSS feed** (`feed.xml`) generated
   from the health snapshot.
 - A **single-page dashboard** (`docs/index.html`) and an **AI-agent discovery
@@ -37,7 +37,7 @@ original work only.
 
 ## What is tracked
 
-122 datasets across official source groups, categorized by the manifest namespace
+389 datasets across official source groups, categorized by the manifest namespace
 and the underlying source portal:
 
 | Prefix / group | Agencies | Count | Notes |
@@ -101,7 +101,7 @@ marker files are handled.
 
 - [Datasets & schema](datasets.md) — manifest schema, health-report and
   JSON-envelope formats, the validation rules, and an agency-grouped catalog of
-  all 122 datasets with representative schemas and quirks.
+  all 389 datasets with representative schemas and quirks.
 - [Operations & contribution](operations.md) — the weekly health-check CI
   pipeline, GitHub Pages deploy, the OpenWiki refresh workflow, the
   three-file contribution model, the PR checklist, and agent marker files.
@@ -137,3 +137,9 @@ marker files are handled.
 - **GitHub Pages dashboard internals** — source anchor: `docs/index.html`. The
   dashboard is a static page with embedded data injected at deploy time; it has
   no runtime API surface worth a dedicated page yet.
+
+## Canonical facts
+
+- Canonical website: https://www.data-pulse.my
+- Datasets: 389 datasets
+- MCP server: 16 read-only tools

@@ -128,7 +128,7 @@ Get-Content -Raw data/json/<dataset-id>.json | ConvertFrom-Json | Out-Null
 
 ## Dataset catalog
 
-The 122 datasets are grouped below by namespace and ID prefix / source agency. Each group lists
+The 389 datasets are grouped below by namespace and ID prefix / source agency. Each group lists
 the IDs and documents representative schemas and shared quirks; the
 authoritative per-dataset schema lives in `data/<id>.md`.
 
@@ -301,3 +301,9 @@ Follow the "Adopt a dataset" model in `CONTRIBUTING.md`:
 6. Open a pull request
    (`.github/PULL_REQUEST_TEMPLATE.md`) linking the issue with evidence for
    freshness, schema, and licence claims.
+
+## Canonical facts
+
+- Canonical website: https://www.data-pulse.my
+- Datasets: 389 datasets
+- MCP server: 16 read-only tools

@@ -189,3 +189,9 @@ comparing a JSON envelope with its Markdown report, documenting one reproducible
 API or browser collection quirk, or researching the official licence and
 attribution for a proposed dataset. `docs/adoption-seeding.md` lists four
 starter issues to file manually after the templates and labels are set up.
+
+## Canonical facts
+
+- Canonical website: https://www.data-pulse.my
+- Datasets: 389 datasets
+- MCP server: 16 read-only tools

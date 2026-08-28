@@ -30,7 +30,7 @@ until descriptions are published.
 
 Three resources are exposed:
 
-- `datapulse://index` — lightweight JSON array of all 122 datasets:
+- `datapulse://index` — lightweight JSON array of all 389 datasets:
   `{id, status, title, source, licence}`.
 - `datapulse://licences` — JSON object mapping licence name → dataset count.
 - `datapulse://{dataset_id}` — full manifest entry for one dataset (on-demand).
@@ -110,3 +110,9 @@ Operational commands:
   `journalctl --user -u datapulse-mcp`.
 - nginx: `systemctl is-active nginx`, `sudo systemctl restart nginx`.
 - cloudflared version referenced in the runbook: `2026.7.3`.
+
+## Canonical facts
+
+- Canonical website: https://www.data-pulse.my
+- Datasets: 389 datasets
+- MCP server: 16 read-only tools
