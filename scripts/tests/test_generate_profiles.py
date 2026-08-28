@@ -223,6 +223,11 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(RELEASE_FIXTURE / "health.schema.json", source / "health.schema.json")
     shutil.copytree(RELEASE_FIXTURE / "config", source / "config")
     shutil.copy2(ROOT / "config/landing-page.json", source / "config/landing-page.json")
+    landing_config = json.loads(
+        (source / "config/landing-page.json").read_text(encoding="utf-8")
+    )
+    landing_config["example"]["dataset_id"] = manifest["datasets"][0]["id"]
+    _write_json(source / "config/landing-page.json", landing_config)
     surfaces = json.loads((source / "config/public-surfaces.json").read_text(encoding="utf-8"))
     production_surfaces = json.loads(
         (ROOT / "config/public-surfaces.json").read_text(encoding="utf-8")

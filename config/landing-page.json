@@ -5,7 +5,7 @@
   "hero": {
     "heading": "Verify Malaysian data before your AI agent uses it.",
     "copy": "DataPulse records observed source identity, freshness, provenance, licence and reuse context, structural evidence, and limitations so people and agents can make an evidence-qualified decision alongside the official publisher.",
-    "primary_cta": {"label": "Inspect one evidence receipt", "href": "/data/fuelprice.md"},
+    "primary_cta": {"label": "Inspect one evidence receipt", "href": "/data/example.md"},
     "secondary_cta": {"label": "Connect via MCP", "href": "mcp:/mcp"}
   },
   "example": {
@@ -13,9 +13,9 @@
     "workflow": ["Discover", "Inspect", "Check evidence", "Use, warn, or stop", "Cite"],
     "receipt_fields": ["Source identity", "Publisher", "Licence and reuse context", "Observed time", "Content date", "Freshness state", "Schema or record signal", "Evidence reference", "Claim scope", "Limitations"],
     "receipt_preview": {
-      "mode": "schema_preview",
-      "label": "Receipt schema preview — not verified evidence",
-      "copy": "These field names show the review schema only. Open the published dataset surface for its current observations, evidence, and limitations."
+      "mode": "live_evidence",
+      "label": "Live published evidence from health/latest.json",
+      "copy": "These are real observed values from the published health snapshot and dataset manifest; any unobserved signal is shown as 'not observed' rather than a fabricated value."
     }
   },
   "rails": [
@@ -41,7 +41,7 @@
   ],
   "vertical": {"label": "See the NPRA example", "href": "/npra.html", "copy": "Domain products can sit downstream of this public source-verification layer without replacing its evidence boundaries."},
   "final_ctas": [
-    {"label": "Inspect one dataset", "href": "/data/fuelprice.md"},
+    {"label": "Inspect one dataset", "href": "/data/example.md"},
     {"label": "Connect your agent", "href": "mcp:/mcp"}
   ]
 }

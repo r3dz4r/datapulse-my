@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.gen_landing_page import MARKER, load_landing_config, render
+from scripts.gen_landing_page import MARKER, REGISTER_STATUS_ORDER, load_landing_config, render
 from scripts.public_surface_generation import GenerationError, load_public_surfaces
 
 
@@ -26,6 +26,8 @@ def _landing_root(tmp_path: Path) -> Path:
         "scripts/templates/landing.html.tmpl",
         "docs/assets/datapulse.css",
         "docs/assets/site-nav.html",
+        "health/latest.json",
+        "datapulse.json",
     ):
         source = ROOT / relative
         target = root / relative
@@ -138,15 +140,36 @@ def test_landing_page_classes_are_owned_by_the_canonical_stylesheet() -> None:
     assert "@media (prefers-reduced-motion: reduce)" in stylesheet
 
 
-def test_landing_page_receipt_is_an_honest_schema_preview(tmp_path: Path) -> None:
+def test_landing_page_receipt_uses_live_evidence(tmp_path: Path) -> None:
     root = _landing_root(tmp_path)
     page = render(root)
-    assert "Receipt schema preview — not verified evidence" in page
-    assert "Preview schema field; see the published evidence surface" in page
+    assert "Preview schema field" not in page
+    assert "not verified evidence" not in page
+    assert "949 records; within tolerance" in page
+    assert "Evidence verdict: use" in page
     assert 'href="/data/fuelprice.md"' in page
 
-    config = _config(root)
-    config["example"]["receipt_preview"]["mode"] = "verified_evidence"
-    _write_config(root, config)
-    with pytest.raises(GenerationError, match="declared canonical artifact"):
-        load_landing_config(root, load_public_surfaces(root))
+
+def test_landing_page_register_is_live_and_bounded(tmp_path: Path) -> None:
+    root = _landing_root(tmp_path)
+    page = render(root)
+
+    assert "LIVE REGISTER" in page
+    assert "register-title" in page
+
+    health = json.loads((root / "health/latest.json").read_text(encoding="utf-8"))
+    datasets = health["datasets"]
+    total = len(datasets)
+
+    priority = {status: index for index, status in enumerate(REGISTER_STATUS_ORDER)}
+    ordered = sorted(
+        datasets,
+        key=lambda row: (priority.get(row.get("status"), len(REGISTER_STATUS_ORDER)), str(row.get("dataset_id", ""))),
+    )
+    first_id = ordered[0]["dataset_id"]
+    assert first_id in page
+
+    assert "legend-swatch" in page
+    assert f"{total} datasets total" in page
+    assert "more datasets" in page
+    assert page.count("legend-swatch") < total
