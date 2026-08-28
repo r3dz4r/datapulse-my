@@ -425,7 +425,7 @@ def verify_contract(
     if require_rekor and rekor is None:
         raise ContractError("required Rekor proof reference is missing")
     claims = {
-        "artifact_signed": True,
+        "artifact_signed": rekor is not None,
         "rekor_witnessed": rekor is not None,
         "source_truth_verified": False,
     }

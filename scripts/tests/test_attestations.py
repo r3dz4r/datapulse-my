@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,6 +34,65 @@ def fixture_root(tmp_path: Path) -> tuple[Path, Path]:
     write(tmp_path / "health/reconciliation.json", {"groups":[]})
     (tmp_path / "health/history.jsonl").write_text(json.dumps({"dataset_id":"sample","observed_at":"2026-08-15T00:00:00Z"})+"\n")
     return tmp_path, key
+
+
+def fixture_rekor_reference(root: Path, name: str) -> Path:
+    """Write deterministic Rekor evidence bound to the fixture health bytes."""
+    digest = hashlib.sha256((root / "health/latest.json").read_bytes()).hexdigest()
+    directory = root / "attestations" / name
+    bundle_path = directory / "bundle.json"
+    canonicalized_body = base64.b64encode(b"fixture Rekor body").decode("ascii")
+    leaf_hash = hashlib.sha256(b"\x00" + base64.b64decode(canonicalized_body)).digest()
+    write(
+        bundle_path,
+        {
+            "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+            "messageSignature": {
+                "messageDigest": {"algorithm": "SHA2_256", "digest": digest}
+            },
+            "verificationMaterial": {
+                "tlogEntries": [
+                    {
+                        "logId": {
+                            "keyId": base64.b64encode(bytes.fromhex("a" * 64)).decode("ascii")
+                        },
+                        "logIndex": 0,
+                        "canonicalizedBody": canonicalized_body,
+                        "inclusionProof": {
+                            "rootHash": base64.b64encode(leaf_hash).decode("ascii"),
+                            "hashes": [],
+                            "treeSize": 1,
+                        },
+                        "inclusionPromise": {"signedEntryTimestamp": "fixture-set"},
+                    }
+                ]
+            },
+        },
+    )
+    reference_path = directory / "reference.json"
+    write(
+        reference_path,
+        {
+            "schema": "datapulse/v1/sigstore-rekor-reference",
+            "artifact": "health/latest.json",
+            "artifact_sha256": digest,
+            "bundle": "bundle.json",
+            "run_id": f"health-{digest}",
+            "rekor": {
+                "log_id": "a" * 64,
+                "log_index": 0,
+                "uuid": hashlib.sha256(base64.b64decode(canonicalized_body)).hexdigest(),
+                "inclusion_proof": True,
+                "signed_entry_timestamp": True,
+            },
+        },
+    )
+    return reference_path
+
+
+def fixture_root_with_rekor(tmp_path: Path) -> tuple[Path, Path, Path]:
+    root, key = fixture_root(tmp_path)
+    return root, key, fixture_rekor_reference(root, "rekor-fixture")
 
 
 def test_generator_signs_daily_digest_and_chain(tmp_path: Path):

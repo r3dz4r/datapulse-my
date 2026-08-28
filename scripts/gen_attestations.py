@@ -49,7 +49,7 @@ def binding_envelope(private: Ed25519PrivateKey, day: str, generated_at: str, he
         "schema":"datapulse/v1/attestation-binding-envelope",
         "payload":payload,
         "signature_base64":sign(private,payload),
-        "claims":{"artifact_signed":True,"rekor_witnessed":rekor is not None,"source_truth_verified":False},
+        "claims":{"artifact_signed":rekor is not None,"rekor_witnessed":rekor is not None,"source_truth_verified":False},
         "rekor":rekor,
     }
 

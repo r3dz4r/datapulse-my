@@ -16,7 +16,7 @@ import yaml
 
 from scripts import gen_attestations as ga
 from scripts.embed_dashboard_data import _attestation_verification
-from scripts.tests.test_attestations import fixture_root, write
+from scripts.tests.test_attestations import fixture_rekor_reference, fixture_root, write
 from scripts.verify_attestation_binding import verify_contract
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -282,11 +282,13 @@ def test_fast_path_preserves_a_newer_valid_served_attestation_plane(tmp_path: Pa
     health["datasets"][0]["last_checked"] = health["checked_at"]
     write(served_root / "health/latest.json", health)
     ga.generate(served_root, key, first)
+    ga.generate(served_root, key, first, fixture_rekor_reference(served_root, first_day))
     health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
     health["checked_at"] = second_checked_at
     health["datasets"][0]["last_checked"] = health["checked_at"]
     write(served_root / "health/latest.json", health)
     ga.generate(served_root, key, second)
+    ga.generate(served_root, key, second, fixture_rekor_reference(served_root, second_day))
     assert verify_contract(served_root, now=second + timedelta(hours=1))["claims"][
         "artifact_signed"
     ] is True

@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from scripts import gen_attestations as ga
-from scripts.tests.test_attestations import fixture_root, write
+from scripts.tests.test_attestations import fixture_root, fixture_root_with_rekor, write
 from scripts.verify_attestation_binding import (
     ContractError,
     verify_contract,
@@ -55,7 +55,7 @@ def test_clean_fixture_binds_health_chain_dataset_set_time_and_active_key(tmp_pa
     assert payload["ed25519"]["key_status"] == "active"
     assert payload["ed25519"]["chain_head"] == load(root / "attestations/latest/chain_head.json")["chain_head"]
     assert binding["claims"] == {
-        "artifact_signed": True,
+        "artifact_signed": False,
         "rekor_witnessed": False,
         "source_truth_verified": False,
     }
@@ -248,8 +248,8 @@ def install_rekor_fixture(root: Path, *, missing_proof: bool = False, attach: bo
 
 
 def test_complete_rekor_reference_binds_the_same_health_digest(tmp_path: Path) -> None:
-    root = generated_root(tmp_path)
-    install_rekor_fixture(root)
+    root, key, rekor_reference = fixture_root_with_rekor(tmp_path)
+    ga.generate(root, key, NOW, rekor_reference)
     result = verify_contract(root, now=NOW + timedelta(hours=1), require_rekor=True)
     assert result["claims"] == {
         "artifact_signed": True,
