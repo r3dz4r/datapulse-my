@@ -48,7 +48,7 @@ jobs:
       - name: Generate derivative OpenWiki documentation
         env:
           OPENWIKI_PROVIDER: openai
-          OPENWIKI_MODEL_ID: gpt-5.6-mini
+          OPENWIKI_MODEL_ID: gpt-5.6-luna
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENWIKI_TELEMETRY_DISABLED: "1"
         run: npm exec --prefix tools/openwiki -- openwiki code --update --print
