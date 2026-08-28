@@ -33,17 +33,16 @@ deploys.
 Runs on a daily cron (`0 8 * * *`, every day 08:00 UTC) and on
 `workflow_dispatch`. The workflow checks out the repo, sets up Node.js 22,
 installs the `openwiki` npm package globally, and runs
-`openwiki code --update --print` with the `openai-chatgpt` provider (ChatGPT
-OAuth login) and the `gpt-5.6-terra` preset model. Provider credentials are
-passed directly via the step's `env:` (`OPENWIKI_PROVIDER`,
-`OPENWIKI_MODEL_ID`, `OPENWIKI_TELEMETRY_DISABLED`, plus the six ChatGPT
-OAuth variables `OPENAI_CHATGPT_ACCESS_TOKEN`, `OPENAI_CHATGPT_REFRESH_TOKEN`,
-`OPENAI_CHATGPT_EXPIRES_AT`, `OPENAI_CHATGPT_ACCOUNT_ID`,
-`OPENAI_CHATGPT_EMAIL`, and `OPENAI_CHATGPT_PLAN`) — no `~/.openwiki/.env`
-file is written. Requires the six secrets `secrets.OPENAI_CHATGPT_ACCESS_TOKEN`,
-`secrets.OPENAI_CHATGPT_REFRESH_TOKEN`, `secrets.OPENAI_CHATGPT_EXPIRES_AT`,
-`secrets.OPENAI_CHATGPT_ACCOUNT_ID`, `secrets.OPENAI_CHATGPT_EMAIL`, and
-`secrets.OPENAI_CHATGPT_PLAN`.
+`openwiki code --update --print` with the `openai` provider (OpenAI
+Platform API key, **not** ChatGPT OAuth) and the `gpt-5.6-mini`
+preset model. Provider credentials are passed directly via the step's
+`env:` (`OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`,
+`OPENWIKI_TELEMETRY_DISABLED`, plus `OPENAI_API_KEY`) — no
+`~/.openwiki/.env` file is written. Requires the single secret
+`secrets.OPENAI_API_KEY`. This provider bills against the OpenAI
+Platform pay-as-you-go account, which is independent of any ChatGPT
+OAuth subscription and so is not subject to the 5-hour OAuth usage
+window.
 
 Instead of committing directly to `main`, the workflow uses
 `peter-evans/create-pull-request@v7` to open an `openwiki/update` branch PR
