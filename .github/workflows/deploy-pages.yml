@@ -393,7 +393,7 @@ jobs:
           smoke_dir="$(mktemp -d)"
           trap 'rm -rf "$smoke_dir"' EXIT
 
-          fetch "dashboard" "${website_origin}/" "$smoke_dir/index.html"
+          fetch "dashboard" "${website_origin}/dashboard" "$smoke_dir/index.html"
           grep -Fq "$expected_dataset_count" "$smoke_dir/index.html" || \
             fail "dashboard does not mention $expected_dataset_count datasets"
           card_count="$(grep -o '"health_report":' "$smoke_dir/index.html" | wc -l || true)"
