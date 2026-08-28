@@ -97,7 +97,7 @@ fetch mcp.json mcp.json
 # Generated and served modes still fetch and validate the current proof below.
 if ! $local_mode; then
   fetch release-verification.md release-verification.md
-  fetch index.html index.html
+  fetch index.html dashboard
   fetch landing.html landing.html
   fetch npra.html npra.html
   fetch buyer-api-reference.md buyer-api-reference.md
