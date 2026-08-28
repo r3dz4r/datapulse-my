@@ -374,6 +374,42 @@ jobs:
             fi
           }
 
+          wait_synced() {
+            local label="$1"
+            local staged_path="$2"
+            local url="$3"
+            local output="$4"
+            local elapsed start_seconds status sleep_seconds
+            local max_wait_seconds=300
+            local retry_interval_seconds=30
+
+            start_seconds="$SECONDS"
+            while true; do
+              if fetch "$label" "$url" "$output"; then
+                if cmp -s "$staged_path" "$output"; then
+                  return 0
+                fi
+                echo "www plane sync pending for $label (waited $((SECONDS - start_seconds))s)"
+              else
+                status="$(<"${output}.status")"
+                if [[ ! "$status" =~ ^(000|429|5[0-9]{2})$ ]]; then
+                  return 1
+                fi
+                echo "www plane fetch pending for $label (HTTP $status; waited $((SECONDS - start_seconds))s)"
+              fi
+
+              elapsed=$((SECONDS - start_seconds))
+              if (( elapsed >= max_wait_seconds )); then
+                fail "served $label differs from staged artifact (waited ${elapsed}s for www plane sync)"
+              fi
+              sleep_seconds=$((max_wait_seconds - elapsed))
+              if (( sleep_seconds > retry_interval_seconds )); then
+                sleep_seconds="$retry_interval_seconds"
+              fi
+              sleep "$sleep_seconds"
+            done
+          }
+
           git fetch --no-tags --depth=1 origin main || \
             fail "deployed source branch could not be fetched"
           git checkout --detach "$DEPLOYED_SHA" || \
@@ -389,7 +425,6 @@ jobs:
           website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)" || \
             fail "config/public-surfaces.json has no valid website origin"
 
-          sleep 30
           smoke_dir="$(mktemp -d)"
           trap 'rm -rf "$smoke_dir"' EXIT
 
@@ -407,14 +442,10 @@ jobs:
           fetch "release reproducibility proof" "${website_origin}/release-verification.md" "$smoke_dir/release-verification.md"
           fetch "health methodology" "${website_origin}/health-methodology.html" "$smoke_dir/health-methodology.html"
 
-          fetch "llms.txt" "${website_origin}/llms.txt" "$smoke_dir/llms.txt"
-          cmp -s llms.txt "$smoke_dir/llms.txt" || fail "served llms.txt differs from staged artifact"
-          fetch "robots.txt" "${website_origin}/robots.txt" "$smoke_dir/robots.txt"
-          cmp -s robots.txt "$smoke_dir/robots.txt" || fail "served robots.txt differs from staged artifact"
-          fetch "sitemap.xml" "${website_origin}/sitemap.xml" "$smoke_dir/sitemap.xml"
-          cmp -s sitemap.xml "$smoke_dir/sitemap.xml" || fail "served sitemap.xml differs from staged artifact"
-          fetch "agent manifest" "${website_origin}/agent.json" "$smoke_dir/agent.json"
-          cmp -s agent.json "$smoke_dir/agent.json" || fail "served agent.json differs from staged artifact"
+          wait_synced "llms.txt" llms.txt "${website_origin}/llms.txt" "$smoke_dir/llms.txt"
+          wait_synced "robots.txt" robots.txt "${website_origin}/robots.txt" "$smoke_dir/robots.txt"
+          wait_synced "sitemap.xml" sitemap.xml "${website_origin}/sitemap.xml" "$smoke_dir/sitemap.xml"
+          wait_synced "agent.json" agent.json "${website_origin}/agent.json" "$smoke_dir/agent.json"
           grep -Eq "$expected_dataset_count (official )?datasets|$expected_dataset_count-dataset" "$smoke_dir/llms.txt" || \
             fail "llms.txt does not contain '$expected_dataset_count datasets'"
           grep -Fq "MCP" "$smoke_dir/llms.txt" || \
@@ -430,8 +461,7 @@ jobs:
             "$smoke_dir/catalog.json" >/dev/null || \
             fail "JSON-LD catalog is invalid or does not contain $expected_dataset_count datasets"
 
-          fetch "MCP advertisement" "${website_origin}/mcp.json" "$smoke_dir/mcp.json"
-          cmp -s mcp.json "$smoke_dir/mcp.json" || fail "served mcp.json differs from staged artifact"
+          wait_synced "mcp.json" mcp.json "${website_origin}/mcp.json" "$smoke_dir/mcp.json"
           jq -e '
             .tools | type == "array" and length > 0 and
             all(.[];

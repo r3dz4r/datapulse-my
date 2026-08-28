@@ -48,7 +48,7 @@ def test_post_deploy_fetches_use_one_bounded_diagnostic_helper() -> None:
         assert flag in step
     assert "PAGES_FETCH_FAILURE surface=%s final=HTTP_%s url=%s curl_detail=%s" in step
     assert '"${curl_detail:-none}"' in step
-    assert 'fetch "dashboard" "${website_origin}/"' in step
+    assert 'fetch "dashboard" "${website_origin}/dashboard"' in step
     assert 'fetch "MCP advertisement" "${website_origin}/mcp.json"' in step
     assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in step
     assert "/docs/" not in step
@@ -239,9 +239,12 @@ def test_deploy_pages_workflow_preserves_post_deploy_invariants() -> None:
     assert '"artifact_signed":false,"rekor_witnessed":false,"source_truth_verified":false' in invariants
     for surface in (
         'fetch "dashboard"',
-        'fetch "llms.txt"',
+        'wait_synced "llms.txt"',
+        'wait_synced "robots.txt"',
+        'wait_synced "sitemap.xml"',
+        'wait_synced "agent.json"',
         'fetch "JSON-LD catalog"',
-        'fetch "MCP advertisement"',
+        'wait_synced "mcp.json"',
         'fetch "health snapshot"',
         'fetch "drift snapshot"',
         'fetch "reconciliation snapshot"',
