@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import subprocess
+import json
 import shutil
+import subprocess
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -11,7 +12,8 @@ from scripts import gen_site_nav
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PAGES = ("index.html", "landing.html", "npra.html", "health-methodology.html")
+PAGES = ("index.html", "landing.html", "npra.html", "health-methodology.html", "learn.html")
+LEARN_PAGE = ROOT / "docs/learn.html"
 
 
 class _TagCollector(HTMLParser):
@@ -41,6 +43,8 @@ def test_canonical_partial_is_well_formed_and_contains_expected_nav_links() -> N
     assert 'class="nav-links"' in partial
     assert 'href="/health-methodology.html"' in partial
     assert ">Methodology</a>" in partial
+    assert 'href="/learn.html"' in partial
+    assert ">Learn</a>" in partial
     assert partial.count("<img") == 1
     assert '<a class="brand" href="/landing" aria-label="DataPulse home"><img class="brand-logo" src="/assets/brand/datapulse-horizontal-full-color.svg" alt="DataPulse"></a>' in partial
     assert "[DATA]" not in partial
@@ -84,3 +88,32 @@ def test_check_is_clean_for_the_rendered_site_pages() -> None:
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_learn_page_uses_the_shared_shell_and_verified_builder_surfaces() -> None:
+    page = LEARN_PAGE.read_text(encoding="utf-8")
+    canonical = (ROOT / "docs/assets/site-nav.html").read_text(encoding="utf-8").rstrip()
+    stylesheet = (ROOT / "docs/assets/datapulse.css").read_text(encoding="utf-8")
+
+    assert "<!-- BEGIN SITE-NAV (generated from assets/site-nav.html) -->" in page
+    assert canonical in page
+    assert '<a class="skip-link" href="#main-content">' in page
+    assert '<main id="main-content">' in page
+    assert page.count('<h1 id="hero-title">') == 1
+    assert 'class="prose"' not in page
+    assert "<style" not in page
+    assert 'href="https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb"' in page
+    assert 'href="/data/fuelprice.md"' in page
+    assert "https://mcp.data-pulse.my/mcp" in page
+    assert 'class="code-wrap"' in page
+    assert "white-space: pre-wrap" in stylesheet
+    assert "overflow-wrap: anywhere" in stylesheet
+
+
+def test_learn_page_is_declared_and_discoverable() -> None:
+    config = json.loads((ROOT / "config/public-surfaces.json").read_text(encoding="utf-8"))
+    sitemap = (ROOT / "sitemap.xml").read_text(encoding="utf-8")
+
+    assert "/learn.html" in config["pages"]
+    assert LEARN_PAGE.is_file()
+    assert "https://www.data-pulse.my/learn.html" in sitemap

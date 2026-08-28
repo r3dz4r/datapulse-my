@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A practical verification-first path for builders using Malaysian public data with DataPulse MY.">
+  <title>Learn — Build with Malaysian public data | DataPulse MY</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;family=Lexend:wght@700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/datapulse.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <!-- BEGIN SITE-NAV (generated from assets/site-nav.html) -->
+  <nav class="site-nav" aria-label="Primary navigation">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/landing" aria-label="DataPulse home"><img class="brand-logo" src="/assets/brand/datapulse-horizontal-full-color.svg" alt="DataPulse"></a>
+      <div class="nav-links">
+        <a href="/" aria-label="Open the DataPulse dashboard">Dashboard</a>
+        <a href="/npra.html" aria-label="Open the DataPulse NPRA engine page">NPRA</a>
+        <a href="/landing#mcp" aria-label="Open the MCP agent section">MCP</a>
+        <a href="/landing#machine-title" aria-label="Open the catalogue surfaces section">Catalogue</a>
+        <a href="/learn.html" aria-label="Learn how to build with DataPulse">Learn</a>
+        <a href="/health-methodology.html" aria-label="Read the DataPulse health methodology">Methodology</a>
+        <a href="https://github.com/r3dz4r/datapulse-my" aria-label="Open the DataPulse GitHub repository">GitHub</a>
+      </div>
+    </div>
+  </nav>
+  <!-- END SITE-NAV -->
+  <main id="main-content">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="wrap">
+        <p class="eyebrow">BUILDER STARTER PATH</p>
+        <h1 id="hero-title">Build with verified Malaysian data.</h1>
+        <p class="hero-copy">Before your workflow uses a public dataset, inspect its source identity, freshness, licence and reuse context, structural signals, and recorded limitations. DataPulse helps you make that evidence-qualified decision while the official publisher remains the source of record.</p>
+        <div class="actions">
+          <a class="button button-primary" href="https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb">Open the notebook in Google Colab</a>
+          <a class="button button-secondary" href="#mcp-quickstart">Start with the read-only MCP endpoint</a>
+        </div>
+        <p class="data-strip">Start small: verify a dataset, fetch from its canonical surface, then keep the evidence boundary in your answer.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="path-title">
+      <div class="wrap">
+        <div class="section-intro">
+          <p class="eyebrow">VERIFY → FETCH → BUILD</p>
+          <h2 id="path-title">A three-step path to a first evidence-aware workflow.</h2>
+          <p class="section-lead">Each step leaves you with something reviewable instead of an unqualified answer.</p>
+        </div>
+        <div class="path-grid">
+          <article class="path-card">
+            <p class="eyebrow">01 / VERIFY</p>
+            <h3>Inspect the dataset report.</h3>
+            <p>Open the report for its source, freshness, licence, structural evidence, and limitations before deciding it fits your use case.</p>
+            <a class="inline-arrow" href="/data/fuelprice.md">Open the fuelprice report</a>
+          </article>
+          <article class="path-card">
+            <p class="eyebrow">02 / FETCH</p>
+            <h3>Use the canonical data surface.</h3>
+            <p>Fetch from the official source named in the report, or use DataPulse’s read-only MCP surface to retrieve published context.</p>
+            <a class="inline-arrow" href="https://api.data.gov.my/data-catalogue?id=fuelprice&amp;limit=1">Inspect one official fuelprice record</a>
+          </article>
+          <article class="path-card">
+            <p class="eyebrow">03 / BUILD</p>
+            <h3>Preserve the evidence boundary.</h3>
+            <p>Make a small retrieval or agent workflow that states the dataset, observed signals, and limitations alongside the answer it supports.</p>
+            <a class="inline-arrow" href="https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb">Follow the notebook workflow</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="notebook-title">
+      <div class="wrap">
+        <div class="section-intro">
+          <p class="eyebrow">THE NOTEBOOK</p>
+          <h2 id="notebook-title">Your first successful outcome: a guarded official-data fetch.</h2>
+          <p class="section-lead">The 12-cell notebook walks through checking health, inspecting evidence, deciding whether to use a dataset, and then fetching official data. After opening it, a beginner should be able to see why a workflow proceeds or stops, rather than treating a successful request as proof that the data is suitable.</p>
+        </div>
+        <div class="actions">
+          <a class="button button-primary" href="https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb">Open the notebook in Google Colab</a>
+          <a class="button button-secondary" href="https://github.com/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb">Read the notebook source on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="mcp-quickstart" aria-labelledby="mcp-title">
+      <div class="wrap">
+        <div class="section-intro">
+          <p class="eyebrow">MCP QUICKSTART</p>
+          <h2 id="mcp-title">Connect to published context with a read-only endpoint.</h2>
+          <p class="section-lead">This is a starter configuration for clients that use an <code>mcpServers</code> URL shape; client configuration varies. The endpoint provides read-only DataPulse context, not upstream writes or a browser session.</p>
+        </div>
+        <div class="code-wrap">
+          <pre aria-label="Starter MCP configuration"><code>{
+  "mcpServers": {
+    "datapulse-my": {
+      "url": "https://mcp.data-pulse.my/mcp"
+    }
+  }
+}</code></pre>
+        </div>
+        <a class="inline-arrow" href="/mcp-reference.md">Read the MCP reference and tool schemas</a>
+      </div>
+    </section>
+
+    <section aria-labelledby="example-title">
+      <div class="wrap">
+        <div class="section-intro">
+          <p class="eyebrow">WORKED EXAMPLE / FUELPRICE</p>
+          <h2 id="example-title">Use only what the evidence supports.</h2>
+          <p class="section-lead">Start with the weekly fuel-price dataset, then let its current report determine the scope of your use.</p>
+        </div>
+        <ol class="landing-flow">
+          <li><a href="/data/fuelprice.md">Find the fuelprice dataset report</a>.</li>
+          <li>Inspect its source, freshness, licence, structural notes, and limitations.</li>
+          <li><a href="https://api.data.gov.my/data-catalogue?id=fuelprice&amp;limit=1">Fetch from the official data.gov.my surface</a> only if that evidence fits the task.</li>
+        </ol>
+        <article class="receipt" aria-labelledby="claim-boundary-title">
+          <p class="receipt-label">CLAIM BOUNDARY</p>
+          <h3 id="claim-boundary-title">What not to claim</h3>
+          <p>Do not describe the result as universally current, complete, or fit for every purpose. State the report’s observed evidence and limitations, and defer to the official source for the record itself.</p>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="proof-title">
+      <div class="wrap">
+        <div class="section-intro">
+          <p class="eyebrow">PUBLISHED SURFACES</p>
+          <h2 id="proof-title">Facts you can inspect yourself.</h2>
+        </div>
+        <ul class="surface-list">
+          <li><a href="/datapulse.json">389 datasets in the published manifest</a>.</li>
+          <li><a href="/mcp.json">16 read-only tools advertised in the MCP catalogue</a>.</li>
+          <li><a href="https://github.com/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb">12 cells in the builder notebook</a>.</li>
+          <li><a href="/health/latest.json">Current health observations are published separately and change over time</a>.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section aria-labelledby="next-title">
+      <div class="wrap">
+        <div class="section-intro">
+          <p class="eyebrow">NEXT ACTIONS</p>
+          <h2 id="next-title">Keep the evidence visible as you build.</h2>
+        </div>
+        <div class="actions">
+          <a class="button button-primary" href="https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb">Open the notebook in Google Colab</a>
+          <a class="button button-secondary" href="/health-methodology.html">Read the methodology</a>
+          <a class="button button-secondary" href="/">Browse the dataset dashboard</a>
+          <a class="button button-secondary" href="/mcp-reference.md">Read the MCP reference</a>
+          <a class="button button-secondary" href="https://github.com/r3dz4r/datapulse-my/issues">Contribute or report an issue</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
