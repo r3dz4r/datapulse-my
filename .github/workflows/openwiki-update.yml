@@ -13,8 +13,12 @@ on:
       - "mcp.json"
       - "README.md"
       - "llms.txt"
-      - ".github/workflows/*.yml"
       - "!openwiki/**"
+
+# Note: this workflow intentionally does NOT trigger on .github/workflows/*.yml.
+# Editing workflow files should not auto-fire OpenWiki regeneration — that's a
+# quota-burn path. Use `gh workflow run openwiki-update.yml` to manually
+# regenerate when you actually want a new wiki page.
 
 permissions:
   contents: write
