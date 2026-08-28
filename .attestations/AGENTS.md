@@ -50,7 +50,7 @@ Canonical form: `json.dumps(payload, ensure_ascii=False, sort_keys=True, separat
 
 ## Regeneration contract
 
-`scripts/gen_attestations.py` is invoked daily by the timer pipeline. It:
+`scripts/gen_attestations.py` is invoked daily by the `datapulse-attest-daily` systemd timer via `~/dotfiles/scripts/datapulse-attest-daily.sh` (after `datapulse-health.service`). It:
 
 1. Reads `health/latest.json` (current probe results)
 2. Reads the current `chain_head.json` (previous_chain_head input)

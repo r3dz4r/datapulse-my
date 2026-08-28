@@ -204,7 +204,7 @@ catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 catalog_graph = json.loads((work / "catalog-graph.json").read_text())
 surfaces = load_public_surfaces(Path.cwd())
 
-assert surfaces["pages"] == ["/", "/landing.html", "/npra.html", "/health-methodology.html"]
+assert surfaces["pages"] == ["/", "/landing.html", "/npra.html", "/health-methodology.html", "/learn.html"]
 assert "/buyer-api-reference.md" in surfaces["artifacts"]
 website, mcp_origin, api_origin = (surfaces["origins"][key] for key in ("website", "mcp", "api"))
 
