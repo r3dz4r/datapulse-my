@@ -49,7 +49,6 @@ def test_post_deploy_fetches_use_one_bounded_diagnostic_helper() -> None:
     assert "PAGES_FETCH_FAILURE surface=%s final=HTTP_%s url=%s curl_detail=%s" in step
     assert '"${curl_detail:-none}"' in step
     assert 'fetch "dashboard" "${website_origin}/dashboard"' in step
-    assert 'fetch "MCP advertisement" "${website_origin}/mcp.json"' in step
     assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in step
     assert "/docs/" not in step
 

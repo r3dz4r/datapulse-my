@@ -40,7 +40,7 @@ def test_local_gate_does_not_require_current_release_proof() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
 
     proof_fetch = re.search(
-        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n  fetch index\.html index\.html\n  fetch landing\.html landing\.html\n  fetch npra\.html npra\.html\n  fetch buyer-api-reference\.md buyer-api-reference\.md\n^fi\n",
+        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n  fetch index\.html dashboard\n  fetch landing\.html landing\.html\n  fetch npra\.html npra\.html\n  fetch buyer-api-reference\.md buyer-api-reference\.md\n^fi\n",
         script,
     )
 
@@ -81,7 +81,7 @@ def test_local_gate_skips_only_generated_p5b_surface_parity() -> None:
         script,
     )
     assert generated_fetches is not None
-    assert 'fetch index.html index.html' in generated_fetches.group(0)
+    assert 'fetch index.html dashboard' in generated_fetches.group(0)
     assert 'fetch landing.html landing.html' in generated_fetches.group(0)
     assert 'fetch npra.html npra.html' in generated_fetches.group(0)
     assert 'fetch buyer-api-reference.md buyer-api-reference.md' in generated_fetches.group(0)
