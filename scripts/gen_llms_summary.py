@@ -17,6 +17,7 @@ PUBLIC_SURFACE_LINKS = {
     "/landing.html": ("Landing page", "Public DataPulse MY overview."),
     "/npra.html": ("NPRA page", "Public NPRA dataset surface."),
     "/health-methodology.html": ("Health methodology", "Published status and freshness methodology."),
+    "/learn.html": ("Learn", "Practical verification-first guidance for building with Malaysian public data."),
     "/buyer-api-reference.md": ("Buyer API reference", "Read-only buyer API contract and examples."),
     "/llms.txt": ("LLM index", "Machine-readable discovery index for agents."),
     "/datapulse.json": ("Dataset manifest", "Full machine-readable dataset manifest."),

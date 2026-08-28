@@ -23,7 +23,7 @@ def _write_public_surface_fixture(root: Path, featured_dataset_id: str) -> None:
                 "api": "https://api.data-pulse.my",
                 "repository": "https://github.com/r3dz4r/datapulse-my",
             },
-            "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html"],
+            "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html", "/learn.html"],
             "artifacts": [
                 "/buyer-api-reference.md",
                 "/llms.txt",
@@ -122,6 +122,7 @@ def test_updates_count_from_manifest(tmp_path: Path) -> None:
     artifacts = output.split("<!-- BEGIN public-artifacts -->", 1)[1].split("<!-- END public-artifacts -->", 1)[0]
     assert "https://www.data-pulse.my/datapulse.json" in artifacts
     assert "https://www.data-pulse.my/health/latest.json" in artifacts
+    assert "[Learn](https://www.data-pulse.my/learn.html): Practical verification-first guidance for building with Malaysian public data." in artifacts
     assert "r3dz4r.github.io" not in artifacts
     assert "/docs/" not in artifacts
 

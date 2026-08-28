@@ -91,6 +91,7 @@ RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "docs/buyer-api-reference.md",
     "docs/health-methodology.html",
     "docs/landing.html",
+    "docs/learn.html",
 )
 PROFILE_INPUTS = (
     ".git",
@@ -223,7 +224,10 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copytree(RELEASE_FIXTURE / "config", source / "config")
     shutil.copy2(ROOT / "config/landing-page.json", source / "config/landing-page.json")
     surfaces = json.loads((source / "config/public-surfaces.json").read_text(encoding="utf-8"))
-    surfaces["pages"] = ["/", "/landing.html", "/npra.html", "/health-methodology.html"]
+    production_surfaces = json.loads(
+        (ROOT / "config/public-surfaces.json").read_text(encoding="utf-8")
+    )
+    surfaces["pages"] = production_surfaces["pages"]
     if "/buyer-api-reference.md" not in surfaces["artifacts"]:
         surfaces["artifacts"].append("/buyer-api-reference.md")
     _write_json(source / "config/public-surfaces.json", surfaces)
@@ -238,6 +242,7 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(RELEASE_FIXTURE / "robots.txt", source / "robots.txt")
     shutil.copy2(RELEASE_FIXTURE / "docs/mcp-deploy.md", source / "docs/mcp-deploy.md")
     shutil.copy2(ROOT / "docs/landing.html", source / "docs/landing.html")
+    shutil.copy2(ROOT / "docs/learn.html", source / "docs/learn.html")
     shutil.copy2(ROOT / "docs/npra.html", source / "docs/npra.html")
     shutil.copy2(ROOT / "docs/health-methodology.html", source / "docs/health-methodology.html")
     shutil.copytree(RELEASE_FIXTURE / "mcp", source / "mcp")
