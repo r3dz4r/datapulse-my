@@ -34,8 +34,8 @@ Runs on a daily cron (`0 8 * * *`, every day 08:00 UTC) and on
 `workflow_dispatch`. The workflow checks out the repo, sets up Node.js 22,
 installs the `openwiki` npm package globally, and runs
 `openwiki code --update --print` with the `openai` provider (OpenAI
-Platform API key, **not** ChatGPT OAuth) and the `gpt-5.6-mini`
-preset model. Provider credentials are passed directly via the step's
+Platform API key, **not** ChatGPT OAuth) and the `gpt-5.6-luna`
+preset model (cheapest Codex-tier alias for this account). Provider credentials are passed directly via the step's
 `env:` (`OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`,
 `OPENWIKI_TELEMETRY_DISABLED`, plus `OPENAI_API_KEY`) — no
 `~/.openwiki/.env` file is written. Requires the single secret
