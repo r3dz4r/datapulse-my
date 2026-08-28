@@ -53,11 +53,16 @@ jobs:
           OPENWIKI_TELEMETRY_DISABLED: "1"
         run: npm exec --prefix tools/openwiki -- openwiki code --update --print
 
-      - name: Inject canonical facts into generated OpenWiki pages
-        run: python3 scripts/inject_openwiki_canonical_facts.py --root .
-
-      - name: Validate generated facts and ownership
-        run: python3 scripts/verify_openwiki.py --generated --changed-from HEAD
+      - name: Inject canonical facts and verify generated pages
+        # Combined step: the deterministic injector must run BEFORE the
+        # verifier so the verifier never sees the model's raw output
+        # (the model's first pass may emit claims the injector will strip,
+        # e.g. "122 datasets"). Running them sequentially in one shell
+        # also avoids the GitHub-Actions parallel-execution race that
+        # broke the previous run.
+        run: |
+          python3 scripts/inject_openwiki_canonical_facts.py --root .
+          python3 scripts/verify_openwiki.py --generated --changed-from HEAD
 
       - name: Create or update OpenWiki pull request
         uses: peter-evans/create-pull-request@v7
