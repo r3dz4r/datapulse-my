@@ -161,6 +161,66 @@ jobs:
         if: github.event_name == 'push' && endsWith(github.event.head_commit.message, '[skip deploy]')
         run: python3 scripts/embed_dashboard_data.py
 
+      - name: Preserve served release proof (fast path)
+        if: github.event_name == 'push' && endsWith(github.event.head_commit.message, '[skip deploy]')
+        run: |
+          set -Eeuo pipefail
+
+          preserved_proof="$RUNNER_TEMP/preserved-release-proof/release-verification.md"
+          rm -rf "$(dirname "$preserved_proof")"
+
+          fetch_public() {
+            local path="$1"
+            local output="$2"
+            local attempt status
+            local max_attempts=3
+            local backoff_seconds=1
+            mkdir -p "$(dirname "$output")"
+            for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+              if status="$(curl --fail --silent --show-error --proto '=https' \
+                --connect-timeout 10 --max-time 30 --write-out '%{http_code}' \
+                "https://www.data-pulse.my/$path" --output "$output")"; then
+                return 0
+              fi
+              rm -f "$output"
+              if [[ ! "$status" =~ ^(000|429|5[0-9]{2})$ || "$attempt" -eq "$max_attempts" ]]; then
+                return 1
+              fi
+              sleep "$backoff_seconds"
+              backoff_seconds=$((backoff_seconds * 2))
+            done
+          }
+
+          fail() {
+            echo "::error title=Fast-path release-proof preservation failed::$1"
+            exit 1
+          }
+
+          fetch_public release-verification.md "$preserved_proof" || fail "served release proof could not be fetched"
+          test -s "$preserved_proof" || fail "served release proof is empty"
+          python3 - "$preserved_proof" <<'PY' || fail "served release proof has an invalid legacy format"
+          from __future__ import annotations
+
+          from pathlib import Path
+          import re
+          import sys
+
+          proof = Path(sys.argv[1]).read_text(encoding="utf-8")
+          required = {
+              "release-proof title": r"^# Release reproducibility verification$",
+              "verification timestamp": r"^- Verified at: `[^`\\n]+`$",
+              "Source SHA": r"^- Source SHA: `[0-9a-f]{7,64}`$",
+              "Profile result": r"^- Profile result: .+$",
+              "Total files built": r"^- Total files built: .+$",
+              "hash table": r"^\\| Path category \\| File count \\| First-run hash \\| Second-run hash \\| Match\\? \\|$",
+              "hash table category row": r"^\\| (?![-: ]+\\|)[^|]+ \\| \\d+ \\|",
+              "Reproduction section": r"^## Reproduction$",
+          }
+          missing = [label for label, pattern in required.items() if re.search(pattern, proof, re.MULTILINE) is None]
+          if missing:
+              raise SystemExit("legacy release proof format: missing " + "; ".join(missing))
+          PY
+
       - name: Preserve served attestation plane (fast path)
         if: github.event_name == 'push' && endsWith(github.event.head_commit.message, '[skip deploy]')
         run: |
@@ -209,7 +269,6 @@ jobs:
           fetch_public attestations/latest/scores.json "$preserved_root/attestations/latest/scores.json"
           fetch_public attestations/latest/binding.json "$preserved_root/attestations/latest/binding.json"
           fetch_public attestations/chain-index.json "$preserved_root/attestations/chain-index.json"
-
           binding_date="$(jq -er '.payload.date | select(type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$preserved_root/attestations/latest/binding.json")" || fail "served binding date is invalid"
           index_date="$(jq -er '.date | select(type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$preserved_root/attestations/latest/index.json")" || fail "served index is invalid"
           jq -e --arg date "$index_date" '
@@ -286,6 +345,10 @@ jobs:
           # https://www.data-pulse.my/foo.md, etc. URLs in the landing page and
           # README should NOT include the `docs/` prefix.
           cp -R docs/. _site/
+          if [[ -d "$RUNNER_TEMP/preserved-release-proof" ]]; then
+            test -s "$RUNNER_TEMP/preserved-release-proof/release-verification.md"
+            cp "$RUNNER_TEMP/preserved-release-proof/release-verification.md" _site/release-verification.md
+          fi
           cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
           cp -R health deltas record-evidence badges samples data _site/
           if [[ -d "$RUNNER_TEMP/preserved-attestations" ]]; then
@@ -447,7 +510,12 @@ jobs:
               fail "unattested health deploy does not expose all trust claims as false"
           fi
 
-          wait_synced "release-verification.md" release-verification.md "${website_origin}/release-verification.md" "$smoke_dir/release-verification.md"
+          allow_legacy_release_proof="${{ (github.event_name == 'push' && endsWith(github.event.head_commit.message, '[skip deploy]')) && '1' || '0' }}"
+          if [[ "$allow_legacy_release_proof" == "1" ]]; then
+            wait_synced "release-verification.md" "$RUNNER_TEMP/preserved-release-proof/release-verification.md" "${website_origin}/release-verification.md" "$smoke_dir/release-verification.md"
+          else
+            wait_synced "release-verification.md" docs/release-verification.md "${website_origin}/release-verification.md" "$smoke_dir/release-verification.md"
+          fi
           fetch "health methodology" "${website_origin}/health-methodology.html" "$smoke_dir/health-methodology.html"
 
           wait_synced "llms.txt" llms.txt "${website_origin}/llms.txt" "$smoke_dir/llms.txt"
@@ -480,25 +548,40 @@ jobs:
             )
           ' "$smoke_dir/mcp.json" >/dev/null || \
             fail "mcp.json has no structurally valid non-empty tool inventory"
-          python3 - "$smoke_dir/release-verification.md" "$DEPLOYED_SHA" "$expected_dataset_count" "$smoke_dir/mcp.json" health/latest.json <<'PY'
+          python3 - "$smoke_dir/release-verification.md" "$DEPLOYED_SHA" "$expected_dataset_count" "$smoke_dir/mcp.json" health/latest.json "$allow_legacy_release_proof" <<'PY'
           import json
           import sys
           from pathlib import Path
 
-          proof, source_sha, dataset_count, mcp_path, health_path = sys.argv[1:]
+          proof, source_sha, dataset_count, mcp_path, health_path, allow_legacy = sys.argv[1:]
           health = json.loads(Path(health_path).read_text(encoding="utf-8"))
           tools = json.loads(Path(mcp_path).read_text(encoding="utf-8"))["tools"]
-          required = (
-              "<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->",
-              "- Status: `current generated release proof`",
-              f"- Source SHA: `{source_sha}`",
-              f"- Health checked at: `{health['checked_at']}`",
-              f"- Dataset count: `{dataset_count}`",
-              f"- MCP tool count: `{len(tools)}`",
-              "- Protocol result: `byte-identical isolated release-build runs`",
-          )
           contents = Path(proof).read_text(encoding="utf-8")
-          missing = [line for line in required if line not in contents]
+          if allow_legacy == "1":
+              import re
+
+              required = {
+                  "release-proof title": r"^# Release reproducibility verification$",
+                  "verification timestamp": r"^- Verified at: `[^`\\n]+`$",
+                  "Source SHA": r"^- Source SHA: `[0-9a-f]{7,64}`$",
+                  "Profile result": r"^- Profile result: .+$",
+                  "Total files built": r"^- Total files built: .+$",
+                  "hash table": r"^\\| Path category \\| File count \\| First-run hash \\| Second-run hash \\| Match\\? \\|$",
+                  "hash table category row": r"^\\| (?![-: ]+\\|)[^|]+ \\| \\d+ \\|",
+                  "Reproduction section": r"^## Reproduction$",
+              }
+              missing = [label for label, pattern in required.items() if re.search(pattern, contents, re.MULTILINE) is None]
+          else:
+              required = (
+                  "<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->",
+                  "- Status: `current generated release proof`",
+                  f"- Source SHA: `{source_sha}`",
+                  f"- Health checked at: `{health['checked_at']}`",
+                  f"- Dataset count: `{dataset_count}`",
+                  f"- MCP tool count: `{len(tools)}`",
+                  "- Protocol result: `byte-identical isolated release-build runs`",
+              )
+              missing = [line for line in required if line not in contents]
           if missing:
               raise SystemExit("release proof drift: " + "; ".join(missing))
           PY

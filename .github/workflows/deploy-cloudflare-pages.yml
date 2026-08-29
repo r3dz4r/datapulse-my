@@ -165,12 +165,54 @@ jobs:
             --verify-proof docs/release-verification.md
           bash scripts/verify_release_invariants.sh --local
 
+      - name: Preserve served release proof (health-only path)
+        if: needs.classify.outputs.health_only == 'true'
+        run: |
+          set -Eeuo pipefail
+          fail() { echo "::error title=Cloudflare release-proof preservation failed::$1"; exit 1; }
+          website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)" || fail "invalid website origin"
+          preserved_proof="$RUNNER_TEMP/preserved-release-proof/release-verification.md"
+          rm -rf "$(dirname "$preserved_proof")"
+          mkdir -p "$(dirname "$preserved_proof")"
+          curl --fail --location --silent --show-error --proto '=https' \
+            --retry 3 --retry-delay 5 --retry-all-errors \
+            --connect-timeout 10 --max-time 30 \
+            "${website_origin}/release-verification.md" --output "$preserved_proof" || \
+            fail "served release proof could not be fetched"
+          test -s "$preserved_proof" || fail "served release proof is empty"
+          python3 - "$preserved_proof" <<'PY' || fail "served release proof has an invalid legacy format"
+          from __future__ import annotations
+
+          from pathlib import Path
+          import re
+          import sys
+
+          proof = Path(sys.argv[1]).read_text(encoding="utf-8")
+          required = {
+              "release-proof title": r"^# Release reproducibility verification$",
+              "verification timestamp": r"^- Verified at: `[^`\\n]+`$",
+              "Source SHA": r"^- Source SHA: `[0-9a-f]{7,64}`$",
+              "Profile result": r"^- Profile result: .+$",
+              "Total files built": r"^- Total files built: .+$",
+              "hash table": r"^\\| Path category \\| File count \\| First-run hash \\| Second-run hash \\| Match\\? \\|$",
+              "hash table category row": r"^\\| (?![-: ]+\\|)[^|]+ \\| \\d+ \\|",
+              "Reproduction section": r"^## Reproduction$",
+          }
+          missing = [label for label, pattern in required.items() if re.search(pattern, proof, re.MULTILINE) is None]
+          if missing:
+              raise SystemExit("legacy release proof format: missing " + "; ".join(missing))
+          PY
+
       - name: Assemble canonical Pages artifact
         run: |
           set -Eeuo pipefail
           rm -rf _site
           mkdir -p _site/.well-known
           cp -R docs/. _site/
+          if [[ -d "$RUNNER_TEMP/preserved-release-proof" ]]; then
+            test -s "$RUNNER_TEMP/preserved-release-proof/release-verification.md"
+            cp "$RUNNER_TEMP/preserved-release-proof/release-verification.md" _site/release-verification.md
+          fi
           cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
           cp -R health deltas record-evidence badges samples data _site/
           cp -R attestations _site/
@@ -213,6 +255,52 @@ jobs:
           fi
           fetch "dashboard" "${website_origin}/dashboard" "$smoke_dir/index.html"
           fetch "health snapshot" "${website_origin}/health/latest.json" "$smoke_dir/health/latest.json"
+          allow_legacy_release_proof="${{ needs.classify.outputs.health_only == 'true' && '1' || '0' }}"
+          if [[ "$allow_legacy_release_proof" == "1" ]]; then
+            staged_proof="$RUNNER_TEMP/preserved-release-proof/release-verification.md"
+          else
+            staged_proof="docs/release-verification.md"
+          fi
+          test -s "$staged_proof" || fail "staged release proof is missing"
+          fetch "release reproducibility proof" "${website_origin}/release-verification.md" "$smoke_dir/release-verification.md"
+          cmp -s "$staged_proof" "$smoke_dir/release-verification.md" || \
+            fail "served release proof differs from staged artifact"
+          python3 - "$smoke_dir/release-verification.md" "$(git rev-parse HEAD)" "$smoke_dir/health/latest.json" mcp.json "$allow_legacy_release_proof" <<'PY'
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          proof_path, source_sha, health_path, mcp_path, allow_legacy = sys.argv[1:]
+          contents = Path(proof_path).read_text(encoding="utf-8")
+          if allow_legacy == "1":
+              required = {
+                  "release-proof title": r"^# Release reproducibility verification$",
+                  "verification timestamp": r"^- Verified at: `[^`\\n]+`$",
+                  "Source SHA": r"^- Source SHA: `[0-9a-f]{7,64}`$",
+                  "Profile result": r"^- Profile result: .+$",
+                  "Total files built": r"^- Total files built: .+$",
+                  "hash table": r"^\\| Path category \\| File count \\| First-run hash \\| Second-run hash \\| Match\\? \\|$",
+                  "hash table category row": r"^\\| (?![-: ]+\\|)[^|]+ \\| \\d+ \\|",
+                  "Reproduction section": r"^## Reproduction$",
+              }
+              missing = [label for label, pattern in required.items() if re.search(pattern, contents, re.MULTILINE) is None]
+          else:
+              health = json.loads(Path(health_path).read_text(encoding="utf-8"))
+              tools = json.loads(Path(mcp_path).read_text(encoding="utf-8"))["tools"]
+              required = (
+                  "<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->",
+                  "- Status: `current generated release proof`",
+                  f"- Source SHA: `{source_sha}`",
+                  f"- Health checked at: `{health['checked_at']}`",
+                  f"- Dataset count: `{len(health['datasets'])}`",
+                  f"- MCP tool count: `{len(tools)}`",
+                  "- Protocol result: `byte-identical isolated release-build runs`",
+              )
+              missing = [line for line in required if line not in contents]
+          if missing:
+              raise SystemExit("release proof drift: " + "; ".join(missing))
+          PY
           mapfile -t pages < <(jq -er '.pages[]' config/public-surfaces.json)
           mapfile -t artifacts < <(jq -er '.artifacts[]' config/public-surfaces.json)
           for path in "${pages[@]}" "${artifacts[@]}"; do

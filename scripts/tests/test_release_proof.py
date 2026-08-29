@@ -14,6 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-pages.yml"
+CLOUDFLARE_DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
 
 
 def _legacy_proof(source_sha: str, verified_at: str) -> str:
@@ -94,7 +95,32 @@ def test_deploy_workflow_waits_for_release_proof_cdn_sync() -> None:
     yaml.safe_load(workflow)
 
     assert (
-        'wait_synced "release-verification.md" release-verification.md '
+        'wait_synced "release-verification.md" docs/release-verification.md '
         '"${website_origin}/release-verification.md" "$smoke_dir/release-verification.md"'
     ) in workflow
     assert 'fetch "release reproducibility proof"' not in workflow
+
+
+@pytest.mark.parametrize("workflow_path", (DEPLOY_WORKFLOW, CLOUDFLARE_DEPLOY_WORKFLOW))
+def test_health_only_deploys_preserve_and_validate_the_served_release_proof(
+    workflow_path: Path,
+) -> None:
+    """A health checkout must not replace a verified proof with its tracked copy."""
+    workflow = workflow_path.read_text(encoding="utf-8")
+    yaml.safe_load(workflow)
+
+    assert "preserved-release-proof/release-verification.md" in workflow
+    assert 'fetch_public release-verification.md' in workflow or '"${website_origin}/release-verification.md"' in workflow
+    assert 'cp "$RUNNER_TEMP/preserved-release-proof/release-verification.md" _site/release-verification.md' in workflow
+    assert "legacy release proof format" in workflow
+
+
+def test_deploy_workflows_keep_full_release_proof_freshness_checks() -> None:
+    """Only health-only paths may accept historical proof metadata."""
+    pages = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    cloudflare = CLOUDFLARE_DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "current generated release proof" in pages
+    assert "allow_legacy_release_proof" in pages
+    assert "current generated release proof" in cloudflare
+    assert "needs.classify.outputs.health_only" in cloudflare
