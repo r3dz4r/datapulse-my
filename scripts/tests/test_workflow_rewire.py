@@ -2,14 +2,21 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
+import shutil
 import subprocess
+import textwrap
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 import yaml
 
+from scripts import gen_attestations as ga
+from scripts.tests.test_attestations import fixture_rekor_reference, fixture_root, write
+from scripts.verify_attestation_binding import verify_contract
 
 ROOT = Path(__file__).resolve().parents[2]
 SYSTEMD_UNIT = ROOT / "deploy/systemd/datapulse-health.service"
@@ -50,6 +57,15 @@ def test_systemd_unit_uses_generate_sh_and_preserves_atomic_health_write() -> No
     assert "flock -n /tmp/datapulse-health.lock" in unit
 
 
+def test_systemd_unit_does_not_reintroduce_superseded_generators() -> None:
+    exec_start = _exec_start(_read(SYSTEMD_UNIT))
+
+    assert "bash scripts/gen_badges.sh" not in exec_start
+    assert "bash scripts/gen_rss.sh" not in exec_start
+    assert "bash scripts/gen_readme_summary.sh" not in exec_start
+    assert "python3 scripts/gen_changelog.py" not in exec_start
+
+
 def test_systemd_unit_preserves_scoped_commit() -> None:
     exec_start = _exec_start(_read(SYSTEMD_UNIT))
     expected = (
@@ -79,6 +95,23 @@ def test_cloudflare_workflow_uses_release_build_and_declared_inputs() -> None:
     assert '"health/**"' in paths_block
     assert "cloudflare/wrangler-action@v3" in workflow
     assert "actions/deploy-pages" not in workflow
+
+
+def test_cloudflare_release_and_proof_steps_keep_protected_attestation_key_setup() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    setup_lines = (
+        'DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}',
+        'echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json',
+        "chmod 600 /tmp/datapulse-attestation-key.json",
+        "export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json",
+    )
+    release_step = workflow.split("      - name: Run release-build generation profile (non-health path)\n", 1)[1].split("      - name: Verify full release contract (non-health path)\n", 1)[0]
+    proof_step = workflow.split("      - name: Verify full release contract (non-health path)\n", 1)[1].split("      - name: Preserve served release proof (health-only path)\n", 1)[0]
+
+    for line in setup_lines:
+        assert line in release_step
+        assert line in proof_step
+    assert "--verify-proof docs/release-verification.md" in proof_step
 
 
 def test_cloudflare_workflow_permissions_and_concurrency_are_not_broadened() -> None:
@@ -111,3 +144,142 @@ def test_canonical_pipeline_stages_and_validates_record_evidence() -> None:
     assert "record-evidence" in pipeline.split("ARTIFACT_PATHS=", 1)[1].split(")", 1)[0]
     assert re.search(r"(?:\$\{PYTHON_BIN\}|python3)\s+scripts/gen_record_evidence\.py", pipeline)
     assert "validate_record_evidence(envelope, full=False)" in pipeline
+
+
+def _fast_path_preservation_script() -> str:
+    workflow = _read(DEPLOY_WORKFLOW)
+    match = re.search(
+        r"(?ms)^      - name: Preserve served attestation plane \(health-only path\)\n"
+        r".*?^        run: \|\n(.*?)(?=^      - name: Assemble canonical Pages artifact)",
+        workflow,
+    )
+    assert match is not None, "fast path must preserve the served attestation plane"
+    return match.group(1)
+
+
+def test_cloudflare_fast_path_preserves_valid_served_attestation_plane(tmp_path: Path) -> None:
+    """A health-only artifact reads the served P1 plane, not checkout evidence."""
+    served_root, key = fixture_root(tmp_path / "served")
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    day = now.date().isoformat()
+    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
+    health["checked_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    health["datasets"][0]["last_checked"] = health["checked_at"]
+    write(served_root / "health/latest.json", health)
+    ga.generate(served_root, key, now)
+    ga.generate(served_root, key, now, fixture_rekor_reference(served_root, day))
+    assert verify_contract(served_root, now=now + timedelta(hours=1))["claims"]["artifact_signed"] is True
+
+    checkout = tmp_path / "checkout"
+    shutil.copytree(served_root, checkout)
+    (checkout / "scripts").mkdir()
+    for script in ("verify_attestation_binding.py", "verify_attestation_plane_state.py"):
+        shutil.copy2(ROOT / "scripts" / script, checkout / "scripts")
+    (checkout / "config").mkdir()
+    shutil.copy2(ROOT / "config/public-surfaces.json", checkout / "config")
+    stale = checkout / "attestations/latest/binding.json"
+    stale.write_text("{}\n", encoding="utf-8")
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_curl = fake_bin / "curl"
+    fake_curl.write_text(
+        """#!/usr/bin/env bash
+set -Eeuo pipefail
+output=""; url=""
+while (( $# > 0 )); do case "$1" in --output) output="$2"; shift 2 ;; *) url="$1"; shift ;; esac; done
+path="${url#https://www.data-pulse.my/}"
+[[ "$path" == .well-known/* ]] && path="docs/$path"
+[[ "$path" != "$url" && -f "${MOCK_SERVED_ROOT:?}/$path" ]] || exit 22
+mkdir -p "$(dirname "$output")"; cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
+""",
+        encoding="utf-8",
+    )
+    fake_curl.chmod(0o755)
+    environment = os.environ.copy()
+    environment.update(PATH=f"{fake_bin}:{environment['PATH']}", MOCK_SERVED_ROOT=str(served_root), RUNNER_TEMP=str(tmp_path / "runner-temp"))
+    completed = subprocess.run(["bash", "-c", _fast_path_preservation_script()], cwd=checkout, env=environment, capture_output=True, text=True, check=False)
+
+    assert completed.returncode == 0, completed.stderr
+    preserved = tmp_path / "runner-temp/preserved-attestations"
+    assert (preserved / "attestations/latest/binding.json").read_bytes() == (served_root / "attestations/latest/binding.json").read_bytes()
+
+
+def test_cloudflare_fast_path_uses_p6_classifier_and_carries_fail_closed_plane() -> None:
+    script = _fast_path_preservation_script()
+
+    assert 'attestation_plane_state="$(python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root")"' in script
+    assert "Signer lane down (P6); attestation failed-closed" in script
+    assert "preserving it unchanged" in script
+    assert "Run a full release-build deployment to heal the public trust plane." in script
+
+
+def test_cloudflare_fast_path_refuses_inconsistent_served_plane() -> None:
+    script = _fast_path_preservation_script()
+
+    assert 'fail "served health/binding plane is inconsistent; Run a full release-build deployment to heal the public trust plane."' in script
+    assert 'python3 scripts/verify_attestation_binding.py --root "$preserved_root"' in script
+
+
+def test_cloudflare_fast_path_overwrites_checkout_attestations_after_broad_copies() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+
+    assert "cp -R health deltas record-evidence badges samples data _site/" in workflow
+    assert "cp -R attestations _site/" in workflow
+    assert "rm -rf _site/attestations" in workflow
+    assert 'cp -R "$RUNNER_TEMP/preserved-attestations/attestations" _site/' in workflow
+    assert "rm -f _site/attestations/latest/binding.json" in workflow
+    assert workflow.index("Preserve served attestation plane (health-only path)") < workflow.index("Assemble canonical Pages artifact")
+
+
+def test_cloudflare_fast_path_overwrites_checkout_release_proof_after_docs_copy() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    proof_step = workflow.split("      - name: Preserve served release proof (health-only path)\n", 1)[1].split("      - name: Preserve served attestation plane (health-only path)\n", 1)[0]
+    assembly = workflow.split("      - name: Assemble canonical Pages artifact\n", 1)[1].split("      - name: Deploy canonical Cloudflare Pages artifact\n", 1)[0]
+
+    assert '"${website_origin}/release-verification.md" --output "$preserved_proof"' in proof_step
+    assert "cp -R docs/. _site/" in assembly
+    assert 'cp "$RUNNER_TEMP/preserved-release-proof/release-verification.md" _site/release-verification.md' in assembly
+
+
+def test_cloudflare_health_only_classifier_is_scoped_to_pipeline_outputs() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    classifier = workflow.split("      - id: classify\n", 1)[1].split("\n  deploy:", 1)[0]
+
+    assert '"health/latest.json" in paths' in classifier
+    assert 'path.startswith("health/")' in classifier
+    assert 'path.startswith("attestations/latest/")' in classifier
+    assert 'path == ".attestations/chain_head.json"' in classifier
+    assert 'all(is_health_cycle_output(path) for path in paths)' in classifier
+
+
+def test_cloudflare_full_release_keeps_fresh_cryptographic_verification() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    release_step = workflow.split("      - name: Verify full release contract (non-health path)\n", 1)[1].split("      - name: Preserve served release proof (health-only path)\n", 1)[0]
+
+    assert "python3 scripts/verify_release_reproducible.py" in release_step
+    assert "--verify-proof docs/release-verification.md" in release_step
+    assert "bash scripts/verify_release_invariants.sh --local" in release_step
+
+
+def test_cloudflare_workflow_retains_dynamic_public_artifact_contracts() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
+
+    assert '"health/**"' in paths_block
+    assert 'fetch "dashboard" "${website_origin}/dashboard"' in workflow
+    assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in workflow
+    for artifact in ("health/trends.json", "health/drift.json", "health/reconciliation.json"):
+        assert artifact in workflow
+    assert '.tools | type == "array" and length > 0' in workflow
+    assert '.inputSchema | type == "object"' in workflow
+    assert "<!-- BEGIN mcp-tools -->" in workflow
+    assert "<!-- END mcp-tools -->" in workflow
+
+
+def test_cloudflare_served_fetches_remain_bounded_and_https_only() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    verify_step = workflow.split("      - name: Verify canonical served surface\n", 1)[1]
+
+    assert "fetch() {" in verify_step
+    for flag in ("--proto '=https'", "--retry 3", "--retry-delay 5", "--retry-all-errors", "--connect-timeout 10", "--max-time 30"):
+        assert flag in verify_step
