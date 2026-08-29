@@ -27,7 +27,7 @@ health/latest.json (merge with prior snapshot in --due mode)
        +--> data/jsonld/catalog.json + dashboard JSON-LD
        |
        v
-GitHub Pages artifact --------------------> data-pulse.my
+Cloudflare Pages artifact ----------------> www.data-pulse.my
        |
        +--> manifest, reports, health, samples, agent discovery
 
@@ -88,7 +88,7 @@ reviewed order, with explicit path ownership:
   health-cycle paths plus signed `attestations/`, `data/json/<id>.json`, `data/jsonld/`,
   `docs/mcp-reference.md`, `mcp.json`, `docs/.dashboard_filters.json`, and
   `docs/trust-snapshot-<date>.{md,json}`.
-  Invoked by the Pages deploy.
+  Invoked by the Cloudflare Pages deployment workflow.
 
 ## Vertical pilots
 
@@ -154,10 +154,11 @@ files fail CI.
 
 ## Publication and MCP
 
-`.github/workflows/deploy-pages.yml` invokes `release-build`, then the
-embed step injects manifest + health + dashboard filters into
-`docs/index.html`, then assembles the Pages artifact, deploys via
-`actions/deploy-pages@v4`, and runs post-deploy invariants.
+`.github/workflows/deploy-cloudflare-pages.yml` is the sole website publisher.
+It invokes `release-build` for non-health releases, embeds the dashboard,
+assembles the Cloudflare Pages artifact, deploys it to the canonical project,
+and verifies `https://www.data-pulse.my` after deployment. GitHub remains the
+source repository and CI/Actions host; it does not publish the website.
 
 The MCP service runs independently on the VPS as `datapulse-mcp.service`
 (user unit). It reads the same published manifest + health that Pages

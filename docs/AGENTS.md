@@ -4,7 +4,7 @@ Working agreement for AI agents editing the public-facing documentation that aut
 
 ## What this is
 
-`docs/` is the public website. Every `.md` here renders to HTML via GitHub Pages (Jekyll or static passthrough depending on file); every `.html` is served as-is. Most files are **committed hand-authored source-of-truth documentation** that drives the dashboard's content. Changes here are immediately visible to anyone visiting `data-pulse.my`.
+`docs/` is the public website source. Cloudflare Pages publishes the assembled artifact from `.github/workflows/deploy-cloudflare-pages.yml`; every `.html` is served as-is. Most files are **committed hand-authored source-of-truth documentation** that drives the dashboard's content. Changes here are immediately visible to anyone visiting `www.data-pulse.my`.
 
 **One-line constraint:** the public-facing docs are the public-facing claim. Every word on `data-pulse.my` is part of the trust layer's contract with visitors.
 

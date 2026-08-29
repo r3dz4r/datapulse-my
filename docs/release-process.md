@@ -17,7 +17,7 @@ that snapshot and the manifest:
   `docs/trust-snapshot-<date>.{md,json}` roundup, plus the rendered
   `docs/health-methodology.html`. `scripts/gen_health_methodology_html.py`
   owns the last file and renders it from `docs/health-methodology.md` with
-  `scripts/templates/health-methodology.html.tmpl`. The Pages deploy workflow
+  `scripts/templates/health-methodology.html.tmpl`. The Cloudflare Pages workflow
   invokes it before embedding and assembling the public artifact.
 
 Treat generated paths as profile outputs: change their source or generator,
@@ -28,7 +28,7 @@ then run the owning profile instead of patching an output directly.
 Two named profiles in `scripts/generate.sh` orchestrate the generators in reviewed order:
 
 - `health-cycle` — invoked by the five-minute scheduler for datasets due under the tiered cadence (or by the weekly GH Actions fallback) after `check.sh --due` produces a fresh `health/latest.json`. Owns `data/<id>.md`, `badges/`, `README.md` (trust-summary block only), `feed.xml`, `catalog-snapshot.json` plus the deprecated `changelog.json` alias, `health/history*`, `health/trends.json`, `health/drift.json`, `health/reconciliation.json`, signed `attestations/`, methodology-v1 scores, `datapulse.json` attestation refs, and `deltas/`.
-- `release-build` — invoked by the Pages deploy workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), dashboard filters (`docs/.dashboard_filters.json`), and the date-stamped trust snapshot (`docs/trust-snapshot-<date>.{md,json}`).
+- `release-build` — invoked by the Cloudflare Pages deployment workflow. Adds JSON envelopes (`data/json/`), JSON-LD (`data/jsonld/`), MCP discovery (`docs/mcp-reference.md`, `mcp.json`), dashboard filters (`docs/.dashboard_filters.json`), and the date-stamped trust snapshot (`docs/trust-snapshot-<date>.{md,json}`).
 
 `release-build` numbers the source stamp as Step 0, followed by twenty-one artifact
 generators through Step 21. Step 21 runs
@@ -49,19 +49,20 @@ The workflow rejects a missing health snapshot, timestamp or dataset-count
 drift, and any missing declared public surface.
 
 Non-health releases retain the full `release-build` and release-invariant path
-before the same `_site` assembly and native Pages deployment. The legacy
-`.github/workflows/deploy-pages.yml` GitHub Pages workflow remains unchanged as
-the rollback path until an operator explicitly retires it; this native workflow
-does not change GitHub Pages settings or routing.
+before the same `_site` assembly and Cloudflare Pages deployment.
+`.github/workflows/deploy-cloudflare-pages.yml` is the sole canonical website
+publisher; GitHub Actions continues to host CI and repository automation, but
+not a competing website deployment path. This repository change does not alter
+external GitHub Pages settings or routing.
 Repository workflow checks prove only what the workflow ran. GitHub branch protection
 must separately require the CI status check before changes reach `main`; see the
 operator handoff in this release work for the control-plane setting.
 
 ## Release invariants
 
-The post-deploy block in `.github/workflows/deploy-pages.yml` is the canonical
-7-gate check. Keep its executable checks byte-identical unless a workflow
-change is reviewed separately:
+The post-deploy block in `.github/workflows/deploy-cloudflare-pages.yml` is the
+canonical served-surface check. Keep its executable checks reviewed with every
+workflow change:
 
 1. The checked-out repository SHA equals the SHA captured for deployment.
 2. The deployed dashboard mentions the live health-row count and embeds one
@@ -80,8 +81,8 @@ change is reviewed separately:
    documentation edit from reintroducing the public 404.
 
 Public artifact fetches inside `scripts/verify_release_invariants.sh` retry HTTP
-errors, including transient 404 responses, for a three-minute Pages-propagation
-delay budget before rejecting the deployed release.
+errors, including transient 404 responses, for a three-minute Cloudflare
+propagation-delay budget before rejecting the deployed release.
 
 A failure blocks the workflow after deployment and identifies the rejected
 surface. Resolve the source or generation issue, rerun the same

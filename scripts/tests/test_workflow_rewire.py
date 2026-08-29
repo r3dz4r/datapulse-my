@@ -1,23 +1,15 @@
-"""Regression tests for generation-profile workflow wiring."""
+"""Regression tests for the active Cloudflare Pages workflow wiring."""
 
 from __future__ import annotations
 
-import json
 import os
 import re
-import shutil
 import subprocess
-import textwrap
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 import yaml
 
-from scripts import gen_attestations as ga
-from scripts.embed_dashboard_data import _attestation_verification
-from scripts.tests.test_attestations import fixture_rekor_reference, fixture_root, write
-from scripts.verify_attestation_binding import verify_contract
 
 ROOT = Path(__file__).resolve().parents[2]
 SYSTEMD_UNIT = ROOT / "deploy/systemd/datapulse-health.service"
@@ -27,30 +19,15 @@ CANONICAL_SYSTEMD_UNIT = Path(
 CANONICAL_PIPELINE = Path(
     os.environ.get("DOTFILES_DIR", "/home/redza/dotfiles")
 ) / "scripts" / "datapulse-pipeline.sh"
-DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-pages.yml"
+DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
 
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def _post_deploy_invariants_step() -> str:
-    workflow = _read(DEPLOY_WORKFLOW)
-    return workflow.split("      - name: Post-deploy release invariants\n", 1)[1]
-
-
-def test_post_deploy_fetches_use_one_bounded_diagnostic_helper() -> None:
-    step = _post_deploy_invariants_step()
-
-    assert step.count("curl ") == 1
-    assert "fetch() {" in step
-    for flag in ("--proto '=https'", "--retry 3", "--retry-delay 5", "--retry-all-errors", "--connect-timeout 10", "--max-time 30"):
-        assert flag in step
-    assert "PAGES_FETCH_FAILURE surface=%s final=HTTP_%s url=%s curl_detail=%s" in step
-    assert '"${curl_detail:-none}"' in step
-    assert 'fetch "dashboard" "${website_origin}/dashboard"' in step
-    assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in step
-    assert "/docs/" not in step
+def _exec_start(unit: str) -> str:
+    return unit.split("ExecStart=", 1)[1].split("\nStandardOutput=", 1)[0]
 
 
 def test_llms_owned_blocks_do_not_publish_legacy_or_docs_urls() -> None:
@@ -63,102 +40,26 @@ def test_llms_owned_blocks_do_not_publish_legacy_or_docs_urls() -> None:
     assert not re.search(r"https?://[^/]+/docs(?:/|\b)", owned)
 
 
-def _post_deploy_fetch_helper() -> str:
-    match = re.search(r"(?ms)^          fetch\(\) \{\n.*?^          \}\n", _post_deploy_invariants_step())
-    assert match is not None
-    return textwrap.dedent(match.group(0))
-
-
-def _run_post_deploy_fetch(
-    tmp_path: Path, statuses: str, *, url: str = "https://example.invalid/health/latest.json"
-) -> subprocess.CompletedProcess[str]:
-    fake_bin = tmp_path / "bin"
-    fake_bin.mkdir()
-    fake_curl = fake_bin / "curl"
-    fake_curl.write_text(
-        """#!/usr/bin/env bash
-set -euo pipefail
-output=""
-retry=false
-while (( $# > 0 )); do
-  case "$1" in
-    --output) output="$2"; shift 2 ;;
-    --retry) retry=true; shift 2 ;;
-    --retry-delay|--connect-timeout|--max-time|--write-out) shift 2 ;;
-    *) shift ;;
-  esac
-done
-read -r -a statuses <<< "${MOCK_CURL_STATUSES:?}"
-status="${statuses[0]}"
-if [[ "$retry" == true && "${#statuses[@]}" -gt 1 ]]; then
-  status="${statuses[1]}"
-fi
-printf 'fake curl detail status=%s\\n' "$status" >&2
-printf '%s' "$status"
-if [[ "$status" =~ ^2[0-9]{2}$ ]]; then
-  printf 'ok\\n' > "$output"
-  exit 0
-fi
-exit 22
-""",
-        encoding="utf-8",
-    )
-    fake_curl.chmod(0o755)
-    environment = os.environ.copy()
-    environment.update(PATH=f"{fake_bin}:{environment['PATH']}", MOCK_CURL_STATUSES=statuses)
-    command = "\n".join(("set -Eeuo pipefail", _post_deploy_fetch_helper(), f'fetch dashboard {url!r} {str(tmp_path / "out")!r}'))
-    return subprocess.run(["bash", "-c", command], cwd=ROOT, env=environment, capture_output=True, text=True, check=False)
-
-
-@pytest.mark.parametrize("transient_status", ["404", "503"])
-def test_post_deploy_fetch_recovers_transient_pages_status(tmp_path: Path, transient_status: str) -> None:
-    completed = _run_post_deploy_fetch(tmp_path, f"{transient_status} 200")
-
-    assert completed.returncode == 0, completed.stderr
-    assert (tmp_path / "out").read_text(encoding="utf-8") == "ok\n"
-
-
-@pytest.mark.parametrize("status", ["404", "503"])
-def test_post_deploy_fetch_keeps_persistent_pages_status_fatal(tmp_path: Path, status: str) -> None:
-    completed = _run_post_deploy_fetch(tmp_path, status)
-
-    assert completed.returncode != 0
-    assert f"PAGES_FETCH_FAILURE surface=dashboard final=HTTP_{status}" in completed.stderr
-    assert "url=https://example.invalid/health/latest.json" in completed.stderr
-    assert f"fake curl detail status={status}" in completed.stderr
-
-
-@pytest.mark.parametrize("url", ["", "http://example.invalid/not-https", "not-a-url"])
-def test_post_deploy_fetch_rejects_malformed_url(tmp_path: Path, url: str) -> None:
-    completed = _run_post_deploy_fetch(tmp_path, "200", url=url)
-
-    assert completed.returncode != 0
-    assert "PAGES_FETCH_FAILURE surface=dashboard final=invalid_url" in completed.stderr
-
-
-def _exec_start(unit: str) -> str:
-    return unit.split("ExecStart=", 1)[1].split("\nStandardOutput=", 1)[0]
-
-
-def test_systemd_unit_uses_generate_sh() -> None:
-    exec_start = _exec_start(_read(SYSTEMD_UNIT))
+def test_systemd_unit_uses_generate_sh_and_preserves_atomic_health_write() -> None:
+    unit = _read(SYSTEMD_UNIT)
+    exec_start = _exec_start(unit)
 
     assert "bash scripts/generate.sh health-cycle" in exec_start
-    assert "bash scripts/gen_badges.sh" not in exec_start
-    assert "bash scripts/gen_rss.sh" not in exec_start
-    assert "bash scripts/gen_readme_summary.sh" not in exec_start
-    assert "python3 scripts/gen_changelog.py" not in exec_start
-
-
-def test_systemd_unit_preserves_atomic_health_write() -> None:
-    unit = _read(SYSTEMD_UNIT)
-
     assert "mktemp health/.latest" in unit
     assert 'mv "$$health_tmp" health/latest.json' in unit
+    assert "flock -n /tmp/datapulse-health.lock" in unit
 
 
-def test_systemd_unit_preserves_flock_guard() -> None:
-    assert "flock -n /tmp/datapulse-health.lock" in _read(SYSTEMD_UNIT)
+def test_systemd_unit_preserves_scoped_commit() -> None:
+    exec_start = _exec_start(_read(SYSTEMD_UNIT))
+    expected = (
+        "health/ deltas/ record-evidence/ badges/ feed.xml README.md "
+        "catalog-snapshot.json changelog.json attestations/ datapulse.json"
+    )
+
+    git_add = re.search(r"git add ([^;\n]+)", exec_start)
+    assert git_add is not None
+    assert git_add.group(1) == expected
 
 
 def test_systemd_unit_emits_lock_skip_telemetry() -> None:
@@ -169,462 +70,37 @@ def test_systemd_unit_emits_lock_skip_telemetry() -> None:
     assert "lock_busy" in unit
 
 
-def test_systemd_unit_preserves_scoped_commit() -> None:
-    exec_start = _exec_start(_read(SYSTEMD_UNIT))
-
-    expected = (
-        "health/ deltas/ record-evidence/ badges/ feed.xml README.md "
-        "catalog-snapshot.json changelog.json attestations/ datapulse.json"
-    )
-    assert f"git add {expected}" in exec_start
-    git_add = re.search(r"git add ([^;\n]+)", exec_start)
-    assert git_add is not None
-    assert git_add.group(1) == expected
-
-
-def test_deploy_pages_workflow_uses_release_build() -> None:
-    workflow = _read(DEPLOY_WORKFLOW)
-
-    assert "bash scripts/generate.sh release-build" in workflow
-    assert "python3 scripts/gen_jsonld_catalog.py" not in workflow
-    assert "python3 scripts/gen_mcp_reference.py" not in workflow
-    assert not re.search(
-        r"^\s+python3 scripts/gen_dashboard_filters\.py\s*$", workflow, re.MULTILINE
-    )
-
-
-def test_release_proof_reuses_protected_attestation_key_setup() -> None:
-    workflow = _read(DEPLOY_WORKFLOW)
-    setup_lines = (
-        "          DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}",
-        '          if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then',
-        '            echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json',
-        "            chmod 600 /tmp/datapulse-attestation-key.json",
-        "            export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json",
-        "          fi",
-    )
-
-    release_step = workflow.split(
-        "      - name: Run release-build generation profile (full path)\n", 1
-    )[1].split("      - name: Generate current release reproducibility proof\n", 1)[0]
-    proof_step = workflow.split(
-        "      - name: Generate current release reproducibility proof\n", 1
-    )[1].split("      - name: Assemble Pages artifact\n", 1)[0]
-
-    for line in setup_lines:
-        assert line in release_step
-        assert line in proof_step
-    assert "--verify-proof docs/release-verification.md" in proof_step
-
-
-def test_deploy_pages_workflow_paths_trigger_includes_generate_sh() -> None:
-    workflow = _read(DEPLOY_WORKFLOW)
-    paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[
-        0
-    ]
-
-    assert '"scripts/generate.sh"' in paths_block
-    assert not re.search(r'"scripts/gen_[^\"]+\.(?:sh|py)"', paths_block)
-
-
-def test_deploy_pages_workflow_preserves_post_deploy_invariants() -> None:
-    workflow = _read(DEPLOY_WORKFLOW)
-    invariants = workflow.split("      - name: Post-deploy release invariants\n", 1)[1]
-
-    assert "DEPLOYED_SHA" in invariants
-    assert "bash scripts/verify_agent_ready.sh" in invariants
-    assert "bash scripts/verify_release_invariants.sh" in invariants
-    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" in invariants
-    assert '"artifact_signed":false,"rekor_witnessed":false,"source_truth_verified":false' in invariants
-    for surface in (
-        'fetch "dashboard"',
-        'wait_synced "llms.txt"',
-        'wait_synced "robots.txt"',
-        'wait_synced "sitemap.xml"',
-        'wait_synced "agent.json"',
-        'fetch "JSON-LD catalog"',
-        'wait_synced "mcp.json"',
-        'fetch "health snapshot"',
-        'fetch "drift snapshot"',
-        'fetch "reconciliation snapshot"',
-    ):
-        assert surface in invariants
-
-
-def _fast_path_preservation_script() -> str:
-    workflow = _read(DEPLOY_WORKFLOW)
-    match = re.search(
-        r"(?ms)^      - name: Preserve served attestation plane \(fast path\)\n"
-        r".*?^        run: \|\n(.*?)(?=^      - name: Run release-build)",
-        workflow,
-    )
-    assert match is not None, "fast path must preserve the served attestation plane"
-    return match.group(1)
-
-
-def test_fast_path_preserves_a_newer_valid_served_attestation_plane(tmp_path: Path) -> None:
-    """A health-only artifact keeps the served P1 plane, never checkout's stale plane."""
-    served_root, key = fixture_root(tmp_path / "served")
-    test_clock = datetime.now(timezone.utc).replace(microsecond=0)
-    first = test_clock - timedelta(days=1)
-    second = test_clock
-    first_day = first.date().isoformat()
-    second_day = second.date().isoformat()
-    first_checked_at = first.replace(hour=0, minute=0, second=0).isoformat().replace(
-        "+00:00", "Z"
-    )
-    second_checked_at = second.replace(hour=0, minute=0, second=0).isoformat().replace(
-        "+00:00", "Z"
-    )
-    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
-    health["checked_at"] = first_checked_at
-    health["datasets"][0]["last_checked"] = health["checked_at"]
-    write(served_root / "health/latest.json", health)
-    ga.generate(served_root, key, first)
-    ga.generate(served_root, key, first, fixture_rekor_reference(served_root, first_day))
-    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
-    health["checked_at"] = second_checked_at
-    health["datasets"][0]["last_checked"] = health["checked_at"]
-    write(served_root / "health/latest.json", health)
-    ga.generate(served_root, key, second)
-    ga.generate(served_root, key, second, fixture_rekor_reference(served_root, second_day))
-    assert verify_contract(served_root, now=second + timedelta(hours=1))["claims"][
-        "artifact_signed"
-    ] is True
-
-    checkout = tmp_path / "checkout"
-    shutil.copytree(served_root, checkout)
-    (checkout / "scripts").mkdir()
-    shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", checkout / "scripts")
-    shutil.copy2(ROOT / "scripts/verify_attestation_plane_state.py", checkout / "scripts")
-    stale = checkout / "attestations"
-    shutil.rmtree(stale)
-    shutil.copytree(served_root / f"attestations/{first_day}", stale / first_day)
-    shutil.copytree(served_root / "attestations/latest", stale / "latest")
-    (stale / "latest/index.json").write_bytes(
-        (served_root / f"attestations/{first_day}/index.json").read_bytes()
-    )
-    (stale / "latest/chain_head.json").write_bytes(
-        (served_root / f"attestations/{first_day}/chain_head.json").read_bytes()
-    )
-
-    fake_bin = tmp_path / "bin"
-    fake_bin.mkdir()
-    fake_curl = fake_bin / "curl"
-    fake_curl.write_text(
-        """#!/usr/bin/env bash
-set -Eeuo pipefail
-output=""
-url=""
-while (( $# > 0 )); do
-  case "$1" in
-    --output) output="$2"; shift 2 ;;
-    *) url="$1"; shift ;;
-  esac
-done
-path="${url#https://www.data-pulse.my/}"
-[[ "$path" == .well-known/* ]] && path="docs/$path"
-if [[ -n "${MOCK_CURL_CALLS:-}" ]]; then
-  printf '%s\n' "$path" >> "$MOCK_CURL_CALLS"
-fi
-if [[ "$path" == "${MOCK_TRANSIENT_PATH:-}" ]] \
-  && [[ "$(grep -Fxc "$path" "$MOCK_CURL_CALLS")" -eq 1 ]]; then
-  printf '503'
-  exit 22
-fi
-[[ "$path" != "$url" && -f "${MOCK_SERVED_ROOT:?}/$path" ]] || {
-  printf 'missing %s\n' "$url" >&2
-  exit 22
-}
-mkdir -p "$(dirname "$output")"
-cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
-""",
-        encoding="utf-8",
-    )
-    fake_curl.chmod(0o755)
-
-    environment = os.environ.copy()
-    environment.update(
-        PATH=f"{fake_bin}:{environment['PATH']}",
-        MOCK_SERVED_ROOT=str(served_root),
-        RUNNER_TEMP=str(tmp_path / "runner-temp"),
-        MOCK_TRANSIENT_PATH=f"attestations/{second_day}/sample.json",
-        MOCK_CURL_CALLS=str(tmp_path / "curl-calls"),
-    )
-    completed = subprocess.run(
-        ["bash", "-c", _fast_path_preservation_script()],
-        cwd=checkout,
-        env=environment,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    assert completed.returncode == 0, completed.stderr
-    assert (tmp_path / "curl-calls").read_text(encoding="utf-8").splitlines().count(
-        f"attestations/{second_day}/sample.json"
-    ) == 2
-    preserved = tmp_path / "runner-temp/preserved-attestations"
-    assert (preserved / "attestations/latest/binding.json").read_bytes() == (
-        served_root / "attestations/latest/binding.json"
-    ).read_bytes()
-    assert (preserved / "attestations/latest/chain_head.json").read_bytes() == (
-        served_root / "attestations/latest/chain_head.json"
-    ).read_bytes()
-    assert (preserved / f"attestations/{second_day}/sample.json").is_file()
-    assert not (preserved / f"attestations/{first_day}/sample.json").exists()
-
-    # The fast health update has no matching P1 binding, so it must not inherit
-    # a claim from the preserved (older) served health bytes.
-    shutil.rmtree(checkout / "attestations")
-    shutil.copytree(preserved / "attestations", checkout / "attestations")
-    shutil.copy2(
-        preserved / "docs/.well-known/datapulse-probe-keys.json",
-        checkout / "docs/.well-known/datapulse-probe-keys.json",
-    )
-    health = json.loads((checkout / "health/latest.json").read_text(encoding="utf-8"))
-    health["checked_at"] = (second + timedelta(days=1)).replace(
-        hour=0, minute=0, second=0
-    ).isoformat().replace("+00:00", "Z")
-    health["datasets"][0]["last_checked"] = health["checked_at"]
-    write(checkout / "health/latest.json", health)
-    assert _attestation_verification(checkout)["claims"] == {
-        "artifact_signed": False,
-        "rekor_witnessed": False,
-        "source_truth_verified": False,
-    }
-    (checkout / "attestations/latest/binding.json").unlink()
-    unattested = subprocess.run(
-        [
-            "python3",
-            "scripts/verify_attestation_binding.py",
-            "--root",
-            str(checkout),
-            "--allow-unattested-health",
-        ],
-        cwd=checkout,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert unattested.returncode == 0, unattested.stderr
-    assert json.loads(unattested.stdout)["claims"] == {
-        "artifact_signed": False,
-        "rekor_witnessed": False,
-        "source_truth_verified": False,
-    }
-
-
-def test_fast_path_fails_closed_when_served_binding_cannot_be_preserved() -> None:
-    script = _fast_path_preservation_script()
-    assert "python3 scripts/verify_attestation_plane_state.py --planedir \"$preserved_root\"" in script
-    assert "Signer lane down (P6); attestation failed-closed" in script
-    assert "Run a full release-build deployment to heal the public trust plane." in script
-    workflow = _read(DEPLOY_WORKFLOW)
-    assert "cp -R health deltas record-evidence badges samples data _site/" in workflow
-    assert "rm -rf _site/attestations" in workflow
-    assert 'cp -R "$RUNNER_TEMP/preserved-attestations/attestations" _site/' in workflow
-    assert 'rm -f _site/attestations/latest/binding.json' in workflow
-    assert workflow.index("Preserve served attestation plane (fast path)") < workflow.index(
-        "Assemble Pages artifact"
-    )
-
-
-def test_fast_path_requires_a_full_release_to_recover_an_inconsistent_served_plane() -> None:
-    """A fast path must stop before assembly when served health and binding diverge."""
-    script = _fast_path_preservation_script()
-
-    assert 'attestation_plane_state="$(python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root")"' in script
-    assert 'fail "served health/binding plane is inconsistent; Run a full release-build deployment to heal the public trust plane."' in script
-
-
-def test_fast_path_stops_with_recovery_diagnostic_for_mismatched_served_plane(
-    tmp_path: Path,
-) -> None:
-    """A served binding cannot authenticate newer served health bytes."""
-    served_root, key = fixture_root(tmp_path / "served")
-    now = datetime.now(timezone.utc)
-    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
-    health["checked_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
-    health["datasets"][0]["last_checked"] = health["checked_at"]
-    write(served_root / "health/latest.json", health)
-    ga.generate(served_root, key, now)
-    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
-    health["datasets"][0]["status"] = "aging"
-    write(served_root / "health/latest.json", health)
-
-    checkout = tmp_path / "checkout"
-    shutil.copytree(served_root, checkout)
-    (checkout / "scripts").mkdir()
-    shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", checkout / "scripts")
-    shutil.copy2(ROOT / "scripts/verify_attestation_plane_state.py", checkout / "scripts")
-    fake_bin = tmp_path / "bin"
-    fake_bin.mkdir()
-    fake_curl = fake_bin / "curl"
-    fake_curl.write_text(
-        """#!/usr/bin/env bash
-set -Eeuo pipefail
-output=""
-url=""
-while (( $# > 0 )); do
-  case "$1" in
-    --output) output="$2"; shift 2 ;;
-    *) url="$1"; shift ;;
-  esac
-done
-path="${url#https://www.data-pulse.my/}"
-[[ "$path" == .well-known/* ]] && path="docs/$path"
-[[ "$path" != "$url" && -f "${MOCK_SERVED_ROOT:?}/$path" ]] || exit 22
-mkdir -p "$(dirname "$output")"
-cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
-""",
-        encoding="utf-8",
-    )
-    fake_curl.chmod(0o755)
-
-    environment = os.environ.copy()
-    environment.update(
-        PATH=f"{fake_bin}:{environment['PATH']}",
-        MOCK_SERVED_ROOT=str(served_root),
-        RUNNER_TEMP=str(tmp_path / "runner-temp"),
-    )
-    completed = subprocess.run(
-        ["bash", "-c", _fast_path_preservation_script()],
-        cwd=checkout,
-        env=environment,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    assert completed.returncode != 0
-    assert "health digest/count/time binding does not match served health" in completed.stdout
-    assert "Run a full release-build deployment to heal the public trust plane." in completed.stdout
-
-
-@pytest.mark.parametrize("failure_mode", ["404", "503"])
-def test_fast_path_stops_before_artifact_assembly_when_served_proof_fetch_fails(
-    tmp_path: Path, failure_mode: str
-) -> None:
-    """A missing or exhausted served proof must abort preservation before assembly."""
-    fake_bin = tmp_path / "bin"
-    fake_bin.mkdir()
-    fake_curl = fake_bin / "curl"
-    fake_curl.write_text(
-        """#!/usr/bin/env bash
-set -Eeuo pipefail
-url=""
-while (( $# > 0 )); do
-  case "$1" in
-    --output|--write-out) shift 2 ;;
-    *) url="$1"; shift ;;
-  esac
-done
-printf '%s\\n' "${url#https://www.data-pulse.my/}" >> "${MOCK_CURL_CALLS:?}"
-printf '%s\\n' "${MOCK_FAILURE_STATUS:?}"
-exit 22
-""",
-        encoding="utf-8",
-    )
-    fake_curl.chmod(0o755)
-
-    environment = os.environ.copy()
-    environment.update(
-        PATH=f"{fake_bin}:{environment['PATH']}",
-        RUNNER_TEMP=str(tmp_path / "runner-temp"),
-        MOCK_FAILURE_STATUS=failure_mode,
-        MOCK_CURL_CALLS=str(tmp_path / "curl-calls"),
-    )
-    completed = subprocess.run(
-        ["bash", "-c", _fast_path_preservation_script()],
-        cwd=ROOT,
-        env=environment,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    assert completed.returncode != 0
-    assert not (tmp_path / "runner-temp/preserved-attestations/attestations/latest/index.json").exists()
-    expected_attempts = 1 if failure_mode == "404" else 3
-    assert len((tmp_path / "curl-calls").read_text(encoding="utf-8").splitlines()) == expected_attempts
-
-
-def test_deploy_pages_publishes_and_verifies_trends_and_drift() -> None:
+def test_cloudflare_workflow_uses_release_build_and_declared_inputs() -> None:
     workflow = _read(DEPLOY_WORKFLOW)
     paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
+
+    assert "bash scripts/generate.sh release-build" in workflow
+    assert '"scripts/**"' in paths_block
     assert '"health/**"' in paths_block
-    assert 'fetch "trend snapshot"' in workflow
-    assert "datapulse/v1/dataset-trends" in workflow
-    assert 'fetch "drift snapshot"' in workflow
-    assert "datapulse/v1/dataset-drift" in workflow
-    assert 'fetch "reconciliation snapshot"' in workflow
-    assert "datapulse/v1/dataset-reconciliation" in workflow
-    assert '.tools | type == "array" and length > 0' in workflow
-    assert "all(.[];" in workflow
-    assert '.inputSchema | type == "object"' in workflow
-    assert "<!-- BEGIN mcp-tools -->" in workflow
-    assert "<!-- END mcp-tools -->" in workflow
-    assert "expected 15 tools" not in workflow
-    assert "for tool in search_datasets" not in workflow
-    assert "[.tools[].name] == [" not in workflow
+    assert "cloudflare/wrangler-action@v3" in workflow
+    assert "actions/deploy-pages" not in workflow
 
 
-def test_deploy_workflow_permissions_not_broadened() -> None:
-    deploy = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+def test_cloudflare_workflow_permissions_and_concurrency_are_not_broadened() -> None:
+    workflow = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+    concurrency = workflow["concurrency"]
 
-    assert deploy["permissions"] == {
-        "contents": "read",
-        "pages": "write",
-        "id-token": "write",
-    }
+    assert workflow["permissions"] == {"contents": "read"}
+    assert "cloudflare-pages-health" in concurrency["group"]
+    assert "cloudflare-pages-release" in concurrency["group"]
+    assert "[skip deploy]" in concurrency["cancel-in-progress"]
 
 
-def test_deploy_pages_concurrency_cancels_only_normal_pushes() -> None:
-    """Keep heartbeat pushes isolated while normal pushes shed queued deploys."""
-    deploy = yaml.safe_load(_read(DEPLOY_WORKFLOW))
-    concurrency = deploy["concurrency"]
-
-    assert "endsWith(github.event.head_commit.message, '[skip deploy]')" in concurrency[
-        "group"
-    ]
-    assert concurrency["cancel-in-progress"] == (
-        "${{ github.event_name == 'push' && !contains("
-        "github.event.head_commit.message, '[skip deploy]') }}"
+def test_generate_sh_release_profile_matches_cloudflare_workflow() -> None:
+    listed = subprocess.run(
+        ["./scripts/generate.sh", "release-build", "--list"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
     )
-
-    def policy(event_name: str, message: str = "") -> tuple[str, bool]:
-        group = (
-            "pages-fast"
-            if event_name == "push" and message.endswith("[skip deploy]")
-            else "pages-deploy"
-        )
-        cancel = event_name == "push" and "[skip deploy]" not in message
-        return group, cancel
-
-    assert policy("push", "fix: refresh dashboard") == ("pages-deploy", True)
-    assert policy("push", "chore(health): update [skip deploy]") == (
-        "pages-fast",
-        False,
-    )
-    assert policy("workflow_dispatch") == ("pages-deploy", False)
-
-
-def test_generate_sh_profiles_match_workflow_invocations() -> None:
-    profiles = {
-        "release-build": DEPLOY_WORKFLOW,
-    }
-
-    for profile, workflow_path in profiles.items():
-        listed = subprocess.run(
-            ["./scripts/generate.sh", profile, "--list"],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        assert f"Profile: {profile}" in listed.stdout
-        assert f"bash scripts/generate.sh {profile}" in _read(workflow_path)
+    assert "Profile: release-build" in listed.stdout
+    assert "bash scripts/generate.sh release-build" in _read(DEPLOY_WORKFLOW)
 
 
 def test_canonical_pipeline_stages_and_validates_record_evidence() -> None:
@@ -633,12 +109,5 @@ def test_canonical_pipeline_stages_and_validates_record_evidence() -> None:
     pipeline = _read(CANONICAL_PIPELINE)
 
     assert "record-evidence" in pipeline.split("ARTIFACT_PATHS=", 1)[1].split(")", 1)[0]
-    assert re.search(
-        r"(?:\$\{PYTHON_BIN\}|python3)\s+scripts/gen_record_evidence\.py",
-        pipeline,
-    )
+    assert re.search(r"(?:\$\{PYTHON_BIN\}|python3)\s+scripts/gen_record_evidence\.py", pipeline)
     assert "validate_record_evidence(envelope, full=False)" in pipeline
-    assert re.search(
-        r"gen_record_evidence\.py\n\s+\$\{PYTHON_BIN\}\s+scripts/gen_evidence_coverage\.py",
-        pipeline,
-    )

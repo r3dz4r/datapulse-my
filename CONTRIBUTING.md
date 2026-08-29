@@ -138,6 +138,6 @@ This project uses [release-please](https://github.com/googleapis/release-please)
 | `chore:`, `docs:`, `refactor:`, `style:`, `test:`, `ci:` | none | (hidden from changelog) |
 | Any commit with `[skip release]` footer | none | `chore(health): update [skip release]` |
 
-Daily health/dataset-output commits should include `[skip release]` in the commit body or footer to avoid bloating the changelog. The existing `chore(health): ... [skip deploy]` pattern already exists for GitHub Pages deploy suppression; release-please respects the same footer convention.
+Daily health/dataset-output commits should include `[skip release]` in the commit body or footer to avoid bloating the changelog. The existing `chore(health): ... [skip deploy]` pattern selects the health-only fast path in the Cloudflare Pages workflow; release-please respects the same footer convention.
 
 After a release-please PR is merged, the `Publish to MCP Registry` workflow (`.github/workflows/publish-mcp.yml`) auto-fires on the new tag push and refreshes the official MCP Registry entry.

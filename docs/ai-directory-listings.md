@@ -69,11 +69,11 @@ Form fields: Tool name · Website URL · Short desc (EN, max 120 chars) · Short
 - Repo: https://github.com/r3dz4r/datapulse-my
 - 389 official datasets across 11+ government portals, with a 10-status taxonomy
 - Licence mix: 12 OGL Malaysia + 154 CC BY 4.0 (as published by the live agent index)
-- Live agent index: https://data-pulse.my/llms.txt (HTTP 301 → https://r3dz4r.github.io/datapulse-my/llms.txt → HTTP 200)
+- Live agent index: https://www.data-pulse.my/llms.txt (canonical Cloudflare Pages artifact)
 - Live MCP server: https://mcp.data-pulse.my/mcp — public, read-only, 389 datasets, and 16 tools (`search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`)
 - Official MCP Registry: `io.github.r3dz4r/datapulse-my` (status: active)
 - Trust layer: 10-status taxonomy and a `_trust_summary` block in `health/latest.json`
-- Dashboard: https://data-pulse.my → GitHub Pages dashboard with live health distribution
+- Dashboard: https://www.data-pulse.my/dashboard → Cloudflare Pages dashboard with live health distribution
 - Honest framing: `llms.txt` + MCP are forward-compatible agent infra, NOT a citation/ranking lever (do not overclaim)
 
 Verified by mcpgrade: 100/100 Grade A on 16 tools, 0 findings, last audited 2026-08-17. Top 5% of the agent-usability rubric.

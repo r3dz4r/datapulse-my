@@ -76,7 +76,7 @@ datapulse-my/
 ├── data/                      # per-dataset metadata pages (generated)
 │
 ├── .github/workflows/         # CI: ci.yml (deterministic-safety-net),
-│                              #     deploy-pages.yml, health-check.yml,
+│                              #     deploy-cloudflare-pages.yml, health-check.yml,
 │                              #     release-please.yml, attest.yml
 ├── openwiki/                  # generated docs (do not hand-edit)
 └── archive/                   # historical datasets (deprecated, kept for diff)
@@ -118,14 +118,14 @@ python3 scripts/check_heartbeat.py # recent pipeline activity
 
 - **Python:** `from __future__ import annotations` on every file. Type hints required on all public functions. Absolute imports preferred. Stdlib + `requests` + `pydantic` + `cryptography` only — small dep tree.
 - **Markdown under `docs/`:** public-facing. Date-stamped changelog entries. Citations to upstream sources where claims are made.
-- **Commit messages:** conventional-commit-ish. `[skip deploy]` trailer on chore(health) commits to avoid 8-min deploy on every timer tick. **Without** the trailer on operator commits.
+- **Commit messages:** conventional-commit-ish. `[skip deploy]` trailer on chore(health) commits selects the Cloudflare Pages health-only fast path. **Without** the trailer on operator commits.
 - **Inline comments:** explain *why*, not *what*. The next agent reading should learn the operator's reasoning.
 
 ## What is NOT in this repo
 
 - **The deploy VPS state** — `~/.config/systemd/user/datapulse-health.timer`, `~/.config/systemd/system/datapulse-health.service`, env vars in `/etc/systemd/system/datapulse-health.service`
 - **Honcho observations** — query via the Honcho API at `http://100.74.84.121:8000/v3/workspaces/redza-prod/...`
-- **The MCP deployment** — separate code path through the deploy-pages.yml workflow + the headroom-proxy service
+- **The MCP deployment** — separate code path through the deploy-cloudflare-pages.yml workflow + the headroom-proxy service
 - **datapulse.my Cloudflare config** — DNS, TLS, cache rules (if any); owner is the operator's Cloudflare account
 - **Upstream data sources** — `data.gov.my`, `BNM`, `DOSM` etc. are read but never owned
 

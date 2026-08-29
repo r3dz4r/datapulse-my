@@ -207,7 +207,7 @@ def test_hero_uses_the_canonical_ten_status_taxonomy() -> None:
 
 def test_release_build_generates_and_embeds_dashboard_data_before_deploy() -> None:
     generate = (ROOT / "scripts/generate.sh").read_text(encoding="utf-8")
-    workflow = (ROOT / ".github/workflows/deploy-pages.yml").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github/workflows/deploy-cloudflare-pages.yml").read_text(encoding="utf-8")
 
     sections = generate.index('"gen_dashboard_sections.py"')
     filters = generate.index('"gen_dashboard_filters.py"')

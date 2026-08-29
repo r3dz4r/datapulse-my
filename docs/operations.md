@@ -56,15 +56,15 @@ health/signature/key/count/time parity.
 | slow | annual, survey-year, as-required | 30 days |
 
 The Sunday 00:00 UTC GitHub Actions workflow runs a full, non-tiered probe and
-the same `health-cycle` profile as a fallback. Its successful completion
-triggers Pages via `workflow_run`, ensuring Pages checks out the health commit
-rather than the pre-push workflow SHA.
+the same `health-cycle` profile as a fallback. The Cloudflare Pages workflow
+publishes the resulting canonical website artifact from `main`.
 
-The Pages workflow owns the broader release surface. On a relevant push to
-`main`, manual dispatch, or successful weekly-health `workflow_run`,
-`.github/workflows/deploy-pages.yml` invokes
-`bash scripts/generate.sh release-build`, embeds current data, and deploys the
-assembled Pages artifact. The always-on `datapulse-mcp.service` user unit is a
+The Cloudflare Pages workflow owns the broader website release surface. On a
+relevant push to `main` or manual dispatch,
+`.github/workflows/deploy-cloudflare-pages.yml` invokes
+`bash scripts/generate.sh release-build` for non-health releases, embeds current
+data, and deploys the assembled artifact to the canonical website origin. The
+always-on `datapulse-mcp.service` user unit is a
 separate read-only runtime owned by `redza`. Its installed command uses
 `/home/redza/.local/share/datapulse-mcp/venv/bin/python` to run
 `/home/redza/.local/share/datapulse-mcp/server.py`, with `Restart=on-failure`.
@@ -90,7 +90,7 @@ stores only its hash and webhook responses never include it.
 - MCP log: `journalctl --user -u datapulse-mcp.service`
 - Health units: `/etc/systemd/system/datapulse-health.{service,timer}`
 - MCP user unit source: `deploy/systemd/datapulse-mcp.service`
-- Release profile invocation: `.github/workflows/deploy-pages.yml`
+- Release profile invocation: `.github/workflows/deploy-cloudflare-pages.yml`
 
 The health timer owns probe commits and generated health artifacts. Humans and
 automation may also write `main`, so the unit pulls with `--rebase --autostash`
@@ -108,12 +108,11 @@ stops the unit and must be resolved in the operational clone.
    Failure here manifests as missing/old `health/latest.json`, `health/trends.json`, `health/drift.json`, `health/reconciliation.json`, or
    absent artifacts in `badges/`, `feed.xml`, `catalog-snapshot.json`, or `deltas/`.
 
-2. **`deploy-pages.yml` workflow** — owned by GH Actions.
-   Runs `release-build` then embed then deploy. Failure here
-   manifests as a Pages deploy failure, a post-deploy invariant
-   failure, or stale public surfaces. Roll back by reverting the
-   triggering commit on `main` and re-running the workflow (or
-   `gh workflow run deploy-pages.yml`).
+2. **`deploy-cloudflare-pages.yml` workflow** — owned by GitHub Actions and
+   publishes only through Cloudflare Pages. It runs `release-build` for
+   non-health releases, embeds, deploys, and verifies the canonical public
+   surface. Roll back by reverting the triggering commit on `main` and
+   re-running `gh workflow run deploy-cloudflare-pages.yml`.
 
 3. **`datapulse-mcp.service` user unit** — owned by `redza`.
    Independent runtime that reads the published manifest + health.
@@ -148,17 +147,17 @@ stops the unit and must be resolved in the operational clone.
 | `health/drift.json` | `scripts/gen_drift.py` after trends | `datapulse-health.timer` | After every successful probe |
 | `health/reconciliation.json` | `scripts/gen_reconciliation.py` after drift | `datapulse-health.timer` | After every successful probe |
 | `deltas/<cycle>.json` | `scripts/gen_dataset_deltas.py` | `datapulse-health.timer` | After history generation for each probe cycle |
-| `data/json/<id>.json` (non-GTFS) | `scripts/gen_json_envelope.py --force` | `deploy-pages.yml` (release-build Step 6) | On every Pages deploy |
-| `data/jsonld/<id>.json`, `data/jsonld/catalog.json` | `scripts/gen_jsonld_catalog.py` | `deploy-pages.yml` (release-build Step 7) | On every Pages deploy |
-| `docs/mcp-reference.md`, `mcp.json` | `scripts/gen_mcp_reference.py` | `deploy-pages.yml` (release-build Step 8) | On every Pages deploy |
-| `docs/.dashboard_filters.json` | `scripts/gen_dashboard_filters.py` | `deploy-pages.yml` (release-build Step 9) | On every Pages deploy |
-| `docs/trust-snapshot-<date>.{md,json}` | `scripts/gen_trust_snapshot.py` | `deploy-pages.yml` (release-build Step 11) | On the weekly release build |
+| `data/json/<id>.json` (non-GTFS) | `scripts/gen_json_envelope.py --force` | `deploy-cloudflare-pages.yml` (release-build Step 6) | On every Cloudflare Pages release |
+| `data/jsonld/<id>.json`, `data/jsonld/catalog.json` | `scripts/gen_jsonld_catalog.py` | `deploy-cloudflare-pages.yml` (release-build Step 7) | On every Cloudflare Pages release |
+| `docs/mcp-reference.md`, `mcp.json` | `scripts/gen_mcp_reference.py` | `deploy-cloudflare-pages.yml` (release-build Step 8) | On every Cloudflare Pages release |
+| `docs/.dashboard_filters.json` | `scripts/gen_dashboard_filters.py` | `deploy-cloudflare-pages.yml` (release-build Step 9) | On every Cloudflare Pages release |
+| `docs/trust-snapshot-<date>.{md,json}` | `scripts/gen_trust_snapshot.py` | `deploy-cloudflare-pages.yml` (release-build Step 11) | On the weekly release build |
 
 `verify_evidence` uses a process-local 10-minute cache and global serialization;
 the cache is cleared when the MCP process restarts. Monitor `mcp-tool` logs for
 verification volume and external timeout rates. Replace this with shared
 limiting/cache before adding workers or replicas.
-| `mcp/server.py` `SOURCE_COMMIT_SHA` constant | `scripts/bump_mcp_source_version.py` | `deploy-pages.yml` (release-build Step 0) | On every Pages deploy |
+| `mcp/server.py` `SOURCE_COMMIT_SHA` constant | `scripts/bump_mcp_source_version.py` | `deploy-cloudflare-pages.yml` (release-build Step 0) | On every Cloudflare Pages release |
 | Deployed `/home/redza/.local/share/datapulse-mcp/server.py` | Manual redeploy | `datapulse-mcp.service` | After any MCP code change |
 | `/etc/systemd/system/datapulse-health.{service,timer}` | Manual install | Root | When timer source changes |
 

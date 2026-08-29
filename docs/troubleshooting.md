@@ -9,7 +9,7 @@ Start with `/var/log/datapulse-health.err`, `health/latest.json`, and the exact
 |---|---|---|
 | `health/latest.json` stale or missing | `datapulse-health.timer` | `systemctl status datapulse-health.timer`, `tail -n 100 /var/log/datapulse-health.err` |
 | Badges / RSS / changelog not updated after a probe | `health-cycle` profile | Run `bash scripts/generate.sh health-cycle --list`, then `bash scripts/generate.sh health-cycle`. If a step fails, the profile stops on first failure — check that step's error. |
-| Pages deploy fails post-deploy invariant | `deploy-pages.yml` workflow | Check the workflow run, compare deployed SHA to repo HEAD, see "Pages still shows old state" below. |
+| Cloudflare Pages deploy fails served-surface verification | `deploy-cloudflare-pages.yml` workflow | Check the workflow run, compare deployed SHA to repo HEAD, see "Pages still shows old state" below. |
 | `verify_mcp_deployment.py` reports `MISMATCH` | MCP service | Redeploy per `docs/mcp-deploy.md`. |
 | `verify_mcp_deployment.py` reports `UNREACHABLE` | Network / Cloudflare / nginx | Verify `curl https://mcp.data-pulse.my/mcp` from VPS, check nginx + cloudflared status. |
 
@@ -23,7 +23,7 @@ Start with `/var/log/datapulse-health.err`, `health/latest.json`, and the exact
 | `Internal error: expected … results, wrote …` | A probe process exited without emitting one row | Run the selected tier directly, identify the missing ID, and inspect its helper stderr. |
 | Old `last_checked` | Dataset is not due, or a failed probe preserved prior evidence | Compare `refresh_frequency`, tier interval, timer status, and recent service log. |
 | Schema validation failure | Manifest field/type drift | Run `python3 -m jsonschema -i datapulse.json datapulse.schema.json` and fix the reported row. |
-| Pages still shows old state | Deploy pending, failed, or used wrong SHA | Inspect Deploy Pages, confirm `workflow_run` conclusion, deployed SHA, and post-deploy gate. |
+| Pages still shows old state | Cloudflare deploy pending, failed, or used wrong SHA | Inspect the Cloudflare Pages workflow run, deployed SHA, and served-surface verification. |
 | MCP initialize works but calls fail | Missing session header or Accept types | Send `Accept: application/json, text/event-stream`, retain `Mcp-Session-Id`, and use it on later requests. |
 
 For a direct source check, preserve redirects and status:
@@ -67,4 +67,3 @@ After `systemctl start datapulse-health.service`, the `health/latest.json` mtime
 **Prevention (long-term, pending):** switch the `ExecStartPre` step from `git pull --rebase --autostash` to `git fetch origin main && git merge --ff-only origin/main || true` (or move VPS-managed commits to a separate branch). Eliminate the rebase step entirely so neither writer can collide. Track at the `system/datapulse-health.service` unit in `r3dz4r/dotfiles`.
 
 <!-- deploy-trigger: 2026-08-11T23:32:55Z -->
-
