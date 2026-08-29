@@ -1,306 +1,138 @@
-# Datasets & Schema
+---
+type: Reference
+title: Dataset Manifest and Health Evidence
+description: How agents discover the 389-dataset manifest and interpret published health, provenance, licence, freshness, anomaly, drift, reconciliation, and attestation evidence without confusing DataPulse observations with authoritative upstream data.
+tags: [datasets, manifest, health, provenance, evidence, freshness, agents]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-29T10:58:32.285Z
+sources:
+  - id: openwiki-source-f317ee207e1653d2033c81a4
+    resource: repo://CONTRIBUTING.md
+  - id: openwiki-source-53cc7c2d889d1fead610dba7
+    resource: repo://datapulse.json
+  - id: openwiki-source-0e17bdbc51bd88531ff18a0f
+    resource: repo://datapulse.schema.json
+  - id: openwiki-source-115b2dad781e2a2c5b5a980d
+    resource: repo://docs/architecture.md
+  - id: openwiki-source-d1a506dbe5374546142e2cfd
+    resource: repo://docs/operations.md
+  - id: openwiki-source-dc24610e6cc0615877889278
+    resource: repo://health/drift.json
+  - id: openwiki-source-1a180b1bc921529852474c20
+    resource: repo://health/latest.json
+  - id: openwiki-source-561b17e078d62ce2508ccd7f
+    resource: repo://health/reconciliation.json
+  - id: openwiki-source-8971a13126276d52c22124bf
+    resource: repo://health/trends.json
+  - id: openwiki-source-770cce86fff48e46671ba377
+    resource: repo://llms.txt
+  - id: openwiki-source-a142396a7263c3e58ad95b67
+    resource: repo://mcp/server.py
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+  - id: openwiki-source-a3ab5aeabb99a56f6fb9c8a2
+    resource: repo://scripts/gen_attestations.py
+  - id: openwiki-source-b4db8e05c3938b5ee3d00841
+    resource: repo://scripts/gen_drift.py
+  - id: openwiki-source-27a9ff39e058b66a43d94bee
+    resource: repo://scripts/gen_reconciliation.py
+  - id: openwiki-source-6a33fb2e72f627ff8e2345de
+    resource: repo://scripts/gen_trends.py
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:58:32.285Z" }
+---
 
-This page documents the manifest registry and its JSON Schema, the health-report
-and JSON-envelope formats, the validation rules every contribution must pass,
-and an agency-grouped catalog of all **122 tracked datasets** with representative
-schemas and quirks.
+# Dataset Manifest and Health Evidence
 
-## Manifest: `datapulse.json`
+DataPulse MY is a read-only evidence layer for Malaysian public data. The canonical origin is https://www.data-pulse.my. It publishes a **389-dataset** manifest and **16 read-only tools**, alongside reports and machine-readable observations that help an agent decide what to inspect next. The upstream publisher remains authoritative for the substantive data, definitions, corrections, and interpretation; a DataPulse status, score, or attestation is not a certification of source truth.
 
-`datapulse.json` is the top-level discovery registry. It contains a `datasets`
-array of 122 entries; every entry must include exactly these twelve fields (see
-`datapulse.schema.json`, JSON Schema 2020-12, `additionalProperties: false`):
+## Discovery paths
 
-- `id` — short, lowercase, hyphen-separated dataset ID; unique and must match
-  both the Markdown report and JSON envelope filenames.
-- `name` — human-readable dataset name.
-- `source` — publishing portal/system (e.g. `data.gov.my`, `ePerolehan`).
-- `steward` — responsible government agency.
-- `url` — official source URL (must be a valid URI).
-- `licence` — licence name stated on the official source.
-- `attribution` — required attribution string.
-- `refresh_frequency` — expected cadence (free text, e.g. `weekly`, `daily`,
-  `daily (weekdays, 0900 MYT)`, `biennial to triennial (survey years)`).
-- `expected_record_count` — optional numeric baseline represented as an integer
-  or `null` when no stable baseline is declared.
-- `geo_coverage` — geographic scope (free text; conventions vary, see below).
-- `health_report` — relative path matching `^data/[A-Za-z0-9_-]+\.md$`.
-- `namespace` — source category such as `economy`, `weather`, or `transport`.
+Use the following entrypoints in this order when building an agent workflow:
 
-The `$schema` field at the root must equal the schema's own URL. The schema
-enforces `minItems: 1` and a closed per-dataset shape with no optional fields.
+1. [`llms.txt`](https://www.data-pulse.my/llms.txt) is the compact agent index. It describes the catalogue, all 16 read-only tools, resources, and representative datasets.
+2. [`datapulse.json`](https://www.data-pulse.my/datapulse.json) is the registry of record. Resolve an exact dataset `id` here before fetching its report or asking MCP for details.
+3. [`datapulse.schema.json`](https://www.data-pulse.my/datapulse.schema.json) defines the manifest contract.
+4. [`health/latest.json`](https://www.data-pulse.my/health/latest.json) is the current published health snapshot.
+5. [`data/<id>.md`](https://www.data-pulse.my/data/fuelprice.md) is the human-readable report; [`data/json/<id>.json`](https://www.data-pulse.my/data/json/fuelprice.json) is its machine-readable companion when published.
+6. The published longitudinal and comparison artifacts are [`health/trends.json`](https://www.data-pulse.my/health/trends.json), [`health/drift.json`](https://www.data-pulse.my/health/drift.json), and [`health/reconciliation.json`](https://www.data-pulse.my/health/reconciliation.json).
 
-### `geo_coverage` conventions
+For interactive agent queries, use the [MCP guide](/openwiki/mcp.md). For generation, validation, scheduling, and recovery, use [operations](/openwiki/operations.md). The public MCP endpoint is `https://mcp.data-pulse.my/mcp`; it reads the published surfaces and does not write upstream data or update health.
 
-`geo_coverage` is free text and uses inconsistent conventions across datasets:
-bare country name (`Malaysia`), annotated scope (`Malaysia (national)`,
-`national`), enumerated areas (`Malaysia (13 states + W.P. Kuala Lumpur + W.P.
-Labuan + W.P. Putrajaya)`), counted units (`Malaysia (222 parliamentary
-constituencies)`, `Malaysia (68 monitoring stations)`), or
-`national (BNM reference rates)`. Consumers should treat it as descriptive text,
-not a parsed structure.
+## What the manifest means
 
-## Health report: `data/<id>.md`
+The root `datasets` array contains one registry entry per discoverable dataset. The schema requires `id`, `name`, `source`, `steward`, `custodian`, `url`, `licence`, `attribution`, `refresh_frequency`, `expected_record_count`, `geo_coverage`, `health_report`, and `namespace`. IDs are the join key across the manifest, health rows, reports, JSON envelopes, attestations, and MCP calls. `health_report` points to a `data/<id>.md` path; the source `url` is the upstream endpoint or page that was observed.
 
-A human-readable assessment. Reports begin with **YAML frontmatter**
-(`dataset_id`, `last_checked`, `status`, `freshness_delta`,
-`next_expected_update`, `record_count`, `date_range`, `schema_version`,
-`schema_drift`, `known_quirks`, `breaking_changes`, `licence`, `attribution`)
-followed by Markdown body sections: Status, Last checked, Coverage, Schema
-(field | type | nullable | definition), Known quirks, Breaking changes, Sample
-links, Reproducibility commands, and Licence. Reports state observed facts
-without implying DataPulse MY is the official publisher.
+Optional relationship and lifecycle fields carry meaning rather than decoration: `canonical_id` and `series_code` group related catalogue identities, `geography` disambiguates comparable slices, `schema_id` identifies explicitly shared schemas, `supersedes` records replacement, `data_type: reference` marks data for which date freshness is not applicable, and `real_status` / `discontinued` describe an observed upstream publishing lifecycle separately from probe health. `custodian` is a stable publisher ID; retain the human-readable `steward` for citations. `geo_coverage` and `refresh_frequency` are descriptive strings, not promises or universally parseable structures.
 
-Notable structural variants:
+The manifest is intentionally representative rather than a catalogue essay. For example, `fuelprice` is a weekly MOF series, `pricecatcher` is a monthly KPDN bulk Parquet bundle whose lookup files must be joined, `exchangerates_daily_0900` is a weekday BNM endpoint, and `met_weather` is a direct weather API. Browser-rendered examples such as `doe_apims` and `eperolehan-diklankan` have an access dependency that an agent must not mistake for upstream unavailability.
 
-- `eperolehan-diklankan.md` has **no YAML frontmatter**; it begins directly with
-  an H1 and a two-level schema (6 listing fields + 7 detail fields).
-- `pricecatcher.md` adds a `file_size_bytes`/`file_count` section for its
-  multi-file Parquet bundle.
+## Health snapshot: observed evidence, not source truth
 
-Status values are constrained to `healthy`, `degraded`, or `unavailable` (the
-manifest/validation layer). JSON envelopes additionally use `current` (on-cadence
-bulk downloads) and `stale` (freshness exceeds cadence).
+`health/latest.json` has schema `datapulse/v0.4/dataset-health`, a snapshot `checked_at`, a `_trust_summary`, and per-dataset rows. A row can expose `last_checked`, HTTP status and request URL, access method/dependency, freshness signal and signal source, content date, record count, shape fingerprint, tolerance result, staleness, status, anomaly fields, and an explanatory message. These are observations made by the probe and extraction pipeline at a stated time; missing evidence is meaningful and should not be silently upgraded to healthy.
 
-## JSON envelope: `data/json/<id>.json`
+The current snapshot was checked at `2026-08-29T10:45:29Z`. Its 389-dataset distribution is: `fresh` 94, `aging` 134, `stale` 144, `discontinued` 1, `browser_dependent` 5, and `reference` 11; `degraded`, `unreachable`, `unknown`, and `unknown_freshness` are currently zero. Freshness evidence comes from a Last-Modified header for 155 datasets, a parsed content date for 221, and neither signal for 13. A status describes the evidence state: `discontinued` is an observed publisher decision, `reference` is versioned lookup data without date-based freshness, and `browser-dependent` means the probe requires browser rendering. None asserts that the upstream values are semantically correct.
 
-The machine-readable twin of the health report. Most envelopes carry
-`schema: "datapulse/v0.1/dataset-health"` and include at minimum: `id`,
-`status`, `freshness_days`, `fields` (with types), `known_quirks`, `licence`,
-and `attribution`. Envelopes may also carry `last_checked`,
-`next_expected_update`, `record_count` / `row_count`, `date_range`,
-`refresh_frequency`, `checks` (named pass/fail observations with method notes),
-`breaking_changes`, and a `reproducibility.commands` array. Freshness and row
-counts must be non-negative numbers; dates must be ISO 8601 `YYYY-MM-DD`.
+A useful interpretation flow is:
 
-There are three structural variants in practice:
-
-- **Structured-checks format (majority, ~86 datasets)** — all `dosm_*`,
-  `dgm_*`, `met_weather`, `kkm_idengue`, `exchangerates_*`. A `checks` array of
-  named pass/warn observations; a `fields` array with `name`, `type`, `format`,
-  `nullable`, `unit`, `constant`, `distinct_values`, `values`, `language`, and
-  `description`.
-- **Nested-checks format (`fuelprice`)** — uses a `checks` object with
-  sub-objects per check type (`freshness`, `schema`, `record_count`), a richer
-  `schema_fields` array, and a `dataset_id` key instead of `id`.
-- **Camofox / special format (~7 datasets)** — `doe_apims`, `doe_rqims`,
-  `doe_mqims`, `eperolehan-diklankan`, `met_weather`, `pricecatcher`,
-  `exchangerates_*`. Dataset-specific extensions such as `pricecatcher`'s
-  `files` array (role/url/size for main + two lookup Parquets) and
-  `eperolehan-diklankan`'s `listing_fields` + `detail_fields` arrays.
-
-Field-level enrichment in JSON that is not in the Markdown reports:
-`distinct_values`, enumerated `values`, `constant` (always-same fields such as
-`series_type: "level"`), `language: "ms"` (Bahasa Malaysia text fields), and
-explicit `unit` values (RM/litre, °C, MLD).
-
-### `next_expected_update` polymorphism
-
-This field holds one of three types depending on context:
-
-- A **date string** (`2026-08-06`) for periodic datasets with a predictable next
-  refresh.
-- A **cadence string** (`monthly`, `daily`) for open-ended periodic datasets
-  where the exact date is not computed.
-- **`null`** for the 11 HIES survey datasets (`dosm_hh_*`), whose next survey
-  year is unpredictable.
-
-## Validation rules
-
-Before submitting a dataset contribution (`CONTRIBUTING.md`):
-
-- `datapulse.json` and the envelope must parse as JSON.
-- The dataset ID must be unique and match both report filenames.
-- Use ISO 8601 `YYYY-MM-DD` dates; freshness and row counts as non-negative
-  numbers.
-- Status must be `healthy`, `degraded`, or `unavailable`.
-- Every manifest `health_report` path must exist.
-- The Markdown report and JSON envelope must be factually consistent.
-- No credentials, cookies, personal data, or copied source records.
-- Check links and reproduce observations against the official source.
-
-PowerShell validation snippet from `CONTRIBUTING.md`:
-
-```powershell
-Get-Content -Raw datapulse.json | ConvertFrom-Json | Out-Null
-Get-Content -Raw data/json/<dataset-id>.json | ConvertFrom-Json | Out-Null
+```mermaid
+flowchart TD
+    A[Discover exact dataset ID] --> B[Read manifest metadata]
+    B --> C[Read latest health row]
+    C --> D{Freshness and access evidence sufficient?}
+    D -->|yes| E[Use upstream URL with citation and licence]
+    D -->|no| F[Report limitation or inspect published evidence]
+    E --> G{Need deeper assurance?}
+    G -->|yes| H[Compare trend drift reconciliation and attestation]
+    G -->|no| I[Keep DataPulse observation separate from source data]
+    H --> I
 ```
 
-## Dataset catalog
+This diagram shows the agent decision boundary: evidence can guide retrieval and review, but it does not replace the publisher.
 
-The 389 datasets are grouped below by namespace and ID prefix / source agency. Each group lists
-the IDs and documents representative schemas and shared quirks; the
-authoritative per-dataset schema lives in `data/<id>.md`.
+## Evidence dimensions and companion artifacts
 
-### DOSM — 45 datasets
+- **Provenance and licence.** The manifest supplies source, steward, custodian, upstream URL, licence, and attribution. MCP `get_provenance(dataset_ids)` returns citation-ready metadata plus a compact receipt; `find_by_licence` supports reuse scoping. Confirm the upstream terms for the intended use.
+- **Freshness and trends.** `health/latest.json` records the current signal and status. `health/trends.json` uses a 14-day window, successful evaluable daily observations, ordinary-least-squares staleness slope, at least three sample days, and a two-day span. Its reliability grades measure publication timeliness, not uptime; `insufficient_data` is a valid result.
+- **Anomalies.** An anomaly is an explainable update-interval outlier, separate from the ten-status taxonomy. Use MCP `find_anomalies`, `find_deteriorating`, `find_recovering`, or `find_unreliable` rather than recomputing a conclusion from one snapshot.
+- **Schema and record-count drift.** `health/drift.json` compares adjacent shape and column transitions and uses a 30-day window for record observations. The current summary is 1 `drift_detected`, 352 `stable`, and 36 `insufficient_data`; a drift signal calls for inspection, not automatic rejection.
+- **Cross-source reconciliation.** `health/reconciliation.json` currently describes 22 groups covering 44 datasets. Identity precedence is reviewed seed, exact canonical URL, then a guarded semantic-title match. Count and content-date tolerances are contextual. A discrepancy is a publication difference requiring human review and does not prove either source is wrong; `check_reconciliation` exposes the group and comparison.
+- **Attestation and integrity.** Dated probe receipts and chain heads can bind published observations to an Ed25519 key and chain. `trust_verdict` combines published facts with an unsigned methodology-versioned score; it does not verify the signature. `verify_attestation` performs L1 signature/key/link checks and optional L2 replay to a Git-tag anchor, while `verify_evidence` performs a rate-limited, ephemeral transport GET. The latter does not recompute pipeline-only content dates, row counts, or shape fingerprints and never updates health. Cryptographic integrity of an observation is not verification of upstream source truth.
 
-The largest group. Two stewards appear in the manifest: "DOSM Malaysia" for the
-28 OpenDOSM economic/labour/demographic series and "Department of Statistics
-Malaysia" for the 17 HIES household-survey series.
+## Read-only control flow and lifecycle
 
-IDs:
-```
-dosm_cpi_state  dosm_cpi_inflation  dosm_cpi_core_inflation  dosm_cpi_state_inflation
-dosm_ppi  dosm_ipi_domestic  dosm_ipi_export
-dosm_gdp_qtr_real  dosm_gdp_qtr_real_sa  dosm_gdp_qtr_nominal
-dosm_gdp_annual_real_supply  dosm_gdp_annual_nominal_supply  dosm_gdp_gni_annual_nominal
-dosm_gdp_state_real_supply
-dosm_trade_headline  dosm_trade_enduse_bec  dosm_trade_sitc_1d
-dosm_lfs_qtr  dosm_lfs_qtr_state  dosm_lfs_year  dosm_lfs_month  dosm_employment_sector
-dosm_population_malaysia  dosm_population_state  dosm_population_parlimen
-dosm_birth_state  dosm_death_state  dosm_death_district_sex
-dosm_death_maternal  dosm_death_maternal_state  dosm_fertility
-dosm_marriages_state  dosm_marriages_state_age
-dosm_hh_income  dosm_hh_income_state  dosm_hh_income_district
-dosm_hh_poverty  dosm_hh_poverty_state  dosm_hh_poverty_district
-dosm_hh_inequality  dosm_hh_inequality_state  dosm_hh_inequality_district
-dosm_hh_expenditure_dun  dosm_hh_expenditure_parlimen
-dosm_crime_district
+The health timer runs `scripts/check.sh --due` for datasets due under their declared cadence, validates a temporary snapshot, and atomically installs `health/latest.json`. A successful cycle generates reports, badges, history, trends, drift, reconciliation, and other discovery artifacts. Release generation additionally produces JSON envelopes, JSON-LD, MCP reference material, and published attestations. MCP loads the published manifest and evidence artifacts; it does not become a second probe pipeline.
+
+```mermaid
+sequenceDiagram
+    participant Source as Upstream source
+    participant Probe as Health probe
+    participant Snapshot as Published snapshot
+    participant Derived as Derived artifacts
+    participant MCP as Read-only MCP
+    Source->>Probe: Respond to scheduled observation
+    Probe->>Snapshot: Validate and atomically publish latest.json
+    Snapshot->>Derived: Generate history trends drift reconciliation
+    Snapshot->>MCP: Serve manifest and health evidence
+    MCP-->>MCP: Return read-only query result
 ```
 
-Shared quirks:
+This sequence shows publication order and the boundary between an upstream response, DataPulse observations, derived evidence, and agent queries.
 
-- **Annual datasets use January 1** as the date (`YYYY-01-01`).
-- **HIES survey datasets (11)** use non-periodic `biennial to triennial (survey
-  years)` cadence with `next_expected_update: null`.
-- **Aggregate/national rows coexist with state/district rows** in several series
-  (CPI state, crime district, trade); filter by the geography column when you
-  need a single level.
-- **Leading-zero codes must stay strings** (e.g. CPI division codes in
-  `dosm_cpi_state`, `dosm_cpi_state_inflation`).
-- Licence: Creative Commons Attribution 4.0. Access: direct HTTP (bulk
-  Parquet/CSV on `storage.dosm.gov.my`).
+## Invariants, failure handling, and safe use
 
-### DGM (data.gov.my portal) — 35 datasets
+The manifest and JSON artifacts must parse; IDs must be unique and agree with report/envelope names; dates are ISO `YYYY-MM-DD` where a date is required; freshness and counts are non-negative; statuses must use the published taxonomy; and every manifest health-report path must exist. Reports and envelopes should remain factually consistent. Contributions must not add credentials, cookies, personal data, or copied source records. URL drift between the manifest, probe, dashboard, envelope, and JSON-LD surfaces is a release failure; operators can run `python3 scripts/check_url_drift.py`.
 
-Hosted on `storage.data.gov.my` but stewarded by diverse agencies (BNM, MOH,
-EPF, SPAN, KTMB, MCMC, etc.). The `dgm_` prefix denotes the hosting portal, not
-a single agency.
+Treat missing or old artifacts as an operational failure, not as a positive health result. Browser-dependent rows require the Camofox sidecar; without it the honest result remains `browser-dependent`. Reconciliation and attestation failures should preserve their limited scope and be escalated for review. See [operations](/openwiki/operations.md) for timer ownership, generation order, validation, rollback, and logs.
 
-IDs:
-```
-dgm_interest_rates  dgm_interest_rates_annual  dgm_money_aggregates
-dgm_currency_in_circulation  dgm_epf_dividend
-dgm_payments_systems  dgm_payments_instruments  dgm_payments_channels
-dgm_payments_transactions_fpx
-dgm_federal_finance_qtr_revenue  dgm_federal_finance_qtr_oe
-dgm_state_finance_expenditure
-dgm_electricity_consumption  dgm_electricity_supply
-dgm_water_consumption  dgm_water_production  dgm_water_access
-dgm_hospital_beds  dgm_healthcare_staff  dgm_infant_immunisation
-dgm_blood_donations_state  dgm_pekab40_screenings_state  dgm_drug_addicts_age
-dgm_prisoners_state  dgm_std_state  dgm_schools_district
-dgm_local_authority_sex  dgm_parliament_sex
-dgm_vehicle_registrations_type_fuel  dgm_crops_state  dgm_fish_landings
-dgm_ktmb_ridership_monthly  dgm_ridership_headline  dgm_mnha
-```
+For a focused workflow, start with [quickstart](/openwiki/quickstart.md), search or inspect an ID through MCP, read its manifest and current health row, then cite the upstream URL with the declared licence and the DataPulse observation time. Use a report, score, anomaly, drift result, reconciliation result, or attestation as supporting published evidence—with its limitations—not as a substitute for the authoritative upstream dataset.
 
-Shared quirks:
+## Current public facts
 
-- Licence: Creative Commons Attribution 4.0. Access: direct HTTP (`curl --head`
-  checks `Content-Length` and `Last-Modified`).
-- **Nullable fields for newer programs** — e.g. `dgm_ridership_headline` bus/rail
-  columns are nullable for services that launched later.
-- Some datasets report long freshness deltas (`dgm_water_consumption` ~680 days,
-  `dgm_crops_state`) when the steward publishes infrequently.
-
-### BNM — 4 exchange-rate datasets
-
-`exchangerates_daily_0900`, `_1130`, `_1200`, `_1700`. Identical schema and
-quirks; they differ only in publication time and endpoint ID.
-
-- **Steward / source:** Bank Negara Malaysia via `data.gov.my`.
-- **Cadence:** daily on weekdays at the named MYT time.
-- **Coverage:** ~7,000 historical records back to 1997-01-02.
-- **Fields:** `date`, `rate_type` (`buying` | `middle` | `selling`), and 27
-  ISO-4217 currency columns (`aed`, `aud`, …, `xdr`).
-- **Quirks:** each endpoint returns full history back to 1997, not just the
-  latest record; `rate_type` varies by row (buying/selling/middle).
-- **Reproducibility:**
-  ```sh
-  curl "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900&limit=1"
-  ```
-- Licence: Open Government Licence (Malaysia).
-
-### DOE — 3 environmental datasets
-
-`doe_apims` (air quality, hourly), `doe_rqims` (river water quality, hourly),
-`doe_mqims` (marine water quality, monthly).
-
-- **Access:** Camofox browser rendering — legacy hosts return 403/404; the live
-  portals are JavaScript-rendered and need a 10–12s render wait.
-- **`doe_apims` quirk:** `**` suffix means multiple pollutants share the dominant
-  API index and is stripped in normalized samples.
-- Licence: Open Government Licence (Malaysia).
-
-### MOF — 2 datasets
-
-**`fuelprice`** — Malaysian weekly fuel prices.
-
-- **Steward / source:** Ministry of Finance Malaysia via `data.gov.my`.
-- **Cadence:** weekly. **Status:** healthy, 0 days behind.
-- **Coverage:** 472 weekly rows, 2017-03-30 through 2026-07-30.
-- **Fields:** `date`, `rous97`, `ron95`, `diesel`, `diesel_euro5`, `lpg`,
-  `kerosene` (numeric except `date`). The JSON envelope is at `schema_version`
-  1.1 — the only dataset above 1.0 (subsidy fields were added after launch).
-- **Quirks:** the `offset` parameter is silently ignored; the date filter is
-  silently ignored. Retrieve the full dataset and paginate/filter locally.
-
-**`eperolehan-diklankan`** — ePerolehan tender notices (DIIKLANKAN).
-
-- **Cadence:** daily. **Access:** JavaScript-rendered, Camofox scrape.
-- **Two-level schema:** 6 listing fields (`title`, `agency`, `publish_date`,
-  `close_date`, `days_remaining`, `briefing_flag`) + 7 detail fields (`ministry`,
-  `estimated_value_rm`, `kod_bidang` (array), `supplier_status`, `coverage_area`,
-  `validity_days`, `procurement_method`).
-- **Quirks:** `href-dash` links require a click-flow; detail pages render 8–12s
-  after a click; gridcell indexes are offset by 1.
-
-### KPDN — `pricecatcher`
-
-Daily grocery prices released as a monthly bulk Parquet bundle.
-
-- **Cadence:** monthly. **Access:** bulk Parquet download only — **not** through
-  the data.gov.my OpenAPI.
-- **Files:** main `pricecatcher_YYYY-MM.parquet` plus two lookup Parquets
-  (`lookup_item.parquet`, `lookup_premise.parquet`). Filename suffix is the
-  publish month.
-- **Main fields (4):** `date`, `premise_code` (integer FK into `lookup_premise`),
-  `item_code` (integer FK into `lookup_item`), `price` (float, RM). Join both
-  lookups before presenting or analysing records.
-- Licence: Open Government Licence (Malaysia).
-
-### KKM — `kkm_idengue`
-
-Weekly dengue case counts.
-
-- **Access:** Camofox browser rendering. State names are Bahasa Malaysia text
-  (`language: "ms"` in the envelope).
-- Licence: Open Government Licence (Malaysia).
-
-### MET Malaysia — `met_weather`
-
-Weather forecast.
-
-- **Access:** direct JSON API (not listed in the data.gov.my catalogue).
-  Forecast text fields are Bahasa Malaysia.
-- Licence: Open Government Licence (Malaysia).
-
-## Adding a new dataset
-
-Follow the "Adopt a dataset" model in `CONTRIBUTING.md`:
-
-1. Open an issue (`.github/ISSUE_TEMPLATE/new-dataset.yml`) describing the
-   dataset and its official source.
-2. Add the manifest entry to `datapulse.json`.
-3. Add `data/<id>.md` (health report) and `data/json/<id>.json` (envelope).
-4. Add a small sample under `samples/` (downloaded from the live source; use a
-   `# SAMPLE:` flag if hand-constructed — no fabrication).
-5. Run the validation checks, reproduce observations against the official
-   source, and confirm the licence/attribution.
-6. Open a pull request
-   (`.github/PULL_REQUEST_TEMPLATE.md`) linking the issue with evidence for
-   freshness, schema, and licence claims.
+- Canonical origin: https://www.data-pulse.my
+- Catalogue: 389 datasets
+- MCP surface: 16 read-only tools
+- Current health snapshot: `2026-08-29T10:45:29Z`
 
 ## Canonical facts
 

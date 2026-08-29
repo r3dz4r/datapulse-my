@@ -1,142 +1,93 @@
-# DataPulse MY — OpenWiki Quickstart
+---
+type: reference guide
+title: DataPulse MY OpenWiki Quickstart
+description: Orient coding agents to DataPulse MY's canonical discovery artifacts, published health evidence, read-only MCP surface, and validation and publication workflows. Use the linked domain pages for dataset, MCP, and operations detail.
+tags: [DataPulse MY, quickstart, data discovery, health evidence, read-only MCP]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-29T10:58:32.285Z
+sources:
+  - id: openwiki-source-378b07edcc123a4ad7e94363
+    resource: repo://.github/workflows/deploy-cloudflare-pages.yml
+  - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
+    resource: repo://.github/workflows/openwiki-update.yml
+  - id: openwiki-source-a3f71836e971edd25c12f70a
+    resource: repo://.github/workflows/pipeline-freshness.yml
+  - id: openwiki-source-b801e3030787d5f9ac603f52
+    resource: repo://config/public-surfaces.json
+  - id: openwiki-source-53cc7c2d889d1fead610dba7
+    resource: repo://datapulse.json
+  - id: openwiki-source-1a180b1bc921529852474c20
+    resource: repo://health/latest.json
+  - id: openwiki-source-83fe3cd6171f4749991ccee9
+    resource: repo://mcp.json
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:58:32.285Z" }
+---
 
-DataPulse MY is an open-source **trust layer for Malaysian public data**. It
-does not republish official datasets. Instead, for each of the **122 tracked
-datasets** across eight Malaysian government agencies, it publishes a set of
-artifacts that together let journalists, researchers, civic technologists, and
-AI agents assess whether a source is usable and how to handle its quirks:
+# DataPulse MY OpenWiki Quickstart
 
-1. A **manifest entry** in [`datapulse.json`](../datapulse.json) — discovery
-   metadata (ID, source, steward, URL, licence, refresh frequency,
-   geo-coverage, health-report path). Validated against
-   [`datapulse.schema.json`](../datapulse.schema.json) (JSON Schema 2020-12).
-2. A **human-readable health report** at `data/<id>.md` — plain-language status,
-   freshness, schema, quirks, licence, and reproducibility commands.
-3. A **machine-readable health envelope** at `data/json/<id>.json` — the same
-   facts in JSON for automated pipelines (status, `freshness_days`, `fields`,
-   `known_quirks`, `checks`, reproducibility commands).
-4. A **small sample** under `samples/` — 1–5 rows in CSV and/or JSON so
-   consumers can inspect the shape without a full download.
+DataPulse MY is a public **metadata and evidence layer** for Malaysian public data. It publishes discovery metadata, health observations, and reproducibility context; it does not replace the substantive upstream datasets. The upstream steward or publisher remains authoritative for the data itself, licence terms, interpretation, and any decision based on it. This page is a route into the repository, not a certification or guarantee of trust, reputation, availability, or evidence reference.
 
-On top of these per-dataset artifacts, the project publishes three aggregate
-layers:
+The canonical human origin is **https://www.data-pulse.my**. The current registry contains **389 datasets**. The public MCP advertisement describes **16 read-only tools** over that catalogue.
 
-- **`health/latest.json`** — a weekly machine-readable freshness snapshot of all
-  389 datasets, produced by [`scripts/check.sh`](../scripts/check.sh).
-- **Status badges** (`badges/<id>.svg`) and an **RSS feed** (`feed.xml`) generated
-  from the health snapshot.
-- A **single-page dashboard** (`docs/index.html`) and an **AI-agent discovery
-  index** ([`llms.txt`](../llms.txt)) that let humans and agents enter the
-  catalogue in one fetch.
+## Start here: the agent path
 
-DataPulse MY is **not the official publisher**. It documents what is available,
-whether it is fresh, how the schema behaves, and which collection quirks
-consumers need to handle. Source datasets remain subject to their own licences
-and attribution requirements. The repository's MIT licence covers its own
-original work only.
+1. **Discover.** Fetch [`llms.txt`](../llms.txt) for the compact agent index, or inspect [`config/public-surfaces.json`](../config/public-surfaces.json) for the canonical website, MCP origin, pages, and published artifact paths.
+2. **Identify.** Use [`datapulse.json`](../datapulse.json), the canonical manifest. An entry supplies an ID, name, source, steward, URL, licence, cadence, geographic coverage, and a health-report path. Treat those fields as DataPulse metadata, not as the upstream record.
+3. **Assess.** Read [`health/latest.json`](../health/latest.json) for the aggregate and per-dataset published health evidence. As checked at `2026-08-29T10:45:29Z`, its summary covers 389 datasets: 94 `fresh`, 134 `aging`, 144 `stale`, 1 `discontinued`, 5 `browser-dependent`, and 11 `reference`; the other defined statuses currently have zero entries. These are observations with explicit signal limits, not a universal quality verdict.
+4. **Query, read-only.** Use `https://mcp.data-pulse.my/mcp` with Streamable HTTP POST. [`mcp.json`](../mcp.json) is the machine-readable contract: authentication is not required, and advertised operations are annotated read-only and idempotent. Prefer the MCP resource `datapulse://index` for a lightweight catalogue, then search and inspect a dataset or its evidence.
+5. **Verify before relying.** Compare the published health, provenance, freshness, anomaly, drift, reconciliation, and attestation evidence with the upstream source's own documentation and licence. A response, badge, or MCP result does not make the upstream source authoritative through DataPulse.
 
-## What is tracked
+```mermaid
+flowchart TD
+    A["Agent reads llms.txt or public surfaces"] --> B["Selects dataset in datapulse.json"]
+    B --> C["Reads health/latest.json evidence"]
+    C --> D["Queries read-only MCP when useful"]
+    D --> E["Checks upstream source and licence"]
+    E --> F["Uses evidence with appropriate caveats"]
+```
 
-389 datasets across official source groups, categorized by the manifest namespace
-and the underlying source portal:
+*This flow shows discovery through evidence-assisted use; the final authority remains the upstream publisher.*
 
-| Prefix / group | Agencies | Count | Notes |
-| --- | --- | --- | --- |
-| `dosm_*` | Department of Statistics Malaysia (DOSM / OpenDOSM) | 45 | Largest group: economic, labour, demographic, household-survey (HIES), trade, CPI, population, vital statistics. |
-| `dgm_*` | data.gov.my portal (stewarded by BNM, MOH, EPF, SPAN, KTMB, MCMC, …) | 35 | Bulk files hosted on `storage.data.gov.my`; prefix denotes the hosting portal, not a single agency. |
-| `exchangerates_daily_*` | Bank Negara Malaysia (BNM) | 4 | Daily reference rates at four fixed MYT times (0900, 1130, 1200, 1700); identical schema. |
-| `doe_*` | Department of Environment (DOE) | 3 | Air (APIMS, hourly), river water (RQIMS, hourly), marine water (MQIMS, monthly). |
-| `fuelprice`, `eperolehan-diklankan` | Ministry of Finance (MOF) | 2 | Weekly fuel prices; daily ePerolehan tender notices. |
-| `pricecatcher` | KPDN | 1 | Monthly bulk Parquet grocery-price release with two lookup files. |
-| `kkm_idengue` | Ministry of Health (KKM) | 1 | Weekly dengue case counts. |
-| `met_weather` | MET Malaysia | 1 | Weather forecast (not listed in the data.gov.my catalogue). |
+## Compact task-routing map
 
-See [Datasets & schema](datasets.md) for the manifest schema, envelope formats,
-validation rules, and an agency-grouped catalog with representative schemas and
-quirks.
+| If your task is to… | Go to | Read-only boundary |
+|---|---|---|
+| Find a dataset, understand manifest fields, or interpret health and freshness evidence | [Dataset Manifest and Health Evidence](datasets.md) | Discovery and evidence only; fetch substantive data from the upstream URL in the manifest. |
+| Search or inspect datasets through an agent interface, use resources, or understand MCP results | [Read-Only MCP Discovery and Evidence Surface](mcp.md) | MCP exposes catalogue/evidence queries; it does not provide a write or mutation workflow. |
+| Change a dataset entry, refresh generated artifacts, diagnose health publication, or validate a release | [Health, Publication, and OpenWiki Operations](operations.md) | Contributions change repository inputs through review and CI; public MCP remains read-only. |
 
-### Licence split
+## Canonical artifacts and safe interpretation
 
-- **Creative Commons Attribution 4.0** — 80 datasets (all `dosm_*` and `dgm_*`,
-  hosted on OpenDOSM / `storage.data.gov.my`).
-- **Open Government Licence (Malaysia)** — 12 datasets (fuelprice,
-  ePerolehan, pricecatcher, the four BNM exchange-rate endpoints, met_weather,
-  the three DOE series, kkm_idengue).
+- **Manifest:** [`datapulse.json`](../datapulse.json) is the registry to resolve IDs and upstream URLs. Do not infer a dataset's substantive truth from its presence in the registry.
+- **Aggregate health:** [`health/latest.json`](../health/latest.json) records the checked time, status taxonomy, and evidence-derived signals. Freshness can come from a `Last-Modified` header or a parsed content date; absence of a signal is materially different from proof of staleness.
+- **Agent index:** [`llms.txt`](../llms.txt) points agents to the manifest, health snapshot, MCP endpoint, and public discovery paths.
+- **MCP contract:** [`mcp.json`](../mcp.json) advertises the endpoint, transport, authentication posture, ten-status taxonomy, tools, and read-only annotations. Its evidence-returning tools report published or ephemeral observations; they do not turn DataPulse into an upstream data API.
+- **Public surfaces:** [`config/public-surfaces.json`](../config/public-surfaces.json) is the source of record for the canonical origins and artifact inventory. Use its website origin exactly as published: `https://www.data-pulse.my`.
 
-### Access-method bifurcation
+A useful minimum check is: resolve the ID in the manifest, inspect the latest health status and check time, follow the upstream URL, and apply the upstream licence and attribution. A `discontinued`, `stale`, `aging`, `browser-dependent`, or `reference` result needs its documented interpretation; a `fresh` result still does not certify the underlying data.
 
-- **Direct HTTP** (`curl` GET/HEAD) — 85 datasets: bulk Parquet/CSV downloads
-  and JSON APIs.
-- **Camofox browser rendering** — 7 datasets: `doe_apims`, `doe_rqims`,
-  `doe_mqims`, `kkm_idengue`, `eperolehan-diklankan`, plus others requiring
-  JavaScript-rendered portals. These need a 10–12s render wait and an
-  accessibility-snapshot capture.
+## How changes become published
 
-## How to use it
+The repository separates an hourly freshness control loop from publication and documentation refresh:
 
-### For humans
+- [`pipeline-freshness.yml`](../.github/workflows/pipeline-freshness.yml) runs hourly or manually with read-only repository permission. It parses `health/latest.json`, requires a valid dataset collection, checks that the health snapshot commit is no more than 30 minutes old, requires at least 300 rows, and rejects statuses outside the ten-value taxonomy.
+- [`deploy-cloudflare-pages.yml`](../.github/workflows/deploy-cloudflare-pages.yml) runs on relevant pushes or manually. It validates the health snapshot. Health-only changes take the dashboard embedding and served-proof preservation path; other changes run the release-build generation and reproducibility/invariant verification profile before deployment. A `[skip deploy]` push is eligible for the health-only classification only when all changed paths are health-cycle outputs.
+- [`openwiki-update.yml`](../.github/workflows/openwiki-update.yml) runs on Mondays, manually, or when the named source-of-record files change (excluding `openwiki/**`). It installs the locked project-local OpenWiki runtime, generates derivative pages, injects canonical facts, verifies them, and proposes the permitted wiki outputs in a pull request. Workflow-file edits do not auto-trigger this job; use a manual run when appropriate.
 
-Start at the dashboard (`https://r3dz4r.github.io/datapulse-my/`) or
-[`datapulse.json`](../datapulse.json). Each manifest entry links to a
-`data/<id>.md` health report for a plain-language assessment, and the matching
-`data/json/<id>.json` envelope for an automated pipeline. Health badges in the
-README give a one-glance status.
+For contribution shape, failure handling, generated artifacts, and the PR boundary, use [Operations](operations.md) rather than copying those procedures here.
 
-### For AI agents
+## Read-only and evidence boundary
 
-Fetch [`llms.txt`](../llms.txt) — the single AI-agent discovery index. It lists
-the MCP connection details, the manifest URL, the health-snapshot URL, and every
-dataset health report. Alternatively, connect to the read-only MCP server at
-`https://mcp.data-pulse.my/mcp` (see [MCP server](mcp.md)). Run
-[`scripts/verify_agent_ready.sh`](../scripts/verify_agent_ready.sh) to self-test
-that the published artifacts are consistent end-to-end before relying on them.
+MCP is an agent-facing query surface, not an ingestion or write API. Its advertised endpoint is `https://mcp.data-pulse.my/mcp`, with `streamable-http`, `POST`, and `auth_required: false`. The tools can search, return manifest and evidence records, expose published trend/drift/reconciliation information, and perform bounded verification operations; results remain evidence about the catalogue or an observation, not a substitute for the upstream publisher.
 
-### For contributors
+In particular, health status measures declared checks and available signals. It can identify freshness risk, browser dependence, missing signals, or publication differences; it cannot establish that every upstream value is correct. When sources disagree, treat reconciliation output as a prompt for human review, not proof that either source is wrong. Always preserve the upstream source's licence and attribution requirements.
 
-See [Operations & contribution](operations.md) for the three-file contribution
-model, the PR checklist, the scheduled CI pipelines, and how auto-managed agent
-marker files are handled.
+## Source-of-record quick reference
 
-## Where to go next
-
-- [Datasets & schema](datasets.md) — manifest schema, health-report and
-  JSON-envelope formats, the validation rules, and an agency-grouped catalog of
-  all 389 datasets with representative schemas and quirks.
-- [Operations & contribution](operations.md) — the weekly health-check CI
-  pipeline, GitHub Pages deploy, the OpenWiki refresh workflow, the
-  three-file contribution model, the PR checklist, and agent marker files.
-- [MCP server](mcp.md) — the read-only FastMCP server (tools, resources,
-  local run, tests) and the production deployment stack (systemd / nginx /
-  Cloudflare Tunnel).
-
-## Key source references
-
-- `README.md` — project purpose, audience, dataset links, and badge embeds.
-- `datapulse.json` — the canonical dataset registry; add new datasets here first.
-- `datapulse.schema.json` — JSON Schema 2020-12 that validates the manifest.
-- `CONTRIBUTING.md` — the three-file contribution model and validation rules.
-- `CHANGELOG.md` — release notes; `[Unreleased]` tracks pending outreach.
-- `data/<id>.md` and `data/json/<id>.json` — one health report + one envelope
-  per dataset.
-- `health/latest.json` — the weekly aggregate freshness snapshot.
-- `llms.txt` — AI-agent discovery index (one file → full portfolio).
-- `scripts/check.sh`, `scripts/gen_badges.sh`, `scripts/gen_rss.sh`,
-  `scripts/verify_agent_ready.sh` — health probe and derived-artifact generators.
-- `deploy-pages.yml`, `openwiki-update.yml` — the two scheduled CI pipelines.
-- `mcp/server.py` — the read-only MCP server.
-
-## Backlog
-
-- **Per-dataset deep-dive pages** — source anchor: `data/*.md` +
-  `data/json/*.json`. Deferred: the agency-grouped catalog in `datasets.md`
-  captures representative schemas and quirks; promote individual pages only when
-  a dataset accumulates enough distinct collection/quirk detail to justify it.
-- **Full per-dataset schema tables in the wiki** — the authoritative field-level
-  schema for each dataset already lives in its `data/<id>.md` report; duplicating
-  all 122 here would be unmaintainable.
-- **GitHub Pages dashboard internals** — source anchor: `docs/index.html`. The
-  dashboard is a static page with embedded data injected at deploy time; it has
-  no runtime API surface worth a dedicated page yet.
+The OpenWiki generation contract names these repository sources of record: [`config/public-surfaces.json`](../config/public-surfaces.json), [`datapulse.json`](../datapulse.json), [`health/latest.json`](../health/latest.json), [`mcp.json`](../mcp.json), [`README.md`](../README.md), [`llms.txt`](../llms.txt), and the checked-in workflows. The three linked domain pages provide the deeper dataset, MCP, and operations models; this quickstart intentionally routes to them instead of duplicating their catalogues or contracts.
 
 ## Canonical facts
 

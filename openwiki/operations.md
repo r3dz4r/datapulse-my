@@ -1,193 +1,135 @@
-# Operations & Contribution
+---
+type: Operations guide
+title: Health, Publication, and OpenWiki Operations
+description: Operational control loops for dataset health evidence, generated public artifacts, Cloudflare Pages publication, MCP Registry release, and derivative OpenWiki refreshes. Use this page to choose the correct validation, failure, and rollback path without confusing health ownership with documentation ownership.
+tags: [operations, health, publication, OpenWiki, MCP, deployment]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-29T10:58:32.285Z
+sources:
+  - id: openwiki-source-378b07edcc123a4ad7e94363
+    resource: repo://.github/workflows/deploy-cloudflare-pages.yml
+  - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
+    resource: repo://.github/workflows/openwiki-update.yml
+  - id: openwiki-source-a3f71836e971edd25c12f70a
+    resource: repo://.github/workflows/pipeline-freshness.yml
+  - id: openwiki-source-424961965958d8ceef8f1e14
+    resource: repo://.github/workflows/publish-mcp.yml
+  - id: openwiki-source-b801e3030787d5f9ac603f52
+    resource: repo://config/public-surfaces.json
+  - id: openwiki-source-53cc7c2d889d1fead610dba7
+    resource: repo://datapulse.json
+  - id: openwiki-source-83fe3cd6171f4749991ccee9
+    resource: repo://mcp.json
+  - id: openwiki-source-f9fafda300b014057921ac73
+    resource: repo://scripts/check.sh
+  - id: openwiki-source-d470dc444e0001374b65b519
+    resource: repo://scripts/generate.sh
+  - id: openwiki-source-de39cc04ecc01bf7015f8977
+    resource: repo://scripts/inject_openwiki_canonical_facts.py
+  - id: openwiki-source-340f09ff2ecacd3f7afbe0ee
+    resource: repo://scripts/verify_openwiki.py
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:58:32.285Z" }
+---
 
-This page covers the recurring operations that keep DataPulse MY running: the
-scheduled CI pipelines, the health-check engine and derived-artifact scripts,
-the OpenWiki refresh workflow, the contribution model, and how auto-managed
-agent marker files are treated.
+# Health, Publication, and OpenWiki Operations
 
-## Scheduled CI pipelines
+DataPulse MY publishes a read-only trust layer around official Malaysian public data. The canonical origin is **https://www.data-pulse.my**. The repository currently describes **389 datasets** and **16 read-only tools**; these counts are generated from `datapulse.json` and `mcp.json`, rather than maintained as independent operational configuration.
 
-Two workflows in `.github/workflows/` drive the project.
+> **Authority boundary.** DataPulse MY does not replace the official source of record. A health snapshot, badge, MCP response, or OpenWiki page is evidence about an observed publication surface, not a guarantee of availability, verified evidence, certification, reputation, or evidence reference. Consumers should validate the relevant source, licence, timestamp, and evidence for their use case. All MCP operations remain read-only.
 
-### `deploy-pages.yml` — publish dashboard and artifacts
+## The control loops at a glance
 
-Runs on push to `main` when published artifacts change (`docs/**`, `llms.txt`,
-`robots.txt`, `sitemap.xml`, `feed.xml`, `datapulse.json`,
-`datapulse.schema.json`, `health/latest.json`, `badges/**`, `samples/**`,
-`data/**`, or the workflow itself) and on `workflow_dispatch`.
+There are four separate loops:
 
-1. Reads `docs/index.html` and replaces the `<script id="embedded-data">` block
-   with inline `window.__DATAPULSE_DATA__ = {health, manifest}`, making the
-   dashboard self-contained (no runtime fetches).
-2. Assembles `_site/` from `docs/` plus the top-level machine-readable files and
-   directories (`llms.txt`, `robots.txt`, `sitemap.xml`, `feed.xml`,
-   `datapulse.json`, `datapulse.schema.json`, `health/`, `badges/`, `samples/`,
-   `data/`).
-3. Deploys to GitHub Pages at `https://r3dz4r.github.io/datapulse-my/`.
+1. **Health evidence:** `scripts/check.sh` probes the manifest and records per-dataset outcomes; the hourly workflow audits that committed evidence.
+2. **Artifact generation:** `scripts/generate.sh` distinguishes a health-cycle from a release-build, so health snapshots and generated public surfaces have different ownership and validation expectations.
+3. **Public publication:** Cloudflare Pages assembles and verifies the canonical site; tagged releases or published releases publish the MCP server advertisement to the MCP Registry.
+4. **Derivative documentation:** the scheduled OpenWiki workflow regenerates only allowlisted documentation and managed instruction markers, then opens a PR.
 
-Uses `concurrency: group: pages, cancel-in-progress: true` to prevent overlapping
-deploys.
+```mermaid
+flowchart TD
+  source["Official dataset sources"] --> probe["scripts/check.sh"]
+  probe --> evidence["health/latest.json and health-cycle evidence"]
+  evidence --> audit["Hourly freshness audit"]
+  evidence --> classify["Pages input classification"]
+  manifest["datapulse.json and source artifacts"] --> classify
+  classify -->|"health-only"| preserve["Validate and preserve served proof and attestation plane"]
+  classify -->|"release"| build["release-build generation and reproducibility verification"]
+  preserve --> pages["Assemble and deploy Cloudflare Pages"]
+  build --> pages
+  pages --> verify["Fetch and verify canonical public surfaces"]
+  release["Tag or published release"] --> registry["OIDC login and idempotent MCP Registry publish"]
+  docs["README, llms, manifest, health, MCP or manual dispatch"] --> wiki["OpenWiki generation"]
+  wiki --> safety["Inject canonical facts and verify allowlist"]
+  safety --> pr["OpenWiki update PR"]
+```
 
-### `openwiki-update.yml` — daily OpenWiki refresh
+*This flow shows the repository-backed health, publication, registry, and documentation control paths.*
 
-Runs on a daily cron (`0 8 * * *`, every day 08:00 UTC) and on
-`workflow_dispatch`. The workflow checks out the repo, sets up Node.js 22,
-installs the `openwiki` npm package globally, and runs
-`openwiki code --update --print` with the `openai` provider (OpenAI
-Platform API key, **not** ChatGPT OAuth) and the `gpt-5.6-luna`
-preset model (cheapest Codex-tier alias for this account). Provider credentials are passed directly via the step's
-`env:` (`OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`,
-`OPENWIKI_TELEMETRY_DISABLED`, plus `OPENAI_API_KEY`) — no
-`~/.openwiki/.env` file is written. Requires the single secret
-`secrets.OPENAI_API_KEY`. This provider bills against the OpenAI
-Platform pay-as-you-go account, which is independent of any ChatGPT
-OAuth subscription and so is not subject to the 5-hour OAuth usage
-window.
+## 1. Health evidence and freshness
 
-Instead of committing directly to `main`, the workflow uses
-`peter-evans/create-pull-request@v7` to open an `openwiki/update` branch PR
-titled "docs: update OpenWiki". The PR's `add-paths` whitelists `openwiki`,
-`AGENTS.md`, `CLAUDE.md`, and `.github/workflows/openwiki-update.yml`, so
-regenerated pages, the agent marker files, and any workflow self-rewrite are
-all carried on the same PR. When OpenWiki produced no content diff, the
-action exits cleanly with no PR.
+### Probe responsibility
 
-Because OpenWiki writes only under `openwiki/`, the workflow's job is purely
-documentation refresh. Dataset health reports and envelopes under `data/` are
-human-authored evidence and are **not** regenerated by OpenWiki.
+`scripts/check.sh` reads `datapulse.json`, validates the manifest and probe policy, and probes selected or all datasets. It supports full runs and due-only runs with tier/cadence selection. It respects `robots.txt`, uses a DataPulse user agent, and has configurable timeouts and Camofox access through environment variables evidenced by the script, including `CAMOFOX_BASE_URL`.
 
-## Health-check engine and derived artifacts
+Adapters are selected through the probe policy. Direct, weather, GTFS static/realtime, browser, and other policy-defined adapters collect different evidence such as HTTP status, headers, content dates, record counts, locations, or feed shape. Browser-dependent sources use Camofox; absence or failure of that dependency is represented in the result rather than hidden.
 
-### `scripts/check.sh`
+The invariant is explicit: **dataset failures are data—record them and continue**. A failed dataset must not be converted into a successful run by aborting early or dropping the row. The resulting health record preserves status, message, access method, and whatever transport or content evidence was observed. The public health taxonomy includes `fresh`, `aging`, `stale`, `discontinued`, `degraded`, `browser-dependent`, `unreachable`, `unknown`, `unknown-freshness`, and `reference`.
 
-The core freshness probe. Reads `datapulse.json`, probes every dataset URL, and
-emits a JSON health snapshot (piped to `health/latest.json`). It dispatches four
-access strategies per dataset ID:
+### Hourly audit
 
-| Function | Strategy | Datasets |
-| --- | --- | --- |
-| `check_browser_dataset` | Opens a Camofox browser tab, waits, takes a DOM snapshot, greps for rows/timestamps, closes | `doe_apims`, `doe_rqims`, `doe_mqims`, `kkm_idengue`, `eperolehan-diklankan`, and other JS-rendered portals |
-| `check_head_dataset` | `curl --head`; checks HTTP status, `Content-Length`, `Last-Modified` | All `dosm_*` and `dgm_*` (bulk file downloads) |
-| `check_weather_dataset` | `curl GET`; parses JSON array, counts records/locations/date range | `met_weather` |
-| `check_direct_dataset` | `curl GET`; inspects first record timestamp | `fuelprice` (special `limit=1` API URL), `pricecatcher`, `exchangerates_daily_*` |
+`.github/workflows/pipeline-freshness.yml` runs hourly and can also be dispatched manually. It has `contents: read`, checks out full history, parses `health/latest.json`, requires a datasets list, checks that the file’s latest commit is no more than 30 minutes old, requires at least 300 rows, and rejects statuses outside the known taxonomy. This workflow audits committed health freshness; it is not a substitute for running the probe or for investigating a failing source.
 
-Resilience principle: "Dataset failures are data: record them and continue." The
-script never aborts on a single dataset failure. Status mapping: HTTP 2xx →
-`healthy`, 4xx → `down`, 5xx → `degraded`, browser failures → `browser-required`
-or `error`.
+**Diagnostic routing:** first inspect the affected row in `health/latest.json`, its `status`, `message`, `access_method`, and timestamps; then compare the manifest URL and applicable probe-policy adapter. For browser-required failures, inspect the Camofox endpoint/configuration and the browser smoke path. For a stale committed snapshot, determine whether the health cycle or its commit did not complete. Preserve the failure evidence until the cause is understood—do not claim healthy merely because the workflow itself ran.
 
-Camofox integration: `warm_camofox_browser()` boots the browser engine once
-before browser checks to prevent cold-start flapping. The Camofox base URL
-defaults to a Tailscale IP and is configurable via `CAMOFOX_BASE_URL`.
-Dependencies: `jq`, `curl`; optionally Camofox for browser-rendered sources.
+## 2. Generation profiles and ownership
 
-The output schema is `datapulse/v0.1/dataset-health` with a `checked_at`
-timestamp and a `datasets` array of per-dataset probe records (`dataset_id`,
-`url`, `status`, `message`, `access_method`, `http_status`, `content_length`,
-`last_modified`, `first_record_timestamp`, `wait_seconds`, `stations`,
-`timestamp`, `snapshot_chars`, `record_count`, `locations`, `date_range`).
+`scripts/generate.sh` is an orchestrator: it never commits, pushes, or deploys. The two profiles deliberately separate ownership:
 
-### `scripts/gen_badges.sh`
+- **`health-cycle`** starts from fresh health evidence and regenerates health-derived outputs: dataset reports, badges, README health summary, RSS, history, trends, drift, reconciliation, attestations, deltas, record evidence where opted in, evidence coverage, and catalog graph.
+- **`release-build`** includes the health cycle and additionally regenerates public discovery, MCP and agent artifacts, JSON envelopes/JSON-LD, dashboard data and filters, API reference, methodology and landing pages, navigation, and release-oriented checks. It stamps the source identity and validates public-surface inputs before generation.
 
-Reads `health/latest.json` and writes one 110×20px shields-style SVG per dataset
-to `badges/<dataset_id>.svg`. Color mapping: `healthy` (green), `degraded`
-(yellow), `down`/`error` (red), `browser-required` (blue), `unknown` (gray).
-Sanitises dataset IDs with `^[A-Za-z0-9._-]+$` and HTML-escapes status strings.
+This distinction is an operational invariant. `health/latest.json` and its evidence are owned by the health pipeline; OpenWiki is not allowed to regenerate `data/` reports or health envelopes. Conversely, a release-build is the route for healing or changing generated public artifacts, not a health-only shortcut.
 
-### `scripts/gen_rss.sh`
+## 3. Cloudflare Pages deployment and classification
 
-Reads `health/latest.json` + `datapulse.json` and writes `feed.xml` (RSS 2.0).
-Each dataset becomes one `<item>` with `[status] name` title, a GitHub blob link
-to `data/<id>.md`, and the snapshot's `checked_at` as the `pubDate`. All dynamic
-content is XML-escaped.
+`.github/workflows/deploy-cloudflare-pages.yml` runs on pushes to `main` matching the declared public-artifact/source paths and on `workflow_dispatch`. It grants `contents: read`. Its concurrency separates `[skip deploy]` health traffic from release traffic and cancels overlapping ordinary push deployments, preventing a newer release from waiting behind an obsolete one.
 
-### `scripts/verify_agent_ready.sh`
+The `classify` job compares the push’s before/after revisions. A push is `health_only=true` only when it contains `health/latest.json` and every changed path belongs to the narrowly defined health-cycle outputs: health files, latest record evidence, latest attestations and chain head, or the catalog/changelog/feed root outputs. Missing history, a non-push event, a missing skip marker, or any source/workflow/public-surface change selects the release profile.
 
-A self-test for AI agent consumers. Fetches `llms.txt` from the published site
-(overridable via `DATAPULSE_AGENT_BASE_URL`), validates it with an inline Python
-script (one H1, a blockquote summary, ≥1 H2 section, absolute HTTPS links,
-exactly one `datapulse.json` and one `health/latest.json` link), then follows
-the discovered URLs and asserts: manifest and health both have 122 entries, unique
-IDs, non-empty required fields, and matching ID sets. Prints a status/licence
-summary. Requires `curl`, `jq`, `python3`. Exits non-zero on any failure.
+Both paths validate that `health/latest.json` has a non-empty `checked_at` and dataset array. The health-only path embeds that snapshot into the dashboard, fetches and validates the served release proof and attestation plane, and preserves the already-served verified plane when the new health bytes cannot inherit its binding. A signer-down state is reported as failed-closed and stale rather than treated as signed. Inconsistent served health/binding evidence stops deployment and routes to a full release-build deployment.
 
-## MCP server
+The release path installs pinned Pandoc and verification dependencies, runs `bash scripts/generate.sh release-build`, then runs reproducibility verification twice (including proof verification) and `verify_release_invariants.sh --local`. The assembled `_site` includes `docs/`, machine-readable discovery and schema files, health and derived evidence, badges, samples, data, and attestations. The workflow requires non-empty dashboard and health files before deploying with `cloudflare/wrangler-action@v3` to the `datapulse-p4b-preview` Pages project on branch `main`.
 
-The read-only FastMCP server is a distinct subsystem documented in
-[MCP server & deployment](mcp.md). In short: it fetches the published
-`datapulse.json` and `health/latest.json` at runtime and exposes five tools and
-three resources over Streamable HTTP. The public endpoint is
-`https://mcp.data-pulse.my/mcp` via a systemd + nginx + Cloudflare Tunnel stack.
+After deployment, the workflow waits for edge visibility, fetches the landing page, dashboard, health snapshot, release proof, declared pages, artifacts, trends, drift, reconciliation, MCP inventory, and `llms.txt`. It checks dashboard/health timestamps and counts, schema summaries, a non-empty MCP tool inventory, and the OpenWiki-style MCP block. A failed surface comparison is a publication failure: diagnose the staged artifact versus the served response, then use a full release-build deployment to repair release-owned drift. Do not paper over a failed proof or replace a served verified plane with an unverified one.
 
-## Three-file contribution model
+## 4. MCP Registry publication
 
-Every dataset contribution is exactly three files plus a sample
-(`CONTRIBUTING.md`):
+`.github/workflows/publish-mcp.yml` runs for `v*` tags, published releases, or manual dispatch. It checks out the repository, downloads `mcp-publisher`, authenticates with GitHub OIDC, and publishes `server.json`. Its permissions are `contents: read` and `id-token: write`; no long-lived registry credential is configured in the workflow.
 
-1. An entry in `datapulse.json` (manifest).
-2. `data/<dataset-id>.md` (health report).
-3. `data/json/<dataset-id>.json` (envelope).
-4. A small sample under `samples/` (CSV and/or JSON, downloaded from the live
-   source; `# SAMPLE:` flag if hand-constructed — no fabrication).
+Publication is idempotency-aware: it reads the server version, queries the MCP Registry, and exits successfully without publishing when that version already exists. Otherwise it publishes the version. A duplicate-version response should therefore be diagnosed as registry/version state, not retried blindly. The public MCP surface remains read-only and is separate from this registry publication step.
 
-The dataset ID must be the same in all three manifest/report/envelope places.
-See [Datasets & schema](datasets.md) for the field requirements and validation
-rules, and the catalog for existing examples.
+## 5. OpenWiki refresh and safety boundary
 
-### Issue and PR templates
+`.github/workflows/openwiki-update.yml` runs on Monday at `0 8 * * 1`, on manual dispatch, and on pushes to selected source-of-record paths (`config/public-surfaces.json`, `datapulse.json`, `health/latest.json`, `mcp.json`, `README.md`, and `llms.txt`; `openwiki/**` is excluded). Workflow-file edits intentionally do not trigger it automatically, avoiding quota-driven regeneration; manual dispatch is the route when a workflow change needs documentation review.
 
-- `.github/ISSUE_TEMPLATE/new-dataset.yml` — propose a new dataset (labels
-  `adopt-a-dataset`).
-- `.github/ISSUE_TEMPLATE/freshness-check.yml` — re-verify an existing dataset
-  (labels `freshness-check`).
-- `.github/ISSUE_TEMPLATE/bug-report.yml` and `question.yml` — general issues.
-- `.github/ISSUE_TEMPLATE/config.yml` — blank issues disabled; contact link to
-  the maintainer.
-- `.github/PULL_REQUEST_TEMPLATE.md` — the adopt-a-dataset checklist: linked
-  issue, manifest entry, health report, JSON envelope, JSON validity, sample
-  from live source, licence confirmed, `check.sh` runs clean, no secrets.
+The job has `contents: write` and `pull-requests: write`, uses Node 22 with the locked project-local OpenWiki installation, and passes the OpenAI Platform API key through step environment variables. It runs `openwiki code --update --print`, then **sequentially** runs `scripts/inject_openwiki_canonical_facts.py --root .` before `scripts/verify_openwiki.py --generated --changed-from HEAD`. The ordering matters: verification must see the deterministic canonical facts, not the model’s raw first pass.
 
-### PR checklist
+The injector derives the canonical website, dataset count, and MCP tool count from the same repository sources used by verification. The verifier rejects the obsolete apex host, stale counts, unsupported authority claims, missing required pages, and changes outside generated OpenWiki paths or the managed marker regions of `AGENTS.md` and `CLAUDE.md`. It is therefore safe to refresh documentation only after the safety step passes.
 
-1. Open an issue describing the dataset and its official source.
-2. Fork and create a focused branch.
-3. Add the manifest entry, report, envelope, and sample.
-4. Run the validation checks (JSON parses, ID unique and matches filenames,
-   ISO dates, non-negative counts, valid status, `health_report` path exists,
-   report and envelope factually consistent, no credentials/copied records).
-5. Reproduce observations against the official source; check links.
-6. Open a PR linking the issue, with evidence for freshness, schema, and
-   licence claims.
+The final action opens or updates an `openwiki/update` PR and allowlists only the four wiki pages, `.last-update.json`, and the two managed instruction files. When there is no content diff, no PR is created. OpenWiki is **derivative documentation only**: it does not own dataset health reports, JSON envelopes, attestations, or other `data/` artifacts. Do not hand-edit generated control fields or instruction content outside the managed OpenWiki markers.
 
-If no licence is stated on the official source, do not assume the data is open:
-note the uncertainty in the issue/PR and ask for review before adding the
-dataset.
+## Validation, rollback, and contribution routing
 
-## Licence scope
+- **Probe failure:** retain the per-dataset failure evidence; inspect URL, policy, access dependency, and source behaviour. A failure is not a successful health cycle.
+- **Freshness-audit failure:** check JSON shape, latest health commit age, row count, and taxonomy; repair the health pipeline or commit path before treating publication as current.
+- **Pages failure:** compare staged `_site` files with the fetched canonical surfaces and release proof. If trust-plane binding or proof is inconsistent, stop and run a full release-build deployment rather than preserving unverifiable bytes.
+- **MCP publication failure:** distinguish an already-published version from authentication/download/publish errors. The workflow’s OIDC path and version lookup are the authoritative diagnostics.
+- **OpenWiki failure:** inspect injector/verifier output. Restrict changes to `/openwiki` outputs or managed marker blocks; do not “fix” a wiki failure by editing health data or other generated artifacts.
+- **Dataset contribution:** use the repository’s issue/PR process and keep manifest identity, report, envelope, sample, licence evidence, and live-source observations consistent. Never add credentials or fabricated samples, and do not assume an unstated upstream licence.
 
-DataPulse MY's MIT licence (`LICENSE`) covers this repository's original work
-only — not the underlying public datasets. Each health report records the
-source dataset's own licence name and required attribution. The split is:
-Creative Commons Attribution 4.0 for the 80 `dosm_*`/`dgm_*` datasets, and Open
-Government Licence (Malaysia) for the remaining 12.
-
-## Auto-managed agent marker files
-
-`AGENTS.md` and `CLAUDE.md` each contain an `<!-- OPENWIKI:START -->` ...
-`<!-- OPENWIKI:END -->` block pointing readers to `openwiki/quickstart.md`.
-These blocks are managed by OpenWiki and the scheduled workflow; **do not
-hand-edit them** during normal wiki maintenance. They are committed by the
-OpenWiki workflow alongside generated pages, not authored as source
-documentation.
-
-## Beginner-friendly contributions
-
-From `CONTRIBUTING.md`: checking whether a dataset URL still resolves, re-running
-a freshness observation, correcting typos or broken links in a health report,
-comparing a JSON envelope with its Markdown report, documenting one reproducible
-API or browser collection quirk, or researching the official licence and
-attribution for a proposed dataset. `docs/adoption-seeding.md` lists four
-starter issues to file manually after the templates and labels are set up.
+For every consumer, validation remains actionable: check the canonical manifest and health snapshot, compare timestamps and status, inspect the published evidence or provenance available for the dataset, and consult the official source before relying on a result. Publication and OpenWiki verification can prove repository/control-flow invariants; they cannot guarantee that an upstream publisher is available or correct.
 
 ## Canonical facts
 
