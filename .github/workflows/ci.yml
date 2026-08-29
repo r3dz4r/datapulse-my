@@ -55,6 +55,37 @@ jobs:
           python3 -m jsonschema -i datapulse.json datapulse.schema.json
           python3 -m jsonschema -i health/latest.json health.schema.json
 
+      - name: Validate tracked release-proof legacy format
+        run: |
+          python3 - docs/release-verification.md <<'PY'
+          from __future__ import annotations
+
+          from pathlib import Path
+          import re
+          import sys
+
+
+          proof_path = Path(sys.argv[1])
+          try:
+              proof = proof_path.read_text(encoding="utf-8")
+          except OSError as error:
+              raise SystemExit(f"legacy release proof format: could not read {proof_path}: {error}") from error
+
+          required = {
+              "release-proof title": r"^# Release reproducibility verification$",
+              "verification timestamp": r"^- Verified at: `[^`\\n]+`$",
+              "Source SHA": r"^- Source SHA: `[0-9a-f]{7,64}`$",
+              "Profile result": r"^- Profile result: .+$",
+              "Total files built": r"^- Total files built: .+$",
+              "hash table": r"^\\| Path category \\| File count \\| First-run hash \\| Second-run hash \\| Match\\? \\|$",
+              "hash table category row": r"^\\| (?![-: ]+\\|)[^|]+ \\| \\d+ \\|",
+              "Reproduction section": r"^## Reproduction$",
+          }
+          missing = [label for label, pattern in required.items() if re.search(pattern, proof, re.MULTILINE) is None]
+          if missing:
+              raise SystemExit("legacy release proof format: missing " + "; ".join(missing))
+          PY
+
       - name: Run repository-contract and MCP tests
         run: python3 -m pytest -q scripts/tests/ mcp/tests/
 

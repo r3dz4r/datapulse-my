@@ -447,7 +447,7 @@ jobs:
               fail "unattested health deploy does not expose all trust claims as false"
           fi
 
-          fetch "release reproducibility proof" "${website_origin}/release-verification.md" "$smoke_dir/release-verification.md"
+          wait_synced "release-verification.md" release-verification.md "${website_origin}/release-verification.md" "$smoke_dir/release-verification.md"
           fetch "health methodology" "${website_origin}/health-methodology.html" "$smoke_dir/health-methodology.html"
 
           wait_synced "llms.txt" llms.txt "${website_origin}/llms.txt" "$smoke_dir/llms.txt"
