@@ -155,10 +155,12 @@ jobs:
             --certificate-oidc-issuer "$SIGSTORE_ISSUER" \
             --cosign "$(command -v cosign)"
           mv "$bundle_tmp" "$publication/health.latest.sigstore.json"
-          # Pin the exact sign-time chain head so a later deploy-job revertify
-          # reconstructs the identical statement (release-build regenerates the
-          # workspace chain head between signing and reverifying).
+          # Pin the exact sign-time statement inputs so a later deploy-job
+          # revertify reconstructs the identical DSSE payload. release-build
+          # regenerates BOTH the workspace chain head and datapulse.json
+          # (methodology_version) between signing and reverifying.
           cp .attestations/chain_head.json "$publication/chain_head.json"
+          cp datapulse.json "$publication/datapulse.json"
 
       - name: Upload verified optional Sigstore bundle
         id: upload_sigstore
@@ -439,7 +441,7 @@ jobs:
               fail "served Sigstore bundle differs from the verified staged artifact"
             python3 scripts/verify_sigstore_bundle.py \
               --health _site/health/latest.json \
-              --manifest datapulse.json \
+              --manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json" \
               --legacy-chain-head "$RUNNER_TEMP/sigstore-publication/chain_head.json" \
               --source-commit "$GITHUB_SHA" \
               --bundle "$smoke_dir/health.latest.sigstore.json" \
