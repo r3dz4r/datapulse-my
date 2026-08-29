@@ -75,8 +75,8 @@ def test_methodology_html_retains_rendered_structure(tmp_path: Path) -> None:
     css = (ROOT / "docs/assets/datapulse.css").read_text(encoding="utf-8")
     assert "Health methodology" in page
     assert "5 minutes" in page
-    assert '<link rel="stylesheet" href="/assets/datapulse.css">' in page
-    assert 'crossorigin="anonymous"' not in page
+    assert '<link rel="stylesheet" href="/assets/datapulse.css" crossorigin="anonymous">' in page
+    assert '<link rel="stylesheet" href="/assets/datapulse.css">' not in page
     assert ":where(main) > :where(p)" in css
     assert '<main id="main-content">' in page
     assert '<section class="hero"' in page
