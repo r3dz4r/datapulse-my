@@ -11,11 +11,18 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from scripts.gen_sigstore_bundle import (
-    PREDICATE_TYPE,
-    generate_statement,
-    statement_bytes,
-)
+if __package__:
+    from scripts.gen_sigstore_bundle import (
+        PREDICATE_TYPE,
+        generate_statement,
+        statement_bytes,
+    )
+else:
+    from gen_sigstore_bundle import (  # type: ignore[no-redef]
+        PREDICATE_TYPE,
+        generate_statement,
+        statement_bytes,
+    )
 
 LOGGER = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[1]

@@ -448,8 +448,22 @@ jobs:
               --connect-timeout 10 --max-time 30 \
               --output "$smoke_dir/unsigned-sigstore-response" --write-out '%{http_code}' \
               "${website_origin}/${sigstore_path}")" || fail "could not prove optional Sigstore bundle absence"
-            [[ "$sigstore_status" == "404" ]] || \
-              fail "stale Sigstore bundle is still served after signing became unavailable (HTTP $sigstore_status)"
+            # The Cloudflare Pages SPA fallback serves the dashboard HTML with HTTP
+            # 200 for ANY missing path, so a missing optional bundle is NOT provable
+            # by a 404 alone. Absence is valid only when the response is NOT a real
+            # Sigstore bundle: HTTP 404, or an HTML SPA fallback (dashboard shell).
+            # A genuinely-served stale bundle (Sigstore JSON media type) is a hard
+            # failure even on HTTP 200.
+            if [[ "$sigstore_status" == "200" ]]; then
+              if grep -q 'application/vnd.dev.sigstore.bundle' "$smoke_dir/unsigned-sigstore-response" \
+                || grep -Eq '<html[ >]|<head>|id="main-content"|hero-heading' "$smoke_dir/unsigned-sigstore-response"; then
+                :  # SPA fallback (dashboard HTML) — no real bundle served
+              else
+                fail "stale Sigstore bundle is still served after signing became unavailable (HTTP $sigstore_status)"
+              fi
+            elif [[ "$sigstore_status" != "404" ]]; then
+              fail "unexpected HTTP status while proving optional Sigstore bundle absence (HTTP $sigstore_status)"
+            fi
             echo '::warning title=Sigstore health bundle absent::Canonical health is current; the optional signer was unavailable and no bundle was published.'
           fi
           allow_legacy_release_proof="${{ needs.classify.outputs.health_only == 'true' && '1' || '0' }}"
