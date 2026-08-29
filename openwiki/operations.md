@@ -1,193 +1,295 @@
-# Operations & Contribution
+---
+type: operational concept
+title: Health Operations, Release Workflows, and Safe Change Boundaries
+description: Operational ownership, health-cycle and release-build workflows, publication topology, attestation and rollback constraints, and focused verification for DataPulse MY. Use this page to choose the safe generation profile, deployment path, and failure response.
+tags: [operations, releases, health, deployment, verification, safety]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-29T10:52:57.734Z
+sources:
+  - id: openwiki-source-164e2da859b5277df81c7d94
+    resource: repo://.github/workflows/ci.yml
+  - id: openwiki-source-378b07edcc123a4ad7e94363
+    resource: repo://.github/workflows/deploy-cloudflare-pages.yml
+  - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
+    resource: repo://.github/workflows/openwiki-update.yml
+  - id: openwiki-source-54423aafa1ae10c52f15ed66
+    resource: repo://agent.json
+  - id: openwiki-source-b801e3030787d5f9ac603f52
+    resource: repo://config/public-surfaces.json
+  - id: openwiki-source-00defdc44caf88700f10e4ce
+    resource: repo://deploy/cloudflared/config.yml.example
+  - id: openwiki-source-c03650896e8a6d0ce01e642a
+    resource: repo://deploy/nginx/datapulse-api.conf
+  - id: openwiki-source-47d1bd4a82ddd11fc2a418dd
+    resource: repo://deploy/nginx/datapulse-mcp.conf
+  - id: openwiki-source-ff671ddcfe865355de502ccd
+    resource: repo://deploy/systemd/datapulse-api.service
+  - id: openwiki-source-d7d048d7122e77b7b4463322
+    resource: repo://deploy/systemd/datapulse-health.service
+  - id: openwiki-source-4b427487abd031405fec1e38
+    resource: repo://deploy/systemd/datapulse-mcp.service
+  - id: openwiki-source-d1a506dbe5374546142e2cfd
+    resource: repo://docs/operations.md
+  - id: openwiki-source-ecf5644d73921d158c12e841
+    resource: repo://docs/release-process.md
+  - id: openwiki-source-f9fafda300b014057921ac73
+    resource: repo://scripts/check.sh
+  - id: openwiki-source-d470dc444e0001374b65b519
+    resource: repo://scripts/generate.sh
+  - id: openwiki-source-d36032c20e0b3e0282bf966f
+    resource: repo://scripts/sync_mcp_deployment.sh
+  - id: openwiki-source-49b45f9b94dfdb5d87bb223f
+    resource: repo://scripts/templates/health-methodology.md.tmpl
+  - id: openwiki-source-c497d4cb0975a9d5d866792f
+    resource: repo://scripts/verify_mcp_deployment.py
+  - id: openwiki-source-340f09ff2ecacd3f7afbe0ee
+    resource: repo://scripts/verify_openwiki.py
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:52:57.734Z" }
+---
 
-This page covers the recurring operations that keep DataPulse MY running: the
-scheduled CI pipelines, the health-check engine and derived-artifact scripts,
-the OpenWiki refresh workflow, the contribution model, and how auto-managed
-agent marker files are treated.
+# Health Operations, Release Workflows, and Safe Change Boundaries
 
-## Scheduled CI pipelines
+DataPulse MY publishes its canonical website at **https://www.data-pulse.my**. The
+current catalog contains **389 datasets** and the MCP surface advertises **16
+read-only tools**. This page describes repository-backed responsibilities and
+verification; a definition, URL, or unit file is not evidence that external
+infrastructure is currently running.
 
-Two workflows in `.github/workflows/` drive the project.
+## Ownership at a glance
 
-### `deploy-pages.yml` — publish dashboard and artifacts
+There are two different generation owners:
 
-Runs on push to `main` when published artifacts change (`docs/**`, `llms.txt`,
-`robots.txt`, `sitemap.xml`, `feed.xml`, `datapulse.json`,
-`datapulse.schema.json`, `health/latest.json`, `badges/**`, `samples/**`,
-`data/**`, or the workflow itself) and on `workflow_dispatch`.
+- The **health cycle** owns observations and artifacts derived from a fresh
+  `health/latest.json`. The systemd `datapulse-health.timer` invokes the health
+  service every five minutes. The Sunday 00:00 UTC `pipeline-audit.yml` job also
+  performs a full probe and a health-cycle fallback.
+- The **release build** owns the broader public release: discovery documents,
+  envelopes, JSON-LD, MCP metadata, dashboard assets, and release proof. The
+  Cloudflare Pages workflow runs it for non-health changes.
 
-1. Reads `docs/index.html` and replaces the `<script id="embedded-data">` block
-   with inline `window.__DATAPULSE_DATA__ = {health, manifest}`, making the
-   dashboard self-contained (no runtime fetches).
-2. Assembles `_site/` from `docs/` plus the top-level machine-readable files and
-   directories (`llms.txt`, `robots.txt`, `sitemap.xml`, `feed.xml`,
-   `datapulse.json`, `datapulse.schema.json`, `health/`, `badges/`, `samples/`,
-   `data/`).
-3. Deploys to GitHub Pages at `https://r3dz4r.github.io/datapulse-my/`.
+`scripts/generate.sh` is an orchestrator: it does not commit, push, or deploy.
+Use `bash scripts/generate.sh health-cycle --list` or
+`bash scripts/generate.sh release-build --list` to inspect ordered commands and
+owned outputs before changing a generator. Change the source or generator, then
+run its owning profile rather than hand-editing a derived output.
 
-Uses `concurrency: group: pages, cancel-in-progress: true` to prevent overlapping
-deploys.
+OpenWiki is a separate documentation refresh. `openwiki-update.yml` runs Monday
+at 08:00 UTC, on selected pushes, or by dispatch; it uses the project-local
+locked OpenWiki runtime and opens a PR rather than committing directly to
+`main`. Its five-file generated output allowlist is `openwiki/quickstart.md`,
+`openwiki/datasets.md`, `openwiki/mcp.md`, `openwiki/operations.md`, and
+`openwiki/.last-update.json`, with managed marker-only changes allowed in
+`AGENTS.md` and `CLAUDE.md`. **`openwiki/quickstart.md` must not be deleted.**
+The workflow injects canonical facts and runs `verify_openwiki.py`; the verifier
+also rejects unsupported claims and changes outside that boundary. OpenWiki does
+not regenerate dataset health or `data/` envelopes.
 
-### `openwiki-update.yml` — daily OpenWiki refresh
+## Health-cycle lifecycle
 
-Runs on a daily cron (`0 8 * * *`, every day 08:00 UTC) and on
-`workflow_dispatch`. The workflow checks out the repo, sets up Node.js 22,
-installs the `openwiki` npm package globally, and runs
-`openwiki code --update --print` with the `openai` provider (OpenAI
-Platform API key, **not** ChatGPT OAuth) and the `gpt-5.6-luna`
-preset model (cheapest Codex-tier alias for this account). Provider credentials are passed directly via the step's
-`env:` (`OPENWIKI_PROVIDER`, `OPENWIKI_MODEL_ID`,
-`OPENWIKI_TELEMETRY_DISABLED`, plus `OPENAI_API_KEY`) — no
-`~/.openwiki/.env` file is written. Requires the single secret
-`secrets.OPENAI_API_KEY`. This provider bills against the OpenAI
-Platform pay-as-you-go account, which is independent of any ChatGPT
-OAuth subscription and so is not subject to the 5-hour OAuth usage
-window.
+The service runs as `redza:redza` in `/home/redza/datapulse-my`, pulls with
+`git pull --rebase --autostash`, and takes a non-blocking `flock` on
+`/tmp/datapulse-health.lock`. It writes the probe result to a temporary file,
+validates JSON, and atomically moves it to `health/latest.json`. Only after that
+successful snapshot replacement does it run `bash scripts/generate.sh
+health-cycle`. If generated health artifacts changed, it stages the health-cycle
+owned paths, commits `chore(health): update due dataset health`, rebases again,
+and pushes `HEAD:main`; a no-change cycle exits without a commit. A concurrent
+cycle skips rather than racing the snapshot. A rebase conflict stops the unit
+for operator resolution.
 
-Instead of committing directly to `main`, the workflow uses
-`peter-evans/create-pull-request@v7` to open an `openwiki/update` branch PR
-titled "docs: update OpenWiki". The PR's `add-paths` whitelists `openwiki`,
-`AGENTS.md`, `CLAUDE.md`, and `.github/workflows/openwiki-update.yml`, so
-regenerated pages, the agent marker files, and any workflow self-rewrite are
-all carried on the same PR. When OpenWiki produced no content diff, the
-action exits cleanly with no PR.
+`check.sh --due` selects datasets by configured refresh tier and cadence. A full
+run reads `datapulse.json` and probes every manifest entry. Direct, weather,
+GTFS, and browser adapters are policy-controlled; browser checks use Camofox.
+`CAMOFOX_BASE_URL` defaults to `http://localhost:9377`, and the browser engine
+is warmed once before the serial browser pass. Camofox is an operational
+precondition for browser-rendered measurements, not a claim that a browser is
+available.
 
-Because OpenWiki writes only under `openwiki/`, the workflow's job is purely
-documentation refresh. Dataset health reports and envelopes under `data/` are
-human-authored evidence and are **not** regenerated by OpenWiki.
+A failed dataset is evidence, not a reason to abort the whole sweep. The probe
+records failure status and details and continues. In due mode, unselected rows
+and prior `last_checked` values are preserved. Missing or malformed snapshots,
+missing generated artifacts, stale health commits, and invalid statuses fail
+health/release gates rather than being silently accepted.
 
-## Health-check engine and derived artifacts
+```mermaid
+stateDiagram-v2
+    [*] --> Waiting
+    Waiting --> Probing: timer tick
+    Probing --> Skipped: flock held
+    Probing --> SnapshotReady: check.sh completes
+    SnapshotReady --> SnapshotReady: per-dataset failure recorded
+    SnapshotReady --> Derived: atomic move health/latest.json
+    Derived --> NoChange: outputs unchanged
+    Derived --> Commit: outputs changed
+    Commit --> Push: rebase succeeds
+    Push --> Waiting
+    NoChange --> Waiting
+    Skipped --> Waiting
+    Probing --> Failed: invalid snapshot or generator error
+    Commit --> Failed: rebase conflict or push failure
+```
 
-### `scripts/check.sh`
+*Caption: The health service records individual probe failures while failing the cycle for invalid snapshots, generator errors, or repository conflicts.*
 
-The core freshness probe. Reads `datapulse.json`, probes every dataset URL, and
-emits a JSON health snapshot (piped to `health/latest.json`). It dispatches four
-access strategies per dataset ID:
+Health-cycle derived ownership includes `data/<id>.md`, badges, the README trust
+summary, `feed.xml`, `catalog-snapshot.json` and its deprecated `changelog.json`
+alias, history, trends, drift, reconciliation, deltas, record evidence where
+opted in, evidence coverage, catalog graph, and attestation outputs. History uses
+an archive directory and a compact seven-day retention invocation. Treat these
+as derived artifacts, not independent sources.
 
-| Function | Strategy | Datasets |
-| --- | --- | --- |
-| `check_browser_dataset` | Opens a Camofox browser tab, waits, takes a DOM snapshot, greps for rows/timestamps, closes | `doe_apims`, `doe_rqims`, `doe_mqims`, `kkm_idengue`, `eperolehan-diklankan`, and other JS-rendered portals |
-| `check_head_dataset` | `curl --head`; checks HTTP status, `Content-Length`, `Last-Modified` | All `dosm_*` and `dgm_*` (bulk file downloads) |
-| `check_weather_dataset` | `curl GET`; parses JSON array, counts records/locations/date range | `met_weather` |
-| `check_direct_dataset` | `curl GET`; inspects first record timestamp | `fuelprice` (special `limit=1` API URL), `pricecatcher`, `exchangerates_daily_*` |
+## Release publication and deployment classification
 
-Resilience principle: "Dataset failures are data: record them and continue." The
-script never aborts on a single dataset failure. Status mapping: HTTP 2xx →
-`healthy`, 4xx → `down`, 5xx → `degraded`, browser failures → `browser-required`
-or `error`.
+`.github/workflows/deploy-cloudflare-pages.yml` is the sole canonical website
+publisher. It classifies a push as **health-only** only when the commit message
+contains `[skip deploy]`, `health/latest.json` changed, and *every* changed path
+is a recognized health-cycle output: `health/**`, latest record evidence,
+latest attestations, the attestation chain head, or the catalog/changelog/feed
+root outputs. Any source, workflow, configuration, or other path is **non-health**
+and takes the release profile. Manual dispatch is non-health by default.
 
-Camofox integration: `warm_camofox_browser()` boots the browser engine once
-before browser checks to prevent cold-start flapping. The Camofox base URL
-defaults to a Tailscale IP and is configurable via `CAMOFOX_BASE_URL`.
-Dependencies: `jq`, `curl`; optionally Camofox for browser-rendered sources.
+Both paths validate `health/latest.json`. The health-only path embeds the current
+health payload and preserves the already-served release proof and verified
+attestation plane; it must not pretend new health bytes inherit an old binding.
+The non-health path installs its pinned verification dependencies, stamps
+`DATAPULSE_SOURCE_COMMIT_SHA`, runs `bash scripts/generate.sh release-build`,
+verifies reproducibility and release invariants, embeds the dashboard, assembles
+`_site`, and deploys it with Wrangler to Cloudflare Pages project
+`datapulse-p4b-preview` on branch `main`. The assembled artifact contains docs,
+manifest and schemas, health and derived data, samples, badges, attestations,
+and declared public surfaces from `config/public-surfaces.json`.
 
-The output schema is `datapulse/v0.1/dataset-health` with a `checked_at`
-timestamp and a `datasets` array of per-dataset probe records (`dataset_id`,
-`url`, `status`, `message`, `access_method`, `http_status`, `content_length`,
-`last_modified`, `first_record_timestamp`, `wait_seconds`, `stations`,
-`timestamp`, `snapshot_chars`, `record_count`, `locations`, `date_range`).
+Post-deploy checks fetch the configured website origin with retries, check the
+landing page and `/dashboard`, compare embedded health timestamp and row count
+to `/health/latest.json`, verify release proof, and fetch every declared page
+and artifact. A missing/stale surface, count drift, unsafe path, or proof mismatch
+fails the workflow. A health-only deployment can warn for an explicitly
+`signer_down` P6 state, but malformed or inconsistent trust material fails
+closed.
 
-### `scripts/gen_badges.sh`
+<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Heuristic: a semicolon inside a label breaks rendering; rephrase the label. -->
+```text
+flowchart TD
+    A[main push or dispatch] --> B{health-only classification}
+    B -->|yes| C[validate health snapshot]
+    C --> D[preserve served proof and attestation plane]
+    B -->|no| E[run release-build]
+    E --> F[verify reproducibility and invariants]
+    D --> G[embed and assemble _site]
+    F --> G
+    G --> H[Cloudflare Pages deploy]
+    H --> I{served surface checks}
+    I -->|pass| J[publication accepted]
+    I -->|fail| K[workflow fails; repair source and redeploy]
+```
 
-Reads `health/latest.json` and writes one 110×20px shields-style SVG per dataset
-to `badges/<dataset_id>.svg`. Color mapping: `healthy` (green), `degraded`
-(yellow), `down`/`error` (red), `browser-required` (blue), `unknown` (gray).
-Sanitises dataset IDs with `^[A-Za-z0-9._-]+$` and HTML-escapes status strings.
+*Caption: Cloudflare Pages separates health-only publication from non-health release generation, then applies the same served-surface verification.*
 
-### `scripts/gen_rss.sh`
+## Attestations, secrets, and the P6 boundary
 
-Reads `health/latest.json` + `datapulse.json` and writes `feed.xml` (RSS 2.0).
-Each dataset becomes one `<item>` with `[status] name` title, a GitHub blob link
-to `data/<id>.md`, and the snapshot's `checked_at` as the `pubDate`. All dynamic
-content is XML-escaped.
+Release generation may sign daily probe facts with the protected Ed25519 key
+provided through `DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE`; the private key is
+materialized only in a protected temporary file in CI and must remain outside
+the checkout and generated assets. Public dated envelopes, `attestations/latest/`,
+and `.well-known/datapulse-probe-keys.json` are publishable. An attestation
+binding covers the exact health SHA-256, dataset count and identifier-set hash,
+observation/publication times, active key, and daily chain head. An Ed25519
+signature proves artifact binding; a Rekor reference, when complete, proves only
+transparency-log witnessing. Neither proves an upstream source is true.
 
-### `scripts/verify_agent_ready.sh`
+P6 production and disposable lab stacks are **absent** in the current operational
+state, and the real-lab marker is absent. Compose definitions must not be treated
+as readiness or permission to provision or sign. If the signer lane explicitly
+reports `artifact_signed:false`, deployment can preserve the stale plane and
+warn; missing, malformed, superseded, or ambiguous trust material remains a
+failure. Do not put API keys, webhook secrets, internal credentials, private
+keys, or other secrets in pages, JSON artifacts, logs, or the repository.
 
-A self-test for AI agent consumers. Fetches `llms.txt` from the published site
-(overridable via `DATAPULSE_AGENT_BASE_URL`), validates it with an inline Python
-script (one H1, a blockquote summary, ≥1 H2 section, absolute HTTPS links,
-exactly one `datapulse.json` and one `health/latest.json` link), then follows
-the discovered URLs and asserts: manifest and health both have 122 entries, unique
-IDs, non-empty required fields, and matching ID sets. Prints a status/licence
-summary. Requires `curl`, `jq`, `python3`. Exits non-zero on any failure.
+## Runtime topology and configuration boundaries
 
-## MCP server
+The checked-in systemd/nginx/Tunnel files describe separate boundaries:
 
-The read-only FastMCP server is a distinct subsystem documented in
-[MCP server & deployment](mcp.md). In short: it fetches the published
-`datapulse.json` and `health/latest.json` at runtime and exposes five tools and
-three resources over Streamable HTTP. The public endpoint is
-`https://mcp.data-pulse.my/mcp` via a systemd + nginx + Cloudflare Tunnel stack.
+- `datapulse-mcp.service` runs the read-only server as a user service on
+  `127.0.0.1:8788`, reading the published website data. Nginx limits `/mcp`,
+  applies origin checks and a 1 request/second zone with burst, and proxies to
+  the service. The Cloudflare Tunnel example terminates at local nginx; its
+  tunnel UUID, credentials file, certificates, and actual activation are
+  operator-managed, not repository facts.
+- `datapulse-api.service` binds the authenticated buyer API to
+  `127.0.0.1:8791`. Its environment files are outside the repository; durable
+  API keys, rate limits, entitlements, and audit state live under
+  `/home/redza/datapulse-my/var/`. The API forwards to the internal
+  `127.0.0.1:8001` engine and does not expose that engine directly. State updates
+  use locking and atomic replacement, and webhook secrets/internal credentials
+  stay environment-only.
+- MCP usage and verification telemetry belongs in the user journal
+  (`journalctl --user -u datapulse-mcp.service`); `verify_evidence` has a
+  process-local ten-minute cache and serialized verification, cleared on restart.
+  Add shared limiting/cache before adding workers or replicas.
 
-## Three-file contribution model
+The configured public origins are website `https://www.data-pulse.my`, MCP
+`https://mcp.data-pulse.my`, and API `https://api.data-pulse.my`. These are
+configuration and contract values; this page does not assert availability.
 
-Every dataset contribution is exactly three files plus a sample
-(`CONTRIBUTING.md`):
+## MCP source synchronization and rollback
 
-1. An entry in `datapulse.json` (manifest).
-2. `data/<dataset-id>.md` (health report).
-3. `data/json/<dataset-id>.json` (envelope).
-4. A small sample under `samples/` (CSV and/or JSON, downloaded from the live
-   source; `# SAMPLE:` flag if hand-constructed — no fabrication).
+Every release build stamps the repository SHA into `mcp/server.py` and `mcp.json`.
+The runtime exposes it from JSON-RPC `initialize.serverInfo.source_commit_sha`.
+`python3 scripts/verify_mcp_deployment.py` then initializes the endpoint, lists
+its tools, and compares that marker with local `git rev-parse HEAD`: exit 0 is a
+match, 1 is a mismatch, and 2 is unreachable. A mismatch requires redeploying
+the source and restarting `datapulse-mcp.service`; it is not safe to infer source
+parity from a healthy HTTP response.
 
-The dataset ID must be the same in all three manifest/report/envelope places.
-See [Datasets & schema](datasets.md) for the field requirements and validation
-rules, and the catalog for existing examples.
+Prefer rollback by `git revert <commit>` followed by the normal release/redeploy
+workflow; preserve the operational clone rather than resetting it. For an MCP
+rollback, restore the prior `mcp/server.py` (and requirements if needed) to
+`/home/redza/.local/share/datapulse-mcp/` and restart the user unit. For systemd
+changes, restore the prior unit source, reinstall, run `systemctl daemon-reload`,
+and restart the affected service/timer. Do not bypass failed release gates or
+repair generated output by force-pushing history.
 
-### Issue and PR templates
+```mermaid
+flowchart TD
+    R[bad release or MCP mismatch] --> V[git revert triggering commit]
+    V --> W[rerun release verification and Pages deploy]
+    W --> S{MCP source marker matches?}
+    S -->|yes| O[observe served surfaces and logs]
+    S -->|no| M[copy reverted MCP source and restart user unit]
+    M --> S
+    W -->|systemd change| U[restore unit, daemon-reload, restart]
+    U --> O
+```
 
-- `.github/ISSUE_TEMPLATE/new-dataset.yml` — propose a new dataset (labels
-  `adopt-a-dataset`).
-- `.github/ISSUE_TEMPLATE/freshness-check.yml` — re-verify an existing dataset
-  (labels `freshness-check`).
-- `.github/ISSUE_TEMPLATE/bug-report.yml` and `question.yml` — general issues.
-- `.github/ISSUE_TEMPLATE/config.yml` — blank issues disabled; contact link to
-  the maintainer.
-- `.github/PULL_REQUEST_TEMPLATE.md` — the adopt-a-dataset checklist: linked
-  issue, manifest entry, health report, JSON envelope, JSON validity, sample
-  from live source, licence confirmed, `check.sh` runs clean, no secrets.
+*Caption: Rollback is an auditable revert-and-redeploy path, with independent MCP source synchronization and systemd recovery.*
 
-### PR checklist
+## Focused verification
 
-1. Open an issue describing the dataset and its official source.
-2. Fork and create a focused branch.
-3. Add the manifest entry, report, envelope, and sample.
-4. Run the validation checks (JSON parses, ID unique and matches filenames,
-   ISO dates, non-negative counts, valid status, `health_report` path exists,
-   report and envelope factually consistent, no credentials/copied records).
-5. Reproduce observations against the official source; check links.
-6. Open a PR linking the issue, with evidence for freshness, schema, and
-   licence claims.
+Pull-request CI is read-only and protects the contracts that matter: shell syntax,
+manifest and health JSON Schema, repository/MCP tests, agent-ready verification,
+OpenWiki ownership, URL drift, release invariants, and canonical-fact linting.
+Run the focused local checks (with project dependencies installed):
 
-If no licence is stated on the official source, do not assume the data is open:
-note the uncertainty in the issue/PR and ask for review before adding the
-dataset.
+```sh
+find . -type f -name '*.sh' -not -path './.git/*' -print0 | xargs -0 -n1 bash -n
+python3 -m jsonschema -i datapulse.json datapulse.schema.json
+python3 -m jsonschema -i health/latest.json health.schema.json
+python3 -m pytest -q scripts/tests/ mcp/tests/
+bash scripts/tests/test_verify_agent_ready.sh
+python3 scripts/verify_repository_contract.py
+python3 scripts/verify_openwiki.py
+python3 scripts/check_url_drift.py
+bash scripts/verify_release_invariants.sh --local
+python3 scripts/fact_lint.py
+systemd-analyze verify deploy/systemd/datapulse-health.service
+systemd-analyze verify deploy/systemd/datapulse-mcp.service
+python3 scripts/verify_mcp_deployment.py
+```
 
-## Licence scope
-
-DataPulse MY's MIT licence (`LICENSE`) covers this repository's original work
-only — not the underlying public datasets. Each health report records the
-source dataset's own licence name and required attribution. The split is:
-Creative Commons Attribution 4.0 for the 80 `dosm_*`/`dgm_*` datasets, and Open
-Government Licence (Malaysia) for the remaining 12.
-
-## Auto-managed agent marker files
-
-`AGENTS.md` and `CLAUDE.md` each contain an `<!-- OPENWIKI:START -->` ...
-`<!-- OPENWIKI:END -->` block pointing readers to `openwiki/quickstart.md`.
-These blocks are managed by OpenWiki and the scheduled workflow; **do not
-hand-edit them** during normal wiki maintenance. They are committed by the
-OpenWiki workflow alongside generated pages, not authored as source
-documentation.
-
-## Beginner-friendly contributions
-
-From `CONTRIBUTING.md`: checking whether a dataset URL still resolves, re-running
-a freshness observation, correcting typos or broken links in a health report,
-comparing a JSON envelope with its Markdown report, documenting one reproducible
-API or browser collection quirk, or researching the official licence and
-attribution for a proposed dataset. `docs/adoption-seeding.md` lists four
-starter issues to file manually after the templates and labels are set up.
+For a real served release, omit `--local` from the release invariant check only
+when the public origin and full attestation/proof plane are available; local mode
+is a source/pre-generation contract and does not claim a current signed binding.
 
 ## Canonical facts
 
