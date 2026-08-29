@@ -4,6 +4,49 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## [0.10.0](https://github.com/r3dz4r/datapulse-my/compare/v0.9.1...v0.10.0) (2026-08-29)
+
+
+### Features
+
+* **datapulse:** add Learn builder page ([08a0ddd](https://github.com/r3dz4r/datapulse-my/commit/08a0ddd50b0fa6822fa33d326661219e526df8f8))
+* **datapulse:** canonicalize public website origin ([8708136](https://github.com/r3dz4r/datapulse-my/commit/87081368e395da6213f325bf1214b248bdea3e3b))
+* **datapulse:** canonicalize www origin across source owners ([a2a5e0d](https://github.com/r3dz4r/datapulse-my/commit/a2a5e0d37d60d00f11b4f6c7304ef45360f3e4c0))
+* **datapulse:** generate current-origin links and manifest schema ([75260e1](https://github.com/r3dz4r/datapulse-my/commit/75260e15284fe5d041eb12ded0bb8dfa01e8d78f))
+* **datapulse:** generate trust verification landing page ([dff2420](https://github.com/r3dz4r/datapulse-my/commit/dff2420c439fe4d008a474c36e0c7a24a1764e83))
+* **datapulse:** live evidence receipt and bounded register on landing ([e83f3c7](https://github.com/r3dz4r/datapulse-my/commit/e83f3c7bcae2663039cb295a810d10b1f667931a))
+* **openwiki:** deterministic canonical-facts injector + 4 stale pages ([8ab904f](https://github.com/r3dz4r/datapulse-my/commit/8ab904f7145527aefb6a5d3251b96272b068781a))
+
+
+### Bug Fixes
+
+* **ci:** align served-surface verify with www-canonical routing; color prose to brand ([31253a8](https://github.com/r3dz4r/datapulse-my/commit/31253a8efed064ddab191f35674555d88a1aded3))
+* **ci:** include /learn.html in release-invariant pages assertion ([a0bfa72](https://github.com/r3dz4r/datapulse-my/commit/a0bfa72659b0e381ef35e4881771701d43bb27a6))
+* **ci:** non-blocking deploy when P6 signer lane is down (artifact_signed:false) ([b241916](https://github.com/r3dz4r/datapulse-my/commit/b241916a8005d6f63c314856b427b1a93e22494b))
+* **ci:** preserve release proof across health-only deploys ([3e331b4](https://github.com/r3dz4r/datapulse-my/commit/3e331b45661d677806324b77fdc01779d68360c9))
+* **ci:** smoke-test /dashboard surface in post-deploy invariants ([0cd1f70](https://github.com/r3dz4r/datapulse-my/commit/0cd1f70e7967d0aaef4aa305eecfa3638fac9347))
+* **ci:** sync-aware post-deploy invariants and dual-plane path filter ([13fbb21](https://github.com/r3dz4r/datapulse-my/commit/13fbb2125a6949725ef65ccefbdfda698c4502c3))
+* **ci:** update methodology + deploy-verify gates for shared-template refactor ([324a203](https://github.com/r3dz4r/datapulse-my/commit/324a20352dde1d431ab783dd2bcff4e5108d2f9b))
+* **ci:** verify dashboard markers from /dashboard surface ([15ab351](https://github.com/r3dz4r/datapulse-my/commit/15ab351f514b88c6a8e0c5c9172eaadc74c7d472))
+* **ci:** wait_synced release proof and legacy format gate ([1b992fc](https://github.com/r3dz4r/datapulse-my/commit/1b992fc9a6774704b50adceb9c3503208f178803))
+* **crypto:** derive attestation artifact_signed from rekor witness presence ([d39bec0](https://github.com/r3dz4r/datapulse-my/commit/d39bec0064af22711f5c070cfc0945b574e718e5))
+* **datapulse:** add google fonts to landing head and repair catalogue nav anchor ([d2f7fc1](https://github.com/r3dz4r/datapulse-my/commit/d2f7fc1a94a9c7ba5fd50f7e35bd348201f68ada))
+* **datapulse:** register Learn page in discovery ([f2c79f2](https://github.com/r3dz4r/datapulse-my/commit/f2c79f2769fb06754cf4231e50853362e89f12d4))
+* **datapulse:** remove NPRA Pro Paddle checkout from the public NPRA page ([2a52856](https://github.com/r3dz4r/datapulse-my/commit/2a52856992b8361e8fff30987c40d184770e864f))
+* **datapulse:** render health-methodology field list as bullets and restore prose spacing ([9502ec7](https://github.com/r3dz4r/datapulse-my/commit/9502ec7370c472811b77bfbbcff2d89bbf53233f))
+* **datapulse:** restore vertical rhythm + section separation in methodology prose ([2b7cc9d](https://github.com/r3dz4r/datapulse-my/commit/2b7cc9de8b94e917fac4ea87af3e3047c8dbfe53))
+* **datapulse:** scroll methodology tables horizontally on mobile ([8cc6235](https://github.com/r3dz4r/datapulse-my/commit/8cc62351ea7cb234661bdf120b766886c36e110d))
+* **datapulse:** wrap long inline code on mobile in methodology content ([d06ede7](https://github.com/r3dz4r/datapulse-my/commit/d06ede7fcfc75122c97796aed4c5481fc367ba0e))
+* **deploy:** preserve Cloudflare trust plane after Pages retirement ([15cd464](https://github.com/r3dz4r/datapulse-my/commit/15cd464d1dc08f6b388545e6ba72340bb7d6dbd6))
+* **headers:** use prefix paths and add /assets cache rule ([60d4500](https://github.com/r3dz4r/datapulse-my/commit/60d4500651262d86ee73c6c09fb345d9ddedba49))
+* **openwiki:** merge inject and verify into one shell step ([bd13212](https://github.com/r3dz4r/datapulse-my/commit/bd132121c68b78db22b8bdeaec217037a3336e19))
+* **openwiki:** neutralize forbidden claims in injector ([cba173d](https://github.com/r3dz4r/datapulse-my/commit/cba173d5605ed118f53e3beb0f29a472043861f5))
+* **openwiki:** stop auto-firing on workflow file edits ([ce993e8](https://github.com/r3dz4r/datapulse-my/commit/ce993e84f2c5218399dcee6b4396f11ce1b6c3f0))
+* **openwiki:** switch provider from openai-chatgpt (OAuth) to openai (API key) ([ecc84be](https://github.com/r3dz4r/datapulse-my/commit/ecc84bed5dedac27f0b667ef702b4da369affb43))
+* **openwiki:** use gpt-5.6-luna (real model) instead of invented gpt-5.6-mini ([6cad556](https://github.com/r3dz4r/datapulse-my/commit/6cad55608b904a859092ec599c304d85ef0f1327))
+* remove Google Fonts dependency from all HTML pages ([e744e89](https://github.com/r3dz4r/datapulse-my/commit/e744e89b39e3cbffeca7005805491ff489b627c0))
+* **web:** make root the canonical landing route ([a2907a7](https://github.com/r3dz4r/datapulse-my/commit/a2907a794fd571a2a65516ea3a709ed2d71fc2aa))
+
 ## [0.9.1](https://github.com/r3dz4r/datapulse-my/compare/v0.9.0...v0.9.1) (2026-08-20)
 
 
