@@ -73,5 +73,8 @@ def test_cli_regeneration_preserves_shared_css_shell(tmp_path: Path) -> None:
     assert hashlib.sha256(_embedded_block(before)).digest() != hashlib.sha256(
         _embedded_block(after)
     ).digest()
-    assert after_head.count(b'<link rel="stylesheet" href="assets/datapulse.css">') == 1
+    assert after_head.count(
+        b'<link rel="stylesheet" href="assets/datapulse.css" crossorigin="anonymous">'
+    ) == 1
+    assert b'<link rel="stylesheet" href="assets/datapulse.css">' not in after_head
     assert len(re.findall(rb"<style(?: [^>]*)?>.*?</style>", after_head, re.DOTALL)) == 1

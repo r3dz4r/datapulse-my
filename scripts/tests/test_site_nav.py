@@ -125,6 +125,14 @@ def test_learn_page_uses_the_shared_shell_and_verified_builder_surfaces() -> Non
     assert "overflow-wrap: anywhere" in stylesheet
 
 
+def test_public_pages_use_cors_enabled_stylesheet_links() -> None:
+    for page_name in PAGES:
+        page = (ROOT / "docs" / page_name).read_text(encoding="utf-8")
+        assert '<link rel="stylesheet" href="/assets/datapulse.css" crossorigin="anonymous">' in page or '<link rel="stylesheet" href="assets/datapulse.css" crossorigin="anonymous">' in page
+        assert '<link rel="stylesheet" href="/assets/datapulse.css">' not in page
+        assert '<link rel="stylesheet" href="assets/datapulse.css">' not in page
+
+
 def test_learn_page_is_declared_and_discoverable() -> None:
     config = json.loads((ROOT / "config/public-surfaces.json").read_text(encoding="utf-8"))
     sitemap = (ROOT / "sitemap.xml").read_text(encoding="utf-8")

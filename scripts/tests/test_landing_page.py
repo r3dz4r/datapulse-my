@@ -63,6 +63,8 @@ def test_landing_page_is_deterministic_generated_and_uses_canonical_links(tmp_pa
     assert "fetch('/health/latest.json', {cache: 'no-store'" in page
     assert "unavailable; treat freshness as unknown" in page
     assert "<nav class=\"site-nav\"" in page
+    assert '<link rel="stylesheet" href="/assets/datapulse.css" crossorigin="anonymous">' in page
+    assert '<link rel="stylesheet" href="/assets/datapulse.css">' not in page
 
 
 def test_landing_page_rejects_malformed_claims_and_manual_mcp_enumeration(tmp_path: Path) -> None:
