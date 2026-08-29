@@ -30,3 +30,10 @@ record-evidence/**/2026-*.json
 # Older rows live in ~/runtime/datapulse-history/health-YYYY-MM.jsonl.gz
 health/history.jsonl
 docs/.health-methodology/
+
+# Unauthorized OpenWiki side-artifacts (per the documented OpenWiki generated-file
+# contract — only quickstart/datasets/mcp/operations/.last-update.json + managed
+# AGENTS.md/CLAUDE.md marker sections are allowed. Anything else from a generator
+# or agent run is a side-effect that must not leak into the repo.)
+openwiki/index.md
+openwiki/.claims/
