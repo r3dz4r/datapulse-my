@@ -14,6 +14,7 @@ from scripts import gen_site_nav
 ROOT = Path(__file__).resolve().parents[2]
 PAGES = ("index.html", "landing.html", "npra.html", "health-methodology.html", "learn.html")
 LEARN_PAGE = ROOT / "docs/learn.html"
+HEALTH_METHODOLOGY_TEMPLATE = ROOT / "scripts/templates/health-methodology.html.tmpl"
 
 
 class _TagCollector(HTMLParser):
@@ -46,9 +47,23 @@ def test_canonical_partial_is_well_formed_and_contains_expected_nav_links() -> N
     assert 'href="/learn.html"' in partial
     assert ">Learn</a>" in partial
     assert partial.count("<img") == 1
-    assert '<a class="brand" href="/landing" aria-label="DataPulse home"><img class="brand-logo" src="/assets/brand/datapulse-horizontal-full-color.svg" alt="DataPulse"></a>' in partial
+    assert '<a class="brand" href="/" aria-label="DataPulse home"><img class="brand-logo" src="/assets/brand/datapulse-horizontal-full-color.svg" alt="DataPulse"></a>' in partial
+    assert 'href="/#mcp"' in partial
+    assert 'href="/#machine-title"' in partial
+    assert 'href="/landing"' not in partial
+    assert 'href="/landing#' not in partial
     assert "[DATA]" not in partial
     assert "DataPulse MY" not in partial
+
+
+def test_health_methodology_template_uses_canonical_landing_links() -> None:
+    template = HEALTH_METHODOLOGY_TEMPLATE.read_text(encoding="utf-8")
+
+    assert 'href="/"' in template
+    assert 'href="/#mcp"' in template
+    assert 'href="/#surfaces"' in template
+    assert 'href="/landing"' not in template
+    assert 'href="/landing#' not in template
 
 
 def test_inject_all_replaces_only_whitelisted_existing_nav_blocks(tmp_path: Path) -> None:
