@@ -1,22 +1,30 @@
 ---
-type: "Reference"
-title: "Read-only MCP and Buyer API Integrations"
-description: "Reference for DataPulse MY's unauthenticated read-only MCP contract, published-artifact flow, deployment verification, and the separate authenticated buyer API, billing, quota, and NPRA boundary."
-tags: ["MCP", "buyer API", "integrations", "billing", "deployment"]
+type: Reference
+title: Read-only MCP and Buyer API Integrations
+description: Reference for DataPulse MY's published unauthenticated read-only MCP contract, catalogue and evidence flow, deployment boundary, and the separate authenticated buyer API with observed Paddle, quota, and NPRA integration behavior.
+tags: [MCP, buyer API, integrations, billing, deployment]
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-29T10:52:57.734Z
+    at: 2026-08-29T16:30:38.224Z
 sources:
+  - id: openwiki-source-378b07edcc123a4ad7e94363
+    resource: repo://.github/workflows/deploy-cloudflare-pages.yml
   - id: openwiki-source-21d85d8e7d85d9fa5d60e9f9
     resource: repo://api/config.py
   - id: openwiki-source-639c66b7cad7e4e00fb0f005
     resource: repo://api/entitlements.py
+  - id: openwiki-source-cd9b48e2d243f1569001eaef
+    resource: repo://api/keys.py
   - id: openwiki-source-a8989d330fb068ca878372fc
     resource: repo://api/paddle.py
   - id: openwiki-source-49a9c6737297a7028826ef33
     resource: repo://api/pharma_proxy.py
   - id: openwiki-source-03201de098bb06232b23e30a
     resource: repo://api/server.py
+  - id: openwiki-source-b801e3030787d5f9ac603f52
+    resource: repo://config/public-surfaces.json
+  - id: openwiki-source-53cc7c2d889d1fead610dba7
+    resource: repo://datapulse.json
   - id: openwiki-source-00defdc44caf88700f10e4ce
     resource: repo://deploy/cloudflared/config.yml.example
   - id: openwiki-source-47d1bd4a82ddd11fc2a418dd
@@ -27,84 +35,85 @@ sources:
     resource: repo://docs/buyer-api-reference.md
   - id: openwiki-source-910861586532d062f16e5be7
     resource: repo://docs/mcp-deploy.md
+  - id: openwiki-source-1a180b1bc921529852474c20
+    resource: repo://health/latest.json
+  - id: openwiki-source-770cce86fff48e46671ba377
+    resource: repo://llms.txt
   - id: openwiki-source-83fe3cd6171f4749991ccee9
     resource: repo://mcp.json
   - id: openwiki-source-a142396a7263c3e58ad95b67
     resource: repo://mcp/server.py
   - id: openwiki-source-73db7b1811c4b31152a67a0b
     resource: repo://mcp/tests/test_server.py
-  - id: openwiki-source-ab4ada65e7fc0e2acb7f228d
-    resource: repo://scripts/tests/test_buyer_api.py
-  - id: openwiki-source-d0e73a1f7e97038add918584
-    resource: repo://scripts/tests/test_npra_paid_control_plane.py
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
   - id: openwiki-source-c497d4cb0975a9d5d866792f
     resource: repo://scripts/verify_mcp_deployment.py
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:52:57.734Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-29T16:30:38.224Z" }
 ---
 
 # Read-only MCP and Buyer API Integrations
 
 DataPulse MY has two deliberately separate integration surfaces:
 
-- **Public MCP:** `POST https://mcp.data-pulse.my/mcp`, unauthenticated, for reading the published Malaysian catalogue and its derived evidence artifacts.
-- **Buyer API:** `https://api.data-pulse.my/api/v1/`, authenticated with `X-API-Key`, for operational access, billing lifecycle, and the paid NPRA proxy.
+- **Public MCP:** `POST https://mcp.data-pulse.my/mcp`, unauthenticated, for reading the published Malaysian catalogue and derived evidence artifacts.
+- **Buyer API:** `https://api.data-pulse.my/api/v1/`, authenticated with `X-API-Key`, for published operational data, audit and quota policy, and the separately protected NPRA boundary.
 
-The canonical website origin is **https://www.data-pulse.my**. The current catalogue contains **389 datasets** and the MCP advertisement describes **16 read-only tools**. `mcp.json` is the generated wire-level advertisement, while `mcp/server.py` is the implementation contract; current source and tests take precedence over older documentation.
+The canonical website origin is **https://www.data-pulse.my**. The live catalogue contains **389 datasets**, and `mcp.json` advertises **16 read-only tools**. `mcp.json` is the advertised wire contract; the server implementation and focused tests explain runtime behavior. Upstream publishers remain authoritative: DataPulse publishes metadata and evidence about those sources, rather than replacing them.
 
 ## Public MCP contract
 
-The endpoint uses MCP streamable HTTP with `POST`. A client must establish a session before discovery: `initialize`, then `notifications/initialized`, then `tools/list` (and similarly resource discovery). Calling `tools/list` before initialization is intentionally rejected by FastMCP. The initialize response exposes the server version and source markers (`source_commit_sha`, `source_commit_date`) so a deployment can be compared with repository HEAD.
+The endpoint is MCP Streamable HTTP: one unauthenticated `POST` endpoint at `https://mcp.data-pulse.my/mcp`. Clients must establish a session before discovery: `initialize`, then `notifications/initialized`, then `tools/list` or resource discovery. A discovery request before initialization is rejected by FastMCP. The initialize response includes the server version and source markers (`source_commit_sha`, `source_commit_date`) for comparing a deployment with repository state.
 
 ```mermaid
 sequenceDiagram
     participant C as MCP Client
     participant E as MCP Edge
     participant S as FastMCP Server
-    participant P as Published Pages
+    participant P as Published Artifacts
     C->>E: POST initialize
     E->>S: Forward MCP request
     S-->>C: serverInfo and session id
     C->>E: POST notifications/initialized
     C->>E: POST tools/list or resources/list
     E->>S: Forward session request
-    S-->>C: Contract discovery with public cache hints
+    S-->>C: Discovery result and cache hints
     C->>E: POST tools/call or resources/read
     E->>S: Forward read request
-    S->>P: Fetch published JSON artifacts
-    P-->>S: Manifest health and derived artifacts
+    S->>P: Fetch published JSON
+    P-->>S: Manifest, health, and derived evidence
     S-->>C: Read-only result
 ```
 
-*Figure 1. MCP session initialization, discovery, and published-artifact read flow.*
+*Figure 1. MCP initialization, discovery, and published-artifact read flow.*
 
-All tools advertise `readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`, and `openWorldHint: true`. FastMCP applies a public five-minute cache hint (`ttl_ms: 300000`, scope `public`) to discovery and cacheable resource results. Tool calls are logged with bounded, credential-redacted arguments and a result summary; usage records are written as daily JSONL under `DATAPULSE_USAGE_DIR` (default `/var/lib/datapulse/usage`). This ledger is for usage reporting, not a data mutation path.
+All advertised tools use `readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`, and `openWorldHint: true`. FastMCP applies a public five-minute cache hint (`ttl_ms: 300000`, scope `public`) to discovery and cacheable resource results. Tool calls are logged with bounded, credential-redacted arguments and result summaries; daily JSONL usage records are written under `DATAPULSE_USAGE_DIR` (default `/var/lib/datapulse/usage`). This ledger is for usage reporting, not a mutation path.
 
-### The 16 read-only tools
+### Tools
 
-The authoritative list and schemas are in `mcp.json`:
+The authoritative names, schemas, limits, and annotations are in `mcp.json`:
 
-| Tool | Purpose and notable inputs |
+| Tool | Responsibility |
 | --- | --- |
-| `search_datasets` | Natural-language title search, optional case-insensitive `source` and canonical/alias `licence`, `limit` 1–50. Exact title, substring, and term scoring are title-weighted; the current manifest has no description field for search. |
-| `get_dataset` | Merge one exact manifest entry with its latest health record, freshness signal, access dependency, `last_verified`, and schema version. Missing health is represented as `unknown`, not inferred healthy. |
-| `find_stale` | Find aging, stale, or degraded datasets, missing health rows, or an over-age health snapshot. |
-| `find_anomalies` | Return pipeline-published update anomalies, optionally filtered by detection mode, reliability grade, and a limit up to 200. |
-| `find_deteriorating` | Return published worsening freshness trends, optionally requiring a minimum anomaly rate. |
-| `find_recovering` | Return published improving freshness trends. |
-| `find_unreliable` | Return low publish-reliability grades; reliability means timeliness of successful freshness observations, not uptime. |
+| `search_datasets` | Rank natural-language title matches, with optional case-insensitive `source` and canonical or alias `licence` filters; `limit` is 1–50. The current manifest has no description field, so search scoring is effectively title-based. |
+| `get_dataset` | Merge one exact manifest entry with its latest health record, freshness signal, access dependency, `last_verified`, and schema version. Missing health is `unknown`, not inferred healthy. |
+| `find_stale` | Find aging, stale, or degraded datasets, missing health rows, and over-age health snapshots. |
+| `find_anomalies` | Return pipeline-published update anomalies, optionally filtered by detection mode and minimum publish-reliability grade. |
+| `find_deteriorating` / `find_recovering` | Return published worsening or improving freshness trends, with optional anomaly-rate filtering for deterioration. |
+| `find_unreliable` | Return low publish-reliability grades. Reliability measures timeliness of successful freshness observations, not service uptime. |
 | `find_schema_drift` | Return published structural or record-count drift, optionally requiring structural transitions. |
-| `check_reconciliation` | Resolve a dataset ID or exact name to its published cross-source group; discrepancies require human review and do not prove which source is wrong. |
+| `check_reconciliation` | Resolve an ID or exact name to a published cross-source group. A discrepancy requires human review and does not prove which source is wrong. |
 | `get_provenance` | Return citation metadata and compact pipeline evidence for 1–50 dataset IDs. |
-| `get_evidence` | Return the complete published evidence receipt without MCP-side recomputation. |
-| `verify_evidence` | Perform a constrained ephemeral transport check for one direct-access dataset. |
-| `trust_verdict` | Join published attestation facts, unsigned methodology-versioned score, and existing health/trend/drift/reconciliation evidence; it does not verify signatures or re-probe. |
-| `verify_attestation` | Verify an Ed25519 attestation (L1), optionally replay daily chain heads to a Git-tag anchor (L2); L3 is the separate `verify_evidence` check. |
+| `get_evidence` | Return the complete published evidence receipt for one dataset without MCP-side recomputation. |
+| `verify_evidence` | Perform one constrained, ephemeral transport check against a direct-access source. |
+| `trust_verdict` | Join published attestation facts, the unsigned methodology-versioned score, and existing health, trend, drift, and reconciliation evidence; it does not verify signatures or re-probe. |
+| `verify_attestation` | Verify an Ed25519 attestation (L1), optionally replay daily chain heads to a Git-tag anchor (L2). L3 is the separate `verify_evidence` check. |
 | `find_by_licence` | Enumerate dataset summaries for a canonical licence or supported alias. |
-| `usage_summary` | Aggregate one buyer's persisted MCP usage by inclusive ISO date range, tool, dataset, and trust-score bucket. |
+| `usage_summary` | Aggregate one buyer's persisted MCP usage for an inclusive ISO date range by tool, dataset, and trust-score bucket. |
 
-### Resources
+### Resources and discovery artifacts
 
-The server exposes eight fixed JSON resources and one template, as advertised by `mcp.json`:
+The server exposes eight fixed JSON resources and one template:
 
 - `datapulse://index` — lightweight ID, status, title, source, licence, and namespace index for all 389 datasets.
 - `datapulse://anomalies` — current anomaly results.
@@ -116,58 +125,64 @@ The server exposes eight fixed JSON resources and one template, as advertised by
 - `datapulse://licences` — licence-to-dataset counts.
 - `datapulse://{dataset_id}` — on-demand full published manifest entry.
 
-MCP reads `datapulse.json`, `health/latest.json`, and the published trend, drift, reconciliation, and attestation artifacts. It does not become the health owner and does not write those artifacts.
+MCP loads `datapulse.json`, `health/latest.json`, and published trend, drift, reconciliation, and attestation artifacts from the canonical website. The `datapulse://index` array is generated from the manifest and joins current health status where available; it is therefore a useful catalogue/discovery entry point, not an independent catalogue owner. The root discovery artifacts include `https://www.data-pulse.my/llms.txt`, `https://www.data-pulse.my/agent.json`, and `https://www.data-pulse.my/mcp.json`.
 
-## Live verification is intentionally limited
+## Evidence semantics and live verification
 
-`verify_evidence` is not a second health pipeline. It only compares transport receipts against the latest published evidence: request/final URL, HTTP status, `Last-Modified`, and content length where available. It streams a GET without downloading the body, has a 30-second timeout, follows at most five redirects, and caches the result for 600 seconds under an in-process lock. Results explicitly mark content date, record count, and first-row/shape fingerprint as unverified and are ephemeral; **they never update health**.
+Published evidence is authoritative for DataPulse's derived health, trend, drift, reconciliation, provenance, and attestation results. `get_evidence` presents the pipeline receipt without recomputation. Reconciliation differences are context for review, not proof that either upstream source is incorrect. Attestation verification distinguishes signature/key and chain checks from transport checks; `trust_verdict` itself does not verify the signature.
 
-Safety gates refuse browser-dependent/Camofox datasets, non-HTTPS URLs, credentials, non-default HTTPS ports, and hosts outside the reviewed allowlist (`api.bnm.gov.my`, `api.data.gov.my`, `eqms.doe.gov.my`, `hansard.parlimen.gov.my`, `idengue.mysa.gov.my`, `storage.data.gov.my`, `storage.dosm.gov.my`, `www.eperolehan.gov.my`). Unsafe redirects are rejected as well. A failed request yields an `unreachable` result; a transport mismatch yields `mismatch`; a browser-dependent or otherwise blocked source remains `not_verifiable`.
+`verify_evidence` is deliberately not a second health pipeline. It streams a GET without downloading the body, compares request/final URL, HTTP status, `Last-Modified`, and content length where available, uses a 30-second timeout and at most five redirects, and caches results for 600 seconds under an in-process lock. Content date, record count, and first-row/shape fingerprints remain explicitly unverified. Results are ephemeral and **never update health artifacts**.
 
-## Deployment and source synchronization
+Safety gates reject browser-dependent/Camofox datasets, non-HTTPS URLs, credentials, non-default HTTPS ports, hosts outside the reviewed allowlist, and unsafe redirects. A failed request is `unreachable`; a transport mismatch is `mismatch`; a blocked or browser-dependent source is `not_verifiable`. These outcomes describe the check, not guaranteed availability of either the upstream service or MCP itself.
 
-The production path is:
+## Deployment boundary and source synchronization
+
+The production request path is:
 
 ```text
 Cloudflare edge → cloudflared tunnel → nginx at 127.0.0.1:8443 → MCP at 127.0.0.1:8788
 ```
 
-`deploy/cloudflared/config.yml.example` routes the public hostname to the local nginx TLS listener and contains a deployment-time tunnel UUID placeholder. `deploy/nginx/datapulse-mcp.conf` accepts only the `/mcp` location, allows the documented dashboard/GitHub origins (or empty Origin), limits requests to 1 request/second with burst 20 and returns 429 on excess, caps bodies at 256 KiB, disables proxy buffering/cache, and permits long-lived sessions with a 3600-second read timeout. Cloudflare's connecting IP is used at the local proxy boundary. `deploy/systemd/datapulse-mcp.service` runs the server as a hardened user service on loopback, with restart backoff and filesystem/home protections.
+The checked-in cloudflared example uses a tunnel UUID and hostname placeholders and forwards its configured hostname to the local nginx TLS listener; the public contract above is the hostname advertised by `mcp.json`. nginx accepts only `/mcp`, allows its configured dashboard/GitHub origins (or empty `Origin`), applies an average limit of 60 requests per minute with a 20-request burst and returns 429 on excess, caps request bodies at 256 KiB, disables proxy buffering/cache, and allows long-lived sessions with a 3600-second read timeout. The systemd user service runs the MCP process on loopback with hardening and restart backoff. The tunnel-to-nginx hop uses an origin certificate; public TLS termination is outside the MCP process.
 
-Run locally with Python 3.11+ and the documented dependencies:
+A release build stamps the current Git SHA and date into `mcp/server.py` and `mcp.json`. `scripts/verify_mcp_deployment.py` performs the protocol-valid handshake, reads `serverInfo.source_commit_sha`, and compares it with `git rev-parse HEAD`: it reports `UNREACHABLE` when the endpoint cannot be inspected and `MISMATCH` when markers differ. A successful handshake does not prove every published artifact is current. The health workflow's MCP synchronization is non-fatal: failed synchronization is recorded and does not stop the health cycle or publication.
+
+Run the local server with Python 3.11+:
 
 ```sh
 uv run --with fastmcp,httpx python mcp/server.py
 ```
 
-The local defaults are `DATA_BASE=https://www.data-pulse.my`, `MCP_HOST=127.0.0.1`, and `MCP_PORT=8788`; `REQUEST_TIMEOUT_SECONDS` is 30. The release process updates the source marker using `scripts/bump_mcp_source_version.py`. To verify a deployment, `scripts/verify_mcp_deployment.py` performs the protocol-valid initialize/initialized/tools-list sequence, reads `serverInfo.source_commit_sha`, and compares it with `git rev-parse HEAD`. It reports `UNREACHABLE` when the endpoint cannot be inspected and `MISMATCH` when source and deployment differ; a successful discovery is not proof that every published artifact is current.
+The local defaults are `DATA_BASE=https://www.data-pulse.my`, `MCP_HOST=127.0.0.1`, `MCP_PORT=8788`, and `REQUEST_TIMEOUT_SECONDS=30`. The read-only deployment check is:
 
-Focused MCP tests use FastMCP's in-memory client plus checked-in/live artifacts. They assert the current protocol, all 16 tools, eight resources and one template, cache hints, read-only annotations, tool parameter contracts, evidence limitations, attestation tamper rejection, drift/reconciliation behavior, and live-artifact matching. Network access is required for the live portions:
+```sh
+python3 scripts/verify_mcp_deployment.py
+```
+
+Focused MCP tests use FastMCP's in-memory client plus checked-in/live artifacts. They cover the initialized protocol, all 16 tools, eight resources and one template, annotations, schemas, cache hints, evidence limitations, attestation tamper rejection, drift/reconciliation behavior, and live-artifact matching. Network access is required for live portions:
 
 ```sh
 uv run --with fastmcp,httpx pytest mcp/tests/ -v
 ```
 
-## Authenticated buyer API boundary
+## Authenticated buyer API
 
-The buyer API intentionally does not import the public FastMCP server. It serves published health/catalogue artifacts behind `X-API-Key` authentication at `https://api.data-pulse.my/api/v1/`:
+The buyer API does not import the public FastMCP server. It is a separate `X-API-Key`-protected service at `https://api.data-pulse.my/api/v1/` that reads the published health and catalogue artifacts and owns buyer policy. Its routes are:
 
 - `GET /health`
-- `GET /datasets` and `GET /datasets/{id}`
-- `GET /datasets/{id}/history`
-- `GET /deltas` and `GET /deltas/{cycle}`
-- `GET /snapshot`
+- `GET /datasets`, `GET /datasets/{id}`, and `GET /datasets/{id}/history`
+- `GET /deltas`, `GET /deltas/{cycle}`, and `GET /snapshot`
 - `GET /keys/me`
-- Paddle `POST /paddle/webhook` and `POST /paddle/redeem`
-- NPRA `GET /npra/health`, `/npra/changes`, `/npra/product/{id}`, `/npra/manufacturer/{id}`, and `/npra/importer/{id}`
+- `POST /paddle/webhook` and `POST /paddle/redeem`
+- `GET /npra/health`, `/npra/changes`, `/npra/product/{id}`, `/npra/manufacturer/{id}`, and `/npra/importer/{id}`
 
-API keys are generated as high-entropy tokens but only a salted SHA-256 hash is persisted. Authentication hashes the presented token and compares it with active records; the plaintext key is not recoverable from storage. The default free-key rate limit is 100 requests per 60-second per-key window, configurable but capped at 1000. The token-bucket state is atomically replaced in a JSON file. List routes default to `limit=50`, cap it at the configured maximum (up to 1000), and use integer-offset cursors; responses are `{data: [...], pagination: {limit, next_cursor, total}}`. Errors use a stable `{error: {code, message}}` envelope; rate-limit errors add `Retry-After` and `error.retry_after_s`.
+Only salted SHA-256 token hashes are persisted; plaintext keys are not recoverable from storage. The default per-key rate limit is 100 requests per 60-second window, configurable but capped at 1000. List responses default to `limit=50`, use integer-offset cursors, and cap the configured page size at 1000. Errors use `{error: {code, message}}`; rate-limit errors additionally provide `Retry-After` and `error.retry_after_s`.
 
-Every GET, including failed authentication and rate-limited requests, is appended to an audit JSONL record containing key label/hash, client IP, user agent, path, status, and latency. Generated artifacts are parsed and cached until their atomic replacement changes mtime; missing or malformed local artifacts fail closed as `503 artifact_unavailable`.
+Every GET—including failed authentication and rate-limited requests—is appended to an audit JSONL record containing key label/hash, client IP, user agent, path, status, and latency. Generated artifacts are parsed and cached until their atomic replacement changes mtime. Missing or malformed local artifacts fail closed as `503 artifact_unavailable`.
 
-### Paddle entitlement and NPRA billing flow
+### Observed Paddle and NPRA integration boundary
 
-NPRA Pro is a separate paid control plane: USD 25/month and 100,000 queries per Paddle billing period. It is not MCP authentication and does not change the public tool surface. Checkout is sandbox-gated to the approved product/price, uses a high-entropy browser nonce as short-lived single-use redemption material, and never places an API key or nonce in a URL or browser storage.
+Paddle is an observed billing integration boundary, not an MCP capability or a guarantee that payment or service activation will succeed. The configured sandbox offer is USD 25/month with 100,000 NPRA queries per Paddle billing period. Activation requires a signed lifecycle event for the approved product/price. Webhook signatures cover the exact raw body and a timestamp within five minutes; malformed, stale, unrecognized, or unapproved events are rejected.
 
 ```mermaid
 sequenceDiagram
@@ -177,38 +192,35 @@ sequenceDiagram
     participant T as Entitlement Store
     participant N as Internal NPRA Engine
     B->>P: Sandbox checkout with dp_nonce custom data
-    P->>A: Signed transaction or subscription webhook
-    A->>A: Verify HMAC body and five-minute timestamp
-    A->>T: Apply event atomically and record event hash
-    T-->>A: Activated or lifecycle outcome
+    P->>A: Signed lifecycle webhook
+    A->>A: Verify HMAC body and timestamp
+    A->>T: Apply event atomically and record payload hash
     B->>A: POST paddle/redeem with nonce
     A->>T: Hash nonce and issue or recover key
-    T-->>B: 201 API key once activation is confirmed
+    T-->>B: Key only after active entitlement
     B->>A: GET npra resource with X-API-Key
     A->>T: Atomically charge current billing period
     A->>N: Whitelisted JSON request with internal credential
     N-->>A: Response or bounded failure
     A->>T: Refund charge on transport or upstream 5xx failure
-    A-->>B: NPRA result or quota/error response
+    A-->>B: Result or quota/error response
 ```
 
-*Figure 2. Paddle confirmation, durable entitlement redemption, and billable NPRA request flow.*
+*Figure 2. Observed Paddle confirmation, entitlement redemption, and billable NPRA request boundary.*
 
-Paddle signatures cover the exact raw body and a timestamp with a five-minute tolerance. The parser requires a recognized lifecycle identity and the exact approved sandbox offer for activating events. The entitlement store uses an advisory file lock and atomic replacement, storing a ledger keyed by event ID plus payload hash. An identical webhook replay is a duplicate; the same event ID with a different payload is a security conflict (`409`) and is audited. Pending/rejected adjustments do not revoke access; approved refund/chargeback adjustments and cancellation do. Revoked subscriptions are terminal, while only a verified paused subscription can resume.
+The entitlement store uses an advisory file lock and atomic replacement. It records event ID plus payload hash: an identical replay is a duplicate, while the same event ID with a different payload is a security conflict (`409`). The redemption nonce is stored only as a hash, expires after 15 minutes, is single-use, and deterministically recovers the same issued key if the client loses the response and retries. Cancellation and approved refund/chargeback adjustments revoke access; revoked subscriptions are terminal, while only a verified paused subscription can resume. Monthly rollover advances the boundary and resets usage.
 
-The webhook stores only a hash of the redemption nonce and never returns it. Redemption is valid for 15 minutes, requires an active entitlement, and deterministically recovers the same issued key if the browser retries after losing the response. `/keys/me` reports `tier: pro`, status, `npra.read`, remaining quota, and reset time. Monthly rollover advances the billing boundary and resets usage. Each NPRA request charges atomically before dispatch; an exhausted period returns `403 quota_exhausted`. Transport failures, oversized/malformed/non-JSON upstream responses, and upstream 5xx responses refund the charge; upstream 4xx responses are returned and remain billable.
-
-The NPRA proxy is internal-only: it accepts a fixed configured HTTP(S) engine URL without embedded credentials/query/fragment, permits only the five named resources, URL-quotes lookup identifiers, sends only `Accept: application/json` and the engine's internal `X-API-Key`, limits responses to 1 MiB, and rejects non-JSON or upstream 5xx responses. No internal credential is exposed to MCP clients or browsers.
-
-Focused tests cover key hashing and revocation, pagination and history windows, persistent rate limiting, error envelopes, append-only audit records, exact Paddle-body/timestamp signatures, offer gating, duplicate/conflicting replay, durable atomic entitlement lifecycle, nonce recovery, quota rollover/refund behavior, and NPRA proxy header/scheme/resource isolation:
+Each NPRA request charges atomically before dispatch. An exhausted period returns `403 quota_exhausted`. Transport failures, oversized/malformed/non-JSON upstream responses, and upstream 5xx failures refund the charge; upstream 4xx responses are returned and remain billable. The proxy accepts a configured HTTP(S) engine URL without embedded credentials, query, or fragment; permits only the five named resources, URL-quotes lookup identifiers, sends only `Accept: application/json` and the engine's internal `X-API-Key`, limits responses to 1 MiB, and never exposes the internal credential to MCP clients or browsers.
 
 ```sh
 python3 -m unittest scripts/tests/test_buyer_api.py scripts/tests/test_npra_paid_control_plane.py
 ```
 
-## Neighboring documentation and invariants
+These focused tests cover key hashing and revocation, pagination and history windows, persistent rate limiting, error envelopes, audit records, exact Paddle signature and offer gating, duplicate/conflicting replay, durable entitlement lifecycle, nonce recovery, quota rollover/refunds, and NPRA header, scheme, resource, and response isolation.
 
-Use `/openwiki/datasets.md` for catalogue semantics and `/openwiki/operations.md` for health-generation operations. This page is the integration boundary: MCP is public, read-only, and artifact-backed; the buyer API is authenticated, audited, rate-limited, and owns paid entitlement state. Neither boundary should be widened by adding secrets, browser-dependent probing, MCP-side health writes, or direct exposure of the NPRA engine.
+## Integration invariants
+
+Use `/openwiki/datasets.md` for catalogue and health semantics, and `/openwiki/operations.md` for health-generation operations. This page is the boundary: MCP is public, unauthenticated, read-only, and artifact-backed; the buyer API is authenticated, audited, rate-limited, and owns paid entitlement state. Do not widen either surface with secrets, MCP-side health writes, browser-dependent probing, payment claims, or direct exposure of the NPRA engine.
 
 Canonical facts: **https://www.data-pulse.my**, **389 datasets**, and **16 read-only tools**.
 
