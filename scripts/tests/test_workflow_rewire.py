@@ -7,7 +7,6 @@ import os
 import re
 import shutil
 import subprocess
-import textwrap
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -124,6 +123,76 @@ def test_cloudflare_workflow_permissions_and_concurrency_are_not_broadened() -> 
     assert "[skip deploy]" in concurrency["cancel-in-progress"]
 
 
+def test_sigstore_oidc_is_isolated_to_a_least_privilege_job() -> None:
+    workflow = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+    signing = workflow["jobs"]["sign_health"]
+
+    assert workflow["permissions"] == {"contents": "read"}
+    assert signing["permissions"] == {"contents": "read", "id-token": "write"}
+    assert "permissions" not in workflow["jobs"]["deploy"]
+    assert "permissions" not in workflow["jobs"]["classify"]
+    assert workflow["jobs"]["deploy"]["needs"] == ["classify", "sign_health"]
+
+
+def test_sigstore_uses_pinned_cosign_dsse_semantics_and_explicit_identity() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    signing = workflow.split("  sign_health:\n", 1)[1].split("\n  deploy:\n", 1)[0]
+
+    assert "sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad" in signing
+    assert "cosign-release: v3.1.3" in signing
+    assert "python3 scripts/gen_sigstore_bundle.py" in signing
+    assert "cosign attest-blob" in signing
+    assert "--statement" in signing
+    assert "cosign sign-blob" not in signing
+    assert "python3 scripts/verify_sigstore_bundle.py" in signing
+    assert "--certificate-identity \"$SIGSTORE_IDENTITY\"" in signing
+    assert "--certificate-oidc-issuer \"$SIGSTORE_ISSUER\"" in signing
+    assert (
+        "https://github.com/r3dz4r/datapulse-my/.github/workflows/"
+        "deploy-cloudflare-pages.yml@refs/heads/main"
+    ) in signing
+    assert "https://token.actions.githubusercontent.com" in signing
+
+
+def test_sigstore_failure_is_non_blocking_and_cannot_publish_partial_output() -> None:
+    parsed = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+    steps = parsed["jobs"]["sign_health"]["steps"]
+    install = next(step for step in steps if step.get("id") == "install_cosign")
+    sign = next(step for step in steps if step.get("id") == "sign_current_health")
+    upload = next(step for step in steps if step.get("id") == "upload_sigstore")
+    result = next(step for step in steps if step.get("id") == "sigstore_result")
+
+    assert install["continue-on-error"] is True
+    assert sign["continue-on-error"] is True
+    assert upload["continue-on-error"] is True
+    assert ".health.latest.sigstore.json.tmp" in sign["run"]
+    assert "verify_sigstore_bundle.py" in sign["run"]
+    assert sign["run"].index("verify_sigstore_bundle.py") < sign["run"].index(
+        'mv "$bundle_tmp" "$publication/health.latest.sigstore.json"'
+    )
+    assert result["if"] == "always()"
+    assert "::warning title=Sigstore health signing unavailable" in result["run"]
+    assert "signed=false" in result["run"]
+    assert "signed=true" in result["run"]
+
+
+def test_cloudflare_publishes_only_a_current_verified_optional_bundle() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    assembly = workflow.split("      - name: Assemble canonical Pages artifact\n", 1)[1].split(
+        "      - name: Deploy canonical Cloudflare Pages artifact\n", 1
+    )[0]
+    served = workflow.split("      - name: Verify canonical served surface\n", 1)[1]
+
+    assert "needs.sign_health.outputs.signed == 'true'" in workflow
+    assert "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093" in workflow
+    assert 'mkdir -p _site/signatures' in assembly
+    assert 'cp "$RUNNER_TEMP/sigstore-publication/health.latest.sigstore.json" _site/signatures/' in assembly
+    assert "signatures/health.latest.sigstore.json" in served
+    assert "cmp -s" in served
+    assert "python3 scripts/verify_sigstore_bundle.py" in served
+    assert "stale Sigstore bundle is still served" in served
+
+
 def test_generate_sh_release_profile_matches_cloudflare_workflow() -> None:
     listed = subprocess.run(
         ["./scripts/generate.sh", "release-build", "--list"],
@@ -150,7 +219,7 @@ def _fast_path_preservation_script() -> str:
     workflow = _read(DEPLOY_WORKFLOW)
     match = re.search(
         r"(?ms)^      - name: Preserve served attestation plane \(health-only path\)\n"
-        r".*?^        run: \|\n(.*?)(?=^      - name: Assemble canonical Pages artifact)",
+        r".*?^        run: \|\n(.*?)(?=^      - name: (?:Download verified optional Sigstore bundle|Assemble canonical Pages artifact))",
         workflow,
     )
     assert match is not None, "fast path must preserve the served attestation plane"
