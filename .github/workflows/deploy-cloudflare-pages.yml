@@ -434,7 +434,7 @@ jobs:
             cmp -s "$staged_bundle" "$smoke_dir/health.latest.sigstore.json" || \
               fail "served Sigstore bundle differs from the verified staged artifact"
             python3 scripts/verify_sigstore_bundle.py \
-              --health "$smoke_dir/health/latest.json" \
+              --health _site/health/latest.json \
               --manifest datapulse.json \
               --legacy-chain-head .attestations/chain_head.json \
               --source-commit "$GITHUB_SHA" \
