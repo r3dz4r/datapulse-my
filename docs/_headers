@@ -1,0 +1,74 @@
+# Cloudflare Pages _headers for DataPulse MY
+#
+# Purpose: Make every public HTML page revalidate on cold-cache visits without
+# breaking the legacy dashboard embed (now served at /dashboard). Google Fonts
+# + the dark-precision CSS load with short edge TTLs so first-paint never
+# flashes unstyled.
+#
+# Note: Cloudflare Pages automatically enables gzip + Brotli on text
+# responses; this file controls browser cache + Cloudflare edge cache TTLs.
+
+# --- Brand assets: hash-bust, serve forever --------------------------
+/assets/*
+  Cache-Control: public, max-age=86400
+  X-Content-Type-Options: nosniff
+  Vary: Accept-Encoding
+
+# --- Data files: brief TTL ----------------------------------------
+/data/jsonld/*
+  Cache-Control: public, max-age=3600
+/data/**/*.json
+  Cache-Control: public, max-age=600
+/data/**/*.md
+  Cache-Control: public, max-age=600
+
+# --- HTML pages: aggressive revalidate ------------------------------
+/landing.html
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+/build.html
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+/npra.html
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+/dashboard.html
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+/health-methodology.html
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+
+# --- Top-level: same -----------------------------------------------
+/
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+
+# --- JSON catalogues: short TTL ------------------------------------
+/health/latest.json
+  Cache-Control: public, max-age=300
+/health/*.json
+  Cache-Control: public, max-age=300
+/datapulse.json
+  Cache-Control: public, max-age=300
+/mcp.json
+  Cache-Control: public, max-age=300
+/agent.json
+  Cache-Control: public, max-age=300
+/llms.txt
+  Cache-Control: public, max-age=300
+/datapulse.schema.json
+  Cache-Control: public, max-age=3600
+/health.schema.json
+  Cache-Control: public, max-age=3600
+/feed.xml
+  Cache-Control: public, max-age=600
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+
+# --- Security headers (applies to all responses) -------------------
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
