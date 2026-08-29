@@ -132,6 +132,19 @@ def test_native_pages_preserves_full_release_build_and_surface_contract() -> Non
         assert copy in workflow
 
 
+def test_health_only_legacy_release_proof_accepts_generated_and_verified_timestamps() -> None:
+    workflow = _workflow()
+    preserve_step = workflow.split(
+        "      - name: Preserve served release proof (health-only path)\n", 1
+    )[1].split("      - name: Preserve served attestation plane (health-only path)\n", 1)[0]
+    match = re.search(r'"verification timestamp": r"([^"]+)"', preserve_step)
+    assert match is not None
+    pattern = match.group(1)
+
+    assert re.search(pattern, "- Generated at: `2026-08-29T10:27:58+00:00`\n", re.MULTILINE)
+    assert re.search(pattern, "- Verified at: `2026-08-29T10:27:58+00:00`\n", re.MULTILINE)
+
+
 def test_native_pages_installs_release_dependencies_before_generation() -> None:
     parsed = yaml.safe_load(_workflow())
     steps = parsed["jobs"]["deploy"]["steps"]

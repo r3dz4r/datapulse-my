@@ -189,7 +189,7 @@ jobs:
           proof = Path(sys.argv[1]).read_text(encoding="utf-8")
           required = {
               "release-proof title": r"^# Release reproducibility verification$",
-              "verification timestamp": r"^- Verified at: `[^`\\n]+`$",
+              "verification timestamp": r"^- (?:Generated|Verified) at: `[^`\\n]+`$",
               "Source SHA": r"^- Source SHA: `[0-9a-f]{7,64}`$",
               "Profile result": r"^- Profile result: .+$",
               "Total files built": r"^- Total files built: .+$",
