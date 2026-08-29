@@ -296,6 +296,7 @@ def test_fast_path_preserves_a_newer_valid_served_attestation_plane(tmp_path: Pa
     shutil.copytree(served_root, checkout)
     (checkout / "scripts").mkdir()
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", checkout / "scripts")
+    shutil.copy2(ROOT / "scripts/verify_attestation_plane_state.py", checkout / "scripts")
     stale = checkout / "attestations"
     shutil.rmtree(stale)
     shutil.copytree(served_root / f"attestations/{first_day}", stale / first_day)
@@ -416,7 +417,8 @@ cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
 
 def test_fast_path_fails_closed_when_served_binding_cannot_be_preserved() -> None:
     script = _fast_path_preservation_script()
-    assert "python3 scripts/verify_attestation_binding.py --root \"$preserved_root\"" in script
+    assert "python3 scripts/verify_attestation_plane_state.py --planedir \"$preserved_root\"" in script
+    assert "Signer lane down (P6); attestation failed-closed" in script
     assert "Run a full release-build deployment to heal the public trust plane." in script
     workflow = _read(DEPLOY_WORKFLOW)
     assert "cp -R health deltas record-evidence badges samples data _site/" in workflow
@@ -432,7 +434,7 @@ def test_fast_path_requires_a_full_release_to_recover_an_inconsistent_served_pla
     """A fast path must stop before assembly when served health and binding diverge."""
     script = _fast_path_preservation_script()
 
-    assert 'if ! python3 scripts/verify_attestation_binding.py --root "$preserved_root"; then' in script
+    assert 'attestation_plane_state="$(python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root")"' in script
     assert 'fail "served health/binding plane is inconsistent; Run a full release-build deployment to heal the public trust plane."' in script
 
 
@@ -455,6 +457,7 @@ def test_fast_path_stops_with_recovery_diagnostic_for_mismatched_served_plane(
     shutil.copytree(served_root, checkout)
     (checkout / "scripts").mkdir()
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", checkout / "scripts")
+    shutil.copy2(ROOT / "scripts/verify_attestation_plane_state.py", checkout / "scripts")
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
     fake_curl = fake_bin / "curl"

@@ -109,6 +109,7 @@ fetch attestation-head.json attestations/latest/chain_head.json
 fetch attestation-scores.json attestations/latest/scores.json
 fetch_optional attestation-binding.json attestations/latest/binding.json || true
 
+attestation_plane_state="local"
 if ! $local_mode; then
   contract_root="$work_dir/contract-root"
   mkdir -p "$contract_root/health" "$contract_root/attestations/latest" "$contract_root/docs/.well-known"
@@ -135,7 +136,17 @@ if ! $local_mode; then
   if [[ "${DATAPULSE_ALLOW_UNATTESTED_HEALTH:-0}" == "1" ]]; then
     binding_args+=(--allow-unattested-health)
   fi
-  python3 scripts/verify_attestation_binding.py "${binding_args[@]}" >/dev/null
+  if attestation_plane_state="$(
+    python3 scripts/verify_attestation_plane_state.py \
+      --planedir "$contract_root" --head-only
+  )"; then
+    if [[ "$attestation_plane_state" == "signer_down" ]]; then
+      echo '::warning title=Signer lane down (P6); attestation failed-closed::Served attestation plane is stale and explicitly reports artifact_signed:false; preserving it unchanged.'
+    fi
+  else
+    python3 scripts/verify_attestation_binding.py "${binding_args[@]}"
+    exit 1
+  fi
 fi
 
 vertical_ids=()
@@ -178,7 +189,7 @@ fi
 
 python3 -m jsonschema -i "$work_dir/manifest.json" datapulse.schema.json
 
-python3 - "$work_dir" "$canonical_base_url" <<'PY'
+python3 - "$work_dir" "$canonical_base_url" "$attestation_plane_state" <<'PY'
 import json
 import re
 import sys
@@ -190,6 +201,7 @@ from scripts.public_surface_generation import load_public_surfaces
 
 work = Path(sys.argv[1])
 base = sys.argv[2]
+signer_down = sys.argv[3] == "signer_down"
 manifest = json.loads((work / "manifest.json").read_text())
 health = json.loads((work / "health.json").read_text())
 trends = json.loads((work / "trends.json").read_text())
@@ -219,19 +231,26 @@ assert len(catalog_ids) == len(set(catalog_ids)) == expected_count
 assert set(manifest_ids) == set(health_ids) == set(catalog_ids)
 assert attestation_keys["schema"] == "datapulse/v1/probe-key-registry"
 assert attestation_index["schema"] == "datapulse/v1/attestation-index"
-assert len(attestation_index["attestations"]) == expected_count
+assert isinstance(attestation_index["attestations"], dict)
+assert attestation_index["attestations"]
 assert attestation_head["schema"] == "datapulse/v1/daily-chain-head-envelope"
 head_payload = attestation_head["payload"]
 assert isinstance(head_payload, dict)
 assert head_payload["schema"] == "datapulse/v1/daily-chain-head"
 assert attestation_index["date"] == head_payload["date"]
 assert attestation_index["chain_head_ref"] == f"attestations/{head_payload['date']}/chain_head.json"
-assert head_payload["dataset_count"] == expected_count
-assert len(attestation_head["dataset_links"]) == expected_count
+assert isinstance(attestation_head["dataset_links"], list)
+assert attestation_head["dataset_links"]
 assert re.fullmatch(r"[0-9a-f]{64}", attestation_head["chain_head"])
 assert attestation_scores["schema"] == "datapulse/v1/trust-scores"
-assert len(attestation_scores["datasets"]) == expected_count
+assert isinstance(attestation_scores["datasets"], list)
+assert attestation_scores["datasets"]
 assert attestation_scores["methodology_version"] == 3
+if not signer_down:
+    assert len(attestation_index["attestations"]) == expected_count
+    assert head_payload["dataset_count"] == expected_count
+    assert len(attestation_head["dataset_links"]) == expected_count
+    assert len(attestation_scores["datasets"]) == expected_count
 reasons = {"measured", "classified", "insufficient_history", "not_applicable", "missing_record", "unknown_status"}
 for row in attestation_scores["datasets"]:
     assert row["methodology_version"] == 3
