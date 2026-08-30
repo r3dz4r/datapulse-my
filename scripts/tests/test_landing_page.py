@@ -147,7 +147,20 @@ def test_landing_page_receipt_uses_live_evidence(tmp_path: Path) -> None:
     page = render(root)
     assert "Preview schema field" not in page
     assert "not verified evidence" not in page
-    assert "949 records; within tolerance" in page
+    health = json.loads((root / "health/latest.json").read_text(encoding="utf-8"))
+    fuelprice = next((row for row in health["datasets"] if row.get("dataset_id") == "fuelprice"), None)
+    assert fuelprice is not None, "health/latest.json is missing the fuelprice dataset"
+    record_count = fuelprice.get("record_count")
+    within_tolerance = fuelprice.get("record_count_within_tolerance")
+    if record_count is None:
+        record_signal = "not observed"
+    elif within_tolerance is True:
+        record_signal = f"{record_count} records; within tolerance"
+    elif within_tolerance is False:
+        record_signal = f"{record_count} records; outside tolerance"
+    else:
+        record_signal = f"{record_count} records; tolerance unknown"
+    assert record_signal in page
     assert "Evidence verdict: use" in page
     assert 'href="/data/fuelprice.md"' in page
 
