@@ -554,6 +554,36 @@ For example, a data pipeline can inspect `status`, `content_freshness_date`, and
 `freshness_signal_source` before processing a source, while a researcher can
 review the known quirks before designing a collection method.
 
+## Verify before trust
+
+Every dataset in this catalogue ships with a **publicly-signed Sigstore
+DSSE evidence receipt** that an agent can verify offline, without trusting
+the DataPulse server. An agent (human or MCP) can obtain, for any dataset,
+the full health row + evidence + signed-receipt-verification in **three MCP
+tool calls or fewer**: `search_datasets` → `verify_dataset` →
+`get_freshness_summary`. The standard offline path is:
+
+```bash
+cosign verify-blob \
+  --bundle https://www.data-pulse.my/data/fuelprice.receipt.sigstore.json \
+  --certificate-identity 'https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+  --certificate-github-workflow-repository r3dz4r/datapulse-my \
+  --certificate-github-workflow-ref refs/heads/main \
+  --certificate-github-workflow-name "Datapulse MY canonical Pages" \
+  fuelprice
+```
+
+The same recipe works for the **canonical health snapshot** at
+`/signatures/health.latest.sigstore.json` (the 389-dataset rollup). Every
+refresh publishes the signed bundles to the public Rekor log. This is the
+only MCP-native trust layer for licensed Malaysian government open data
+whose receipts are independently verifiable.
+
+See [notes/2026-08-30-phase-5-verify-before-trust-sovereignty-one-pager.md](notes/2026-08-30-phase-5-verify-before-trust-sovereignty-one-pager.md)
+for the full positioning one-pager (sovereignty framing, no-competitor
+gap, distribution status).
+
 ## Monitoring
 
 - The VPS `datapulse-health.timer` wakes every 5 minutes and runs only the
