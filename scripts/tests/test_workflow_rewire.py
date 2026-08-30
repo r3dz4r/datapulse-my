@@ -176,6 +176,24 @@ def test_sigstore_failure_is_non_blocking_and_cannot_publish_partial_output() ->
     assert "signed=true" in result["run"]
 
 
+def test_per_dataset_receipts_are_generated_signed_and_staged_only_for_releases() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    signing = workflow.split("  sign_health:\n", 1)[1].split("\n  deploy:\n", 1)[0]
+    deploy = workflow.split("  deploy:\n", 1)[1]
+
+    assert "Generate per-dataset evidence statements" in signing
+    assert "Sign per-dataset evidence statements" in signing
+    assert "python3 scripts/gen_per_dataset_receipt.py" in signing
+    assert "python3 scripts/sign_per_dataset_receipts.py" in signing
+    assert "python3 scripts/verify_per_dataset_receipt.py" in signing
+    assert "--certificate-identity \"$SIGSTORE_IDENTITY\"" in signing
+    assert "needs.classify.outputs.health_only != 'true'" in signing
+    assert "continue-on-error: true" in signing
+    assert "receipts_signed" in signing
+    assert "Generate per-dataset evidence statements (release artifact)" in deploy
+    assert "cp \"$RUNNER_TEMP/sigstore-publication/data/\"*.receipt.sigstore.json _site/data/" in deploy
+
+
 def test_cloudflare_publishes_only_a_current_verified_optional_bundle() -> None:
     workflow = _read(DEPLOY_WORKFLOW)
     assembly = workflow.split("      - name: Assemble canonical Pages artifact\n", 1)[1].split(

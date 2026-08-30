@@ -32,6 +32,11 @@ record-evidence/**/2026-*.json
 health/history.jsonl
 docs/.health-methodology/
 
+# Per-dataset signed evidence receipts (Phase 3): regenerated each release-build;
+# the signed bundle is published via Cloudflare Pages, not via git.
+data/*.receipt.evidence.json
+data/*.receipt.statement.json
+
 # Unauthorized OpenWiki side-artifacts (per the documented OpenWiki generated-file
 # contract — only quickstart/datasets/mcp/operations/.last-update.json + managed
 # AGENTS.md/CLAUDE.md marker sections are allowed. Anything else from a generator
