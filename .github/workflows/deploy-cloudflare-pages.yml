@@ -185,6 +185,9 @@ jobs:
           else
             echo "signed=false" >> "$GITHUB_OUTPUT"
             rm -f "$RUNNER_TEMP/sigstore-publication/health.latest.sigstore.json"
+            rm -f "$RUNNER_TEMP/health.latest.statement.json"
+            rm -f "$RUNNER_TEMP/sigstore-publication/chain_head.json"
+            rm -f "$RUNNER_TEMP/sigstore-publication/datapulse.json"
             rm -f "$RUNNER_TEMP/sigstore-publication/.health.latest.sigstore.json.tmp"
             echo '::warning title=Sigstore health signing unavailable::Canonical health will be published without a Sigstore bundle; no stale or unverified bundle will be carried forward.'
           fi
@@ -383,8 +386,14 @@ jobs:
           fi
           if [[ "${{ needs.sign_health.outputs.signed }}" == "true" ]]; then
             test -s "$RUNNER_TEMP/sigstore-publication/health.latest.sigstore.json"
+            test -s "$RUNNER_TEMP/health.latest.statement.json"
+            test -s "$RUNNER_TEMP/sigstore-publication/chain_head.json"
+            test -s "$RUNNER_TEMP/sigstore-publication/datapulse.json"
             mkdir -p _site/signatures
             cp "$RUNNER_TEMP/sigstore-publication/health.latest.sigstore.json" _site/signatures/
+            cp "$RUNNER_TEMP/health.latest.statement.json" _site/signatures/
+            cp "$RUNNER_TEMP/sigstore-publication/chain_head.json" _site/signatures/
+            cp "$RUNNER_TEMP/sigstore-publication/datapulse.json" _site/signatures/
           fi
           test -s _site/index.html
           test -s _site/health/latest.json
