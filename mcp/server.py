@@ -9,6 +9,9 @@ import base64
 import hashlib
 import asyncio
 import logging
+import shutil
+import subprocess
+import tempfile
 from copy import deepcopy
 from asyncio import gather
 from datetime import date, datetime, timedelta, timezone
@@ -29,6 +32,14 @@ from mcp.types import Icon, Implementation as MCPImplementation, ToolAnnotations
 from pydantic import Field
 from fastmcp.tools import FunctionTool
 from typing_extensions import Annotated
+
+from scripts.gen_per_dataset_receipt import (
+    PREDICATE_TYPE as PER_DATASET_RECEIPT_PREDICATE_TYPE,
+    canonical_evidence_row,
+    generate_statement as generate_per_dataset_statement,
+    statement_bytes as receipt_statement_bytes,
+)
+from scripts.verify_per_dataset_receipt import BundleError, _decode_payload
 
 
 # T29 (2026-08-09): source version marker. Set by `scripts/bump_mcp_source_version.py`
@@ -51,6 +62,11 @@ MCP_PORT = int(os.getenv("MCP_PORT", "8788"))
 REQUEST_TIMEOUT_SECONDS = 30.0
 VERIFY_CACHE_SECONDS = 600.0
 VERIFY_MAX_REDIRECTS = 5
+SIGSTORE_CERTIFICATE_IDENTITY = (
+    "https://github.com/r3dz4r/datapulse-my/.github/workflows/"
+    "deploy-cloudflare-pages.yml@refs/heads/main"
+)
+SIGSTORE_CERTIFICATE_OIDC_ISSUER = "https://token.actions.githubusercontent.com"
 ZERO = "0" * 64
 ALLOWED_SOURCE_HOSTS = frozenset(
     {
@@ -293,6 +309,16 @@ VERIFY_EVIDENCE_DESCRIPTION = (
     "ephemeral and never update health artifacts. Returns a dict with transport receipt "
     "fields and a `verdict` for downstream trust checks without re-fetching."
 )
+VERIFY_DATASET_DESCRIPTION = (
+    "Verify one dataset before trust in a single read-only call. Returns dataset "
+    "metadata, the published health and evidence rows, and a fail-closed Sigstore "
+    "per-dataset receipt verification result with artifact references. Use "
+    "verify_dataset('fuelprice') before relying on a dataset claim."
+)
+FRESHNESS_SUMMARY_DESCRIPTION = (
+    "Return a freshness-at-a-glance summary of the published catalogue: fresh, "
+    "aging, stale, and reference counts plus the latest health check time."
+)
 FIND_BY_LICENCE_DESCRIPTION = (
     "Return all datasets with the given licence, summarised. Use to enumerate what's "
     "available under a specific licence for compliance/reuse scoping."
@@ -367,6 +393,16 @@ async def _fetch_json(path: str) -> dict[str, Any]:
         )
         response.raise_for_status()
         return response.json()
+
+
+async def _fetch_bytes(path: str) -> bytes:
+    """Fetch one published immutable artifact without accepting caller-controlled URLs."""
+    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+        response = await client.get(
+            f"{DATA_BASE}/{path.lstrip('/')}", follow_redirects=True
+        )
+        response.raise_for_status()
+        return response.content
 
 
 async def _load_manifest() -> dict[str, Any]:
@@ -1401,6 +1437,160 @@ _get_evidence_tool = FunctionTool.from_function(
 )
 _get_evidence_tool.parameters.setdefault("required", [])
 mcp.add_tool(_get_evidence_tool)
+
+
+def _bounded_verifier_output(completed: subprocess.CompletedProcess[str]) -> str:
+    """Return bounded verifier diagnostics without exposing arbitrary process output."""
+    output = "\n".join(part for part in (completed.stdout, completed.stderr) if part)
+    return output[:4096]
+
+
+def _verify_sigstore_receipt(
+    *, evidence: dict[str, Any], bundle: bytes
+) -> tuple[bool, str]:
+    """Run the Phase 3 Cosign verification flow in an isolated temporary directory."""
+    cosign = shutil.which("cosign")
+    if cosign is None:
+        return False, "cosign verifier is unavailable; verification fails closed"
+    with tempfile.TemporaryDirectory(prefix="datapulse-receipt-") as directory:
+        root = Path(directory)
+        evidence_path = root / "receipt.evidence.json"
+        bundle_path = root / "receipt.sigstore.json"
+        evidence_path.write_bytes(receipt_statement_bytes(evidence))
+        bundle_path.write_bytes(bundle)
+        completed = subprocess.run(
+            [
+                cosign,
+                "verify-blob-attestation",
+                "--bundle",
+                str(bundle_path),
+                "--certificate-identity",
+                SIGSTORE_CERTIFICATE_IDENTITY,
+                "--certificate-oidc-issuer",
+                SIGSTORE_CERTIFICATE_OIDC_ISSUER,
+                "--type",
+                PER_DATASET_RECEIPT_PREDICATE_TYPE,
+                str(evidence_path),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
+    output = _bounded_verifier_output(completed)
+    if completed.returncode != 0:
+        return False, output or "cosign verification failed"
+    return True, output or "cosign verification succeeded"
+
+
+async def verify_dataset(
+    dataset_id: Annotated[
+        str,
+        Field(
+            min_length=1,
+            description="Canonical dataset identifier to verify before trust, e.g. 'fuelprice'.",
+            examples=["fuelprice"],
+        ),
+    ],
+    include_proof_steps: Annotated[
+        bool,
+        Field(
+            description="Include bounded Cosign verifier output for audit steps, e.g. false.",
+            examples=[False, True],
+        ),
+    ] = False,
+) -> dict[str, Any]:
+    """Verify a published per-dataset Sigstore receipt without changing any artifacts."""
+    published_evidence = await get_evidence(dataset_id)
+    manifest, health = await _load_catalogue()
+    entry = {item["id"]: item for item in manifest.get("datasets", [])}.get(dataset_id)
+    if entry is None:
+        raise ValueError(f"Unknown dataset id: {dataset_id}")
+    health_row = _health_by_id(health).get(dataset_id)
+    if health_row is None:
+        raise ValueError(f"Dataset has no published health row: {dataset_id}")
+
+    canonical_evidence = canonical_evidence_row(health_row, entry)
+    statement = generate_per_dataset_statement(dataset_id, canonical_evidence)
+    bundle_ref = f"{DATA_BASE}/data/{dataset_id}.receipt.sigstore.json"
+    statement_ref = f"{DATA_BASE}/data/{dataset_id}.receipt.statement.json"
+    provenance_artifact_url = f"{DATA_BASE}/data/{dataset_id}.receipt.evidence.json"
+    verifier_output = ""
+    signed = False
+    try:
+        bundle = await _fetch_bytes(f"data/{dataset_id}.receipt.sigstore.json")
+        decoded_bundle = json.loads(bundle)
+        if not isinstance(decoded_bundle, dict):
+            raise BundleError("bundle must be a JSON object")
+        if _decode_payload(decoded_bundle) != receipt_statement_bytes(statement):
+            raise BundleError("bundle DSSE payload differs from canonical per-dataset statement")
+        signed, verifier_output = await asyncio.to_thread(
+            _verify_sigstore_receipt, evidence=canonical_evidence, bundle=bundle
+        )
+    except (httpx.HTTPError, json.JSONDecodeError, BundleError, OSError, subprocess.SubprocessError) as exc:
+        verifier_output = f"receipt verification failed closed: {exc.__class__.__name__}"
+
+    return {
+        "dataset_id": dataset_id,
+        "dataset": entry,
+        "health": health_row,
+        "evidence": published_evidence["evidence"],
+        "signed": signed,
+        "verifier_output": verifier_output[:4096] if include_proof_steps else None,
+        "bundle_ref": bundle_ref,
+        "statement_ref": statement_ref,
+        "certificate_identity": SIGSTORE_CERTIFICATE_IDENTITY,
+        "certificate_oidc_issuer": SIGSTORE_CERTIFICATE_OIDC_ISSUER,
+        "verification_hint": (
+            "Verify independently with cosign verify-blob-attestation --bundle "
+            f"{bundle_ref} --certificate-identity {SIGSTORE_CERTIFICATE_IDENTITY} "
+            f"--certificate-oidc-issuer {SIGSTORE_CERTIFICATE_OIDC_ISSUER} "
+            f"--type {PER_DATASET_RECEIPT_PREDICATE_TYPE} {provenance_artifact_url}"
+        ),
+        "provenance_artifact_url": provenance_artifact_url,
+    }
+
+
+_verify_dataset_tool = FunctionTool.from_function(
+    verify_dataset,
+    title="Verify Dataset Before Trust",
+    description=VERIFY_DATASET_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+_verify_dataset_tool.parameters.setdefault("required", [])
+mcp.add_tool(_verify_dataset_tool)
+
+
+async def get_freshness_summary() -> dict[str, Any]:
+    """Return the four agent-facing freshness counts from the published health snapshot."""
+    health = await _load_health()
+    records = health.get("datasets", [])
+    if not isinstance(records, list):
+        raise ValueError("health snapshot datasets must be an array")
+    counts = {status: 0 for status in ("fresh", "aging", "stale", "reference")}
+    for record in records:
+        if isinstance(record, dict) and record.get("status") in counts:
+            counts[record["status"]] += 1
+    return {
+        "summary": "Freshness summary for the latest published DataPulse MY health snapshot.",
+        "counts": counts,
+        "dataset_total": len(records),
+        "checked_at": health.get("checked_at"),
+    }
+
+
+_get_freshness_summary_tool = FunctionTool.from_function(
+    get_freshness_summary,
+    title="Summarize Catalogue Freshness",
+    description=FRESHNESS_SUMMARY_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+_get_freshness_summary_tool.parameters.setdefault("required", [])
+mcp.add_tool(_get_freshness_summary_tool)
 
 
 async def verify_evidence(

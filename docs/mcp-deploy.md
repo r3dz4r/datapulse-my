@@ -3,7 +3,7 @@
 ## Endpoint status
 
 <!-- BEGIN mcp-tools -->
-The stable public endpoint is `https://mcp.data-pulse.my/mcp`. Its local contract registers 16 tools (`search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`), 8 concrete resources, and 1 resource templates.
+The stable public endpoint is `https://mcp.data-pulse.my/mcp`. Its local contract registers 18 tools (`search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`), 8 concrete resources, and 1 resource templates.
 <!-- END mcp-tools -->
 
 The durable services currently terminate at nginx on

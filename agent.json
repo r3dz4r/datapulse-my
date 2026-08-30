@@ -15,10 +15,12 @@
     "mcp_server": {
       "endpoint": "https://mcp.data-pulse.my/mcp",
       "transport": "streamable-http",
-      "tools": 16,
+      "tools": 18,
       "resources": 8,
       "resource_templates": 1
-    }
+    },
+    "verify_dataset": true,
+    "get_freshness_summary": true
   },
   "resources": {
     "manifest": "https://www.data-pulse.my/datapulse.json",
@@ -29,8 +31,12 @@
     "sitemap": "https://www.data-pulse.my/sitemap.xml"
   },
   "source": {
-    "commit_sha": "a2a5e0d37d60d00f11b4f6c7304ef45360f3e4c0",
-    "commit_date": "2026-08-27"
+    "commit_sha": "0ebf2368857804d7b8e8ec3a0affea90bcb3f29c",
+    "commit_date": "2026-08-30"
   },
-  "last_updated": "2026-08-27"
+  "last_updated": "2026-08-30",
+  "trust_model": {
+    "signed_receipts": "per-dataset-sigstore",
+    "verification": "cosign verify-blob --bundle ..."
+  }
 }

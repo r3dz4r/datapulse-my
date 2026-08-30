@@ -2,18 +2,21 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DataPulse MY agent manifest",
   "type": "object",
-  "required": ["$schema", "schema", "@context", "@type", "@id", "name", "description", "url", "capabilities", "resources", "source", "last_updated"],
+  "required": ["$schema", "schema", "@context", "@type", "@id", "name", "description", "url", "capabilities", "trust_model", "resources", "source", "last_updated"],
   "properties": {
     "$schema": {"type": "string", "format": "uri"}, "schema": {"const": "datapulse/v1/agent-manifest"},
     "@context": {"type": "string", "format": "uri"}, "@type": {"const": "WebSite"}, "@id": {"type": "string", "format": "uri"},
     "name": {"const": "DataPulse MY"}, "description": {"type": "string"}, "url": {"type": "string", "format": "uri"},
     "capabilities": {
-      "type": "object", "required": ["data_access", "mcp_server"],
+      "type": "object", "required": ["data_access", "mcp_server", "verify_dataset", "get_freshness_summary"],
       "properties": {
         "data_access": {"type": "object", "required": ["read", "write"], "properties": {"read": {"const": true}, "write": {"const": false}}, "additionalProperties": false},
-        "mcp_server": {"type": "object", "required": ["endpoint", "transport", "tools", "resources", "resource_templates"], "properties": {"endpoint": {"type": "string", "format": "uri"}, "transport": {"const": "streamable-http"}, "tools": {"type": "integer", "minimum": 0}, "resources": {"type": "integer", "minimum": 0}, "resource_templates": {"type": "integer", "minimum": 0}}, "additionalProperties": false}
+        "mcp_server": {"type": "object", "required": ["endpoint", "transport", "tools", "resources", "resource_templates"], "properties": {"endpoint": {"type": "string", "format": "uri"}, "transport": {"const": "streamable-http"}, "tools": {"type": "integer", "minimum": 0}, "resources": {"type": "integer", "minimum": 0}, "resource_templates": {"type": "integer", "minimum": 0}}, "additionalProperties": false},
+        "verify_dataset": {"const": true},
+        "get_freshness_summary": {"const": true}
       }, "additionalProperties": false
     },
+    "trust_model": {"type": "object", "required": ["signed_receipts", "verification"], "properties": {"signed_receipts": {"const": "per-dataset-sigstore"}, "verification": {"const": "cosign verify-blob --bundle ..."}}, "additionalProperties": false},
     "resources": {"type": "object", "additionalProperties": {"type": "string", "format": "uri"}},
     "source": {"type": "object", "required": ["commit_sha", "commit_date"], "properties": {"commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"}, "commit_date": {"type": "string", "format": "date"}}, "additionalProperties": false},
     "last_updated": {"type": "string", "format": "date"}

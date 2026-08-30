@@ -135,10 +135,11 @@ def render_mcp_document(
 def render_agent_document(
     *, config: dict[str, Any], datasets: list[dict[str, Any]], tools: list[object],
     resources: list[object], templates: list[object], source_sha: str, source_date: str,
+    include_trust_model: bool = False, include_verification_capabilities: bool = False,
 ) -> dict[str, Any]:
     """Render the complete agent manifest without retaining stale JSON fields."""
     website = config["origins"]["website"]
-    return {
+    document = {
         "$schema": f"{website}/agent.schema.json",
         "schema": "datapulse/v1/agent-manifest",
         "@context": "https://schema.org/docs/jsonldcontext.jsonld",
@@ -168,6 +169,17 @@ def render_agent_document(
         "source": {"commit_sha": source_sha, "commit_date": source_date},
         "last_updated": source_date,
     }
+    if include_trust_model:
+        document["trust_model"] = {
+            "signed_receipts": "per-dataset-sigstore",
+            "verification": "cosign verify-blob --bundle ...",
+        }
+    if include_verification_capabilities:
+        document["capabilities"].update({
+            "verify_dataset": True,
+            "get_freshness_summary": True,
+        })
+    return document
 
 
 def _signature(tool: object) -> str:
@@ -223,7 +235,14 @@ async def generate(root: Path, *, source_sha: str | None = None, source_date: st
         _annotations(tool)
 
     mcp_document = render_mcp_document(config=config, datasets=datasets, taxonomy=taxonomy, tools=tools, resources=resources, templates=templates, source_sha=resolved_sha, source_date=resolved_date)
-    agent_document = render_agent_document(config=config, datasets=datasets, tools=tools, resources=resources, templates=templates, source_sha=resolved_sha, source_date=resolved_date)
+    agent_document = render_agent_document(
+        config=config, datasets=datasets, tools=tools, resources=resources,
+        templates=templates, source_sha=resolved_sha, source_date=resolved_date,
+        include_trust_model="trust_model" in schemas["agent.schema.json"].get("properties", {}),
+        include_verification_capabilities={"verify_dataset", "get_freshness_summary"}.issubset(
+            schemas["agent.schema.json"].get("properties", {}).get("capabilities", {}).get("properties", {})
+        ),
+    )
     for label, document, schema in (
         ("mcp.json", mcp_document, schemas["mcp.schema.json"]),
         ("agent.json", agent_document, schemas["agent.schema.json"]),

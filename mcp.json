@@ -452,6 +452,58 @@
       }
     },
     {
+      "name": "verify_dataset",
+      "description": "Verify one dataset before trust in a single read-only call. Returns dataset metadata, the published health and evidence rows, and a fail-closed Sigstore per-dataset receipt verification result with artifact references. Use verify_dataset('fuelprice') before relying on a dataset claim.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "description": "Canonical dataset identifier to verify before trust, e.g. 'fuelprice'.",
+            "examples": [
+              "fuelprice"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "include_proof_steps": {
+            "default": false,
+            "description": "Include bounded Cosign verifier output for audit steps, e.g. false.",
+            "examples": [
+              false,
+              true
+            ],
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dataset_id"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "get_freshness_summary",
+      "description": "Return a freshness-at-a-glance summary of the published catalogue: fresh, aging, stale, and reference counts plus the latest health check time.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object",
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
       "name": "verify_evidence",
       "description": "Perform a rate-limited live streamed GET for one direct-access dataset and compare transport receipts with the latest published evidence, e.g. verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints remain pipeline-only and are explicitly reported as unverified; results are ephemeral and never update health artifacts. Returns a dict with transport receipt fields and a `verdict` for downstream trust checks without re-fetching.",
       "inputSchema": {

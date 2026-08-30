@@ -45,6 +45,8 @@ TOOL_PARAMETERS = {
     "get_provenance": {"dataset_ids"},
     "get_evidence": {"dataset_id"},
     "verify_evidence": {"dataset_id"},
+    "verify_dataset": {"dataset_id", "include_proof_steps"},
+    "get_freshness_summary": set(),
     "trust_verdict": {"dataset_id"},
     "verify_attestation": {"reference", "replay_chain"},
     "find_by_licence": {"licence"},
@@ -71,6 +73,8 @@ EXPECTED_TOOL_TITLES = {
     "get_provenance": "Build Citation-Ready Provenance",
     "get_evidence": "Inspect Published Evidence Receipts",
     "verify_evidence": "Re-verify Source Transport Evidence",
+    "verify_dataset": "Verify Dataset Before Trust",
+    "get_freshness_summary": "Summarize Catalogue Freshness",
     "trust_verdict": "Aggregate a Published Trust Verdict",
     "verify_attestation": "Verify a Signed Probe Attestation",
     "find_by_licence": "Scope Reusable Data by Licence",
@@ -117,13 +121,13 @@ async def test_modern_and_legacy_clients_preserve_discovery_surface_and_cache_hi
             assert result.ttl_ms == 300_000
             assert result.cache_scope == "public"
 
-        assert len(tools.tools) == 16
+        assert len(tools.tools) == 18
         assert len(resources.resources) == 8
         assert len(templates.resource_templates) == 1
 
     async with Client(server.mcp, mode="legacy") as legacy:
         assert legacy.protocol_version == "2025-11-25"
-        assert len(await legacy.list_tools()) == 16
+        assert len(await legacy.list_tools()) == 18
         assert len(await legacy.list_resources()) == 8
         assert len(await legacy.list_resource_templates()) == 1
 
@@ -438,8 +442,11 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
     ] == [["fuelprice", "pricecatcher"]]
     assert tools["get_evidence"].parameters["required"] == ["dataset_id"]
     assert tools["verify_evidence"].parameters["required"] == ["dataset_id"]
+    assert tools["verify_dataset"].parameters["required"] == ["dataset_id"]
+    assert tools["get_freshness_summary"].parameters["required"] == []
     assert tools["get_evidence"].parameters["properties"]["dataset_id"]["examples"] == ["fuelprice"]
     assert tools["verify_evidence"].parameters["properties"]["dataset_id"]["examples"] == ["fuelprice"]
+    assert tools["verify_dataset"].parameters["properties"]["dataset_id"]["examples"] == ["fuelprice"]
     assert tools["search_datasets"].parameters["properties"]["query"]["examples"] == [
         "inflation cpi"
     ]
