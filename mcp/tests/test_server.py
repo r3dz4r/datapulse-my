@@ -159,6 +159,19 @@ async def test_verify_attestation_l1_passes(monkeypatch: pytest.MonkeyPatch) -> 
     assert result["levels"]["L2"]["covered"] is False and result["levels"]["L3"]["covered"] is False
 
 
+async def test_verify_attestation_call_tool_returns_verification_levels(monkeypatch: pytest.MonkeyPatch) -> None:
+    install_attestation_fixture(monkeypatch)
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool(
+            "verify_attestation", {"reference": "sample", "replay_chain": False}
+        )
+
+    assert result.data["dataset_id"] == "sample"
+    assert result.data["levels"]["L1"]["satisfied"] is True
+    assert result.data["levels"]["L3"]["covered"] is False
+
+
 @pytest.mark.parametrize("field", ["signature_base64", "chain_link"])
 async def test_verify_attestation_l1_rejects_tamper(monkeypatch: pytest.MonkeyPatch, field: str) -> None:
     install_attestation_fixture(monkeypatch, tamper=field)
@@ -184,6 +197,37 @@ async def test_trust_verdict_is_join_only(monkeypatch: pytest.MonkeyPatch) -> No
     assert result["score"]["methodology_version"] == 3
     assert result["score"]["component_availability"] == {"freshness":{"available":True,"reason":"classified"}}
     assert result["verified_live_at"] is None
+
+
+async def test_trust_verdict_call_tool_joins_published_records(monkeypatch: pytest.MonkeyPatch) -> None:
+    install_attestation_fixture(monkeypatch)
+
+    async def catalogue():
+        return (
+            {"datasets": [{"id": "sample", "name": "Sample", "source": "Agency"}]},
+            {"datasets": [{"dataset_id": "sample", "status": "fresh", "last_checked": "2026-08-15T00:00:00Z"}]},
+        )
+
+    async def trends():
+        return {"datasets": [{"dataset_id": "sample", "trend": "stable"}]}
+
+    async def drift():
+        return {"datasets": [{"dataset_id": "sample", "verdict": "stable"}]}
+
+    async def recon():
+        return {"groups": []}
+
+    monkeypatch.setattr(server, "_load_catalogue", catalogue)
+    monkeypatch.setattr(server, "_load_trends", trends)
+    monkeypatch.setattr(server, "_load_drift", drift)
+    monkeypatch.setattr(server, "_load_reconciliation", recon)
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("trust_verdict", {"dataset_id": "sample"})
+
+    assert result.data["dataset_id"] == "sample"
+    assert result.data["score"]["methodology_version"] == 3
+    assert result.data["evidence"]["trend"] == {"dataset_id": "sample", "trend": "stable"}
 
 
 async def test_find_schema_drift_filters_limits_and_ranks(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -601,6 +645,37 @@ async def test_usage_jsonl_sink_and_summary(monkeypatch: pytest.MonkeyPatch, tmp
     assert summary == {"total_calls": 3, "by_tool": {"search_datasets": 1, "get_dataset": 1, "trust_verdict": 1}, "by_dataset": {"fuelprice": 1, "cpi": 1}, "trust_distribution": {"75-89": 1}}
     with pytest.raises(ValueError): await server.usage_summary("buyer-a", "2026-08-03", "2026-08-02")
     with pytest.raises(ValueError): await server.usage_summary("buyer-a", "invalid", day)
+
+
+async def test_usage_summary_call_tool_aggregates_buyer_ledger(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    (tmp_path / "2026-08-01.jsonl").write_text(
+        json.dumps({"buyer_id": "buyer-a", "tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}}) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "2026-08-02.jsonl").write_text(
+        "\n".join(
+            json.dumps(row)
+            for row in [
+                {"buyer_id": "buyer-a", "tool": "trust_verdict", "args": {"dataset_id": "cpi"}, "result_summary": {"score": 92}},
+                {"buyer_id": "other", "tool": "trust_verdict", "args": {"dataset_id": "ignored"}, "result_summary": {"score": 100}},
+            ]
+        ) + "\n",
+        encoding="utf-8",
+    )
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool(
+            "usage_summary",
+            {"buyer_id": "buyer-a", "since": "2026-08-01", "until": "2026-08-02"},
+        )
+
+    assert result.data == {
+        "total_calls": 2,
+        "by_tool": {"get_dataset": 1, "trust_verdict": 1},
+        "by_dataset": {"fuelprice": 1, "cpi": 1},
+        "trust_distribution": {"90-100": 1},
+    }
 
 
 async def _result(value: dict) -> dict:
@@ -1100,6 +1175,24 @@ async def test_get_evidence_projects_complete_published_receipt(monkeypatch: pyt
     assert result["evidence"] == {field: row[field] for field in server.EVIDENCE_FIELDS}
 
 
+async def test_get_evidence_call_tool_returns_published_receipt(monkeypatch: pytest.MonkeyPatch) -> None:
+    row = {field: f"value-{field}" for field in server.EVIDENCE_FIELDS}
+    manifest = {"datasets": [{"id": "sample"}]}
+    health = {"schema": "datapulse/v0.4/dataset-health", "checked_at": "snapshot", "datasets": [{**row, "dataset_id": "sample"}]}
+
+    async def load() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", load)
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("get_evidence", {"dataset_id": "sample"})
+
+    assert result.data["dataset_id"] == "sample"
+    assert result.data["evidence_available"] is True
+    assert result.data["evidence"] == {field: row[field] for field in server.EVIDENCE_FIELDS}
+
+
 async def test_get_evidence_keeps_missing_receipts_explicit(monkeypatch: pytest.MonkeyPatch) -> None:
     async def load() -> tuple[dict, dict]: return {"datasets": [{"id": "sample"}]}, {"datasets": []}
     monkeypatch.setattr(server, "_load_catalogue", load)
@@ -1153,6 +1246,42 @@ async def test_verify_evidence_matches_transport_and_marks_content_unverified(mo
     assert [request.url for request in requests] == [httpx.URL(url)]
     assert result["verdict"] == "match" and result["last_modified_match"] is True
     assert result["content_date_match"] is None and result["record_count_match"] is None and result["first_row_hash_match"] is None
+
+
+async def test_verify_evidence_call_tool_passes_matching_transport(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"
+    manifest, health = _verification_fixture(url)
+
+    async def load() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    install_fake_live_http(monkeypatch, [httpx.Response(200, headers={"Last-Modified": "Fri, 14 Aug 2026 01:02:03 GMT", "Content-Length": "123"})])
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("verify_evidence", {"dataset_id": "sample"})
+
+    assert result.data["verdict"] == "match"
+    assert result.data["request_url_match"] is True
+    assert result.data["content_date_match"] is None
+
+
+async def test_verify_evidence_call_tool_reports_transport_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"
+    manifest, health = _verification_fixture(url)
+
+    async def load() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    install_fake_live_http(monkeypatch, [httpx.Response(200, headers={"Last-Modified": "Sat, 15 Aug 2026 01:02:03 GMT", "Content-Length": "456"})])
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("verify_evidence", {"dataset_id": "sample"})
+
+    assert result.data["verdict"] == "mismatch"
+    assert result.data["last_modified_match"] is False
+    assert result.data["content_length_match"] is False
 
 
 async def test_verify_evidence_reports_transport_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
