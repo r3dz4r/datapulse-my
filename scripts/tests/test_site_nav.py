@@ -125,12 +125,14 @@ def test_learn_page_uses_the_shared_shell_and_verified_builder_surfaces() -> Non
     assert "overflow-wrap: anywhere" in stylesheet
 
 
-def test_public_pages_use_cors_enabled_stylesheet_links() -> None:
+def test_public_pages_use_plain_same_origin_stylesheet_links() -> None:
+    # Same-origin CSS must NOT carry crossorigin="anonymous": forcing a CORS-mode
+    # fetch on a same-origin stylesheet causes intermittent styling drops in
+    # Chrome (documented Chromium/CSS-engine issue), matching a prior audit.
     for page_name in PAGES:
         page = (ROOT / "docs" / page_name).read_text(encoding="utf-8")
-        assert '<link rel="stylesheet" href="/assets/datapulse.css" crossorigin="anonymous">' in page or '<link rel="stylesheet" href="assets/datapulse.css" crossorigin="anonymous">' in page
-        assert '<link rel="stylesheet" href="/assets/datapulse.css">' not in page
-        assert '<link rel="stylesheet" href="assets/datapulse.css">' not in page
+        assert '<link rel="stylesheet" href="/assets/datapulse.css">' in page or '<link rel="stylesheet" href="assets/datapulse.css">' in page
+        assert 'crossorigin="anonymous"' not in page
 
 
 def test_learn_page_is_declared_and_discoverable() -> None:
