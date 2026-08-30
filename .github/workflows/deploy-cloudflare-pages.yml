@@ -369,14 +369,26 @@ jobs:
         run: |
           set -Eeuo pipefail
           rm -rf _site
+          printf '::error title=DEPLOY-DIAG-1 ::PRE-CHECKOUT-WORKTREE: pwd=%s; git-rev-parse=%s; health-listing=%s; latest-json=%s; latest-stat=%s\n' \
+            "$(pwd)" \
+            "$(git rev-parse HEAD 2>/dev/null || echo no-git)" \
+            "$(ls -la health/ 2>&1 | head -10 | tr '\n' ';' || true)" \
+            "$(ls -la health/latest.json 2>&1 | tr '\n' ';' || true)" \
+            "$(stat -c '%a %s %n' health/latest.json 2>/dev/null || echo MISSING)"
           mkdir -p _site/.well-known
           cp -R docs/. _site/
+          printf '::error title=DEPLOY-DIAG-2 ::POST-DOCS-CP: site-listing=%s; site-health=%s\n' \
+            "$(ls _site/ 2>&1 | head -5 | tr '\n' ';' || true)" \
+            "$(ls _site/health 2>&1 | tr '\n' ';' || echo no-health)"
           if [[ -d "$RUNNER_TEMP/preserved-release-proof" ]]; then
             test -s "$RUNNER_TEMP/preserved-release-proof/release-verification.md"
             cp "$RUNNER_TEMP/preserved-release-proof/release-verification.md" _site/release-verification.md
           fi
           cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
           cp -R health deltas record-evidence badges samples data _site/
+          printf '::error title=DEPLOY-DIAG-3 ::POST-HEALTH-CP: site-health-listing=%s; latest-stat=%s\n' \
+            "$(ls -la _site/health/ 2>&1 | tr '\n' ';' || true)" \
+            "$(stat -c '%a %s %n' _site/health/latest.json 2>/dev/null || echo MISSING)"
           cp -R attestations _site/
           cp -R .attestations _site/
           cp docs/.well-known/datapulse-probe-keys.json _site/.well-known/
@@ -399,6 +411,12 @@ jobs:
             cp "$RUNNER_TEMP/sigstore-publication/chain_head.json" _site/signatures/
             cp "$RUNNER_TEMP/sigstore-publication/datapulse.json" _site/signatures/
           fi
+          printf '::error title=DEPLOY-DIAG-4 ::PRE-TEST-FAILURE-CHECK: pwd=%s; site-health-listing=%s; health-json=%s; site-listing=%s; workdir-top-level=%s\n' \
+            "$(pwd)" \
+            "$(ls -la _site/health/ 2>&1 | head -20 | tr '\n' ';' || true)" \
+            "$(find _site/health -name '*.json' 2>&1 | head | tr '\n' ';' || true)" \
+            "$(ls -la _site/ 2>&1 | head -10 | tr '\n' ';' || true)" \
+            "$(printf 'workdir-top-level:;'; ls -la 2>&1 | head -10 | tr '\n' ';' || true)"
           test -s _site/index.html
           test -s _site/health/latest.json
 
