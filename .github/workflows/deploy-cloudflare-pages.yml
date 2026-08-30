@@ -418,6 +418,8 @@ jobs:
 
       - name: Assemble canonical Pages artifact
         run: |
+          export PS4='+ $(date -u +%Y-%m-%dT%H:%M:%SZ) ${BASH_SOURCE}:${LINENO}: '
+          set -x
           set -Eeuo pipefail
           rm -rf _site
           printf '::error title=DEPLOY-DIAG-1 ::PRE-CHECKOUT-WORKTREE: pwd=%s; git-rev-parse=%s; health-listing=%s; latest-json=%s; latest-stat=%s\n' \
