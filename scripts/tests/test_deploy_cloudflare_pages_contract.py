@@ -158,7 +158,19 @@ def test_native_pages_installs_release_dependencies_before_generation() -> None:
 
     assert install_index < release_build_index
     assert install_step["if"] == "needs.classify.outputs.health_only != 'true'"
-    assert install_step["run"] == "python -m pip install jsonschema --requirement mcp/requirements.txt"
+    assert install_step["run"] == (
+        "python -m pip install jsonschema --requirement mcp/requirements.txt "
+        "'datacontract-cli[duckdb]==0.12.5'"
+    )
+
+
+def test_native_pages_runs_contract_validation_only_for_full_releases() -> None:
+    """Contract drift blocks release builds but never a health-only publication."""
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    validation = next(step for step in steps if step.get("name") == "Validate DataPulse contract (non-health path)")
+
+    assert validation["if"] == "needs.classify.outputs.health_only != 'true'"
+    assert validation["run"] == "bash scripts/run_datacontract_validation.sh"
 
 
 def test_native_pages_installs_pinned_pandoc_before_non_health_release_build() -> None:

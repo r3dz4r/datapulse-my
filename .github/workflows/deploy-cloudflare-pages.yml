@@ -223,7 +223,7 @@ jobs:
 
       - name: Install release verification dependencies
         if: needs.classify.outputs.health_only != 'true'
-        run: python -m pip install jsonschema --requirement mcp/requirements.txt
+        run: python -m pip install jsonschema --requirement mcp/requirements.txt 'datacontract-cli[duckdb]==0.12.5'
 
       - name: Run release-build generation profile (non-health path)
         if: needs.classify.outputs.health_only != 'true'
@@ -239,6 +239,10 @@ jobs:
             export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json
           fi
           bash scripts/generate.sh release-build
+
+      - name: Validate DataPulse contract (non-health path)
+        if: needs.classify.outputs.health_only != 'true'
+        run: bash scripts/run_datacontract_validation.sh
 
       - name: Verify full release contract (non-health path)
         if: needs.classify.outputs.health_only != 'true'

@@ -1,0 +1,126 @@
+version: 1.0.0
+kind: DataContract
+apiVersion: v3.1.0
+id: datapulse-canonical-health
+name: DataPulse MY canonical health snapshot
+status: active
+description:
+  purpose: Release gate for canonical health and manifest JSON only; evidence receipts and optional Sigstore bundles are deliberately excluded.
+servers:
+  - server: canonical_json
+    type: local
+    format: json
+    path: ${DATAPULSE_CONTRACT_DATA_DIR}/{model}.json
+schema:
+  - name: health_snapshot
+    physicalName: health_snapshot
+    physicalType: object
+    logicalType: object
+    quality:
+      - id: health_snapshot_present
+        type: library
+        metric: rowCount
+        mustBeGreaterThan: 0
+        dimension: completeness
+    properties:
+      - name: schema
+        logicalType: string
+        required: true
+        quality:
+          - id: health_schema_identifier
+            type: sql
+            query: SELECT COUNT(*) FROM ${table} WHERE schema != 'datapulse/v0.4/dataset-health'
+            mustBe: 0
+            dimension: conformity
+        logicalTypeOptions:
+          pattern: '^datapulse/v0\.4/dataset-health$'
+      - name: checked_at
+        logicalType: string
+        required: true
+        logicalTypeOptions:
+          pattern: '^.+T.+Z$'
+      - name: _trust_summary
+        logicalType: object
+        required: true
+        properties:
+          - name: checked_at
+            logicalType: string
+            required: true
+          - name: datasets_total
+            logicalType: integer
+            required: true
+            logicalTypeOptions:
+              minimum: 1
+          - name: by_status
+            logicalType: object
+            required: true
+      - name: datasets
+        logicalType: array
+        required: true
+        logicalTypeOptions:
+          minItems: 1
+        items:
+          name: dataset
+          logicalType: object
+          properties:
+            - name: dataset_id
+              logicalType: string
+              required: true
+              logicalTypeOptions:
+                minLength: 1
+            - name: last_checked
+              logicalType: string
+              required: true
+            - name: url
+              logicalType: string
+              required: true
+            - name: status
+              logicalType: string
+              required: true
+              logicalTypeOptions:
+                pattern: '^(fresh|aging|stale|discontinued|degraded|browser-dependent|unreachable|unknown|unknown-freshness|reference)$'
+            - name: content_freshness_date
+              description: Optional ISO date or null; its presence is checked by the canonical JSON schema.
+            - name: record_count
+              description: Optional integer or null; its presence is checked by the canonical JSON schema.
+            - name: record_count_within_tolerance
+              logicalType: boolean
+  - name: datapulse_manifest
+    physicalName: datapulse_manifest
+    physicalType: object
+    logicalType: object
+    quality:
+      - id: manifest_present
+        type: library
+        metric: rowCount
+        mustBeGreaterThan: 0
+        dimension: completeness
+    properties:
+      - name: $schema
+        logicalType: string
+        required: true
+      - name: datasets
+        logicalType: array
+        required: true
+        logicalTypeOptions:
+          minItems: 1
+        items:
+          name: dataset
+          logicalType: object
+          properties:
+            - name: id
+              logicalType: string
+              required: true
+              logicalTypeOptions:
+                minLength: 1
+            - name: source
+              logicalType: string
+              required: true
+            - name: licence
+              logicalType: string
+              required: true
+            - name: methodology_version
+              logicalType: integer
+              required: true
+              logicalTypeOptions:
+                minimum: 1
