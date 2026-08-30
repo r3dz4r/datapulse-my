@@ -164,6 +164,9 @@ jobs:
           cp .attestations/chain_head.json "$publication/chain_head.json"
           cp datapulse.json "$publication/datapulse.json"
 
+      - name: Stage statement into Sigstore publication
+        run: cp "$RUNNER_TEMP/health.latest.statement.json" "$RUNNER_TEMP/sigstore-publication/"
+
       - name: Generate per-dataset evidence statements
         if: needs.classify.outputs.health_only != 'true'
         run: python3 scripts/gen_per_dataset_receipt.py
