@@ -354,7 +354,7 @@ def test_cloudflare_workflow_retains_dynamic_public_artifact_contracts() -> None
 
     assert '"health/**"' in paths_block
     assert 'fetch "dataset register" "${website_origin}/"' in workflow
-    assert 'fetch_redirect "dashboard" "${website_origin}/dashboard" 301' in workflow
+    assert 'fetch_alias "dashboard" "${website_origin}/dashboard"' in workflow
     assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in workflow
     for artifact in ("health/trends.json", "health/drift.json", "health/reconciliation.json"):
         assert artifact in workflow

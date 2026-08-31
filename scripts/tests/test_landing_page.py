@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.gen_landing_page import MARKER, REGISTER_STATUS_ORDER, load_landing_config, render
+from scripts.gen_landing_page import MARKER, compatibility_outputs, load_landing_config, render
 from scripts.public_surface_generation import GenerationError, load_public_surfaces
 
 
@@ -62,9 +62,9 @@ def test_landing_page_is_deterministic_generated_and_uses_canonical_links(tmp_pa
     assert 'http-equiv="refresh" content="0; url=/"' in page
     assert "DataPulse dataset register" in page
     assert "DataPulse MY" not in page
-    assert (root / "docs/_redirects").read_text(encoding="utf-8") == (
-        "/landing.html / 301\n/landing / 301\n/dashboard / 301\n"
-    )
+    dashboard = (root / "docs/dashboard.html").read_text(encoding="utf-8")
+    assert dashboard == page
+    assert not (root / "docs/_redirects").exists()
 
 
 def test_landing_page_rejects_malformed_claims_and_manual_mcp_enumeration(tmp_path: Path) -> None:
@@ -142,9 +142,9 @@ def test_landing_page_compatibility_output_is_independent_of_live_health(tmp_pat
     assert render(root) == page
 
 
-def test_landing_page_redirect_manifest_is_deterministic(tmp_path: Path) -> None:
+def test_landing_page_compatibility_outputs_are_deterministic(tmp_path: Path) -> None:
     root = _landing_root(tmp_path)
     assert _run(root).returncode == 0
-    redirects = (root / "docs/_redirects").read_bytes()
+    outputs = {path: content.encode() for path, content in compatibility_outputs(root).items()}
     assert _run(root).returncode == 0
-    assert (root / "docs/_redirects").read_bytes() == redirects
+    assert {path: path.read_bytes() for path in outputs} == outputs

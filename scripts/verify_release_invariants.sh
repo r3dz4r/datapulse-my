@@ -33,7 +33,7 @@ fetch() {
   mkdir -p "$(dirname "$work_dir/$name")"
   if $local_mode; then
     case "$path" in
-      index.html|landing.html|_redirects|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)
+      index.html|landing.html|dashboard.html|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)
         path="docs/$path"
         ;;
     esac
@@ -103,7 +103,7 @@ if ! $local_mode; then
   fetch buyer-api-reference.md buyer-api-reference.md
 fi
 if $local_mode; then
-  fetch redirects _redirects
+  fetch dashboard.html dashboard.html
 fi
 fetch llms.txt llms.txt
 fetch attestation-keys.json .well-known/datapulse-probe-keys.json
@@ -503,7 +503,9 @@ assert '<link rel="canonical" href="/">' in landing
 assert 'http-equiv="refresh" content="0; url=/"' in landing
 assert "DataPulse dataset register" in landing
 assert "DataPulse MY" not in landing
-assert (work / "redirects").read_text(encoding="utf-8") == "/landing.html / 301\n/landing / 301\n/dashboard / 301\n"
+dashboard = (work / "dashboard.html").read_text(encoding="utf-8")
+assert dashboard == landing
+assert not (Path.cwd() / "docs/_redirects").exists()
 buyer_blocks = "\n".join(
     owned(work / "buyer-api-reference.md", marker) for marker in (
         "buyer-api-host", "buyer-api-quickstart", "buyer-api-limits",

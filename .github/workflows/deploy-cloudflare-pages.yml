@@ -456,7 +456,7 @@ jobs:
             cp "$RUNNER_TEMP/sigstore-publication/datapulse.json" _site/signatures/
           fi
           test -s _site/index.html
-          test -s _site/_redirects
+          test ! -e _site/_redirects
           test -s _site/health/latest.json
 
       - name: Deploy canonical Cloudflare Pages artifact
@@ -489,18 +489,43 @@ jobs:
               --connect-timeout 10 --max-time 30 "$url" --output "$output" || \
               fail "missing or stale served surface: $surface"
           }
-          fetch_redirect() {
-            local surface="$1" url="$2" expected_status="$3"
-            local headers="$smoke_dir/${surface// /-}.headers" body="$smoke_dir/${surface// /-}.body" status location
+          fetch_alias() {
+            local surface="$1" url="$2"
+            local requested_path="${url#"$website_origin"}"
+            local headers="$smoke_dir/${surface// /-}.headers" body="$smoke_dir/${surface// /-}.body" location status
+            local resolved_headers="$smoke_dir/${surface// /-}.resolved.headers" resolved_body="$smoke_dir/${surface// /-}.resolved.body"
             [[ "$url" =~ ^https://[^[:space:]]+$ ]] || fail "invalid URL for $surface"
-            status="$(curl --silent --show-error --proto '=https' \
+            # Fetch once without following.  Pages may clean-normalise an HTML
+            # path.  Only the documented landing.html -> landing transition is
+            # allowed; every other Location is a route-contract failure.
+            status="$(curl --fail --silent --show-error --proto '=https' \
               --retry 3 --retry-delay 5 --retry-all-errors \
               --connect-timeout 10 --max-time 30 \
-              --dump-header "$headers" --output "$body" --write-out '%{http_code}' "$url")" || \
-              fail "could not fetch compatibility redirect: $surface"
-            [[ "$status" == "$expected_status" ]] || fail "$surface returned HTTP $status; expected $expected_status"
+              --dump-header "$headers" --output "$body" --write-out '%{http_code}' "$url")" \
+              || fail "could not fetch compatibility alias: $surface"
             location="$(awk 'tolower($1) == "location:" { sub(/\\r$/, "", $2); print $2; exit }' "$headers")"
-            [[ "$location" == "${website_origin}/" ]] || fail "$surface redirects to ${location:-missing}; expected ${website_origin}/"
+            if [[ -n "$location" ]]; then
+              [[ "$requested_path" == "/landing.html" && "$status" == "308" ]] \
+                || fail "$surface uses an unexpected edge redirect to ${location}"
+              [[ "$location" == "/landing" || "$location" == "${website_origin}/landing" ]] \
+                || fail "$surface normalizes to an unexpected location: ${location}"
+              status="$(curl --fail --silent --show-error --proto '=https' \
+                --retry 3 --retry-delay 5 --retry-all-errors \
+                --connect-timeout 10 --max-time 30 \
+                --dump-header "$resolved_headers" --output "$resolved_body" --write-out '%{http_code}' \
+                "${website_origin}/landing")" \
+                || fail "could not fetch normalized compatibility alias: $surface"
+              [[ "$status" == "200" ]] || fail "$surface normalized alias returned HTTP $status"
+              location="$(awk 'tolower($1) == "location:" { sub(/\\r$/, "", $2); print $2; exit }' "$resolved_headers")"
+              [[ -z "$location" ]] || fail "$surface normalized alias redirects again to ${location}"
+              body="$resolved_body"
+            else
+              [[ "$status" == "200" ]] || fail "$surface returned unexpected HTTP $status"
+            fi
+            grep -Fq '<title>DataPulse dataset register</title>' "$body" || fail "$surface lacks alias document identity"
+            grep -Fq '<link rel="canonical" href="/">' "$body" || fail "$surface lacks root canonical identity"
+            grep -Fq 'http-equiv="refresh" content="0; url=/"' "$body" || fail "$surface lacks root browser fallback"
+            grep -Fq 'href="/">DataPulse dataset register</a>' "$body" || fail "$surface lacks accessible root fallback"
           }
           # Allow the custom-domain edge to observe the just-created Pages deployment.
           sleep 30
@@ -514,9 +539,9 @@ jobs:
           if grep -q "DataPulse MY" "$smoke_dir/index.html"; then
             fail "origin root retains the retired product-name alias"
           fi
-          fetch_redirect "landing.html" "${website_origin}/landing.html" 301
-          fetch_redirect "landing" "${website_origin}/landing" 301
-          fetch_redirect "dashboard" "${website_origin}/dashboard" 301
+          fetch_alias "landing.html" "${website_origin}/landing.html"
+          fetch_alias "landing" "${website_origin}/landing"
+          fetch_alias "dashboard" "${website_origin}/dashboard"
           fetch "health snapshot" "${website_origin}/health/latest.json" "$smoke_dir/health/latest.json"
           cmp -s _site/health/latest.json "$smoke_dir/health/latest.json" || \
             fail "served canonical health differs from the deployed bytes"

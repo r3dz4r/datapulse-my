@@ -198,7 +198,7 @@ case "$profile" in
       "URL drift and cadence audit"
       "docs/trust-snapshot-<date>.{md,json}"
       "docs/health-methodology.html"
-      "docs/landing.html and docs/_redirects (compatibility aliases to the canonical root register)"
+      "docs/{landing,dashboard}.html (static compatibility aliases to the canonical root register)"
       "docs/{index,npra,health-methodology,learn}.html site navigation"
     )
     ;;

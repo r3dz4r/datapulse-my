@@ -408,12 +408,32 @@ def render(root: Path = ROOT) -> str:
     return rendered
 
 
-def render_redirects(surfaces: dict[str, object]) -> str:
-    """Render the source-owned Cloudflare compatibility redirects."""
-    aliases = surfaces["compatibility_aliases"]
-    if not isinstance(aliases, list):
-        raise GenerationError("compatibility_aliases must be a list")
-    return "".join(f"{alias['path']} {alias['target']} 301\n" for alias in aliases)
+def compatibility_outputs(root: Path) -> dict[Path, str]:
+    """Render each static Pages compatibility document exactly once.
+
+    Cloudflare Pages normalises ``index.html`` to ``/``.  Redirect rules that
+    point aliases at either spelling can therefore loop at the edge.  A static
+    document lets the browser resolve the declared canonical target instead.
+    """
+    surfaces = load_public_surfaces(root)
+    outputs: dict[Path, str] = {}
+    for alias in surfaces["compatibility_aliases"]:
+        path, target = alias["path"], alias["target"]
+        if target != "/":
+            raise GenerationError("compatibility aliases must target the root register")
+        if path.endswith(".html"):
+            output = root / "docs" / path.lstrip("/")
+        else:
+            output = root / "docs" / f"{path.lstrip('/')}.html"
+        previous = outputs.get(output)
+        page = render(root)
+        if previous is not None and previous != page:
+            raise GenerationError(f"compatibility aliases disagree for {output}")
+        outputs[output] = page
+    required = {root / "docs/landing.html", root / "docs/dashboard.html"}
+    if set(outputs) != required:
+        raise GenerationError("compatibility aliases must generate landing.html and dashboard.html")
+    return outputs
 
 
 def main() -> int:
@@ -422,10 +442,7 @@ def main() -> int:
     args = parser.parse_args()
     root = Path(__import__("os").environ.get("DATAPULSE_REPO_ROOT", ROOT)).resolve()
     try:
-        outputs = {
-            root / "docs/landing.html": render(root),
-            root / "docs/_redirects": render_redirects(load_public_surfaces(root)),
-        }
+        outputs = compatibility_outputs(root)
         changed = any(not output.is_file() or output.read_text(encoding="utf-8") != content for output, content in outputs.items())
         if args.check:
             return 1 if changed else 0

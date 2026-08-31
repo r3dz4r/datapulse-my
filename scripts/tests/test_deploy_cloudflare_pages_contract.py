@@ -41,6 +41,95 @@ def _classifies_as_health_only(paths: tuple[str, ...]) -> bool:
     return result.returncode == 0
 
 
+def _alias_helper() -> str:
+    """Extract the deployed shell helper for direct state-machine testing."""
+    verify = _workflow().split("      - name: Verify canonical served surface\n", 1)[1]
+    match = re.search(r"(?ms)^          fetch_alias\(\) \{.*?^          \}\n", verify)
+    assert match is not None, "the alias verifier must remain executable and contract-tested"
+    return textwrap.dedent(match.group(0))
+
+
+def _run_alias_helper(requested_path: str, responses: dict[str, tuple[str, str, str]]) -> subprocess.CompletedProcess[str]:
+    """Run the workflow helper against deterministic HTTP responses."""
+    response_cases = "\n".join(
+        f'    https://example.test{path}) status={status!r}; location={location!r}; body={body!r} ;;'
+        for path, (status, location, body) in responses.items()
+    )
+    script = f"""
+set -Eeuo pipefail
+smoke_dir=$(mktemp -d)
+trap 'rm -rf "$smoke_dir"' EXIT
+website_origin='https://example.test'
+fail() {{ echo "$1" >&2; return 1; }}
+curl() {{
+  local dump='' output='' url='' arg
+  while (($#)); do
+    arg="$1"
+    case "$arg" in
+      --dump-header) dump="$2"; shift 2 ;;
+      --output) output="$2"; shift 2 ;;
+      --write-out) shift 2 ;;
+      https://*) url="$arg"; shift ;;
+      *) shift ;;
+    esac
+  done
+  case "$url" in
+{response_cases}
+    *) return 1 ;;
+  esac
+  printf 'HTTP/2 %s\n' "$status" > "$dump"
+  if [[ -n "$location" ]]; then printf 'Location: %s\n' "$location" >> "$dump"; fi
+  printf '%s' "$body" > "$output"
+  printf '%s' "$status"
+}}
+{_alias_helper()}
+fetch_alias 'test alias' "$website_origin{requested_path}"
+"""
+    return subprocess.run(["bash", "-c", script], check=False, capture_output=True, text=True)
+
+
+_ALIAS_BODY = (
+    '<title>DataPulse dataset register</title>\n'
+    '<link rel="canonical" href="/">\n'
+    '<meta http-equiv="refresh" content="0; url=/">\n'
+    '<a href="/">DataPulse dataset register</a>\n'
+)
+
+
+def test_alias_verifier_accepts_documented_html_normalization_chain() -> None:
+    result = _run_alias_helper(
+        "/landing.html",
+        {
+            "/landing.html": ("308", "/landing", ""),
+            "/landing": ("200", "", _ALIAS_BODY),
+        },
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("path", ("/landing", "/dashboard"))
+def test_alias_verifier_accepts_direct_static_alias(path: str) -> None:
+    result = _run_alias_helper(path, {path: ("200", "", _ALIAS_BODY)})
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    ("path", "response"),
+    (
+        ("/landing.html", ("308", "/index.html", "")),
+        ("/landing.html", ("308", "/landing.html", "")),
+        ("/landing.html", ("308", "https://evil.example/landing", "")),
+        ("/landing", ("200", "/landing", _ALIAS_BODY)),
+        ("/dashboard", ("200", "", '<title>dashboard SPA</title>')),
+    ),
+)
+def test_alias_verifier_rejects_cycles_wrong_locations_and_spa_fallback(
+    path: str, response: tuple[str, str, str]
+) -> None:
+    result = _run_alias_helper(path, {path: response})
+    assert result.returncode != 0
+
+
 def test_health_only_skip_deploy_push_still_runs_native_pages() -> None:
     """The health trailer selects the fast path; it must never skip deployment."""
     workflow = _workflow()
@@ -130,6 +219,12 @@ def test_native_pages_preserves_full_release_build_and_surface_contract() -> Non
         "cp -R .attestations _site/",
     ):
         assert copy in workflow
+    assert "test ! -e _site/_redirects" in workflow
+    assert "fetch_alias \"landing.html\"" in workflow
+    assert "fetch_alias \"landing\"" in workflow
+    assert "fetch_alias \"dashboard\"" in workflow
+    assert "Only the documented landing.html -> landing transition is" in workflow
+    assert "normalized alias redirects again" in workflow
 
 
 def test_health_only_legacy_release_proof_accepts_generated_and_verified_timestamps() -> None:
@@ -320,9 +415,11 @@ def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() ->
     verify = workflow.split("      - name: Verify canonical served surface\n", 1)[1]
 
     assert 'fetch "dataset register" "${website_origin}/" "$smoke_dir/index.html"' in verify
-    assert 'fetch_redirect "landing.html" "${website_origin}/landing.html" 301' in verify
-    assert 'fetch_redirect "landing" "${website_origin}/landing" 301' in verify
-    assert 'fetch_redirect "dashboard" "${website_origin}/dashboard" 301' in verify
+    assert 'fetch_alias "landing.html" "${website_origin}/landing.html"' in verify
+    assert 'fetch_alias "landing" "${website_origin}/landing"' in verify
+    assert 'fetch_alias "dashboard" "${website_origin}/dashboard"' in verify
+    assert 'Only the documented landing.html -> landing transition is' in verify
+    assert 'normalized alias redirects again' in verify
     assert 'DataPulse dataset register' in verify
     assert 'origin root does not contain 389 register rows' in verify
     assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in verify

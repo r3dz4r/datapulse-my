@@ -460,7 +460,7 @@
       "docs/mcp-reference.md",
       "docs/buyer-api-reference.md",
       "docs/landing.html",
-      "docs/_redirects",
+      "docs/dashboard.html",
       "docs/index.html"
     ],
     "owned_markers": {
@@ -593,14 +593,14 @@
       "invariant": "canonical redirect fallback, generated marker, and no duplicate landing surface"
     },
     {
-      "surface": "docs/_redirects",
+      "surface": "docs/dashboard.html",
       "markers": [],
-      "canonical_inputs": ["config/public-surfaces.json", "scripts/gen_landing_page.py"],
+      "canonical_inputs": ["config/landing-page.json", "config/public-surfaces.json", "config/public-surfaces.schema.json", "scripts/templates/landing.html.tmpl"],
       "generator": "scripts/gen_landing_page.py",
       "profiles": ["release-build"],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_landing_page.py",
-      "invariant": "Cloudflare Pages compatibility redirects remain canonical and deterministic"
+      "invariant": "static compatibility alias with a canonical root fallback"
     },
     {
       "surface": "mcp.json",
