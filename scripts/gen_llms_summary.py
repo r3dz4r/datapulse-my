@@ -14,7 +14,6 @@ from scripts.public_surface_generation import GenerationError, load_json, load_p
 
 PUBLIC_SURFACE_LINKS = {
     "/": ("Live dashboard", "Human-readable dataset status cards with embedded health and manifest data."),
-    "/landing.html": ("Landing page", "Public DataPulse MY overview."),
     "/npra.html": ("NPRA page", "Public NPRA dataset surface."),
     "/health-methodology.html": ("Health methodology", "Published status and freshness methodology."),
     "/learn.html": ("Learn", "Practical verification-first guidance for building with Malaysian public data."),

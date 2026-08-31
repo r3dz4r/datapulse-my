@@ -33,7 +33,8 @@ def test_cloudflare_pages_is_the_only_website_publisher() -> None:
     assert yaml.safe_load(workflow) is not None
     assert "pages deploy _site --project-name=datapulse-p4b-preview --branch=main" in workflow
     assert 'website_origin="$(jq -er' in workflow
-    assert 'fetch "dashboard" "${website_origin}/dashboard"' in workflow
+    assert 'fetch "dataset register" "${website_origin}/"' in workflow
+    assert 'fetch_redirect "dashboard" "${website_origin}/dashboard" 301' in workflow
     assert "actions/deploy-pages" not in workflow
     assert "deploy-pages.yml" not in workflow
 

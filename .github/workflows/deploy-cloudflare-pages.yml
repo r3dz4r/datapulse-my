@@ -456,6 +456,7 @@ jobs:
             cp "$RUNNER_TEMP/sigstore-publication/datapulse.json" _site/signatures/
           fi
           test -s _site/index.html
+          test -s _site/_redirects
           test -s _site/health/latest.json
 
       - name: Deploy canonical Cloudflare Pages artifact
@@ -488,15 +489,34 @@ jobs:
               --connect-timeout 10 --max-time 30 "$url" --output "$output" || \
               fail "missing or stale served surface: $surface"
           }
+          fetch_redirect() {
+            local surface="$1" url="$2" expected_status="$3"
+            local headers="$smoke_dir/${surface// /-}.headers" body="$smoke_dir/${surface// /-}.body" status location
+            [[ "$url" =~ ^https://[^[:space:]]+$ ]] || fail "invalid URL for $surface"
+            status="$(curl --silent --show-error --proto '=https' \
+              --retry 3 --retry-delay 5 --retry-all-errors \
+              --connect-timeout 10 --max-time 30 \
+              --dump-header "$headers" --output "$body" --write-out '%{http_code}' "$url")" || \
+              fail "could not fetch compatibility redirect: $surface"
+            [[ "$status" == "$expected_status" ]] || fail "$surface returned HTTP $status; expected $expected_status"
+            location="$(awk 'tolower($1) == "location:" { sub(/\\r$/, "", $2); print $2; exit }' "$headers")"
+            [[ "$location" == "${website_origin}/" ]] || fail "$surface redirects to ${location:-missing}; expected ${website_origin}/"
+          }
           # Allow the custom-domain edge to observe the just-created Pages deployment.
           sleep 30
-          fetch "landing" "${website_origin}/" "$smoke_dir/landing.html"
-          grep -q "Verify Malaysian data before your AI agent uses it" "$smoke_dir/landing.html" \
-            || fail "origin root is not the landing page"
-          if grep -q "__DATAPULSE_DATA__" "$smoke_dir/landing.html"; then
-            fail "origin root unexpectedly serves the dashboard; landing expected"
+          fetch "dataset register" "${website_origin}/" "$smoke_dir/index.html"
+          grep -q "<title>DataPulse dataset register</title>" "$smoke_dir/index.html" \
+            || fail "origin root is not the DataPulse dataset register"
+          grep -q "__DATAPULSE_DATA__" "$smoke_dir/index.html" \
+            || fail "origin root has no embedded register health payload"
+          [[ "$(grep -o '<article class="register-row' "$smoke_dir/index.html" | wc -l)" -eq 389 ]] \
+            || fail "origin root does not contain 389 register rows"
+          if grep -q "DataPulse MY" "$smoke_dir/index.html"; then
+            fail "origin root retains the retired product-name alias"
           fi
-          fetch "dashboard" "${website_origin}/dashboard" "$smoke_dir/index.html"
+          fetch_redirect "landing.html" "${website_origin}/landing.html" 301
+          fetch_redirect "landing" "${website_origin}/landing" 301
+          fetch_redirect "dashboard" "${website_origin}/dashboard" 301
           fetch "health snapshot" "${website_origin}/health/latest.json" "$smoke_dir/health/latest.json"
           cmp -s _site/health/latest.json "$smoke_dir/health/latest.json" || \
             fail "served canonical health differs from the deployed bytes"

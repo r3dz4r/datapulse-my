@@ -198,8 +198,8 @@ case "$profile" in
       "URL drift and cadence audit"
       "docs/trust-snapshot-<date>.{md,json}"
       "docs/health-methodology.html"
-      "docs/landing.html (canonical source-verification page)"
-      "docs/{index,landing,npra,health-methodology}.html site navigation"
+      "docs/landing.html and docs/_redirects (compatibility aliases to the canonical root register)"
+      "docs/{index,npra,health-methodology,learn}.html site navigation"
     )
     ;;
   *)

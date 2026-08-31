@@ -397,15 +397,8 @@ def render(root: Path = ROOT) -> str:
     surfaces = load_public_surfaces(root)
     config = load_landing_config(root, surfaces)
     template = (root / "scripts/templates/landing.html.tmpl").read_text(encoding="utf-8")
-    nav = (root / "docs/assets/site-nav.html").read_text(encoding="utf-8").rstrip()
-    if "<nav class=\"site-nav\"" not in nav:
-        raise GenerationError("docs/assets/site-nav.html is not the canonical site navigation")
-    health = load_json(root / "health/latest.json")
-    manifest = load_json(root / "datapulse.json")
-    receipt = build_evidence_receipt(config["dataset_id"], config["receipt_fields"], health, manifest)
-    register = build_live_register(health, manifest)
     values: dict[str, str] = {key: html.escape(value, quote=True) for key, value in config.items() if isinstance(value, str)}
-    values.update({"site_nav": nav, "workflow": _render_list(config["workflow"], "li"), "receipt_fields": receipt["fields_html"], "evidence_verdict": receipt["verdict_html"], "register_rows": register["rows_html"], "register_summary": register["summary_html"], "rails": "\n".join(f"        <article><h3>{html.escape(_text(item['name'], 'rail name'))}{' <span>(Future)</span>' if item.get('future') else ''}</h3><p>{html.escape(_text(item['copy'], 'rail copy'))}</p></article>" for item in config["rails"]), "machine_surfaces": "\n".join(f"        <li><a href=\"{html.escape(href, quote=True)}\">{html.escape(label)}</a></li>" for label, href in config["machine_surfaces"]), "boundaries": _render_list(config["boundaries"], "li"), "final_ctas": "\n".join(f"          <a class=\"button {'button-primary' if index == 0 else 'button-secondary'}\" href=\"{html.escape(href, quote=True)}\">{html.escape(label)}</a>" for index, (label, href) in enumerate(config["final_ctas"]))})
+    values["canonical_href"] = "/"
     missing = set(TOKEN.findall(template)) - set(values)
     if missing or TOKEN.sub(lambda match: values[match.group(1)], template).find("{{") >= 0:
         raise GenerationError(f"landing template has unresolved token(s): {', '.join(sorted(missing))}")
@@ -415,19 +408,30 @@ def render(root: Path = ROOT) -> str:
     return rendered
 
 
+def render_redirects(surfaces: dict[str, object]) -> str:
+    """Render the source-owned Cloudflare compatibility redirects."""
+    aliases = surfaces["compatibility_aliases"]
+    if not isinstance(aliases, list):
+        raise GenerationError("compatibility_aliases must be a list")
+    return "".join(f"{alias['path']} {alias['target']} 301\n" for alias in aliases)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Fail if docs/landing.html would change.")
     args = parser.parse_args()
     root = Path(__import__("os").environ.get("DATAPULSE_REPO_ROOT", ROOT)).resolve()
     try:
-        content = render(root)
-        output = root / "docs/landing.html"
-        changed = not output.is_file() or output.read_text(encoding="utf-8") != content
+        outputs = {
+            root / "docs/landing.html": render(root),
+            root / "docs/_redirects": render_redirects(load_public_surfaces(root)),
+        }
+        changed = any(not output.is_file() or output.read_text(encoding="utf-8") != content for output, content in outputs.items())
         if args.check:
             return 1 if changed else 0
-        if changed:
-            atomic_write_text(output, content)
+        for output, content in outputs.items():
+            if not output.is_file() or output.read_text(encoding="utf-8") != content:
+                atomic_write_text(output, content)
     except (GenerationError, OSError, UnicodeError) as error:
         print(f"Unable to generate landing page: {error}", file=sys.stderr)
         return 1

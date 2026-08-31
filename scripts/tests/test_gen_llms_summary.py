@@ -23,7 +23,8 @@ def _write_public_surface_fixture(root: Path, featured_dataset_id: str) -> None:
                 "api": "https://api.data-pulse.my",
                 "repository": "https://github.com/r3dz4r/datapulse-my",
             },
-            "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html", "/learn.html"],
+            "pages": ["/", "/npra.html", "/health-methodology.html", "/learn.html"],
+            "compatibility_aliases": [{"path": "/landing.html", "target": "/"}],
             "artifacts": [
                 "/buyer-api-reference.md",
                 "/llms.txt",

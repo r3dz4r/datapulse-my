@@ -43,6 +43,8 @@ OWNED_CATEGORIES = (
     "docs/.dashboard_filters.json",
     "docs/.dashboard_sections.json",
     "docs/index.html",
+    "docs/landing.html",
+    "docs/_redirects",
     "docs/npra.html",
     "docs/buyer-api-reference.md",
     "P5B public markers",

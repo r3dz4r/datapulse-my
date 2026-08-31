@@ -1,94 +1,15 @@
 <!doctype html>
-<!-- generated: scripts/gen_landing_page.py; inputs: config/landing-page.json, config/public-surfaces.json, scripts/templates/landing.html.tmpl, docs/assets/site-nav.html; do not hand-edit -->
+<!-- generated: scripts/gen_landing_page.py; inputs: config/landing-page.json, config/public-surfaces.json, scripts/templates/landing.html.tmpl; do not hand-edit -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A source-verification layer for AI agents using Malaysian public data.">
-  <title>DataPulse MY — Source verification for Malaysian public data</title>
-  <link rel="stylesheet" href="/assets/datapulse.css">
+  <meta name="description" content="The DataPulse dataset register is available at the canonical root route.">
+  <title>DataPulse dataset register</title>
+  <link rel="canonical" href="/">
+  <meta http-equiv="refresh" content="0; url=/">
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
-  <!-- BEGIN SITE-NAV (generated from assets/site-nav.html) -->
-  <nav class="site-nav" aria-label="Primary navigation">
-    <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="DataPulse home"><img class="brand-logo" src="/assets/brand/datapulse-horizontal-full-color.svg" alt="DataPulse"></a>
-      <div class="nav-links">
-        <a href="/" aria-label="Open the DataPulse dashboard">Dashboard</a>
-        <a href="/npra.html" aria-label="Open the DataPulse NPRA engine page">NPRA</a>
-        <a href="/#mcp" aria-label="Open the MCP agent section">MCP</a>
-        <a href="/#machine-title" aria-label="Open the catalogue surfaces section">Catalogue</a>
-        <a href="/learn.html" aria-label="Learn how to build with DataPulse">Learn</a>
-        <a href="/health-methodology.html" aria-label="Read the DataPulse health methodology">Methodology</a>
-        <a href="https://github.com/r3dz4r/datapulse-my" aria-label="Open the DataPulse GitHub repository">GitHub</a>
-      </div>
-    </div>
-  </nav>
-  <!-- END SITE-NAV -->
-  <main id="main-content">
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="wrap">
-        <p class="eyebrow">SOURCE VERIFICATION FOR AGENT-CONSUMED PUBLIC DATA</p>
-        <h1 id="hero-title">Verify Malaysian data before your AI agent uses it.</h1>
-        <p class="hero-copy">DataPulse records observed source identity, freshness, provenance, licence and reuse context, structural evidence, and limitations so people and agents can make an evidence-qualified decision alongside the official publisher.</p>
-        <div class="actions">
-          <a class="button button-primary" href="/data/fuelprice.md">Inspect one evidence receipt</a>
-          <a class="button button-secondary" href="https://mcp.data-pulse.my/mcp">Connect via MCP</a>
-        </div>
-        <p id="runtime-observation" class="data-strip" aria-live="polite">Current published observation: loading; if unavailable, treat it as unknown.</p>
-      </div>
-    </section>
-    <section aria-labelledby="workflow-title"><div class="wrap">
-      <p class="eyebrow">EVIDENCE PREFLIGHT</p><h2 id="workflow-title">Make the decision from the receipt.</h2>
-      <p class="section-lead">For the configured example dataset, follow the evidence before using or citing a source.</p>
-      <ol class="landing-flow">        <li>Discover</li>
-        <li>Inspect</li>
-        <li>Check evidence</li>
-        <li>Use, warn, or stop</li>
-        <li>Cite</li></ol>
-      <article class="receipt" aria-labelledby="receipt-title"><p class="receipt-label">Live published evidence from health/latest.json</p><h3 id="receipt-title">Evidence receipt</h3><p>These are real observed values from the published health snapshot and dataset manifest; any unobserved signal is shown as &#x27;not observed&#x27; rather than a fabricated value.</p><p class="data-strip"><span class="legend-item"><span class="legend-swatch fresh"></span> Evidence verdict: use</span></p><dl>        <div><dt>Source identity</dt><dd>fuelprice · other</dd></div>
-        <div><dt>Publisher</dt><dd>data.gov.my</dd></div>
-        <div><dt>Licence and reuse context</dt><dd>Open Government Licence (Malaysia)</dd></div>
-        <div><dt>Observed time</dt><dd>2026-08-23T02:11:54Z</dd></div>
-        <div><dt>Content date</dt><dd>2026-08-20</dd></div>
-        <div><dt>Freshness state</dt><dd>Fresh</dd></div>
-        <div><dt>Schema or record signal</dt><dd>949 records; within tolerance</dd></div>
-        <div><dt>Evidence reference</dt><dd><a href="/data/fuelprice.md">/data/fuelprice.md</a> · <a href="/health/latest.json">/health/latest.json</a></dd></div>
-        <div><dt>Claim scope</dt><dd>Read-only observation; official publisher remains source of record; observed health is not objective truth.</dd></div>
-        <div><dt>Limitations</dt><dd>No universal truth verdict; gaps stay visible; freshness signal is content-date-parse.</dd></div></dl><a class="inline-arrow" href="/data/fuelprice.md">Open the example evidence surface</a></article>
-    </div></section>
-    <section aria-labelledby="register-title"><div class="wrap"><p class="eyebrow">LIVE REGISTER</p><h2 id="register-title">A bounded view of what is live now.</h2><p class="section-lead">A summary of the current published observation. The full register lives on the dashboard.</p><p class="data-strip">fresh 94 · aging 134 · stale 144 · browser-dependent 5 · discontinued 1 · reference 11 — 389 datasets total</p><div class="table-wrap"><table><thead><tr><th>Dataset</th><th>Source</th><th>Status</th><th>Last checked</th><th>Records</th></tr></thead><tbody><tr><td>Astronomy Almanac<br>almanak_astronomi</td><td>data.gov.my (OpenAPI)</td><td><span class="legend-item"><span class="legend-swatch fresh"></span>fresh</span></td><td>2026-08-28T12:11:35Z</td><td>538</td></tr><tr><td>Kijang Emas (Gold Reference Price)<br>bnm_kijang_emas</td><td>BNM Open API (apikijangportal.bnm.gov.my)</td><td><span class="legend-item"><span class="legend-swatch aging"></span>aging</span></td><td>2026-08-28T12:11:35Z</td><td>2</td></tr><tr><td>Air Pollutant Concentrations<br>air_pollution</td><td>data.gov.my</td><td><span class="legend-item"><span class="legend-swatch stale"></span>stale</span></td><td>2026-08-23T02:11:54Z</td><td>432</td></tr><tr><td>DOE APIMS Air Quality (Hourly API)<br>doe_apims</td><td>DOE MyEQMS portal (Camofox-rendered)</td><td><span class="legend-item"><span class="legend-swatch browser-dependent"></span>browser-dependent</span></td><td>2026-08-28T17:11:00Z</td><td>—</td></tr><tr><td>GTFS Static — Rapid Kuantan Bus Schedule<br>gtfs_static_prasarana_bus_kuantan</td><td>data.gov.my (GTFS API)</td><td><span class="legend-item"><span class="legend-swatch discontinued"></span>discontinued</span></td><td>2026-08-16T02:09:20Z</td><td>—</td></tr><tr><td>Currency Codes (ISO 4217)<br>currency_codes</td><td>data.gov.my (OpenAPI)</td><td><span class="legend-item"><span class="legend-swatch reference"></span>reference</span></td><td>2026-08-16T02:09:20Z</td><td>179</td></tr><tr><td>Daily Blood Donations by Blood Group<br>blood_donations</td><td>data.gov.my (OpenAPI)</td><td><span class="legend-item"><span class="legend-swatch fresh"></span>fresh</span></td><td>2026-08-28T12:11:35Z</td><td>37720</td></tr><tr><td>Balance of Payments by Account<br>bop_balance</td><td>OpenDOSM (also indexed by data.gov.my)</td><td><span class="legend-item"><span class="legend-swatch aging"></span>aging</span></td><td>2026-08-23T02:11:54Z</td><td>330</td></tr><tr><td>Monthly Arrivals by Nationality &amp; Sex<br>arrivals</td><td>data.gov.my (OpenAPI)</td><td><span class="legend-item"><span class="legend-swatch stale"></span>stale</span></td><td>2026-08-23T02:11:54Z</td><td>13050</td></tr><tr><td>DOE MQIMS Marine Water Quality (Manual)<br>doe_mqims</td><td>DOE MyEQMS portal (Camofox-rendered)</td><td><span class="legend-item"><span class="legend-swatch browser-dependent"></span>browser-dependent</span></td><td>2026-08-23T03:05:59Z</td><td>—</td></tr><tr><td>Broad Economic Categories (BEC)<br>dosm_bec</td><td>DOSM via data.gov.my</td><td><span class="legend-item"><span class="legend-swatch reference"></span>reference</span></td><td>2026-08-16T02:09:20Z</td><td>31</td></tr><tr><td>data.gov.my Daily Blood Donations by Blood Group &amp; State<br>blood_donations_state</td><td>data.gov.my (storage.data.gov.my)</td><td><span class="legend-item"><span class="legend-swatch fresh"></span>fresh</span></td><td>2026-08-28T12:11:35Z</td><td>490360</td></tr></tbody></table></div><p class="data-strip">…and 377 more datasets — the full register lives on the dashboard.</p><a class="inline-arrow" href="/">Open the full dashboard</a></div></section>
-    <section aria-labelledby="rails-title"><div class="wrap"><p class="eyebrow">SUPPORTING RAILS</p><h2 id="rails-title">From readable context to verifiable decisions.</h2><div class="landing-grid">        <article><h3>Readable</h3><p>Concise human and machine-readable dataset context.</p></article>
-        <article><h3>Discoverable</h3><p>Canonical discovery files and a public catalogue.</p></article>
-        <article><h3>Callable</h3><p>Read-only MCP access to structured public-data context.</p></article>
-        <article><h3>Verifiable</h3><p>Observed freshness, provenance, licence, structural evidence, drift, reconciliation, and limitations.</p></article>
-        <article><h3>Payable <span>(Future)</span></h3><p>Future and conditional: no payment product is offered on this surface.</p></article></div></div></section>
-    <section id="mcp" aria-labelledby="machine-title"><div class="wrap"><p class="eyebrow">MACHINE ACCESS</p><h2 id="machine-title">Canonical surfaces, not a copied capability catalogue.</h2><p class="section-lead">Use the canonical documents for discovery and schemas. The MCP endpoint is read-only.</p><ul class="surface-list">        <li><a href="/agent.json">Agent capability discovery</a></li>
-        <li><a href="/mcp.json">MCP advertisement and schemas</a></li>
-        <li><a href="/llms.txt">Agent-readable orientation</a></li>
-        <li><a href="/datapulse.json">Dataset manifest</a></li>
-        <li><a href="/health/latest.json">Current published observation</a></li>
-        <li><a href="/data/jsonld/catalog.json">JSON-LD catalogue</a></li></ul><p class="endpoint"><a href="https://mcp.data-pulse.my/mcp">https://mcp.data-pulse.my/mcp</a></p></div></section>
-    <section aria-labelledby="boundaries-title"><div class="wrap"><p class="eyebrow">CLAIM BOUNDARIES</p><h2 id="boundaries-title">Evidence is not a universal truth verdict.</h2><ul class="boundary-list">        <li>DataPulse is read-only; official publishers remain the source of record.</li>
-        <li>Integrity, provenance, freshness, and structural checks do not establish substantive truth.</li>
-        <li>Unknown, stale, degraded, inaccessible, and conflicting signals remain visible.</li>
-        <li>Agents and humans decide whether the available evidence is fit for a particular use.</li></ul></div></section>
-    <section aria-labelledby="vertical-title"><div class="wrap"><h2 id="vertical-title">One domain example.</h2><p class="section-lead">Domain products can sit downstream of this public source-verification layer without replacing its evidence boundaries.</p><a class="inline-arrow" href="/npra.html">See the NPRA example</a></div></section>
-    <section aria-labelledby="final-title"><div class="wrap"><h2 id="final-title">Start with the evidence.</h2><div class="actions">          <a class="button button-primary" href="/data/fuelprice.md">Inspect one dataset</a>
-          <a class="button button-secondary" href="https://mcp.data-pulse.my/mcp">Connect your agent</a></div></div></section>
-  </main>
-  <script>
-    (() => {
-      const target = document.getElementById('runtime-observation');
-      const unknown = 'Current published observation: unavailable; treat freshness as unknown and inspect the evidence directly.';
-      fetch('/health/latest.json', {cache: 'no-store', headers: {Accept: 'application/json'}})
-        .then(response => response.ok ? response.json() : Promise.reject(new Error('unavailable')))
-        .then(health => {
-          if (!Array.isArray(health.datasets) || typeof health.checked_at !== 'string') throw new Error('malformed');
-          target.textContent = `Current published observation: ${health.checked_at}. Inspect the evidence receipt before use.`;
-        }).catch(() => { target.textContent = unknown; });
-    })();
-  </script>
+  <p>The <a href="/">DataPulse dataset register</a> has moved to the canonical root route.</p>
 </body>
 </html>

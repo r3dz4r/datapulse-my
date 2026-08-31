@@ -58,13 +58,13 @@ def test_landing_page_is_deterministic_generated_and_uses_canonical_links(tmp_pa
     assert (root / "docs/landing.html").read_bytes() == output
     page = output.decode("utf-8")
     assert page.startswith("<!doctype html>\n" + MARKER)
-    for href in ("/agent.json", "/mcp.json", "/llms.txt", "/datapulse.json", "/health/latest.json", "/data/jsonld/catalog.json"):
-        assert f'href="{href}"' in page
-    assert "fetch('/health/latest.json', {cache: 'no-store'" in page
-    assert "unavailable; treat freshness as unknown" in page
-    assert "<nav class=\"site-nav\"" in page
-    assert '<link rel="stylesheet" href="/assets/datapulse.css">' in page
-    assert 'crossorigin="anonymous"' not in page
+    assert '<link rel="canonical" href="/">' in page
+    assert 'http-equiv="refresh" content="0; url=/"' in page
+    assert "DataPulse dataset register" in page
+    assert "DataPulse MY" not in page
+    assert (root / "docs/_redirects").read_text(encoding="utf-8") == (
+        "/landing.html / 301\n/landing / 301\n/dashboard / 301\n"
+    )
 
 
 def test_landing_page_rejects_malformed_claims_and_manual_mcp_enumeration(tmp_path: Path) -> None:
@@ -114,8 +114,8 @@ def test_landing_config_enforces_boundaries_and_runtime_surfaces() -> None:
     assert config["mcp_endpoint"] == "https://mcp.data-pulse.my/mcp"
     assert config["health_href"] == "/health/latest.json"
     page = render(ROOT)
-    assert "Payable <span>(Future)</span>" in page
-    assert "substantive truth" in page
+    assert "DataPulse dataset register" in page
+    assert 'href="/"' in page
 
 
 def test_landing_config_rejects_missing_boundary(tmp_path: Path) -> None:
@@ -127,64 +127,24 @@ def test_landing_config_rejects_missing_boundary(tmp_path: Path) -> None:
         load_landing_config(root, load_public_surfaces(root))
 
 
-def test_landing_page_classes_are_owned_by_the_canonical_stylesheet() -> None:
+def test_landing_page_is_a_minimal_canonical_fallback() -> None:
     page = render(ROOT)
-    stylesheet = (ROOT / "docs/assets/datapulse.css").read_text(encoding="utf-8")
-    classes = {name for value in re.findall(r'\bclass="([^"]+)"', page) for name in value.split()}
-    defined = set(re.findall(r"\.([a-z][a-z0-9-]*)\b", stylesheet))
-    assert classes <= defined
-    assert {"landing-flow", "receipt", "landing-grid", "surface-list", "boundary-list", "brand-logo"} <= defined
-    assert '<a class="skip-link" href="#main-content">' in page
-    assert '<main id="main-content">' in page
-    assert "aria-labelledby=" in page
-    assert "a:focus-visible, button:focus-visible" in stylesheet
-    assert "@media (max-width: 768px)" in stylesheet
-    assert "@media (prefers-reduced-motion: reduce)" in stylesheet
+    assert "LIVE REGISTER" not in page
+    assert "SOURCE VERIFICATION" not in page
+    assert "__DATAPULSE_DATA__" not in page
+    assert page.count('href="/"') == 2
 
 
-def test_landing_page_receipt_uses_live_evidence(tmp_path: Path) -> None:
+def test_landing_page_compatibility_output_is_independent_of_live_health(tmp_path: Path) -> None:
     root = _landing_root(tmp_path)
     page = render(root)
-    assert "Preview schema field" not in page
-    assert "not verified evidence" not in page
-    health = json.loads((root / "health/latest.json").read_text(encoding="utf-8"))
-    fuelprice = next((row for row in health["datasets"] if row.get("dataset_id") == "fuelprice"), None)
-    assert fuelprice is not None, "health/latest.json is missing the fuelprice dataset"
-    record_count = fuelprice.get("record_count")
-    within_tolerance = fuelprice.get("record_count_within_tolerance")
-    if record_count is None:
-        record_signal = "not observed"
-    elif within_tolerance is True:
-        record_signal = f"{record_count} records; within tolerance"
-    elif within_tolerance is False:
-        record_signal = f"{record_count} records; outside tolerance"
-    else:
-        record_signal = f"{record_count} records; tolerance unknown"
-    assert record_signal in page
-    assert "Evidence verdict: use" in page
-    assert 'href="/data/fuelprice.md"' in page
+    (root / "health/latest.json").unlink()
+    assert render(root) == page
 
 
-def test_landing_page_register_is_live_and_bounded(tmp_path: Path) -> None:
+def test_landing_page_redirect_manifest_is_deterministic(tmp_path: Path) -> None:
     root = _landing_root(tmp_path)
-    page = render(root)
-
-    assert "LIVE REGISTER" in page
-    assert "register-title" in page
-
-    health = json.loads((root / "health/latest.json").read_text(encoding="utf-8"))
-    datasets = health["datasets"]
-    total = len(datasets)
-
-    priority = {status: index for index, status in enumerate(REGISTER_STATUS_ORDER)}
-    ordered = sorted(
-        datasets,
-        key=lambda row: (priority.get(row.get("status"), len(REGISTER_STATUS_ORDER)), str(row.get("dataset_id", ""))),
-    )
-    first_id = ordered[0]["dataset_id"]
-    assert first_id in page
-
-    assert "legend-swatch" in page
-    assert f"{total} datasets total" in page
-    assert "more datasets" in page
-    assert page.count("legend-swatch") < total
+    assert _run(root).returncode == 0
+    redirects = (root / "docs/_redirects").read_bytes()
+    assert _run(root).returncode == 0
+    assert (root / "docs/_redirects").read_bytes() == redirects

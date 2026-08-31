@@ -19,6 +19,7 @@ ALLOWED_CONFIG_KEYS = {
     "schema",
     "origins",
     "pages",
+    "compatibility_aliases",
     "artifacts",
     "featured_dataset_ids",
 }
@@ -87,7 +88,7 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
         raise GenerationError(f"{schema_path}: missing strict origins schema: {error}") from error
     document = load_json(path)
     unknown = set(document) - ALLOWED_CONFIG_KEYS
-    missing = ALLOWED_CONFIG_KEYS - set(document)
+    missing = (ALLOWED_CONFIG_KEYS - {"compatibility_aliases"}) - set(document)
     if unknown:
         raise GenerationError(f"{path}: unknown key(s): {', '.join(sorted(unknown))}")
     if missing:
@@ -105,9 +106,26 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
         if expected != value:
             raise GenerationError(f"{path}: origin {key!r} violates canonical schema constraint")
     pages = _validate_paths("pages", document["pages"])
+    aliases = document.get("compatibility_aliases", [])
+    if not isinstance(aliases, list) or not all(isinstance(alias, dict) for alias in aliases):
+        raise GenerationError("compatibility_aliases must be an explicit object array")
+    validated_aliases: list[dict[str, str]] = []
+    for alias in aliases:
+        if set(alias) != {"path", "target"}:
+            raise GenerationError("compatibility_aliases entries must contain exactly path and target")
+        alias_path = _validate_paths("compatibility_aliases.path", [alias["path"]])[0]
+        target = _validate_paths("compatibility_aliases.target", [alias["target"]])[0]
+        validated_aliases.append({"path": alias_path, "target": target})
+    alias_paths = [alias["path"] for alias in validated_aliases]
+    if len(alias_paths) != len(set(alias_paths)):
+        raise GenerationError("compatibility_aliases contains a duplicate path")
+    if set(alias_paths) & set(pages):
+        raise GenerationError("compatibility_aliases and pages must not overlap")
+    if any(alias["target"] not in pages for alias in validated_aliases):
+        raise GenerationError("compatibility_aliases target must be a canonical page")
     artifacts = _validate_paths("artifacts", document["artifacts"])
-    if set(pages) & set(artifacts):
-        raise GenerationError(f"{path}: pages and artifacts must not overlap")
+    if set(pages) & set(artifacts) or set(alias_paths) & set(artifacts):
+        raise GenerationError(f"{path}: pages, compatibility_aliases, and artifacts must not overlap")
     featured = document["featured_dataset_ids"]
     if (
         not isinstance(featured, list)
@@ -120,6 +138,7 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
         "schema": document["schema"],
         "origins": validated_origins,
         "pages": pages,
+        "compatibility_aliases": validated_aliases,
         "artifacts": artifacts,
         "featured_dataset_ids": list(featured),
     }

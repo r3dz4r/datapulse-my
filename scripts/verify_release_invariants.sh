@@ -33,7 +33,7 @@ fetch() {
   mkdir -p "$(dirname "$work_dir/$name")"
   if $local_mode; then
     case "$path" in
-      index.html|landing.html|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)
+      index.html|landing.html|_redirects|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)
         path="docs/$path"
         ;;
     esac
@@ -101,6 +101,9 @@ if ! $local_mode; then
   fetch landing.html landing.html
   fetch npra.html npra.html
   fetch buyer-api-reference.md buyer-api-reference.md
+fi
+if $local_mode; then
+  fetch redirects _redirects
 fi
 fetch llms.txt llms.txt
 fetch attestation-keys.json .well-known/datapulse-probe-keys.json
@@ -216,7 +219,7 @@ catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 catalog_graph = json.loads((work / "catalog-graph.json").read_text())
 surfaces = load_public_surfaces(Path.cwd())
 
-assert surfaces["pages"] == ["/", "/landing.html", "/npra.html", "/health-methodology.html", "/learn.html"]
+assert surfaces["pages"] == ["/", "/npra.html", "/health-methodology.html", "/learn.html"]
 assert "/buyer-api-reference.md" in surfaces["artifacts"]
 website, mcp_origin, api_origin = (surfaces["origins"][key] for key in ("website", "mcp", "api"))
 
@@ -496,10 +499,11 @@ assert f"{api_origin}/api/v1/paddle/redeem" in npra_source
 assert f"{api_origin}/api/v1/keys/me" in npra_source
 landing = (work / "landing.html").read_text(encoding="utf-8")
 assert landing.startswith("<!doctype html>\n<!-- generated: scripts/gen_landing_page.py;")
-assert f'{mcp_origin}/mcp' in landing
-assert "fetch('/health/latest.json', {cache: 'no-store'" in landing
-assert "universal trust score" not in landing.lower()
-assert "webmcp" not in landing.lower()
+assert '<link rel="canonical" href="/">' in landing
+assert 'http-equiv="refresh" content="0; url=/"' in landing
+assert "DataPulse dataset register" in landing
+assert "DataPulse MY" not in landing
+assert (work / "redirects").read_text(encoding="utf-8") == "/landing.html / 301\n/landing / 301\n/dashboard / 301\n"
 buyer_blocks = "\n".join(
     owned(work / "buyer-api-reference.md", marker) for marker in (
         "buyer-api-host", "buyer-api-quickstart", "buyer-api-limits",

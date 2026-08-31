@@ -12,7 +12,7 @@ from scripts import gen_site_nav
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PAGES = ("index.html", "landing.html", "npra.html", "health-methodology.html", "learn.html")
+PAGES = ("index.html", "npra.html", "health-methodology.html", "learn.html")
 LEARN_PAGE = ROOT / "docs/learn.html"
 HEALTH_METHODOLOGY_TEMPLATE = ROOT / "scripts/templates/health-methodology.html.tmpl"
 

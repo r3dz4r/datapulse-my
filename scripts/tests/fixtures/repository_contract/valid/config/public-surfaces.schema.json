@@ -1,7 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataPulse MY public surface contract",
   "type": "object",
-  "required": ["schema", "origins", "pages", "artifacts", "featured_dataset_ids"],
+  "required": [
+    "schema",
+    "origins",
+    "pages",
+    "artifacts",
+    "featured_dataset_ids",
+    "compatibility_aliases"
+  ],
   "properties": {
     "schema": {"const": "datapulse/v1/public-surfaces"},
     "origins": {
@@ -15,9 +23,23 @@
       },
       "additionalProperties": false
     },
-    "pages": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
-    "artifacts": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
-    "featured_dataset_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true}
+    "pages": {"type": "array", "items": {"type": "string", "pattern": "^/(?!.*(?:^|/)\\.\\.(?:/|$))"}, "uniqueItems": true},
+    "compatibility_aliases": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": ["path", "target"],
+        "properties": {
+          "path": {"type": "string", "pattern": "^/(?!.*(?:^|/)\\.\\.(?:/|$))"},
+          "target": {"type": "string", "pattern": "^/(?!.*(?:^|/)\\.\\.(?:/|$))"}
+        },
+        "additionalProperties": false
+      },
+      "uniqueItems": true
+    },
+    "artifacts": {"type": "array", "items": {"type": "string", "pattern": "^/(?!.*(?:^|/)\\.\\.(?:/|$))"}, "uniqueItems": true},
+    "featured_dataset_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
   },
   "additionalProperties": false
 }

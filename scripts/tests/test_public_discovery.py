@@ -19,7 +19,8 @@ def _stage(root: Path) -> None:
             "api": "https://api.data-pulse.my",
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
-        "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html"],
+        "pages": ["/", "/npra.html", "/health-methodology.html"],
+        "compatibility_aliases": [{"path": "/landing.html", "target": "/"}],
         "artifacts": ["/buyer-api-reference.md", "/llms.txt", "/agent.json", "/mcp.json"],
         "featured_dataset_ids": ["alpha"],
     }
@@ -59,7 +60,6 @@ def test_generation_is_deterministic_and_preserves_unowned_prose(tmp_path: Path)
     locations = [node.text for node in root.findall("{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
     assert locations == [
         "https://www.data-pulse.my/",
-        "https://www.data-pulse.my/landing.html",
         "https://www.data-pulse.my/npra.html",
         "https://www.data-pulse.my/health-methodology.html",
         "https://www.data-pulse.my/buyer-api-reference.md",
