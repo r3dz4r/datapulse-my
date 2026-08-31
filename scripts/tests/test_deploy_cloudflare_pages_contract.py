@@ -145,6 +145,23 @@ def test_health_only_legacy_release_proof_accepts_generated_and_verified_timesta
     assert re.search(pattern, "- Verified at: `2026-08-29T10:27:58+00:00`\n", re.MULTILINE)
 
 
+def test_final_health_only_release_proof_check_accepts_both_timestamp_forms_fail_closed() -> None:
+    workflow = _workflow()
+    verify_step = workflow.split("      - name: Verify canonical served surface\n", 1)[1]
+    match = re.search(r'"verification timestamp": r"([^"]+)"', verify_step)
+    assert match is not None
+    pattern = match.group(1)
+
+    for timestamp in ("Generated", "Verified"):
+        assert re.search(pattern, f"- {timestamp} at: `2026-08-29T10:27:58+00:00`", re.MULTILINE)
+    for malformed in (
+        "- generated at: `2026-08-29T10:27:58+00:00`",
+        "- Generated at: 2026-08-29T10:27:58+00:00",
+        "- Generated at: `not-a-timestamp`\nextra",
+    ):
+        assert re.search(pattern, malformed, re.MULTILINE) is None
+
+
 def test_health_only_signed_sigstore_bundle_skips_legacy_plane_preservation() -> None:
     """A fresh verified bundle must not be blocked by a stale served plane."""
     steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
