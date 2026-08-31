@@ -145,6 +145,46 @@ def test_health_only_legacy_release_proof_accepts_generated_and_verified_timesta
     assert re.search(pattern, "- Verified at: `2026-08-29T10:27:58+00:00`\n", re.MULTILINE)
 
 
+def test_health_only_signed_sigstore_bundle_skips_legacy_plane_preservation() -> None:
+    """A fresh verified bundle must not be blocked by a stale served plane."""
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    preserve = next(
+        step for step in steps if step.get("name") == "Preserve served attestation plane (health-only path)"
+    )
+    download = next(step for step in steps if step.get("name") == "Download verified optional Sigstore bundle")
+    assemble = next(step for step in steps if step.get("name") == "Assemble canonical Pages artifact")
+
+    assert preserve["if"] == (
+        "needs.classify.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.signed != 'true'"
+    )
+    assert download["if"] == (
+        "needs.sign_health.outputs.signed == 'true' || "
+        "needs.sign_health.outputs.receipts_signed == 'true'"
+    )
+    for artifact in (
+        "health.latest.sigstore.json",
+        "health.latest.statement.json",
+        "chain_head.json",
+        "datapulse.json",
+    ):
+        assert f'test -s "$RUNNER_TEMP/sigstore-publication/{artifact}"' in assemble["run"]
+        assert f'cp "$RUNNER_TEMP/sigstore-publication/{artifact}" _site/signatures/' in assemble["run"]
+
+
+def test_health_only_signer_down_path_preserves_only_a_verified_served_plane() -> None:
+    """Absent a fresh bundle, corrupt served evidence must remain deployment-blocking."""
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    preserve = next(
+        step for step in steps if step.get("name") == "Preserve served attestation plane (health-only path)"
+    )
+    assemble = next(step for step in steps if step.get("name") == "Assemble canonical Pages artifact")
+
+    assert "python3 scripts/verify_attestation_plane_state.py --planedir \"$preserved_root\"" in preserve["run"]
+    assert "served health/binding plane is inconsistent" in preserve["run"]
+    assert "rm -f _site/attestations/latest/binding.json" in assemble["run"]
+
+
 def test_native_pages_installs_release_dependencies_before_generation() -> None:
     parsed = yaml.safe_load(_workflow())
     steps = parsed["jobs"]["deploy"]["steps"]

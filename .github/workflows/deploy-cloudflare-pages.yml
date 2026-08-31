@@ -352,7 +352,7 @@ jobs:
           PY
 
       - name: Preserve served attestation plane (health-only path)
-        if: needs.classify.outputs.health_only == 'true'
+        if: needs.classify.outputs.health_only == 'true' && needs.sign_health.outputs.signed != 'true'
         run: |
           set -Eeuo pipefail
           # A health-only checkout can lag a completed release. Its attestation
