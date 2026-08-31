@@ -5,6 +5,7 @@ readonly DEFAULT_DEPLOYED_PATH=/home/redza/.local/share/datapulse-mcp/server.py
 readonly DEFAULT_ENDPOINT=http://127.0.0.1:8788/mcp
 readonly DEFAULT_SERVICE=datapulse-mcp.service
 readonly DEFAULT_DROP_IN=/home/redza/.config/systemd/user/datapulse-mcp.service.d/99-source-marker.conf
+readonly DEFAULT_PYTHONPATH=/home/redza/datapulse-my
 readonly ACCEPT='application/json, text/event-stream'
 
 source_path=""
@@ -12,6 +13,7 @@ deployed_path="${DATAPULSE_MCP_DEPLOYED_PATH:-$DEFAULT_DEPLOYED_PATH}"
 endpoint="${DATAPULSE_MCP_ENDPOINT:-$DEFAULT_ENDPOINT}"
 service="${DATAPULSE_MCP_SERVICE:-$DEFAULT_SERVICE}"
 drop_in="${DATAPULSE_MCP_SOURCE_DROP_IN:-$DEFAULT_DROP_IN}"
+pythonpath="${DATAPULSE_MCP_PYTHONPATH:-$DEFAULT_PYTHONPATH}"
 result_file=""
 work_dir=""
 source_tmp=""
@@ -107,6 +109,8 @@ done
 [[ -n "$source_path" ]] || fail '--source is required'
 [[ -f "$source_path" ]] || fail "source is not a regular file: $source_path"
 [[ -f "$deployed_path" ]] || fail "deployed copy is not a regular file: $deployed_path"
+[[ "$pythonpath" != *$'\n'* && "$pythonpath" != *$'\r'* && "$pythonpath" != *'"'* && "$pythonpath" != *"'"* ]] \
+  || fail 'DATAPULSE_MCP_PYTHONPATH contains unsupported systemd Environment characters'
 command -v curl >/dev/null || fail 'curl is required'
 command -v jq >/dev/null || fail 'jq is required'
 command -v systemctl >/dev/null || fail 'systemctl is required'
@@ -147,10 +151,11 @@ PY
 )" || fail "could not read FASTMCP_VERSION from $source_path"
 expected_source_version="v${expected_fastmcp_version}+${expected_source_sha:0:7}"
 
-readonly drop_in_content='[Service]
+readonly drop_in_content="[Service]
 # The deployed file is authoritative; stale manual environment overrides must not
 # mask the SOURCE_COMMIT_SHA/SOURCE_COMMIT_DATE embedded by release-build.
-UnsetEnvironment=DATAPULSE_MCP_SOURCE_SHA DATAPULSE_MCP_SOURCE_DATE'
+UnsetEnvironment=DATAPULSE_MCP_SOURCE_SHA DATAPULSE_MCP_SOURCE_DATE
+Environment=PYTHONPATH=$pythonpath"
 
 drop_in_changed=false
 if [[ ! -f "$drop_in" ]] || [[ "$(<"$drop_in")" != "$drop_in_content" ]]; then

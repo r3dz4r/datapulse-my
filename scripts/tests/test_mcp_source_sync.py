@@ -219,6 +219,35 @@ def test_release_build_profile_includes_bump_step() -> None:
     assert "0. python3 scripts/bump_mcp_source_version.py" in listed.stdout
 
 
+def test_service_like_server_import_resolves_repository_scripts(tmp_path: Path) -> None:
+    deployed_dir = tmp_path / "deployed"
+    deployed_dir.mkdir()
+    shutil.copy2(ROOT / "mcp/server.py", deployed_dir / "server.py")
+
+    probe = subprocess.run(
+        [
+            "python3",
+            "-c",
+            (
+                "import importlib.util; "
+                "spec = importlib.util.spec_from_file_location(\"datapulse_mcp_server\", \"server.py\"); "
+                "module = importlib.util.module_from_spec(spec); "
+                "spec.loader.exec_module(module); "
+                "print(module.generate_per_dataset_statement.__module__)"
+            ),
+        ],
+        cwd=deployed_dir,
+        env={**os.environ, "PYTHONPATH": str(ROOT)},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=20,
+    )
+
+    assert probe.returncode == 0, probe.stderr
+    assert probe.stdout.strip() == "scripts.gen_per_dataset_receipt"
+
+
 @pytest.mark.parametrize(
     ("source_fastmcp_version", "runtime_version", "live_sha", "malformed", "expected_surface"),
     [
@@ -333,6 +362,13 @@ def test_sync_verifies_fastmcp_identity_and_rolls_back_on_failure(
     if expected_surface is not None:
         assert result.returncode == 0, result.stderr
         assert deployed.read_text(encoding="utf-8") == source_text
+        assert (tmp_path / "drop-in.conf").read_text(encoding="utf-8") == (
+            "[Service]\n"
+            "# The deployed file is authoritative; stale manual environment overrides must not\n"
+            "# mask the SOURCE_COMMIT_SHA/SOURCE_COMMIT_DATE embedded by release-build.\n"
+            "UnsetEnvironment=DATAPULSE_MCP_SOURCE_SHA DATAPULSE_MCP_SOURCE_DATE\n"
+            "Environment=PYTHONPATH=/home/redza/datapulse-my\n"
+        )
         assert f"identity surface={expected_surface}" in result.stdout
     else:
         assert result.returncode != 0
