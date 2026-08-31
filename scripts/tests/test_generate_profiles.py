@@ -44,6 +44,7 @@ GENERATORS = (
     "gen_trust_snapshot.py",
     "gen_json_envelope.py",
     "gen_jsonld_catalog.py",
+    "gen_register_page.py",
     "gen_mcp_reference.py",
     "gen_dashboard_filters.py",
     "gen_dashboard_sections.py",
@@ -135,7 +136,7 @@ def _stage_source(tmp_path: Path) -> Path:
                 "real_status": "active",
                 "steward": "Fixture Agency",
                 "source": "Fixture Portal",
-                "url": f"data:text/csv,name%0A{dataset_id}",
+                "url": f"https://example.invalid/{dataset_id}.csv",
                 "geo_coverage": "Malaysia",
                 "health_report": f"data/{dataset_id}.md",
                 "refresh_frequency": "daily",
@@ -153,7 +154,7 @@ def _stage_source(tmp_path: Path) -> Path:
                 "message": "Fixture health result.",
                 "http_status": 200,
                 "record_count": 1,
-                "url": f"data:text/csv,name%0A{dataset_id}",
+                "url": f"https://example.invalid/{dataset_id}.csv",
             }
         )
     _write_json(source / "health/latest.json", health)
@@ -222,6 +223,8 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(RELEASE_FIXTURE / "mcp.schema.json", source / "mcp.schema.json")
     shutil.copy2(RELEASE_FIXTURE / "health.schema.json", source / "health.schema.json")
     shutil.copytree(RELEASE_FIXTURE / "config", source / "config")
+    for name in ("register-page.json", "register-page.schema.json"):
+        shutil.copy2(ROOT / "config" / name, source / "config" / name)
     shutil.copy2(ROOT / "config/landing-page.json", source / "config/landing-page.json")
     landing_config = json.loads(
         (source / "config/landing-page.json").read_text(encoding="utf-8")

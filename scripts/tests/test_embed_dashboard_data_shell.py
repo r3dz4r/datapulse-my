@@ -25,9 +25,11 @@ def _embedded_block(document: bytes) -> bytes:
     return match.group(0)
 
 
-def test_cli_regeneration_preserves_shared_css_shell(tmp_path: Path) -> None:
+def test_cli_regeneration_uses_source_owned_register_homepage(tmp_path: Path) -> None:
     html_path = tmp_path / "index.html"
+    npra_path = tmp_path / "npra.html"
     shutil.copyfile(REPOSITORY_ROOT / "docs/index.html", html_path)
+    shutil.copyfile(REPOSITORY_ROOT / "docs/npra.html", npra_path)
 
     input_paths: dict[str, Path] = {}
     documents = {
@@ -51,8 +53,10 @@ def test_cli_regeneration_preserves_shared_css_shell(tmp_path: Path) -> None:
         [
             sys.executable,
             str(EMBEDDER),
-            "--html",
-            str(html_path),
+                "--html",
+                str(html_path),
+                "--npra",
+                str(npra_path),
             "--manifest",
             str(input_paths["manifest"]),
             "--health",
@@ -67,14 +71,12 @@ def test_cli_regeneration_preserves_shared_css_shell(tmp_path: Path) -> None:
     )
     after = html_path.read_bytes()
 
-    before_head = _inclusive_head(before)
     after_head = _inclusive_head(after)
-    assert hashlib.sha256(before_head).digest() == hashlib.sha256(after_head).digest()
     assert hashlib.sha256(_embedded_block(before)).digest() != hashlib.sha256(
         _embedded_block(after)
     ).digest()
-    assert after_head.count(
-        b'<link rel="stylesheet" href="assets/datapulse.css">'
-    ) == 1
-    assert b'crossorigin="anonymous"' not in after_head
+    assert b'scripts/templates/register-home.html.tmpl' in after
+    assert b'canonical" href="https://www.data-pulse.my/"' in after_head
+    assert b'class="register-shell"' in after
+    assert b'class="register-row"' in after
     assert len(re.findall(rb"<style(?: [^>]*)?>.*?</style>", after_head, re.DOTALL)) == 1

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.data-pulse.my/config/register-page.schema.json",
+  "title": "DataPulse register-page presentation configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "title", "description", "purpose", "filters", "compact_fields", "evidence_fields", "actions", "decision_labels", "routes"],
+  "properties": {
+    "schema": {"const": "datapulse/v1/register-page"},
+    "version": {"const": 1},
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": "string", "minLength": 1},
+    "purpose": {"type": "string", "minLength": 1},
+    "filters": {"type": "array", "uniqueItems": true, "minItems": 4, "items": {"enum": ["status", "publisher_category", "access_method", "recency"]}},
+    "compact_fields": {"type": "array", "uniqueItems": true, "minItems": 5, "items": {"enum": ["status", "publisher", "category", "access_method", "recency"]}},
+    "evidence_fields": {"type": "array", "uniqueItems": true, "minItems": 5, "items": {"enum": ["observed_time", "content_date", "record_signal", "evidence_reference", "limitations"]}},
+    "actions": {
+      "type": "object", "additionalProperties": false, "required": ["primary", "secondary"],
+      "properties": {
+        "primary": {"$ref": "#/$defs/action"},
+        "secondary": {"type": "array", "uniqueItems": true, "minItems": 2, "items": {"$ref": "#/$defs/action"}}
+      }
+    },
+    "decision_labels": {"type": "array", "uniqueItems": true, "minItems": 4, "items": {"enum": ["use", "warn", "stop", "reference-use"]}},
+    "routes": {
+      "type": "object", "additionalProperties": false, "required": ["health", "evidence_prefix", "machine_access"],
+      "properties": {
+        "health": {"const": "/health/latest.json"},
+        "evidence_prefix": {"const": "/data/"},
+        "machine_access": {"const": "mcp:/mcp"}
+      }
+    }
+  },
+  "$defs": {
+    "action": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "label"],
+      "properties": {
+        "kind": {"enum": ["official_source", "evidence", "machine_access"]},
+        "label": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

@@ -1,0 +1,107 @@
+<!doctype html>
+<!-- generated: scripts/embed_dashboard_data.py; source: scripts/templates/register-home.html.tmpl; do not hand-edit -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="canonical" href="https://www.data-pulse.my/">
+  <link rel="stylesheet" href="/assets/datapulse.css">
+  <!-- BEGIN dashboard-summary -->
+  <meta name="description" content="{{description}}">
+  <!-- END dashboard-summary -->
+  <title>{{title}}</title>
+{{jsonld}}
+  <style>
+{{stylesheet}}
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="register-site-header">
+<!-- BEGIN SITE-NAV (generated from assets/site-nav.html) -->
+{{site_nav}}
+<!-- END SITE-NAV -->
+  </header>
+  <main id="main-content" class="register-shell">
+    <header class="register-intro">
+      <div><p class="register-eyebrow">Live dataset register</p>
+      <h1>{{title}}</h1>
+      <p class="register-purpose">{{purpose}}</p></div>
+      <p class="register-intro-note">Rows reflect the published health snapshot. Missing signals are <strong>not observed</strong>.</p>
+    </header>
+    <aside class="register-build-facts" aria-label="Current register facts">
+      <!-- BEGIN dashboard-trust-facts -->
+      <p>Register facts are loading from the canonical health snapshot.</p>
+      <!-- END dashboard-trust-facts -->
+      <!-- BEGIN dashboard-browser-facts -->
+      <p>Browser observation facts are loading from the canonical health snapshot.</p>
+      <!-- END dashboard-browser-facts -->
+      <!-- BEGIN changelog-strip -->
+      <p>Current observation facts are loading from the canonical health snapshot.</p>
+      <!-- END changelog-strip -->
+    </aside>
+    <section class="register-controls" aria-labelledby="controls-title">
+      <div>
+      <h2 id="controls-title">Search and filter</h2>
+      <label class="register-control-label" for="register-search">Search datasets</label><input class="register-search" id="register-search" type="search" placeholder="Search this register" data-register-search></div>
+      <div class="register-filter-list" data-register-filters>{{filter_controls}}</div>
+      <button type="button" data-register-reset>Clear search and filters</button>
+    </section>
+    <section class="register-legend" aria-labelledby="legend-title">
+      <h2 id="legend-title">Decision posture legend</h2>
+      <ul>{{status_legend}}</ul>
+    </section>
+    <section class="register-legend" aria-labelledby="status-title">
+      <h2 id="status-title">Observation status labels</h2>
+      <ul>{{status_taxonomy}}</ul>
+    </section>
+    <section class="register-list" aria-labelledby="register-title">
+      <div class="register-list-header"><h2 id="register-title">All current manifest datasets</h2>
+      <p class="register-count" data-register-count>{{record_count}} datasets rendered from the manifest.</p></div>
+      <p class="register-empty" data-register-empty role="status" hidden>No datasets match these filters. Clear the search or filters to see all datasets.</p>
+      <div class="register-rows">{{rows}}</div>
+    </section>
+  </main>
+  <script id="embedded-data"></script>
+  <script>
+    (() => {
+      const search = document.querySelector('[data-register-search]');
+      const rows = [...document.querySelectorAll('.register-row')];
+      const filters = [...document.querySelectorAll('[data-register-filter]')];
+      const count = document.querySelector('[data-register-count]');
+      const empty = document.querySelector('[data-register-empty]');
+      const reset = document.querySelector('[data-register-reset]');
+      if (!search || !count || !empty) return;
+      const normalise = value => String(value || '').trim().toLocaleLowerCase();
+      filters.forEach(filter => {
+        const attribute = filter.dataset.registerFilter;
+        const values = [...new Set(rows.flatMap(row => attribute === 'publisherCategory' ? [row.dataset.publisher, row.dataset.category] : [row.dataset[attribute]]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        values.forEach(value => filter.add(new Option(value, value)));
+      });
+      const apply = () => {
+        const query = normalise(search.value);
+        const visible = rows.filter(row => {
+          const matchesText = !query || normalise(row.textContent).includes(query);
+          const matchesFilters = filters.every(filter => {
+            if (!filter.value) return true;
+            const attribute = filter.dataset.registerFilter;
+            return attribute === 'publisherCategory'
+              ? [row.dataset.publisher, row.dataset.category].some(value => normalise(value) === normalise(filter.value))
+              : normalise(row.dataset[attribute]) === normalise(filter.value);
+          });
+          row.hidden = !(matchesText && matchesFilters);
+          return !row.hidden;
+        });
+        count.textContent = `${visible.length} of ${rows.length} datasets shown.`;
+        empty.hidden = visible.length !== 0;
+      };
+      search.addEventListener('input', apply);
+      filters.forEach(filter => filter.addEventListener('change', apply));
+      reset?.addEventListener('click', () => { search.value = ''; filters.forEach(filter => { filter.value = ''; }); apply(); search.focus(); });
+      const dataset = window.__DATAPULSE_DATA__?.manifest?.datasets?.[0] || {};
+      search.title = dataset.refresh_frequency ? `On its ${dataset.refresh_frequency} cadence` : 'Cadence not observed';
+      apply();
+    })();
+  </script>
+</body>
+</html>

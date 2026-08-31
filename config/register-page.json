@@ -1,0 +1,23 @@
+{
+  "schema": "datapulse/v1/register-page",
+  "version": 1,
+  "title": "DataPulse dataset register",
+  "description": "A live register of observed Malaysian public-data dataset access and evidence.",
+  "purpose": "Inspect the current observation alongside the official publisher before deciding whether a dataset fits your use.",
+  "filters": ["status", "publisher_category", "access_method", "recency"],
+  "compact_fields": ["status", "publisher", "category", "access_method", "recency"],
+  "evidence_fields": ["observed_time", "content_date", "record_signal", "evidence_reference", "limitations"],
+  "actions": {
+    "primary": {"kind": "official_source", "label": "Official source"},
+    "secondary": [
+      {"kind": "evidence", "label": "Evidence and detail"},
+      {"kind": "machine_access", "label": "MCP/API access"}
+    ]
+  },
+  "decision_labels": ["use", "warn", "reference-use", "stop"],
+  "routes": {
+    "health": "/health/latest.json",
+    "evidence_prefix": "/data/",
+    "machine_access": "mcp:/mcp"
+  }
+}

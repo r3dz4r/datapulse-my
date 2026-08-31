@@ -6,7 +6,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from public_surface_generation import load_public_surfaces
+try:
+    from scripts.public_surface_generation import load_public_surfaces
+except ModuleNotFoundError:  # Direct script execution puts scripts/ on sys.path.
+    from public_surface_generation import load_public_surfaces
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,11 +25,16 @@ def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def script_safe_json(document: object) -> str:
+    """Serialize JSON-LD safely for text inside an HTML script element."""
+    return json.dumps(document, ensure_ascii=False, indent=2).replace("<", "\\u003c")
+
+
 def publisher_reference(base_url: str) -> dict:
     return {
         "@type": "Organization",
         "@id": f"{base_url}/#org",
-        "name": "DataPulse MY",
+        "name": "DataPulse",
     }
 
 
@@ -56,10 +64,10 @@ def dataset_object(entry: dict, health: dict, *, base_url: str) -> dict:
                 "@type": "DataDownload",
                 "encodingFormat": "text/markdown",
                 "contentUrl": report_url,
-                "name": f"DataPulse MY health record for {entry['name']}",
+                "name": f"DataPulse health record for {entry['name']}",
             }
         ],
-        "measurementTechnique": "Continuous HTTP + content-shape probing by DataPulse MY",
+        "measurementTechnique": "Continuous HTTP + content-shape probing by DataPulse",
         "dateModified": entry.get("verified_at") or health.get("checked_at", "")[:10],
         "variableMeasured": [
             {
@@ -99,8 +107,7 @@ def site_metadata_graph(base_url: str, mcp_url: str, repository_url: str) -> lis
         {
             "@type": "Organization",
             "@id": f"{base_url}/#org",
-            "name": "DataPulse MY",
-            "alternateName": "DataPulse Malaysia",
+            "name": "DataPulse",
             "url": f"{base_url}/",
             "logo": "https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/docs/images/ce/logo_dark.svg",
             "description": "Open-source trust layer for Malaysian public data.",
@@ -123,7 +130,7 @@ def site_metadata_graph(base_url: str, mcp_url: str, repository_url: str) -> lis
         {
             "@type": "WebSite",
             "@id": f"{base_url}/#site",
-            "name": "DataPulse MY",
+            "name": "DataPulse",
             "url": f"{base_url}/",
             "inLanguage": ["en", "ms"],
             "publisher": {"@id": f"{base_url}/#org"},
@@ -139,12 +146,41 @@ def site_metadata_graph(base_url: str, mcp_url: str, repository_url: str) -> lis
                 {
                     "@type": "ListItem",
                     "position": 1,
-                    "name": "DataPulse MY",
+                    "name": "DataPulse",
                     "item": f"{base_url}/",
                 }
             ],
         },
     ]
+
+
+def homepage_graph(manifest: dict, origins: dict[str, str]) -> dict:
+    """Build the canonical, deterministic homepage JSON-LD graph."""
+    datasets = manifest.get("datasets")
+    if not isinstance(datasets, list):
+        raise ValueError("manifest datasets must be an array")
+    base_url = origins["website"]
+    catalog = {
+        "@type": "Dataset",
+        "@id": f"{base_url}/#catalog",
+        "name": "DataPulse Dataset Catalog",
+        "description": f"Open trust layer for Malaysian public data. {len(datasets)} official datasets with continuous health monitoring and licence/attribution metadata.",
+        "url": f"{base_url}/",
+        "sameAs": origins["repository"],
+        "identifier": "datapulse-my-catalog-v1",
+        "spatialCoverage": {"@type": "Place", "name": "Malaysia"},
+        "publisher": publisher_reference(base_url),
+        "creator": {"@type": "Organization", "name": "Multiple Malaysian government agencies", "url": "https://data.gov.my"},
+        "license": f"{origins['repository']}/blob/main/LICENSE",
+        "isAccessibleForFree": True,
+        "distribution": [
+            {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{base_url}/datapulse.json", "name": "Machine-readable dataset manifest"},
+            {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": f"{base_url}/health/latest.json", "name": "Current health signals for all tracked datasets"},
+            {"@type": "DataDownload", "encodingFormat": "text/markdown", "contentUrl": f"{base_url}/llms.txt", "name": "LLM agent index"},
+        ],
+        "hasPart": [dashboard_part(dataset_object(entry, {}, base_url=base_url)) for entry in datasets],
+    }
+    return {"@context": "https://schema.org", "@graph": [catalog, *site_metadata_graph(base_url, origins["mcp"], origins["repository"])]}
 
 
 def main() -> None:
@@ -170,7 +206,7 @@ def main() -> None:
         "@context": "https://schema.org",
         "@type": "DatasetCatalog",
         "@id": f"{base_url}/data/jsonld/catalog.json",
-        "name": "DataPulse MY — All Datasets (JSON-LD)",
+        "name": "DataPulse — All Datasets (JSON-LD)",
         "url": f"{base_url}/data/jsonld/catalog.json",
         "dataset": datasets,
     }
@@ -179,32 +215,12 @@ def main() -> None:
     )
 
     dashboard = DASHBOARD_PATH.read_text(encoding="utf-8")
-    start = dashboard.index(SCRIPT_OPEN) + len(SCRIPT_OPEN)
-    end = dashboard.index(SCRIPT_CLOSE, start)
-    graph = json.loads(dashboard[start:end])
-    catalog_node = graph["@graph"][0]
-    catalog_node["@id"] = f"{base_url}/#catalog"
-    catalog_node["url"] = f"{base_url}/"
-    catalog_node["sameAs"] = origins["repository"]
-    catalog_node["license"] = f"{origins['repository']}/blob/main/LICENSE"
-    catalog_node["publisher"] = publisher_reference(base_url)
-    distributions = catalog_node.get("distribution")
-    if distributions is not None:
-        paths = ("/datapulse.json", "/health/latest.json", "/llms.txt")
-        if (
-            not isinstance(distributions, list)
-            or len(distributions) != len(paths)
-            or not all(isinstance(item, dict) for item in distributions)
-        ):
-            raise ValueError("dashboard catalog graph must contain the three canonical distributions")
-        for distribution, path in zip(distributions, paths, strict=True):
-            distribution["contentUrl"] = f"{base_url}{path}"
-    catalog_node["hasPart"] = [dashboard_part(dataset) for dataset in datasets]
-    graph["@graph"] = [
-        catalog_node,
-        *site_metadata_graph(base_url, origins["mcp"], origins["repository"]),
-    ]
-    replacement = json.dumps(graph, ensure_ascii=False, indent=2)
+    try:
+        start = dashboard.index(SCRIPT_OPEN) + len(SCRIPT_OPEN)
+        end = dashboard.index(SCRIPT_CLOSE, start)
+    except ValueError as error:
+        raise ValueError("docs/index.html is missing the canonical JSON-LD slot") from error
+    replacement = script_safe_json(homepage_graph(manifest, origins))
     DASHBOARD_PATH.write_text(
         dashboard[:start] + replacement + dashboard[end:], encoding="utf-8"
     )

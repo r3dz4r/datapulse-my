@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from scripts import embed_dashboard_data
+from scripts.check_url_drift import embedded_manifest
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -120,7 +122,40 @@ def test_embed_replaces_existing_data_block_with_all_dashboard_inputs(
     assert "dashboardSections:" in html
     assert '"generated_at":"now"' in html
     assert "old" not in html
-    assert "2026-08-17</time> · 1 datasets tracked" in html
+    assert "2026-08-17</time>; <a href=\"/health/latest.json\">1 datasets tracked" in html
+
+
+def test_production_homepage_is_the_source_owned_register_with_compatible_payload() -> None:
+    """The explicit production path composes register rows with the legacy data API."""
+    html = embed_dashboard_data._render_page(
+        ROOT / "docs/index.html",
+        ROOT / "datapulse.json",
+        ROOT / "health/latest.json",
+        ROOT / "docs/.dashboard_filters.json",
+        ROOT / "docs/.dashboard_sections.json",
+        ROOT / "attestations/latest/index.json",
+        ROOT / "attestations/latest/binding.json",
+        ROOT,
+    )
+    visible = re.sub(r"<script.*?</script>", "", html, flags=re.DOTALL)
+
+    assert "scripts/templates/register-home.html.tmpl" in html
+    assert html.count('class="register-row"') == 389
+    first_row = re.search(r'<article class="register-row"[^>]*data-posture="([^"]+)"', html)
+    assert first_row is not None and first_row.group(1) == "use"
+    assert "DataPulse MY" not in html
+    assert "DataPulse" in visible
+    assert html.count('<script id="embedded-data">') == 1
+    assert len(embedded_manifest(html)) == 389
+    assert html.index('data-action="official-source"') < html.index('data-action="evidence"') < html.index('data-action="machine-access"')
+    for posture in ("use", "warn", "reference-use", "stop"):
+        assert f"Decision: {posture}" in html
+    assert re.findall(r'<li data-posture="([^"]+)">Decision:', html)[:4] == [
+        "use", "warn", "reference-use", "stop"
+    ]
+    for status in embed_dashboard_data.gen_register_page.STATUS_TO_POSTURE:
+        assert f"Status: {status.replace('_', '-')}" in html
+    assert "not observed" in html
 
 
 def test_embed_escapes_script_end_sequences(tmp_path: Path) -> None:
@@ -177,7 +212,7 @@ def test_embed_derives_dashboard_dataset_counts_from_trust_summary(
 
     html = html_path.read_text(encoding="utf-8")
     assert "We probe 42 official datasets" in html
-    assert "3 datasets verified" in html
+    assert "3 datasets observed" in html
     assert "the 42-dataset catalogue" in html
 
 
@@ -205,7 +240,7 @@ def test_embed_replaces_inflated_all_dataset_cadence_claims(tmp_path: Path) -> N
     html = html_path.read_text(encoding="utf-8")
     assert "42 official datasets every 5 minutes" in html
     assert "42 datasets probed every 5 minutes" in html
-    assert "0 of 1 datasets (0.0%) require a real browser to probe" in html
+    assert "0 of 1 datasets (0.0%) require a real browser for observation" in html
 
 
 def test_embed_updates_changelog_strip_idempotently(tmp_path: Path) -> None:

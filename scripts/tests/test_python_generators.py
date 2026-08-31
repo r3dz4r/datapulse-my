@@ -298,6 +298,28 @@ def test_jsonld_catalog_covers_all_manifest_ids() -> None:
     assert by_id["beta"]["variableMeasured"][1]["value"] == 22
 
 
+def test_jsonld_homepage_script_escapes_malicious_dataset_name(tmp_path: Path) -> None:
+    source = tmp_path / "malicious-source"
+    shutil.copytree(FIXTURE, source)
+    manifest = json.loads((source / "datapulse.json").read_text(encoding="utf-8"))
+    manifest["datasets"][0]["name"] = "</script><script>alert(1)</script>"
+    (source / "datapulse.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    result = _run(JSONLD_GENERATOR, JSONLD_INPUTS, JSONLD_OUTPUTS, source_root=source)
+
+    assert result.returncode == 0, result.stderr
+    dashboard = result.outputs["docs/index.html"]
+    assert dashboard is not None
+    assert dashboard.count(b"</script>") == 1
+    script = dashboard.split(JSONLD_SCRIPT_OPEN.encode(), 1)[1].split(
+        JSONLD_SCRIPT_CLOSE.encode(), 1
+    )[0]
+    graph = json.loads(script)
+    assert graph["@graph"][0]["hasPart"][0]["name"] == (
+        "</script><script>alert(1)</script>"
+    )
+
+
 def test_jsonld_urls_use_canonical_host() -> None:
     result = _run(JSONLD_GENERATOR, JSONLD_INPUTS, JSONLD_OUTPUTS)
 
@@ -329,7 +351,7 @@ def test_jsonld_urls_use_canonical_host() -> None:
     assert catalog["publisher"] == {
         "@type": "Organization",
         "@id": "https://www.data-pulse.my/#org",
-        "name": "DataPulse MY",
+        "name": "DataPulse",
     }
     if "distribution" in catalog:
         assert [item["contentUrl"] for item in catalog["distribution"]] == [
@@ -371,6 +393,8 @@ def test_jsonld_site_metadata_is_generated_from_public_surfaces() -> None:
     assert breadcrumb["itemListElement"][0]["item"] == "https://www.data-pulse.my/"
     assert "https://data-pulse.my/" not in json.dumps(graph)
     assert "r3dz4r.github.io/datapulse-my" not in json.dumps(graph)
+    assert "datapulse my" not in json.dumps(graph).lower()
+    assert "datapulse malaysia" not in json.dumps(graph).lower()
 
 
 def test_jsonld_removes_obsolete_per_id_files(tmp_path: Path) -> None:

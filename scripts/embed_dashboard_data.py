@@ -14,6 +14,13 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 try:
+    from scripts import gen_register_page
+    from scripts import gen_jsonld_catalog
+except ImportError:  # Direct script execution puts scripts/ on sys.path.
+    import gen_register_page
+    import gen_jsonld_catalog
+
+try:
     from scripts.verify_attestation_binding import ContractError, verify_contract
     from scripts.public_surface_generation import (
         GenerationError,
@@ -53,6 +60,7 @@ NPRA_DATASET_IDS = {
     "cosmetic_notifications_cancelled",
     "cosmetics_manufacturers",
 }
+HOMEPAGE_TEMPLATE = Path("scripts/templates/register-home.html.tmpl")
 
 
 def _format_myt(value: str) -> str:
@@ -182,18 +190,8 @@ def update_changelog_strip(html: str, manifest: object, health: object) -> str:
     dataset_count = len(manifest["datasets"])
     replacement = (
         f"{CHANGELOG_BEGIN}\n"
-        '    <aside class="changelog-strip" aria-label="Recently shipped">\n'
-        "      <strong>Recently shipped</strong>\n"
-        f'      <span><time datetime="{shipped_date}">{shipped_date}</time> · '
-        f"{dataset_count} datasets tracked</span>\n"
-        '      <a href="/catalog-snapshot.json">Machine-readable catalog snapshot</a>\n'
-        '      <a href="/health/latest.json">Latest trust snapshot →</a>\n'
-        '      <a href="/release-verification.md">Reproducible build proof</a>\n'
-        '      <a class="chip" href="/trust-layer-notebook.ipynb" '
-        'title="Open the canonical Colab notebook: verify before you use">Trust Layer notebook</a>\n'
-        '      <a class="chip" href="#camofox">Browser-dependent</a>\n'
-        '      <a class="chip" href="#legal">Legal</a>\n'
-        "    </aside>\n"
+        f'      <p>Published health snapshot: <time datetime="{shipped_date}">{shipped_date}</time>; '
+        f'<a href="/health/latest.json">{dataset_count} datasets tracked</a>.</p>\n'
         f"    {CHANGELOG_END}"
     )
     pattern = re.compile(
@@ -235,21 +233,82 @@ def _dashboard_facts(html: str, manifest: object, health: object, website: str) 
     html = replace_owned_block(
         html,
         DASHBOARD_SUMMARY_MARKER,
-        f'<meta name="description" content="Live health for {total} Malaysian public datasets tracked by DataPulse MY.">',
+        f'<meta name="description" content="Live register of {total} observed Malaysian public datasets from DataPulse.">',
     )
     html = replace_owned_block(
         html,
         DASHBOARD_TRUST_FACTS_MARKER,
-        f'<li><a href="{website}/health/latest.json">{total} datasets verified</a></li>',
+        f'<p><a href="{website}/health/latest.json">{total} datasets observed</a>; use the official publisher for the source of record.</p>',
     )
     percentage = browser_dependent / total * 100 if total else 0
     return replace_owned_block(
         html,
         DASHBOARD_BROWSER_FACTS_MARKER,
-        f"""<p>{browser_dependent} of {total} datasets ({percentage:.1f}%) require a real browser to probe because their
-      source pages render client-side JavaScript: <code>eperolehan-diklankan</code>,
-      <code>doe_apims</code>, <code>doe_rqims</code>, <code>doe_mqims</code>, and <code>kkm_idengue</code>.</p>""",
+        f"<p>{browser_dependent} of {total} datasets ({percentage:.1f}%) require a real browser for observation.</p>",
     )
+
+
+def _jsonld_block(manifest: dict[str, object], origins: dict[str, str]) -> str:
+    """Render homepage JSON-LD from the canonical generator, never prior HTML."""
+    try:
+        graph = gen_jsonld_catalog.homepage_graph(manifest, origins)
+        encoded = gen_jsonld_catalog.script_safe_json(graph)
+    except (KeyError, TypeError, ValueError) as error:
+        raise EmbedError(f"cannot render canonical homepage JSON-LD: {error}") from error
+    return f'  <script type="application/ld+json">\n{encoded}\n  </script>'
+
+
+def _render_homepage(root: Path, previous_html: str) -> str:
+    """Render the production shell through the reviewed register renderer's shared logic."""
+    config = gen_register_page._validate_config(root)
+    surfaces = gen_register_page.load_public_surfaces(root)
+    manifest = gen_register_page._load_manifest(root)
+    health = gen_register_page._load_health(root)
+    template = (root / HOMEPAGE_TEMPLATE).read_text(encoding="utf-8")
+    stylesheet = (root / "scripts/templates/register.css").read_text(encoding="utf-8")
+    filter_attributes = {
+        "status": "status", "publisher_category": "publisherCategory", "access_method": "accessMethod", "recency": "recency",
+    }
+    filters = " ".join(
+        f'<label for="register-filter-{item}">{gen_register_page.html.escape(item.replace("_", " ").title())}</label><select id="register-filter-{item}" data-register-filter="{filter_attributes[item]}" aria-label="Filter by {gen_register_page.html.escape(item.replace("_", " "))}"><option value="">All {gen_register_page.html.escape(item.replace("_", " "))}</option></select>'
+        for item in config["filters"]
+    )
+    legend = "".join(
+        f'<li data-posture="{gen_register_page.html.escape(label, quote=True)}">'
+        f"Decision: {gen_register_page.html.escape(label)}</li>"
+        for label in config["decision_labels"]
+    )
+    ordered = sorted(
+        manifest,
+        key=lambda entry: gen_register_page._presentation_sort_key(entry, health.get(entry["id"])),
+    )
+    values = {
+        "title": gen_register_page.html.escape(config["title"], quote=True),
+        "description": gen_register_page.html.escape(config["description"], quote=True),
+        "purpose": gen_register_page.html.escape(config["purpose"]),
+        "health_href": config["routes"]["health"],
+        "site_nav": (root / "docs/assets/site-nav.html").read_text(encoding="utf-8").rstrip(),
+        "stylesheet": stylesheet,
+        "filter_controls": filters,
+        "status_legend": legend,
+        "status_taxonomy": "".join(
+            f"<li>Status: {gen_register_page.html.escape(status.replace('_', '-'))}</li>"
+            for status in gen_register_page.STATUS_TO_POSTURE
+        ),
+        "record_count": str(len(manifest)),
+        "rows": "\n".join(
+            gen_register_page._row_html(entry, health.get(entry["id"]), config, surfaces["origins"]["mcp"] + "/mcp")
+            for entry in ordered
+        ),
+        "jsonld": _jsonld_block({"datasets": manifest}, surfaces["origins"]),
+    }
+    missing = set(gen_register_page.TOKEN.findall(template)) - set(values)
+    if missing:
+        raise EmbedError(f"homepage template has unresolved token(s): {', '.join(sorted(missing))}")
+    rendered = gen_register_page.TOKEN.sub(lambda match: values[match.group(1)], template)
+    if "{{" in rendered or any(claim in rendered.lower() for claim in gen_register_page.FORBIDDEN_CLAIMS):
+        raise EmbedError("rendered homepage violates the register claim-boundary contract")
+    return rendered
 
 
 def _npra_links(html: str, origins: dict[str, str]) -> str:
@@ -362,8 +421,10 @@ def _render_page(
     except GenerationError as error:
         raise EmbedError(str(error)) from error
     if html_path.name == "index.html":
+        template_path = root / HOMEPAGE_TEMPLATE
+        if template_path.is_file():
+            html = _render_homepage(root, html)
         html = update_changelog_strip(html, manifest, health)
-        html = _replace_attestation_ui(html)
         html = _dashboard_facts(html, manifest, health, surfaces["origins"]["website"])
     if html_path.name == "npra.html":
         html = _npra_freshness(html, health)

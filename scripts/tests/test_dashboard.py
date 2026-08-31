@@ -26,10 +26,9 @@ CANONICAL_KEYS = [
     "weather",
 ]
 
-# Measured 2026-08-24 baseline: 1,188,958 homepage bytes and 943,505
-# embedded-data bytes. These temporary headroom ceilings should be revised
-# deliberately after a later dashboard component-breakdown optimization.
-MAX_HOMEPAGE_BYTES = 1_248_406
+# The source-owned register adds 389 accessible, server-rendered rows while
+# retaining the legacy embedded payload for machine consumers.
+MAX_HOMEPAGE_BYTES = 1_900_000
 MAX_EMBEDDED_DATA_BYTES = 1_000_115
 EMBEDDED_DATA_BLOCK = re.compile(rb'<script id="embedded-data">.*?</script>', re.DOTALL)
 
@@ -137,31 +136,39 @@ def test_dashboard_payload_budget_rejects_synthetic_overage(
         assert_dashboard_payload_within_budget(fixture_path.read_bytes())
 
 
-def test_dashboard_filter_container_is_populated_only_at_runtime() -> None:
+def test_register_search_and_filter_controls_are_present_without_network_fetch() -> None:
     html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
-    parser = CategoryFilterParser()
-    parser.feed(html)
+    assert 'for="register-search"' in html
+    assert 'data-register-search' in html
+    assert 'data-register-filters' in html
+    for dimension in ("status", "publisher_category", "access_method", "recency"):
+        assert f'id="register-filter-{dimension}"' in html
+    assert 'data-register-empty' in html
+    assert 'data-register-reset' in html
+    assert "filters.every" in html
+    assert "filter.addEventListener('change', apply)" in html
+    assert "reset?.addEventListener('click'" in html
+    assert 'fetch(' not in html
 
-    assert parser.buttons == []
-    assert "function renderCategoryFilters(dashboardFilters)" in html
-    assert "Object.entries" in html
-    assert "renderCategoryFilters(DATA.dashboardFilters);" in html
-    assert "Dashboard filters are unavailable" in html
+
+def test_register_embedded_payload_precedes_its_reader_and_keeps_shared_shell_contracts() -> None:
+    html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
+    embedded = html.index('<script id="embedded-data">')
+    reader = html.index("window.__DATAPULSE_DATA__")
+
+    assert embedded < reader
+    assert html.count('<link rel="stylesheet" href="/assets/datapulse.css">') == 1
+    assert html.count("<!-- BEGIN SITE-NAV (generated from assets/site-nav.html) -->") == 1
+    assert '<nav class="site-nav"' in html
 
 
-def test_dashboard_renders_collapsible_sections_with_global_controls() -> None:
+def test_homepage_renders_the_compact_register_instead_of_dashboard_sections() -> None:
     html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
 
-    assert 'class="dashboard-sections"' in html
-    assert 'id="toggle-all-sections"' in html
-    assert 'class="category-filters status-filters"' in html
-    assert 'class="dataset-grid"' not in html
-    assert "function buildSection(section, index" in html
-    assert 'make("button", "section-header")' in html
-    assert 'body.hidden = index !== 0' in html
-    assert "function applyFilters()" in html
-    assert "DATA.dashboardSections" in html
-    assert "Most-consumed on data.gov.my (views + downloads)" in html
+    assert 'class="register-list"' in html
+    assert html.count('class="register-row"') == 389
+    assert '<details class="register-evidence">' in html
+    assert 'class="dashboard-sections"' not in html
 
 
 def test_embedded_data_contract_includes_dashboard_sections() -> None:
@@ -170,24 +177,17 @@ def test_embedded_data_contract_includes_dashboard_sections() -> None:
     assert "dashboardSections:" in html
 
 
-def test_dashboard_distinguishes_signature_witness_and_source_truth() -> None:
+def test_homepage_retains_fail_closed_attestation_verification_payload() -> None:
     html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
 
-    assert 'addFact(facts, "Artifact signature"' in html
-    assert 'addFact(facts, "Rekor witness"' in html
-    assert 'addFact(facts, "Source truth"' in html
     assert "attestationVerification" in html
-    assert 'addFact(facts, "Signed"' not in html
-    assert "dataset.attestation_ref === signedRef" not in html
+    assert '"artifact_signed":false' in html
+    assert '"source_truth_verified":false' in html
 
 
-def test_hero_uses_the_canonical_ten_status_taxonomy() -> None:
+def test_register_labels_the_canonical_ten_status_taxonomy() -> None:
     html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
-    hero_start = html.index('<div class="hero-stats"')
-    hero_end = html.index("</div>\n    </section>", hero_start)
-    hero = html[hero_start:hero_end]
     expected = [
-        "datasets_total",
         "fresh",
         "aging",
         "stale",
@@ -200,9 +200,8 @@ def test_hero_uses_the_canonical_ten_status_taxonomy() -> None:
         "reference",
     ]
 
-    positions = [hero.index(f'data-stat="{status}"') for status in expected]
+    positions = [html.index(f"Status: {status.replace('_', '-')}") for status in expected]
     assert positions == sorted(positions)
-    assert hero.index('id="hero-last-probed"') > positions[-1]
 
 
 def test_release_build_generates_and_embeds_dashboard_data_before_deploy() -> None:

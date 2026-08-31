@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- generated: scripts/gen_register_page.py; preview only; do not hand-edit generated output -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{description}}">
+  <title>{{title}}</title>
+  <style>
+{{stylesheet}}
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="register-site-header"><nav class="register-nav" aria-label="Register navigation"><a class="register-brand" href="/">DataPulse</a><a href="{{health_href}}">Current observation</a></nav></header>
+  <main id="main-content" class="register-shell">
+    <header class="register-intro">
+      <div><p class="register-eyebrow">Live dataset register</p>
+      <h1>{{title}}</h1>
+      <p class="register-purpose">{{purpose}}</p></div>
+      <p class="register-intro-note">Rows reflect the published health snapshot. Missing signals are <strong>not observed</strong>.</p>
+    </header>
+    <section class="register-controls" aria-labelledby="controls-title">
+      <div>
+      <h2 id="controls-title">Search and filter</h2>
+      <label class="register-control-label" for="register-search">Search datasets</label><input class="register-search" id="register-search" type="search" placeholder="Search this register" data-register-search></div>
+      <div class="register-filter-list" data-register-filters>{{filter_controls}}</div>
+    </section>
+    <section class="register-legend" aria-labelledby="legend-title">
+      <h2 id="legend-title">Decision posture legend</h2>
+      <ul>{{status_legend}}</ul>
+    </section>
+    <section class="register-list" aria-labelledby="register-title">
+      <div class="register-list-header"><h2 id="register-title">All current manifest datasets</h2>
+      <p class="register-count" data-register-count>{{record_count}} datasets rendered from the manifest.</p></div>
+      <div class="register-rows">{{rows}}</div>
+    </section>
+  </main>
+</body>
+</html>

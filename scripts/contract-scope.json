@@ -445,6 +445,7 @@
       "api/config.py",
       "scripts/gen_api_reference.py",
       "scripts/embed_dashboard_data.py",
+      "scripts/templates/register-home.html.tmpl",
       "scripts/gen_landing_page.py",
       "scripts/templates/landing.html.tmpl",
       "config/landing-page.json",
@@ -458,7 +459,8 @@
       "sitemap.xml",
       "docs/mcp-reference.md",
       "docs/buyer-api-reference.md",
-      "docs/landing.html"
+      "docs/landing.html",
+      "docs/index.html"
     ],
     "owned_markers": {
       "README.md": ["mcp-tools", "public-discovery"],
@@ -562,12 +564,12 @@
     {
       "surface": "docs/index.html",
       "markers": ["dashboard-summary", "dashboard-trust-facts", "dashboard-browser-facts", "changelog-strip"],
-      "canonical_inputs": ["datapulse.json", "health/latest.json", "docs/.dashboard_filters.json", "docs/.dashboard_sections.json", "config/public-surfaces.json"],
+      "canonical_inputs": ["datapulse.json", "health/latest.json", "docs/.dashboard_filters.json", "docs/.dashboard_sections.json", "config/public-surfaces.json", "config/register-page.json", "config/register-page.schema.json", "scripts/templates/register-home.html.tmpl", "scripts/templates/register.css", "scripts/gen_register_page.py"],
       "generator": "scripts/embed_dashboard_data.py",
       "profiles": ["release-build"],
-      "ownership": "marker-owned",
+      "ownership": "full-output-and-markers",
       "fixture": "scripts/tests/test_embed_dashboard_data.py",
-      "invariant": "dashboard marker facts and embedded canonical data parity"
+      "invariant": "source-owned register homepage with marker facts and embedded canonical data parity"
     },
     {
       "surface": "docs/npra.html",
