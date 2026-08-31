@@ -503,7 +503,11 @@ jobs:
               --connect-timeout 10 --max-time 30 \
               --dump-header "$headers" --output "$body" --write-out '%{http_code}' "$url")" \
               || fail "could not fetch compatibility alias: $surface"
-            location="$(awk 'tolower($1) == "location:" { sub(/\\r$/, "", $2); print $2; exit }' "$headers")"
+            location="$(awk 'tolower($1) == "location:" { sub(/[\r ]+$/, "", $2); print $2; exit }' "$headers")"
+            # Pages appends a trailing empty fragment to certain Location
+            # values; canonicalise the comparison value so a benign `#` does
+            # not fail an otherwise-correct alias normalization.
+            [[ "$location" == "${location%#}" ]] || location="${location%#}"
             if [[ -n "$location" ]]; then
               [[ "$requested_path" == "/landing.html" && "$status" == "308" ]] \
                 || fail "$surface uses an unexpected edge redirect to ${location}"
@@ -516,7 +520,7 @@ jobs:
                 "${website_origin}/landing")" \
                 || fail "could not fetch normalized compatibility alias: $surface"
               [[ "$status" == "200" ]] || fail "$surface normalized alias returned HTTP $status"
-              location="$(awk 'tolower($1) == "location:" { sub(/\\r$/, "", $2); print $2; exit }' "$resolved_headers")"
+              location="$(awk 'tolower($1) == "location:" { sub(/[\r ]+$/, "", $2); print $2; exit }' "$resolved_headers")"
               [[ -z "$location" ]] || fail "$surface normalized alias redirects again to ${location}"
               body="$resolved_body"
             else
