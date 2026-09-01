@@ -168,12 +168,11 @@ jobs:
         run: cp "$RUNNER_TEMP/health.latest.statement.json" "$RUNNER_TEMP/sigstore-publication/"
 
       - name: Generate per-dataset evidence statements
-        if: needs.classify.outputs.health_only != 'true'
         run: python3 scripts/gen_per_dataset_receipt.py
 
       - name: Sign per-dataset evidence statements
         id: sign_per_dataset
-        if: needs.classify.outputs.health_only != 'true' && steps.install_cosign.outcome == 'success'
+        if: steps.install_cosign.outcome == 'success'
         continue-on-error: true
         env:
           SIGSTORE_IDENTITY: https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main
@@ -198,8 +197,7 @@ jobs:
         if: always()
         run: |
           set -Eeuo pipefail
-          if [[ "${{ needs.classify.outputs.health_only }}" != "true" \
-             && "${{ steps.sign_per_dataset.outcome }}" == "success" \
+          if [[ "${{ steps.sign_per_dataset.outcome }}" == "success" \
              && -f "$RUNNER_TEMP/per-dataset-receipts.result" \
              && "$(cat "$RUNNER_TEMP/per-dataset-receipts.result")" == "signed" ]]; then
             echo "signed=true" >> "$GITHUB_OUTPUT"
@@ -256,6 +254,12 @@ jobs:
           jq -e '
             .datasets | type == "array" and length > 0
           ' health/latest.json >/dev/null
+
+      - name: Require current per-dataset receipts (health-only path)
+        if: needs.classify.outputs.health_only == 'true' && needs.sign_health.outputs.receipts_signed != 'true'
+        run: |
+          echo '::error title=Cloudflare receipt contract failed::A new health snapshot would not have a current verified per-dataset receipt set.'
+          exit 1
 
       - name: Embed canonical health dashboard (health-only path)
         if: needs.classify.outputs.health_only == 'true'

@@ -176,22 +176,51 @@ def test_sigstore_failure_is_non_blocking_and_cannot_publish_partial_output() ->
     assert "signed=true" in result["run"]
 
 
-def test_per_dataset_receipts_are_generated_signed_and_staged_only_for_releases() -> None:
-    workflow = _read(DEPLOY_WORKFLOW)
-    signing = workflow.split("  sign_health:\n", 1)[1].split("\n  deploy:\n", 1)[0]
-    deploy = workflow.split("  deploy:\n", 1)[1]
+def test_per_dataset_receipts_are_generated_signed_and_staged_for_every_deployment_profile() -> None:
+    parsed = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+    steps = parsed["jobs"]["sign_health"]["steps"]
+    generate = next(step for step in steps if step.get("name") == "Generate per-dataset evidence statements")
+    sign = next(step for step in steps if step.get("id") == "sign_per_dataset")
+    result = next(step for step in steps if step.get("id") == "per_receipt_result")
+    assemble = next(
+        step for step in parsed["jobs"]["deploy"]["steps"]
+        if step.get("name") == "Assemble canonical Pages artifact"
+    )
 
-    assert "Generate per-dataset evidence statements" in signing
-    assert "Sign per-dataset evidence statements" in signing
-    assert "python3 scripts/gen_per_dataset_receipt.py" in signing
-    assert "python3 scripts/sign_per_dataset_receipts.py" in signing
-    assert "python3 scripts/verify_per_dataset_receipt.py" in signing
-    assert "--certificate-identity \"$SIGSTORE_IDENTITY\"" in signing
-    assert "needs.classify.outputs.health_only != 'true'" in signing
-    assert "continue-on-error: true" in signing
-    assert "receipts_signed" in signing
-    assert "Generate per-dataset evidence statements (release artifact)" in deploy
-    assert "cp \"$RUNNER_TEMP/sigstore-publication/data/\"*.receipt.sigstore.json _site/data/" in deploy
+    assert "if" not in generate
+    assert sign["if"] == "steps.install_cosign.outcome == 'success'"
+    assert "python3 scripts/gen_per_dataset_receipt.py" in generate["run"]
+    assert "python3 scripts/sign_per_dataset_receipts.py" in sign["run"]
+    assert "python3 scripts/verify_per_dataset_receipt.py" in sign["run"]
+    assert "--certificate-identity \"$SIGSTORE_IDENTITY\"" in sign["run"]
+    assert sign["continue-on-error"] is True
+    assert result["if"] == "always()"
+    assert "needs.classify.outputs.health_only" not in result["run"]
+    assert "receipts_signed" in parsed["jobs"]["sign_health"]["outputs"]
+    for suffix in ("evidence.json", "statement.json", "sigstore.json"):
+        assert f'cp "$RUNNER_TEMP/sigstore-publication/data/"*.receipt.{suffix} _site/data/' in assemble["run"]
+
+
+def test_health_only_deployment_fails_closed_without_current_signed_receipts() -> None:
+    parsed = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+    steps = parsed["jobs"]["deploy"]["steps"]
+    gate = next(
+        step for step in steps
+        if step.get("name") == "Require current per-dataset receipts (health-only path)"
+    )
+    assemble_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Assemble canonical Pages artifact"
+    )
+    gate_index = steps.index(gate)
+
+    assert gate["if"] == (
+        "needs.classify.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.receipts_signed != 'true'"
+    )
+    assert "exit 1" in gate["run"]
+    assert "new health snapshot would not have a current verified per-dataset receipt set" in gate["run"]
+    assert gate_index < assemble_index
 
 
 def test_cloudflare_publishes_only_a_current_verified_optional_bundle() -> None:
