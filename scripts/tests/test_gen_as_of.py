@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = ROOT / "scripts/gen_as_of.py"
@@ -26,6 +28,11 @@ GTFS_IDS = [
     "gtfs_realtime_mybas_ipoh", "gtfs_realtime_mybas_seremban_a", "gtfs_realtime_mybas_seremban_b", "gtfs_realtime_mybas_melaka",
     "gtfs_realtime_mybas_johor", "gtfs_realtime_mybas_kuching",
 ]
+REAL_HISTORY = ROOT / "health/history.jsonl"
+SKIP_NO_HISTORY = pytest.mark.skipif(
+    not REAL_HISTORY.exists() or REAL_HISTORY.stat().st_size == 0,
+    reason="real health history unavailable",
+)
 
 
 def _make_root(tmp_path: Path, family: str) -> Path:
@@ -48,6 +55,15 @@ def _make_root(tmp_path: Path, family: str) -> Path:
 
 def _run(root: Path, family: str, date: str = DATE) -> subprocess.CompletedProcess[str]:
     return subprocess.run([sys.executable, str(GENERATOR), "--root", str(root), "--family", family, "--date", date], text=True, capture_output=True)
+
+
+def _run_generator(arguments: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(GENERATOR), *arguments],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
 
 
 def _tree_digest(path: Path) -> dict[str, str]:
@@ -111,3 +127,39 @@ def test_cli_future_date_rejected(tmp_path: Path) -> None:
     result = _run(root, "bnm_open_api", "2026-09-02")
     assert result.returncode != 0
     assert "future" in result.stderr.lower()
+
+
+@SKIP_NO_HISTORY
+def test_real_bnm_open_api_2026_09_01_has_eight_datasets() -> None:
+    """Real-data calibration confirms all BNM Open API IDs are present."""
+    result = _run_generator(["--family", "bnm_open_api", "--date", "2026-09-01"])
+    assert result.returncode == 0, result.stderr
+    output_dir = ROOT / "health/as_of/bnm_open_api/2026-09-01"
+    assert output_dir.is_dir()
+    files = {path.stem for path in output_dir.glob("*.json") if path.name != "_manifest.json"}
+    expected = {
+        "bnm_opr", "bnm_base_rate", "bnm_kl_usd_myr", "bnm_interest_rate",
+        "bnm_interest_volume", "bnm_interbank_swap", "bnm_kijang_emas", "bnm_myor",
+    }
+    assert expected.issubset(files), f"missing datasets: {sorted(expected - files)}"
+    manifest = json.loads((output_dir / "_manifest.json").read_text())
+    assert manifest["family"] == "bnm_open_api"
+    assert manifest["as_of_date"] == "2026-09-01"
+    assert manifest["actual_dataset_count"] == 8
+    assert manifest["expected_dataset_count"] == 8
+
+
+@SKIP_NO_HISTORY
+def test_real_gtfs_api_2026_09_01_has_thirty_datasets() -> None:
+    """Real-data calibration confirms all GTFS API IDs are present."""
+    result = _run_generator(["--family", "gtfs_api", "--date", "2026-09-01"])
+    assert result.returncode == 0, result.stderr
+    output_dir = ROOT / "health/as_of/gtfs_api/2026-09-01"
+    assert output_dir.is_dir()
+    files = {path.stem for path in output_dir.glob("*.json") if path.name != "_manifest.json"}
+    assert len(files) == 30, f"expected 30 dataset files, got {len(files)}: {sorted(files)}"
+    manifest = json.loads((output_dir / "_manifest.json").read_text())
+    assert manifest["family"] == "gtfs_api"
+    assert manifest["as_of_date"] == "2026-09-01"
+    assert manifest["actual_dataset_count"] == 30
+    assert manifest["expected_dataset_count"] == 30
