@@ -4,7 +4,7 @@ Working agreement for AI agents editing or extending the read-only FastMCP serve
 
 ## What this is
 
-`server.py` exposes a **read-only** FastMCP server (1850 lines) over the published DataPulse MY manifest (`datapulse.json`) and health snapshot (`health/latest.json`). 16 tools. No writes to the DataPulse MY data layer.
+`server.py` exposes a **read-only** FastMCP server (~2,000 lines) over the published DataPulse MY manifest (`datapulse.json`) and health snapshot (`health/latest.json`). 18 tools (canonical count in `mcp.json`, generated from `server.py` AST — never hardcode in docs). No writes to the DataPulse MY data layer.
 
 The M8ven tool trust score (currently D, 41/100) audits this server. Tool annotation completeness, test coverage, and handler isolation are tracked findings — changes here directly affect that score.
 
@@ -48,7 +48,7 @@ uv run --with fastmcp,httpx pytest mcp/tests/ -v
 # 2. Re-render the mcp.json catalog
 python scripts/gen_mcp_reference.py   # regenerates /mcp.json at repo root
 
-# 3. Confirm 16-tool count unchanged (or update intentionally)
+# 3. Confirm the live tool count matches mcp.json (or update intentionally)
 jq '.tools | length' mcp.json
 
 # 4. Check annotations are present on every tool

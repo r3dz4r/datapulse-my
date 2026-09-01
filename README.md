@@ -164,7 +164,7 @@ DataPulse MY also exposes an AI-ready, read-only MCP server so agents can query
 the catalogue natively:
 
 - Endpoint: `https://mcp.data-pulse.my/mcp` (Streamable HTTP, no auth)
-Verified by mcpgrade: 100/100 (Grade A), 16 tools, last audited 2026-08-17.
+Verified by mcpgrade: 100/100 (Grade A), 18 tools, last audited 2026-08-17 (re-audit due — count changed 16→18 since; canonical count lives in `mcp.json`).
 <!-- BEGIN mcp-tools -->
 - 18 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 

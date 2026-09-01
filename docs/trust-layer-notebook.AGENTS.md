@@ -29,7 +29,7 @@ Working agreement for AI agents extending, regenerating, or replacing the trust-
 ## What is NOT in the notebook
 
 - **Deploy-time configuration** — `.github/workflows/health-check.yml`, the timer in `~/.config/systemd/user/datapulse-health.timer`
-- **The MCP server code** — `mcp/server.py` and the 16 tools exposed via `mcp.data-pulse.my`
+- **The MCP server code** — `mcp/server.py` and its tools exposed via `mcp.data-pulse.my` (count is dynamic; see `mcp.json`)
 - **Raw health probes** — these run via systemd, not from this notebook
 - **The pipeline that GENERATES this notebook** — there is no generator; the notebook is hand-authored and committed
 
