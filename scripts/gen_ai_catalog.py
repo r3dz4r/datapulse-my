@@ -17,8 +17,6 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 LOGGER = logging.getLogger(__name__)
 CATALOG_VERSION = "1.0.0"
-DEFAULT_CONTACT_EMAIL = "ops@data-pulse.my"
-PERSONAL_EMAIL = "mohd.redzafahmy@gmail.com"
 PUBLIC_ORIGIN = "https://www.data-pulse.my"
 MCP_ENDPOINT = "https://mcp.data-pulse.my/mcp"
 TRUST_MODEL = "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)"
@@ -54,14 +52,6 @@ def _read_object(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError(f"{path} must be a JSON object")
     return value
-
-
-def _validate_contact_email(contact_email: str) -> str:
-    if contact_email == PERSONAL_EMAIL:
-        raise ValueError("personal publisher contact email is not permitted")
-    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", contact_email):
-        raise ValueError("--contact-email must be a valid email address")
-    return contact_email
 
 
 def _source_commit_sha(root: Path, mcp: dict[str, Any]) -> str:
@@ -133,9 +123,8 @@ def _verification() -> dict[str, str]:
     }
 
 
-def build_outputs(root: Path, contact_email: str = DEFAULT_CONTACT_EMAIL) -> tuple[bytes, dict[str, bytes]]:
+def build_outputs(root: Path) -> tuple[bytes, dict[str, bytes]]:
     """Return canonical catalog and card bytes without writing public artifacts."""
-    contact_email = _validate_contact_email(contact_email)
     mcp = _read_object(root / "mcp.json")
     manifest = _read_object(root / "datapulse.json")
     datasets = manifest.get("datasets")
@@ -182,7 +171,7 @@ def build_outputs(root: Path, contact_email: str = DEFAULT_CONTACT_EMAIL) -> tup
         "ard_spec_version": "0.9",
         "contract_version": CATALOG_VERSION,
         "host": {"displayName": "DataPulse MY", "homepage": f"{PUBLIC_ORIGIN}/", "repository": "https://github.com/r3dz4r/datapulse-my"},
-        "publisher": {"name": "DataPulse MY", "contact_email": contact_email},
+        "publisher": {"name": "DataPulse MY"},
         "endpoint": {"url": MCP_ENDPOINT, "transport": "streamable-http", "method": "POST", "auth_required": False},
         "trust": _verification(),
         "dataset_count": len(datasets),
@@ -204,8 +193,8 @@ def _atomic_write(path: Path, content: bytes) -> None:
             temporary.unlink()
 
 
-def generate(root: Path, contact_email: str = DEFAULT_CONTACT_EMAIL) -> list[Path]:
-    catalog, cards = build_outputs(root, contact_email)
+def generate(root: Path) -> list[Path]:
+    catalog, cards = build_outputs(root)
     outputs = [root / "docs/ai-catalog.json"]
     _atomic_write(outputs[0], catalog)
     for name, content in cards.items():
@@ -218,14 +207,13 @@ def generate(root: Path, contact_email: str = DEFAULT_CONTACT_EMAIL) -> list[Pat
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT)
-    parser.add_argument("--contact-email", default=DEFAULT_CONTACT_EMAIL)
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
-        outputs = generate(args.root.resolve(), args.contact_email)
+        outputs = generate(args.root.resolve())
     except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
         LOGGER.error("AI catalog generation failed: %s", exc)
         return 1

@@ -60,18 +60,6 @@ def test_modified_catalog_fails(tmp_path: Path) -> None:
     assert _run(VERIFIER, root).returncode == 1
 
 
-def test_personal_email_in_publisher_field_fails(tmp_path: Path) -> None:
-    root = _fixture_root(tmp_path)
-    _generate(root)
-    path = root / "docs/ai-catalog.json"
-    catalog = json.loads(path.read_text(encoding="utf-8"))
-    catalog["publisher"]["contact_email"] = "mohd.redzafahmy@gmail.com"
-    path.write_text(json.dumps(catalog, indent=2) + "\n", encoding="utf-8")
-    result = _run(VERIFIER, root)
-    assert result.returncode == 1
-    assert "project contact email" in result.stderr
-
-
 def test_did_in_host_field_fails(tmp_path: Path) -> None:
     root = _fixture_root(tmp_path)
     _generate(root)
@@ -82,10 +70,3 @@ def test_did_in_host_field_fails(tmp_path: Path) -> None:
     result = _run(VERIFIER, root)
     assert result.returncode == 1
     assert "must not contain an identifier" in result.stderr
-
-
-def test_unknown_contact_email_via_cli_overrides(tmp_path: Path) -> None:
-    root = _fixture_root(tmp_path)
-    generated = _run(GENERATOR, root, "--contact-email", "foo@bar.baz")
-    assert generated.returncode == 0, generated.stderr
-    assert _run(VERIFIER, root, "--contact-email", "foo@bar.baz").returncode == 0

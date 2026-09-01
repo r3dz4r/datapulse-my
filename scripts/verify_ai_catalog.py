@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from gen_ai_catalog import DEFAULT_CONTACT_EMAIL, PERSONAL_EMAIL, PUBLIC_ORIGIN, build_outputs
+from gen_ai_catalog import PUBLIC_ORIGIN, build_outputs
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,7 +51,7 @@ def _card_path(root: Path, url: object) -> Path:
     return path
 
 
-def verify(root: Path, contact_email: str = DEFAULT_CONTACT_EMAIL) -> list[str]:
+def verify(root: Path) -> list[str]:
     """Return every contract defect without mutating the generated public surface."""
     root = root.resolve()
     catalog_path = root / "docs/ai-catalog.json"
@@ -67,9 +67,6 @@ def verify(root: Path, contact_email: str = DEFAULT_CONTACT_EMAIL) -> list[str]:
     host = catalog.get("host")
     if not isinstance(host, dict) or "identifier" in host:
         errors.append("catalog host must not contain an identifier")
-    publisher = catalog.get("publisher")
-    if not isinstance(publisher, dict) or publisher.get("contact_email") == PERSONAL_EMAIL:
-        errors.append("catalog publisher.contact_email must be a project contact email")
     entries = catalog.get("entries")
     if not isinstance(entries, list):
         errors.append("catalog entries must be an array")
@@ -116,7 +113,7 @@ def verify(root: Path, contact_email: str = DEFAULT_CONTACT_EMAIL) -> list[str]:
         if card.get("contract_version") != contract_version:
             errors.append(f"card contract_version does not match catalog: {path.relative_to(root)}")
     try:
-        expected_catalog, expected_cards = build_outputs(root, contact_email)
+        expected_catalog, expected_cards = build_outputs(root)
     except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
         raise OperatorError(f"cannot build expected catalog: {exc}") from exc
     if catalog_path.read_bytes() != expected_catalog:
@@ -133,14 +130,13 @@ def verify(root: Path, contact_email: str = DEFAULT_CONTACT_EMAIL) -> list[str]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT)
-    parser.add_argument("--contact-email", default=DEFAULT_CONTACT_EMAIL)
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
-        errors = verify(args.root, args.contact_email)
+        errors = verify(args.root)
     except OperatorError as exc:
         LOGGER.error("AI catalog verifier operator error: %s", exc)
         return 2

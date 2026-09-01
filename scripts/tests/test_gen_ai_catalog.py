@@ -12,7 +12,6 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = ROOT / "scripts/gen_ai_catalog.py"
-PERSONAL_EMAIL = "mohd.redzafahmy@gmail.com"
 
 
 def _fixture_root(tmp_path: Path) -> Path:
@@ -64,15 +63,6 @@ def test_capabilities_array_is_sorted(tmp_path: Path) -> None:
     assert all(entry["capabilities"] == sorted(entry["capabilities"]) for entry in _catalog(root)["entries"])
 
 
-def test_publisher_contact_email_not_personal(tmp_path: Path) -> None:
-    root = _fixture_root(tmp_path)
-    assert _generate(root).returncode == 0
-    assert _catalog(root)["publisher"]["contact_email"] == "ops@data-pulse.my"
-    rejected = _generate(root, "--contact-email", PERSONAL_EMAIL)
-    assert rejected.returncode == 1
-    assert "personal publisher contact" in rejected.stderr
-
-
 def test_per_tool_card_files_generated(tmp_path: Path) -> None:
     root = _fixture_root(tmp_path)
     assert _generate(root).returncode == 0
@@ -100,9 +90,3 @@ def test_contract_version_present_and_semver(tmp_path: Path) -> None:
     root = _fixture_root(tmp_path)
     assert _generate(root).returncode == 0
     assert re.fullmatch(r"\d+\.\d+\.\d+", _catalog(root)["contract_version"])
-
-
-def test_contact_email_override_cli(tmp_path: Path) -> None:
-    root = _fixture_root(tmp_path)
-    assert _generate(root, "--contact-email", "foo@bar.baz").returncode == 0
-    assert _catalog(root)["publisher"]["contact_email"] == "foo@bar.baz"
