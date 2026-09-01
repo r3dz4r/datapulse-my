@@ -42,14 +42,21 @@ def test_canonical_partial_is_well_formed_and_contains_expected_nav_links() -> N
     assert parser.tags.count("nav") == 1
     assert "div" in parser.tags
     assert 'class="nav-links"' in partial
-    assert 'href="/health-methodology.html"' in partial
-    assert ">Methodology</a>" in partial
-    assert 'href="/learn.html"' in partial
-    assert ">Learn</a>" in partial
+    # Scoped nav: dark-theme reversed (white) logo; only Dashboard + GitHub in the menu.
+    assert 'href="/health-methodology.html"' not in partial
+    assert ">Methodology</a>" not in partial
+    assert 'href="/learn.html"' not in partial
+    assert ">Learn</a>" not in partial
+    assert ">NPRA</a>" not in partial
+    assert ">MCP</a>" not in partial
+    assert ">Catalogue</a>" not in partial
+    assert 'href="/"' in partial and ">Dashboard</a>" in partial
+    assert 'href="https://github.com/r3dz4r/datapulse-my"' in partial
     assert partial.count("<img") == 1
-    assert '<a class="brand" href="/" aria-label="DataPulse home"><img class="brand-logo" src="/assets/brand/datapulse-horizontal-full-color.svg" alt="DataPulse"></a>' in partial
-    assert 'href="/#mcp"' in partial
-    assert 'href="/#machine-title"' in partial
+    assert '<a class="brand" href="/" aria-label="DataPulse home"><img class="brand-logo" src="/assets/brand/datapulse-horizontal-reversed.svg" alt="DataPulse"></a>' in partial
+    assert "/assets/brand/datapulse-horizontal-full-color.svg" not in partial
+    assert 'href="/#mcp"' not in partial
+    assert 'href="/#machine-title"' not in partial
     assert 'href="/landing"' not in partial
     assert 'href="/landing#' not in partial
     assert "[DATA]" not in partial
@@ -60,8 +67,12 @@ def test_health_methodology_template_uses_canonical_landing_links() -> None:
     template = HEALTH_METHODOLOGY_TEMPLATE.read_text(encoding="utf-8")
 
     assert 'href="/"' in template
-    assert 'href="/#mcp"' in template
-    assert 'href="/#surfaces"' in template
+    # Scoped dark nav: no MCP/surfaces anchors, reversed logo, Dashboard + GitHub only.
+    assert 'href="/#mcp"' not in template
+    assert 'href="/#surfaces"' not in template
+    assert "datapulse-horizontal-reversed.svg" in template
+    assert ">Dashboard</a>" in template
+    assert 'href="https://github.com/r3dz4r/datapulse-my"' in template
     assert 'href="/landing"' not in template
     assert 'href="/landing#' not in template
 
