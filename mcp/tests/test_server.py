@@ -1575,3 +1575,23 @@ async def test_gtfs_namespace_present_in_index_resource(
         item["id"] == "gtfs_static_ktmb" and item["namespace"] == "transport"
         for item in payload
     )
+
+
+async def test_get_freshness_summary_returns_published_snapshot():
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("get_freshness_summary", {})
+    payload = result.data if hasattr(result, "data") else result
+    assert isinstance(payload, dict)
+    assert "checked_at" in payload
+    assert "dataset_total" in payload
+    assert isinstance(payload["dataset_total"], int)
+    assert payload["dataset_total"] > 0
+
+
+async def test_get_freshness_summary_call_tool_matches_direct_handler():
+    async with Client(server.mcp) as client:
+        via_client = await client.call_tool("get_freshness_summary", {})
+    direct = await server.get_freshness_summary()
+    client_payload = via_client.data if hasattr(via_client, "data") else via_client
+    assert client_payload["dataset_total"] == direct["dataset_total"]
+    assert client_payload["checked_at"] == direct["checked_at"]
