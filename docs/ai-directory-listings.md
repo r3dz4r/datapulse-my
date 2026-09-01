@@ -1,17 +1,22 @@
-# DataPulse MY — Directory Listing Drafts
+# DataPulse — Directory Listing Drafts and Audit
 
 **Created:** 2026-08-03
-**Updated:** 2026-08-18
-**Purpose:** Review drafts for submitting DataPulse MY to Malaysian AI directories. Aiecosystem.my submission in admin-review queue (submitted 2026-08-18 with 389-dataset / 16-tool / AI Products framing); awaiting admin approval before live. Assistants.my not yet submitted — pending aiecosystem verification.
+**Historical submission date:** 2026-08-18
+**Last live audit:** 2026-09-01
+**Document status:** Historical submission record plus current directory audit. Do not treat old payloads or third-party metadata as current DataPulse capability truth.
 
-**Context on fit:** DataPulse MY is an open-source, AI-ready trust layer for Malaysian public data. It tracks 389 official datasets across 11+ government portals with a 10-status taxonomy, freshness and licences, offers a machine-readable `llms.txt` index, and runs a public read-only 16-tool MCP server. Best-fit directories are registration-driven (not Open-AI-style marketplaces), and these are the two with clean submission paths.
+**Current result:** The aiecosystem.my listing is live and visible. The assistants.my submission has not been made. The official MCP Registry has one active latest record and four deprecated historical records. Glama’s listing exists but is stale/unhealthy.
+
+**Context on fit:** DataPulse is an open-source, AI-ready evidence layer for Malaysian public data. It publishes freshness, licence, provenance, and source-condition evidence through machine-readable surfaces and a public read-only MCP server. Current capability counts belong to the live `mcp.json` advertisement, not this submission record.
+
+**Audit references:** [aiecosystem.my](https://aiecosystem.my/) · [aiecosystem edit record](https://aiecosystem.my/edit-company?company_id=307) · [assistants.my](https://assistants.my/) · [official MCP Registry query](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.r3dz4r%2Fdatapulse-my) · [Glama connector](https://glama.ai/mcp/connectors/io.github.r3dz4r/datapulse-my)
 
 ---
 
 ## Target 1 — aiecosystem.my (Malaysian AI Ecosystem Directory)
 
 Submission URL: https://aiecosystem.my/submit-company
-Edit path: https://aiecosystem.my/edit-company?company_id=307 (admin-review queue — edit shows "Waiting for admin approval" banner after submit; do not retry via curl — POSTs land in queue, not immediate write)
+Edit path: https://aiecosystem.my/edit-company?company_id=307 (the current edit form displays a review warning for future changes; the public homepage is the evidence that the existing listing is live)
 
 Form fields: Company Name · Website URL · Description (max 25 words) · Category
 
@@ -26,7 +31,7 @@ Description word count: **22 words** ✅ (within the 25-word cap)
 
 **Category note:** the form offers: AI Academies / AI Communities / AI Products / AI Services / LLM Malaysia. "AI Products" is the closest fit for an open-source data layer. (No explicit "government data" or "developer tools" category here — the field is a single select.)
 
-**Submission status (2026-08-18):** submitted manually by operator with values above. Admin-review queue confirmed via screenshot showing "Your edit request has been submitted. Waiting for admin approval." Verifiable by re-fetching `edit-company?company_id=307` after admin applies. **Lesson learned:** see `datapulse-my-docs` skill Anti-pattern 6 — POST returns HTTP 200 with success banner but values do not persist until moderator approves; do not burn 4 curl variants diagnosing this.
+**Submission record (2026-08-18):** submitted manually by the operator with the values above. **Current live verification (2026-09-01):** the aiecosystem.my homepage visibly lists DataPulse MY with the submitted description and website. The edit-page review warning applies to future edits; it is not evidence that the existing listing is still pending. **Lesson learned:** a successful form response or review banner is weaker evidence than a re-fetched public listing.
 
 ---
 
@@ -35,57 +40,55 @@ Description word count: **22 words** ✅ (within the 25-word cap)
 Submission URL: https://assistants.my/submit
 Form fields: Tool name · Website URL · Short desc (EN, max 120 chars) · Short desc (BM, max 120) · Category · Pricing model · Bahasa Malaysia support? · Built in Malaysia/SEA? · Logo URL (optional) · Email
 
-**Note:** when this is submitted, use the same Option-2 description shape locked in for aiecosystem.my (22 words, "389 datasets", "read-only MCP", "No API key"). The form has different fields and slightly different word-count constraints — adjust to fit, but keep the substance.
+**Current audit (2026-09-01):** no DataPulse listing was found on the assistants.my directory homepage. The form remains available, but no submission has been made. Use count-free copy unless the live machine contract is rechecked immediately before submission.
 
 | Field | Value |
 |---|---|
 | Tool name | DataPulse MY |
 | Website URL | https://www.data-pulse.my |
-| Short desc (English, ≤120 chars) | AI-ready trust layer for 389 Malaysian public datasets — licences, freshness, read-only MCP server. |
-| Short desc (Bahasa Malaysia, ≤120 chars) | Lapisan kepercayaan AI: 389 set data awam Malaysia — kesegaran, lesen, pelayan MCP. |
+| Short desc (English, ≤120 chars) | AI-ready verification layer for Malaysian public datasets — licences, freshness, read-only MCP server. |
+| Short desc (Bahasa Malaysia, ≤120 chars) | Lapisan pengesahan AI untuk data awam Malaysia — lesen, kesegaran, pelayan MCP baca sahaja. |
 | Category | Developer Tools |
 | Pricing model | Free |
 | Bahasa Malaysia support? | Partial |
 | Built in Malaysia/SEA? | Yes (origin, not hosting) |
 | Logo URL (optional) | (leave blank, or point to a badge SVG from the repo) |
-| Email | mohd.redzafahmy@gmail.com |
+| Email | Retained privately by the operator; do not commit to the public repository. |
 
-**Length checks (verified 2026-08-18):**
-- English desc: "AI-ready trust layer for 389 Malaysian public datasets — licences, freshness, read-only MCP server." → **99 chars** ✅ (≤120)
-- BM desc: "Lapisan kepercayaan AI: 389 set data awam Malaysia — kesegaran, lesen, pelayan MCP." → **83 chars** ✅ (≤120)
+**Length checks:** Recalculate immediately before any submission; the count-free candidates above are intentionally not treated as permanently locked copy.
 
 **Category note:** the form offers ... Developer Tools / Government / ... — "Developer Tools" remains the best fit now that DataPulse MY provides a machine-readable data layer and MCP server; "Government" also arguably fits (Malaysian official data). Picked Developer Tools.
 
 **"Built in Southeast Asia?" flag (resolved 2026-08-06):** the form field is `sea_built` — a Yes/No for the whole SEA region. DataPulse MY is built by a Malaysian, on Malaysian official data, so the answer is **Yes**. The infra-host ambiguity is moot: the field asks about origin, not hosting.
 
-**Email note (resolved 2026-08-06):** user confirmed `mohd.redzafahmy@gmail.com` may be used for the review/submission.
-
 **aiecosystem.my field re-check (2026-08-06):** the form has only 4 fields (name, url, description, category_id). No email, no "Built in MY" question — both earlier concerns are moot for this form.
 
 ---
 
-## Facts baked into both drafts (all verified)
+## Current and historical facts
 
 - Repo: https://github.com/r3dz4r/datapulse-my
-- 389 official datasets across 11+ government portals, with a 10-status taxonomy
-- Licence mix: 12 OGL Malaysia + 154 CC BY 4.0 (as published by the live agent index)
-- Live agent index: https://www.data-pulse.my/llms.txt (canonical Cloudflare Pages artifact)
-- Live MCP server: https://mcp.data-pulse.my/mcp — public, read-only, 389 datasets, and 16 tools (`search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`)
-- Official MCP Registry: `io.github.r3dz4r/datapulse-my` (status: active)
-- Trust layer: 10-status taxonomy and a `_trust_summary` block in `health/latest.json`
-- Dashboard: https://www.data-pulse.my/dashboard → Cloudflare Pages dashboard with live health distribution
-- Honest framing: `llms.txt` + MCP are forward-compatible agent infra, NOT a citation/ranking lever (do not overclaim)
+- Current catalogue coverage must be read from `datapulse.json` and `health/latest.json` immediately before reuse.
+- Current MCP capability must be read from `mcp.json`; do not copy a tool count into directory copy.
+- Live agent index: https://www.data-pulse.my/llms.txt
+- Live MCP server: https://mcp.data-pulse.my/mcp — public, read-only, machine-readable dataset discovery and evidence.
+- Official MCP Registry: `io.github.r3dz4r/datapulse-my` — active latest record verified 2026-09-01 as version `3.4.6`; four older records are deprecated.
+- Glama: listing exists but was last tested 2026-08-20 and currently reports stale/unhealthy metadata; not a current source of DataPulse capability truth.
+- Trust boundary: DataPulse reports observable source evidence and does not certify upstream semantic truth.
 
-Verified by mcpgrade: 100/100 Grade A on 16 tools, 0 findings, last audited 2026-08-17. Top 5% of the agent-usability rubric.
+The original 2026-08-18 aiecosystem payload is retained above as a historical submission record. It is not a reusable current capability manifest.
 
-## Next steps
+## Disposition
 
-- [x] Review both drafts
-- [x] **"Built in Malaysia/SEA?"** — resolved 2026-08-06: sea_built = Yes (origin, not hosting)
-- [x] **Email consent** — resolved 2026-08-06: mohd.redzafahmy@gmail.com OK
-- [x] **aiecosystem.my submission** — submitted 2026-08-18 with Option-2 description (22 words, 389 datasets, read-only MCP, No API key), category AI Products (id=1), URL https://www.data-pulse.my. Awaiting admin approval.
-- [ ] **Verify aiecosystem.my** — re-fetch `edit-company?company_id=307` and confirm description contains "389" + "read-only MCP server" + category shows id=1 after admin applies.
-- [ ] **assistants.my submission** — pending aiecosystem verification. Same description shape; Camofox typing API for React-controlled form (per `chapters/ai-directory-listings.md` of `datapulse-my-docs` skill).
-- [x] **Description shape locked in:** Option 2 — "Open-source AI-ready trust layer for 389 official Malaysian public datasets, with freshness, licences, and a public read-only MCP server. No API key." (22 words). Do NOT use the 21-word variant with "live 16-tool MCP server" — verified as the form's moderated submission; the live-public version will say "read-only MCP server" because the assistant audience knows what that means without the count.
+- [x] Review both historical submission drafts.
+- [x] Verify aiecosystem.my listing on the public homepage — live as of 2026-09-01.
+- [x] Confirm the aiecosystem edit page is a review-gated edit surface, not proof that the existing listing is pending.
+- [x] Confirm assistants.my has no DataPulse listing — no submission performed.
+- [x] Confirm the official MCP Registry has one active latest record and four deprecated historical records.
+- [x] Mark Glama metadata as stale/unhealthy external metadata.
+- [x] Remove personal submission contact detail from this public document.
+- [x] Remove reusable 16-tool and count-heavy current claims.
+- [ ] Reconcile served `agent.json` with served `mcp.json` before any future count-based submission copy.
+- [ ] Decide separately whether to submit DataPulse to assistants.my after the machine-surface parity gate passes.
 
-Nothing further will be submitted to aiecosystem.my. Once it verifies, the same payload is the assistants.my candidate.
+No external directory should be edited or resubmitted from this document without a fresh source audit, explicit operator approval, and a new dated submission record.

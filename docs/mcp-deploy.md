@@ -87,7 +87,7 @@ curl -sS "$endpoint" \
   | jq '.result.tools | length'
 ```
 
-The expected output is `15`.
+The expected output is `18`.
 
 `verify_evidence` serializes outbound checks behind one process-local lock and
 caches results for 10 minutes. It refuses browser-dependent datasets and unsafe
@@ -131,7 +131,7 @@ printf 'live=%s head=%s\n' "$live_count" "$head_count"
 test "$live_count" -eq "$head_count"
 ```
 
-The expected count at this revision is `335`. If the assertion fails, do not
+The expected count at this revision is `389`. If the assertion fails, do not
 merge: the MCP server is stale and the manifest-count claim is false.
 
 ## Source-to-deployment sync

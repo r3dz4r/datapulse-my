@@ -9,9 +9,26 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = ROOT / "scripts/gen_llms_summary.py"
+DOCUMENTATION_ARTIFACTS = [
+    "/documentation-map.md",
+    "/source-of-truth-map.md",
+    "/glossary.md",
+    "/trust-contract.md",
+    "/status-semantics.md",
+    "/evidence-receipt-spec.md",
+    "/agent-quickstart.md",
+    "/agent-workflows.md",
+    "/dataset-lifecycle.md",
+    "/incident-response.md",
+    "/reproducibility.md",
+    "/enterprise-governance.md",
+    "/integration-patterns.md",
+]
 
 
-def _write_public_surface_fixture(root: Path, featured_dataset_id: str) -> None:
+def _write_public_surface_fixture(
+    root: Path, featured_dataset_id: str, *, include_documentation: bool = False
+) -> None:
     config_dir = root / "config"
     config_dir.mkdir(exist_ok=True)
     (config_dir / "public-surfaces.json").write_text(
@@ -27,6 +44,7 @@ def _write_public_surface_fixture(root: Path, featured_dataset_id: str) -> None:
             "compatibility_aliases": [{"path": "/landing.html", "target": "/"}],
             "artifacts": [
                 "/buyer-api-reference.md",
+                *(DOCUMENTATION_ARTIFACTS if include_documentation else []),
                 "/llms.txt",
                 "/datapulse.json",
                 "/datapulse.schema.json",
@@ -77,7 +95,7 @@ def _write_fixture(root: Path, *, count: int = 3, include_mcp_line: bool = True)
     (root / "datapulse.json").write_text(
         json.dumps(manifest) + "\n", encoding="utf-8"
     )
-    _write_public_surface_fixture(root, "dataset-0")
+    _write_public_surface_fixture(root, "dataset-0", include_documentation=True)
 
     lines = [
         "# Fixture\n",
@@ -139,6 +157,22 @@ def test_idempotent_second_run(tmp_path: Path) -> None:
     assert (tmp_path / "llms.txt").read_bytes() == after_first
 
 
+def test_renders_configured_documentation_artifacts(tmp_path: Path) -> None:
+    _write_fixture(tmp_path)
+    _write_public_surface_fixture(
+        tmp_path, "dataset-0", include_documentation=True
+    )
+
+    result = _run(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    artifacts = (tmp_path / "llms.txt").read_text(encoding="utf-8").split(
+        "<!-- BEGIN public-artifacts -->", 1
+    )[1].split("<!-- END public-artifacts -->", 1)[0]
+    for documentation_path in DOCUMENTATION_ARTIFACTS:
+        assert f"https://www.data-pulse.my{documentation_path}" in artifacts
+
+
 def test_removes_per_dataset_bullets_absent_from_manifest(tmp_path: Path) -> None:
     manifest = {
         "datasets": [
@@ -171,7 +205,7 @@ def test_removes_per_dataset_bullets_absent_from_manifest(tmp_path: Path) -> Non
         ),
         encoding="utf-8",
     )
-    _write_public_surface_fixture(tmp_path, "current")
+    _write_public_surface_fixture(tmp_path, "current", include_documentation=True)
 
     result = _run(tmp_path)
 
@@ -215,6 +249,40 @@ def test_missing_declared_artifact_fails(tmp_path: Path) -> None:
 
     assert result.returncode != 0
     assert "/feed.xml" in result.stderr
+
+
+def test_configured_documentation_artifact_without_mapping_fails(tmp_path: Path) -> None:
+    _write_fixture(tmp_path)
+    _write_public_surface_fixture(
+        tmp_path, "dataset-0", include_documentation=True
+    )
+    config_path = tmp_path / "config/public-surfaces.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["artifacts"].append("/unmapped-documentation.md")
+    config_path.write_text(json.dumps(config) + "\n", encoding="utf-8")
+
+    result = _run(tmp_path)
+
+    assert result.returncode != 0
+    assert "/unmapped-documentation.md" in result.stderr
+    assert "no llms.txt rendering" in result.stderr
+
+
+def test_documentation_mapping_without_configured_path_fails(tmp_path: Path) -> None:
+    _write_fixture(tmp_path)
+    _write_public_surface_fixture(
+        tmp_path, "dataset-0", include_documentation=True
+    )
+    config_path = tmp_path / "config/public-surfaces.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["artifacts"].remove("/documentation-map.md")
+    config_path.write_text(json.dumps(config) + "\n", encoding="utf-8")
+
+    result = _run(tmp_path)
+
+    assert result.returncode != 0
+    assert "/documentation-map.md" in result.stderr
+    assert "absent from public-surfaces.json" in result.stderr
 
 
 def test_rejects_invalid_root(tmp_path: Path) -> None:

@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import json
 import re
 from pathlib import Path
 from typing import Iterable, Sequence
+from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +35,29 @@ HISTORICAL_DOCS = (
     "docs/data-json-workspace-proposal-2026-08-08.md",
     "docs/health-compatibility-report-2026-08-08.md",
     "docs/mcp-self-grade-2026-08-08.md",
+)
+
+CANONICAL_DOCS = (
+    "docs/documentation-map.md",
+    "docs/source-of-truth-map.md",
+    "docs/glossary.md",
+    "docs/trust-contract.md",
+    "docs/status-semantics.md",
+    "docs/evidence-receipt-spec.md",
+    "docs/agent-quickstart.md",
+    "docs/agent-workflows.md",
+    "docs/dataset-lifecycle.md",
+    "docs/incident-response.md",
+    "docs/reproducibility.md",
+    "docs/enterprise-governance.md",
+    "docs/integration-patterns.md",
+)
+
+LEGACY_MCP_NAMES = (
+    "list_datasets",
+    "get_health_snapshot",
+    "get_attestation",
+    "list_machine_surfaces",
 )
 
 PROHIBITED_LITERALS = (
@@ -71,10 +96,111 @@ LITERAL_PATTERNS = tuple(
     )
     for literal, current_value in PROHIBITED_LITERALS
 )
+MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
+LEGACY_DIRECT_TOOL_PAYLOAD = re.compile(r'\{\s*"tool"\s*:')
+DATASET_ID_ARGUMENT = re.compile(
+    r"\bdataset_id\s*[:=]\s*[\"`]([a-z0-9][a-z0-9_-]*)[\"`]"
+)
+DATASET_MARKDOWN_PATH = re.compile(r"(?:^|/)data/([a-z0-9][a-z0-9_-]*)\.md$")
 
 
 def is_excluded(path: str, exclude_globs: Sequence[str]) -> bool:
     return any(fnmatch.fnmatchcase(path, pattern) for pattern in exclude_globs)
+
+
+def line_number(text: str, position: int) -> int:
+    """Return the one-based line number at ``position`` in ``text``."""
+    return text.count("\n", 0, position) + 1
+
+
+def relative_link_target(link: str) -> str | None:
+    """Return a local link target, excluding URLs and fragment-only links."""
+    target = link.strip().split(maxsplit=1)[0].strip("<>")
+    if not target or target.startswith(("#", "//")) or urlparse(target).scheme:
+        return None
+    return target.split("#", maxsplit=1)[0].split("?", maxsplit=1)[0]
+
+
+def manifest_dataset_ids(root: Path) -> set[str] | None:
+    """Load canonical dataset identifiers, or return ``None`` for no manifest."""
+    path = root / "datapulse.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return {
+        dataset["id"]
+        for dataset in payload.get("datasets", [])
+        if isinstance(dataset, dict) and isinstance(dataset.get("id"), str)
+    }
+
+
+def lint_canonical_documents(
+    root: Path,
+    canonical_docs: Iterable[str],
+    exclude_globs: Sequence[str],
+) -> list[str]:
+    """Return link, legacy-contract, and dataset-example findings."""
+    findings: list[str] = []
+    existing_docs: list[tuple[str, Path, str]] = []
+    for relative_path in canonical_docs:
+        if is_excluded(relative_path, exclude_globs):
+            continue
+        path = root / relative_path
+        if not path.is_file():
+            findings.append(f"{relative_path}: canonical doc not found")
+            continue
+        existing_docs.append((relative_path, path, path.read_text(encoding="utf-8")))
+
+    dataset_ids = manifest_dataset_ids(root)
+    if existing_docs and dataset_ids is None:
+        findings.append("datapulse.json: dataset manifest not found")
+
+    for relative_path, path, text in existing_docs:
+        for match in MARKDOWN_LINK.finditer(text):
+            target = relative_link_target(match.group(1))
+            if target is None:
+                continue
+            resolved = path.parent / target
+            if not resolved.is_file():
+                findings.append(
+                    f"{relative_path}:{line_number(text, match.start(1))}: "
+                    f"broken relative link '{target}'"
+                )
+        for legacy_name in LEGACY_MCP_NAMES:
+            for match in re.finditer(rf"(?<!\w){re.escape(legacy_name)}(?!\w)", text):
+                findings.append(
+                    f"{relative_path}:{line_number(text, match.start())}: "
+                    f"legacy MCP name '{legacy_name}'"
+                )
+        for match in LEGACY_DIRECT_TOOL_PAYLOAD.finditer(text):
+            findings.append(
+                f"{relative_path}:{line_number(text, match.start())}: "
+                "legacy direct MCP tool payload"
+            )
+        for literal, current_value, pattern in LITERAL_PATTERNS:
+            for match in pattern.finditer(text):
+                findings.append(
+                    f"{relative_path}:{line_number(text, match.start())}: prohibited "
+                    f"literal '{literal}' in canonical doc (current: '{current_value}')"
+                )
+        if dataset_ids is not None:
+            examples = [
+                *(
+                    (match.group(1), match.start(1))
+                    for match in DATASET_ID_ARGUMENT.finditer(text)
+                ),
+                *(
+                    (match.group(1), match.start(1))
+                    for match in DATASET_MARKDOWN_PATH.finditer(text)
+                ),
+            ]
+            for dataset_id, position in examples:
+                if dataset_id not in dataset_ids:
+                    findings.append(
+                        f"{relative_path}:{line_number(text, position)}: unknown "
+                        f"dataset ID '{dataset_id}' in canonical example"
+                    )
+    return findings
 
 
 def lint_documents(
@@ -82,6 +208,7 @@ def lint_documents(
     current_docs: Iterable[str] = CURRENT_DOCS,
     historical_docs: Iterable[str] = HISTORICAL_DOCS,
     exclude_globs: Sequence[str] = (),
+    canonical_docs: Iterable[str] = (),
 ) -> list[str]:
     """Return deterministic fact-lint findings for files below ``root``."""
     findings: list[str] = []
@@ -116,6 +243,7 @@ def lint_documents(
         if not DATE_STAMP.search(first_five_lines):
             findings.append(f"{relative_path}: missing date stamp in first 5 lines")
 
+    findings.extend(lint_canonical_documents(root, canonical_docs, exclude_globs))
     return findings
 
 
@@ -128,6 +256,12 @@ def parse_args() -> argparse.Namespace:
         default="",
         help="comma-separated file globs to skip",
     )
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=ROOT,
+        help="repository root to lint (default: this script's repository)",
+    )
     return parser.parse_args()
 
 
@@ -136,7 +270,11 @@ def main() -> int:
     exclude_globs = tuple(
         pattern.strip() for pattern in args.exclude.split(",") if pattern.strip()
     )
-    findings = lint_documents(ROOT, exclude_globs=exclude_globs)
+    findings = lint_documents(
+        args.root,
+        exclude_globs=exclude_globs,
+        canonical_docs=CANONICAL_DOCS,
+    )
     for finding in findings:
         print(finding)
     return 1 if findings else 0
