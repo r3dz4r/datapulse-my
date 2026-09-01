@@ -18,14 +18,24 @@ EXPECTED_NAMESPACE = "http://www.w3.org/2000/svg"
 
 def tracked_svgs(root: Path) -> list[Path]:
     result = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "--", "*.svg"],
+        ["git", "-C", str(root), "ls-files", "-z", "--", "*.svg"],
         capture_output=True,
         text=True,
         check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(f"unable to list tracked SVG files: {result.stderr.strip()}")
-    return [root / relative_path for relative_path in result.stdout.splitlines() if relative_path]
+    paths: list[Path] = []
+    for raw in result.stdout.split("\x00"):
+        relative_path = raw.strip()
+        if not relative_path:
+            continue
+        # Test fixtures intentionally exercise the verifier's failure modes;
+        # don't let them poison the live surface scan.
+        if relative_path.startswith("scripts/tests/fixtures/"):
+            continue
+        paths.append(root / relative_path)
+    return paths
 
 
 def verify_svg_namespace(root: Path) -> list[str]:
