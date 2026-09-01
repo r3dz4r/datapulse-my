@@ -1,0 +1,67 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "verify_dataset",
+    "verify_dataset.dataset_id",
+    "verify_dataset.include_proof_steps"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Verify one dataset before trust in a single read-only call. Returns dataset metadata, the published health and evidence rows, and a fail-closed Sigstore per-dataset receipt verification result with artifact references. Use verify_dataset('fuelprice') before relying on a dataset claim.",
+  "displayName": "verify_dataset",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:verify_dataset",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "dataset_id": {
+        "description": "Canonical dataset identifier to verify before trust, e.g. 'fuelprice'.",
+        "examples": [
+          "fuelprice"
+        ],
+        "minLength": 1,
+        "type": "string"
+      },
+      "include_proof_steps": {
+        "default": false,
+        "description": "Include bounded Cosign verifier output for audit steps, e.g. false.",
+        "examples": [
+          false,
+          true
+        ],
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "dataset_id"
+    ],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "evidence",
+    "malaysia",
+    "read-only",
+    "trust-layer",
+    "verification"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

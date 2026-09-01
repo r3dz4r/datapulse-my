@@ -1,0 +1,58 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "find_recovering",
+    "find_recovering.limit"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Return datasets whose published freshness trend is recovering, with the fastest staleness reductions first. Includes pipeline-computed trend and publish-reliability evidence.",
+  "displayName": "find_recovering",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:find_recovering",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "limit": {
+        "default": 50,
+        "description": "Maximum ranked recovering datasets to return; integer from 1 to 200, e.g. 50.",
+        "examples": [
+          10,
+          50
+        ],
+        "maximum": 200,
+        "minimum": 1,
+        "type": "integer"
+      }
+    },
+    "required": [],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "freshness",
+    "malaysia",
+    "read-only",
+    "trends",
+    "trust-layer"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

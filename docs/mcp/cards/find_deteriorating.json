@@ -1,0 +1,77 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "find_deteriorating",
+    "find_deteriorating.limit",
+    "find_deteriorating.min_anomaly_rate"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Return datasets whose published freshness trend is deteriorating, ranked by staleness slope. Optionally require a minimum historical anomaly rate; includes pipeline-computed trend and reliability evidence so agents do not recompute it.",
+  "displayName": "find_deteriorating",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:find_deteriorating",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "limit": {
+        "default": 50,
+        "description": "Maximum ranked deteriorating datasets to return; integer from 1 to 200, e.g. 50.",
+        "examples": [
+          10,
+          50
+        ],
+        "maximum": 200,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "min_anomaly_rate": {
+        "anyOf": [
+          {
+            "maximum": 100,
+            "minimum": 0,
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional minimum percent of anomaly-evaluable history days, e.g. 25.0.",
+        "examples": [
+          25.0,
+          50.0
+        ]
+      }
+    },
+    "required": [],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "freshness",
+    "malaysia",
+    "read-only",
+    "trends",
+    "trust-layer"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

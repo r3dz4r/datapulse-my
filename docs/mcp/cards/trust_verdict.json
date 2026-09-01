@@ -1,0 +1,57 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "trust_verdict",
+    "trust_verdict.dataset_id"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Return published attestation facts, the unsigned methodology-versioned trust score, numeric components, and component_availability reasons, plus existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately.",
+  "displayName": "trust_verdict",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:trust_verdict",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "dataset_id": {
+        "description": "Canonical dataset identifier to aggregate, e.g. 'fuelprice'.",
+        "examples": [
+          "fuelprice"
+        ],
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "required": [
+      "dataset_id"
+    ],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "evidence",
+    "malaysia",
+    "read-only",
+    "trust",
+    "verification"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

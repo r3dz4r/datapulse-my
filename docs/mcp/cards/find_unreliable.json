@@ -1,0 +1,68 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "find_unreliable",
+    "find_unreliable.at_or_below_grade",
+    "find_unreliable.limit"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Return datasets whose evaluated publish-reliability grade is at or below a threshold (the unreliable ones), with the worst grades and lowest on-time percentages first. Reliability measures timeliness of successful freshness observations, not uptime; sample days are included so agents can judge evidence depth.",
+  "displayName": "find_unreliable",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:find_unreliable",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "at_or_below_grade": {
+        "default": "C",
+        "description": "Inclusive reliability threshold; e.g. 'C' returns grades C, D, and F.",
+        "examples": [
+          "C",
+          "F"
+        ],
+        "type": "string"
+      },
+      "limit": {
+        "default": 50,
+        "description": "Maximum ranked unreliable datasets to return; integer from 1 to 200, e.g. 50.",
+        "examples": [
+          10,
+          50
+        ],
+        "maximum": 200,
+        "minimum": 1,
+        "type": "integer"
+      }
+    },
+    "required": [],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "malaysia",
+    "read-only",
+    "reliability",
+    "risk",
+    "trust-layer"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

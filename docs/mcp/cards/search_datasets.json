@@ -1,0 +1,100 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "search_datasets",
+    "search_datasets.licence",
+    "search_datasets.limit",
+    "search_datasets.query",
+    "search_datasets.source"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Search DataPulse MY's 389 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence.",
+  "displayName": "search_datasets",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:search_datasets",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "licence": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional exact licence name or supported alias, e.g. 'CC BY 4.0'.",
+        "examples": [
+          "CC BY 4.0",
+          "Open Government Licence (Malaysia)"
+        ]
+      },
+      "limit": {
+        "default": 10,
+        "description": "Maximum ranked matches to return; integer from 1 to 50, e.g. 10.",
+        "maximum": 50,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "query": {
+        "description": "Free-text search terms; natural language is allowed, e.g. 'inflation cpi'.",
+        "examples": [
+          "inflation cpi"
+        ],
+        "minLength": 1,
+        "type": "string"
+      },
+      "source": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional case-insensitive source-name substring, e.g. 'OpenDOSM'.",
+        "examples": [
+          "OpenDOSM",
+          "data.gov.my",
+          "MET Malaysia"
+        ]
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "discovery",
+    "malaysia",
+    "public-data",
+    "read-only",
+    "trust-layer"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

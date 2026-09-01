@@ -1,0 +1,59 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "find_by_licence",
+    "find_by_licence.licence"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Return all datasets with the given licence, summarised. Use to enumerate what's available under a specific licence for compliance/reuse scoping.",
+  "displayName": "find_by_licence",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:find_by_licence",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "licence": {
+        "description": "Exact licence name or supported alias, e.g. 'Creative Commons Attribution 4.0'.",
+        "examples": [
+          "Creative Commons Attribution 4.0",
+          "CC BY 4.0",
+          "OGL"
+        ],
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "required": [
+      "licence"
+    ],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "compliance",
+    "discovery",
+    "licence",
+    "malaysia",
+    "read-only"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

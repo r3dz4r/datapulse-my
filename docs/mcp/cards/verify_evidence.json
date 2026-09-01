@@ -1,0 +1,57 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "verify_evidence",
+    "verify_evidence.dataset_id"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Perform a rate-limited live streamed GET for one direct-access dataset and compare transport receipts with the latest published evidence, e.g. verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints remain pipeline-only and are explicitly reported as unverified; results are ephemeral and never update health artifacts. Returns a dict with transport receipt fields and a `verdict` for downstream trust checks without re-fetching.",
+  "displayName": "verify_evidence",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:verify_evidence",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "dataset_id": {
+        "description": "Canonical direct-access dataset identifier to re-fetch, e.g. 'fuelprice'.",
+        "examples": [
+          "fuelprice"
+        ],
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "required": [
+      "dataset_id"
+    ],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "evidence",
+    "malaysia",
+    "read-only",
+    "transport",
+    "verification"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

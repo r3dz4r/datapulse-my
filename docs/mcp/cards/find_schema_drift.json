@@ -1,0 +1,70 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "find_schema_drift",
+    "find_schema_drift.limit",
+    "find_schema_drift.min_change_count"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Return datasets with published structural or record-count drift evidence, ranked with structural changes first. Optionally require a minimum number of structural transitions; includes pipeline-computed evidence so agents do not infer drift from freshness alone.",
+  "displayName": "find_schema_drift",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:find_schema_drift",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "limit": {
+        "default": 50,
+        "description": "Maximum ranked drift results to return; integer from 1 to 200, e.g. 50.",
+        "examples": [
+          10,
+          50
+        ],
+        "maximum": 200,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "min_change_count": {
+        "default": 0,
+        "description": "Minimum structural fingerprint or column-count transitions; integer from 0 to 100, e.g. 1.",
+        "examples": [
+          0,
+          1
+        ],
+        "maximum": 100,
+        "minimum": 0,
+        "type": "integer"
+      }
+    },
+    "required": [],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "malaysia",
+    "read-only",
+    "schema",
+    "trust-layer",
+    "validation"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

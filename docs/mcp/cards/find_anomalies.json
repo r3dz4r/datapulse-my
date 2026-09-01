@@ -1,0 +1,92 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "find_anomalies",
+    "find_anomalies.limit",
+    "find_anomalies.min_reliability",
+    "find_anomalies.mode"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Return datasets flagged by the latest published anomaly detection (anomalies), ranked by how far the observed update interval exceeds its threshold. Optionally require a minimum publish-reliability grade; includes pipeline-computed anomaly and reliability evidence so agents do not recompute it.",
+  "displayName": "find_anomalies",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:find_anomalies",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "limit": {
+        "default": 50,
+        "description": "Maximum ranked anomalies to return; integer from 1 to 200, e.g. 50.",
+        "examples": [
+          10,
+          50
+        ],
+        "maximum": 200,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "min_reliability": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional minimum publish-reliability grade; e.g. 'C' keeps A, B, and C and excludes insufficient data.",
+        "examples": [
+          "A",
+          "C"
+        ]
+      },
+      "mode": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional exact detection mode; e.g. 'rolling_14d' or 'cadence_fallback'.",
+        "examples": [
+          "rolling_14d",
+          "cadence_fallback"
+        ]
+      }
+    },
+    "required": [],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "anomalies",
+    "freshness",
+    "malaysia",
+    "read-only",
+    "trust-layer"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

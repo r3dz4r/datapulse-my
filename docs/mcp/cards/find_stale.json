@@ -1,0 +1,57 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "find_stale",
+    "find_stale.max_age_hours"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Return datasets whose status is aging, stale, or degraded, plus datasets missing from the latest health snapshot. Use when an agent needs to know which data has a freshness or schema-validity risk.",
+  "displayName": "find_stale",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:find_stale",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "max_age_hours": {
+        "default": 24,
+        "description": "Maximum acceptable age of the latest health check in whole hours; non-negative integer, e.g. 72.",
+        "examples": [
+          24,
+          72
+        ],
+        "minimum": 0,
+        "type": "integer"
+      }
+    },
+    "required": [],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "freshness",
+    "malaysia",
+    "read-only",
+    "risk",
+    "trust-layer"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

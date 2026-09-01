@@ -1,0 +1,75 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "usage_summary",
+    "usage_summary.buyer_id",
+    "usage_summary.since",
+    "usage_summary.until"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "description": "Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range.",
+  "displayName": "usage_summary",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:usage_summary",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "buyer_id": {
+        "description": "Buyer identifier, e.g. 'pro-default' or 'anonymous'.",
+        "examples": [
+          "pro-default"
+        ],
+        "minLength": 1,
+        "type": "string"
+      },
+      "since": {
+        "description": "Inclusive ISO start date YYYY-MM-DD, e.g. '2026-08-01'.",
+        "examples": [
+          "2026-08-01"
+        ],
+        "type": "string"
+      },
+      "until": {
+        "description": "Inclusive ISO end date YYYY-MM-DD, e.g. '2026-08-07'.",
+        "examples": [
+          "2026-08-07"
+        ],
+        "type": "string"
+      }
+    },
+    "required": [
+      "buyer_id",
+      "since",
+      "until"
+    ],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "d03e6ee85cf873804f483fab48d264aff7719990",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "audit",
+    "malaysia",
+    "read-only",
+    "summary",
+    "usage"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

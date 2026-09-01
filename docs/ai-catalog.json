@@ -1,0 +1,437 @@
+{
+  "ard_spec_version": "0.9",
+  "contract_version": "1.0.0",
+  "dataset_count": 389,
+  "endpoint": {
+    "auth_required": false,
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "entries": [
+    {
+      "capabilities": [
+        "check_reconciliation",
+        "check_reconciliation.dataset_name"
+      ],
+      "description": "Return the published cross-source reconciliation group for a dataset name or id, including per-member counts, dates, statuses, tolerances, and contextual deltas. A discrepancy requires human review and does not prove either source is wrong.",
+      "displayName": "check_reconciliation",
+      "identifier": "urn:air:data-pulse.my:mcp:check_reconciliation",
+      "representativeQueries": [
+        "check_reconciliation(dataset_name='interestrates')"
+      ],
+      "tags": [
+        "malaysia",
+        "read-only",
+        "reconciliation",
+        "trust-layer",
+        "validation"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/check_reconciliation.json"
+    },
+    {
+      "capabilities": [
+        "find_anomalies",
+        "find_anomalies.limit",
+        "find_anomalies.min_reliability",
+        "find_anomalies.mode"
+      ],
+      "description": "Return datasets flagged by the latest published anomaly detection (anomalies), ranked by how far the observed update interval exceeds its threshold. Optionally require a minimum publish-reliability grade; includes pipeline-computed anomaly and reliability evidence so agents do not recompute it.",
+      "displayName": "find_anomalies",
+      "identifier": "urn:air:data-pulse.my:mcp:find_anomalies",
+      "representativeQueries": [
+        "find_anomalies(limit=10)",
+        "find_anomalies(min_reliability='A')",
+        "find_anomalies(mode='rolling_14d')"
+      ],
+      "tags": [
+        "anomalies",
+        "freshness",
+        "malaysia",
+        "read-only",
+        "trust-layer"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/find_anomalies.json"
+    },
+    {
+      "capabilities": [
+        "find_by_licence",
+        "find_by_licence.licence"
+      ],
+      "description": "Return all datasets with the given licence, summarised. Use to enumerate what's available under a specific licence for compliance/reuse scoping.",
+      "displayName": "find_by_licence",
+      "identifier": "urn:air:data-pulse.my:mcp:find_by_licence",
+      "representativeQueries": [
+        "find_by_licence(licence='Creative Commons Attribution 4.0')"
+      ],
+      "tags": [
+        "compliance",
+        "discovery",
+        "licence",
+        "malaysia",
+        "read-only"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/find_by_licence.json"
+    },
+    {
+      "capabilities": [
+        "find_deteriorating",
+        "find_deteriorating.limit",
+        "find_deteriorating.min_anomaly_rate"
+      ],
+      "description": "Return datasets whose published freshness trend is deteriorating, ranked by staleness slope. Optionally require a minimum historical anomaly rate; includes pipeline-computed trend and reliability evidence so agents do not recompute it.",
+      "displayName": "find_deteriorating",
+      "identifier": "urn:air:data-pulse.my:mcp:find_deteriorating",
+      "representativeQueries": [
+        "find_deteriorating(limit=10)",
+        "find_deteriorating(min_anomaly_rate=25.0)"
+      ],
+      "tags": [
+        "freshness",
+        "malaysia",
+        "read-only",
+        "trends",
+        "trust-layer"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/find_deteriorating.json"
+    },
+    {
+      "capabilities": [
+        "find_recovering",
+        "find_recovering.limit"
+      ],
+      "description": "Return datasets whose published freshness trend is recovering, with the fastest staleness reductions first. Includes pipeline-computed trend and publish-reliability evidence.",
+      "displayName": "find_recovering",
+      "identifier": "urn:air:data-pulse.my:mcp:find_recovering",
+      "representativeQueries": [
+        "find_recovering(limit=10)"
+      ],
+      "tags": [
+        "freshness",
+        "malaysia",
+        "read-only",
+        "trends",
+        "trust-layer"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/find_recovering.json"
+    },
+    {
+      "capabilities": [
+        "find_schema_drift",
+        "find_schema_drift.limit",
+        "find_schema_drift.min_change_count"
+      ],
+      "description": "Return datasets with published structural or record-count drift evidence, ranked with structural changes first. Optionally require a minimum number of structural transitions; includes pipeline-computed evidence so agents do not infer drift from freshness alone.",
+      "displayName": "find_schema_drift",
+      "identifier": "urn:air:data-pulse.my:mcp:find_schema_drift",
+      "representativeQueries": [
+        "find_schema_drift(limit=10)",
+        "find_schema_drift(min_change_count=0)"
+      ],
+      "tags": [
+        "malaysia",
+        "read-only",
+        "schema",
+        "trust-layer",
+        "validation"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/find_schema_drift.json"
+    },
+    {
+      "capabilities": [
+        "find_stale",
+        "find_stale.max_age_hours"
+      ],
+      "description": "Return datasets whose status is aging, stale, or degraded, plus datasets missing from the latest health snapshot. Use when an agent needs to know which data has a freshness or schema-validity risk.",
+      "displayName": "find_stale",
+      "identifier": "urn:air:data-pulse.my:mcp:find_stale",
+      "representativeQueries": [
+        "find_stale(max_age_hours=24)"
+      ],
+      "tags": [
+        "freshness",
+        "malaysia",
+        "read-only",
+        "risk",
+        "trust-layer"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/find_stale.json"
+    },
+    {
+      "capabilities": [
+        "find_unreliable",
+        "find_unreliable.at_or_below_grade",
+        "find_unreliable.limit"
+      ],
+      "description": "Return datasets whose evaluated publish-reliability grade is at or below a threshold (the unreliable ones), with the worst grades and lowest on-time percentages first. Reliability measures timeliness of successful freshness observations, not uptime; sample days are included so agents can judge evidence depth.",
+      "displayName": "find_unreliable",
+      "identifier": "urn:air:data-pulse.my:mcp:find_unreliable",
+      "representativeQueries": [
+        "find_unreliable(at_or_below_grade='C')",
+        "find_unreliable(limit=10)"
+      ],
+      "tags": [
+        "malaysia",
+        "read-only",
+        "reliability",
+        "risk",
+        "trust-layer"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/find_unreliable.json"
+    },
+    {
+      "capabilities": [
+        "get_dataset",
+        "get_dataset.dataset_id"
+      ],
+      "description": "Return full detail for one dataset id, including its latest health status and last-verified timestamp, content_freshness_date, and freshness_signal_source (last_modified, content_parse, or none). Use to fetch the provenance/citation metadata for a dataset found via search_datasets and distinguish unknown-freshness from proven stale data.",
+      "displayName": "get_dataset",
+      "identifier": "urn:air:data-pulse.my:mcp:get_dataset",
+      "representativeQueries": [
+        "get_dataset(dataset_id='dosm_cpi_state')"
+      ],
+      "tags": [
+        "dataset",
+        "malaysia",
+        "provenance",
+        "read-only",
+        "trust-layer"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/get_dataset.json"
+    },
+    {
+      "capabilities": [
+        "get_evidence",
+        "get_evidence.dataset_id"
+      ],
+      "description": "Return the complete pipeline-published evidence receipt for one dataset id, including probe time, transport, access dependency, freshness, record-count, shape, tolerance, status, and anomaly fields. Use for a deep audit, e.g. get_evidence('fuelprice'); values are presented without MCP-side recomputation.",
+      "displayName": "get_evidence",
+      "identifier": "urn:air:data-pulse.my:mcp:get_evidence",
+      "representativeQueries": [
+        "get_evidence(dataset_id='fuelprice')"
+      ],
+      "tags": [
+        "evidence",
+        "malaysia",
+        "read-only",
+        "receipts",
+        "trust-layer"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/get_evidence.json"
+    },
+    {
+      "capabilities": [
+        "get_freshness_summary"
+      ],
+      "description": "Return a freshness-at-a-glance summary of the published catalogue: fresh, aging, stale, and reference counts plus the latest health check time.",
+      "displayName": "get_freshness_summary",
+      "identifier": "urn:air:data-pulse.my:mcp:get_freshness_summary",
+      "representativeQueries": [],
+      "tags": [
+        "freshness",
+        "malaysia",
+        "read-only",
+        "summary",
+        "trust-layer"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/get_freshness_summary.json"
+    },
+    {
+      "capabilities": [
+        "get_provenance",
+        "get_provenance.dataset_ids"
+      ],
+      "description": "Return citation-ready provenance metadata for the listed dataset ids, plus compact pipeline-published evidence receipts: row probe time, HTTP status, request URL, access dependency, freshness source, content date, record count, shape fingerprint, anomaly flag, and status. Use when an agent must cite data and show the evidence behind the trust claim without recomputing it.",
+      "displayName": "get_provenance",
+      "identifier": "urn:air:data-pulse.my:mcp:get_provenance",
+      "representativeQueries": [],
+      "tags": [
+        "evidence",
+        "malaysia",
+        "provenance",
+        "read-only",
+        "trust-layer"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/get_provenance.json"
+    },
+    {
+      "capabilities": [
+        "search_datasets",
+        "search_datasets.licence",
+        "search_datasets.limit",
+        "search_datasets.query",
+        "search_datasets.source"
+      ],
+      "description": "Search DataPulse MY's 389 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence.",
+      "displayName": "search_datasets",
+      "identifier": "urn:air:data-pulse.my:mcp:search_datasets",
+      "representativeQueries": [
+        "search_datasets(licence='CC BY 4.0')",
+        "search_datasets(query='inflation cpi')",
+        "search_datasets(source='OpenDOSM')"
+      ],
+      "tags": [
+        "discovery",
+        "malaysia",
+        "public-data",
+        "read-only",
+        "trust-layer"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/search_datasets.json"
+    },
+    {
+      "capabilities": [
+        "trust_verdict",
+        "trust_verdict.dataset_id"
+      ],
+      "description": "Return published attestation facts, the unsigned methodology-versioned trust score, numeric components, and component_availability reasons, plus existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately.",
+      "displayName": "trust_verdict",
+      "identifier": "urn:air:data-pulse.my:mcp:trust_verdict",
+      "representativeQueries": [
+        "trust_verdict(dataset_id='fuelprice')"
+      ],
+      "tags": [
+        "evidence",
+        "malaysia",
+        "read-only",
+        "trust",
+        "verification"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/trust_verdict.json"
+    },
+    {
+      "capabilities": [
+        "usage_summary",
+        "usage_summary.buyer_id",
+        "usage_summary.since",
+        "usage_summary.until"
+      ],
+      "description": "Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range.",
+      "displayName": "usage_summary",
+      "identifier": "urn:air:data-pulse.my:mcp:usage_summary",
+      "representativeQueries": [
+        "usage_summary(buyer_id='pro-default')",
+        "usage_summary(since='2026-08-01')",
+        "usage_summary(until='2026-08-07')"
+      ],
+      "tags": [
+        "audit",
+        "malaysia",
+        "read-only",
+        "summary",
+        "usage"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/usage_summary.json"
+    },
+    {
+      "capabilities": [
+        "verify_attestation",
+        "verify_attestation.reference",
+        "verify_attestation.replay_chain"
+      ],
+      "description": "Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence. Returns `levels.L1.signature_valid` and `levels.L2.satisfied` for signature and replay status.",
+      "displayName": "verify_attestation",
+      "identifier": "urn:air:data-pulse.my:mcp:verify_attestation",
+      "representativeQueries": [
+        "verify_attestation(reference='fuelprice')",
+        "verify_attestation(replay_chain=False)"
+      ],
+      "tags": [
+        "attestation",
+        "evidence",
+        "malaysia",
+        "read-only",
+        "verification"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/verify_attestation.json"
+    },
+    {
+      "capabilities": [
+        "verify_dataset",
+        "verify_dataset.dataset_id",
+        "verify_dataset.include_proof_steps"
+      ],
+      "description": "Verify one dataset before trust in a single read-only call. Returns dataset metadata, the published health and evidence rows, and a fail-closed Sigstore per-dataset receipt verification result with artifact references. Use verify_dataset('fuelprice') before relying on a dataset claim.",
+      "displayName": "verify_dataset",
+      "identifier": "urn:air:data-pulse.my:mcp:verify_dataset",
+      "representativeQueries": [
+        "verify_dataset(dataset_id='fuelprice')",
+        "verify_dataset(include_proof_steps=False)"
+      ],
+      "tags": [
+        "evidence",
+        "malaysia",
+        "read-only",
+        "trust-layer",
+        "verification"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/verify_dataset.json"
+    },
+    {
+      "capabilities": [
+        "verify_evidence",
+        "verify_evidence.dataset_id"
+      ],
+      "description": "Perform a rate-limited live streamed GET for one direct-access dataset and compare transport receipts with the latest published evidence, e.g. verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints remain pipeline-only and are explicitly reported as unverified; results are ephemeral and never update health artifacts. Returns a dict with transport receipt fields and a `verdict` for downstream trust checks without re-fetching.",
+      "displayName": "verify_evidence",
+      "identifier": "urn:air:data-pulse.my:mcp:verify_evidence",
+      "representativeQueries": [
+        "verify_evidence(dataset_id='fuelprice')"
+      ],
+      "tags": [
+        "evidence",
+        "malaysia",
+        "read-only",
+        "transport",
+        "verification"
+      ],
+      "type": "application/mcp-server-card+json",
+      "url": "https://www.data-pulse.my/mcp/cards/verify_evidence.json"
+    }
+  ],
+  "host": {
+    "displayName": "DataPulse MY",
+    "homepage": "https://www.data-pulse.my/",
+    "repository": "https://github.com/r3dz4r/datapulse-my"
+  },
+  "license": "MIT (catalog); dataset licences as declared per dataset",
+  "publisher": {
+    "contact_email": "ops@data-pulse.my",
+    "name": "DataPulse MY"
+  },
+  "specVersion": "1.0",
+  "taxonomy": [
+    "fresh",
+    "aging",
+    "stale",
+    "discontinued",
+    "degraded",
+    "browser-dependent",
+    "unreachable",
+    "unknown",
+    "unknown-freshness",
+    "reference"
+  ],
+  "trust": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}
