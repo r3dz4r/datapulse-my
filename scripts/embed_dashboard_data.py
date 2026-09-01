@@ -269,8 +269,8 @@ def _render_homepage(root: Path, previous_html: str) -> str:
     filter_attributes = {
         "status": "status", "publisher_category": "publisherCategory", "access_method": "accessMethod", "recency": "recency",
     }
-    filters = " ".join(
-        f'<label for="register-filter-{item}">{gen_register_page.html.escape(item.replace("_", " ").title())}</label><select id="register-filter-{item}" data-register-filter="{filter_attributes[item]}" aria-label="Filter by {gen_register_page.html.escape(item.replace("_", " "))}"><option value="">All {gen_register_page.html.escape(item.replace("_", " "))}</option></select>'
+    filters = "\n        ".join(
+        f'<label class="register-chip" data-register-chip><span class="register-chip-label">{gen_register_page.html.escape(item.replace("_", " ").title())}</span><select id="register-filter-{item}" data-register-filter="{filter_attributes[item]}" aria-label="Filter by {gen_register_page.html.escape(item.replace("_", " "))}"><option value="">All {gen_register_page.html.escape(item.replace("_", " "))}</option></select><span class="register-chip-caret" aria-hidden="true"></span></label>'
         for item in config["filters"]
     )
     legend = "".join(

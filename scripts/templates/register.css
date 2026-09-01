@@ -44,14 +44,23 @@ h3 { font-size: 1rem; line-height: 1.25; }
 .register-intro-note { max-width: 18rem; margin: 0; line-height: 1.45; }
 
 .register-controls, .register-legend, .register-list { margin-top: 0.9rem; border: 1px solid var(--register-border); background: var(--register-panel); }
-.register-controls { display: grid; grid-template-columns: minmax(14rem, 1fr) auto; gap: 1rem; align-items: end; padding: 1rem 1.25rem; }
-.register-control-label { display: block; margin-bottom: 0.35rem; color: var(--register-muted); font-size: 0.8rem; font-weight: 650; }
-.register-search { width: 100%; min-height: 2.75rem; padding: 0.65rem 0.75rem; border: 1px solid var(--register-border); border-radius: 0; color: var(--register-text); background: #0b1117; font: inherit; }
+.register-controls { display: grid; gap: 0.75rem; padding: 1rem 1.25rem; }
+.register-search-row { position: relative; border-bottom: 1px solid var(--register-border); }
+.register-search-row::after { position: absolute; right: 0.25rem; top: 50%; color: var(--register-muted); content: "/"; font: 0.9rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; pointer-events: none; transform: translateY(-50%); }
+.register-control-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.register-search { width: 100%; min-height: 2.75rem; padding: 0.65rem 1.5rem 0.65rem 0; border: 0; border-radius: 0; color: var(--register-text); background: transparent; font: 0.85rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .register-search::placeholder { color: #78909f; }
 .register-filter-list { display: flex; flex-wrap: wrap; gap: 0.45rem; }
-.register-filter-list label { min-height: 2.75rem; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.65rem; border: 1px solid var(--register-border); color: var(--register-muted); font-size: 0.82rem; text-transform: capitalize; }
-.register-filter-list input { accent-color: var(--register-accent); inline-size: 1rem; block-size: 1rem; }
-.register-filter-list label:has(input:checked) { border-color: var(--register-accent); color: var(--register-text); background: #12313e; }
+.register-chip { position: relative; min-height: 2.25rem; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.65rem; border: 1px solid var(--register-border); border-radius: 4px; color: var(--register-muted); background: var(--register-canvas); cursor: pointer; }
+.register-chip-label { font: 0.72rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.04em; text-transform: uppercase; }
+.register-chip select { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.register-chip-caret { width: 0; height: 0; border-top: 0.3rem solid var(--register-muted); border-inline: 0.25rem solid transparent; pointer-events: none; }
+.register-chip:focus-within { border-color: var(--register-accent-strong); }
+.register-chip:has(select option:not(:first-child):checked) { border-color: var(--register-accent); color: var(--register-text); }
+.register-chip:has(select option:not(:first-child):checked)::after { position: absolute; inset: 0.2rem auto 0.2rem 0.2rem; width: 2px; background: var(--register-accent); content: ""; pointer-events: none; }
+.register-controls-meta { display: flex; align-items: center; gap: 0.75rem; min-height: 1.5rem; }
+.register-clear { padding: 0; border: 0; color: var(--register-accent-strong); background: transparent; font: inherit; font-size: 0.78rem; text-decoration: underline; cursor: pointer; }
+.register-clear:hover { color: #ffffff; }
 
 .register-legend { display: flex; gap: 1rem; align-items: center; padding: 0.65rem 1.25rem; }
 .register-legend h2 { white-space: nowrap; }

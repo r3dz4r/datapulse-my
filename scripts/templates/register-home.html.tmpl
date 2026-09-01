@@ -41,11 +41,16 @@
       <!-- END changelog-strip -->
     </aside>
     <section class="register-controls" aria-labelledby="controls-title">
-      <div>
       <h2 id="controls-title">Search and filter</h2>
-      <label class="register-control-label" for="register-search">Search datasets</label><input class="register-search" id="register-search" type="search" placeholder="Search this register" data-register-search></div>
+      <div class="register-search-row">
+        <label class="register-control-label" for="register-search">Search datasets</label>
+        <input class="register-search" id="register-search" type="search" placeholder="Search this register" data-register-search autocomplete="off">
+      </div>
       <div class="register-filter-list" data-register-filters>{{filter_controls}}</div>
-      <button type="button" data-register-reset>Clear search and filters</button>
+      <div class="register-controls-meta">
+        <span class="register-count" data-register-count>{{record_count}} of {{record_count}} datasets shown.</span>
+        <button type="button" class="register-clear" data-register-clear data-register-reset hidden>Reset filters</button>
+      </div>
     </section>
     <section class="register-legend" aria-labelledby="legend-title">
       <h2 id="legend-title">Decision posture legend</h2>
@@ -57,7 +62,7 @@
     </section>
     <section class="register-list" aria-labelledby="register-title">
       <div class="register-list-header"><h2 id="register-title">All current manifest datasets</h2>
-      <p class="register-count" data-register-count>{{record_count}} datasets rendered from the manifest.</p></div>
+      </div>
       <p class="register-empty" data-register-empty role="status" hidden>No datasets match these filters. Clear the search or filters to see all datasets.</p>
       <div class="register-rows">{{rows}}</div>
     </section>
@@ -70,7 +75,7 @@
       const filters = [...document.querySelectorAll('[data-register-filter]')];
       const count = document.querySelector('[data-register-count]');
       const empty = document.querySelector('[data-register-empty]');
-      const reset = document.querySelector('[data-register-reset]');
+      const reset = document.querySelector('[data-register-clear]');
       if (!search || !count || !empty) return;
       const normalise = value => String(value || '').trim().toLocaleLowerCase();
       filters.forEach(filter => {
@@ -94,6 +99,7 @@
         });
         count.textContent = `${visible.length} of ${rows.length} datasets shown.`;
         empty.hidden = visible.length !== 0;
+        reset.hidden = !query && filters.every(filter => !filter.value);
       };
       search.addEventListener('input', apply);
       filters.forEach(filter => filter.addEventListener('change', apply));
