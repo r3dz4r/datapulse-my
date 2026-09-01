@@ -13,6 +13,11 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+try:
+    from scripts.verify_svg_namespace import verify_svg_namespace
+except ModuleNotFoundError:  # direct invocation places scripts/, not the repo root, on sys.path
+    from verify_svg_namespace import verify_svg_namespace
+
 
 def _load_json(root: Path, relative_path: str, errors: list[str]) -> Any | None:
     path = root / relative_path
@@ -542,6 +547,9 @@ def verify_repository_contract(root: Path) -> list[str]:
         _verify_scoped_contract(root, scope, manifest_id_set, errors)
     else:
         errors.append("scripts/contract-scope.json:<root>: expected object")
+
+    if (root / ".git").exists():
+        errors.extend(verify_svg_namespace(root))
 
     return errors
 
