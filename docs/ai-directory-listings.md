@@ -87,7 +87,7 @@ The original 2026-08-18 aiecosystem payload is retained above as a historical su
 - [x] Confirm the official MCP Registry has one active latest record and four deprecated historical records.
 - [x] Mark Glama metadata as stale/unhealthy external metadata.
 - [x] Remove personal submission contact detail from this public document.
-- [x] Remove reusable 16-tool and count-heavy current claims.
+- [x] Remove reusable tool-count and count-heavy current claims (done 2026-09-02; a stale count lived here before that).
 - [ ] Reconcile served `agent.json` with served `mcp.json` before any future count-based submission copy.
 - [ ] Decide separately whether to submit DataPulse to assistants.my after the machine-surface parity gate passes.
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 from pathlib import Path
 import sys
 
@@ -28,6 +29,27 @@ def lint_fixture(
         historical_docs = ("historical.md",)
 
     return lint_documents(tmp_path, current_docs, historical_docs)
+
+
+def write_count_surfaces(
+    tmp_path: Path, *, tool_count: int = 18, dataset_count: int = 389
+) -> None:
+    """Write minimal canonical machine surfaces for count-claim tests."""
+    (tmp_path / "mcp.json").write_text(
+        json.dumps({"tools": [{} for _ in range(tool_count)]}), encoding="utf-8"
+    )
+    (tmp_path / "datapulse.json").write_text(
+        json.dumps({"datasets": [{} for _ in range(dataset_count)]}),
+        encoding="utf-8",
+    )
+
+
+def lint_count_fixture(tmp_path: Path, relative_path: str, text: str) -> list[str]:
+    """Lint one file against the count surfaces written by a test."""
+    path = tmp_path / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return lint_documents(tmp_path, (relative_path,), ())
 
 
 def test_current_doc_with_stale_economy_count_is_flagged(tmp_path: Path) -> None:
@@ -80,6 +102,94 @@ def test_clean_current_doc_passes(tmp_path: Path) -> None:
     assert errors == []
 
 
+def test_stale_tool_count_fails(tmp_path: Path) -> None:
+    write_count_surfaces(tmp_path)
+
+    errors = lint_count_fixture(tmp_path, "README.md", "The server has 16 tools.\n")
+
+    assert errors == [
+        "README.md:1: claims 16 tools; canonical mcp.json has 18"
+    ]
+
+
+def test_current_tool_count_passes(tmp_path: Path) -> None:
+    write_count_surfaces(tmp_path)
+
+    errors = lint_count_fixture(tmp_path, "README.md", "The server has 18 tools.\n")
+
+    assert errors == []
+
+
+def test_hyphenated_tool_count_flagged(tmp_path: Path) -> None:
+    write_count_surfaces(tmp_path)
+
+    errors = lint_count_fixture(tmp_path, "README.md", "The 16-tool surface.\n")
+
+    assert errors == [
+        "README.md:1: claims 16 tools; canonical mcp.json has 18"
+    ]
+
+
+def test_stale_dataset_count_fails(tmp_path: Path) -> None:
+    write_count_surfaces(tmp_path)
+
+    errors = lint_count_fixture(tmp_path, "README.md", "The registry has 388 datasets.\n")
+
+    assert errors == [
+        "README.md:1: claims 388 datasets; canonical datapulse.json has 389"
+    ]
+
+
+def test_current_dataset_count_passes(tmp_path: Path) -> None:
+    write_count_surfaces(tmp_path)
+
+    errors = lint_count_fixture(tmp_path, "README.md", "The registry has 389 datasets.\n")
+
+    assert errors == []
+
+
+def test_notes_directory_exempt(tmp_path: Path) -> None:
+    write_count_surfaces(tmp_path)
+
+    errors = lint_count_fixture(
+        tmp_path, "notes/2026-09-01-x.md", "The server had 16 tools.\n"
+    )
+
+    assert errors == []
+
+
+def test_historical_audit_document_exempt(tmp_path: Path) -> None:
+    write_count_surfaces(tmp_path)
+
+    errors = lint_count_fixture(
+        tmp_path, "docs/AUDIT-2026-09-01.md", "The server had 16 tools.\n"
+    )
+
+    assert errors == []
+
+
+def test_generated_block_exempt(tmp_path: Path) -> None:
+    write_count_surfaces(tmp_path)
+
+    errors = lint_count_fixture(
+        tmp_path,
+        "README.md",
+        "<!-- BEGIN mcp-tools -->\nThe server has 16 tools.\n<!-- END mcp-tools -->\n",
+    )
+
+    assert errors == []
+
+
+def test_missing_mcp_json_reports_and_skips(tmp_path: Path) -> None:
+    (tmp_path / "datapulse.json").write_text(
+        '{"datasets": [{}]}\n', encoding="utf-8"
+    )
+
+    errors = lint_count_fixture(tmp_path, "README.md", "The server has 16 tools.\n")
+
+    assert errors == ["mcp.json: no tools array"]
+
+
 def canonical_fixture(tmp_path: Path, quickstart_text: str = "# Quickstart\n") -> list[str]:
     """Create the canonical public-document set plus a minimal manifest."""
     for relative_path in CANONICAL_DOCS:
@@ -92,6 +202,7 @@ def canonical_fixture(tmp_path: Path, quickstart_text: str = "# Quickstart\n") -
     (tmp_path / "datapulse.json").write_text(
         '{"datasets": [{"id": "fuelprice"}]}\n', encoding="utf-8"
     )
+    (tmp_path / "mcp.json").write_text('{"tools": [{}]}\n', encoding="utf-8")
     return lint_documents(tmp_path, (), (), canonical_docs=CANONICAL_DOCS)
 
 

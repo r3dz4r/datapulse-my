@@ -53,6 +53,16 @@ CANONICAL_DOCS = (
     "docs/integration-patterns.md",
 )
 
+AGENT_DOCS = (
+    "AGENTS.md",
+    "mcp/AGENTS.md",
+    "docs/AGENTS.md",
+    "scripts/AGENTS.md",
+    "docs/trust-layer-notebook.AGENTS.md",
+)
+
+COUNT_SCOPE = frozenset((*CURRENT_DOCS, *CANONICAL_DOCS, *AGENT_DOCS))
+
 LEGACY_MCP_NAMES = (
     "list_datasets",
     "get_health_snapshot",
@@ -102,6 +112,8 @@ DATASET_ID_ARGUMENT = re.compile(
     r"\bdataset_id\s*[:=]\s*[\"`]([a-z0-9][a-z0-9_-]*)[\"`]"
 )
 DATASET_MARKDOWN_PATH = re.compile(r"(?:^|/)data/([a-z0-9][a-z0-9_-]*)\.md$")
+TOOL_COUNT_MENTION = re.compile(r"(?<![\d.])(\d{1,3})[ -]tools?\b")
+DATASET_COUNT_MENTION = re.compile(r"(?<![\d.])(\d{1,4})[ -]datasets?\b")
 
 
 def is_excluded(path: str, exclude_globs: Sequence[str]) -> bool:
@@ -132,6 +144,57 @@ def manifest_dataset_ids(root: Path) -> set[str] | None:
         for dataset in payload.get("datasets", [])
         if isinstance(dataset, dict) and isinstance(dataset.get("id"), str)
     }
+
+
+def canonical_array_count(root: Path, filename: str, key: str) -> int | None:
+    """Return a canonical JSON array's count, or ``None`` when it is absent/empty."""
+    path = root / filename
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    values = payload.get(key) if isinstance(payload, dict) else None
+    return len(values) if isinstance(values, list) and values else None
+
+
+def lint_count_claims(
+    text: str,
+    relative_path: str,
+    tool_count: int | None,
+    dataset_count: int | None,
+) -> list[str]:
+    """Return stale canonical tool and dataset count claims in one document."""
+    findings: list[str] = []
+    in_generated_mcp_tools = False
+    for number, line in enumerate(text.splitlines(), start=1):
+        if "<!-- BEGIN mcp-tools -->" in line:
+            in_generated_mcp_tools = True
+        if not in_generated_mcp_tools:
+            lowered = line.lower()
+            canonical_jq_reference = (
+                "canonical" in lowered
+                and "jq" in lowered
+                and ("mcp.json" in lowered or "datapulse.json" in lowered)
+            )
+            if not canonical_jq_reference:
+                if tool_count is not None:
+                    for match in TOOL_COUNT_MENTION.finditer(line):
+                        claimed_count = int(match.group(1))
+                        if claimed_count != tool_count:
+                            findings.append(
+                                f"{relative_path}:{number}: claims {claimed_count} tools; "
+                                f"canonical mcp.json has {tool_count}"
+                            )
+                if dataset_count is not None:
+                    for match in DATASET_COUNT_MENTION.finditer(line):
+                        claimed_count = int(match.group(1))
+                        if claimed_count != dataset_count:
+                            findings.append(
+                                f"{relative_path}:{number}: claims {claimed_count} datasets; "
+                                f"canonical datapulse.json has {dataset_count}"
+                            )
+        if "<!-- END mcp-tools -->" in line:
+            in_generated_mcp_tools = False
+    return findings
 
 
 def lint_canonical_documents(
@@ -213,6 +276,9 @@ def lint_documents(
     """Return deterministic fact-lint findings for files below ``root``."""
     findings: list[str] = []
 
+    current_docs = tuple(current_docs)
+    canonical_docs = tuple(canonical_docs)
+
     for relative_path in current_docs:
         if is_excluded(relative_path, exclude_globs):
             continue
@@ -244,6 +310,34 @@ def lint_documents(
             findings.append(f"{relative_path}: missing date stamp in first 5 lines")
 
     findings.extend(lint_canonical_documents(root, canonical_docs, exclude_globs))
+
+    count_documents = dict.fromkeys((*current_docs, *canonical_docs, *AGENT_DOCS))
+    scoped_count_documents = tuple(
+        relative_path
+        for relative_path in count_documents
+        if relative_path in COUNT_SCOPE and not is_excluded(relative_path, exclude_globs)
+    )
+    existing_count_documents = tuple(
+        relative_path
+        for relative_path in scoped_count_documents
+        if (root / relative_path).is_file()
+    )
+    if existing_count_documents:
+        tool_count = canonical_array_count(root, "mcp.json", "tools")
+        dataset_count = canonical_array_count(root, "datapulse.json", "datasets")
+        if tool_count is None:
+            findings.append("mcp.json: no tools array")
+        if dataset_count is None:
+            findings.append("datapulse.json: no datasets array")
+        for relative_path in existing_count_documents:
+            findings.extend(
+                lint_count_claims(
+                    (root / relative_path).read_text(encoding="utf-8"),
+                    relative_path,
+                    tool_count,
+                    dataset_count,
+                )
+            )
     return findings
 
 

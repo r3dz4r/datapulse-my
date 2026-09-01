@@ -70,9 +70,9 @@ workflow change:
 3. The deployed `llms.txt` reports the live count, mentions MCP, and lists all
    advertised MCP tools.
 4. The deployed JSON-LD catalog is valid and contains one entry per health row.
-5. The deployed `mcp.json` is valid and advertises the reviewed 15-tool order
+5. The deployed `mcp.json` is valid and advertises the reviewed tool order
    (including `trust_verdict` and `verify_attestation`) and 8-concrete-resource-plus-1-template order
-   (including `datapulse://attestations`).
+   (including `datapulse://attestations`). Tool count is canonical in `mcp.json` — never hardcode it here.
 6. The deployed `health/latest.json`, `health/trends.json`, `health/drift.json`, and `health/reconciliation.json` are valid and contain the expected live health rows.
 7. `scripts/verify_agent_ready.sh` and
    `scripts/verify_release_invariants.sh` accept the public surfaces.
