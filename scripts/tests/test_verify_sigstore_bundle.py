@@ -92,6 +92,85 @@ def test_verifier_checks_dsse_payload_digest_identity_and_issuer(tmp_path: Path)
     ]
 
 
+def test_verifier_rejects_manifest_bytes_that_differ_from_signed_snapshot(tmp_path: Path) -> None:
+    health, manifest, chain_head, bundle = _bundle(tmp_path)
+    manifest.write_bytes(manifest.read_bytes() + b"\n")
+
+    with pytest.raises(BundleError, match="signed manifest digest"):
+        verify_bundle(
+            health=health,
+            manifest=manifest,
+            chain_head=chain_head,
+            source_commit=SOURCE_COMMIT,
+            bundle=bundle,
+            identity=IDENTITY,
+            issuer=ISSUER,
+        )
+
+
+def test_verifier_rejects_missing_signed_manifest_binding(tmp_path: Path) -> None:
+    health, manifest, chain_head, bundle = _bundle(tmp_path)
+    value = json.loads(bundle.read_text(encoding="utf-8"))
+    payload = json.loads(base64.b64decode(value["dsseEnvelope"]["payload"]))
+    payload["predicate"].pop("signedManifest")
+    value["dsseEnvelope"]["payload"] = base64.b64encode(
+        statement_bytes(payload)
+    ).decode("ascii")
+    bundle.write_text(json.dumps(value), encoding="utf-8")
+
+    with pytest.raises(BundleError, match="missing signed manifest binding"):
+        verify_bundle(
+            health=health,
+            manifest=manifest,
+            chain_head=chain_head,
+            source_commit=SOURCE_COMMIT,
+            bundle=bundle,
+            identity=IDENTITY,
+            issuer=ISSUER,
+        )
+
+
+@pytest.mark.parametrize(
+    ("binding_path", "replacement", "message"),
+    (
+        (("ref",), "datapulse.json", "signed manifest reference"),
+        (("digest", "sha256"), "f" * 64, "signed manifest digest"),
+    ),
+)
+def test_verifier_rejects_tampered_signed_manifest_binding(
+    tmp_path: Path,
+    binding_path: tuple[str, ...],
+    replacement: str,
+    message: str,
+) -> None:
+    health, manifest, chain_head, bundle = _bundle(tmp_path)
+    payload = json.loads(
+        base64.b64decode(
+            json.loads(bundle.read_text(encoding="utf-8"))["dsseEnvelope"]["payload"]
+        )
+    )
+    binding = payload["predicate"]["signedManifest"]
+    for key in binding_path[:-1]:
+        binding = binding[key]
+    binding[binding_path[-1]] = replacement
+    value = json.loads(bundle.read_text(encoding="utf-8"))
+    value["dsseEnvelope"]["payload"] = base64.b64encode(
+        statement_bytes(payload)
+    ).decode("ascii")
+    bundle.write_text(json.dumps(value), encoding="utf-8")
+
+    with pytest.raises(BundleError, match=message):
+        verify_bundle(
+            health=health,
+            manifest=manifest,
+            chain_head=chain_head,
+            source_commit=SOURCE_COMMIT,
+            bundle=bundle,
+            identity=IDENTITY,
+            issuer=ISSUER,
+        )
+
+
 def test_verifier_rejects_message_signature_bundle_for_dsse_contract(tmp_path: Path) -> None:
     health, manifest, chain_head, bundle = _bundle(tmp_path)
     value = json.loads(bundle.read_text(encoding="utf-8"))

@@ -157,10 +157,9 @@ jobs:
             --certificate-oidc-issuer "$SIGSTORE_ISSUER" \
             --cosign "$(command -v cosign)"
           mv "$bundle_tmp" "$publication/health.latest.sigstore.json"
-          # Pin the exact sign-time statement inputs so a later deploy-job
-          # revertify reconstructs the identical DSSE payload. release-build
-          # regenerates BOTH the workspace chain head and datapulse.json
-          # (methodology_version) between signing and reverifying.
+          # Publish the exact sign-time inputs beside the bundle. The manifest
+          # snapshot is the canonical verification input; release-build may
+          # later regenerate the top-level discovery manifest.
           cp .attestations/chain_head.json "$publication/chain_head.json"
           cp datapulse.json "$publication/datapulse.json"
 
@@ -557,13 +556,18 @@ jobs:
           sigstore_path="signatures/health.latest.sigstore.json"
           if [[ "$sigstore_signed" == "true" ]]; then
             staged_bundle="$RUNNER_TEMP/sigstore-publication/health.latest.sigstore.json"
+            staged_manifest="$RUNNER_TEMP/sigstore-publication/datapulse.json"
             test -s "$staged_bundle" || fail "verified Sigstore bundle is missing from the deploy job"
+            test -s "$staged_manifest" || fail "signed manifest snapshot is missing from the deploy job"
             fetch "Sigstore health DSSE bundle" "${website_origin}/${sigstore_path}" "$smoke_dir/health.latest.sigstore.json"
             cmp -s "$staged_bundle" "$smoke_dir/health.latest.sigstore.json" || \
               fail "served Sigstore bundle differs from the verified staged artifact"
+            fetch "signed manifest snapshot" "${website_origin}/signatures/datapulse.json" "$smoke_dir/signatures/datapulse.json"
+            cmp -s "$staged_manifest" "$smoke_dir/signatures/datapulse.json" || \
+              fail "served signed manifest snapshot differs from the verified staged artifact"
             python3 scripts/verify_sigstore_bundle.py \
               --health _site/health/latest.json \
-              --manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json" \
+              --manifest "$smoke_dir/signatures/datapulse.json" \
               --legacy-chain-head "$RUNNER_TEMP/sigstore-publication/chain_head.json" \
               --source-commit "$GITHUB_SHA" \
               --bundle "$smoke_dir/health.latest.sigstore.json" \

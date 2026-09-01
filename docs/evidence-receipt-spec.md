@@ -62,6 +62,20 @@ A consumer should:
 
 A matching identifier without a matching digest is not sufficient. A valid digest without a trustworthy source or policy is not sufficient. A valid signature without semantic ground truth is not sufficient.
 
+### Portfolio bundle manifest binding
+
+The portfolio health statement carries `predicate.signedManifest`, with the
+canonical publication reference `signatures/datapulse.json` and a SHA-256
+digest over the exact manifest bytes used at signing. To verify
+`/signatures/health.latest.sigstore.json`, consumers must fetch that signed
+companion manifest and check its bytes against the statement binding. The
+top-level `/datapulse.json` is a live discovery manifest; it has a distinct
+role and is not the portfolio-bundle verification input unless its byte parity
+with the signed companion is independently established.
+
+This binding proves the integrity of the attested observation and its manifest
+snapshot. It does not prove the semantic truth of the upstream data.
+
 ## Evidence and authority model
 
 | Receipt statement | Establishes | Does not establish |

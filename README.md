@@ -574,11 +574,13 @@ cosign verify-blob \
   fuelprice
 ```
 
-The same recipe works for the **canonical health snapshot** at
-`/signatures/health.latest.sigstore.json` (the 389-dataset rollup). Every
-refresh publishes the signed bundles to the public Rekor log. This is the
-only MCP-native trust layer for licensed Malaysian government open data
-whose receipts are independently verifiable.
+For the portfolio-level health bundle, verify
+`/signatures/health.latest.sigstore.json` with the exact companion manifest
+at `/signatures/datapulse.json`. That signed-manifest snapshot is distinct
+from `/datapulse.json`, the current discovery manifest: the latter can change
+when generated metadata is refreshed. A valid signature proves the integrity
+of DataPulse's attested observation, not that upstream data is semantically
+true. Every refresh publishes signed bundles to the public Rekor log.
 
 See [notes/2026-08-30-phase-5-verify-before-trust-sovereignty-one-pager.md](notes/2026-08-30-phase-5-verify-before-trust-sovereignty-one-pager.md)
 for the full positioning one-pager (sovereignty framing, no-competitor

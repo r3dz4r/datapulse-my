@@ -235,6 +235,10 @@ def test_cloudflare_publishes_only_a_current_verified_optional_bundle() -> None:
     assert 'mkdir -p _site/signatures' in assembly
     assert 'cp "$RUNNER_TEMP/sigstore-publication/health.latest.sigstore.json" _site/signatures/' in assembly
     assert "signatures/health.latest.sigstore.json" in served
+    assert "signatures/datapulse.json" in served
+    assert 'fetch "signed manifest snapshot" "${website_origin}/signatures/datapulse.json"' in served
+    assert '--manifest "$smoke_dir/signatures/datapulse.json"' in served
+    assert '--manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json"' not in served
     assert "cmp -s" in served
     assert "python3 scripts/verify_sigstore_bundle.py" in served
     assert "stale Sigstore bundle is still served" in served

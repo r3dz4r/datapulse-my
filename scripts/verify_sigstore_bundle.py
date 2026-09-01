@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import logging
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -14,12 +16,14 @@ from typing import Any
 if __package__:
     from scripts.gen_sigstore_bundle import (
         PREDICATE_TYPE,
+        SIGNED_MANIFEST_REF,
         generate_statement,
         statement_bytes,
     )
 else:
     from gen_sigstore_bundle import (  # type: ignore[no-redef]
         PREDICATE_TYPE,
+        SIGNED_MANIFEST_REF,
         generate_statement,
         statement_bytes,
     )
@@ -28,6 +32,7 @@ LOGGER = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[1]
 BUNDLE_MEDIA_TYPE = "application/vnd.dev.sigstore.bundle.v0.3+json"
 DSSE_PAYLOAD_TYPE = "application/vnd.in-toto+json"
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 class BundleError(ValueError):
@@ -79,6 +84,38 @@ def _validate_verification_argument(value: str, label: str) -> None:
         raise BundleError(f"{label} must be an explicit HTTPS identity")
 
 
+def _validate_signed_manifest_binding(payload: bytes, manifest: Path) -> None:
+    """Reject a bundle unless its signed manifest binding matches local bytes."""
+    try:
+        statement = json.loads(payload.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise BundleError("bundle DSSE payload is not readable JSON") from exc
+    if not isinstance(statement, dict):
+        raise BundleError("bundle DSSE payload must be a JSON object")
+    predicate = statement.get("predicate")
+    if not isinstance(predicate, dict):
+        raise BundleError("bundle DSSE payload has no predicate object")
+    binding = predicate.get("signedManifest")
+    if not isinstance(binding, dict):
+        raise BundleError("bundle DSSE payload is missing signed manifest binding")
+    if binding.get("ref") != SIGNED_MANIFEST_REF:
+        raise BundleError(
+            f"signed manifest reference must be {SIGNED_MANIFEST_REF}"
+        )
+    digest = binding.get("digest")
+    if not isinstance(digest, dict):
+        raise BundleError("signed manifest digest must be an object")
+    expected_digest = digest.get("sha256")
+    if not isinstance(expected_digest, str) or SHA256_PATTERN.fullmatch(expected_digest) is None:
+        raise BundleError("signed manifest digest must be a lowercase SHA-256 digest")
+    try:
+        actual_digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    except OSError as exc:
+        raise BundleError(f"manifest is not readable: {manifest}") from exc
+    if actual_digest != expected_digest:
+        raise BundleError("supplied manifest does not match signed manifest digest")
+
+
 def verify_bundle(
     *,
     health: Path,
@@ -96,6 +133,7 @@ def verify_bundle(
     expected_statement = generate_statement(health, manifest, chain_head, source_commit)
     expected_payload = statement_bytes(expected_statement)
     actual_payload = _decode_payload(_load_bundle(bundle))
+    _validate_signed_manifest_binding(actual_payload, manifest)
     if actual_payload != expected_payload:
         raise BundleError("bundle DSSE payload differs from the deterministic health statement")
     if cosign is not None:

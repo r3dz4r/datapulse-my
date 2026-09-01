@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from scripts.gen_sigstore_bundle import (
+    SIGNED_MANIFEST_REF,
     PREDICATE_TYPE,
     STATEMENT_TYPE,
     StatementError,
@@ -79,6 +80,10 @@ def test_statement_is_byte_deterministic_and_binds_exact_health_bytes(tmp_path: 
             "digest": {"sha256": hashlib.sha256(health.read_bytes()).hexdigest()},
         }
     ]
+    assert statement["predicate"]["signedManifest"] == {
+        "ref": SIGNED_MANIFEST_REF,
+        "digest": {"sha256": hashlib.sha256(manifest.read_bytes()).hexdigest()},
+    }
 
 
 def test_predicate_contains_only_grounded_phase_one_metadata(tmp_path: Path) -> None:
@@ -94,6 +99,10 @@ def test_predicate_contains_only_grounded_phase_one_metadata(tmp_path: Path) -> 
         "healthCheckedAt": "2026-08-29T13:31:05Z",
         "sourceCommit": SOURCE_COMMIT,
         "methodologyVersion": 2,
+        "signedManifest": {
+            "ref": "signatures/datapulse.json",
+            "digest": {"sha256": hashlib.sha256(manifest.read_bytes()).hexdigest()},
+        },
         "legacyEd25519": {
             "chainHeadRef": ".attestations/chain_head.json",
             "chainHead": "a" * 64,

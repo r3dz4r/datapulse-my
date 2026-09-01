@@ -21,6 +21,7 @@ PREDICATE_TYPE = "https://www.data-pulse.my/predicates/health-snapshot/v1"
 PREDICATE_SCHEMA = "datapulse/v1/health-snapshot-attestation"
 HEALTH_SCHEMA = "datapulse/v0.4/dataset-health"
 LEGACY_CHAIN_SCHEMA = "datapulse/v1/daily-chain-head-envelope"
+SIGNED_MANIFEST_REF = "signatures/datapulse.json"
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
 
@@ -125,7 +126,11 @@ def generate_statement(
     except OSError as exc:
         raise StatementError(f"health snapshot is not readable: {health_path}") from exc
     health = _decode_object(health_bytes, health_path, "health snapshot")
-    manifest = _load_object(manifest_path, "manifest")
+    try:
+        manifest_bytes = manifest_path.read_bytes()
+    except OSError as exc:
+        raise StatementError(f"manifest is not readable JSON: {manifest_path}") from exc
+    manifest = _decode_object(manifest_bytes, manifest_path, "manifest")
     chain = _load_object(chain_head_path, "legacy chain head")
     rows = _health_rows(health)
     methodology_version = _methodology_version(manifest, rows)
@@ -145,6 +150,10 @@ def generate_statement(
             "healthCheckedAt": health["checked_at"],
             "sourceCommit": source_commit,
             "methodologyVersion": methodology_version,
+            "signedManifest": {
+                "ref": SIGNED_MANIFEST_REF,
+                "digest": {"sha256": hashlib.sha256(manifest_bytes).hexdigest()},
+            },
             "legacyEd25519": {
                 "chainHeadRef": ".attestations/chain_head.json",
                 "chainHead": chain_digest,
