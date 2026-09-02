@@ -7,10 +7,16 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "verify_source_cards.py"
 HISTORY = ROOT / "health" / "history.jsonl"
+SKIP_NO_HISTORY = pytest.mark.skipif(
+    not HISTORY.exists() or HISTORY.stat().st_size == 0,
+    reason="health/history.jsonl unavailable (CI or freshly cloned worktree)",
+)
 CARDS = ROOT / "notes" / "source-cards"
 
 
@@ -30,11 +36,13 @@ def _copy_cards(tmp_path: Path) -> Path:
     return destination
 
 
+@SKIP_NO_HISTORY
 def test_clean_state_passes() -> None:
     completed = _run(CARDS)
     assert completed.returncode == 0, completed.stderr
 
 
+@SKIP_NO_HISTORY
 def test_bnm_card_lying_about_status_fails(tmp_path: Path) -> None:
     cards = _copy_cards(tmp_path)
     path = cards / "bnm-open-api.md"
@@ -50,6 +58,7 @@ def test_bnm_card_lying_about_status_fails(tmp_path: Path) -> None:
     assert "BNM stale-200 dataset mismatch" in completed.stderr
 
 
+@SKIP_NO_HISTORY
 def test_gtfs_card_missing_offpeak_quirk_fails(tmp_path: Path) -> None:
     cards = _copy_cards(tmp_path)
     path = cards / "gtfs-api.md"
@@ -59,6 +68,7 @@ def test_gtfs_card_missing_offpeak_quirk_fails(tmp_path: Path) -> None:
     assert "off-peak zero-vehicle" in completed.stderr
 
 
+@SKIP_NO_HISTORY
 def test_bnm_card_wrong_dataset_count_fails(tmp_path: Path) -> None:
     cards = _copy_cards(tmp_path)
     path = cards / "bnm-open-api.md"

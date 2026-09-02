@@ -15,6 +15,10 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "verify_failure_corpus.py"
 CORPUS = ROOT / "notes" / "failure-corpus"
 HISTORY = ROOT / "health" / "history.jsonl"
+SKIP_NO_HISTORY = pytest.mark.skipif(
+    not HISTORY.exists() or HISTORY.stat().st_size == 0,
+    reason="health/history.jsonl unavailable (CI or freshly cloned worktree)",
+)
 sys.path.insert(0, str(ROOT / "scripts"))
 from verify_failure_corpus import load_history, load_records, verify_records  # noqa: E402
 
@@ -38,11 +42,13 @@ def history() -> list[dict[str, object]]:
     return load_history(HISTORY)
 
 
+@SKIP_NO_HISTORY
 def test_clean_state_passes() -> None:
     completed = _run(CORPUS)
     assert completed.returncode == 0, completed.stderr
 
 
+@SKIP_NO_HISTORY
 def test_removed_record_fails(tmp_path: Path, history: list[dict[str, object]]) -> None:
     corpus = _copy_corpus(tmp_path)
     (corpus / "bnm-open-api" / "row-date-missing-200.json").unlink()
@@ -50,6 +56,7 @@ def test_removed_record_fails(tmp_path: Path, history: list[dict[str, object]]) 
     assert any("required failure records" in error for error in errors)
 
 
+@SKIP_NO_HISTORY
 def test_modified_record_fails(tmp_path: Path, history: list[dict[str, object]]) -> None:
     corpus = _copy_corpus(tmp_path)
     path = corpus / "bnm-open-api" / "schema-shape-hash-churn.json"
@@ -60,6 +67,7 @@ def test_modified_record_fails(tmp_path: Path, history: list[dict[str, object]])
     assert any("unexpected failure_type" in error for error in errors)
 
 
+@SKIP_NO_HISTORY
 def test_lying_about_affected_datasets_fails(tmp_path: Path, history: list[dict[str, object]]) -> None:
     corpus = _copy_corpus(tmp_path)
     path = corpus / "bnm-open-api" / "http-200-stale-content.json"
@@ -70,6 +78,7 @@ def test_lying_about_affected_datasets_fails(tmp_path: Path, history: list[dict[
     assert any("no matching live-history signal" in error for error in errors)
 
 
+@SKIP_NO_HISTORY
 def test_field_missing_fails(tmp_path: Path, history: list[dict[str, object]]) -> None:
     corpus = _copy_corpus(tmp_path)
     path = corpus / "gtfs-api" / "discontinued-line-404.json"

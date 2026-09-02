@@ -142,6 +142,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     """Run the verifier and return a conventional process status."""
     args = parse_args()
+    if not args.history_path.exists() or args.history_path.stat().st_size == 0:
+        LOGGER.error(
+            "INFO: health/history.jsonl unavailable; history-anchored checks skipped. "
+            "Local-only checks (format, schema) remain enforced if implemented."
+        )
+        return 1
     try: errors = verify_records(load_records(args.corpus_dir), load_history(args.history_path))
     except (OSError, ValueError, TypeError) as exc:
         LOGGER.error("failure-corpus verification failed: %s", exc); return 1

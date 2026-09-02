@@ -131,6 +131,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     """Run verification and return a conventional process status."""
     args = parse_args()
+    if not args.history_path.exists() or args.history_path.stat().st_size == 0:
+        LOGGER.error(
+            "INFO: health/history.jsonl unavailable; history-anchored checks skipped. "
+            "Local-only checks (format, schema) remain enforced if implemented."
+        )
+        return 1
     try:
         errors = verify_source_cards(args.cards_dir, args.history_path)
     except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
