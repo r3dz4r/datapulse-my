@@ -1,0 +1,117 @@
+{
+  "claims": [
+    {
+      "claim_id": "verified-datasets-uniform",
+      "phrase_pattern": "\\b(verified|verified-only|verifiably complete) datasets\\b",
+      "verification_mode": "forbidden_in_canonical",
+      "scope_statement": "Per-dataset evidence is monitored, not 'verified'. The catalogue reports observed probe outcomes from the published MCP server; downstream consumers must re-run verify_dataset() to obtain a fresh receipt.",
+      "evidence_source": "scripts/gen_per_dataset_receipt.py",
+      "last_audit_date": "2026-09-02",
+      "re_audit_trigger": "Any change to scripts/gen_per_dataset_receipt.py or any new per-dataset claim in copy.",
+      "allowed_occurrences": [],
+      "forbidden_in": ["README.md", "llms.txt", "mcp.json", "docs/**/*.md", "docs/**/*.html"],
+      "notes": "The phrase 'verified datasets' implies uniform coverage that does not exist. Replace with 'monitored datasets' or 'datasets with published receipts'."
+    },
+    {
+      "claim_id": "authoritative-claim",
+      "phrase_pattern": "\\bauthoritative\\b",
+      "verification_mode": "context_allowed",
+      "scope_statement": "DataPulse is authoritative for the registry itself (the catalogue and machine advertisements). It is NOT authoritative for upstream sources — those upstream maintainers own their own authoritative signals.",
+      "evidence_source": "datapulse.json + scripts/embed_dashboard_data.py",
+      "last_audit_date": "2026-09-02",
+      "re_audit_trigger": "Any change to docs/agent-quickstart.md or new docs/ pages referencing authority.",
+      "allowed_occurrences": [
+        {
+          "path": "docs/agent-quickstart.md",
+          "line_range_or_pattern": "line 13 (registry/catalogue scope)",
+          "justification": "The phrase 'authoritative' is qualified in this occurrence to refer to the DataPulse registry, not underlying sources. The sentence structure makes this scope explicit."
+        },
+        {
+          "path": "docs/agent-quickstart.md",
+          "line_range_or_pattern": "line 219 (Never-upgrade guideline)",
+          "justification": "This is a 'Never upgrade X to Y' guideline for future contributors — it names the phrase precisely so future copy does not regress to it. The lint should not flag this occurrence."
+        }
+      ],
+      "forbidden_in": ["docs/**/*.md", "docs/**/*.html", "README.md", "llms.txt"],
+      "notes": "All future occurrences outside the two annotated sites must be qualified by 'registry' or 'catalogue' within 5 words of 'authoritative'."
+    },
+    {
+      "claim_id": "first-pioneer-novelty",
+      "phrase_pattern": "\\b(pioneer|first to (provide|offer|deliver|publish|launch))\\b",
+      "verification_mode": "forbidden_in_canonical",
+      "scope_statement": "Per the 2026-08-17 retraction discipline, DataPulse MY does not make 'first' or 'pioneer' claims about the agency-verification category.",
+      "evidence_source": "notes/2026-08-17-retraction-discipline.md (if it exists; otherwise the September-1 quiet-excellence memo)",
+      "last_audit_date": "2026-09-02",
+      "re_audit_trigger": "Any new retraction-discipline revision or any new headline claim.",
+      "allowed_occurrences": [],
+      "forbidden_in": ["README.md", "llms.txt", "docs/**/*.md", "docs/**/*.html", "mcp.json"],
+      "notes": "Note: 'first' as in 'first issue', 'first having to', or 'first request' is allowed — this rule targets promotional novelty phrases like 'first to provide', 'pioneer of', 'industry first'."
+    },
+    {
+      "claim_id": "every-dataset-has-receipt",
+      "phrase_pattern": "\\b(every|each|all) datasets? (have|has|carries?|includes?)\\b[^.]*\\b(receipt|signature|sigstore|cosign)\\b",
+      "verification_mode": "forbidden_in_canonical",
+      "scope_statement": "Coverage is partial. The per-dataset receipt generator is per-call, not per-dataset-persisted for every dataset; portability covers some, not all 389.",
+      "evidence_source": "scripts/gen_per_dataset_receipt.py",
+      "last_audit_date": "2026-09-02",
+      "re_audit_trigger": "If a refresh produces stable receipts for all datasets, this claim can be retired; until then it stays forbidden.",
+      "allowed_occurrences": [],
+      "forbidden_in": ["README.md", "llms.txt", "docs/**/*.md", "docs/**/*.html"],
+      "notes": "The phrase 'per-dataset receipt' (without 'every/all') is allowed in llms.txt and tool descriptions because it describes the verification method."
+    },
+    {
+      "claim_id": "freshness-verified-uniform",
+      "phrase_pattern": "\\b(freshness verified|freshness is verified|freshness has been verified)\\b",
+      "verification_mode": "forbidden_in_canonical",
+      "scope_statement": "Freshness is observed per-probe. The 10-status taxonomy exposes `stale`, `aging`, `unknown-freshness`, etc. — never a uniform 'verified' claim.",
+      "evidence_source": "health.schema.json#properties/datasets/items/properties/status/enum",
+      "last_audit_date": "2026-09-02",
+      "re_audit_trigger": "Any change to the 10-status taxonomy.",
+      "allowed_occurrences": [],
+      "forbidden_in": ["README.md", "llms.txt", "docs/**/*.md", "docs/**/*.html"],
+      "notes": "Replace with 'freshness is reported' or 'freshness is observed' if needed."
+    },
+    {
+      "claim_id": "mcp-tool-count-manual",
+      "phrase_pattern": "\"((1[0-9])|(2[0-9])) (tools?|MCP tools?)\"",
+      "verification_mode": "forbidden_in_canonical",
+      "scope_statement": "Tool count is 18 at HEAD. Any numeric claim about MCP tool count must be a generated artifact (e.g. from mcp.json or the per-tool cards listing), not hard-coded.",
+      "evidence_source": "mcp.json (len(tools) at HEAD = 18)",
+      "last_audit_date": "2026-09-02",
+      "re_audit_trigger": "Any new tool addition or removal — count delta must be regenerated.",
+      "allowed_occurrences": [],
+      "forbidden_in": ["README.md", "docs/**/*.md", "docs/**/*.html", "llms.txt"],
+      "notes": "Pattern matches literal numbers like '16 tools', '17 tools', '18 tools', etc. The rule: any numeric MCP tool count claim must come from the auto-regenerated resource, not be hand-typed."
+    },
+    {
+      "claim_id": "uncrowded-niche-claim",
+      "phrase_pattern": "\\b(uncrowded|blue ocean|white space|no incumbent)\\b",
+      "verification_mode": "forbidden_in_canonical",
+      "scope_statement": "Quiet-excellence memo language. Do not promote any 'uncrowded' framing; let external observers draw that conclusion from the evidence.",
+      "evidence_source": "analyses/datapulse-quiet-excellence-moat-research-2026-08-31.md (private)",
+      "last_audit_date": "2026-09-02",
+      "re_audit_trigger": "If the quiet-excellence memo is retired or revised.",
+      "allowed_occurrences": [],
+      "forbidden_in": ["README.md", "llms.txt", "docs/**/*.md", "docs/**/*.html", "mcp.json"],
+      "notes": "Promotional framing of category adoption."
+    },
+    {
+      "claim_id": "statistical-standard-deviation",
+      "phrase_pattern": "\\b(standard deviation|population standard|sample standard)\\b",
+      "verification_mode": "allowed_in_statistical",
+      "scope_statement": "Mathematical use of 'standard' is allowed only in files where it is the term of art (statistical methodology).",
+      "evidence_source": "docs/health-methodology.html",
+      "last_audit_date": "2026-09-02",
+      "re_audit_trigger": "Any new statistical file or new health-methodology revision.",
+      "allowed_occurrences": [
+        {
+          "path": "docs/health-methodology.html",
+          "line_range_or_pattern": "section discussing population standard deviation",
+          "justification": "Term of art for the probe's statistical outlier test."
+        }
+      ],
+      "forbidden_in": ["README.md", "llms.txt", "docs/learn.html", "docs/agent-quickstart.md"],
+      "notes": "Forbidden anywhere except docs/health-methodology.html."
+    }
+  ]
+}

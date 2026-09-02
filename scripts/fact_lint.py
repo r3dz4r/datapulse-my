@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import date
 import fnmatch
 import json
 import re
@@ -115,9 +116,187 @@ DATASET_MARKDOWN_PATH = re.compile(r"(?:^|/)data/([a-z0-9][a-z0-9_-]*)\.md$")
 TOOL_COUNT_MENTION = re.compile(r"(?<![\d.])(\d{1,3})[ -]tools?\b")
 DATASET_COUNT_MENTION = re.compile(r"(?<![\d.])(\d{1,4})[ -]datasets?\b")
 
+REQUIRED_CLAIM_FIELDS = (
+    "claim_id",
+    "phrase_pattern",
+    "verification_mode",
+    "scope_statement",
+    "evidence_source",
+    "last_audit_date",
+    "re_audit_trigger",
+)
+CLAIM_VERIFICATION_MODES = frozenset(
+    {
+        "forbidden_in_canonical",
+        "allowed_in_canonical",
+        "context_allowed",
+        "allowed_in_statistical",
+    }
+)
+CONTEXT_QUALIFIERS = {
+    "authoritative-claim": frozenset({"registry", "catalogue", "machine", "marker"}),
+}
+
 
 def is_excluded(path: str, exclude_globs: Sequence[str]) -> bool:
     return any(fnmatch.fnmatchcase(path, pattern) for pattern in exclude_globs)
+
+
+def claim_glob_matches(path: str, pattern: str) -> bool:
+    """Match a claim-ledger path glob, with ``**/`` also matching no directory."""
+    return fnmatch.fnmatchcase(path, pattern) or fnmatch.fnmatchcase(
+        path, pattern.replace("**/", "")
+    )
+
+
+def claim_scope_paths(root: Path, globs: Sequence[str]) -> set[str]:
+    """Return top-level public-document paths selected by claim-ledger globs."""
+    paths: set[str] = set()
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        relative_path = path.relative_to(root).as_posix()
+        if relative_path in HISTORICAL_DOCS:
+            continue
+        if relative_path.startswith("docs/") and "/" in relative_path[5:]:
+            continue
+        if any(claim_glob_matches(relative_path, pattern) for pattern in globs):
+            paths.add(relative_path)
+    return paths
+
+
+def occurrence_is_allowlisted(
+    allowed_occurrences: object, relative_path: str, number: int
+) -> bool:
+    """Return whether one match has an exact ledger occurrence annotation."""
+    if not isinstance(allowed_occurrences, list):
+        return False
+    for occurrence in allowed_occurrences:
+        if not isinstance(occurrence, dict) or occurrence.get("path") != relative_path:
+            continue
+        annotation = occurrence.get("line_range_or_pattern")
+        if isinstance(annotation, str) and re.search(rf"\bline {number}\b", annotation):
+            return True
+    return False
+
+
+def has_scope_qualifier(text: str, position: int, claim_id: str) -> bool:
+    """Return whether a context-controlled claim is locally scope-qualified."""
+    qualifiers = CONTEXT_QUALIFIERS.get(claim_id, frozenset())
+    context = text[max(0, position - 120) : position + 120]
+    nearby_words = re.findall(r"[A-Za-z]+", context)
+    if any(word.lower() in qualifiers for word in nearby_words):
+        return True
+    preceding_words = re.findall(r"[A-Za-z]+", text[max(0, position - 40) : position])
+    return "not" in {word.lower() for word in preceding_words[-3:]}
+
+
+def check_claims(root: Path, ledger_path: Path) -> list[str]:
+    """Return claim-ledger schema and scope violations below ``root``."""
+    findings: list[str] = []
+    try:
+        ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return [f"{ledger_path}: claim ledger not found"]
+    except json.JSONDecodeError as error:
+        return [f"{ledger_path}: invalid JSON: {error.msg}"]
+
+    claims = ledger.get("claims") if isinstance(ledger, dict) else None
+    if not isinstance(claims, list):
+        return [f"{ledger_path}: top-level 'claims' must be a list"]
+
+    for index, claim in enumerate(claims, start=1):
+        label = f"claim record {index}"
+        if not isinstance(claim, dict):
+            findings.append(f"{label}: must be an object")
+            continue
+        for field in REQUIRED_CLAIM_FIELDS:
+            if not isinstance(claim.get(field), str) or not claim[field].strip():
+                findings.append(f"{label}: missing required field '{field}'")
+        if not isinstance(claim.get("allowed_occurrences"), list):
+            findings.append(f"{label}: 'allowed_occurrences' must be a list")
+        if not isinstance(claim.get("forbidden_in"), list):
+            findings.append(f"{label}: 'forbidden_in' must be a list")
+        mode = claim.get("verification_mode")
+        if isinstance(mode, str) and mode not in CLAIM_VERIFICATION_MODES:
+            findings.append(f"{label}: invalid verification_mode '{mode}'")
+        audit_date = claim.get("last_audit_date")
+        if isinstance(audit_date, str) and audit_date:
+            try:
+                date.fromisoformat(audit_date)
+            except ValueError:
+                findings.append(
+                    f"{label}: invalid last_audit_date '{audit_date}'"
+                )
+        pattern = claim.get("phrase_pattern")
+        if isinstance(pattern, str) and pattern:
+            try:
+                re.compile(pattern, re.IGNORECASE)
+            except re.error as error:
+                findings.append(f"{label}: invalid phrase_pattern: {error}")
+
+    if findings:
+        return findings
+
+    for claim in claims:
+        assert isinstance(claim, dict)
+        pattern = re.compile(claim["phrase_pattern"], re.IGNORECASE)
+        mode = claim["verification_mode"]
+        forbidden_in = claim["forbidden_in"]
+        allowed_occurrences = claim["allowed_occurrences"]
+        if mode in {"forbidden_in_canonical", "allowed_in_canonical"}:
+            paths = set(CURRENT_DOCS)
+        elif mode == "context_allowed":
+            paths = set(CURRENT_DOCS)
+            paths.update(claim_scope_paths(root, forbidden_in))
+            paths.update(
+                occurrence["path"]
+                for occurrence in allowed_occurrences
+                if isinstance(occurrence, dict)
+                and isinstance(occurrence.get("path"), str)
+            )
+        else:
+            paths = claim_scope_paths(root, forbidden_in)
+
+        for relative_path in sorted(paths):
+            path = root / relative_path
+            if not path.is_file():
+                continue
+            text = path.read_text(encoding="utf-8")
+            for match in pattern.finditer(text):
+                number = line_number(text, match.start())
+                phrase = match.group(0)
+                if mode == "forbidden_in_canonical":
+                    findings.append(
+                        f"{relative_path}:{number}: forbidden claim phrase '{phrase}' "
+                        f"({claim['claim_id']})"
+                    )
+                elif mode == "allowed_in_canonical":
+                    if not occurrence_is_allowlisted(
+                        allowed_occurrences, relative_path, number
+                    ):
+                        findings.append(
+                            f"{relative_path}:{number}: unallowlisted claim phrase "
+                            f"'{phrase}' ({claim['claim_id']})"
+                        )
+                elif mode == "context_allowed":
+                    if not occurrence_is_allowlisted(
+                        allowed_occurrences, relative_path, number
+                    ) and not has_scope_qualifier(
+                        text, match.start(), claim["claim_id"]
+                    ):
+                        findings.append(
+                            f"{relative_path}:{number}: unscoped claim phrase "
+                            f"'{phrase}' ({claim['claim_id']})"
+                        )
+                elif any(
+                    claim_glob_matches(relative_path, glob) for glob in forbidden_in
+                ):
+                    findings.append(
+                        f"{relative_path}:{number}: forbidden claim phrase '{phrase}' "
+                        f"({claim['claim_id']})"
+                    )
+    return findings
 
 
 def line_number(text: str, position: int) -> int:
@@ -356,11 +535,21 @@ def parse_args() -> argparse.Namespace:
         default=ROOT,
         help="repository root to lint (default: this script's repository)",
     )
+    parser.add_argument(
+        "--check-claims",
+        action="store_true",
+        help="validate the claim ledger and check controlled claim scope",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.check_claims:
+        findings = check_claims(args.root, args.root / "claims" / "claims.json")
+        for finding in findings:
+            print(finding)
+        return 1 if findings else 0
     exclude_globs = tuple(
         pattern.strip() for pattern in args.exclude.split(",") if pattern.strip()
     )
