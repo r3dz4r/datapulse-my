@@ -11,6 +11,15 @@ on:
       - "record-evidence/**"
       - "feed.xml"
       - "data/**"
+      - "changelog.json"
+      - "catalog-snapshot.json"
+      - "catalog-graph.json"
+      - "attestations/**"
+      # README.md stays NOT ignored: an operator doc/README edit is a real
+      # release intent. Only the regenerated outputs above (and health/badges/
+      # deltas/data) are pure pipeline results and must not fire Release Please.
+      # Without these, every chore(health) tick re-runs release-please and
+      # exhausts the GitHub App installation rate limit (~60 req/hr).
 
 # Cancel in-flight runs when a new push lands. Without this, a burst of
 # timer pushes (every ~5 min) spawns parallel release-please runs that
