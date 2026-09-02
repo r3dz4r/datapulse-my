@@ -1,0 +1,55 @@
+{
+  "schema": "datapulse/v1/failure-record",
+  "failure_id": "cross-family-http-200-stale-content-broad",
+  "family": "cross-family",
+  "failure_type": "http_200_stale_content",
+  "severity": "high",
+  "first_observed_at": "2026-08-28T01:56:29Z",
+  "most_recent_observed_at": "2026-09-01T22:21:08Z",
+  "affected_datasets": [],
+  "evidence": {
+    "description": "144 of 389 datasets in the stated catalogue baseline (37%) showed stale status with HTTP 200. The latest local history retains the same 37% pattern; HTTP 200 does not imply freshness across BNM, DOSM, exchequer, hansard, GTFS, NPRA, and others.",
+    "live_signals": {
+      "total_datasets": 389,
+      "stale_http_200_count": 145,
+      "stale_http_200_pct": 37.3
+    },
+    "example_history_lines": [
+      {
+        "dataset_id": "air_pollution",
+        "observed_at": "2026-09-01T22:21:08Z",
+        "status": "stale",
+        "http_status": 200,
+        "content_date": "2022-12-01"
+      },
+      {
+        "dataset_id": "almanak_astronomi",
+        "observed_at": "2026-09-01T22:21:08Z",
+        "status": "stale",
+        "http_status": 200,
+        "content_date": "2026-08-22"
+      },
+      {
+        "dataset_id": "births",
+        "observed_at": "2026-09-01T22:21:08Z",
+        "status": "stale",
+        "http_status": 200,
+        "content_date": "2026-08-26"
+      }
+    ]
+  },
+  "impact_on_claim_or_decision": "Consumers checking only HTTP status would misread a substantial group of stale datasets as fresh.",
+  "resolution_or_quarantine": "Per-family source cards document local staleness; consumers must inspect content_date.",
+  "rule_or_policy_change": "Probe rule is correct; this record locks the corpus-level baseline.",
+  "regression_test": {
+    "path": "scripts/tests/test_failure_corpus_format.py::test_cross_family_corpus_baseline",
+    "description": "The observed stale-HTTP-200 percentage must stay within five points of the baseline."
+  },
+  "served_verification": {
+    "live_url": "https://www.data-pulse.my/health/latest.json",
+    "expected_status": "200",
+    "last_verified": "2026-09-02"
+  },
+  "recorded_at": "2026-09-01",
+  "recorded_by": "Hermes (HS-04 dispatch)"
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "datapulse/v1/failure-record",
+  "failure_id": "bnm-open-api-http-200-stale-content",
+  "family": "bnm_open_api",
+  "failure_type": "http_200_stale_content",
+  "severity": "high",
+  "first_observed_at": "2026-08-28T01:56:29Z",
+  "most_recent_observed_at": "2026-09-01T22:21:08Z",
+  "affected_datasets": ["bnm_base_rate", "bnm_opr", "bnm_kijang_emas"],
+  "evidence": {
+    "description": "BNM apikijangportal Open API returns HTTP 200 with row content_date that is months-to-years old. Three different staleness profiles exist on the same HTTP-200 signature: (1) bnm_base_rate is a genuinely dormant reference series with content_date=2020-08-06; (2) bnm_opr is a declared-monthly series with content_date=2026-05-07 (~4 months stale); (3) bnm_kijang_emas is declared-daily with content_date=2026-08-26 (~6 days stale, possible declared-cadence drift).",
+    "live_signals": {
+      "bnm_base_rate.content_date": "2020-08-06",
+      "bnm_opr.content_date": "2026-05-07",
+      "bnm_kijang_emas.content_date": "2026-08-26",
+      "all_three.http_status": 200,
+      "all_three.status": "stale"
+    },
+    "example_history_lines": [
+      {"dataset_id": "bnm_base_rate", "observed_at": "2026-09-01T22:21:08Z", "status": "stale", "content_date": "2020-08-06", "http_status": 200},
+      {"dataset_id": "bnm_opr", "observed_at": "2026-09-01T22:21:08Z", "status": "stale", "content_date": "2026-05-07", "http_status": 200},
+      {"dataset_id": "bnm_kijang_emas", "observed_at": "2026-09-01T22:21:08Z", "status": "stale", "content_date": "2026-08-26", "http_status": 200}
+    ]
+  },
+  "impact_on_claim_or_decision": "Agent callers using bnm_opr or bnm_kijang_emas without checking row date would treat them as fresh because HTTP 200 suggests availability. Source-card document captures this in known_false_positives.",
+  "resolution_or_quarantine": "Documented in notes/source-cards/bnm-open-api.md. Consumers MUST inspect content_date directly when status=stale AND data_type_mix.reference is non-zero.",
+  "rule_or_policy_change": "Probe rule emits content_date and anomaly_detected; source-card verification asserts all three datasets are known false positives.",
+  "regression_test": {
+    "path": "scripts/tests/test_verify_source_cards.py::test_clean_state_passes",
+    "description": "Verifier requires the three HTTP-200-but-stale datasets to appear in the BNM source card's known_false_positives."
+  },
+  "served_verification": {
+    "live_url": "https://www.data-pulse.my/ai-catalog.json",
+    "expected_status": "200",
+    "last_verified": "2026-09-02"
+  },
+  "recorded_at": "2026-09-02",
+  "recorded_by": "Hermes (HS-04 dispatch)"
+}

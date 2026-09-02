@@ -1,0 +1,7 @@
+{
+  "schema": "datapulse/v1/failure-record", "failure_id": "bnm-open-api-row-date-missing-200", "family": "bnm_open_api", "failure_type": "row_date_missing_200", "severity": "low", "first_observed_at": "2026-08-28T01:56:29Z", "most_recent_observed_at": "2026-09-01T22:21:08Z", "affected_datasets": [],
+  "evidence": {"description": "BNM API responds HTTP 200 even when row data is structurally inconsistent, including missing columns or null content_date. The probe treats HTTP 200 as success with anomaly_detected=True, so future rules must not accept 200 without validation.", "live_signals": {"bnm_anomaly_count_in_latest_probe": 3, "all_anomaly_datasets_have_http_status_200": true}, "example_history_lines": []},
+  "impact_on_claim_or_decision": "A future probe rule that trusts HTTP 200 without per-row content_date inspection would silently regress.", "resolution_or_quarantine": "Current probe emits anomaly_detected; HS-05 should assert 200 only with valid row data.", "rule_or_policy_change": "Current rule is correct; this is a future regression anchor.",
+  "regression_test": {"path": "scripts/tests/test_failure_corpus_format.py::test_each_failure_record_has_required_fields", "description": "The format contract retains the deliberately empty affected_datasets array."},
+  "served_verification": {"live_url": "https://www.data-pulse.my/health/latest.json", "expected_status": "200", "last_verified": "2026-09-01"}, "recorded_at": "2026-09-01", "recorded_by": "Hermes (HS-04 dispatch)"
+}
