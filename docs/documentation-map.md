@@ -22,6 +22,39 @@ DataPulse documentation is part of the public evidence contract. This map tells 
 | Understand the monitoring method | [Health methodology](health-methodology.md) |
 | Operate or release the repository | [Operations](operations.md), [Release process](release-process.md), and [Release verification](release-verification.md) |
 
+## Public surfaces
+
+Canonical pages (other routes are compatibility aliases to these):
+
+| Surface | Purpose |
+|---|---|
+| [Live dashboard](https://www.data-pulse.my/) (`/`) | Human-readable dataset status cards with embedded health and manifest data. |
+| [NPRA page](https://www.data-pulse.my/npra.html) | Focused public NPRA dataset surface. |
+| [Health methodology](https://www.data-pulse.my/health-methodology.html) | Status and freshness methodology, including the ten-status taxonomy. |
+| [Learn](https://www.data-pulse.my/learn.html) | Verification-first guidance for building with Malaysian public data. |
+
+Root machine artifacts (served at the website origin):
+
+| Artifact | Purpose |
+|---|---|
+| [`/llms.txt`](https://www.data-pulse.my/llms.txt) | Machine-readable discovery index for AI agents and LLMs. |
+| [`/agent.json`](https://www.data-pulse.my/agent.json) | Machine-readable agent capability manifest. |
+| [`/mcp.json`](https://www.data-pulse.my/mcp.json) | MCP server advertisement (canonical tool count and schemas). |
+| [`/datapulse.json`](https://www.data-pulse.my/datapulse.json) | Full machine-readable dataset manifest. |
+| [`/health/latest.json`](https://www.data-pulse.my/health/latest.json) | Current published dataset health snapshot. |
+| [`/health/trends.json`](https://www.data-pulse.my/health/trends.json) | Published freshness trend and reliability evidence. |
+| [`/health/drift.json`](https://www.data-pulse.my/health/drift.json) | Published structural and record-count drift evidence. |
+| [`/health/reconciliation.json`](https://www.data-pulse.my/health/reconciliation.json) | Cross-source publication differences for human review. |
+| [`/feed.xml`](https://www.data-pulse.my/feed.xml) | RSS feed of dataset health changes. |
+| [`/changelog.json`](https://www.data-pulse.my/changelog.json) | Machine-readable release-by-release summary. |
+| [`/badges/`](https://www.data-pulse.my/badges/) | Per-dataset SVG status badges. |
+| [`/ai-catalog.json`](https://www.data-pulse.my/ai-catalog.json) | AI resource directory (ARD) catalog of the MCP tool surface. |
+| [`/catalog-snapshot.json`](https://www.data-pulse.my/catalog-snapshot.json) | Point-in-time catalog snapshot. |
+
+The freshness-policy vocabulary (the ten statuses and their reference-family
+splits) is owned by [health-methodology.md](health-methodology.md) and
+[status-semantics.md](status-semantics.md); this map does not redefine it.
+
 ## Audience paths
 
 ### Agent or application builder

@@ -26,19 +26,54 @@ need to handle.
 
 ## Who it is for
 
-- Journalists and researchers checking whether a public dataset is usable.
-- Civic technologists building reproducible data pipelines.
-- Public servants improving the discoverability and reliability of open data.
-- Developers who need stable, machine-readable dataset health metadata.
+- **AI builders and AI-agent / LLM-app developers** wiring a model to the
+  read-only MCP server so it can check a Malaysian figure's freshness, licence,
+  and provenance before it cites the number.
+- **AI agents as consumers** discovering and querying the catalogue through
+  `llms.txt`, `agent.json`, and the read-only MCP endpoint without a browser,
+  receiving the same freshness, licence, schema-drift, and provenance evidence
+  a human reviewer would.
+- **University students, academics, and researchers** using the Colab notebook
+  to see which Malaysian official series is genuinely current versus reference
+  or stale before grounding coursework, a thesis, or a replication.
+- **Data scientists and analysts** distinguishing a series that stopped updating
+  (stale/discontinued) from a lookup/reference table that is fine as-is, before
+  building a model or dashboard.
+- **Compliance, validation, and regulatory-monitoring teams** keeping an
+  evidence/attestation trail (probe timestamp, content date, source, attestation)
+  that an official figure was checked before it appears in a product or external
+  communication.
+- **Journalists and fact-checkers** verifying a fuel price, inflation/CPI, rate,
+  ridership, or policy figure is current before publishing.
+- **Civic technologists** building reproducible pipelines on transparent health
+  metadata.
+- **Public servants** seeing the discoverability and reliability status of the
+  open data their agency publishes.
 
 ## Use this for
 
-- **Journalist fact-check:** before citing a fuel price figure, check fuelprice
-  freshness to make sure it's current.
-- **Pipeline health gate:** fail the build when a required dataset probe has
-  remained unavailable for more than 24 hours.
-- **RAG knowledge base:** consume the JSON envelopes as structured context for
-  a chatbot answering "what's the latest BNM rate?"
+- **AI builder / agent developer:** give your agent a pre-citation trust check —
+  before it answers from a Malaysian dataset, have it call `verify_dataset` and
+  `get_freshness_summary` and caveat anything stale instead of asserting
+  currentness.
+- **AI agent consumer:** discover and query the catalogue via `llms.txt` plus the
+  read-only MCP endpoint, and receive freshness status, licence, schema-drift,
+  and provenance as structured context.
+- **Student / researcher:** ground a coursework or thesis figure in a dataset
+  whose freshness and licence you can actually verify, via the Colab notebook.
+- **Data scientist / analyst:** before modelling a series, tell one that stopped
+  updating (stale/discontinued) apart from a lookup/reference table that is fine
+  as-is.
+- **Compliance / validation team:** keep an evidence trail that an official
+  figure was checked at a known time before it appears in your product or
+  external communication.
+- **Journalist / fact-checker:** before citing a fuel price, inflation/CPI, rate,
+  or ridership figure, check its freshness so you are not publishing a stale
+  number.
+- **Civic technologist:** consume the machine-readable health envelopes in a
+  reproducible pipeline with transparent health metadata.
+- **Public servant:** see how discoverable and reliably described your agency's
+  published open data is.
 
 ## Dataset health
 
@@ -47,7 +82,11 @@ Health is reported as `fresh`, `aging`, `stale`, `discontinued`, `degraded`,
 `reference`. Unknown freshness means the URL and content shape work, but neither
 a Last-Modified header nor a parseable content date proves when the data was
 updated. Reference means versioned lookup data is reachable and its record count
-is measured, while date-based freshness does not apply. The public
+is measured, while date-based freshness does not apply. The reference family
+splits into plain `reference`, `policy-reference` (policy state that stays valid
+until superseded — BNM OPR is current while unchanged, not stale), and
+`reference-current` (a lookup that must still pass freshness, such as a bank-rate
+table that can itself go stale). The public
 [`_trust_summary`](health/latest.json) shows the distribution and explicitly
 counts missing freshness and row-count signals.
 
@@ -164,7 +203,7 @@ DataPulse MY also exposes an AI-ready, read-only MCP server so agents can query
 the catalogue natively:
 
 - Endpoint: `https://mcp.data-pulse.my/mcp` (Streamable HTTP, no auth)
-Verified by mcpgrade: 100/100 (Grade A), 18 tools, last audited 2026-08-17 (re-audit due — count changed 16→18 since; canonical count lives in `mcp.json`).
+Verified by mcpgrade: 100/100 (Grade A). The canonical tool count lives in `mcp.json` / `agent.json`.
 <!-- BEGIN mcp-tools -->
 - 18 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 
@@ -229,8 +268,8 @@ API key):
 }
 ```
 
-Restart Claude Desktop, confirm the hammer icon shows "datapulse-my" with 13
-tools in the runtime order above. Cursor / Cline use the same JSON in their MCP config panel.
+Restart Claude Desktop, confirm the hammer icon shows "datapulse-my" with the
+read-only tools listed above. Cursor / Cline use the same JSON in their MCP config panel.
 
 ## Included datasets
 
