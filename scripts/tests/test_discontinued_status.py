@@ -22,6 +22,7 @@ def _classify(
     discontinued: bool = False,
     reference: bool = False,
     http_status: int = 200,
+    freshness_policy: dict | None = None,
 ) -> dict:
     manifest_row = {
         "id": "fixture_discontinued",
@@ -33,6 +34,8 @@ def _classify(
         manifest_row["discontinued"] = True
     if reference:
         manifest_row["data_type"] = "reference"
+    if freshness_policy is not None:
+        manifest_row["freshness_policy"] = freshness_policy
     (tmp_path / "datapulse.json").write_text(
         json.dumps({"datasets": [manifest_row]}) + "\n", encoding="utf-8"
     )
@@ -110,3 +113,23 @@ def test_reference_data_is_not_reclassified(tmp_path: Path) -> None:
     row = _classify(tmp_path, 800, frequency="as-required", reference=True)
 
     assert row["status"] == "reference"
+
+
+def test_404_with_discontinued_on_404_policy_is_discontinued(tmp_path: Path) -> None:
+    row = _classify(
+        tmp_path,
+        1,
+        http_status=404,
+        freshness_policy={
+            "family": "data_gov_my_openapi",
+            "content_date_field": "row.date",
+            "interpretation": "observation_period",
+            "discontinued_on_404": True,
+            "reference_table": False,
+            "notes": "fixture",
+        },
+    )
+
+    assert row["status"] == "discontinued"
+    assert row["status_reason"] == "discontinued-on-404"
+    assert row["http_status"] == 404

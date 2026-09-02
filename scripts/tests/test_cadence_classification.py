@@ -112,3 +112,105 @@ def test_bnm_opr_has_monthly_manifest_cadence() -> None:
     bnm_opr = next(row for row in manifest["datasets"] if row["id"] == "bnm_opr")
 
     assert bnm_opr["refresh_frequency"] == "monthly"
+
+
+def test_openapi_stale_date_is_publisher_likely_retired(tmp_path: Path) -> None:
+    manifest_row = {
+        "id": "fixture_openapi_stale",
+        "url": "https://example.invalid/fixture.json",
+        "refresh_frequency": "annual",
+        "namespace": "test",
+        "freshness_policy": {
+            "family": "data_gov_my_openapi",
+            "content_date_field": "row.date",
+            "interpretation": "observation_period",
+            "discontinued_on_404": True,
+            "reference_table": False,
+            "notes": "fixture",
+        },
+    }
+    (tmp_path / "datapulse.json").write_text(
+        json.dumps({"datasets": [manifest_row]}) + "\n", encoding="utf-8"
+    )
+
+    policy = {
+        "version": 1,
+        "defaults": {"adapter": "direct"},
+        "templates": {},
+        "datasets": {
+            "fixture_openapi_stale": {
+                "freshness": {
+                    "content-date-field": "date",
+                    "extraction-mode": "max",
+                    "fallback": "last-modified",
+                }
+            }
+        },
+    }
+    policy_path = tmp_path / "probe-policy.json"
+    policy_path.write_text(json.dumps(policy) + "\n", encoding="utf-8")
+
+    (tmp_path / "health").mkdir()
+    (tmp_path / "health" / "latest.json").write_text(
+        json.dumps({
+            "schema": "datapulse/v0.4/dataset-health",
+            "checked_at": "2026-09-02T00:00:00Z",
+            "_trust_summary": {"datasets_total": 1},
+            "datasets": [
+                {
+                    "dataset_id": "fixture_openapi_stale",
+                    "last_checked": "2026-09-01T00:00:00Z",
+                    "url": "https://example.invalid/fixture.json",
+                    "status": "stale",
+                    "content_freshness_date": "2021-01-01",
+                }
+            ],
+        }) + "\n",
+        encoding="utf-8",
+    )
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_curl = fake_bin / "curl"
+    fake_curl.write_text(
+        """#!/usr/bin/env bash
+set -euo pipefail
+output_path=""
+headers_path=""
+while (( $# > 0 )); do
+  case "$1" in
+    --output) output_path="$2"; shift 2 ;;
+    --dump-header) headers_path="$2"; shift 2 ;;
+    --max-time|--write-out) shift 2 ;;
+    *) shift ;;
+  esac
+done
+if [[ "$output_path" == "-" ]]; then
+  exit 0
+fi
+printf '[{"date":"2021-01-01"}]\n' > "$output_path"
+printf 'HTTP/1.1 200 OK\r\n\r\n' > "$headers_path"
+printf '200'
+""",
+        encoding="utf-8",
+    )
+    fake_curl.chmod(0o755)
+
+    environment = os.environ.copy()
+    environment["PATH"] = f"{fake_bin}:{environment['PATH']}"
+    environment["DATAPULSE_PROBE_POLICY"] = str(policy_path)
+    completed = subprocess.run(
+        ["bash", str(CHECK_SCRIPT), "datapulse.json"],
+        cwd=tmp_path,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    row = json.loads(completed.stdout)["datasets"][0]
+    assert row["status"] == "stale"
+    assert row["status_reason"] == "publisher-likely-retired"
+    assert row["content_freshness_date"] == "2021-01-01"

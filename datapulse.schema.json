@@ -222,6 +222,63 @@
           "description": "Evidence for marking an upstream dataset discontinued.",
           "type": "string",
           "minLength": 1
+        },
+        "freshness_policy": {
+          "$ref": "#/$defs/freshnessPolicy"
+        }
+      },
+      "additionalProperties": false
+    },
+    "freshnessPolicy": {
+      "type": "object",
+      "required": [
+        "family",
+        "content_date_field",
+        "interpretation",
+        "discontinued_on_404",
+        "reference_table",
+        "notes"
+      ],
+      "properties": {
+        "family": {
+          "description": "Stable source-family key used to select the probe-side freshness rule.",
+          "type": "string",
+          "enum": [
+            "data_gov_my_openapi",
+            "data_gov_my_storage",
+            "data_gov_my",
+            "dosm_via_data_gov_my",
+            "opendosm_storage",
+            "opendosm_data_gov_my_storage",
+            "data_gov_my_archive",
+            "data_gov_my_storage_dosm_gov_my"
+          ]
+        },
+        "content_date_field": {
+          "description": "Field that carries the date used for freshness classification.",
+          "type": "string",
+          "minLength": 1
+        },
+        "interpretation": {
+          "description": "Semantics of the content date: observation period vs publisher publication date.",
+          "type": "string",
+          "enum": [
+            "observation_period",
+            "publication_date"
+          ]
+        },
+        "discontinued_on_404": {
+          "description": "When true, a probe that observes HTTP 404 classifies the row as discontinued rather than stale.",
+          "type": "boolean"
+        },
+        "reference_table": {
+          "description": "When true, the dataset is a lookup/reference table with no freshness clock.",
+          "type": "boolean"
+        },
+        "notes": {
+          "description": "Human-readable explanation of the family freshness rule.",
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false

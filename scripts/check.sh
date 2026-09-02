@@ -1463,6 +1463,8 @@ build_health_snapshot() {
       | ($manifest_rows[] | select(.id == $probe.dataset_id)) as $entry
       | (first($previous_rows[] | select(.dataset_id == $probe.dataset_id)) // {}) as $old
       | cadence_days($entry.refresh_frequency) as $cadence
+      | (($entry.freshness_policy // {}) | .reference_table // false) as $policy_reference_table
+      | (($entry.freshness_policy // {}) | .family // null) as $policy_family
       | ($probe.last_modified // null) as $last_modified
       | (if ($probe | has("content_freshness_date")) then
            $probe.content_freshness_date
@@ -1476,6 +1478,15 @@ build_health_snapshot() {
            | if $content_epoch <= $checked_epoch then $content_freshness_candidate else null end
          ) catch null)
          end) as $content_freshness_date
+      | (if (($policy_family == "data_gov_my_openapi" or $policy_family == "data_gov_my_storage")
+             and ($probe.http_status | type) == "number"
+             and $probe.http_status == 200
+             and $content_freshness_date != null
+             and (($content_freshness_date + "T00:00:00Z" | fromdateiso8601) as $content_epoch
+                 | ($checked_epoch - $content_epoch) > (365 * 86400))
+             and (($old.content_freshness_date // null) == null
+                  or $old.content_freshness_date == $content_freshness_date))
+         then true else false end) as $publisher_likely_retired
       | (if $last_modified == null then null
          else (($last_modified | fromdateiso8601) as $modified
            | ([0, (($checked_epoch - $modified) / 86400 | floor)] | max))
@@ -1518,12 +1529,12 @@ build_health_snapshot() {
            end
          else "unknown-freshness"
          end) as $staleness_status
-      | (if ($entry.data_type // "") == "reference" then
+      | (if ($entry.data_type // "") == "reference" or $policy_reference_table then
            null
          elif ($entry.discontinued // false) then
            "discontinued"
          elif (($probe.http_status | type) == "number"
-               and (($probe.http_status == 404) or ($probe.http_status == 410))) then
+                and (($probe.http_status == 404) or ($probe.http_status == 410))) then
            "discontinued"
          else null
          end) as $discontinued_status
@@ -1534,7 +1545,7 @@ build_health_snapshot() {
          elif (($probe.http_status | type) != "number" or $probe.http_status < 200 or $probe.http_status >= 300) then
            "unreachable"
          # Reference data is versioned rather than time-series, so no freshness clock applies.
-         elif ($entry.data_type // "") == "reference" then
+         elif ($entry.data_type // "") == "reference" or $policy_reference_table then
            "reference"
          elif $probe.status == "degraded" then
            "degraded"
@@ -1548,12 +1559,20 @@ build_health_snapshot() {
          elif $staleness_status == "aging" then "aging"
          else "fresh"
          end) as $status
+      | (if $discontinued_status == "discontinued" then
+           (if ($probe.http_status == 404 or $probe.http_status == 410) then "discontinued-on-404"
+            else "manifest-discontinued" end)
+         elif $publisher_likely_retired then
+           "publisher-likely-retired"
+         else null
+         end) as $status_reason
       | {
           dataset_id: ($probe.dataset_id // null),
           last_checked: (if $probe_measured then $checked_at else null end),
           namespace: ($entry.namespace // null),
           url: ($probe.url // null),
           status: $status,
+          status_reason: $status_reason,
           message: ($probe.message // null),
           request_url: ($probe.request_url // null),
           access_method: ($probe.access_method // null),
