@@ -1,15 +1,15 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-02T12:16:09Z",
+  "checked_at": "2026-09-02T12:20:30Z",
   "_trust_summary": {
-    "checked_at": "2026-09-02T12:16:09Z",
+    "checked_at": "2026-09-02T12:20:30Z",
     "datasets_total": 389,
     "by_status": {
-      "fresh": 84,
+      "fresh": 85,
       "aging": 134,
       "stale": 152,
       "discontinued": 1,
-      "degraded": 2,
+      "degraded": 1,
       "browser_dependent": 5,
       "unreachable": 0,
       "unknown": 0,
@@ -635,7 +635,7 @@
         "days_since_modified": 0.0009375
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-02T12:18:50Z"
+    "pipeline_heartbeat_at": "2026-09-02T12:23:10Z"
   },
   "datasets": [
     {
@@ -948,10 +948,11 @@
     },
     {
       "dataset_id": "exchangerates_daily_1200",
-      "last_checked": "2026-09-02T08:16:27Z",
+      "last_checked": "2026-09-02T12:20:30Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
-      "status": "degraded",
+      "status": "fresh",
+      "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
       "access_method": "direct curl GET",
@@ -976,7 +977,7 @@
       "incomplete": false,
       "column_count": 29,
       "first_row_hash": "shape-v1:2860600fb4e8ff017be607e235d83d858e3172a3b9d9f0309c26aa8c994b2191",
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
