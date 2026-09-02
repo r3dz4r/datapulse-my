@@ -7,6 +7,8 @@ import argparse
 import fnmatch
 import json
 import re
+import subprocess
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -569,6 +571,11 @@ def main() -> int:
         for error in errors:
             print(f"- {error}")
         return 1
+
+    subprocess.run(
+        [sys.executable, str(args.root / "scripts/verify_local_public_parity.py"), "--root", str(args.root)],
+        check=True,
+    )
 
     manifest = json.loads((args.root / "datapulse.json").read_text(encoding="utf-8"))
     print(f"Repository contract verification passed ({len(manifest['datasets'])} datasets).")
