@@ -1,0 +1,52 @@
+workflow_id: reproducible-notebook
+name: Reproducible Research / Notebook Workflow
+objective: A user pins the DataPulse evidence and source state used in an analysis so a reviewer can re-verify the same observation.
+named_user: An analyst, researcher, or journalist who cited DataPulse in a notebook or article and wants the citation to be re-verifiable.
+trigger: The user references DataPulse evidence in an analysis (notebook cell, report, OR chart caption).
+expected_decision: pin | cite-and-request-review
+setup_path: |
+  Run scripts/verify_dataset.py (a future local wrapper around mcp.tools.verify_dataset) before ingesting the data; capture the verdict as a notebook cell or YAML frontmatter block.
+  Pin the evidence_at timestamp, the health/last_modified fields, and the SHA-256 of the served JSON bytes at the moment of citation.
+  If the notebook or article is publication-grade, write a sidecar file like notes/citations/<dataset_id>-<YYYY-MM-DD>.md that records: dataset_id, source URL, evidence_at, content_date, verified_at, citations count, reviewer (operator).
+  Re-run the verifier on the same dataset at the start of a new analysis session; mismatch > 1 cycle indicates pin drift.
+evidence_object: |
+  {
+    "kind": "dataset_citation",
+    "dataset_id": "<string>",
+    "source_url": "https://www.data-pulse.my/#<dataset_id>",
+    "evidence_at": "<iso8601>",
+    "verified_at": "<iso8601>",
+    "content_date_age_days_at_pinning": 7,
+    "verification_hash": "sha256:<hex>",
+    "verifier_runtime_call": "verify_dataset()",
+    "user_id": "<operator handle>",
+    "session_label": "<notebook or article id>"
+  }
+failure_case: |
+  Re-verification returns a different verdict than the pinned one (mismatched health, missing receipt, schema drift, or source disagreement).
+  Source URL no longer serves the same content with the same hash (drift between pinning and review).
+success_measure: |
+  A reviewer can replay the cited observation in < 60 seconds by re-running
+  scripts/verify_dataset.py --evidence-at=<pinned iso8601>. Output matches the
+  cited content within the same row-count noise.
+known_consumers: |
+  Internal Datapulse-MY and engine-team analysts.
+  Research collaborators (once published via the kit in EU-02).
+  External journalists or academic authors.
+owner: design phase
+status: draft (operator review pending)
+last_reviewed: 2026-09-02
+re_audit_trigger: |
+  Any change to mcp.tools/verify_dataset shape or the served evidence shape.
+  Any change to the schema or taxonomy that breaks a pinned citation.
+  Whenever the user reports a citation mismatch.
+assumed_surfaces: |
+  This workflow assumes the following surfaces are live on or before Day 1 of EU-02:
+  - `mcp.tools.get_dataset(dataset_id)` — exists today; returns metadata + the latest health row + evidence row.
+  - `mcp.tools.verify_dataset(dataset_id, include_proof_steps=true)` — exists today.
+  - `https://www.data-pulse.my/health/latest.json` — exists today; immutable per health cycle.
+  Surfaces this workflow does NOT assume (must ship before production use, not prerequisites):
+  - A local `scripts/verify_dataset.py` CLI wrapper — referenced for familiarity but the workflow can call the MCP endpoint directly via the curl-based FastMCP streamable-HTTP handshake.
+  - A `--evidence-at=<iso8601>` flag on the wrapper — would only matter for the deterministic replay path; the workflow can query `mcp.tools/verify_dataset` once and persist the structured verdict directly.
+  - The sidecar `notes/citations/<dataset_id>-<YYYY-MM-DD>.md` artifact — opt-in; EU-02 adoption kit may include a copyable template.
+reference_card: docs/mcp/cards/verify_dataset.json (per-tool MCP card shape)

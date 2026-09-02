@@ -1,0 +1,53 @@
+workflow_id: engine-trust-composition
+name: Engine Trust Composition (NPRA)
+objective: NPRA/Engine output refers back to DataPulse evidence without confusing vertical product claims with source-health claims. This is a vertical-on-top-of-substrate workflow that surfaces when an Engine-side answer crosses a DataPulse-attributed dataset.
+named_user: Engine-side analyst using the pharma MCP at `https://mcp.data-pulse.my/engine` who needs to cite upstream source state in a regulator-submittable document.
+trigger: Engine produces an answer (or summary) that references a data point originally sourced from a public Malaysian dataset.
+expected_decision: link-with-evidence-anchor | defer-with-source-stale-warning | reject-with-source-refusal
+setup_path: |
+  When Engine's answer cites a datapoint, attach a source-verification stub that calls DataPulse's verify_dataset for the upstream dataset id.
+  The stub returns the same use/warn/stop verdict object used by the agent-MCP workflow.
+  Engine's final report records the stub's verdict inline so the downstream reader can re-verify.
+  Engine never claims a dataset is "verified" without the stub's actual response; failure modes pass through unchanged.
+  Engine's MCP card answers carry a `bundle_ref` linking back to DataPulse's evidence row.
+evidence_object: |
+  {
+    "kind": "engine_composition",
+    "engine_answer_id": "<uuid>",
+    "engine_mcp_endpoint": "https://mcp.data-pulse.my/engine",
+    "datapulse_evidence_ref": {
+      "verdict": "use|warn|stop",
+      "dataset_id": "<string>",
+      "verified_at": "<iso8601>",
+      "source_url": "https://www.data-pulse.my/#<dataset_id>",
+      "stub_response_digest": "sha256:<hex>"
+    },
+    "engine_subject": "<pharma subject>"
+  }
+failure_case: |
+  Engine produces an answer that cites a DataPulse-sourced dataset but DataPulse verifier returns stop.
+  Engine produces an answer before the source dataset has been verified.
+  Source dataset's `verified_at` is older than the regulator's freshness requirement.
+  The engine answer is a vertical-product claim (e.g. "BNM-sourced"), not a sub-state-truth anchor. The stub must compose, not replace.
+success_measure: |
+  Every engine answer that surfaces a public-dataset-derived claim carries the verbatim source-verification stub.
+  The stub's verdict matches what DataPulse returns on re-query within 1 probe cycle.
+known_consumers: |
+  Engine-NPRA analysts.
+  Future engine-onboarding scripts (vertical recipes from the September plan dq-6 + Workstream D).
+owner: design phase
+status: draft (operator review pending); optional fourth workflow per the plan
+last_reviewed: 2026-09-02
+re_audit_trigger: |
+  Any change to mcp.tools/verify_dataset shape or to the Engine MCP card format.
+  Any change to the source-list filter that affects upstream attribution.
+assumed_surfaces: |
+  This workflow assumes the following surfaces are live on or before Day 1 of EU-02:
+  - `mcp.data-pulse.my/mcp` (DataPulse canonical MCP server) — exists today.
+  - `mcp.tools.verify_dataset(dataset_id, include_proof_steps=true)` — exists today.
+  - `mcp.data-pulse.my/engine` (Engine NPRA MCP server) — exists today.
+  Surfaces this workflow does NOT assume (must ship before production use, not prerequisites):
+  - A local `scripts/verify_dataset.py` CLI wrapper around the DataPulse MCP tool — not required; the Engine-side stub can call the MCP endpoint directly via the FastMCP streamable-HTTP handshake.
+  - An Engine-side `bundle_ref` field on Engine MCP card answers — currently declared in the engine MCP card spec but not yet surfaced; EU-02 should wire or fall back to `engine_subject + stub_response_digest`.
+  - A formal "stub" component class in the Engine MCP server — currently Engine must inline the stub call; a refactor to make it composable is EU-02 work, not a prerequisite.
+reference_card: docs/agent-quickstart.md (per-pharma-adapter authoring guide)

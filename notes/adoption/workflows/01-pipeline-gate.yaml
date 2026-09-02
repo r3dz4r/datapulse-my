@@ -1,0 +1,47 @@
+workflow_id: pipeline-gate
+name: Pipeline Gate
+objective: Pre-process a dataset for downstream analysis only if freshness, schema, and evidence are acceptable.
+named_user: Data engineer preparing a dataset for a downstream ETL or notebook task.
+trigger: Run before any batch ingestion, retraining, or top-N selection task that depends on the dataset.
+expected_decision: proceed | retry-with-stale-allowed | block-with-reason | branch-to-stale-only-snapshot
+setup_path: |
+  1. Call `mcp.tools/get_freshness_summary(dataset_id, since_days=7)` on the canonical MCP server at `https://mcp.data-pulse.my/mcp`. The tool returns a per-cycle freshness array; the workflow reads `fresh`, `aging`, `stale`, `discontinued` rates and the latest observed_at timestamp.
+  2. Call `mcp.tools/verify_dataset(dataset_id, include_proof_steps=true)`. Branch on the structured verdict field: `use` (continue), `warn` (alert but proceed with evidence_at recorded), `stop` (refuse and tag the consumer artifact with the reason). The tool also returns receipt references; persist them.
+  3. Persist the verdict object (see evidence_object) alongside the downstream artifact (model, dataset, dashboard). The verdict object is the single source of truth for the decision; a reviewer must be able to replay it deterministically from `evidence_at` and `evidence_artifacts[]`.
+  4. On `warn` or `stop`, attach the verdict block as a sidecar `notes/citations/<dataset_id>-<YYYY-MM-DD>.md` artifact in the adopting team's repo (only if the team's policy says so; for internal DataPulse pipelines this is the default).
+evidence_object: |
+  {
+    "verdict": "use|warn|stop",
+    "reason": "<string from verifier>",
+    "evaluated_at": "<iso8601>",
+    "evidence_artifacts": [
+      {"type": "per_dataset_receipt", "uri": "..."},
+      {"type": "health_snapshot_hash", "uri": "..."}
+    ],
+    "drift_observations": [...]
+  }
+failure_case: |
+  - HTTP 200 with content_date older than declared cadence (the BNM false-green pattern).
+  - Schema-drift signal where the shape_hash differs from the previous week.
+  - Missing per-dataset receipt in `data/<dataset>.receipt.json`.
+  - `mcp.tools/verify_dataset` returns `stop` because the dataset was discontinued (e.g. `gtfs_static_prasarana_bus_kuantan`).
+success_measure: |
+  Downstream artifacts carry the verbatim `verdict` object so a reviewer can replay the decision deterministically. The number of `use`-verdicted runs that produce a downstream outcome the consumer reports as wrong is < 1 over 30 days.
+known_consumers: DataPulse's own pipeline utilities (when run); future MCP agents that gate ingestion; reproducible research workflows that pin evidence_at = run time.
+owner: design phase
+status: draft (operator review pending)
+last_reviewed: 2026-09-02
+re_audit_trigger: |
+  - Any change to mcp.tools/verify_dataset shape or verdict enum.
+  - Any change to the 10-status taxonomy that the verdict maps from.
+  - Any new failure pattern discovered in production that this workflow should branch on (consumer reports a wrong outcome).
+assumed_surfaces: |
+  This workflow assumes the following surfaces are live on or before Day 1 of EU-02:
+  - `mcp.tools.get_freshness_summary(dataset_id, since_days=N)` — exists today.
+  - `mcp.tools.verify_dataset(dataset_id, include_proof_steps=true)` — exists today.
+  - `mcp.tools.check_reconciliation(dataset_id)` (for source-disagreement branch) — exists today.
+  Surfaces this workflow does NOT assume (must ship before production use, not prerequisites):
+  - A local `scripts/verify_dataset.py` CLI wrapper around the MCP tool — not required; the workflow can call the MCP endpoint directly via an MCP client.
+  - A `--max-stale-tolerance=<N>d` CLI flag on `verify_dataset.py` — not implemented today; if the workflow should accept a custom tolerance band, EU-02 must add it (or the workflow continues to use the default 10-status taxonomy mapping).
+  - Per-dataset receipt retrieval for the `evidence_artifacts[]` block — currently the per-dataset receipt generator exists in script form (`scripts/gen_per_dataset_receipt.py`); the workflow assumes the receipt is published under a stable URI for citation, which is a separate EU-02 prerequisite.
+reference_card: notes/source-cards/bnm-open-api.md (illustrative observed-cadence band)

@@ -1,0 +1,58 @@
+workflow_id: agent-mcp
+name: Agent / MCP Workflow
+objective: An agent discovers a dataset, checks evidence, chooses use/warn/stop, cites the source, and preserves the evidence object in its answer.
+named_user: AI agent calling the canonical MCP server (or any consumer building an agent against `mcp.data-pulse.my/mcp`).
+trigger: User asks the agent to reference a Malaysian dataset.
+expected_decision: use | warn | stop
+setup_path: |
+  Call `mcp.tools/search_datasets(query=<user-text>)` to find candidate dataset ids.
+  For each candidate, call `mcp.tools.verify_dataset(dataset_id, include_proof_steps=true)`.
+  Branch on the structured verdict:
+    use  -> cite https://www.data-pulse.my/#<dataset_id> with the published health row timestamp.
+    warn -> cite with a last-verified-at <iso8601> note; do not assert freshness.
+    stop -> answer with an evidence-backed refusal that names the missing or stale signal.
+  Embed the verdict block into the agent response payload so reviewers can trace which signal triggered the decision.
+evidence_object: |
+  {
+    "decision": "use|warn|stop",
+    "dataset_id": "<string>",
+    "source_url": "https://www.data-pulse.my/#<dataset_id>",
+    "verified_at": "<iso8601>",
+    "row_count_observed": 42,
+    "shape_hash": "shape-v1:...",
+    "checks": {
+      "http_status": 200,
+      "content_date_age_days": 14,
+      "anomaly_detected": false,
+      "per_dataset_receipt_present": true
+    }
+  }
+failure_case: |
+  HTTP-200-but-stale content (the BNM dormant series pattern). The agent must NOT treat HTTP 200 alone as evidence of freshness; the verdict object is the only machine-readable signal.
+  Missing per-dataset receipt. The agent must answer stop and name the missing signal in the refusal.
+  Source disagreement (multiple APIs for the same dataset). The agent must call mcp.tools/check_reconciliation(dataset_id) and prefer the canonical entry the reconciliation group classifies as authoritative.
+success_measure: |
+  Every agent answer that cites a DataPulse dataset carries the verbatim verdict object.
+  Manual spot-checks on 10 real citations per week show the verdict matches what the MCP server returns when re-queried at the same instant.
+known_consumers: |
+  Adopted MCP agents (when integrated).
+  Future built-in agents in Claude Desktop / Cursor / Windsurf (after ARD catalog is indexed).
+  LangChain and LlamaIndex when a tool wrapper is added (out of scope for EU-02).
+owner: design phase
+status: draft (operator review pending)
+last_reviewed: 2026-09-02
+re_audit_trigger: |
+  Any change to mcp.tools/verify_dataset shape.
+  Any change to the canonical source-list filter that drives reconciliation.
+  When notes/claims/claims.json picks up a new forbidden phrase (the workflow re-reads the ledger on every decision).
+assumed_surfaces: |
+  This workflow assumes the following surfaces are live on or before Day 1 of EU-02:
+  - `mcp.tools.search_datasets(query)` — exists today; returns 18-tool MCP server.
+  - `mcp.tools.verify_dataset(dataset_id, include_proof_steps=true)` — exists today.
+  - `mcp.tools.check_reconciliation(dataset_id)` — exists today.
+  - `https://www.data-pulse.my/#<dataset_id>` deep-link target — exists today; one anchor per dataset.
+  - `claims/claims.json` ledger reachable from the agent's tooling environment — exists today.
+  Surfaces this workflow does NOT assume (must ship before production use, not prerequisites):
+  - An MCP-aware LLM client library on the agent runtime — out of scope for EU-02; the workflow assumes the agent already has one.
+  - ARD catalog federation of `https://www.data-pulse.my/ai-catalog.json` — out of scope for EU-02 (depends on external registries picking it up; see September plan Workstream A angle #5).
+reference_card: docs/mcp/cards/verify_dataset.json (per-tool MCP card shape)
