@@ -1496,7 +1496,20 @@ build_health_snapshot() {
          else ((($content_freshness_date + "T00:00:00Z") | fromdateiso8601) as $content_date
            | ([0, (($checked_epoch - $content_date) / 86400 | floor)] | max))
          end) as $content_freshness_age
-      | ([$last_modified_age, $content_freshness_age] | map(select(. != null)) | max // null) as $staleness_days
+      | (($entry.refresh_frequency // "" | ascii_downcase) as $freq
+         | if ($freq == "30 seconds" or $freq == "hourly") then
+             ($probe.newest_vehicle_timestamp // null) as $newest_vehicle
+             | ($probe.header_timestamp // null) as $header_ts
+             | (if (($newest_vehicle | type) == "number") and ($newest_vehicle > 0) then $newest_vehicle
+                elif (($header_ts | type) == "number") and ($header_ts > 0) then $header_ts
+                else null end)
+           else null
+           end) as $realtime_epoch
+      | (if $realtime_epoch != null then
+           ([0, (($checked_epoch - $realtime_epoch) / 86400)] | max)
+         else
+           ([$last_modified_age, $content_freshness_age] | map(select(. != null)) | max // null)
+         end) as $staleness_days
       | ((($old.column_count | type) == "number"
             and ($probe.column_count | type) == "number"
             and $old.column_count != $probe.column_count)

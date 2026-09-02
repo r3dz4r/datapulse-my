@@ -130,6 +130,61 @@ cp "$fixture_dir/full/manifest.json" "$fixture_dir/full-comparison/manifest.json
 jq -e '.datasets_compared == 1 and (.differences | length) == 1' \
   "$fixture_dir/full-comparison-report.json" >/dev/null
 
+# Realtime GTFS staleness: a live 30-second feed must classify `fresh` from its
+# second-resolution vehicle timestamp, not from the day-granular calendar date.
+# The fixture pins content_freshness_date to an ancient calendar date so the
+# whole-day path would report ~9,600 stale days; the realtime path must win.
+real_python3="$(command -v python3)"
+mkdir "$fixture_dir/realtime-bin" "$fixture_dir/realtime-fresh" "$fixture_dir/realtime-stale"
+cat > "$fixture_dir/realtime-bin/python3" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+for arg in "$@"; do
+  case "$arg" in
+    *probe_gtfs.py)
+      now="$(date -u +%s)"
+      ts=$(( now - GTFS_AGE_SECONDS ))
+      printf '{"dataset_id":"gtfs_realtime_mybas_ipoh","url":"https://example.invalid/rt.pb","request_url":"https://example.invalid/rt.pb","access_method":"direct curl","http_status":200,"content_length":1200,"status":"fresh","message":"HTTP 200; valid GTFS realtime protobuf (22 vehicles)","vehicle_count":22,"record_count":22,"header_timestamp":%s,"newest_vehicle_timestamp":%s,"content_freshness_date":"2000-01-01"}\n' "$ts" "$ts"
+      exit 0
+      ;;
+  esac
+done
+exec "$REAL_PYTHON3" "$@"
+SH
+chmod +x "$fixture_dir/realtime-bin/python3"
+
+cat > "$fixture_dir/realtime-manifest.json" <<'JSON'
+{"datasets":[{"id":"gtfs_realtime_mybas_ipoh","url":"https://example.invalid/rt.pb","refresh_frequency":"30 seconds","namespace":"test"}]}
+JSON
+cp "$fixture_dir/realtime-manifest.json" "$fixture_dir/realtime-fresh/manifest.json"
+cp "$fixture_dir/realtime-manifest.json" "$fixture_dir/realtime-stale/manifest.json"
+
+(
+  cd "$fixture_dir/realtime-fresh"
+  PATH="$fixture_dir/realtime-bin:$PATH" REAL_PYTHON3="$real_python3" GTFS_AGE_SECONDS=10 \
+    bash "$repo_root/scripts/check.sh" manifest.json
+) > "$fixture_dir/realtime-fresh-output.json"
+jq -e '
+  (.datasets | length) == 1
+  and .datasets[0].status == "fresh"
+  and .datasets[0].staleness_status == "fresh"
+  and .datasets[0].newest_vehicle_timestamp > 0
+  and .datasets[0].content_freshness_date == "2000-01-01"
+  and .datasets[0].staleness_days < 0.00045
+' "$fixture_dir/realtime-fresh-output.json" >/dev/null
+
+(
+  cd "$fixture_dir/realtime-stale"
+  PATH="$fixture_dir/realtime-bin:$PATH" REAL_PYTHON3="$real_python3" GTFS_AGE_SECONDS=9000 \
+    bash "$repo_root/scripts/check.sh" manifest.json
+) > "$fixture_dir/realtime-stale-output.json"
+jq -e '
+  (.datasets | length) == 1
+  and .datasets[0].status == "stale"
+  and .datasets[0].staleness_status == "stale"
+  and .datasets[0].staleness_days > 0.0009
+' "$fixture_dir/realtime-stale-output.json" >/dev/null
+
 cat > "$fixture_dir/bad-manifest.json" <<'JSON'
 {"datasets":[{"id":"captured-daily","refresh_frequency":"fortnightly"}]}
 JSON
