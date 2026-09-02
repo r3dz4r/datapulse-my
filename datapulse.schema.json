@@ -105,10 +105,12 @@
           ]
         },
         "data_type": {
-          "description": "Dataset semantic type when date-based freshness does not apply.",
+          "description": "Dataset semantic type. `reference` and `policy-reference` carry no freshness clock and classify as `reference`. `reference-current` is reference content that is still expected to be current, so it remains subject to the normal freshness classification (fresh/aging/stale).",
           "type": "string",
           "enum": [
-            "reference"
+            "reference",
+            "policy-reference",
+            "reference-current"
           ]
         },
         "discontinued": {

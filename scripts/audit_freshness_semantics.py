@@ -14,7 +14,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "datapulse/freshness-semantics-audit/v1"
-NO_CLOCK_DATA_TYPES = {"reference"}
+NO_CLOCK_DATA_TYPES = {"reference", "policy-reference"}
 SOURCE_AWARE_FAMILIES = {
     "data_gov_my_openapi",
     "data_gov_my_storage",

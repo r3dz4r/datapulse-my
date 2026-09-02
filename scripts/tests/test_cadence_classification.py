@@ -17,7 +17,7 @@ CHECK_SCRIPT = ROOT / "scripts/check.sh"
 
 
 def _classify(
-    tmp_path: Path, frequency: str, age_days: int, *, reference: bool = False
+    tmp_path: Path, frequency: str, age_days: int, *, data_type: str | None = None
 ) -> dict:
     manifest_row = {
         "id": "fixture_cadence",
@@ -25,8 +25,8 @@ def _classify(
         "refresh_frequency": frequency,
         "namespace": "test",
     }
-    if reference:
-        manifest_row["data_type"] = "reference"
+    if data_type is not None:
+        manifest_row["data_type"] = data_type
     (tmp_path / "datapulse.json").write_text(
         json.dumps({"datasets": [manifest_row]}) + "\n", encoding="utf-8"
     )
@@ -101,10 +101,24 @@ def test_cadence_and_null_fallback_are_conservative(
 
 
 def test_reference_status_precedes_staleness(tmp_path: Path) -> None:
-    row = _classify(tmp_path, "as-required", 300, reference=True)
+    row = _classify(tmp_path, "as-required", 300, data_type="reference")
 
     assert row["staleness_status"] == "stale"
     assert row["status"] == "reference"
+
+
+def test_policy_reference_status_is_reference_not_stale(tmp_path: Path) -> None:
+    row = _classify(tmp_path, "monthly", 120, data_type="policy-reference")
+
+    assert row["staleness_status"] == "stale"
+    assert row["status"] == "reference"
+
+
+def test_reference_current_classifies_stale(tmp_path: Path) -> None:
+    row = _classify(tmp_path, "monthly", 2000, data_type="reference-current")
+
+    assert row["staleness_status"] == "stale"
+    assert row["status"] == "stale"
 
 
 def test_bnm_opr_has_monthly_manifest_cadence() -> None:

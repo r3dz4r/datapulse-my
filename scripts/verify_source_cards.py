@@ -12,7 +12,7 @@ from typing import Any
 
 LOGGER = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[1]
-BNM_STALE_200 = {"bnm_base_rate", "bnm_kijang_emas", "bnm_opr"}
+BNM_STALE_200 = {"bnm_base_rate", "bnm_kijang_emas"}
 KUANTAN_DATASET = "gtfs_static_prasarana_bus_kuantan"
 
 
@@ -79,13 +79,15 @@ def verify_bnm_open_api_card(card: dict[str, Any], history_path: Path) -> list[s
             f"BNM stale-200 dataset mismatch: history shows {stale_200}, "
             f"card claims {sorted(card_claims)}"
         )
-    if card.get("data_type_mix", {}).get("reference", 0) < 1:
-        errors.append("BNM data_type_mix.reference must be >= 1")
+    if card.get("data_type_mix", {}).get("policy_reference", 0) != 1:
+        errors.append("BNM data_type_mix.policy_reference must be 1")
+    if card.get("data_type_mix", {}).get("reference_current", 0) != 1:
+        errors.append("BNM data_type_mix.reference_current must be 1")
     if card.get("datasets_in_family") != 8:
         errors.append(f"BNM datasets_in_family={card.get('datasets_in_family')}, expected 8")
     if card_claims != BNM_STALE_200:
         errors.append(
-            "BNM known_false_positives must list exactly the three HTTP-200-but-stale "
+            "BNM known_false_positives must list exactly the two HTTP-200-but-stale "
             f"datasets; got {sorted(card_claims)}, expected {sorted(BNM_STALE_200)}"
         )
     return errors

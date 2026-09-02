@@ -37,6 +37,7 @@ FRESHNESS_BASELINE_SECONDS = {
 }
 
 SURVEY_FREQUENCY = "biennial to triennial (survey years)"
+NO_CLOCK_DATA_TYPES = {"reference", "policy-reference"}
 HEALTH_STATUSES = (
     "fresh",
     "aging",
@@ -238,7 +239,7 @@ def classify_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
         return "browser-dependent", "browser-access-required"
     if _is_transport_failure(row):
         return "unreachable", "transport-failure"
-    if row.get("data_type") == "reference":
+    if row.get("data_type") in NO_CLOCK_DATA_TYPES:
         return "reference", "versioned-reference-data"
     if _is_degraded(row):
         return "degraded", "probe-degraded"

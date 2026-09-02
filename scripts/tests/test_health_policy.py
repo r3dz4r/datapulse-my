@@ -118,6 +118,59 @@ def test_unreachable_reference_data_remains_unreachable() -> None:
     assert classify_status(row, NOW) == ("unreachable", "transport-failure")
 
 
+def test_policy_reference_has_no_freshness_clock() -> None:
+    row = {
+        "dataset_id": "bnm_opr",
+        "data_type": "policy-reference",
+        "refresh_frequency": "monthly",
+        "last_checked": "2026-08-08T12:00:00Z",
+        "http_status": 200,
+        "content_freshness_date": "2026-05-07",
+    }
+
+    assert classify_status(row, NOW) == ("reference", "versioned-reference-data")
+
+
+def test_reference_current_subject_to_freshness_clock() -> None:
+    row = {
+        "dataset_id": "bnm_base_rate",
+        "data_type": "reference-current",
+        "refresh_frequency": "monthly",
+        "last_checked": "2026-08-08T12:00:00Z",
+        "http_status": 200,
+        "content_freshness_date": "2020-08-06",
+    }
+
+    assert classify_status(row, NOW) == ("stale", "freshness-stale")
+
+
+def test_reference_current_transport_failure_still_wins() -> None:
+    row = {
+        "dataset_id": "bnm_base_rate",
+        "data_type": "reference-current",
+        "refresh_frequency": "monthly",
+        "last_checked": "2026-08-08T12:00:00Z",
+        "http_status": 503,
+        "content_freshness_date": "2020-08-06",
+    }
+
+    assert classify_status(row, NOW) == ("unreachable", "transport-failure")
+
+
+def test_reference_current_browser_dependency_still_wins() -> None:
+    row = {
+        "dataset_id": "bnm_base_rate",
+        "data_type": "reference-current",
+        "refresh_frequency": "monthly",
+        "last_checked": "2026-08-08T12:00:00Z",
+        "http_status": 200,
+        "access_method": "Camofox",
+        "content_freshness_date": "2020-08-06",
+    }
+
+    assert classify_status(row, NOW) == ("browser-dependent", "browser-access-required")
+
+
 @pytest.mark.parametrize(
     ("last_checked", "reason"),
     [

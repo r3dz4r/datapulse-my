@@ -1465,6 +1465,7 @@ build_health_snapshot() {
       | cadence_days($entry.refresh_frequency) as $cadence
       | (($entry.freshness_policy // {}) | .reference_table // false) as $policy_reference_table
       | (($entry.freshness_policy // {}) | .family // null) as $policy_family
+      | (($entry.data_type // "") == "reference" or ($entry.data_type // "") == "policy-reference") as $no_clock_reference
       | ($probe.last_modified // null) as $last_modified
       | (if ($probe | has("content_freshness_date")) then
            $probe.content_freshness_date
@@ -1529,7 +1530,7 @@ build_health_snapshot() {
            end
          else "unknown-freshness"
          end) as $staleness_status
-      | (if ($entry.data_type // "") == "reference" or $policy_reference_table then
+      | (if $no_clock_reference or $policy_reference_table then
            null
          elif ($entry.discontinued // false) then
            "discontinued"
@@ -1544,9 +1545,10 @@ build_health_snapshot() {
            "browser-dependent"
          elif (($probe.http_status | type) != "number" or $probe.http_status < 200 or $probe.http_status >= 300) then
            "unreachable"
-         # Reference data is versioned rather than time-series, so no freshness clock applies.
-         elif ($entry.data_type // "") == "reference" or $policy_reference_table then
-           "reference"
+          # reference/policy-reference are versioned rather than time-series, so no freshness clock applies.
+          # reference-current stays subject to the ordinary staleness computation below.
+          elif $no_clock_reference or $policy_reference_table then
+            "reference"
          elif $probe.status == "degraded" then
            "degraded"
          elif $staleness_status == "unknown-freshness" then "unknown-freshness"
