@@ -9,7 +9,13 @@
       "last_audit_date": "2026-09-02",
       "re_audit_trigger": "Any change to scripts/gen_per_dataset_receipt.py or any new per-dataset claim in copy.",
       "allowed_occurrences": [],
-      "forbidden_in": ["README.md", "llms.txt", "mcp.json", "docs/**/*.md", "docs/**/*.html"],
+      "forbidden_in": [
+        "README.md",
+        "llms.txt",
+        "mcp.json",
+        "docs/**/*.md",
+        "docs/**/*.html"
+      ],
       "notes": "The phrase 'verified datasets' implies uniform coverage that does not exist. Replace with 'monitored datasets' or 'datasets with published receipts'."
     },
     {
@@ -32,7 +38,12 @@
           "justification": "This is a 'Never upgrade X to Y' guideline for future contributors — it names the phrase precisely so future copy does not regress to it. The lint should not flag this occurrence."
         }
       ],
-      "forbidden_in": ["docs/**/*.md", "docs/**/*.html", "README.md", "llms.txt"],
+      "forbidden_in": [
+        "docs/**/*.md",
+        "docs/**/*.html",
+        "README.md",
+        "llms.txt"
+      ],
       "notes": "All future occurrences outside the two annotated sites must be qualified by 'registry' or 'catalogue' within 5 words of 'authoritative'."
     },
     {
@@ -44,7 +55,13 @@
       "last_audit_date": "2026-09-02",
       "re_audit_trigger": "Any new retraction-discipline revision or any new headline claim.",
       "allowed_occurrences": [],
-      "forbidden_in": ["README.md", "llms.txt", "docs/**/*.md", "docs/**/*.html", "mcp.json"],
+      "forbidden_in": [
+        "README.md",
+        "llms.txt",
+        "docs/**/*.md",
+        "docs/**/*.html",
+        "mcp.json"
+      ],
       "notes": "Note: 'first' as in 'first issue', 'first having to', or 'first request' is allowed — this rule targets promotional novelty phrases like 'first to provide', 'pioneer of', 'industry first'."
     },
     {
@@ -56,7 +73,12 @@
       "last_audit_date": "2026-09-02",
       "re_audit_trigger": "If a refresh produces stable receipts for all datasets, this claim can be retired; until then it stays forbidden.",
       "allowed_occurrences": [],
-      "forbidden_in": ["README.md", "llms.txt", "docs/**/*.md", "docs/**/*.html"],
+      "forbidden_in": [
+        "README.md",
+        "llms.txt",
+        "docs/**/*.md",
+        "docs/**/*.html"
+      ],
       "notes": "The phrase 'per-dataset receipt' (without 'every/all') is allowed in llms.txt and tool descriptions because it describes the verification method."
     },
     {
@@ -68,7 +90,12 @@
       "last_audit_date": "2026-09-02",
       "re_audit_trigger": "Any change to the 10-status taxonomy.",
       "allowed_occurrences": [],
-      "forbidden_in": ["README.md", "llms.txt", "docs/**/*.md", "docs/**/*.html"],
+      "forbidden_in": [
+        "README.md",
+        "llms.txt",
+        "docs/**/*.md",
+        "docs/**/*.html"
+      ],
       "notes": "Replace with 'freshness is reported' or 'freshness is observed' if needed."
     },
     {
@@ -80,7 +107,12 @@
       "last_audit_date": "2026-09-02",
       "re_audit_trigger": "Any new tool addition or removal — count delta must be regenerated.",
       "allowed_occurrences": [],
-      "forbidden_in": ["README.md", "docs/**/*.md", "docs/**/*.html", "llms.txt"],
+      "forbidden_in": [
+        "README.md",
+        "docs/**/*.md",
+        "docs/**/*.html",
+        "llms.txt"
+      ],
       "notes": "Pattern matches literal numbers like '16 tools', '17 tools', '18 tools', etc. The rule: any numeric MCP tool count claim must come from the auto-regenerated resource, not be hand-typed."
     },
     {
@@ -92,7 +124,13 @@
       "last_audit_date": "2026-09-02",
       "re_audit_trigger": "If the quiet-excellence memo is retired or revised.",
       "allowed_occurrences": [],
-      "forbidden_in": ["README.md", "llms.txt", "docs/**/*.md", "docs/**/*.html", "mcp.json"],
+      "forbidden_in": [
+        "README.md",
+        "llms.txt",
+        "docs/**/*.md",
+        "docs/**/*.html",
+        "mcp.json"
+      ],
       "notes": "Promotional framing of category adoption."
     },
     {
@@ -110,8 +148,54 @@
           "justification": "Term of art for the probe's statistical outlier test."
         }
       ],
-      "forbidden_in": ["README.md", "llms.txt", "docs/learn.html", "docs/agent-quickstart.md"],
+      "forbidden_in": [
+        "README.md",
+        "llms.txt",
+        "docs/learn.html",
+        "docs/agent-quickstart.md"
+      ],
       "notes": "Forbidden anywhere except docs/health-methodology.html."
+    },
+    {
+      "claim_id": "verifier-handles-missing-history",
+      "phrase_pattern": "no-phrase",
+      "verification_mode": "allowed_in_canonical",
+      "scope_statement": "Any verifier in scripts/verify_*.py that depends on health/history.jsonl must check for the file's existence as its first step. If the file is missing or zero-sized, the verifier exits with an INFO message (and the appropriate exit code per test expectations) instead of crashing with FileNotFoundError. Source-card verifier (scripts/verify_source_cards.py), failure-corpus verifier (scripts/verify_failure_corpus.py), and any future live-history-anchored verifier must follow the same pattern.",
+      "evidence_source": "scripts/verify_source_cards.py (line ~134) + scripts/verify_failure_corpus.py (line ~145) + commits b13f885a3 + 79402d651",
+      "last_audit_date": "2026-09-02",
+      "re_audit_trigger": "Any new health-history-anchored verifier must be checked for the same missing-history handling.",
+      "allowed_occurrences": [
+        {
+          "path": "scripts/verify_source_cards.py",
+          "line_range_or_pattern": "argparse.parse_args() default + main() first step before any history_path.open()",
+          "justification": "Documented invariant. Verifier checks for history_path.exists() and exits cleanly with INFO when missing."
+        },
+        {
+          "path": "scripts/verify_failure_corpus.py",
+          "line_range_or_pattern": "main() first step before any history_path.open()",
+          "justification": "Documented invariant, mirroring scripts/verify_source_cards.py."
+        }
+      ],
+      "forbidden_in": [],
+      "notes": "Retroactive audit-record from HS-05. The pattern was implemented in commits b13f885a3 and 79402d651 (DP-08 chain) after PR CI failed on missing history in CI."
+    },
+    {
+      "claim_id": "parity-verifier-deterministic-regen-relaxed",
+      "phrase_pattern": "no-phrase",
+      "verification_mode": "allowed_in_canonical",
+      "scope_statement": "scripts/verify_local_public_parity.py MUST NOT include a deterministic_regen dimension that byte-compares docs/index.html against an in-memory render of itself. Such a comparison is too strict for files whose content drifts by probe-cycle (e.g., embed_dashboard_data.py output that absorbs the latest health/latest.json). Regen parity is the responsibility of scripts/verify_release_reproducible.py, which controls regen timing. The parity verifier is restricted to live/local read-back across 7 dimensions: dataset_count, taxonomy, source_commit, manifest_schema, attestation_subject, receipts, public_routes.",
+      "evidence_source": "scripts/verify_local_public_parity.py (current shape after commit bbb95ea7d) + scripts/verify_release_reproducible.py (canonical owner of regen parity)",
+      "last_audit_date": "2026-09-02",
+      "re_audit_trigger": "If regen parity must be re-introduced into parity verifier, add it as a soft tolerance check (size band, schema-shape parity) NOT as a byte-exact equality.",
+      "allowed_occurrences": [
+        {
+          "path": "scripts/verify_local_public_parity.py",
+          "line_range_or_pattern": "verify() returns 7 dimensions and skips deterministic_regen",
+          "justification": "Documented scope. Regen parity is owned by verify_release_reproducible.py."
+        }
+      ],
+      "forbidden_in": [],
+      "notes": "Retroactive audit-record from HS-05. The deterministic_regen dimension was removed in commit bbb95ea7d after PR CI failed with deterministic_regen size drift on a probe-driven file."
     }
   ]
 }
