@@ -43,14 +43,13 @@ def _run_clean() -> tuple[list[str], list[str], list[str]]:
     return parity.verify(
         ROOT,
         fetch=_public_fetch(SOURCE_INDEX, SOURCE_HEALTH, SOURCE_TOOLS),
-        generated_index=lambda _: SOURCE_INDEX,
     )
 
 
 def test_clean_state_passes() -> None:
     errors, _, passed = _run_clean()
     assert errors == []
-    assert {"dataset_count", "tool_count", "taxonomy", "deterministic_regen"} <= set(passed)
+    assert {"dataset_count", "tool_count", "taxonomy"} <= set(passed)
 
 
 def test_wrong_dataset_count_fails() -> None:
@@ -77,17 +76,6 @@ def test_wrong_tool_count_fails() -> None:
         assert any("mcp_tool parity failure" in error and removed in error for error in errors)
     finally:
         path.write_text(original, encoding="utf-8")
-
-
-def test_modified_generated_doc_fails() -> None:
-    path = ROOT / "docs/index.html"
-    original = path.read_bytes()
-    try:
-        path.write_bytes(original + b" ")
-        errors, _, _ = _run_clean()
-        assert "ERROR: deterministic_regen failure: docs/index.html size drift" in errors
-    finally:
-        path.write_bytes(original)
 
 
 def test_taxonomy_violation_fails() -> None:

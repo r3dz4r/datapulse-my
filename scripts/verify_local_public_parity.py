@@ -87,22 +87,7 @@ def _mcp_tools(fetch: Callable[..., Response]) -> set[str]:
     return {item["name"] for item in values}
 
 
-def _generated_index_bytes(root: Path) -> bytes:
-    """Render in memory so determinism is checked without modifying docs/index.html."""
-    try:
-        from scripts import embed_dashboard_data as embedder
-    except ImportError:
-        import embed_dashboard_data as embedder  # type: ignore[no-redef]
-    return embedder._render_page(  # type: ignore[attr-defined]
-        root / "docs/index.html", root / "datapulse.json", root / "health/latest.json",
-        root / "docs/.dashboard_filters.json", root / "docs/.dashboard_sections.json",
-        root / "attestations/latest/index.json", root / "attestations/latest/binding.json",
-        root,
-    ).encode("utf-8")
-
-
-def verify(root: Path, *, fetch: Callable[..., Response] = _fetch,
-           generated_index: Callable[[Path], bytes] = _generated_index_bytes) -> tuple[list[str], list[str], list[str]]:
+def verify(root: Path, *, fetch: Callable[..., Response] = _fetch) -> tuple[list[str], list[str], list[str]]:
     """Return (errors, warnings, passed dimensions) for a repository root."""
     errors: list[str] = []
     warnings: list[str] = []
@@ -228,14 +213,12 @@ def verify(root: Path, *, fetch: Callable[..., Response] = _fetch,
     if not any("route_parity" in error for error in errors):
         passed.append("public_routes")
 
-    # 10. Rendered output is compared in memory; the verifier never writes generated files.
-    try:
-        if generated_index(root) != (root / "docs/index.html").read_bytes():
-            errors.append("ERROR: deterministic_regen failure: docs/index.html size drift")
-        else:
-            passed.append("deterministic_regen")
-    except Exception as exc:
-        errors.append(f"ERROR: deterministic_regen failure: {exc}")
+    # Regen parity is intentionally NOT a dimension of this verifier. The
+    # on-disk docs/index.html is produced by health-cycle commits which may be
+    # one probe cycle behind the live `health/latest.json`, so a byte-exact
+    # comparison will report a false drift. The deterministic-safety-net's
+    # `verify_release_reproducible.py` is the canonical home for regen parity
+    # since it controls the regen timing.
     return errors, warnings, passed
 
 
