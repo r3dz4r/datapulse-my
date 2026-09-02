@@ -128,6 +128,31 @@ def test_bnm_opr_has_monthly_manifest_cadence() -> None:
     assert bnm_opr["refresh_frequency"] == "monthly"
 
 
+HANSARD_IDS = ("hansard_sittings", "hansard_mps", "hansard_parliamentary_terms")
+
+
+def test_hansard_rows_declare_event_driven_cadence() -> None:
+    manifest = json.loads((ROOT / "datapulse.json").read_text(encoding="utf-8"))
+
+    for dataset_id in HANSARD_IDS:
+        row = next(r for r in manifest["datasets"] if r["id"] == dataset_id)
+        assert row["refresh_frequency"] == "as-required"
+
+
+def test_hansard_recess_gap_classifies_not_stale(tmp_path: Path) -> None:
+    row = _classify(tmp_path, "as-required", 26)
+
+    assert row["staleness_status"] == "fresh"
+    assert row["status"] == "fresh"
+
+
+def test_hansard_long_halt_classifies_stale(tmp_path: Path) -> None:
+    row = _classify(tmp_path, "as-required", 300)
+
+    assert row["staleness_status"] == "stale"
+    assert row["status"] == "stale"
+
+
 def test_openapi_stale_date_is_publisher_likely_retired(tmp_path: Path) -> None:
     manifest_row = {
         "id": "fixture_openapi_stale",

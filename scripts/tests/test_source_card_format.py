@@ -34,6 +34,10 @@ def test_gtfs_card_has_required_frontmatter_fields() -> None:
     assert REQUIRED_FIELDS <= _card("gtfs-api.md").keys()
 
 
+def test_hansard_card_has_required_frontmatter_fields() -> None:
+    assert REQUIRED_FIELDS <= _card("malaysia-parliament-digital-hansard.md").keys()
+
+
 def test_bnm_card_yaml_parses() -> None:
     assert _card("bnm-open-api.md")["family"] == "bnm_open_api"
 
@@ -42,15 +46,19 @@ def test_gtfs_card_yaml_parses() -> None:
     assert _card("gtfs-api.md")["family"] == "gtfs_api"
 
 
+def test_hansard_card_yaml_parses() -> None:
+    assert _card("malaysia-parliament-digital-hansard.md")["family"] == "hansard_parlimen"
+
+
 def test_card_body_has_narrative() -> None:
-    for name in ("bnm-open-api.md", "gtfs-api.md"):
+    for name in ("bnm-open-api.md", "gtfs-api.md", "malaysia-parliament-digital-hansard.md"):
         parts = (CARDS / name).read_text(encoding="utf-8").split("---\n", 2)
         assert len(parts) == 3
         assert parts[2].strip()
 
 
 def test_card_dates_are_iso8601() -> None:
-    for name in ("bnm-open-api.md", "gtfs-api.md"):
+    for name in ("bnm-open-api.md", "gtfs-api.md", "malaysia-parliament-digital-hansard.md"):
         card = _card(name)
         date.fromisoformat(str(card["last_reviewed"]))
         date.fromisoformat(str(card["next_review_date"]))
@@ -64,7 +72,15 @@ def test_card_known_false_positives_non_empty_gtfs() -> None:
     assert _card("gtfs-api.md")["known_false_positives"]
 
 
+def test_card_known_false_positives_non_empty_hansard() -> None:
+    assert _card("malaysia-parliament-digital-hansard.md")["known_false_positives"]
+
+
 def test_json_fixtures_mirror_card_frontmatter_shape() -> None:
-    for card_name, fixture_name in (("bnm-open-api.md", "bnm-open-api.json"), ("gtfs-api.md", "gtfs-api.json")):
+    for card_name, fixture_name in (
+        ("bnm-open-api.md", "bnm-open-api.json"),
+        ("gtfs-api.md", "gtfs-api.json"),
+        ("malaysia-parliament-digital-hansard.md", "malaysia-parliament-digital-hansard.json"),
+    ):
         fixture = json.loads((FIXTURES / fixture_name).read_text(encoding="utf-8"))
         assert fixture.keys() == _card(card_name).keys()

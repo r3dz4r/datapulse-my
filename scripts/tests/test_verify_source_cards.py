@@ -76,3 +76,32 @@ def test_bnm_card_wrong_dataset_count_fails(tmp_path: Path) -> None:
     completed = _run(cards)
     assert completed.returncode != 0
     assert "datasets_in_family=7" in completed.stderr
+
+
+@SKIP_NO_HISTORY
+def test_hansard_card_wrong_dataset_count_fails(tmp_path: Path) -> None:
+    cards = _copy_cards(tmp_path)
+    path = cards / "malaysia-parliament-digital-hansard.md"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace('"datasets_in_family":3', '"datasets_in_family":2'),
+        encoding="utf-8",
+    )
+    completed = _run(cards)
+    assert completed.returncode != 0
+    assert "Hansard datasets_in_family=2" in completed.stderr
+
+
+@SKIP_NO_HISTORY
+def test_hansard_card_wrong_recess_claim_fails(tmp_path: Path) -> None:
+    cards = _copy_cards(tmp_path)
+    path = cards / "malaysia-parliament-digital-hansard.md"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            '"affected_datasets":["hansard_sittings"',
+            '"affected_datasets":["hansard_sittings_typo"',
+        ),
+        encoding="utf-8",
+    )
+    completed = _run(cards)
+    assert completed.returncode != 0
+    assert "Hansard known_false_positives" in completed.stderr

@@ -14,6 +14,7 @@ LOGGER = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[1]
 BNM_STALE_200 = {"bnm_base_rate", "bnm_kijang_emas"}
 KUANTAN_DATASET = "gtfs_static_prasarana_bus_kuantan"
+HANSARD_IDS = {"hansard_sittings", "hansard_mps", "hansard_parliamentary_terms"}
 
 
 def load_card(path: Path) -> dict[str, Any]:
@@ -115,11 +116,44 @@ def verify_gtfs_api_card(card: dict[str, Any], history_path: Path) -> list[str]:
     return errors
 
 
+def verify_hansard_card(card: dict[str, Any], history_path: Path) -> list[str]:
+    """Validate Hansard source-card claims against the most recent Hansard probes."""
+    errors: list[str] = []
+    latest = latest_probe_per_dataset(history_path, prefix="hansard_")
+    observed_ids = set(latest)
+    if observed_ids != HANSARD_IDS:
+        errors.append(
+            f"Hansard dataset mismatch: history shows {sorted(observed_ids)}, "
+            f"expected {sorted(HANSARD_IDS)}"
+        )
+    if card.get("datasets_in_family") != 3:
+        errors.append(
+            f"Hansard datasets_in_family={card.get('datasets_in_family')}, expected 3"
+        )
+    recess_claims = _affected_datasets(card, "recess")
+    if recess_claims != HANSARD_IDS:
+        errors.append(
+            "Hansard known_false_positives must list exactly the three recess datasets; "
+            f"got {sorted(recess_claims)}, expected {sorted(HANSARD_IDS)}"
+        )
+    cadence = card.get("declared_cadence", "").lower()
+    if "as-required" not in cadence or "event-driven" not in cadence:
+        errors.append(
+            "Hansard declared_cadence must be event-driven and use as-required semantics"
+        )
+    return errors
+
+
 def verify_source_cards(cards_dir: Path, history_path: Path) -> list[str]:
-    """Verify both source cards and return deterministic error messages."""
+    """Verify the reviewed source cards and return deterministic error messages."""
     bnm_card = load_card(cards_dir / "bnm-open-api.md")
     gtfs_card = load_card(cards_dir / "gtfs-api.md")
-    return verify_bnm_open_api_card(bnm_card, history_path) + verify_gtfs_api_card(gtfs_card, history_path)
+    hansard_card = load_card(cards_dir / "malaysia-parliament-digital-hansard.md")
+    return (
+        verify_bnm_open_api_card(bnm_card, history_path)
+        + verify_gtfs_api_card(gtfs_card, history_path)
+        + verify_hansard_card(hansard_card, history_path)
+    )
 
 
 def parse_args() -> argparse.Namespace:
