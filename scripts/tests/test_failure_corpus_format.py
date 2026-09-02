@@ -6,9 +6,16 @@ from datetime import datetime
 import json
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[2]
 CORPUS = ROOT / "notes" / "failure-corpus"
+HISTORY = ROOT / "health" / "history.jsonl"
+SKIP_NO_HISTORY = pytest.mark.skipif(
+    not HISTORY.exists() or HISTORY.stat().st_size == 0,
+    reason="health/history.jsonl unavailable (CI or freshly cloned worktree)",
+)
 REQUIRED_FIELDS = {
     "schema", "failure_id", "family", "failure_type", "severity",
     "first_observed_at", "most_recent_observed_at", "affected_datasets",
@@ -64,6 +71,7 @@ def test_dates_parse() -> None:
         _parse_iso8601(served["last_verified"])
 
 
+@SKIP_NO_HISTORY
 def test_cross_family_corpus_baseline() -> None:
     history = [json.loads(line) for line in (ROOT / "health" / "history.jsonl").read_text().splitlines()]
     latest_at = max(record["observed_at"] for record in history)
