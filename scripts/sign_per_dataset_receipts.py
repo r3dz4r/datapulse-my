@@ -8,6 +8,7 @@ import logging
 import os
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 
@@ -28,6 +29,22 @@ def _write_result(path: Path | None, signed: bool) -> None:
 def _clear_bundles(data_dir: Path) -> None:
     for bundle in data_dir.glob("*.receipt.sigstore.json"):
         bundle.unlink()
+
+
+def _sign_one(*, statement: Path, data_dir: Path, staging: Path, cosign: str) -> Path:
+    """Sign a single receipt statement into the staging dir, raising on any failure."""
+    identifier = statement.name.removesuffix(".receipt.statement.json")
+    evidence = data_dir / f"{identifier}.receipt.evidence.json"
+    if not evidence.is_file():
+        raise ValueError(f"missing canonical evidence row: {evidence}")
+    bundle = staging / f"{identifier}.receipt.sigstore.json"
+    completed = subprocess.run([
+        cosign, "attest-blob", "--yes", "--statement", str(statement),
+        "--bundle", str(bundle), str(evidence),
+    ], check=False, capture_output=True, text=True)
+    if completed.returncode != 0 or not bundle.is_file() or not bundle.stat().st_size:
+        raise RuntimeError(f"cosign failed while signing {identifier}")
+    return bundle
 
 
 def sign_receipts(*, data_dir: Path, cosign: str, result_out: Path | None = None) -> bool:
@@ -52,19 +69,21 @@ def sign_receipts(*, data_dir: Path, cosign: str, result_out: Path | None = None
     shutil.rmtree(staging, ignore_errors=True)
     staging.mkdir()
     try:
-        for statement in statements:
-            identifier = statement.name.removesuffix(".receipt.statement.json")
-            evidence = data_dir / f"{identifier}.receipt.evidence.json"
-            if not evidence.is_file():
-                raise ValueError(f"missing canonical evidence row: {evidence}")
-            bundle = staging / f"{identifier}.receipt.sigstore.json"
-            completed = subprocess.run([
-                cosign, "attest-blob", "--yes", "--statement", str(statement),
-                "--bundle", str(bundle), str(evidence),
-            ], check=False, capture_output=True, text=True)
-            if completed.returncode != 0 or not bundle.is_file() or not bundle.stat().st_size:
-                raise RuntimeError(f"cosign failed while signing {identifier}")
-        for bundle in staging.glob("*.receipt.sigstore.json"):
+        # Each receipt is fully independent: one content-addressed Sigstore bundle
+        # per statement+evidence pair, no cross-statement state. Parallelising the
+        # serial ~389-round-trip loop removes the dominant deploy cost. The pool is
+        # bounded to 8 workers so concurrent Rekor attest requests stay comfortably
+        # under Sigstore rate limits (389 simultaneous calls would trip them).
+        # Future.result() re-raises the first worker error into the except clause,
+        # and the atomic drain below still runs only after every worker succeeds.
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            futures = [
+                pool.submit(_sign_one, statement=statement, data_dir=data_dir, staging=staging, cosign=cosign)
+                for statement in statements
+            ]
+            for future in futures:
+                future.result()
+        for bundle in sorted(staging.glob("*.receipt.sigstore.json")):
             os.replace(bundle, data_dir / bundle.name)
     except (OSError, ValueError, RuntimeError) as exc:
         _warning(f"{exc}; canonical health publication will continue unsigned")
