@@ -80,7 +80,7 @@ def test_cli_regeneration_uses_source_owned_register_homepage(tmp_path: Path) ->
     assert b'class="register-shell"' in after
     assert b'class="register-row"' in after
     assert b'class="register-chip" data-register-chip' in after
-    assert after.count(b'data-register-filter=') == 4
+    assert after.count(b'data-register-filter=') == 5
     assert b'class="register-clear" data-register-clear data-register-reset hidden>Reset filters</button>' in after
     assert b'.register-chip:has(select option:not(:first-child):checked)' in after
     assert len(re.findall(rb"<style(?: [^>]*)?>.*?</style>", after_head, re.DOTALL)) == 1

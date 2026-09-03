@@ -267,7 +267,7 @@ def _render_homepage(root: Path, previous_html: str) -> str:
     template = (root / HOMEPAGE_TEMPLATE).read_text(encoding="utf-8")
     stylesheet = (root / "scripts/templates/register.css").read_text(encoding="utf-8")
     filter_attributes = {
-        "status": "status", "publisher_category": "publisherCategory", "access_method": "accessMethod", "recency": "recency",
+        "status": "status", "publisher": "publisher", "category": "category", "access_method": "accessMethod", "recency": "recency",
     }
     filters = "\n        ".join(
         f'<label class="register-chip" data-register-chip><span class="register-chip-label">{gen_register_page.html.escape(item.replace("_", " ").title())}</span><select id="register-filter-{item}" data-register-filter="{filter_attributes[item]}" aria-label="Filter by {gen_register_page.html.escape(item.replace("_", " "))}"><option value="">All {gen_register_page.html.escape(item.replace("_", " "))}</option></select><span class="register-chip-caret" aria-hidden="true"></span></label>'

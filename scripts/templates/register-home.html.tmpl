@@ -80,7 +80,7 @@
       const normalise = value => String(value || '').trim().toLocaleLowerCase();
       filters.forEach(filter => {
         const attribute = filter.dataset.registerFilter;
-        const values = [...new Set(rows.flatMap(row => attribute === 'publisherCategory' ? [row.dataset.publisher, row.dataset.category] : [row.dataset[attribute]]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        const values = [...new Set(rows.map(row => row.dataset[attribute]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
         values.forEach(value => filter.add(new Option(value, value)));
       });
       const apply = () => {
@@ -90,9 +90,7 @@
           const matchesFilters = filters.every(filter => {
             if (!filter.value) return true;
             const attribute = filter.dataset.registerFilter;
-            return attribute === 'publisherCategory'
-              ? [row.dataset.publisher, row.dataset.category].some(value => normalise(value) === normalise(filter.value))
-              : normalise(row.dataset[attribute]) === normalise(filter.value);
+            return normalise(row.dataset[attribute]) === normalise(filter.value);
           });
           row.hidden = !(matchesText && matchesFilters);
           return !row.hidden;

@@ -92,7 +92,7 @@ def _validate_config(root: Path) -> dict[str, Any]:
     errors = sorted(Draft202012Validator(schema).iter_errors(config), key=lambda item: list(item.path))
     if errors:
         raise GenerationError(f"config/register-page.json: {errors[0].message}")
-    expected = {"status", "publisher_category", "access_method", "recency"}
+    expected = {"status", "publisher", "category", "access_method", "recency"}
     if set(config["filters"]) != expected or set(config["compact_fields"]) != {"status", "publisher", "category", "access_method", "recency"} or set(config["evidence_fields"]) != {"observed_time", "content_date", "record_signal", "evidence_reference", "limitations"}:
         raise GenerationError("config/register-page.json must declare the complete supported register controls and fields")
     if config["actions"]["primary"]["kind"] != "official_source" or [item["kind"] for item in config["actions"]["secondary"]] != ["evidence", "machine_access"]:

@@ -28,8 +28,12 @@ CANONICAL_KEYS = [
 
 # The source-owned register adds 389 accessible, server-rendered rows while
 # retaining the legacy embedded payload for machine consumers.
-MAX_HOMEPAGE_BYTES = 1_900_000
-MAX_EMBEDDED_DATA_BYTES = 1_000_115
+# Ceilings were originally temporary headroom ('revise deliberately'); the
+# register source-owned row + embedded machine-payload growth (register Slice A)
+# legitimately exceeded the initial 1.9MB / ~1.0MB values, so revise upward to
+# reflect the deliberately-grown register. Revisit if the page grows further.
+MAX_HOMEPAGE_BYTES = 2_000_000
+MAX_EMBEDDED_DATA_BYTES = 1_100_000
 EMBEDDED_DATA_BLOCK = re.compile(rb'<script id="embedded-data">.*?</script>', re.DOTALL)
 
 
@@ -141,7 +145,7 @@ def test_register_search_and_filter_controls_are_present_without_network_fetch()
     assert 'for="register-search"' in html
     assert 'data-register-search' in html
     assert 'data-register-filters' in html
-    for dimension in ("status", "publisher_category", "access_method", "recency"):
+    for dimension in ("status", "publisher", "category", "access_method", "recency"):
         assert f'id="register-filter-{dimension}"' in html
     assert 'data-register-empty' in html
     assert 'data-register-reset' in html
