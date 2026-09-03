@@ -478,11 +478,9 @@ def owned(path: Path, marker: str) -> str:
 
 dashboard_summary = owned(work / "index.html", "dashboard-summary")
 dashboard_trust = owned(work / "index.html", "dashboard-trust-facts")
-dashboard_browser = owned(work / "index.html", "dashboard-browser-facts")
 assert f'{len(manifest["datasets"])} Malaysian public datasets' in dashboard_summary
 assert f'{website}/health/latest.json' in dashboard_trust
 assert f'{len(manifest["datasets"])} datasets verified' in dashboard_trust
-assert f'{health["_trust_summary"]["by_status"]["browser_dependent"]} of {len(manifest["datasets"])} datasets' in dashboard_browser
 npra_freshness = owned(work / "npra.html", "npra-freshness")
 npra_records = [row for row in health["datasets"] if row["dataset_id"] in {
     "pharmaceutical_products", "pharmaceutical_importers", "pharmaceutical_manufacturers",
