@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -23,7 +24,7 @@ def _fixture_root(tmp_path: Path, manifest: list[dict], health: list[dict]) -> P
         (tmp_path / target).write_bytes((ROOT / source).read_bytes())
     (tmp_path / "datapulse.json").write_text(json.dumps({"datasets": manifest}), encoding="utf-8")
     (tmp_path / "health").mkdir()
-    (tmp_path / "health/latest.json").write_text(json.dumps({"datasets": health}), encoding="utf-8")
+    (tmp_path / "health/latest.json").write_text(json.dumps({"checked_at": "2026-08-31T00:00:00Z", "datasets": health}), encoding="utf-8")
     return tmp_path
 
 
@@ -133,6 +134,29 @@ def test_posture_first_ordering_uses_recency_then_dataset_id(tmp_path: Path) -> 
 
     # Warn rows intentionally precede reference-use rows; both precede stop rows.
     assert ordered_ids == ["e-use-new", "h-use-new", "c-use-old", "g-use-missing", "b-warn-new", "f-warn-old", "d-reference", "a-stop"]
+
+
+def test_recency_bucket_is_deterministic_and_relative_to_snapshot_clock() -> None:
+    now = datetime(2026, 9, 3, tzinfo=timezone.utc)
+    assert gen_register_page._recency_bucket({"content_freshness_date": "2026-09-03"}, now) == "Under 30 days"
+    assert gen_register_page._recency_bucket({"content_freshness_date": "2026-08-04"}, now) == "1-6 months"
+    assert gen_register_page._recency_bucket({"content_freshness_date": "2026-03-05"}, now) == "6-12 months"
+    assert gen_register_page._recency_bucket({"content_freshness_date": "2025-09-03"}, now) == "Over a year"
+    assert gen_register_page._recency_bucket({"content_freshness_date": None, "last_checked": None}, now) == "Unknown"
+    assert gen_register_page._recency_bucket({"content_freshness_date": "2026-09-03"}, None) == "Unknown"
+    assert set(gen_register_page.RECENCY_BUCKETS) == {"Under 30 days", "1-6 months", "6-12 months", "Over a year", "Unknown"}
+
+
+def test_register_rows_bucket_recency_but_preserve_exact_date_and_access_method(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path, [_dataset()], [_health(content_freshness_date="2026-08-30")])
+    rendered = gen_register_page.render(root)
+    assert 'data-recency="Under 30 days"' in rendered
+    assert 'data-access-method="direct"' in rendered
+    assert ">2026-08-30</dd>" in rendered
+    assert "Access method</dt>" in rendered
+    assert 'data-filter-dimension="access_method"' not in rendered
+    for dimension in ("status", "publisher", "category", "recency"):
+        assert f'data-filter-dimension="{dimension}"' in rendered
 
 
 def test_escaping_and_action_order(tmp_path: Path) -> None:

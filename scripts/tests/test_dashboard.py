@@ -145,7 +145,7 @@ def test_register_search_and_filter_controls_are_present_without_network_fetch()
     assert 'for="register-search"' in html
     assert 'data-register-search' in html
     assert 'data-register-filters' in html
-    for dimension in ("status", "publisher", "category", "access_method", "recency"):
+    for dimension in ("status", "publisher", "category", "recency"):
         assert f'id="register-filter-{dimension}"' in html
     assert 'data-register-empty' in html
     assert 'data-register-reset' in html

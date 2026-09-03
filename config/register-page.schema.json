@@ -11,7 +11,7 @@
     "title": {"type": "string", "minLength": 1},
     "description": {"type": "string", "minLength": 1},
     "purpose": {"type": "string", "minLength": 1},
-    "filters": {"type": "array", "uniqueItems": true, "minItems": 4, "items": {"enum": ["status", "publisher", "category", "access_method", "recency"]}},
+    "filters": {"type": "array", "uniqueItems": true, "minItems": 4, "items": {"enum": ["status", "publisher", "category", "recency"]}},
     "compact_fields": {"type": "array", "uniqueItems": true, "minItems": 5, "items": {"enum": ["status", "publisher", "category", "access_method", "recency"]}},
     "evidence_fields": {"type": "array", "uniqueItems": true, "minItems": 5, "items": {"enum": ["observed_time", "content_date", "record_signal", "evidence_reference", "limitations"]}},
     "actions": {

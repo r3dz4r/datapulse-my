@@ -8,7 +8,7 @@ import html
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -42,9 +42,8 @@ def _status_key(value: object) -> str | None:
     return value.replace("-", "_")
 
 
-def _recency_timestamp(health_row: dict[str, Any] | None) -> float | None:
-    """Return the preferred observed recency signal, or None when it is unavailable."""
-    value = (health_row or {}).get("content_freshness_date") or (health_row or {}).get("last_checked")
+def _parse_timestamp(value: object) -> datetime | None:
+    """Parse an ISO-8601 value into an aware UTC datetime, or None when unusable."""
     if not isinstance(value, str) or not value.strip():
         return None
     try:
@@ -53,7 +52,46 @@ def _recency_timestamp(health_row: dict[str, Any] | None) -> float | None:
         return None
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.timestamp()
+    return parsed
+
+
+def _recency_timestamp(health_row: dict[str, Any] | None) -> float | None:
+    """Return the preferred observed recency signal, or None when it is unavailable."""
+    value = (health_row or {}).get("content_freshness_date") or (health_row or {}).get("last_checked")
+    parsed = _parse_timestamp(value)
+    return parsed.timestamp() if parsed else None
+
+
+RECENCY_BUCKETS = ("Under 30 days", "1-6 months", "6-12 months", "Over a year", "Unknown")
+_UNDER_30_DAYS = timedelta(days=30).total_seconds()
+_SIX_MONTHS = timedelta(days=182).total_seconds()
+_ONE_YEAR = timedelta(days=365).total_seconds()
+
+
+def _recency_bucket(health_row: dict[str, Any] | None, now: datetime | None) -> str:
+    """Map a row's content date to a deterministic age bucket relative to the snapshot clock.
+
+    The content date (``content_freshness_date``, else ``last_checked``) is measured
+    against ``now`` (the health snapshot ``checked_at``). Windows are exclusive of the
+    upper bound and inclusive of the lower bound:
+      age < 30 days -> "Under 30 days";
+      30 days <= age < 182 days -> "1-6 months";
+      182 days <= age < 365 days -> "6-12 months";
+      age >= 365 days -> "Over a year";
+      no usable content date or snapshot clock -> "Unknown".
+    """
+    timestamp = _recency_timestamp(health_row)
+    if timestamp is None or now is None:
+        return "Unknown"
+    reference = now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+    age = reference.timestamp() - timestamp
+    if age < _UNDER_30_DAYS:
+        return "Under 30 days"
+    if age < _SIX_MONTHS:
+        return "1-6 months"
+    if age < _ONE_YEAR:
+        return "6-12 months"
+    return "Over a year"
 
 
 def _presentation_sort_key(entry: dict[str, Any], health_row: dict[str, Any] | None) -> tuple[int, bool, float, str]:
@@ -92,8 +130,10 @@ def _validate_config(root: Path) -> dict[str, Any]:
     errors = sorted(Draft202012Validator(schema).iter_errors(config), key=lambda item: list(item.path))
     if errors:
         raise GenerationError(f"config/register-page.json: {errors[0].message}")
-    expected = {"status", "publisher", "category", "access_method", "recency"}
-    if set(config["filters"]) != expected or set(config["compact_fields"]) != {"status", "publisher", "category", "access_method", "recency"} or set(config["evidence_fields"]) != {"observed_time", "content_date", "record_signal", "evidence_reference", "limitations"}:
+    filter_expected = {"status", "publisher", "category", "recency"}
+    compact_expected = {"status", "publisher", "category", "access_method", "recency"}
+    evidence_expected = {"observed_time", "content_date", "record_signal", "evidence_reference", "limitations"}
+    if set(config["filters"]) != filter_expected or set(config["compact_fields"]) != compact_expected or set(config["evidence_fields"]) != evidence_expected:
         raise GenerationError("config/register-page.json must declare the complete supported register controls and fields")
     if config["actions"]["primary"]["kind"] != "official_source" or [item["kind"] for item in config["actions"]["secondary"]] != ["evidence", "machine_access"]:
         raise GenerationError("config/register-page.json must place official_source before evidence and machine_access actions")
@@ -120,8 +160,10 @@ def _load_manifest(root: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _load_health(root: Path) -> dict[str, dict[str, Any]]:
-    datasets = load_json(root / "health/latest.json").get("datasets")
+def _load_health(root: Path) -> tuple[dict[str, dict[str, Any]], datetime | None]:
+    document = load_json(root / "health/latest.json")
+    checked_at = _parse_timestamp(document.get("checked_at")) if isinstance(document, dict) else None
+    datasets = document.get("datasets") if isinstance(document, dict) else None
     if not isinstance(datasets, list):
         raise GenerationError("health/latest.json: datasets must be an array")
     by_id: dict[str, dict[str, Any]] = {}
@@ -135,10 +177,10 @@ def _load_health(root: Path) -> dict[str, dict[str, Any]]:
         if status not in STATUS_TO_POSTURE:
             raise GenerationError(f"health/latest.json:{dataset_id}: unsupported status {row.get('status')!r}")
         by_id[dataset_id] = row
-    return by_id
+    return by_id, checked_at
 
 
-def _row_html(entry: dict[str, Any], health_row: dict[str, Any] | None, config: dict[str, Any], mcp_endpoint: str) -> str:
+def _row_html(entry: dict[str, Any], health_row: dict[str, Any] | None, config: dict[str, Any], mcp_endpoint: str, now: datetime | None) -> str:
     dataset_id = entry["id"]
     status = _status_key(health_row.get("status")) if health_row else None
     status_label = status.replace("_", "-") if status else "not observed"
@@ -147,6 +189,7 @@ def _row_html(entry: dict[str, Any], health_row: dict[str, Any] | None, config: 
     category = _display(entry.get("namespace"))
     access_method = _display(health_row.get("access_method") if health_row else None)
     recency = _display((health_row or {}).get("content_freshness_date") or (health_row or {}).get("last_checked"))
+    recency_bucket = _recency_bucket(health_row, now)
     observed_time = _display((health_row or {}).get("last_checked"))
     record_count = (health_row or {}).get("record_count")
     record_signal = "not observed" if record_count is None else f"{record_count} records"
@@ -154,7 +197,7 @@ def _row_html(entry: dict[str, Any], health_row: dict[str, Any] | None, config: 
     official_url = _safe_url(entry.get("url"), f"datapulse.json:{dataset_id}:url")
     official_action = f'<a data-action="official-source" href="{html.escape(official_url, quote=True)}">{html.escape(config["actions"]["primary"]["label"])}</a>' if official_url else '<span data-action="official-source">Official source: not observed</span>'
     secondary = config["actions"]["secondary"]
-    return f'''      <article class="register-row" data-dataset-id="{html.escape(dataset_id, quote=True)}" data-status="{html.escape(status or "not-observed", quote=True)}" data-posture="{html.escape(posture, quote=True)}" data-publisher="{html.escape(publisher, quote=True)}" data-category="{html.escape(category, quote=True)}" data-access-method="{html.escape(access_method, quote=True)}" data-recency="{html.escape(recency, quote=True)}">
+    return f'''      <article class="register-row" data-dataset-id="{html.escape(dataset_id, quote=True)}" data-status="{html.escape(status or "not-observed", quote=True)}" data-posture="{html.escape(posture, quote=True)}" data-publisher="{html.escape(publisher, quote=True)}" data-category="{html.escape(category, quote=True)}" data-access-method="{html.escape(access_method, quote=True)}" data-recency="{html.escape(recency_bucket, quote=True)}">
         <header class="register-row-header"><h3>{html.escape(_display(entry.get("name")))}</h3><p class="register-id"><code>{html.escape(dataset_id)}</code></p><p class="register-decision"><span class="register-status">Status: {html.escape(status_label)}</span><span class="register-posture">Decision: {html.escape(posture)}</span></p></header>
         <dl class="compact-facts"><div><dt>Publisher</dt><dd>{html.escape(publisher)}</dd></div><div><dt>Category</dt><dd>{html.escape(category)}</dd></div><div><dt>Access method</dt><dd>{html.escape(access_method)}</dd></div><div><dt>Recency</dt><dd>{html.escape(recency)}</dd></div></dl>
         <footer class="register-row-footer"><p class="register-actions">{official_action} <a data-action="evidence" href="{html.escape(evidence_href, quote=True)}">{html.escape(secondary[0]["label"])}</a> <a data-action="machine-access" href="{html.escape(mcp_endpoint, quote=True)}">{html.escape(secondary[1]["label"])}</a></p>
@@ -166,13 +209,13 @@ def render(root: Path) -> str:
     config = _validate_config(root)
     surfaces = load_public_surfaces(root)
     manifest = _load_manifest(root)
-    health = _load_health(root)
+    health, now = _load_health(root)
     template = (root / "scripts/templates/register.html.tmpl").read_text(encoding="utf-8")
     stylesheet = (root / "scripts/templates/register.css").read_text(encoding="utf-8")
     filters = " ".join(f'<label><input type="checkbox" data-filter-dimension="{html.escape(item, quote=True)}"> {html.escape(item.replace("_", " "))}</label>' for item in config["filters"])
     legend = "".join(f"<li>Decision: {html.escape(label)}</li>" for label in config["decision_labels"])
     ordered_manifest = sorted(manifest, key=lambda entry: _presentation_sort_key(entry, health.get(entry["id"])))
-    values = {"title": html.escape(config["title"], quote=True), "description": html.escape(config["description"], quote=True), "purpose": html.escape(config["purpose"]), "health_href": config["routes"]["health"], "stylesheet": stylesheet, "filter_controls": filters, "status_legend": legend, "record_count": str(len(manifest)), "rows": "\n".join(_row_html(entry, health.get(entry["id"]), config, surfaces["origins"]["mcp"] + "/mcp") for entry in ordered_manifest)}
+    values = {"title": html.escape(config["title"], quote=True), "description": html.escape(config["description"], quote=True), "purpose": html.escape(config["purpose"]), "health_href": config["routes"]["health"], "stylesheet": stylesheet, "filter_controls": filters, "status_legend": legend, "record_count": str(len(manifest)),         "rows": "\n".join(_row_html(entry, health.get(entry["id"]), config, surfaces["origins"]["mcp"] + "/mcp", now) for entry in ordered_manifest)}
     missing = set(TOKEN.findall(template)) - set(values)
     if missing:
         raise GenerationError(f"register template has unresolved token(s): {', '.join(sorted(missing))}")

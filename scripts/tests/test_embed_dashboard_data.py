@@ -142,8 +142,8 @@ def test_production_homepage_is_the_source_owned_register_with_compatible_payloa
     assert "scripts/templates/register-home.html.tmpl" in html
     assert html.count('class="register-row"') == 389
     assert 'class="register-search" id="register-search" type="search" placeholder="Search this register" data-register-search autocomplete="off"' in html
-    assert html.count('class="register-chip" data-register-chip') == 5
-    assert html.count('data-register-filter=') == 5
+    assert html.count('class="register-chip" data-register-chip') == 4
+    assert html.count('data-register-filter=') == 4
     assert 'class="register-chip-label">Status</span>' in html
     assert 'class="register-chip-caret" aria-hidden="true"></span>' in html
     assert 'class="register-count" data-register-count>389 of 389 datasets shown.</span>' in html
