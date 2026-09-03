@@ -34,8 +34,7 @@ def _strip() -> str:
         "old changelog\n"
         "<!-- END changelog-strip -->\n"
         "<!-- BEGIN dashboard-summary -->\nstale summary\n<!-- END dashboard-summary -->\n"
-        "<!-- BEGIN dashboard-trust-facts -->\nstale trust facts\n<!-- END dashboard-trust-facts -->\n"
-        "<!-- BEGIN dashboard-browser-facts -->\nstale browser facts\n<!-- END dashboard-browser-facts -->"
+        "<!-- BEGIN dashboard-trust-facts -->\nstale trust facts\n<!-- END dashboard-trust-facts -->"
     )
 
 
@@ -250,7 +249,9 @@ def test_embed_replaces_inflated_all_dataset_cadence_claims(tmp_path: Path) -> N
     html = html_path.read_text(encoding="utf-8")
     assert "42 official datasets every 5 minutes" in html
     assert "42 datasets probed every 5 minutes" in html
-    assert "0 of 1 datasets (0.0%) require a real browser for observation" in html
+    # The browser-dependent-observation sentence was removed from the register
+    # (the browser-facts block and its population are gone), so it must be absent.
+    assert "require a real browser for observation" not in html
 
 
 def test_embed_updates_changelog_strip_idempotently(tmp_path: Path) -> None:

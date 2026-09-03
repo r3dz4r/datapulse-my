@@ -46,7 +46,6 @@ CHANGELOG_BEGIN = "<!-- BEGIN changelog-strip -->"
 CHANGELOG_END = "<!-- END changelog-strip -->"
 DASHBOARD_SUMMARY_MARKER = "dashboard-summary"
 DASHBOARD_TRUST_FACTS_MARKER = "dashboard-trust-facts"
-DASHBOARD_BROWSER_FACTS_MARKER = "dashboard-browser-facts"
 NPRA_FRESHNESS_MARKER = "npra-freshness"
 NPRA_CONNECT_MARKER = "npra-connect"
 NPRA_SURFACES_MARKER = "npra-surfaces"
@@ -218,18 +217,6 @@ def _dashboard_facts(html: str, manifest: object, health: object, website: str) 
     records = health.get("datasets")
     if not isinstance(records, list):
         raise EmbedError("health datasets must be an array")
-    by_status = summary.get("by_status")
-    browser_dependent = by_status.get("browser_dependent", 0) if isinstance(by_status, dict) else None
-    if (
-        not isinstance(by_status, dict)
-        or isinstance(browser_dependent, bool)
-        or not isinstance(browser_dependent, int)
-        or browser_dependent < 0
-        or browser_dependent > total
-    ):
-        raise EmbedError(
-            "health _trust_summary.by_status.browser_dependent must be a count between zero and the manifest total"
-        )
     html = replace_owned_block(
         html,
         DASHBOARD_SUMMARY_MARKER,
@@ -240,12 +227,7 @@ def _dashboard_facts(html: str, manifest: object, health: object, website: str) 
         DASHBOARD_TRUST_FACTS_MARKER,
         f'<p><a href="{website}/health/latest.json">{total} datasets observed</a>; use the official publisher for the source of record.</p>',
     )
-    percentage = browser_dependent / total * 100 if total else 0
-    return replace_owned_block(
-        html,
-        DASHBOARD_BROWSER_FACTS_MARKER,
-        f"<p>{browser_dependent} of {total} datasets ({percentage:.1f}%) require a real browser for observation.</p>",
-    )
+    return html
 
 
 def _jsonld_block(manifest: dict[str, object], origins: dict[str, str]) -> str:

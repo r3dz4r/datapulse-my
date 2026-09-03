@@ -55,7 +55,7 @@ P5B_MARKERS = {
         "buyer-api-host", "buyer-api-quickstart", "buyer-api-limits",
         "buyer-api-endpoints", "buyer-api-pagination",
     ),
-    "docs/index.html": ("dashboard-summary", "dashboard-trust-facts", "dashboard-browser-facts"),
+    "docs/index.html": ("dashboard-summary", "dashboard-trust-facts"),
     "docs/npra.html": ("npra-freshness", "npra-connect", "npra-surfaces"),
 }
 

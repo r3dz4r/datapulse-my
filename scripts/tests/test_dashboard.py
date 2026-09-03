@@ -225,7 +225,7 @@ def test_dashboard_and_npra_facts_are_explicit_marker_owned() -> None:
     index = (ROOT / "docs/index.html").read_text(encoding="utf-8")
     npra = (ROOT / "docs/npra.html").read_text(encoding="utf-8")
 
-    for marker in ("dashboard-summary", "dashboard-trust-facts", "dashboard-browser-facts", "changelog-strip"):
+    for marker in ("dashboard-summary", "dashboard-trust-facts", "changelog-strip"):
         assert f"<!-- BEGIN {marker} -->" in index
         assert f"<!-- END {marker} -->" in index
     for marker in ("npra-freshness", "npra-connect", "npra-surfaces"):
@@ -234,48 +234,6 @@ def test_dashboard_and_npra_facts_are_explicit_marker_owned() -> None:
     generator = (ROOT / "scripts/embed_dashboard_data.py").read_text(encoding="utf-8")
     assert "DATASET_COUNT_PATTERNS" not in generator
     assert "_replace_dataset_counts" not in generator
-
-
-def test_browser_fact_uses_canonical_summary_for_hyphenated_record_status() -> None:
-    html = (
-        "<!-- BEGIN dashboard-summary -->old<!-- END dashboard-summary -->"
-        "<!-- BEGIN dashboard-trust-facts -->old<!-- END dashboard-trust-facts -->"
-        "<!-- BEGIN dashboard-browser-facts -->old<!-- END dashboard-browser-facts -->"
-    )
-    manifest = {"datasets": [{"dataset_id": str(index)} for index in range(5)]}
-    health = {
-        "checked_at": "2026-08-24T00:00:00Z",
-        "datasets": [{"dataset_id": "browser", "status": "browser-dependent"}],
-        "_trust_summary": {
-            "datasets_total": 5,
-            "by_status": {"browser_dependent": 1},
-        },
-    }
-
-    rendered = _dashboard_facts(html, manifest, health, "https://www.data-pulse.my")
-
-    assert "1 of 5 datasets (20.0%)" in rendered
-
-
-@pytest.mark.parametrize("browser_count", [True, -1, 6, "1"])
-def test_browser_fact_rejects_malformed_canonical_summary(browser_count: object) -> None:
-    html = (
-        "<!-- BEGIN dashboard-summary -->old<!-- END dashboard-summary -->"
-        "<!-- BEGIN dashboard-trust-facts -->old<!-- END dashboard-trust-facts -->"
-        "<!-- BEGIN dashboard-browser-facts -->old<!-- END dashboard-browser-facts -->"
-    )
-    manifest = {"datasets": [{"dataset_id": str(index)} for index in range(5)]}
-    health = {
-        "checked_at": "2026-08-24T00:00:00Z",
-        "datasets": [],
-        "_trust_summary": {
-            "datasets_total": 5,
-            "by_status": {"browser_dependent": browser_count},
-        },
-    }
-
-    with pytest.raises(EmbedError, match="browser_dependent"):
-        _dashboard_facts(html, manifest, health, "https://www.data-pulse.my")
 
 
 def test_marker_failure_preserves_all_dashboard_targets(tmp_path: Path) -> None:
@@ -352,7 +310,6 @@ def test_embed_preserves_canonical_jsonld_site_metadata(tmp_path: Path) -> None:
         + "\n</head><body>\n"
         "<!-- BEGIN dashboard-summary -->\nold\n<!-- END dashboard-summary -->\n"
         "<!-- BEGIN dashboard-trust-facts -->\nold\n<!-- END dashboard-trust-facts -->\n"
-        "<!-- BEGIN dashboard-browser-facts -->\nold\n<!-- END dashboard-browser-facts -->\n"
         "<!-- BEGIN changelog-strip -->\nold\n<!-- END changelog-strip -->\n"
         "</body>",
         encoding="utf-8",
