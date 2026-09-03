@@ -537,7 +537,7 @@ jobs:
           # Allow the custom-domain edge to observe the just-created Pages deployment.
           sleep 30
           fetch "dataset register" "${website_origin}/" "$smoke_dir/index.html"
-          grep -q "<title>DataPulse dataset register</title>" "$smoke_dir/index.html" \
+          grep -q "<title>DataPulse Dataset Register</title>" "$smoke_dir/index.html" \
             || fail "origin root is not the DataPulse dataset register"
           grep -q "__DATAPULSE_DATA__" "$smoke_dir/index.html" \
             || fail "origin root has no embedded register health payload"
