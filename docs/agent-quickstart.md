@@ -216,8 +216,8 @@ When your agent cites DataPulse MY:
    `Licence and reuse context`, `Observed time`, `Content date`, `Freshness state`,
    `Schema or record signal`, `Evidence reference`, `Claim scope`, `Limitations`).
 3. **Repeat the decision posture** (`USE`, `WARN`, `STOP`) verbatim.
-4. **Never upgrade** "observed" to "verified", "current" to "authoritative", or
-   "fresh at last_checked" to "fresh now" without re-fetching.
+4. **Never upgrade** "observed" to "verified", nor present a last-fetched value as
+   definitive currency, without re-fetching.
 5. **Defer to the publisher** if their licence is more restrictive than the
    receipt implies.
 
