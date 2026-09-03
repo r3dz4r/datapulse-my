@@ -122,7 +122,8 @@ def test_embed_replaces_existing_data_block_with_all_dashboard_inputs(
     assert "dashboardSections:" in html
     assert '"generated_at":"now"' in html
     assert "old" not in html
-    assert "2026-08-17</time>; <a href=\"/health/latest.json\">1 datasets tracked" in html
+    assert "2026-08-17</time>" in html
+    assert 'Live health snapshot: <a href="/health/latest.json"><time datetime="2026-08-17">2026-08-17</time></a>.' in html
 
 
 def test_production_homepage_is_the_source_owned_register_with_compatible_payload() -> None:
@@ -276,7 +277,9 @@ def test_embed_updates_changelog_strip_idempotently(tmp_path: Path) -> None:
     assert html.count(embed_dashboard_data.CHANGELOG_BEGIN) == 1
     assert html.count(embed_dashboard_data.CHANGELOG_END) == 1
     assert '<time datetime="2026-08-17">2026-08-17</time>' in html
-    assert "2 datasets tracked" in html
+    assert "Live health snapshot:" in html
+    assert "2 datasets observed" in html
+    assert "datasets tracked" not in html
     assert 'href="/health/latest.json"' in html
 
 

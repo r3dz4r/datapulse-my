@@ -187,11 +187,11 @@ def update_changelog_strip(html: str, manifest: object, health: object) -> str:
         raise EmbedError("health checked_at must include a UTC offset")
 
     shipped_date = observed_at.astimezone(timezone.utc).date().isoformat()
-    dataset_count = len(manifest["datasets"])
+    # The dataset total is stated once by _dashboard_facts (dashboard-trust-facts).
+    # This strip only publishes the snapshot date so the aside never restates the total.
     replacement = (
         f"{CHANGELOG_BEGIN}\n"
-        f'      <p>Published health snapshot: <time datetime="{shipped_date}">{shipped_date}</time>; '
-        f'<a href="/health/latest.json">{dataset_count} datasets tracked</a>.</p>\n'
+        f'      <p>Live health snapshot: <a href="/health/latest.json"><time datetime="{shipped_date}">{shipped_date}</time></a>.</p>\n'
         f"    {CHANGELOG_END}"
     )
     pattern = re.compile(

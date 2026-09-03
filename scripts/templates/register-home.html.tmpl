@@ -24,7 +24,7 @@
   </header>
   <main id="main-content" class="register-shell">
     <header class="register-intro">
-      <div><p class="register-eyebrow">Live dataset register</p>
+      <div><p class="register-eyebrow">Observed from official Malaysian publishers, with signed evidence</p>
       <h1>{{title}}</h1>
       <p class="register-purpose">{{purpose}}</p></div>
       <p class="register-intro-note">Rows reflect the published health snapshot. Missing signals are <strong>not observed</strong>.</p>
@@ -53,12 +53,15 @@
       </div>
     </section>
     <section class="register-legend" aria-labelledby="legend-title">
-      <h2 id="legend-title">Decision posture legend</h2>
-      <ul>{{status_legend}}</ul>
-    </section>
-    <section class="register-legend" aria-labelledby="status-title">
-      <h2 id="status-title">Observation status labels</h2>
-      <ul>{{status_taxonomy}}</ul>
+      <h2 id="legend-title">Reading the register</h2>
+      <div class="register-legend-group">
+        <h3 class="register-legend-group-title">Decision posture</h3>
+        <ul>{{status_legend}}</ul>
+      </div>
+      <div class="register-legend-group">
+        <h3 class="register-legend-group-title">Observation status</h3>
+        <ul>{{status_taxonomy}}</ul>
+      </div>
     </section>
     <section class="register-list" aria-labelledby="register-title">
       <div class="register-list-header"><h2 id="register-title">All current manifest datasets</h2>

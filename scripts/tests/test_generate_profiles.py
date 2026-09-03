@@ -446,7 +446,8 @@ def test_release_build_runs_in_clean_fixture(tmp_path: Path) -> None:
     dataset_count = len(
         json.loads((result.workdir / "datapulse.json").read_text(encoding="utf-8"))["datasets"]
     )
-    assert f"{dataset_count} datasets tracked" in dashboard
+    assert f"{dataset_count} datasets observed" in dashboard
+    assert "datasets tracked" not in dashboard
     assert 'href="/health/latest.json"' in dashboard
     archives = list((result.workdir / ".archives").glob("health-*.jsonl.gz"))
     assert archives, "release-build must archive expired history inside its workdir"

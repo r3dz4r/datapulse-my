@@ -62,8 +62,10 @@ h3 { font-size: 1rem; line-height: 1.25; }
 .register-clear { padding: 0; border: 0; color: var(--register-accent-strong); background: transparent; font: inherit; font-size: 0.78rem; text-decoration: underline; cursor: pointer; }
 .register-clear:hover { color: #ffffff; }
 
-.register-legend { display: flex; gap: 1rem; align-items: center; padding: 0.65rem 1.25rem; }
+.register-legend { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; padding: 0.9rem 1.25rem; }
 .register-legend h2 { white-space: nowrap; }
+.register-legend-group { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: baseline; }
+.register-legend-group-title { min-width: 8.75rem; color: var(--register-muted); font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; }
 .register-legend ul { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
 .register-legend li, .register-posture { display: inline-flex; align-items: center; min-height: 1.75rem; padding: 0.2rem 0.45rem; border: 1px solid currentColor; font-weight: 700; }
 .register-legend li { letter-spacing: 0.02em; text-transform: none; }
