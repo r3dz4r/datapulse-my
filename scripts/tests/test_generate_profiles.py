@@ -218,6 +218,8 @@ def _stage_source(tmp_path: Path) -> Path:
         RELEASE_FIXTURE / "docs/mcp-reference.md",
         source / "docs/mcp-reference.md",
     )
+    shutil.copy2(ROOT / "docs/agent-quickstart.md", source / "docs/agent-quickstart.md")
+    shutil.copy2(ROOT / "docs/datapulse-intro.md", source / "docs/datapulse-intro.md")
     shutil.copy2(RELEASE_FIXTURE / "mcp.json", source / "mcp.json")
     shutil.copy2(RELEASE_FIXTURE / "agent.json", source / "agent.json")
     shutil.copy2(RELEASE_FIXTURE / "agent.schema.json", source / "agent.schema.json")
