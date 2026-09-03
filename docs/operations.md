@@ -89,7 +89,7 @@ stores only its hash and webhook responses never include it.
 - Health log (unchanged): `/var/log/datapulse-health.err`
 - MCP log: `journalctl --user -u datapulse-mcp.service`
 - Health units: `/etc/systemd/system/datapulse-health.{service,timer}`
-- MCP user unit source: `deploy/systemd/datapulse-mcp.service`
+- MCP user unit source: `system-user/datapulse-mcp.service` in the private `r3dz4r/dotfiles` repo (installed live at `~/.config/systemd/user/`)
 - Release profile invocation: `.github/workflows/deploy-cloudflare-pages.yml`
 
 The health timer owns probe commits and generated health artifacts. Humans and
@@ -185,7 +185,7 @@ verification:
 ```bash
 # Verify source units parse cleanly
 systemd-analyze verify deploy/systemd/datapulse-health.service
-systemd-analyze verify deploy/systemd/datapulse-mcp.service
+systemd-analyze verify ~/.config/systemd/user/datapulse-mcp.service
 
 # Verify generated artifacts are deterministic
 bash scripts/generate.sh health-cycle --list

@@ -36,7 +36,7 @@ journalctl --user -u datapulse-mcp.service -n 100 --no-pager
 
 The deployed application and virtual environment live under
 `/home/redza/.local/share/datapulse-mcp`. The source service unit is
-`deploy/systemd/datapulse-mcp.service`.
+`system-user/datapulse-mcp.service` in the private `r3dz4r/dotfiles` repo.
 
 nginx runs as the system service `nginx.service`. Its DataPulse configuration
 is installed at `/etc/nginx/sites-available/datapulse-mcp` and
