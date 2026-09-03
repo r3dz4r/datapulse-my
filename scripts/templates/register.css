@@ -83,6 +83,8 @@ h3 { font-size: 1rem; line-height: 1.25; }
 .register-count { margin: 0; text-transform: none; letter-spacing: 0; }
 .register-rows { display: grid; gap: 0.55rem; }
 .register-row { display: grid; grid-template-columns: minmax(16rem, 1.55fr) minmax(19rem, 1.8fr) auto; gap: 1rem; align-items: start; padding: 0.9rem; border: 1px solid var(--register-border); border-left: 3px solid var(--register-muted); background: #0d141b; }
+/* The client search/filter toggles row.hidden; author display:grid must not override [hidden]. */
+.register-row[hidden] { display: none; }
 [data-posture="use"] { border-left-color: var(--register-use); }
 [data-posture="warn"] { border-left-color: var(--register-warn); }
 [data-posture="stop"] { border-left-color: var(--register-stop); }
