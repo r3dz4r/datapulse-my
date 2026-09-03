@@ -383,7 +383,7 @@ def build_live_register(health: dict[str, Any], manifest: dict[str, Any]) -> dic
     more_html = ""
     if total > len(bounded):
         more = total - len(bounded)
-        more_html = f'<p class="data-strip">…and {more} more datasets — the full register lives on the dashboard.</p>'
+        more_html = f'<p class="data-strip">…and {more} more datasets — the full register is available at the register home.</p>'
 
     ordered = [status for status in REGISTER_STATUS_ORDER if counts.get(status, 0) > 0]
     ordered += sorted(set(counts) - set(REGISTER_STATUS_ORDER))
@@ -430,9 +430,9 @@ def compatibility_outputs(root: Path) -> dict[Path, str]:
         if previous is not None and previous != page:
             raise GenerationError(f"compatibility aliases disagree for {output}")
         outputs[output] = page
-    required = {root / "docs/landing.html", root / "docs/dashboard.html"}
+    required = {root / "docs/landing.html", root / "docs/dashboard.html", root / "docs/register.html"}
     if set(outputs) != required:
-        raise GenerationError("compatibility aliases must generate landing.html and dashboard.html")
+        raise GenerationError("compatibility aliases must generate landing.html, dashboard.html, and register.html")
     return outputs
 
 

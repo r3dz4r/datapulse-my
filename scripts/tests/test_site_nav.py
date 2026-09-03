@@ -42,7 +42,7 @@ def test_canonical_partial_is_well_formed_and_contains_expected_nav_links() -> N
     assert parser.tags.count("nav") == 1
     assert "div" in parser.tags
     assert 'class="nav-links"' in partial
-    # Scoped nav: dark-theme reversed (white) logo; only Dashboard + GitHub in the menu.
+    # Scoped nav: dark-theme reversed (white) logo; only Register + GitHub in the menu.
     assert 'href="/health-methodology.html"' not in partial
     assert ">Methodology</a>" not in partial
     assert 'href="/learn.html"' not in partial
@@ -50,7 +50,7 @@ def test_canonical_partial_is_well_formed_and_contains_expected_nav_links() -> N
     assert ">NPRA</a>" not in partial
     assert ">MCP</a>" not in partial
     assert ">Catalogue</a>" not in partial
-    assert 'href="/"' in partial and ">Dashboard</a>" in partial
+    assert 'href="/"' in partial and ">Register</a>" in partial
     assert 'href="https://github.com/r3dz4r/datapulse-my"' in partial
     assert partial.count("<img") == 1
     assert '<a class="brand" href="/" aria-label="DataPulse home"><img class="brand-logo" src="/assets/brand/datapulse-horizontal-reversed.svg" alt="DataPulse"></a>' in partial
