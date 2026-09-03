@@ -27,6 +27,35 @@ a:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid
 .skip-link:focus { transform: translateY(0); }
 
 .register-site-header { border-bottom: 1px solid var(--register-border); background: #0c1218; }
+
+/* Self-contained nav: the injected site-nav markup must render even when the
+   external stylesheet is not applied. Scoped under .register-site-header with
+   values matching datapulse.css so the desktop nav is unchanged when both load. */
+.register-site-header .site-nav { position: sticky; top: 0; z-index: 2; background: transparent; color: var(--register-text); border-bottom: 1px solid var(--register-border); }
+.register-site-header .wrap { width: min(1440px, calc(100% - 2rem)); margin-inline: auto; }
+.register-site-header .nav-inner { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 8px; }
+.register-site-header .brand { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; gap: 8px; font-weight: 600; text-decoration: none; color: inherit; white-space: nowrap; }
+.register-site-header .brand img,
+.register-site-header .brand-logo { display: block; width: 175px; max-width: 100%; height: 36px; aspect-ratio: 330 / 68; }
+.register-site-header .nav-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 20px; }
+.register-site-header .nav-links a { min-height: 44px; display: inline-flex; align-items: center; padding: 8px 0; color: var(--register-muted); font-weight: 600; text-decoration: none; transition: color 150ms ease-out; }
+.register-site-header .nav-links a:hover { color: var(--register-accent); }
+.register-site-header .nav-dropdown { position: relative; }
+.register-site-header .nav-dropdown-toggle { list-style: none; min-height: 44px; display: inline-flex; align-items: center; padding: 8px 0; color: var(--register-muted); font-weight: 600; cursor: pointer; transition: color 150ms ease-out; }
+.register-site-header .nav-dropdown-toggle::-webkit-details-marker { display: none; }
+.register-site-header .nav-dropdown-toggle::marker { content: ""; }
+.register-site-header .nav-dropdown-toggle:hover,
+.register-site-header .nav-dropdown[open] > .nav-dropdown-toggle { color: var(--register-accent); }
+.register-site-header .nav-dropdown-toggle:focus-visible { outline: 2px solid var(--register-accent); outline-offset: 3px; }
+.register-site-header .nav-dropdown-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 3; min-width: 200px; display: flex; flex-direction: column; padding: 8px; background: var(--register-panel); border: 1px solid var(--register-border); }
+.register-site-header .nav-dropdown-menu a { min-height: 40px; padding: 8px 12px; white-space: nowrap; }
+
+@media (max-width: 768px) {
+  .register-site-header .nav-inner { align-items: flex-start; flex-direction: column; gap: 0; padding-block: 8px; }
+  .register-site-header .nav-links { width: 100%; justify-content: flex-start; gap: 4px 12px; }
+  .register-site-header .nav-dropdown-menu { position: static; min-width: 0; margin-left: 8px; padding: 0 0 0 8px; background: transparent; border: 0; border-left: 1px solid var(--register-border); }
+}
+
 .register-nav, .register-shell { width: min(1440px, calc(100% - 2rem)); margin-inline: auto; }
 .register-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3.25rem; }
 .register-nav a { min-height: 2.75rem; display: inline-flex; align-items: center; text-decoration: none; font-size: 0.875rem; font-weight: 650; }
