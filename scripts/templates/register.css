@@ -72,6 +72,12 @@ h3 { font-size: 1rem; line-height: 1.25; }
 .register-legend li[data-posture="reference-use"], [data-posture="reference-use"] .register-posture { color: var(--register-reference); }
 .register-legend li[data-posture="stop"], [data-posture="stop"] .register-posture { color: var(--register-stop); }
 
+.register-status-dot { width: 0.5rem; height: 0.5rem; margin-right: 0.35rem; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
+.register-legend li[data-posture-status="use"] { color: var(--register-use); }
+.register-legend li[data-posture-status="warn"] { color: var(--register-warn); }
+.register-legend li[data-posture-status="reference-use"] { color: var(--register-reference); }
+.register-legend li[data-posture-status="stop"] { color: var(--register-stop); }
+
 .register-list { padding: 1rem 1.25rem 1.25rem; }
 .register-list-header { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; margin-bottom: 0.75rem; }
 .register-count { margin: 0; text-transform: none; letter-spacing: 0; }

@@ -292,7 +292,9 @@ def _render_homepage(root: Path, previous_html: str) -> str:
         "filter_controls": filters,
         "status_legend": legend,
         "status_taxonomy": "".join(
-            f"<li>Status: {gen_register_page.html.escape(status.replace('_', '-'))}</li>"
+            f'<li data-posture-status="{gen_register_page.html.escape(gen_register_page.STATUS_TO_POSTURE[status], quote=True)}">'
+            f'<span class="register-status-dot" aria-hidden="true"></span>'
+            f"Status: {gen_register_page.html.escape(status.replace('_', '-'))}</li>"
             for status in gen_register_page.STATUS_TO_POSTURE
         ),
         "record_count": str(len(manifest)),

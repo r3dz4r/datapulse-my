@@ -4867,6 +4867,12 @@ h3 { font-size: 1rem; line-height: 1.25; }
 .register-legend li[data-posture="reference-use"], [data-posture="reference-use"] .register-posture { color: var(--register-reference); }
 .register-legend li[data-posture="stop"], [data-posture="stop"] .register-posture { color: var(--register-stop); }
 
+.register-status-dot { width: 0.5rem; height: 0.5rem; margin-right: 0.35rem; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
+.register-legend li[data-posture-status="use"] { color: var(--register-use); }
+.register-legend li[data-posture-status="warn"] { color: var(--register-warn); }
+.register-legend li[data-posture-status="reference-use"] { color: var(--register-reference); }
+.register-legend li[data-posture-status="stop"] { color: var(--register-stop); }
+
 .register-list { padding: 1rem 1.25rem 1.25rem; }
 .register-list-header { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; margin-bottom: 0.75rem; }
 .register-count { margin: 0; text-transform: none; letter-spacing: 0; }
@@ -4979,7 +4985,7 @@ dd { margin: 0.15rem 0 0; color: var(--register-text); font-size: 0.84rem; overf
     </section>
     <section class="register-legend" aria-labelledby="status-title">
       <h2 id="status-title">Observation status labels</h2>
-      <ul><li>Status: fresh</li><li>Status: aging</li><li>Status: stale</li><li>Status: discontinued</li><li>Status: degraded</li><li>Status: browser-dependent</li><li>Status: unreachable</li><li>Status: unknown</li><li>Status: unknown-freshness</li><li>Status: reference</li></ul>
+      <ul><li data-posture-status="use"><span class="register-status-dot" aria-hidden="true"></span>Status: fresh</li><li data-posture-status="warn"><span class="register-status-dot" aria-hidden="true"></span>Status: aging</li><li data-posture-status="stop"><span class="register-status-dot" aria-hidden="true"></span>Status: stale</li><li data-posture-status="stop"><span class="register-status-dot" aria-hidden="true"></span>Status: discontinued</li><li data-posture-status="stop"><span class="register-status-dot" aria-hidden="true"></span>Status: degraded</li><li data-posture-status="stop"><span class="register-status-dot" aria-hidden="true"></span>Status: browser-dependent</li><li data-posture-status="stop"><span class="register-status-dot" aria-hidden="true"></span>Status: unreachable</li><li data-posture-status="stop"><span class="register-status-dot" aria-hidden="true"></span>Status: unknown</li><li data-posture-status="stop"><span class="register-status-dot" aria-hidden="true"></span>Status: unknown-freshness</li><li data-posture-status="reference-use"><span class="register-status-dot" aria-hidden="true"></span>Status: reference</li></ul>
     </section>
     <section class="register-list" aria-labelledby="register-title">
       <div class="register-list-header"><h2 id="register-title">All current manifest datasets</h2>
