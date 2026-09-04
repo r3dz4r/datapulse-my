@@ -30,6 +30,17 @@
     }
   },
   "datasets": {
+    "_parquet_probe_canary_kkmnow_blood": {
+      "adapter": "direct",
+      "format": "parquet",
+      "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/blood_01_stock_timeseries.parquet",
+      "freshness": {
+        "family": "data_gov_my",
+        "extraction-mode": "max",
+        "content-date-field": "date",
+        "fallback": "last-modified"
+      }
+    },
     "air_pollution": {
       "freshness": {
         "content-date-field": "date",
@@ -2352,6 +2363,14 @@
     "trade_sitc_1d": {
       "template": "data-catalogue-date"
     },
+    "kkmnow_blood": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/blood_01_stock_timeseries.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
+    "kkmnow_organ": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/organ_01_timeseries.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
+    "kkmnow_covidnow": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidnow_01_timeseries.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
+    "kkmnow_covidepid": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidepid_01_util.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
+    "kkmnow_covidvax": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidvax_01_waffle.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
+    "kkmnow_pekab40": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pekab40_01_timeseries.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
+    "kkmnow_bedutil": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/bedutil_01_table_facility.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
+    "kkmnow_facilities": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/facilities_01_table.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
     "hansard_sittings": {
       "template": "hansard-script"
     },
