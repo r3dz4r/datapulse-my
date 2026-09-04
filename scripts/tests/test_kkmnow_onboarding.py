@@ -44,14 +44,21 @@ def test_kkmnow_datasets_have_complete_contract_records() -> None:
 
 
 def test_kkmnow_blood_artifacts_preserve_template_structure() -> None:
-    report = (ROOT / "data/kkmnow_blood.md").read_text(encoding="utf-8")
-    jsonld = _load_json("data/jsonld/kkmnow_blood.json")
-    badge = (ROOT / "badges/kkmnow_blood.svg").read_text(encoding="utf-8")
+    health = _load_json("health/latest.json")
+    statuses = {row["dataset_id"]: row["status"] for row in health["datasets"]}
 
-    assert report.startswith("---\nid: \"kkmnow_blood\"")
-    assert "## Status" in report
-    assert jsonld["@type"] == "Dataset"
-    assert jsonld["identifier"] == "kkmnow_blood"
-    assert jsonld["distribution"][0]["contentUrl"].endswith("/kkmnow_blood.md")
-    assert 'aria-label="health: unknown"' in badge
-    assert "<title>health: unknown</title>" in badge
+    for dataset_id in TARGETS:
+        report = (ROOT / "data" / f"{dataset_id}.md").read_text(encoding="utf-8")
+        jsonld = _load_json(f"data/jsonld/{dataset_id}.json")
+        badge = (ROOT / "badges" / f"{dataset_id}.svg").read_text(encoding="utf-8")
+        status = statuses[dataset_id]
+
+        assert report.startswith(f'---\nid: "{dataset_id}"')
+        assert "## Status" in report
+        assert jsonld["@type"] == "Dataset"
+        assert jsonld["identifier"] == dataset_id
+        assert jsonld["distribution"][0]["contentUrl"].endswith(
+            f"/{dataset_id}.md"
+        )
+        assert f'aria-label="health: {status}"' in badge
+        assert f"<title>health: {status}</title>" in badge
