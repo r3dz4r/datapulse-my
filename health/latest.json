@@ -1,15 +1,15 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-04T10:15:37Z",
+  "checked_at": "2026-09-04T10:25:53Z",
   "_trust_summary": {
-    "checked_at": "2026-09-04T10:15:37Z",
+    "checked_at": "2026-09-04T10:25:53Z",
     "datasets_total": 389,
     "by_status": {
-      "fresh": 85,
+      "fresh": 84,
       "aging": 144,
       "stale": 142,
       "discontinued": 1,
-      "degraded": 0,
+      "degraded": 1,
       "browser_dependent": 5,
       "unreachable": 0,
       "unknown": 0,
@@ -595,7 +595,7 @@
         "days_since_modified": 0.0009606481481481482
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-04T10:23:18Z"
+    "pipeline_heartbeat_at": "2026-09-04T10:29:03Z"
   },
   "datasets": [
     {
@@ -970,19 +970,19 @@
     },
     {
       "dataset_id": "exchangerates_daily_1700",
-      "last_checked": "2026-09-04T09:20:30Z",
+      "last_checked": "2026-09-04T10:25:53Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
-      "status": "fresh",
+      "status": "degraded",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 8060619,
+      "content_length": 8062056,
       "last_modified": null,
-      "content_freshness_date": "2026-09-03",
-      "first_record_timestamp": "2013-03-01",
+      "content_freshness_date": "2026-09-04",
+      "first_record_timestamp": "2006-12-18",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
       "transition_registration_count": null,
@@ -993,13 +993,13 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 17202,
+      "record_count": 17205,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
       "column_count": 29,
-      "first_row_hash": "shape-v1:2860600fb4e8ff017be607e235d83d858e3172a3b9d9f0309c26aa8c994b2191",
-      "content_shape_changed": false,
+      "first_row_hash": "shape-v1:f55dd70c5f7e6baf0e5c309f7a1d3748189b8bede932a71850330a6d42c2ddc8",
+      "content_shape_changed": true,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -1013,7 +1013,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": 1,
+      "staleness_days": 0,
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -1026,7 +1026,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mode": "cadence_fallback"
       }
     },
@@ -1097,7 +1097,7 @@
     },
     {
       "dataset_id": "doe_apims",
-      "last_checked": "2026-09-04T10:05:26Z",
+      "last_checked": "2026-09-04T10:25:53Z",
       "namespace": "environment",
       "url": "https://eqms.doe.gov.my/APIMS/main",
       "status": "browser-dependent",
@@ -1118,7 +1118,7 @@
       "appendix_resource_count": null,
       "wait_seconds": 30,
       "stations": 8,
-      "timestamp": "04/09/2026, 03:05",
+      "timestamp": "04/09/2026, 03:25",
       "snapshot_chars": 10276,
       "record_count": null,
       "estimated_record_count": null,
