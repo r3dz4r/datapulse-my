@@ -19,3 +19,6 @@
 # Markdown and CSV: LF for consistency
 *.md text eol=lf
 *.csv text eol=lf
+
+# PDF fixtures are binary; do not apply text diffs, whitespace checks, or EOL conversion.
+scripts/tests/fixtures/*.pdf binary

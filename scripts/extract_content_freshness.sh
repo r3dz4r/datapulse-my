@@ -18,6 +18,9 @@ content_format="$(jq -r --arg id "$dataset_id" \
 
 content_file="${DATAPULSE_CONTENT_FILE:-}"
 temporary_file=""
+if [[ -z "$content_file" && -f "$url" ]]; then
+  content_file="$url"
+fi
 if [[ -z "$content_file" ]]; then
   temporary_file="$(mktemp)"
   content_file="$temporary_file"
@@ -78,6 +81,75 @@ if dates:
     else:
         past = {value for value in dates if value <= today}
         print(max(past).isoformat() if past else max(dates).isoformat())
+PY
+  exit 0
+fi
+
+case "${url%%\?*}" in
+  *.pdf) pdf_input=1 ;;
+  *) pdf_input=0 ;;
+esac
+if [[ "$content_file" == *.pdf || "$content_format" == "pdf" ]]; then
+  pdf_input=1
+fi
+
+if [[ "$pdf_input" -eq 1 ]]; then
+  python3 - "$content_file" "$extraction_mode" <<'PY'
+from datetime import date
+from pathlib import Path
+import re
+import sys
+
+try:
+    import pdfplumber
+except ImportError as error:
+    raise SystemExit(
+        "PDF freshness extraction requires pdfplumber; install requirements.txt"
+    ) from error
+
+
+def extract_dates(text: str) -> set[date]:
+    dates: set[date] = set()
+    for match in re.finditer(r"(?<!\d)(\d{4})(?:[-/](\d{1,2}))?(?!\d)", text):
+        year, month = (int(part) if part is not None else None for part in match.groups())
+        if month is None:
+            month = 1
+        try:
+            dates.add(date(year, month, 1))
+        except ValueError:
+            pass
+    return dates
+
+
+path = Path(sys.argv[1])
+extraction_mode = sys.argv[2]
+table_dates: set[date] = set()
+text_dates: set[date] = set()
+
+with pdfplumber.open(path) as pdf:
+    for page in pdf.pages:
+        for table in page.extract_tables():
+            for row in table:
+                for cell in row:
+                    if cell:
+                        table_dates.update(extract_dates(cell))
+        page_text = page.extract_text() or ""
+        text_dates.update(extract_dates(page_text))
+
+# Prefer table values: publication years on cover pages can lag the data period.
+dates = table_dates or text_dates
+if not dates:
+    raise SystemExit(
+        "PDF freshness extraction found no extractable date strings; "
+        "the PDF is not in the expected format"
+    )
+
+today = date.today()
+if extraction_mode == "min":
+    print(min(dates).isoformat())
+else:
+    past = {value for value in dates if value <= today}
+    print(max(past).isoformat() if past else max(dates).isoformat())
 PY
   exit 0
 fi
