@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-09-04T15:30:27Z",
-  "node_count": 389,
-  "edge_count": 8175,
+  "generated_at": "2026-09-04T22:06:50Z",
+  "node_count": 397,
+  "edge_count": 8331,
   "edge_kinds": {
-    "same_steward": 4062,
-    "same_agency": 4111,
+    "same_steward": 4090,
+    "same_agency": 4239,
     "same_geography": 0,
     "canonical_series": 1,
     "successor_to": 0,
     "shared_schema": 1
   },
   "coverage": {
-    "datasets_with_at_least_one_edge": 365,
+    "datasets_with_at_least_one_edge": 373,
     "isolated_datasets": [
       "almanak_astronomi",
       "cosmetics_manufacturers",
@@ -1838,6 +1838,54 @@
       "title": "KKM iDengue Weekly Dengue Cases",
       "steward": "KKM (Bahagian Kawalan Penyakit) + MYSA",
       "agency": "KKM iDengue portal (Camofox-rendered)"
+    },
+    {
+      "dataset_id": "kkmnow_bedutil",
+      "title": "KKMNOW Hospital Bed Utilisation by Facility/State",
+      "steward": "Ministry of Health Malaysia",
+      "agency": "github.com/MoH-Malaysia/kkmnow-data"
+    },
+    {
+      "dataset_id": "kkmnow_blood",
+      "title": "KKMNOW Daily Blood Donations and Stock",
+      "steward": "Ministry of Health Malaysia",
+      "agency": "github.com/MoH-Malaysia/kkmnow-data"
+    },
+    {
+      "dataset_id": "kkmnow_covidepid",
+      "title": "KKMNOW Weekly COVID-19 Epidemiological Surveillance",
+      "steward": "Ministry of Health Malaysia",
+      "agency": "github.com/MoH-Malaysia/kkmnow-data"
+    },
+    {
+      "dataset_id": "kkmnow_covidnow",
+      "title": "KKMNOW COVID-19 Daily Cases",
+      "steward": "Ministry of Health Malaysia",
+      "agency": "github.com/MoH-Malaysia/kkmnow-data"
+    },
+    {
+      "dataset_id": "kkmnow_covidvax",
+      "title": "KKMNOW COVID-19 Vaccine Registrations",
+      "steward": "Ministry of Health Malaysia",
+      "agency": "github.com/MoH-Malaysia/kkmnow-data"
+    },
+    {
+      "dataset_id": "kkmnow_facilities",
+      "title": "KKMNOW Healthcare Resources/Facilities Directory",
+      "steward": "Ministry of Health Malaysia",
+      "agency": "github.com/MoH-Malaysia/kkmnow-data"
+    },
+    {
+      "dataset_id": "kkmnow_organ",
+      "title": "KKMNOW Organ Donation Pledges and Deaths",
+      "steward": "Ministry of Health Malaysia",
+      "agency": "github.com/MoH-Malaysia/kkmnow-data"
+    },
+    {
+      "dataset_id": "kkmnow_pekab40",
+      "title": "KKMNOW PeKa B40 Daily Health Screenings by State",
+      "steward": "Ministry of Health Malaysia",
+      "agency": "github.com/MoH-Malaysia/kkmnow-data"
     },
     {
       "dataset_id": "lecturers_uni",
@@ -5336,6 +5384,102 @@
     {
       "kind": "same_agency",
       "from": "covid_cases",
+      "to": "kkmnow_bedutil",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases",
+      "to": "kkmnow_blood",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases",
+      "to": "kkmnow_covidepid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases",
+      "to": "kkmnow_covidnow",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases",
+      "to": "kkmnow_covidvax",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases",
+      "to": "kkmnow_facilities",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases",
+      "to": "kkmnow_organ",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases",
+      "to": "kkmnow_pekab40",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases",
       "to": "mnha",
       "weight": 1,
       "provenance": {
@@ -5420,6 +5564,102 @@
     {
       "kind": "same_agency",
       "from": "covid_cases_age",
+      "to": "kkmnow_bedutil",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_age",
+      "to": "kkmnow_blood",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_age",
+      "to": "kkmnow_covidepid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_age",
+      "to": "kkmnow_covidnow",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_age",
+      "to": "kkmnow_covidvax",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_age",
+      "to": "kkmnow_facilities",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_age",
+      "to": "kkmnow_organ",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_age",
+      "to": "kkmnow_pekab40",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_age",
       "to": "mnha",
       "weight": 1,
       "provenance": {
@@ -5504,6 +5744,102 @@
     {
       "kind": "same_agency",
       "from": "covid_cases_vaxstatus",
+      "to": "kkmnow_bedutil",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_vaxstatus",
+      "to": "kkmnow_blood",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_vaxstatus",
+      "to": "kkmnow_covidepid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_vaxstatus",
+      "to": "kkmnow_covidnow",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_vaxstatus",
+      "to": "kkmnow_covidvax",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_vaxstatus",
+      "to": "kkmnow_facilities",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_vaxstatus",
+      "to": "kkmnow_organ",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_vaxstatus",
+      "to": "kkmnow_pekab40",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_cases_vaxstatus",
       "to": "mnha",
       "weight": 1,
       "provenance": {
@@ -5553,6 +5889,102 @@
       "kind": "same_agency",
       "from": "covid_deaths_linelist",
       "to": "infant_immunisation",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_deaths_linelist",
+      "to": "kkmnow_bedutil",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_deaths_linelist",
+      "to": "kkmnow_blood",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_deaths_linelist",
+      "to": "kkmnow_covidepid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_deaths_linelist",
+      "to": "kkmnow_covidnow",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_deaths_linelist",
+      "to": "kkmnow_covidvax",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_deaths_linelist",
+      "to": "kkmnow_facilities",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_deaths_linelist",
+      "to": "kkmnow_organ",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "covid_deaths_linelist",
+      "to": "kkmnow_pekab40",
       "weight": 1,
       "provenance": {
         "matched_fields": [
@@ -50588,6 +51020,102 @@
     {
       "kind": "same_agency",
       "from": "healthcare_staff",
+      "to": "kkmnow_bedutil",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "healthcare_staff",
+      "to": "kkmnow_blood",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "healthcare_staff",
+      "to": "kkmnow_covidepid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "healthcare_staff",
+      "to": "kkmnow_covidnow",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "healthcare_staff",
+      "to": "kkmnow_covidvax",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "healthcare_staff",
+      "to": "kkmnow_facilities",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "healthcare_staff",
+      "to": "kkmnow_organ",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "healthcare_staff",
+      "to": "kkmnow_pekab40",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "healthcare_staff",
       "to": "mnha_moh",
       "weight": 1,
       "provenance": {
@@ -50684,6 +51212,102 @@
     {
       "kind": "same_agency",
       "from": "hospital_beds",
+      "to": "kkmnow_bedutil",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "hospital_beds",
+      "to": "kkmnow_blood",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "hospital_beds",
+      "to": "kkmnow_covidepid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "hospital_beds",
+      "to": "kkmnow_covidnow",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "hospital_beds",
+      "to": "kkmnow_covidvax",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "hospital_beds",
+      "to": "kkmnow_facilities",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "hospital_beds",
+      "to": "kkmnow_organ",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "hospital_beds",
+      "to": "kkmnow_pekab40",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "hospital_beds",
       "to": "mnha",
       "weight": 1,
       "provenance": {
@@ -50769,6 +51393,102 @@
       "kind": "same_agency",
       "from": "hospital_beds",
       "to": "vaxreg_covid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "infant_immunisation",
+      "to": "kkmnow_bedutil",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "infant_immunisation",
+      "to": "kkmnow_blood",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "infant_immunisation",
+      "to": "kkmnow_covidepid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "infant_immunisation",
+      "to": "kkmnow_covidnow",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "infant_immunisation",
+      "to": "kkmnow_covidvax",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "infant_immunisation",
+      "to": "kkmnow_facilities",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "infant_immunisation",
+      "to": "kkmnow_organ",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "infant_immunisation",
+      "to": "kkmnow_pekab40",
       "weight": 1,
       "provenance": {
         "matched_fields": [
@@ -51105,6 +51825,870 @@
       "kind": "same_agency",
       "from": "ipi_export",
       "to": "sdg_10-c-1",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_bedutil",
+      "to": "mnha",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_bedutil",
+      "to": "mnha_moh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_bedutil",
+      "to": "nutrition_children_sex",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_bedutil",
+      "to": "nutrition_children_strata",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_bedutil",
+      "to": "sanitation_access",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_bedutil",
+      "to": "sdg_03-3-1",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_bedutil",
+      "to": "std_state",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_bedutil",
+      "to": "vaxreg_covid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_bedutil",
+      "to": "vaxreg_covid_demog",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_blood",
+      "to": "mnha",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_blood",
+      "to": "mnha_moh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_blood",
+      "to": "nutrition_children_sex",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_blood",
+      "to": "nutrition_children_strata",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_blood",
+      "to": "sanitation_access",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_blood",
+      "to": "sdg_03-3-1",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_blood",
+      "to": "std_state",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_blood",
+      "to": "vaxreg_covid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_blood",
+      "to": "vaxreg_covid_demog",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidepid",
+      "to": "mnha",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidepid",
+      "to": "mnha_moh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidepid",
+      "to": "nutrition_children_sex",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidepid",
+      "to": "nutrition_children_strata",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidepid",
+      "to": "sanitation_access",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidepid",
+      "to": "sdg_03-3-1",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidepid",
+      "to": "std_state",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidepid",
+      "to": "vaxreg_covid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidepid",
+      "to": "vaxreg_covid_demog",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidnow",
+      "to": "mnha",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidnow",
+      "to": "mnha_moh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidnow",
+      "to": "nutrition_children_sex",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidnow",
+      "to": "nutrition_children_strata",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidnow",
+      "to": "sanitation_access",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidnow",
+      "to": "sdg_03-3-1",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidnow",
+      "to": "std_state",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidnow",
+      "to": "vaxreg_covid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidnow",
+      "to": "vaxreg_covid_demog",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidvax",
+      "to": "mnha",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidvax",
+      "to": "mnha_moh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidvax",
+      "to": "nutrition_children_sex",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidvax",
+      "to": "nutrition_children_strata",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidvax",
+      "to": "sanitation_access",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidvax",
+      "to": "sdg_03-3-1",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidvax",
+      "to": "std_state",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidvax",
+      "to": "vaxreg_covid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_covidvax",
+      "to": "vaxreg_covid_demog",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_facilities",
+      "to": "mnha",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_facilities",
+      "to": "mnha_moh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_facilities",
+      "to": "nutrition_children_sex",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_facilities",
+      "to": "nutrition_children_strata",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_facilities",
+      "to": "sanitation_access",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_facilities",
+      "to": "sdg_03-3-1",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_facilities",
+      "to": "std_state",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_facilities",
+      "to": "vaxreg_covid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_facilities",
+      "to": "vaxreg_covid_demog",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_organ",
+      "to": "mnha",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_organ",
+      "to": "mnha_moh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_organ",
+      "to": "nutrition_children_sex",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_organ",
+      "to": "nutrition_children_strata",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_organ",
+      "to": "sanitation_access",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_organ",
+      "to": "sdg_03-3-1",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_organ",
+      "to": "std_state",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_organ",
+      "to": "vaxreg_covid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_organ",
+      "to": "vaxreg_covid_demog",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_pekab40",
+      "to": "mnha",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_pekab40",
+      "to": "mnha_moh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_pekab40",
+      "to": "nutrition_children_sex",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_pekab40",
+      "to": "nutrition_children_strata",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_pekab40",
+      "to": "sanitation_access",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_pekab40",
+      "to": "sdg_03-3-1",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_pekab40",
+      "to": "std_state",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_pekab40",
+      "to": "vaxreg_covid",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "kkmnow_pekab40",
+      "to": "vaxreg_covid_demog",
       "weight": 1,
       "provenance": {
         "matched_fields": [
@@ -102910,6 +104494,370 @@
       "kind": "same_steward",
       "from": "ipi_export",
       "to": "sppi_3d",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_bedutil",
+      "to": "kkmnow_blood",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_bedutil",
+      "to": "kkmnow_covidepid",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_bedutil",
+      "to": "kkmnow_covidnow",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_bedutil",
+      "to": "kkmnow_covidvax",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_bedutil",
+      "to": "kkmnow_facilities",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_bedutil",
+      "to": "kkmnow_organ",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_bedutil",
+      "to": "kkmnow_pekab40",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_blood",
+      "to": "kkmnow_covidepid",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_blood",
+      "to": "kkmnow_covidnow",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_blood",
+      "to": "kkmnow_covidvax",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_blood",
+      "to": "kkmnow_facilities",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_blood",
+      "to": "kkmnow_organ",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_blood",
+      "to": "kkmnow_pekab40",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidepid",
+      "to": "kkmnow_covidnow",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidepid",
+      "to": "kkmnow_covidvax",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidepid",
+      "to": "kkmnow_facilities",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidepid",
+      "to": "kkmnow_organ",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidepid",
+      "to": "kkmnow_pekab40",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidnow",
+      "to": "kkmnow_covidvax",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidnow",
+      "to": "kkmnow_facilities",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidnow",
+      "to": "kkmnow_organ",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidnow",
+      "to": "kkmnow_pekab40",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidvax",
+      "to": "kkmnow_facilities",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidvax",
+      "to": "kkmnow_organ",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_covidvax",
+      "to": "kkmnow_pekab40",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_facilities",
+      "to": "kkmnow_organ",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_facilities",
+      "to": "kkmnow_pekab40",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "kkmnow_organ",
+      "to": "kkmnow_pekab40",
       "weight": 2,
       "provenance": {
         "matched_fields": [
