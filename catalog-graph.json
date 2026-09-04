@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-09-04T23:20:55Z",
-  "node_count": 398,
-  "edge_count": 8331,
+  "generated_at": "2026-09-04T23:41:11Z",
+  "node_count": 408,
+  "edge_count": 8386,
   "edge_kinds": {
-    "same_steward": 4090,
-    "same_agency": 4239,
+    "same_steward": 4135,
+    "same_agency": 4249,
     "same_geography": 0,
     "canonical_series": 1,
     "successor_to": 0,
     "shared_schema": 1
   },
   "coverage": {
-    "datasets_with_at_least_one_edge": 373,
+    "datasets_with_at_least_one_edge": 384,
     "isolated_datasets": [
       "almanak_astronomi",
       "cosmetics_manufacturers",
@@ -36,8 +36,7 @@
       "prisoners_state",
       "ridership_headline",
       "sdg_16-1-1",
-      "sdg_16-2-2",
-      "st_energy_balance_pdf"
+      "sdg_16-2-2"
     ]
   },
   "precision": {
@@ -2315,10 +2314,70 @@
       "agency": "OpenDOSM (also indexed by data.gov.my)"
     },
     {
+      "dataset_id": "st_cogenerators",
+      "title": "Co-Generators — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "meih.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_consumers",
+      "title": "Number of Electricity Consumers — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "meih.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_elesca",
+      "title": "Electrical Competency Certificates Issued — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "meih.st.gov.my (ST)"
+    },
+    {
       "dataset_id": "st_energy_balance_pdf",
       "title": "National Energy Balance (Malaysia, annual PDF)",
       "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
       "agency": "st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_generation_mix_gwh",
+      "title": "Generation Mix (GWh) — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "meih.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_installed_capacity_mw",
+      "title": "Installed Generation Capacity (MW) — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "meih.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_ipps",
+      "title": "Independent Power Producers — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "meih.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_max_demand_mw",
+      "title": "Maximum Demand (MW) — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "meih.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_re_projects",
+      "title": "Renewable Energy Projects — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "meih.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_sales_unit_gwh",
+      "title": "Electricity Sales by Unit (GWh) — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "meih.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_sales_value_rm_million",
+      "title": "Electricity Sales by Value (RM million) — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "meih.st.gov.my (ST)"
     },
     {
       "dataset_id": "state_finance_expenditure",
@@ -53248,6 +53307,126 @@
       "kind": "same_agency",
       "from": "sdg_10-c-1",
       "to": "sppi_3d",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_cogenerators",
+      "to": "st_energy_balance_pdf",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_consumers",
+      "to": "st_energy_balance_pdf",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_elesca",
+      "to": "st_energy_balance_pdf",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_energy_balance_pdf",
+      "to": "st_generation_mix_gwh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_energy_balance_pdf",
+      "to": "st_installed_capacity_mw",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_energy_balance_pdf",
+      "to": "st_ipps",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_energy_balance_pdf",
+      "to": "st_max_demand_mw",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_energy_balance_pdf",
+      "to": "st_re_projects",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_energy_balance_pdf",
+      "to": "st_sales_unit_gwh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_energy_balance_pdf",
+      "to": "st_sales_value_rm_million",
       "weight": 1,
       "provenance": {
         "matched_fields": [
@@ -106334,6 +106513,591 @@
       "kind": "same_steward",
       "from": "sdg_04-6-1",
       "to": "sdg_10-c-1",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_cogenerators",
+      "to": "st_consumers",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_cogenerators",
+      "to": "st_elesca",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_cogenerators",
+      "to": "st_generation_mix_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_cogenerators",
+      "to": "st_installed_capacity_mw",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_cogenerators",
+      "to": "st_ipps",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_cogenerators",
+      "to": "st_max_demand_mw",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_cogenerators",
+      "to": "st_re_projects",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_cogenerators",
+      "to": "st_sales_unit_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_cogenerators",
+      "to": "st_sales_value_rm_million",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_consumers",
+      "to": "st_elesca",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_consumers",
+      "to": "st_generation_mix_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_consumers",
+      "to": "st_installed_capacity_mw",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_consumers",
+      "to": "st_ipps",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_consumers",
+      "to": "st_max_demand_mw",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_consumers",
+      "to": "st_re_projects",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_consumers",
+      "to": "st_sales_unit_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_consumers",
+      "to": "st_sales_value_rm_million",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_elesca",
+      "to": "st_generation_mix_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_elesca",
+      "to": "st_installed_capacity_mw",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_elesca",
+      "to": "st_ipps",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_elesca",
+      "to": "st_max_demand_mw",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_elesca",
+      "to": "st_re_projects",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_elesca",
+      "to": "st_sales_unit_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_elesca",
+      "to": "st_sales_value_rm_million",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_generation_mix_gwh",
+      "to": "st_installed_capacity_mw",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_generation_mix_gwh",
+      "to": "st_ipps",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_generation_mix_gwh",
+      "to": "st_max_demand_mw",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_generation_mix_gwh",
+      "to": "st_re_projects",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_generation_mix_gwh",
+      "to": "st_sales_unit_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_generation_mix_gwh",
+      "to": "st_sales_value_rm_million",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_installed_capacity_mw",
+      "to": "st_ipps",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_installed_capacity_mw",
+      "to": "st_max_demand_mw",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_installed_capacity_mw",
+      "to": "st_re_projects",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_installed_capacity_mw",
+      "to": "st_sales_unit_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_installed_capacity_mw",
+      "to": "st_sales_value_rm_million",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_ipps",
+      "to": "st_max_demand_mw",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_ipps",
+      "to": "st_re_projects",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_ipps",
+      "to": "st_sales_unit_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_ipps",
+      "to": "st_sales_value_rm_million",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_max_demand_mw",
+      "to": "st_re_projects",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_max_demand_mw",
+      "to": "st_sales_unit_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_max_demand_mw",
+      "to": "st_sales_value_rm_million",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_re_projects",
+      "to": "st_sales_unit_gwh",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_re_projects",
+      "to": "st_sales_value_rm_million",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_sales_unit_gwh",
+      "to": "st_sales_value_rm_million",
       "weight": 2,
       "provenance": {
         "matched_fields": [
