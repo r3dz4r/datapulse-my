@@ -1,0 +1,36 @@
+# VCS
+.git/
+.gitattributes
+.github/
+
+# Generated / runtime artifacts
+health/
+.attestations/
+data/
+record-evidence/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local venvs / build artifacts
+.venv/
+venv/
+node_modules/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Tests (Glama runs the production server, not the test suite)
+mcp/tests/
+scripts/tests/
+
+# Secrets (just in case)
+.env
+.env.*
+*.pem
+*.key
+privkey.pem
