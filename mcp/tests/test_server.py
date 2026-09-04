@@ -1420,6 +1420,41 @@ async def test_dataset_resource_template_returns_full_manifest_entry(
     assert json.loads(result[0].text) == expected
 
 
+def test_health_rows_are_freshness_coherent() -> None:
+    """Gate: no dataset row may assert a temporal freshness age (fresh/aging/stale)
+    without a freshness basis, and no row may label an undated observation as
+    'fresh'. Third-party sources change behaviour all the time (Cloudflare walls,
+    dropped Last-Modified headers, redirects). Per-source tests must not go red
+    when a source legitimately stops yielding a date. This cross-cutting invariant
+    is the durable guard: it only fails if a row is INTERNALLY incoherent, never
+    because an upstream stopped cooperating.
+      - fresh/aging/stale => needs content_freshness_date OR last_modified.
+      - no basis at all (no-header/none signal, no date, no last-modified) => the
+        status must be an HONEST 'could not derive a freshness date' disposition
+        (unknown-freshness, reference, discontinued, browser-dependent, ...), never
+        fresh/aging/stale (which assert a dated temporal judgement)."""
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+    problems = []
+    for row in health["datasets"]:
+        status = row.get("status")
+        signal = row.get("freshness_signal") or row.get("freshness_signal_source")
+        has_date = bool(row.get("content_freshness_date"))
+        has_lm = bool(row.get("last_modified"))
+        basis = has_date or has_lm
+        if status in {"fresh", "aging", "stale"} and not basis:
+            problems.append(
+                f"{row['dataset_id']}: {status} without content date or Last-Modified "
+                f"(signal={signal!r})"
+            )
+        if not basis and signal in {"no-header", "none", None, ""} and status in {
+            "fresh", "aging", "stale",
+        }:
+            problems.append(
+                f"{row['dataset_id']}: no freshness basis but labelled {status}"
+            )
+    assert not problems, "incoherent health rows:\n" + "\n".join(problems)
+
+
 def test_met_weather_uses_content_freshness() -> None:
     """MET weather must be observed honestly: when the JSON forecast is
     reachable it supplies a parsed content date (content_date_parse / fresh); when
