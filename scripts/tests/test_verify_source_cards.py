@@ -55,7 +55,7 @@ def test_bnm_card_lying_about_status_fails(tmp_path: Path) -> None:
     )
     completed = _run(cards)
     assert completed.returncode != 0
-    assert "BNM stale-200 dataset mismatch" in completed.stderr
+    assert "must list exactly the two HTTP-200-but-stale datasets" in completed.stderr
 
 
 @SKIP_NO_HISTORY

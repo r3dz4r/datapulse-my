@@ -75,10 +75,20 @@ def verify_bnm_open_api_card(card: dict[str, Any], history_path: Path) -> list[s
         and dataset_id in BNM_STALE_200
     )
     card_claims = _affected_datasets(card, "HTTP 200")
-    if set(stale_200) != card_claims:
+    # card_claims must document exactly the datasets capable of stale-200.
+    if card_claims != BNM_STALE_200:
         errors.append(
-            f"BNM stale-200 dataset mismatch: history shows {stale_200}, "
-            f"card claims {sorted(card_claims)}"
+            "BNM known_false_positives must list exactly the two HTTP-200-but-stale "
+            f"datasets; got {sorted(card_claims)}, expected {sorted(BNM_STALE_200)}"
+        )
+    # A documented stale-200 dataset recovering to fresh is a healthy outcome, not an
+    # error, so history's current stale-200 set must be a SUBSET of the documented
+    # capability (no undocumented stale-200 surprise) - never required to equal it.
+    unexpected = sorted(set(stale_200) - card_claims)
+    if unexpected:
+        errors.append(
+            "BNM stale-200 present for an undocumented dataset: "
+            f"history={sorted(stale_200)}, documented={sorted(card_claims)}"
         )
     if card.get("data_type_mix", {}).get("policy_reference", 0) != 1:
         errors.append("BNM data_type_mix.policy_reference must be 1")
@@ -86,11 +96,6 @@ def verify_bnm_open_api_card(card: dict[str, Any], history_path: Path) -> list[s
         errors.append("BNM data_type_mix.reference_current must be 1")
     if card.get("datasets_in_family") != 8:
         errors.append(f"BNM datasets_in_family={card.get('datasets_in_family')}, expected 8")
-    if card_claims != BNM_STALE_200:
-        errors.append(
-            "BNM known_false_positives must list exactly the two HTTP-200-but-stale "
-            f"datasets; got {sorted(card_claims)}, expected {sorted(BNM_STALE_200)}"
-        )
     return errors
 
 
