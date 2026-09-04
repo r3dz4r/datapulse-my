@@ -1,0 +1,45 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "kkmnow_pekab40",
+  "status": "fresh",
+  "last_checked": "2026-09-04T22:06:50Z",
+  "freshness_days": 1,
+  "next_expected_update": null,
+  "refresh_frequency": "daily",
+  "record_count": 1211,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 1211 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [
+    "No additional source-specific quirks were established before the first probe.",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pekab40_01_timeseries.parquet",
+    "access_method": "curl"
+  },
+  "licence": "MIT License",
+  "attribution": "github.com/MoH-Malaysia/kkmnow-data (healthcare)"
+}
