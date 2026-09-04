@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
@@ -23,6 +24,7 @@ def _stage(tmp_path: Path) -> Path:
 
 def test_reference_is_idempotent_and_uses_canonical_dynamic_facts(tmp_path: Path) -> None:
     root = _stage(tmp_path)
+    dataset_count = len(json.loads((root / "datapulse.json").read_text(encoding="utf-8"))["datasets"])
     reference = root / "docs/buyer-api-reference.md"
     first = render_document(root, reference, root / "datapulse.json", root / "health/latest.json")
     reference.write_text(first, encoding="utf-8")
@@ -30,7 +32,7 @@ def test_reference_is_idempotent_and_uses_canonical_dynamic_facts(tmp_path: Path
     assert first == second
     assert "https://api.data-pulse.my/api/v1/health" in first
     assert "api.datapulse-my.my" not in first
-    assert '"total": 389' in first
+    assert f'"total": {dataset_count}' in first
     assert "cap it at 1000" in first
 
 
