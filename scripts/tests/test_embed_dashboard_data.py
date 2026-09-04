@@ -127,6 +127,7 @@ def test_embed_replaces_existing_data_block_with_all_dashboard_inputs(
 
 def test_production_homepage_is_the_source_owned_register_with_compatible_payload() -> None:
     """The explicit production path composes register rows with the legacy data API."""
+    manifest = json.loads((ROOT / "datapulse.json").read_text(encoding="utf-8"))
     html = embed_dashboard_data._render_page(
         ROOT / "docs/index.html",
         ROOT / "datapulse.json",
@@ -140,13 +141,14 @@ def test_production_homepage_is_the_source_owned_register_with_compatible_payloa
     visible = re.sub(r"<script.*?</script>", "", html, flags=re.DOTALL)
 
     assert "scripts/templates/register-home.html.tmpl" in html
-    assert html.count('class="register-row"') == 389
+    assert html.count('class="register-row"') == len(manifest["datasets"])
     assert 'class="register-search" id="register-search" type="search" placeholder="Search this register" data-register-search autocomplete="off"' in html
     assert html.count('class="register-chip" data-register-chip') == 4
     assert html.count('data-register-filter=') == 4
     assert 'class="register-chip-label">Status</span>' in html
     assert 'class="register-chip-caret" aria-hidden="true"></span>' in html
-    assert 'class="register-count" data-register-count>389 of 389 datasets shown.</span>' in html
+    total = len(manifest["datasets"])
+    assert f'class="register-count" data-register-count>{total} of {total} datasets shown.</span>' in html
     assert 'class="register-clear" data-register-clear data-register-reset hidden>Reset filters</button>' in html
     assert '.register-chip:has(select option:not(:first-child):checked)' in html
     assert '.register-search-row::after' in html
@@ -155,7 +157,7 @@ def test_production_homepage_is_the_source_owned_register_with_compatible_payloa
     assert "DataPulse MY" not in html
     assert "DataPulse" in visible
     assert html.count('<script id="embedded-data">') == 1
-    assert len(embedded_manifest(html)) == 389
+    assert len(embedded_manifest(html)) == len(manifest["datasets"])
     assert html.index('data-action="official-source"') < html.index('data-action="evidence"') < html.index('data-action="machine-access"')
     for posture in ("use", "warn", "reference-use", "stop"):
         assert f"Decision: {posture}" in html
@@ -223,6 +225,33 @@ def test_embed_derives_dashboard_dataset_counts_from_trust_summary(
     assert "We probe 42 official datasets" in html
     assert "3 datasets observed" in html
     assert "the 42-dataset catalogue" in html
+
+
+def test_embed_allows_health_summary_to_lag_manifest(tmp_path: Path) -> None:
+    """The register publishes new manifest rows before their first probe completes."""
+    html_path = tmp_path / "index.html"
+    html_path.write_text(f"<body>{_strip()}</body>\n", encoding="utf-8")
+    documents = [
+        {"datasets": [{"id": "alpha"}, {"id": "beta"}, {"id": "gamma"}]},
+        {
+            "checked_at": "2026-08-17T03:30:56Z",
+            "datasets": [],
+            "_trust_summary": {"datasets_total": 2, "by_status": {"browser_dependent": 0}},
+        },
+        {"namespaces": []},
+        {"sections": []},
+    ]
+    paths = []
+    for index, document in enumerate(documents):
+        path = tmp_path / f"lagging-{index}.json"
+        path.write_text(json.dumps(document), encoding="utf-8")
+        paths.append(path)
+
+    embed_dashboard_data.embed(html_path, *paths)
+
+    html = html_path.read_text(encoding="utf-8")
+    assert "3 datasets observed" in html
+    assert "3 published, 2 observed, 1 pending first probe" in html
 
 
 def test_embed_replaces_inflated_all_dataset_cadence_claims(tmp_path: Path) -> None:

@@ -209,7 +209,7 @@ Verified by mcpgrade: 100/100 (Grade A). The canonical tool count lives in `mcp.
 - 18 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 
 The public endpoint serves all 18 read-only tools over the
-389-dataset catalogue.
+397-dataset catalogue.
 <!-- END mcp-tools -->
 - 8 resources plus 1 resource template, including `datapulse://attestations` and the signed daily probe-attestation index.
 

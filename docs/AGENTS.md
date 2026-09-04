@@ -11,7 +11,7 @@ Working agreement for AI agents editing the public-facing documentation that aut
 ## Hard rules
 
 1. **Read-only-by-implication.** Datapulse MY's docs describe a system that is itself read-only. Do not write prose that suggests writes, mutations, or upstream interactions beyond what the code actually does.
-2. **Every external claim must be citeable.** Numbers ("389 datasets", "10-status taxonomy") must be reproducible from `datapulse.json` + `health/latest.json`. The scheduler wakes every 5 minutes but probes only due datasets under tiered cadence; never describe this as all datasets every five minutes.
+2. **Every external claim must be citeable.** Numbers ("397 datasets", "10-status taxonomy") must be reproducible from `datapulse.json` + `health/latest.json`. The scheduler wakes every 5 minutes but probes only due datasets under tiered cadence; never describe this as all datasets every five minutes.
 3. **No fabricated dataset IDs.** When examples cite datasets like `fuelprice`, `gtfs-static/prasarana?category=rapid-bus-kuantan`, `pharmaceutical_product_register`, verify they exist in `datapulse.json` first. See `scripts/check.py` for the verifier.
 4. **Methodology changes require an explicit version bump.** `health-methodology.md` and `health-methodology.html` carry a methodology_version field (currently `3`). Changes to the scoring formula, status taxonomy, or signal extraction require bumping this and updating consumers (`mcp/server.py`, dashboard rendering).
 5. **The audit docs (`AUDIT-*.md`, `DESIGN-AUDIT-*.md`) are immutable history.** They capture a point-in-time state. Add new audits, never edit old ones — even to fix typos.

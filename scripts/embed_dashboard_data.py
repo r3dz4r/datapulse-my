@@ -210,10 +210,13 @@ def _dashboard_facts(html: str, manifest: object, health: object, website: str) 
         raise EmbedError("manifest must contain a datasets array")
     if not isinstance(health, dict) or not isinstance(health.get("checked_at"), str):
         raise EmbedError("health checked_at must be an ISO-8601 string")
-    summary = health.get("_trust_summary")
-    if not isinstance(summary, dict) or summary.get("datasets_total") != len(manifest["datasets"]):
-        raise EmbedError("health _trust_summary.datasets_total must match the manifest")
     total = len(manifest["datasets"])
+    summary = health.get("_trust_summary")
+    observed_raw = summary.get("datasets_total") if isinstance(summary, dict) else None
+    if not isinstance(observed_raw, int) or observed_raw < 0 or observed_raw > total:
+        raise EmbedError("health _trust_summary.datasets_total must be 0..len(manifest)")
+    observed = observed_raw
+    pending = max(0, total - observed)
     records = health.get("datasets")
     if not isinstance(records, list):
         raise EmbedError("health datasets must be an array")
@@ -225,7 +228,7 @@ def _dashboard_facts(html: str, manifest: object, health: object, website: str) 
     html = replace_owned_block(
         html,
         DASHBOARD_TRUST_FACTS_MARKER,
-        f'<p><a href="{website}/health/latest.json">{total} datasets observed</a>; use the official publisher for the source of record.</p>',
+        f'<p><a href="{website}/health/latest.json">{total} datasets observed</a>; {total} published, {observed} observed, {pending} pending first probe; use the official publisher for the source of record.</p>',
     )
     return html
 
