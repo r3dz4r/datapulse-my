@@ -4,7 +4,7 @@ Working agreement for AI agents (Hermes, Codex, Claude Code) operating inside th
 
 ## What this repo is
 
-`r3dz4r/datapulse-my` — open-source trust layer for Malaysian public data. 398 official datasets from `data.gov.my`, `BNM`, `DOSM`, `DOE`, `KKM`, `KPDN`, `MET Malaysia` continuously probed and classified into a 10-status taxonomy (`fresh | aging | stale | discontinued | degraded | browser_dependent | unreachable | unknown | unknown_freshness | reference`). Live MCP server with 18 read-only tools (canonical count: `jq '.tools | length' mcp.json` — do NOT hardcode this number in prose). Hosted on `https://www.data-pulse.my` and `https://mcp.data-pulse.my`.
+`r3dz4r/datapulse-my` — open-source trust layer for Malaysian public data. 408 official datasets from `data.gov.my`, `BNM`, `DOSM`, `DOE`, `KKM`, `KPDN`, `MET Malaysia` continuously probed and classified into a 10-status taxonomy (`fresh | aging | stale | discontinued | degraded | browser_dependent | unreachable | unknown | unknown_freshness | reference`). Live MCP server with 18 read-only tools (canonical count: `jq '.tools | length' mcp.json` — do NOT hardcode this number in prose). Hosted on `https://www.data-pulse.my` and `https://mcp.data-pulse.my`.
 
 **One-line constraint:** every change here is publicly visible. The dashboard auto-deploys on push to main (modulo `[skip deploy]` trailers). Bad data leaks fast.
 
@@ -26,7 +26,7 @@ Working agreement for AI agents (Hermes, Codex, Claude Code) operating inside th
 ```
 datapulse-my/
 ├── README.md                  # public-facing; badges, agent-quickstart, value prop
-├── datapulse.json             # 398-dataset manifest (generated)
+├── datapulse.json             # 408-dataset manifest (generated)
 ├── datapulse.schema.json      # manifest JSON Schema (hand-authored)
 ├── health.schema.json         # health JSON Schema (hand-authored)
 ├── agent.json                 # machine-readable agent capability manifest
