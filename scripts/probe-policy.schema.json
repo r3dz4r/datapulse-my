@@ -23,13 +23,16 @@
     },
     "datasets": {
       "type": "object",
-      "propertyNames": {"pattern": "^[a-z0-9][a-z0-9_-]*$"},
+      "propertyNames": {"pattern": "^_?[a-z0-9][a-z0-9_-]*$"},
       "additionalProperties": {"$ref": "#/$defs/dataset-policy"}
     }
   },
   "$defs": {
     "adapter": {
       "enum": ["direct", "browser", "weather", "gtfs-static", "gtfs-realtime", "hansard-script"]
+    },
+    "format": {
+      "enum": ["csv", "json", "html", "xml", "pdf", "parquet"]
     },
     "freshness": {
       "type": "object",
@@ -43,6 +46,7 @@
         "extraction-mode": {
           "enum": ["max", "min", "first-row", "structural-hash"]
         },
+        "family": {"type": "string"},
         "fallback": {"enum": ["last-modified", "unknown-freshness"]},
         "date-source": {"const": "data.gov.my-page"}
       },
@@ -123,6 +127,8 @@
       "properties": {
         "template": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$"},
         "adapter": {"$ref": "#/$defs/adapter"},
+        "format": {"$ref": "#/$defs/format"},
+        "url": {"type": "string", "format": "uri"},
         "freshness": {"$ref": "#/$defs/freshness"},
         "rolling": {"$ref": "#/$defs/rolling"},
         "browser": {"$ref": "#/$defs/browser"},

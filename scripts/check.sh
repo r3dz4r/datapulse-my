@@ -888,7 +888,7 @@ check_direct_dataset() {
   local source_url="$2"
   local request_url="$source_url"
   local http_status content_length first_record_timestamp details last_modified
-  local content_freshness_date content_request_url date_field extraction_mode
+  local content_freshness_date content_request_url date_field extraction_mode content_format
   local date_source metadata_page_url
   local metrics record_count column_count first_row_hash first_row body_format
   local estimated_record_count record_count_estimated incomplete
@@ -904,6 +904,7 @@ check_direct_dataset() {
 
   date_field="$(probe_policy_value "$dataset_id" '.freshness["content-date-field"]' 2>/dev/null || true)"
   extraction_mode="$(probe_policy_value "$dataset_id" '.freshness["extraction-mode"]' 2>/dev/null || true)"
+  content_format="$(probe_policy_value "$dataset_id" '.format' 2>/dev/null || true)"
   date_source="$(probe_policy_value "$dataset_id" '.freshness["date-source"]' 2>/dev/null || true)"
   if [[ -n "$date_field" && -z "$extraction_mode" ]]; then
     printf 'Probe policy error: %s content date field requires extraction-mode\n' "$dataset_id" >&2
@@ -990,7 +991,13 @@ check_direct_dataset() {
   fi
   first_record_timestamp="$(jq -r '.first_record_timestamp // empty' <<< "$metrics")"
   content_freshness_date=""
-  if [[ -n "$content_request_url" ]] && curl --location --silent --show-error --fail \
+  if [[ -n "$date_field" && ( "$body_format" == "parquet" || "$content_format" == "parquet" ) ]]; then
+    # Parquet is binary, so its configured date column is read by the shared
+    # pyarrow helper rather than the JSON or CSV branches below.
+    content_freshness_date="$(DATAPULSE_CONTENT_FILE="$body_file" \
+      DATAPULSE_PROBE_POLICY="$probe_policy" \
+      "$script_dir/extract_content_freshness.sh" "$request_url" "$dataset_id")"
+  elif [[ -n "$content_request_url" ]] && curl --location --silent --show-error --fail \
     --max-time "$curl_timeout" "${request_header_args[@]}" \
     --output "$content_body_file" "$content_request_url" 2>/dev/null; then
     if [[ "$extraction_mode" == "min" ]]; then

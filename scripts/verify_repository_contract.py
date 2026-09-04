@@ -465,6 +465,12 @@ def verify_repository_contract(root: Path) -> list[str]:
     }
     policy_rows = probe_policy.get("datasets", {}) if isinstance(probe_policy, dict) else {}
     policy_ids = set(policy_rows) if isinstance(policy_rows, dict) else set()
+    # Internal engine canaries are operator probes, not public manifest datasets.
+    internal_canary_ids = {
+        dataset_id
+        for dataset_id in policy_ids
+        if re.fullmatch(r"_[a-z0-9][a-z0-9_-]*", dataset_id)
+    }
     missing_private_manifests = {
         dataset_id
         for dataset_id in policy_ids & private_npra_ids
@@ -475,7 +481,7 @@ def verify_repository_contract(root: Path) -> list[str]:
             "scripts/probe-policy.json: approved private NPRA manifests are missing: "
             + _format_ids(missing_private_manifests)
         )
-    unknown_policy_ids = policy_ids - manifest_id_set - private_npra_ids
+    unknown_policy_ids = policy_ids - manifest_id_set - private_npra_ids - internal_canary_ids
     if unknown_policy_ids:
         errors.append(
             "scripts/probe-policy.json: dataset keys absent from canonical manifests: "

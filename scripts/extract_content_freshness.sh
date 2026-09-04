@@ -11,6 +11,10 @@ extraction_mode="$(jq -er --arg id "$dataset_id" \
   printf 'Probe policy error: %s requires a freshness extraction mode\n' "$dataset_id" >&2
   exit 1
 }
+content_date_field="$(jq -r --arg id "$dataset_id" \
+  '.datasets[$id].freshness["content-date-field"] // empty' "$probe_policy")"
+content_format="$(jq -r --arg id "$dataset_id" \
+  '.datasets[$id].format // empty' "$probe_policy")"
 
 content_file="${DATAPULSE_CONTENT_FILE:-}"
 temporary_file=""
@@ -20,6 +24,62 @@ if [[ -z "$content_file" ]]; then
   trap 'rm -f "$temporary_file"' EXIT
   curl --location --silent --show-error --fail --max-time "${DATAPULSE_CURL_TIMEOUT:-30}" \
     --output "$content_file" "$url"
+fi
+
+case "${url%%\?*}" in
+  *.parquet) parquet_input=1 ;;
+  *) parquet_input=0 ;;
+esac
+if [[ "$content_file" == *.parquet || "$content_format" == "parquet" ]]; then
+  parquet_input=1
+fi
+
+if [[ "$parquet_input" -eq 1 ]]; then
+  python3 - "$content_file" "$extraction_mode" "$content_date_field" <<'PY'
+from datetime import date, datetime
+from pathlib import Path
+import sys
+
+try:
+    import pyarrow.parquet as pq
+except ImportError as error:
+    raise SystemExit(
+        "Parquet freshness extraction requires pyarrow; install requirements.txt"
+    ) from error
+
+path = Path(sys.argv[1])
+extraction_mode = sys.argv[2]
+date_field = sys.argv[3]
+if not date_field:
+    raise SystemExit("Parquet freshness extraction requires content-date-field")
+
+table = pq.read_table(path)
+if date_field not in table.column_names:
+    raise SystemExit(
+        f"Parquet freshness extraction field {date_field!r} is not a table column"
+    )
+
+dates: set[date] = set()
+for value in table.column(date_field).to_pylist():
+    if isinstance(value, datetime):
+        dates.add(value.date())
+    elif isinstance(value, date):
+        dates.add(value)
+    elif isinstance(value, str):
+        try:
+            dates.add(date.fromisoformat(value[:10]))
+        except ValueError:
+            pass
+
+if dates:
+    today = date.today()
+    if extraction_mode == "min":
+        print(min(dates).isoformat())
+    else:
+        past = {value for value in dates if value <= today}
+        print(max(past).isoformat() if past else max(dates).isoformat())
+PY
+  exit 0
 fi
 
 python3 - "$content_file" "$extraction_mode" <<'PY'

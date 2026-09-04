@@ -168,9 +168,10 @@ def test_register_embedded_payload_precedes_its_reader_and_keeps_shared_shell_co
 
 def test_homepage_renders_the_compact_register_instead_of_dashboard_sections() -> None:
     html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
+    manifest = json.loads((ROOT / "datapulse.json").read_text(encoding="utf-8"))
 
     assert 'class="register-list"' in html
-    assert html.count('class="register-row"') == 389
+    assert html.count('class="register-row"') == len(manifest["datasets"])
     assert '<details class="register-evidence">' in html
     assert 'class="dashboard-sections"' not in html
 
