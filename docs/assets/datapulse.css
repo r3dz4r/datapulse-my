@@ -307,3 +307,117 @@
       .actions { display: grid; }
       pre { padding: 20px 16px; }
     }
+
+    /* =========================================================================
+       DOCUMENTATION ARTICLE SURFACE (scoped to doc content pages only)
+       Docs pages (datapulse-intro / agent-quickstart / mcp-reference / learn /
+       health-methodology) nest their Pandoc prose under an id'd section > .wrap,
+       which the direct-child-of-main prose rules above do not reach. Restore real
+       vertical rhythm, a readable prose measure, and reconcile the nav/hero gap on
+       narrow widths. Every selector is qualified by one of the doc-content ids so
+       the register / npra / landing MONITOR surfaces (which have none of these ids)
+       stay visually untouched.
+       ========================================================================= */
+
+    /* ---- Prose measure + vertical rhythm (desktop) --------------------------- */
+    #documentation-content > .wrap,
+    #mcp-quickstart > .wrap,
+    #health-methodology-content {
+      max-width: 74rem;
+      margin-inline: auto;
+    }
+    #documentation-content p,
+    #mcp-quickstart p {
+      margin-block: 0.9em;
+      line-height: 1.7;
+    }
+    #documentation-content h2,
+    #documentation-content h3,
+    #documentation-content h4,
+    #mcp-quickstart h2,
+    #mcp-quickstart h3,
+    #mcp-quickstart h4 {
+      line-height: 1.25;
+    }
+    #documentation-content h2,
+    #mcp-quickstart h2 {
+      margin-block: 2em 0.85em;
+      padding-top: 0.4em;
+      border-top: 1px solid var(--color-border);
+      letter-spacing: -0.02em;
+    }
+    #documentation-content ul,
+    #documentation-content ol,
+    #mcp-quickstart ul,
+    #mcp-quickstart ol {
+      margin-block: 1em;
+      padding-inline-start: 1.5em;
+    }
+    #documentation-content ul li,
+    #documentation-content ol li,
+    #mcp-quickstart ul li,
+    #mcp-quickstart ol li {
+      margin-block: 0.45em;
+      line-height: 1.65;
+    }
+    #documentation-content blockquote,
+    #mcp-quickstart blockquote {
+      margin-block: 1.4em;
+      padding: 0.6em 1.1em;
+      border-left: 0.25rem solid var(--color-border);
+      color: var(--color-muted-fg);
+    }
+    #documentation-content hr,
+    #mcp-quickstart hr {
+      margin-block: 2em;
+      border: 0;
+      border-top: 1px solid var(--color-border);
+    }
+    #documentation-content table,
+    #mcp-quickstart table {
+      max-width: 100%;
+      margin-block: 1.4em;
+    }
+    #documentation-content > .wrap > p:first-child,
+    #mcp-quickstart > .wrap > p:first-child {
+      margin-top: 0;
+    }
+    #documentation-content > .wrap > :last-child,
+    #mcp-quickstart > .wrap > :last-child {
+      margin-bottom: 0;
+    }
+
+    /* ---- Documentation hero/prologue: compact, register-native ----
+       Scope to the docs pages only (they carry a doc-content section); npra also
+       has a hero with aria-labelledby="hero-title" so it must NOT be matched. */
+    body:has(#documentation-content, #mcp-quickstart, #health-methodology-content)
+      section.hero[aria-labelledby="hero-title"] {
+      padding-block: 2rem 1.5rem;
+    }
+
+    /* ---- Narrow widths: reconcile nav-to-content gap, keep prose fluid ---------- */
+    @media (max-width: 768px) {
+      /* The docs pages put the raw .site-nav in <body> directly (not wrapped in the
+         register .register-site-header). Give the nav and the immediately-following
+         <main> breathing room so the logo / Documentation menu no longer butt up
+         against the content, WITHOUT affecting the register/npra Monitor pages
+         (their nav is under .register-site-header and already handled by
+         register.css; and they have no #documentation-content / #mcp-quickstart /
+         #health-methodology-content section). Scope with :has() to the docs only. */
+      body:has(#documentation-content, #mcp-quickstart, #health-methodology-content) > .site-nav {
+        border-bottom: 1px solid var(--color-border);
+      }
+      body:has(#documentation-content, #mcp-quickstart, #health-methodology-content)
+        main#main-content > section.hero:first-of-type {
+        padding-top: 0.5rem;
+      }
+      #documentation-content > .wrap,
+      #mcp-quickstart > .wrap,
+      #health-methodology-content {
+        width: min(100% - 2rem, 74rem);
+      }
+      #documentation-content h2,
+      #mcp-quickstart h2 {
+        font-size: 1.4rem;
+      }
+    }
