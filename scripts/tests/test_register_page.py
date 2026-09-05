@@ -241,7 +241,8 @@ def test_rejects_duplicate_manifest_id_and_malformed_health(tmp_path: Path) -> N
 
 def test_real_repository_smoke_renders_current_manifest() -> None:
     rendered = gen_register_page.render(ROOT)
-    assert rendered.count('class="register-row"') == 389
+    manifest = json.loads((ROOT / "datapulse.json").read_text(encoding="utf-8"))
+    assert rendered.count('class="register-row"') == len(manifest["datasets"])
     assert "16 tools" not in rendered
     for forbidden in gen_register_page.FORBIDDEN_CLAIMS:
         assert forbidden not in rendered.lower()

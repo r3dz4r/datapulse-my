@@ -114,6 +114,9 @@ fetch attestation-scores.json attestations/latest/scores.json
 fetch_optional attestation-binding.json attestations/latest/binding.json || true
 
 attestation_plane_state="local"
+if $local_mode; then
+  attestation_plane_state="signer_down"
+fi
 if ! $local_mode; then
   contract_root="$work_dir/contract-root"
   mkdir -p "$contract_root/health" "$contract_root/attestations/latest" "$contract_root/docs/.well-known"

@@ -536,13 +536,16 @@ jobs:
           }
           # Allow the custom-domain edge to observe the just-created Pages deployment.
           sleep 30
+          expected_dataset_count="$(jq -er '.datasets | select(type == "array" and length > 0) | length' _site/datapulse.json)" \
+            || fail "assembled manifest has no dataset array"
           fetch "dataset register" "${website_origin}/" "$smoke_dir/index.html"
           grep -q "<title>DataPulse Dataset Register</title>" "$smoke_dir/index.html" \
             || fail "origin root is not the DataPulse dataset register"
           grep -q "__DATAPULSE_DATA__" "$smoke_dir/index.html" \
             || fail "origin root has no embedded register health payload"
-          [[ "$(grep -o '<article class="register-row' "$smoke_dir/index.html" | wc -l)" -eq 389 ]] \
-            || fail "origin root does not contain 389 register rows"
+          observed_register_rows="$(grep -o '<article class="register-row' "$smoke_dir/index.html" | wc -l)"
+          [[ "$observed_register_rows" -eq "$expected_dataset_count" ]] \
+            || fail "origin root register rows mismatch: expected $expected_dataset_count, observed $observed_register_rows"
           if grep -q "DataPulse MY" "$smoke_dir/index.html"; then
             fail "origin root retains the retired product-name alias"
           fi

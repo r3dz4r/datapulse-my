@@ -421,7 +421,11 @@ def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() ->
     assert 'Only the documented landing.html -> landing transition is' in verify
     assert 'normalized alias redirects again' in verify
     assert 'DataPulse dataset register' in verify
-    assert 'origin root does not contain 389 register rows' in verify
+    assert 'expected_dataset_count="$(jq -er' in verify
+    assert "_site/datapulse.json" in verify
+    assert '[[ "$observed_register_rows" -eq "$expected_dataset_count" ]]' in verify
+    assert "origin root register rows mismatch: expected $expected_dataset_count, observed $observed_register_rows" in verify
+    assert "389 register rows" not in verify
     assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in verify
     assert 'for path in "${pages[@]}" "${artifacts[@]}"' in verify
     assert "embedded dashboard checked_at differs from served health/latest.json" in verify
