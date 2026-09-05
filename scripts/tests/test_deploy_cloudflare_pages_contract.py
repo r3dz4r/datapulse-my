@@ -462,6 +462,11 @@ def test_health_only_signed_artifact_carries_and_overlays_the_generated_attestat
     """Health-only deployment must publish the generated sign-time trust plane."""
     workflow = _workflow()
     sign_health = workflow.split("  sign_health:\n", 1)[1].split("\n  deploy:\n", 1)[0]
+    upload = next(
+        step
+        for step in yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+        if step.get("name") == "Upload verified optional Sigstore bundle"
+    )
     sign_step = sign_health.split("      - name: Sign and verify current health DSSE bundle\n", 1)[1].split(
         "      - name: Stage statement into Sigstore publication\n", 1
     )[0]
@@ -477,6 +482,7 @@ def test_health_only_signed_artifact_carries_and_overlays_the_generated_attestat
     assert 'test -s "$publication/datapulse.json"' in sign_step
     assert 'cp -R attestations "$publication/attestations"' in sign_step
     assert 'cp -R .attestations "$publication/.attestations"' in sign_step
+    assert upload["with"]["include-hidden-files"] is True
 
     overlay_condition = '"${{ needs.classify.outputs.health_only }}" == "true" && "${{ needs.sign_health.outputs.signed }}" == "true"'
     assert overlay_condition in assemble
