@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 WORKFLOWS = ROOT / ".github/workflows"
 RETIRED_WORKFLOW = WORKFLOWS / "deploy-pages.yml"
 CANONICAL_WORKFLOW = WORKFLOWS / "deploy-cloudflare-pages.yml"
+SERVED_VERIFIER = ROOT / "scripts/verify_served_release.sh"
 CURRENT_OPERATIONAL_DOCS = (
     ROOT / "AGENTS.md",
     ROOT / "CONTRIBUTING.md",
@@ -29,12 +30,15 @@ CURRENT_OPERATIONAL_DOCS = (
 def test_cloudflare_pages_is_the_only_website_publisher() -> None:
     assert not RETIRED_WORKFLOW.exists()
     workflow = CANONICAL_WORKFLOW.read_text(encoding="utf-8")
+    verifier = SERVED_VERIFIER.read_text(encoding="utf-8")
 
     assert yaml.safe_load(workflow) is not None
-    assert "pages deploy _site --project-name=datapulse-p4b-preview --branch=main" in workflow
-    assert 'website_origin="$(jq -er' in workflow
-    assert 'fetch "dataset register" "${website_origin}/"' in workflow
-    assert 'fetch_alias "dashboard" "${website_origin}/dashboard"' in workflow
+    production_pages_command = "pages deploy _site --project-name=datapulse-p4b-preview --branch=main"
+    assert production_pages_command in workflow
+    assert "bash scripts/verify_served_release.sh" in workflow
+    assert 'fetch "dataset register" "$base_url/"' in verifier
+    assert 'fetch_alias dashboard "$base_url/dashboard"' in verifier
+    assert workflow.rindex("bash scripts/verify_served_release.sh") > workflow.index(production_pages_command)
     assert "actions/deploy-pages" not in workflow
     assert "deploy-pages.yml" not in workflow
 

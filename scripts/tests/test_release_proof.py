@@ -14,6 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
+SERVED_VERIFIER = ROOT / "scripts/verify_served_release.sh"
 
 
 def _legacy_proof(source_sha: str, verified_at: str) -> str:
@@ -91,10 +92,13 @@ def test_ci_legacy_proof_format_rejects_missing_structural_field(tmp_path: Path)
 def test_cloudflare_workflow_fetches_the_served_release_proof() -> None:
     """The canonical publisher compares the served proof with the staged artifact."""
     workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    verifier = SERVED_VERIFIER.read_text(encoding="utf-8")
     yaml.safe_load(workflow)
 
-    assert 'fetch "release reproducibility proof" "${website_origin}/release-verification.md"' in workflow
-    assert 'cmp -s "$staged_proof" "$smoke_dir/release-verification.md"' in workflow
+    assert "bash scripts/verify_served_release.sh" in workflow
+    assert '--base-url "$website_origin"' in workflow
+    assert 'fetch "release reproducibility proof" "$base_url/release-verification.md"' in verifier
+    assert 'cmp -s "$staged_proof" "$smoke_dir/release-verification.md"' in verifier
 
 
 def test_health_only_deploys_preserve_and_validate_the_served_release_proof(
@@ -112,7 +116,8 @@ def test_health_only_deploys_preserve_and_validate_the_served_release_proof(
 def test_cloudflare_workflow_keeps_full_release_proof_freshness_checks() -> None:
     """Only health-only paths may accept historical proof metadata."""
     workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    verifier = SERVED_VERIFIER.read_text(encoding="utf-8")
 
-    assert "current generated release proof" in workflow
-    assert "allow_legacy_release_proof" in workflow
+    assert "current generated release proof" in verifier
+    assert "if health_only == 'true':" in verifier
     assert "needs.classify.outputs.health_only" in workflow
