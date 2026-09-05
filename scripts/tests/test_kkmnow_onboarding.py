@@ -26,12 +26,15 @@ def test_kkmnow_datasets_have_complete_contract_records() -> None:
     policies = _load_json("scripts/probe-policy.json")["datasets"]
     approved_ids = _load_json("scripts/contract-scope.json")["json_envelope"]["approved_ids"]
     rows = {row["id"]: row for row in manifest["datasets"]}
+    methodology_versions = {row["methodology_version"] for row in rows.values()}
+    assert methodology_versions == {2}
+    methodology_version = methodology_versions.pop()
 
     for dataset_id in TARGETS:
         row = rows[dataset_id]
         assert row["canonical_id"] == dataset_id
         assert row["custodian"] == "kkm"
-        assert row["methodology_version"] == 1
+        assert row["methodology_version"] == methodology_version
         assert row["freshness_policy"]["family"] == "github_parquet"
         assert policies[dataset_id]["adapter"] == "direct"
         assert policies[dataset_id]["format"] == "parquet"
