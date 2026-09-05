@@ -439,12 +439,12 @@ def test_native_pages_stages_and_verifies_the_assembled_artifact_before_producti
     assert assemble_index < staging_index < preview_index < production_index
     assert staging["uses"] == "cloudflare/wrangler-action@v3"
     assert "pages deploy _site --project-name=datapulse-p4b-preview" in staging_command
-    assert "--branch=staging-${{ github.sha }}" in staging_command
+    assert "--branch=staging-${{ github.run_id }}" in staging_command
     assert "--branch=main" not in staging_command
     assert "data-pulse.my" not in staging_command
     assert "www.data-pulse.my" not in staging_command
     assert "if" not in preview
-    assert 'preview_branch="staging-${GITHUB_SHA}"' in preview_run
+    assert 'preview_branch="staging-${GITHUB_RUN_ID}"' in preview_run
     assert 'preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"' in preview_run
     assert (
         "website_origin=\"$(jq -er '.origins.website | select(type == \"string\" "

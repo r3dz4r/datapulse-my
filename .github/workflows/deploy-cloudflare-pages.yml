@@ -504,12 +504,12 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy _site --project-name=datapulse-p4b-preview --branch=staging-${{ github.sha }}
+          command: pages deploy _site --project-name=datapulse-p4b-preview --branch=staging-${{ github.run_id }}
 
       - name: Verify isolated Pages preview before production promotion
         run: |
           set -Eeuo pipefail
-          preview_branch="staging-${GITHUB_SHA}"
+          preview_branch="staging-${GITHUB_RUN_ID}"
           preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"
           website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)"
           DATAPULSE_RELEASE_BASE_URL="$preview_origin" \
