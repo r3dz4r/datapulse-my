@@ -4,6 +4,47 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## [0.11.0](https://github.com/r3dz4r/datapulse-my/compare/v0.10.0...v0.11.0) (2026-09-05)
+
+
+### Features
+
+* **data:** add current ST license registers ([2a5c559](https://github.com/r3dz4r/datapulse-my/commit/2a5c5597ae77fc98eb65cfa6b69ca36f48ab7c04))
+* **data:** onboard 10 ST MyEnergyStats dashboards (HTML, CBAM lane) ([9edb24a](https://github.com/r3dz4r/datapulse-my/commit/9edb24a477ec7620bd09be90642230e7dddc3d8c))
+* **data:** onboard 8 KKMNOW github live-tail parquet datasets ([7ebfbb7](https://github.com/r3dz4r/datapulse-my/commit/7ebfbb7253aecf3986d94678d5f7fa02cc124d03))
+* **data:** onboard ST National Energy Balance 2022 PDF with pdfplumber probe ([583f175](https://github.com/r3dz4r/datapulse-my/commit/583f1759e233d676522fdd14cbaf60cec64d0c2a))
+* **docs:** add Documentation nav dropdown and ship three HTML doc pages ([7873e64](https://github.com/r3dz4r/datapulse-my/commit/7873e6403db72df61b7bc6540a671b23c3d67278))
+* **docs:** generalize health-methodology HTML generator to multi-doc manifest ([fdeb6a9](https://github.com/r3dz4r/datapulse-my/commit/fdeb6a99667528b3aa7c3c16656d27ea77ea9664))
+* **engine:** add Apache Parquet ingestion for github-hosted MOH data ([5b8c7d6](https://github.com/r3dz4r/datapulse-my/commit/5b8c7d6797948648e52cab938f87d71e00ab9810))
+* **register:** drop access-method filter and bucketize recency ([bb0e61d](https://github.com/r3dz4r/datapulse-my/commit/bb0e61d3183177719a5672bd3fae882dbe75816c))
+* **register:** remove duplication for a more coherent, legible page ([fe99c5a](https://github.com/r3dz4r/datapulse-my/commit/fe99c5a3df7f8a16d4141d83b5779620f1bfc72b))
+* **register:** remove the 'N of total datasets require a real browser' aside note ([4e25593](https://github.com/r3dz4r/datapulse-my/commit/4e255932e3acd42864ac2ea018463066b325ace2))
+* **register:** rename Dashboard label to Register, add /register alias, title-copy update ([ad2576d](https://github.com/r3dz4r/datapulse-my/commit/ad2576d7c6c0cb8ef4102184df332b888b9a64a9))
+* **register:** semantic tone on observation-status legend (register Slice B) ([2cd9477](https://github.com/r3dz4r/datapulse-my/commit/2cd94770fd7fe6c404b4c1f1ef32d223dbe5aa3b))
+* **register:** split muddled Publisher/Category filter + revise payload ceilings ([5a23a3c](https://github.com/r3dz4r/datapulse-my/commit/5a23a3c1d504c1c02d93db9408dc2b8639609758))
+
+
+### Bug Fixes
+
+* **ci:** align release checks with 412-dataset health ([1e4ea05](https://github.com/r3dz4r/datapulse-my/commit/1e4ea059b4193d3d11c51e5814b83dc61aed62cf))
+* **cicd:** deploy root-title check matches the canonical 'DataPulse Dataset Register' ([1084449](https://github.com/r3dz4r/datapulse-my/commit/10844499ef200b77cfddc2f6b6e2fdfa8317d112))
+* **cicd:** drop the removed dashboard-browser-facts marker from the release gate configs ([28d5ecb](https://github.com/r3dz4r/datapulse-my/commit/28d5ecb800bf8eb5639e41adcbecda838a941fc4))
+* **ci:** persist health-only attestation plane ([81f0de8](https://github.com/r3dz4r/datapulse-my/commit/81f0de8a92cad926dcfaab486e9920a26ee7c352))
+* **ci:** refresh chain head before Sigstore sign ([3c23ed8](https://github.com/r3dz4r/datapulse-my/commit/3c23ed8fec41ab50c655039f7287ce8489638c85))
+* **ci:** retain hidden attestation files in upload ([fdc54c9](https://github.com/r3dz4r/datapulse-my/commit/fdc54c94e910f33226bf751c3c7ae6a343352c5e))
+* **data:** align pricecatcher URL and KKMNOW test ([4e43204](https://github.com/r3dz4r/datapulse-my/commit/4e43204af62b9aee0a94ccab5debd617e62a9723))
+* **data:** count multiline ST register CSV records correctly ([bba1bfe](https://github.com/r3dz4r/datapulse-my/commit/bba1bfeb52514035c456153143f7f682d2dd9d5d))
+* **data:** probe ST MyEnergyStats through report protocol ([dffa2b1](https://github.com/r3dz4r/datapulse-my/commit/dffa2b1688b78685fa306bea298edabe11381ce0))
+* **data:** unify manifest methodology_version to 2 ([a79bb08](https://github.com/r3dz4r/datapulse-my/commit/a79bb0882f4f79aec47befad199485e8755064e7))
+* **deploy:** cancel stale health deploys in-progress and parallelise receipt signing ([347ff20](https://github.com/r3dz4r/datapulse-my/commit/347ff2089d32e31febf654a8588eeeb271e9d8a0))
+* **mcp:** relax MET-weather freshness guard to accept honest source disposition ([083af97](https://github.com/r3dz4r/datapulse-my/commit/083af976d207119e408fd0e3d6f7ebc985a46e4c))
+* **nav:** add chevron affordance + rounded dropdown panel ([bbb73d7](https://github.com/r3dz4r/datapulse-my/commit/bbb73d738805dc1692acbea981e85f807ea4c6bd))
+* **register:** hidden filter rows were not visually hidden (display overrode [hidden]) ([2917195](https://github.com/r3dz4r/datapulse-my/commit/2917195e442b580b265099bd2b7c75121686880a))
+* **register:** make the register nav self-contained so it renders without the external stylesheet ([627c3fc](https://github.com/r3dz4r/datapulse-my/commit/627c3fc5d8d3e6a7d038e650270645474f257439))
+* **verify:** BNM stale-200 guard must not require every documented stale dataset to be stale right now ([d0ea6da](https://github.com/r3dz4r/datapulse-my/commit/d0ea6dab451c4735ed9a8be7f9ffa9667c636685))
+* **web:** add a register-coherent documentation article template to datapulse.css ([2d2c32d](https://github.com/r3dz4r/datapulse-my/commit/2d2c32dec2823a5e76c47a794d63d16b2e4e61c8))
+* **web:** unify doc-page typography onto the register's Inter theme in datapulse.css ([f7574f9](https://github.com/r3dz4r/datapulse-my/commit/f7574f98d539257dd258726abb9790ba4c1a07dc))
+
 ## [0.10.0](https://github.com/r3dz4r/datapulse-my/compare/v0.9.1...v0.10.0) (2026-08-29)
 
 
