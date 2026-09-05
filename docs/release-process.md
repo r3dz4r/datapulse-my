@@ -43,26 +43,38 @@ with their operational owner.
 publisher. It runs on relevant pushes and manual dispatch. A health-only commit
 with the `[skip deploy]` trailer takes its fast path: it treats
 `health/latest.json` as the canonical health input, regenerates the dashboard
-embed, assembles `_site`, deploys to the existing Cloudflare Pages project, and
-then compares the served dashboard payload with served `health/latest.json`.
-The workflow rejects a missing health snapshot, timestamp or dataset-count
-drift, and any missing declared public surface.
+embed, and assembles `_site` once. Every deployment profile then follows the
+same promotion gate: deploy that assembled artifact to an isolated Cloudflare
+Pages preview alias, run the full release invariants against the preview, promote
+the same `_site` artifact to the production Pages branch, then run final served
+verification. The workflow rejects a missing health snapshot, timestamp or
+dataset-count drift, and any missing declared public surface.
 
 Non-health releases retain the full `release-build` and release-invariant path
-before the same `_site` assembly and Cloudflare Pages deployment.
+before the same `_site` assembly and stage-before-promote gate. Preview aliases
+are deterministic SHA-derived `staging-<sha>` Pages branches at the existing
+project's `pages.dev` origin. They never receive `data-pulse.my` or
+`www.data-pulse.my` custom domains, and are intentionally not deleted
+automatically so they remain immutable deployment evidence.
 `.github/workflows/deploy-cloudflare-pages.yml` is the sole canonical website
 publisher; GitHub Actions continues to host CI and repository automation, but
 not a competing website deployment path. This repository change does not alter
 external GitHub Pages settings or routing.
 Repository workflow checks prove only what the workflow ran. GitHub branch protection
 must separately require the CI status check before changes reach `main`; see the
-operator handoff in this release work for the control-plane setting.
+operator handoff in this release work for the control-plane setting. That PR
+review/merge gate is separate from the deployment-time stage-before-promote
+gate: the former controls what reaches `main`, while the latter proves the
+assembled Pages artifact before it receives the production branch.
 
 ## Release invariants
 
-The post-deploy block in `.github/workflows/deploy-cloudflare-pages.yml` is the
-canonical served-surface check. Keep its executable checks reviewed with every
-workflow change:
+The preview verification and final post-promotion block in
+`.github/workflows/deploy-cloudflare-pages.yml` are the canonical served-surface
+checks. The preview invokes `scripts/verify_release_invariants.sh` with the
+preview `pages.dev` origin as its release base and the configured production
+website origin for canonical-link expectations. Keep its executable checks
+reviewed with every workflow change:
 
 1. The checked-out repository SHA equals the SHA captured for deployment.
 2. The deployed dashboard mentions the live health-row count and embeds one
@@ -84,9 +96,11 @@ Public artifact fetches inside `scripts/verify_release_invariants.sh` retry HTTP
 errors, including transient 404 responses, for a three-minute Cloudflare
 propagation-delay budget before rejecting the deployed release.
 
-A failure blocks the workflow after deployment and identifies the rejected
-surface. Resolve the source or generation issue, rerun the same
-`release-build` → embed → deploy sequence, and do not waive the failing gate.
+A preview failure blocks production promotion and identifies the rejected
+surface. A final served-verification failure blocks the workflow after
+production deployment. Resolve the source or generation issue, rerun the same
+`release-build` → embed → preview → verify → promote sequence, and do not waive
+the failing gate.
 
 ## MCP source synchronization
 

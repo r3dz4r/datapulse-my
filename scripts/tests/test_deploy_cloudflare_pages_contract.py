@@ -410,6 +410,54 @@ def test_native_pages_uses_only_cloudflare_secrets_and_project() -> None:
     assert "pages: write" not in workflow
 
 
+def test_native_pages_stages_and_verifies_the_assembled_artifact_before_production() -> None:
+    """The exact assembled artifact must pass preview invariants before promotion."""
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    assemble_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Assemble canonical Pages artifact"
+    )
+    staging_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Deploy isolated Cloudflare Pages preview artifact"
+    )
+    preview_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Verify isolated Pages preview before production promotion"
+    )
+    production_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Deploy canonical Cloudflare Pages artifact"
+    )
+
+    staging = steps[staging_index]
+    preview = steps[preview_index]
+    production = steps[production_index]
+    staging_command = staging["with"]["command"]
+    preview_run = preview["run"]
+
+    assert assemble_index < staging_index < preview_index < production_index
+    assert staging["uses"] == "cloudflare/wrangler-action@v3"
+    assert "pages deploy _site --project-name=datapulse-p4b-preview" in staging_command
+    assert "--branch=staging-${GITHUB_SHA:0:12}" in staging_command
+    assert "--branch=main" not in staging_command
+    assert "data-pulse.my" not in staging_command
+    assert "www.data-pulse.my" not in staging_command
+    assert "if" not in preview
+    assert 'preview_branch="staging-${GITHUB_SHA:0:12}"' in preview_run
+    assert 'preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"' in preview_run
+    assert (
+        "website_origin=\"$(jq -er '.origins.website | select(type == \\\"string\\\" "
+        "and test(\\\"^https://[^/]+$\\\"))' config/public-surfaces.json)\""
+    ) in preview_run
+    assert 'DATAPULSE_RELEASE_BASE_URL="$preview_origin"' in preview_run
+    assert 'DATAPULSE_CANONICAL_BASE_URL="$website_origin"' in preview_run
+    assert "bash scripts/verify_release_invariants.sh" in preview_run
+    assert production["with"]["command"] == (
+        "pages deploy _site --project-name=datapulse-p4b-preview --branch=main"
+    )
+
+
 def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() -> None:
     workflow = _workflow()
     verify = workflow.split("      - name: Verify canonical served surface\n", 1)[1]

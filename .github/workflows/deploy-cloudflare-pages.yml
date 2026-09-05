@@ -495,6 +495,27 @@ jobs:
           test ! -e _site/_redirects
           test -s _site/health/latest.json
 
+      - name: Install preview release invariant dependencies
+        run: python -m pip install jsonschema --requirement mcp/requirements.txt
+
+      - name: Deploy isolated Cloudflare Pages preview artifact
+        id: deploy_preview
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy _site --project-name=datapulse-p4b-preview --branch=staging-${GITHUB_SHA:0:12}
+
+      - name: Verify isolated Pages preview before production promotion
+        run: |
+          set -Eeuo pipefail
+          preview_branch="staging-${GITHUB_SHA:0:12}"
+          preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"
+          website_origin="$(jq -er '.origins.website | select(type == \"string\" and test(\"^https://[^/]+$\"))' config/public-surfaces.json)"
+          DATAPULSE_RELEASE_BASE_URL="$preview_origin" \
+            DATAPULSE_CANONICAL_BASE_URL="$website_origin" \
+            bash scripts/verify_release_invariants.sh
+
       - name: Deploy canonical Cloudflare Pages artifact
         id: deploy
         uses: cloudflare/wrangler-action@v3
