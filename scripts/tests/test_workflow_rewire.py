@@ -26,6 +26,7 @@ CANONICAL_PIPELINE = Path(
     os.environ.get("DOTFILES_DIR", "/home/redza/dotfiles")
 ) / "scripts" / "datapulse-pipeline.sh"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
+SERVED_VERIFIER = ROOT / "scripts/verify_served_release.sh"
 
 
 def _read(path: Path) -> str:
@@ -228,7 +229,7 @@ def test_cloudflare_publishes_only_a_current_verified_optional_bundle() -> None:
     assembly = workflow.split("      - name: Assemble canonical Pages artifact\n", 1)[1].split(
         "      - name: Deploy canonical Cloudflare Pages artifact\n", 1
     )[0]
-    served = workflow.split("      - name: Verify canonical served surface\n", 1)[1]
+    served = _read(SERVED_VERIFIER)
 
     assert "needs.sign_health.outputs.signed == 'true'" in workflow
     assert "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093" in workflow
@@ -236,9 +237,9 @@ def test_cloudflare_publishes_only_a_current_verified_optional_bundle() -> None:
     assert 'cp "$RUNNER_TEMP/sigstore-publication/health.latest.sigstore.json" _site/signatures/' in assembly
     assert "signatures/health.latest.sigstore.json" in served
     assert "signatures/datapulse.json" in served
-    assert 'fetch "signed manifest snapshot" "${website_origin}/signatures/datapulse.json"' in served
+    assert 'fetch "signed manifest snapshot" "$base_url/signatures/datapulse.json"' in served
     assert '--manifest "$smoke_dir/signatures/datapulse.json"' in served
-    assert '--manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json"' not in served
+    assert '--manifest "$publication_dir/datapulse.json"' not in served
     assert "cmp -s" in served
     assert "python3 scripts/verify_sigstore_bundle.py" in served
     assert "stale Sigstore bundle is still served" in served
@@ -386,20 +387,20 @@ def test_cloudflare_workflow_retains_dynamic_public_artifact_contracts() -> None
     paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
 
     assert '"health/**"' in paths_block
-    assert 'fetch "dataset register" "${website_origin}/"' in workflow
-    assert 'fetch_alias "dashboard" "${website_origin}/dashboard"' in workflow
-    assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in workflow
-    for artifact in ("health/trends.json", "health/drift.json", "health/reconciliation.json"):
-        assert artifact in workflow
-    assert '.tools | type == "array" and length > 0' in workflow
-    assert '.inputSchema | type == "object"' in workflow
-    assert "<!-- BEGIN mcp-tools -->" in workflow
-    assert "<!-- END mcp-tools -->" in workflow
+    served = _read(SERVED_VERIFIER)
+    assert 'fetch "dataset register" "$base_url/"' in served
+    assert 'fetch_alias dashboard "$base_url/dashboard"' in served
+    assert 'fetch "health snapshot" "$base_url/health/latest.json"' in served
+    assert 'for kind in trends drift reconciliation' in served
+    assert '.tools | type == "array" and length > 0' in served
+    assert '.inputSchema | type == "object"' in served
+    assert "<!-- BEGIN mcp-tools -->" in served
+    assert "<!-- END mcp-tools -->" in served
 
 
 def test_cloudflare_served_fetches_remain_bounded_and_https_only() -> None:
     workflow = _read(DEPLOY_WORKFLOW)
-    verify_step = workflow.split("      - name: Verify canonical served surface\n", 1)[1]
+    verify_step = _read(SERVED_VERIFIER)
 
     assert "fetch() {" in verify_step
     for flag in ("--proto '=https'", "--retry 3", "--retry-delay 5", "--retry-all-errors", "--connect-timeout 10", "--max-time 30"):

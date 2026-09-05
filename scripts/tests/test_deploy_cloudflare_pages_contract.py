@@ -15,10 +15,15 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
+SERVED_VERIFIER = ROOT / "scripts/verify_served_release.sh"
 
 
 def _workflow() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
+
+
+def _served_verifier() -> str:
+    return SERVED_VERIFIER.read_text(encoding="utf-8")
 
 
 def _health_cycle_classifier() -> str:
@@ -43,8 +48,7 @@ def _classifies_as_health_only(paths: tuple[str, ...]) -> bool:
 
 def _alias_helper() -> str:
     """Extract the deployed shell helper for direct state-machine testing."""
-    verify = _workflow().split("      - name: Verify canonical served surface\n", 1)[1]
-    match = re.search(r"(?ms)^          fetch_alias\(\) \{.*?^          \}\n", verify)
+    match = re.search(r"(?ms)^fetch_alias\(\) \{.*?^\}\n", _served_verifier())
     assert match is not None, "the alias verifier must remain executable and contract-tested"
     return textwrap.dedent(match.group(0))
 
@@ -60,6 +64,7 @@ set -Eeuo pipefail
 smoke_dir=$(mktemp -d)
 trap 'rm -rf "$smoke_dir"' EXIT
 website_origin='https://example.test'
+base_url="$website_origin"
 fail() {{ echo "$1" >&2; return 1; }}
 curl() {{
   local dump='' output='' url='' arg
@@ -220,11 +225,11 @@ def test_native_pages_preserves_full_release_build_and_surface_contract() -> Non
     ):
         assert copy in workflow
     assert "test ! -e _site/_redirects" in workflow
-    assert "fetch_alias \"landing.html\"" in workflow
-    assert "fetch_alias \"landing\"" in workflow
-    assert "fetch_alias \"dashboard\"" in workflow
-    assert "Only the documented landing.html -> landing transition is" in workflow
-    assert "normalized alias redirects again" in workflow
+    verifier = _served_verifier()
+    assert 'fetch_alias landing.html "$base_url/landing.html"' in verifier
+    assert 'fetch_alias landing "$base_url/landing"' in verifier
+    assert 'fetch_alias dashboard "$base_url/dashboard"' in verifier
+    assert "normalized alias redirects again" in verifier
 
 
 def test_health_only_legacy_release_proof_accepts_generated_and_verified_timestamps() -> None:
@@ -242,8 +247,7 @@ def test_health_only_legacy_release_proof_accepts_generated_and_verified_timesta
 
 def test_final_health_only_release_proof_check_accepts_both_timestamp_forms_fail_closed() -> None:
     workflow = _workflow()
-    verify_step = workflow.split("      - name: Verify canonical served surface\n", 1)[1]
-    match = re.search(r'"verification timestamp": r"([^"]+)"', verify_step)
+    match = re.search(r"'verification timestamp':r'([^']+)'", _served_verifier())
     assert match is not None
     pattern = match.group(1)
 
@@ -446,13 +450,11 @@ def test_native_pages_stages_and_verifies_the_assembled_artifact_before_producti
     assert "if" not in preview
     assert 'preview_branch="staging-${GITHUB_RUN_ID}"' in preview_run
     assert 'preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"' in preview_run
-    assert (
-        "website_origin=\"$(jq -er '.origins.website | select(type == \"string\" "
-        "and test(\"^https://[^/]+$\"))' config/public-surfaces.json)\""
-    ) in preview_run
-    assert 'DATAPULSE_RELEASE_BASE_URL="$preview_origin"' in preview_run
-    assert 'DATAPULSE_CANONICAL_BASE_URL="$website_origin"' in preview_run
-    assert "bash scripts/verify_release_invariants.sh" in preview_run
+    assert "bash scripts/verify_served_release.sh" in preview_run
+    assert '--base-url "$preview_origin"' in preview_run
+    assert '--sigstore-signed "${{ needs.sign_health.outputs.signed }}"' in preview_run
+    assert '--sigstore-publication "$RUNNER_TEMP/sigstore-publication"' in preview_run
+    assert "verify_release_invariants.sh" not in preview_run
     assert production["with"]["command"] == (
         "pages deploy _site --project-name=datapulse-p4b-preview --branch=main"
     )
@@ -460,21 +462,20 @@ def test_native_pages_stages_and_verifies_the_assembled_artifact_before_producti
 
 def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() -> None:
     workflow = _workflow()
-    verify = workflow.split("      - name: Verify canonical served surface\n", 1)[1]
+    verify = _served_verifier()
 
-    assert 'fetch "dataset register" "${website_origin}/" "$smoke_dir/index.html"' in verify
-    assert 'fetch_alias "landing.html" "${website_origin}/landing.html"' in verify
-    assert 'fetch_alias "landing" "${website_origin}/landing"' in verify
-    assert 'fetch_alias "dashboard" "${website_origin}/dashboard"' in verify
-    assert 'Only the documented landing.html -> landing transition is' in verify
+    assert 'fetch "dataset register" "$base_url/" "$smoke_dir/index.html"' in verify
+    assert 'fetch_alias landing.html "$base_url/landing.html"' in verify
+    assert 'fetch_alias landing "$base_url/landing"' in verify
+    assert 'fetch_alias dashboard "$base_url/dashboard"' in verify
     assert 'normalized alias redirects again' in verify
     assert 'DataPulse dataset register' in verify
     assert 'expected_dataset_count="$(jq -er' in verify
-    assert "_site/datapulse.json" in verify
+    assert '"$site_dir/datapulse.json"' in verify
     assert '[[ "$observed_register_rows" -eq "$expected_dataset_count" ]]' in verify
     assert "origin root register rows mismatch: expected $expected_dataset_count, observed $observed_register_rows" in verify
     assert "389 register rows" not in verify
-    assert 'fetch "health snapshot" "${website_origin}/health/latest.json"' in verify
+    assert 'fetch "health snapshot" "$base_url/health/latest.json"' in verify
     assert 'for path in "${pages[@]}" "${artifacts[@]}"' in verify
     assert "embedded dashboard checked_at differs from served health/latest.json" in verify
     assert "embedded dashboard dataset count differs from served health/latest.json" in verify
@@ -482,7 +483,7 @@ def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() ->
     assert "--proto '=https'" in verify
     assert "--retry-all-errors" in verify
     assert "exit 1" in verify
-    assert re.search(r"embedded_health\[\"checked_at\"\].*health\[\"checked_at\"\]", verify, re.DOTALL)
+    assert "embedded['checked_at'] != health['checked_at']" in verify
 
 
 def test_sign_health_refreshes_chain_head_before_signing() -> None:

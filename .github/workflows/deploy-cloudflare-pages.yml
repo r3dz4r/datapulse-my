@@ -506,15 +506,25 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy _site --project-name=datapulse-p4b-preview --branch=staging-${{ github.run_id }}
 
+      - name: Install pinned Cosign verifier for preview served verification
+        if: needs.sign_health.outputs.signed == 'true'
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        with:
+          cosign-release: v3.1.3
+
       - name: Verify isolated Pages preview before production promotion
         run: |
           set -Eeuo pipefail
           preview_branch="staging-${GITHUB_RUN_ID}"
           preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"
-          website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)"
-          DATAPULSE_RELEASE_BASE_URL="$preview_origin" \
-            DATAPULSE_CANONICAL_BASE_URL="$website_origin" \
-            bash scripts/verify_release_invariants.sh
+          bash scripts/verify_served_release.sh \
+            --base-url "$preview_origin" \
+            --site _site \
+            --sigstore-signed "${{ needs.sign_health.outputs.signed }}" \
+            --health-only "${{ needs.classify.outputs.health_only }}" \
+            --sigstore-publication "$RUNNER_TEMP/sigstore-publication" \
+            --source-commit "$GITHUB_SHA" \
+            --cosign "$(command -v cosign || true)"
 
       - name: Deploy canonical Cloudflare Pages artifact
         id: deploy
@@ -533,231 +543,12 @@ jobs:
       - name: Verify canonical served surface
         run: |
           set -Eeuo pipefail
-          fail() { echo "::error title=Cloudflare Pages contract failed::$1"; exit 1; }
-          website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)" || fail "invalid website origin"
-          smoke_dir="$(mktemp -d)"
-          trap 'rm -rf "$smoke_dir"' EXIT
-          fetch() {
-            local surface="$1" url="$2" output="$3"
-            [[ "$url" =~ ^https://[^[:space:]]+$ ]] || fail "invalid URL for $surface"
-            mkdir -p "$(dirname "$output")"
-            curl --fail --location --silent --show-error --proto '=https' \
-              --retry 3 --retry-delay 5 --retry-all-errors \
-              --connect-timeout 10 --max-time 30 "$url" --output "$output" || \
-              fail "missing or stale served surface: $surface"
-          }
-          fetch_alias() {
-            local surface="$1" url="$2"
-            local requested_path="${url#"$website_origin"}"
-            local headers="$smoke_dir/${surface// /-}.headers" body="$smoke_dir/${surface// /-}.body" location status
-            local resolved_headers="$smoke_dir/${surface// /-}.resolved.headers" resolved_body="$smoke_dir/${surface// /-}.resolved.body"
-            [[ "$url" =~ ^https://[^[:space:]]+$ ]] || fail "invalid URL for $surface"
-            # Fetch once without following.  Pages may clean-normalise an HTML
-            # path.  Only the documented landing.html -> landing transition is
-            # allowed; every other Location is a route-contract failure.
-            status="$(curl --fail --silent --show-error --proto '=https' \
-              --retry 3 --retry-delay 5 --retry-all-errors \
-              --connect-timeout 10 --max-time 30 \
-              --dump-header "$headers" --output "$body" --write-out '%{http_code}' "$url")" \
-              || fail "could not fetch compatibility alias: $surface"
-            location="$(awk 'tolower($1) == "location:" { sub(/[\r ]+$/, "", $2); print $2; exit }' "$headers")"
-            # Pages appends a trailing empty fragment to certain Location
-            # values; canonicalise the comparison value so a benign `#` does
-            # not fail an otherwise-correct alias normalization.
-            [[ "$location" == "${location%#}" ]] || location="${location%#}"
-            if [[ -n "$location" ]]; then
-              [[ "$requested_path" == "/landing.html" && "$status" == "308" ]] \
-                || fail "$surface uses an unexpected edge redirect to ${location}"
-              [[ "$location" == "/landing" || "$location" == "${website_origin}/landing" ]] \
-                || fail "$surface normalizes to an unexpected location: ${location}"
-              status="$(curl --fail --silent --show-error --proto '=https' \
-                --retry 3 --retry-delay 5 --retry-all-errors \
-                --connect-timeout 10 --max-time 30 \
-                --dump-header "$resolved_headers" --output "$resolved_body" --write-out '%{http_code}' \
-                "${website_origin}/landing")" \
-                || fail "could not fetch normalized compatibility alias: $surface"
-              [[ "$status" == "200" ]] || fail "$surface normalized alias returned HTTP $status"
-              location="$(awk 'tolower($1) == "location:" { sub(/[\r ]+$/, "", $2); print $2; exit }' "$resolved_headers")"
-              [[ -z "$location" ]] || fail "$surface normalized alias redirects again to ${location}"
-              body="$resolved_body"
-            else
-              [[ "$status" == "200" ]] || fail "$surface returned unexpected HTTP $status"
-            fi
-            grep -Fq '<title>DataPulse dataset register</title>' "$body" || fail "$surface lacks alias document identity"
-            grep -Fq '<link rel="canonical" href="/">' "$body" || fail "$surface lacks root canonical identity"
-            grep -Fq 'http-equiv="refresh" content="0; url=/"' "$body" || fail "$surface lacks root browser fallback"
-            grep -Fq 'href="/">DataPulse dataset register</a>' "$body" || fail "$surface lacks accessible root fallback"
-          }
-          # Allow the custom-domain edge to observe the just-created Pages deployment.
-          sleep 30
-          expected_dataset_count="$(jq -er '.datasets | select(type == "array" and length > 0) | length' _site/datapulse.json)" \
-            || fail "assembled manifest has no dataset array"
-          fetch "dataset register" "${website_origin}/" "$smoke_dir/index.html"
-          grep -q "<title>DataPulse Dataset Register</title>" "$smoke_dir/index.html" \
-            || fail "origin root is not the DataPulse dataset register"
-          grep -q "__DATAPULSE_DATA__" "$smoke_dir/index.html" \
-            || fail "origin root has no embedded register health payload"
-          observed_register_rows="$(grep -o '<article class="register-row' "$smoke_dir/index.html" | wc -l)"
-          [[ "$observed_register_rows" -eq "$expected_dataset_count" ]] \
-            || fail "origin root register rows mismatch: expected $expected_dataset_count, observed $observed_register_rows"
-          if grep -q "DataPulse MY" "$smoke_dir/index.html"; then
-            fail "origin root retains the retired product-name alias"
-          fi
-          fetch_alias "landing.html" "${website_origin}/landing.html"
-          fetch_alias "landing" "${website_origin}/landing"
-          fetch_alias "dashboard" "${website_origin}/dashboard"
-          fetch "health snapshot" "${website_origin}/health/latest.json" "$smoke_dir/health/latest.json"
-          cmp -s _site/health/latest.json "$smoke_dir/health/latest.json" || \
-            fail "served canonical health differs from the deployed bytes"
-          sigstore_signed="${{ needs.sign_health.outputs.signed }}"
-          sigstore_path="signatures/health.latest.sigstore.json"
-          if [[ "$sigstore_signed" == "true" ]]; then
-            staged_bundle="$RUNNER_TEMP/sigstore-publication/health.latest.sigstore.json"
-            staged_manifest="$RUNNER_TEMP/sigstore-publication/datapulse.json"
-            test -s "$staged_bundle" || fail "verified Sigstore bundle is missing from the deploy job"
-            test -s "$staged_manifest" || fail "signed manifest snapshot is missing from the deploy job"
-            fetch "Sigstore health DSSE bundle" "${website_origin}/${sigstore_path}" "$smoke_dir/health.latest.sigstore.json"
-            cmp -s "$staged_bundle" "$smoke_dir/health.latest.sigstore.json" || \
-              fail "served Sigstore bundle differs from the verified staged artifact"
-            fetch "signed manifest snapshot" "${website_origin}/signatures/datapulse.json" "$smoke_dir/signatures/datapulse.json"
-            cmp -s "$staged_manifest" "$smoke_dir/signatures/datapulse.json" || \
-              fail "served signed manifest snapshot differs from the verified staged artifact"
-            python3 scripts/verify_sigstore_bundle.py \
-              --health _site/health/latest.json \
-              --manifest "$smoke_dir/signatures/datapulse.json" \
-              --legacy-chain-head "$RUNNER_TEMP/sigstore-publication/chain_head.json" \
-              --source-commit "$GITHUB_SHA" \
-              --bundle "$smoke_dir/health.latest.sigstore.json" \
-              --certificate-identity "https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main" \
-              --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-              --cosign "$(command -v cosign)" || fail "served Sigstore bundle verification failed"
-          else
-            sigstore_status="$(curl --location --silent --show-error --proto '=https' \
-              --retry 3 --retry-delay 5 --retry-all-errors \
-              --connect-timeout 10 --max-time 30 \
-              --output "$smoke_dir/unsigned-sigstore-response" --write-out '%{http_code}' \
-              "${website_origin}/${sigstore_path}")" || fail "could not prove optional Sigstore bundle absence"
-            # The Cloudflare Pages SPA fallback serves the dashboard HTML with HTTP
-            # 200 for ANY missing path, so a missing optional bundle is NOT provable
-            # by a 404 alone. Absence is valid only when the response is NOT a real
-            # Sigstore bundle: HTTP 404, or an HTML SPA fallback (dashboard shell).
-            # A genuinely-served stale bundle (Sigstore JSON media type) is a hard
-            # failure even on HTTP 200.
-            if [[ "$sigstore_status" == "200" ]]; then
-              if grep -q 'application/vnd.dev.sigstore.bundle' "$smoke_dir/unsigned-sigstore-response" \
-                || grep -Eq '<html[ >]|<head>|id="main-content"|hero-heading' "$smoke_dir/unsigned-sigstore-response"; then
-                :  # SPA fallback (dashboard HTML) — no real bundle served
-              else
-                fail "stale Sigstore bundle is still served after signing became unavailable (HTTP $sigstore_status)"
-              fi
-            elif [[ "$sigstore_status" != "404" ]]; then
-              fail "unexpected HTTP status while proving optional Sigstore bundle absence (HTTP $sigstore_status)"
-            fi
-            echo '::warning title=Sigstore health bundle absent::Canonical health is current; the optional signer was unavailable and no bundle was published.'
-          fi
-          allow_legacy_release_proof="${{ needs.classify.outputs.health_only == 'true' && '1' || '0' }}"
-          if [[ "$allow_legacy_release_proof" == "1" ]]; then
-            staged_proof="$RUNNER_TEMP/preserved-release-proof/release-verification.md"
-          else
-            staged_proof="docs/release-verification.md"
-          fi
-          test -s "$staged_proof" || fail "staged release proof is missing"
-          fetch "release reproducibility proof" "${website_origin}/release-verification.md" "$smoke_dir/release-verification.md"
-          cmp -s "$staged_proof" "$smoke_dir/release-verification.md" || \
-            fail "served release proof differs from staged artifact"
-          python3 - "$smoke_dir/release-verification.md" "$(git rev-parse HEAD)" "$smoke_dir/health/latest.json" mcp.json "$allow_legacy_release_proof" <<'PY'
-          import json
-          import re
-          import sys
-          from pathlib import Path
-
-          proof_path, source_sha, health_path, mcp_path, allow_legacy = sys.argv[1:]
-          contents = Path(proof_path).read_text(encoding="utf-8")
-          if allow_legacy == "1":
-              required = {
-                  "release-proof title": r"^# Release reproducibility verification$",
-                  "verification timestamp": r"^- (?:Generated|Verified) at: `[^`\\n]+`$",
-                  "Source SHA": r"^- Source SHA: `[0-9a-f]{7,64}`$",
-                  "Profile result": r"^- Profile result: .+$",
-                  "Total files built": r"^- Total files built: .+$",
-                  "hash table": r"^\\| Path category \\| File count \\| First-run hash \\| Second-run hash \\| Match\\? \\|$",
-                  "hash table category row": r"^\\| (?![-: ]+\\|)[^|]+ \\| \\d+ \\|",
-                  "Reproduction section": r"^## Reproduction$",
-              }
-              missing = [label for label, pattern in required.items() if re.search(pattern, contents, re.MULTILINE) is None]
-          else:
-              health = json.loads(Path(health_path).read_text(encoding="utf-8"))
-              tools = json.loads(Path(mcp_path).read_text(encoding="utf-8"))["tools"]
-              required = (
-                  "<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->",
-                  "- Status: `current generated release proof`",
-                  f"- Source SHA: `{source_sha}`",
-                  f"- Health checked at: `{health['checked_at']}`",
-                  f"- Dataset count: `{len(health['datasets'])}`",
-                  f"- MCP tool count: `{len(tools)}`",
-                  "- Protocol result: `byte-identical isolated release-build runs`",
-              )
-              missing = [line for line in required if line not in contents]
-          if missing:
-              raise SystemExit("release proof drift: " + "; ".join(missing))
-          PY
-          mapfile -t pages < <(jq -er '.pages[]' config/public-surfaces.json)
-          mapfile -t artifacts < <(jq -er '.artifacts[]' config/public-surfaces.json)
-          for path in "${pages[@]}" "${artifacts[@]}"; do
-            [[ "$path" == "/" || "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "unsafe declared public path: $path"
-            if [[ "$path" == */ ]]; then
-              declared_file="$(find "_site${path}" -type f -print -quit)" || fail "declared collection is missing: $path"
-              [[ -n "$declared_file" ]] || fail "declared collection is empty: $path"
-              path="/${declared_file#_site/}"
-            fi
-            fetch "declared public surface $path" "${website_origin}${path}" "$smoke_dir/surfaces${path%/}/index"
-          done
-          python3 - "$smoke_dir/index.html" "$smoke_dir/health/latest.json" <<'PY'
-          import json
-          import re
-          import sys
-          from pathlib import Path
-
-          dashboard = Path(sys.argv[1]).read_text(encoding="utf-8")
-          health = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
-          match = re.search(r"window\.__DATAPULSE_DATA__\s*=\s*\{health:\s*", dashboard)
-          if match is None:
-              raise SystemExit("dashboard has no embedded health payload")
-          decoder = json.JSONDecoder()
-          embedded_health, _ = decoder.raw_decode(dashboard[match.end():])
-          if embedded_health["checked_at"] != health["checked_at"]:
-              raise SystemExit("embedded dashboard checked_at differs from served health/latest.json")
-          if len(embedded_health["datasets"]) != len(health["datasets"]):
-              raise SystemExit("embedded dashboard dataset count differs from served health/latest.json")
-          if dashboard.count('"health_report":') != len(health["datasets"]):
-              raise SystemExit("dashboard dataset-card count differs from served health/latest.json")
-          PY
-          expected_dataset_count="$(jq -er '.datasets | select(type == "array" and length > 0) | length' "$smoke_dir/health/latest.json")" || fail "served health has no dataset array"
-          fetch "trend snapshot" "${website_origin}/health/trends.json" "$smoke_dir/trends.json"
-          jq -e --argjson expected "$expected_dataset_count" '
-            .schema == "datapulse/v1/dataset-trends"
-            and (.datasets | type == "array" and length == $expected)
-            and (.summary.datasets_total == $expected)
-          ' "$smoke_dir/trends.json" >/dev/null || fail "served trends are invalid"
-          fetch "drift snapshot" "${website_origin}/health/drift.json" "$smoke_dir/drift.json"
-          jq -e --argjson expected "$expected_dataset_count" '
-            .schema == "datapulse/v1/dataset-drift"
-            and (.datasets | type == "array" and length == $expected)
-            and (.summary.datasets_total == $expected)
-          ' "$smoke_dir/drift.json" >/dev/null || fail "served drift is invalid"
-          fetch "reconciliation snapshot" "${website_origin}/health/reconciliation.json" "$smoke_dir/reconciliation.json"
-          jq -e --argjson expected "$expected_dataset_count" '
-            .schema == "datapulse/v1/dataset-reconciliation"
-            and (.summary.datasets_total == $expected)
-            and (.summary.datasets_grouped + .summary.datasets_single_source == $expected)
-          ' "$smoke_dir/reconciliation.json" >/dev/null || fail "served reconciliation is invalid"
-          fetch "MCP inventory" "${website_origin}/mcp.json" "$smoke_dir/mcp.json"
-          jq -e '
-            .tools | type == "array" and length > 0 and
-            all(.[]; type == "object" and
-              (.name | type == "string" and length > 0) and
-              (.inputSchema | type == "object"))
-          ' "$smoke_dir/mcp.json" >/dev/null || fail "served MCP inventory is invalid"
-          fetch "LLM index" "${website_origin}/llms.txt" "$smoke_dir/llms.txt"
-          grep -Fxq '<!-- BEGIN mcp-tools -->' "$smoke_dir/llms.txt" || fail "served llms index has no MCP tools block"
-          grep -Fxq '<!-- END mcp-tools -->' "$smoke_dir/llms.txt" || fail "served llms index has incomplete MCP tools block"
+          website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)"
+          bash scripts/verify_served_release.sh \
+            --base-url "$website_origin" \
+            --site _site \
+            --sigstore-signed "${{ needs.sign_health.outputs.signed }}" \
+            --health-only "${{ needs.classify.outputs.health_only }}" \
+            --sigstore-publication "$RUNNER_TEMP/sigstore-publication" \
+            --source-commit "$GITHUB_SHA" \
+            --cosign "$(command -v cosign || true)"
