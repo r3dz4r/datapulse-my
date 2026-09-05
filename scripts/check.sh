@@ -265,6 +265,12 @@ validate_adapter_config() {
         && probe_policy_value "$dataset_id" '.browser["wait-seconds"]' >/dev/null \
         || { printf 'Probe policy error: %s browser adapter requires date-pattern and wait-seconds\n' "$dataset_id" >&2; return 1; }
       ;;
+    st-energy)
+      probe_policy_value "$dataset_id" '.["st-energy"]["flow-id"]' >/dev/null \
+        && probe_policy_value "$dataset_id" '.["st-energy"]["event-id"]' >/dev/null \
+        && probe_policy_value "$dataset_id" '.["st-energy"]["report-kind"]' >/dev/null \
+        || { printf 'Probe policy error: %s st-energy adapter requires flow, event, and report kind\n' "$dataset_id" >&2; return 1; }
+      ;;
     *)
       printf 'Probe policy error: %s has unsupported adapter %s\n' "$dataset_id" "$adapter" >&2
       return 1
@@ -1293,6 +1299,96 @@ check_gtfs_dataset() {
   fi
 }
 
+check_st_energy_dataset() {
+  local dataset_id="$1" source_url="$2"
+  local flow_id event_id report_kind group_by group_value select_all detail_url form_request
+  local http_status content_length metrics year record_count column_count pdf_url details
+  local session_dir base_file detail_file report_file
+
+  flow_id="$(probe_policy_value "$dataset_id" '.["st-energy"]["flow-id"]')" || return 1
+  event_id="$(probe_policy_value "$dataset_id" '.["st-energy"]["event-id"]')" || return 1
+  report_kind="$(probe_policy_value "$dataset_id" '.["st-energy"]["report-kind"]')" || return 1
+  group_by="$(probe_policy_value "$dataset_id" '.["st-energy"]["group-by"]' 2>/dev/null || true)"
+  group_value="$(probe_policy_value "$dataset_id" '.["st-energy"]["group-value"]' 2>/dev/null || true)"
+  select_all="$(probe_policy_value "$dataset_id" '.["st-energy"]["select-all-field"]' 2>/dev/null || true)"
+  if [[ "$source_url" != "https://meih.st.gov.my/statistics" ]] || \
+    [[ ! "$flow_id" =~ ^[0-9]+$ ]] || \
+    [[ ! "$event_id" =~ ^ViewStatisticELC(1|2|3|6|9)$ ]]; then
+    emit "$dataset_id" "$source_url" "degraded" "Invalid ST protocol policy" '{"access_method":"ST MyEnergyStats protocol"}'
+    return 0
+  fi
+
+  session_dir="$(mktemp -d)"
+  base_file="$session_dir/base.html"
+  detail_file="$session_dir/detail.html"
+  report_file="$session_dir/report.body"
+  if ! http_status="$(curl --location --silent --show-error --max-time "$curl_timeout" \
+    --cookie-jar "$session_dir/cookies" --cookie "$session_dir/cookies" \
+    --output "$base_file" --write-out '%{http_code}' "$source_url" 2>/dev/null)" \
+    || [[ ! "$http_status" =~ ^2[0-9][0-9]$ ]]; then
+    rm -rf "$session_dir"
+    emit "$dataset_id" "$source_url" "unreachable" "ST landing request failed" '{"access_method":"ST MyEnergyStats protocol GET"}'
+    return 0
+  fi
+  detail_url="$(python3 "$script_dir/st_energy_adapter.py" detail-url "$base_file" --event-id "$event_id" --flow-id "$flow_id" 2>/dev/null || true)"
+  if [[ -z "$detail_url" ]]; then
+    rm -rf "$session_dir"
+    emit "$dataset_id" "$source_url" "degraded" "ST event link was not present in landing page" "$(jq -cn --argjson http_status "$http_status" '{access_method:"ST MyEnergyStats protocol GET",http_status:$http_status}')"
+    return 0
+  fi
+  if ! http_status="$(curl --location --silent --show-error --max-time "$curl_timeout" \
+    --cookie-jar "$session_dir/cookies" --cookie "$session_dir/cookies" \
+    --output "$detail_file" --write-out '%{http_code}' "$detail_url" 2>/dev/null)" \
+    || [[ ! "$http_status" =~ ^2[0-9][0-9]$ ]]; then
+    rm -rf "$session_dir"
+    emit "$dataset_id" "$source_url" "unreachable" "ST detail request failed" "$(jq -cn --arg request_url "$detail_url" '{request_url:$request_url,access_method:"ST MyEnergyStats protocol GET"}')"
+    return 0
+  fi
+
+  if [[ "$report_kind" == "form-table" ]]; then
+    form_request="$(python3 "$script_dir/st_energy_adapter.py" form-request "$detail_file" \
+      --group-by "$group_by" --group-value "$group_value" --select-all-field "$select_all" 2>/dev/null || true)"
+    if [[ -z "$form_request" ]]; then
+      rm -rf "$session_dir"
+      emit "$dataset_id" "$source_url" "degraded" "ST report form was unavailable or unsafe" "$(jq -cn --arg request_url "$detail_url" '{request_url:$request_url,access_method:"ST MyEnergyStats protocol"}')"
+      return 0
+    fi
+    IFS=$'\t' read -r detail_url form_request <<< "$form_request"
+    if ! http_status="$(curl --silent --show-error --max-time "$curl_timeout" \
+      --cookie-jar "$session_dir/cookies" --cookie "$session_dir/cookies" \
+      --data "$form_request" --output "$report_file" --write-out '%{http_code}' "$detail_url" 2>/dev/null)" \
+      || [[ ! "$http_status" =~ ^2[0-9][0-9]$ ]]; then
+      rm -rf "$session_dir"
+      emit "$dataset_id" "$source_url" "unreachable" "ST report POST failed" "$(jq -cn --arg request_url "$detail_url" '{request_url:$request_url,access_method:"ST MyEnergyStats protocol POST"}')"
+      return 0
+    fi
+    metrics="$(python3 "$script_dir/st_energy_adapter.py" table-metrics "$report_file" 2>/dev/null || true)"
+    year="$(jq -r '.year // empty' <<< "$metrics")"
+    if [[ -z "$year" ]]; then
+      rm -rf "$session_dir"
+      emit "$dataset_id" "$source_url" "degraded" "ST report response contained no valid year table" "$(jq -cn --arg request_url "$detail_url" --arg event_id "$event_id" --arg flow_id "$flow_id" '{request_url:$request_url,access_method:"ST MyEnergyStats protocol POST",event_id:$event_id,flow_id:$flow_id,report_kind:"form-table"}')"
+      return 0
+    fi
+    content_length="$(wc -c < "$report_file" | tr -d '[:space:]')"
+    record_count="$(jq '.record_count' <<< "$metrics")"; column_count="$(jq '.column_count' <<< "$metrics")"
+    details="$(jq -cn --arg request_url "$detail_url" --argjson http_status "$http_status" --argjson content_length "$content_length" --argjson record_count "$record_count" --argjson column_count "$column_count" --arg freshness "${year}-01-01" --arg event_id "$event_id" --arg flow_id "$flow_id" '{request_url:$request_url,access_method:"ST MyEnergyStats protocol POST",http_status:$http_status,content_length:$content_length,record_count:$record_count,column_count:$column_count,content_freshness_date:$freshness,event_id:$event_id,flow_id:$flow_id,report_kind:"form-table"}')"
+    rm -rf "$session_dir"
+    emit "$dataset_id" "$source_url" "fresh" "ST report table returned a valid year" "$details"
+    return 0
+  fi
+
+  IFS=$'\t' read -r year pdf_url <<< "$(python3 "$script_dir/st_energy_adapter.py" pdf-link "$detail_file" 2>/dev/null || true)"
+  if [[ -z "$year" || -z "$pdf_url" ]] || ! http_status="$(curl --location --silent --show-error --max-time "$curl_timeout" --cookie "$session_dir/cookies" --output "$report_file" --write-out '%{http_code}' "$pdf_url" 2>/dev/null)" || [[ ! "$http_status" =~ ^2[0-9][0-9]$ ]]; then
+    rm -rf "$session_dir"
+    emit "$dataset_id" "$source_url" "degraded" "ST PDF report was unavailable" "$(jq -cn --arg event_id "$event_id" --arg flow_id "$flow_id" '{access_method:"ST MyEnergyStats protocol PDF",event_id:$event_id,flow_id:$flow_id,report_kind:"pdf-links"}')"
+    return 0
+  fi
+  content_length="$(wc -c < "$report_file" | tr -d '[:space:]')"
+  details="$(jq -cn --arg request_url "$pdf_url" --argjson http_status "$http_status" --argjson content_length "$content_length" --arg freshness "${year}-01-01" --arg event_id "$event_id" --arg flow_id "$flow_id" '{request_url:$request_url,access_method:"ST MyEnergyStats protocol PDF",http_status:$http_status,content_length:$content_length,content_freshness_date:$freshness,event_id:$event_id,flow_id:$flow_id,report_kind:"pdf-links"}')"
+  rm -rf "$session_dir"
+  emit "$dataset_id" "$source_url" "fresh" "ST PDF report returned a valid document year" "$details"
+}
+
 dispatch_policy_adapter() {
   local dataset_id="$1"
   local source_url="$2"
@@ -1320,6 +1416,9 @@ dispatch_policy_adapter() {
       ;;
     hansard-script)
       check_hansard_script_dataset "$dataset_id" "$source_url"
+      ;;
+    st-energy)
+      check_st_energy_dataset "$dataset_id" "$source_url"
       ;;
   esac
 }

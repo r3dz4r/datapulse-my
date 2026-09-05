@@ -2363,31 +2363,296 @@
     "trade_sitc_1d": {
       "template": "data-catalogue-date"
     },
-    "kkmnow_blood": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/blood_01_stock_timeseries.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
-    "kkmnow_organ": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/organ_01_timeseries.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
-    "kkmnow_covidnow": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidnow_01_timeseries.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
-    "kkmnow_covidepid": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidepid_01_util.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
-    "kkmnow_covidvax": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidvax_01_waffle.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
-    "kkmnow_pekab40": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pekab40_01_timeseries.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
-    "kkmnow_bedutil": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/bedutil_01_table_facility.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
-    "kkmnow_facilities": {"adapter":"direct","format":"parquet","url":"https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/facilities_01_table.parquet","freshness":{"family":"github_parquet","extraction-mode":"max","content-date-field":"date","fallback":"last-modified"}},
-    "st_energy_balance_pdf": {"adapter":"direct","format":"pdf","url":"https://www.st.gov.my/sites/default/files/2026-02/National_Energy_Balance_2022.pdf","freshness":{"family":"st_energy_balance","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
+    "kkmnow_blood": {
+      "adapter": "direct",
+      "format": "parquet",
+      "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/blood_01_stock_timeseries.parquet",
+      "freshness": {
+        "family": "github_parquet",
+        "extraction-mode": "max",
+        "content-date-field": "date",
+        "fallback": "last-modified"
+      }
+    },
+    "kkmnow_organ": {
+      "adapter": "direct",
+      "format": "parquet",
+      "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/organ_01_timeseries.parquet",
+      "freshness": {
+        "family": "github_parquet",
+        "extraction-mode": "max",
+        "content-date-field": "date",
+        "fallback": "last-modified"
+      }
+    },
+    "kkmnow_covidnow": {
+      "adapter": "direct",
+      "format": "parquet",
+      "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidnow_01_timeseries.parquet",
+      "freshness": {
+        "family": "github_parquet",
+        "extraction-mode": "max",
+        "content-date-field": "date",
+        "fallback": "last-modified"
+      }
+    },
+    "kkmnow_covidepid": {
+      "adapter": "direct",
+      "format": "parquet",
+      "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidepid_01_util.parquet",
+      "freshness": {
+        "family": "github_parquet",
+        "extraction-mode": "max",
+        "content-date-field": "date",
+        "fallback": "last-modified"
+      }
+    },
+    "kkmnow_covidvax": {
+      "adapter": "direct",
+      "format": "parquet",
+      "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidvax_01_waffle.parquet",
+      "freshness": {
+        "family": "github_parquet",
+        "extraction-mode": "max",
+        "content-date-field": "date",
+        "fallback": "last-modified"
+      }
+    },
+    "kkmnow_pekab40": {
+      "adapter": "direct",
+      "format": "parquet",
+      "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pekab40_01_timeseries.parquet",
+      "freshness": {
+        "family": "github_parquet",
+        "extraction-mode": "max",
+        "content-date-field": "date",
+        "fallback": "last-modified"
+      }
+    },
+    "kkmnow_bedutil": {
+      "adapter": "direct",
+      "format": "parquet",
+      "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/bedutil_01_table_facility.parquet",
+      "freshness": {
+        "family": "github_parquet",
+        "extraction-mode": "max",
+        "content-date-field": "date",
+        "fallback": "last-modified"
+      }
+    },
+    "kkmnow_facilities": {
+      "adapter": "direct",
+      "format": "parquet",
+      "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/facilities_01_table.parquet",
+      "freshness": {
+        "family": "github_parquet",
+        "extraction-mode": "max",
+        "content-date-field": "date",
+        "fallback": "last-modified"
+      }
+    },
+    "st_energy_balance_pdf": {
+      "adapter": "direct",
+      "format": "pdf",
+      "url": "https://www.st.gov.my/sites/default/files/2026-02/National_Energy_Balance_2022.pdf",
+      "freshness": {
+        "family": "st_energy_balance",
+        "extraction-mode": "max",
+        "content-date-field": "year_month",
+        "fallback": "last-modified"
+      }
+    },
     "hansard_sittings": {
       "template": "hansard-script"
     },
     "hansard_parliamentary_terms": {
       "template": "hansard-script"
     },
-    "st_installed_capacity_mw": {"adapter":"direct","format":"html","url":"https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatistic&categoryId=10&flowId=38","freshness":{"family":"st_energy_statistics","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
-    "st_max_demand_mw": {"adapter":"direct","format":"html","url":"https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatistic&categoryId=10&flowId=39","freshness":{"family":"st_energy_statistics","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
-    "st_generation_mix_gwh": {"adapter":"direct","format":"html","url":"https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatistic&categoryId=10&flowId=40","freshness":{"family":"st_energy_statistics","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
-    "st_sales_unit_gwh": {"adapter":"direct","format":"html","url":"https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatistic&categoryId=10&flowId=41","freshness":{"family":"st_energy_statistics","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
-    "st_sales_value_rm_million": {"adapter":"direct","format":"html","url":"https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatistic&categoryId=10&flowId=42","freshness":{"family":"st_energy_statistics","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
-    "st_consumers": {"adapter":"direct","format":"html","url":"https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatistic&categoryId=10&flowId=43","freshness":{"family":"st_energy_statistics","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
-    "st_ipps": {"adapter":"direct","format":"html","url":"https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatistic&categoryId=10&flowId=32","freshness":{"family":"st_energy_statistics","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
-    "st_re_projects": {"adapter":"direct","format":"html","url":"https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatistic&categoryId=10&flowId=35","freshness":{"family":"st_energy_statistics","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
-    "st_cogenerators": {"adapter":"direct","format":"html","url":"https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatistic&categoryId=10&flowId=34","freshness":{"family":"st_energy_statistics","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
-    "st_elesca": {"adapter":"direct","format":"html","url":"https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatistic&categoryId=10&flowId=37","freshness":{"family":"st_energy_statistics","extraction-mode":"max","content-date-field":"year_month","fallback":"last-modified"}},
+    "st_installed_capacity_mw": {
+      "adapter": "st-energy",
+      "format": "html",
+      "url": "https://meih.st.gov.my/statistics",
+      "st-energy": {
+        "flow-id": "38",
+        "event-id": "ViewStatisticELC3",
+        "report-kind": "form-table",
+        "group-by": "region",
+        "group-value": "1",
+        "select-all-field": "products",
+        "content-date-source": "table-year"
+      },
+      "freshness": {
+        "family": "st_energy_statistics",
+        "extraction-mode": "max",
+        "content-date-field": "year",
+        "fallback": "last-modified"
+      }
+    },
+    "st_max_demand_mw": {
+      "adapter": "st-energy",
+      "format": "html",
+      "url": "https://meih.st.gov.my/statistics",
+      "st-energy": {
+        "flow-id": "39",
+        "event-id": "ViewStatisticELC2",
+        "report-kind": "form-table",
+        "select-all-field": "utilities",
+        "content-date-source": "table-year"
+      },
+      "freshness": {
+        "family": "st_energy_statistics",
+        "extraction-mode": "max",
+        "content-date-field": "year",
+        "fallback": "last-modified"
+      }
+    },
+    "st_generation_mix_gwh": {
+      "adapter": "st-energy",
+      "format": "html",
+      "url": "https://meih.st.gov.my/statistics",
+      "st-energy": {
+        "flow-id": "40",
+        "event-id": "ViewStatisticELC3",
+        "report-kind": "form-table",
+        "group-by": "region",
+        "group-value": "1",
+        "select-all-field": "products",
+        "content-date-source": "table-year"
+      },
+      "freshness": {
+        "family": "st_energy_statistics",
+        "extraction-mode": "max",
+        "content-date-field": "year",
+        "fallback": "last-modified"
+      }
+    },
+    "st_sales_unit_gwh": {
+      "adapter": "st-energy",
+      "format": "html",
+      "url": "https://meih.st.gov.my/statistics",
+      "st-energy": {
+        "flow-id": "41",
+        "event-id": "ViewStatisticELC6",
+        "report-kind": "form-table",
+        "group-by": "utility",
+        "group-value": "1",
+        "select-all-field": "sectors",
+        "content-date-source": "table-year"
+      },
+      "freshness": {
+        "family": "st_energy_statistics",
+        "extraction-mode": "max",
+        "content-date-field": "year",
+        "fallback": "last-modified"
+      }
+    },
+    "st_sales_value_rm_million": {
+      "adapter": "st-energy",
+      "format": "html",
+      "url": "https://meih.st.gov.my/statistics",
+      "st-energy": {
+        "flow-id": "42",
+        "event-id": "ViewStatisticELC2",
+        "report-kind": "form-table",
+        "select-all-field": "utilities",
+        "content-date-source": "table-year"
+      },
+      "freshness": {
+        "family": "st_energy_statistics",
+        "extraction-mode": "max",
+        "content-date-field": "year",
+        "fallback": "last-modified"
+      }
+    },
+    "st_consumers": {
+      "adapter": "st-energy",
+      "format": "html",
+      "url": "https://meih.st.gov.my/statistics",
+      "st-energy": {
+        "flow-id": "43",
+        "event-id": "ViewStatisticELC6",
+        "report-kind": "form-table",
+        "group-by": "utility",
+        "group-value": "1",
+        "select-all-field": "sectors",
+        "content-date-source": "table-year"
+      },
+      "freshness": {
+        "family": "st_energy_statistics",
+        "extraction-mode": "max",
+        "content-date-field": "year",
+        "fallback": "last-modified"
+      }
+    },
+    "st_ipps": {
+      "adapter": "st-energy",
+      "format": "html",
+      "url": "https://meih.st.gov.my/statistics",
+      "st-energy": {
+        "flow-id": "32",
+        "event-id": "ViewStatisticELC1",
+        "report-kind": "pdf-links",
+        "content-date-source": "pdf-link-year"
+      },
+      "freshness": {
+        "family": "st_energy_statistics",
+        "extraction-mode": "max",
+        "content-date-field": "year",
+        "fallback": "last-modified"
+      }
+    },
+    "st_re_projects": {
+      "adapter": "st-energy",
+      "format": "html",
+      "url": "https://meih.st.gov.my/statistics",
+      "st-energy": {
+        "flow-id": "35",
+        "event-id": "ViewStatisticELC1",
+        "report-kind": "pdf-links",
+        "content-date-source": "pdf-link-year"
+      },
+      "freshness": {
+        "family": "st_energy_statistics",
+        "extraction-mode": "max",
+        "content-date-field": "year",
+        "fallback": "last-modified"
+      }
+    },
+    "st_cogenerators": {
+      "adapter": "st-energy",
+      "format": "html",
+      "url": "https://meih.st.gov.my/statistics",
+      "st-energy": {
+        "flow-id": "34",
+        "event-id": "ViewStatisticELC1",
+        "report-kind": "pdf-links",
+        "content-date-source": "pdf-link-year"
+      },
+      "freshness": {
+        "family": "st_energy_statistics",
+        "extraction-mode": "max",
+        "content-date-field": "year",
+        "fallback": "last-modified"
+      }
+    },
+    "st_elesca": {
+      "adapter": "st-energy",
+      "format": "html",
+      "url": "https://meih.st.gov.my/statistics",
+      "st-energy": {
+        "flow-id": "37",
+        "event-id": "ViewStatisticELC9",
+        "report-kind": "form-table",
+        "select-all-field": "othparams",
+        "content-date-source": "table-year"
+      },
+      "freshness": {
+        "family": "st_energy_statistics",
+        "extraction-mode": "max",
+        "content-date-field": "year",
+        "fallback": "last-modified"
+      }
+    },
     "hansard_mps": {
       "template": "hansard-script"
     }

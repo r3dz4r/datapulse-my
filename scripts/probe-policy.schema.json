@@ -29,7 +29,7 @@
   },
   "$defs": {
     "adapter": {
-      "enum": ["direct", "browser", "weather", "gtfs-static", "gtfs-realtime", "hansard-script"]
+      "enum": ["direct", "browser", "weather", "gtfs-static", "gtfs-realtime", "hansard-script", "st-energy"]
     },
     "format": {
       "enum": ["csv", "json", "html", "xml", "pdf", "parquet"]
@@ -74,6 +74,25 @@
         "date-pattern": {"type": "string", "minLength": 1, "maxLength": 500},
         "wait-seconds": {"type": "integer", "minimum": 1, "maximum": 120}
       }
+    },
+    "st-energy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flow-id", "event-id", "report-kind", "content-date-source"],
+      "properties": {
+        "flow-id": {"type": "string", "pattern": "^[0-9]+$"},
+        "event-id": {"enum": ["ViewStatisticELC1", "ViewStatisticELC2", "ViewStatisticELC3", "ViewStatisticELC6", "ViewStatisticELC9"]},
+        "report-kind": {"enum": ["form-table", "pdf-links"]},
+        "group-by": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+        "group-value": {"type": "string", "pattern": "^[A-Za-z0-9_]+$"},
+        "select-all-field": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+        "content-date-source": {"enum": ["table-year", "pdf-link-year"]}
+      },
+      "allOf": [
+        {"if": {"properties": {"report-kind": {"const": "form-table"}}}, "then": {"required": ["select-all-field"], "properties": {"content-date-source": {"const": "table-year"}}}},
+        {"if": {"required": ["group-by"]}, "then": {"required": ["group-value"]}},
+        {"if": {"properties": {"report-kind": {"const": "pdf-links"}}}, "then": {"properties": {"event-id": {"const": "ViewStatisticELC1"}, "content-date-source": {"const": "pdf-link-year"}}}}
+      ]
     },
     "dynamic-url": {
       "type": "object",
@@ -132,6 +151,7 @@
         "freshness": {"$ref": "#/$defs/freshness"},
         "rolling": {"$ref": "#/$defs/rolling"},
         "browser": {"$ref": "#/$defs/browser"},
+        "st-energy": {"$ref": "#/$defs/st-energy"},
         "dynamic-url": {"$ref": "#/$defs/dynamic-url"},
         "special-validator": {
           "enum": ["npra-registration-format", "npra-guidance-appendices"]
@@ -149,6 +169,13 @@
         {
           "if": {"properties": {"adapter": {"const": "weather"}}, "required": ["adapter"]},
           "then": {"required": ["freshness"]}
+        },
+        {
+          "if": {"properties": {"adapter": {"const": "st-energy"}}, "required": ["adapter"]},
+          "then": {
+            "required": ["st-energy", "freshness", "url"],
+            "properties": {"url": {"const": "https://meih.st.gov.my/statistics"}}
+          }
         }
       ]
     }
