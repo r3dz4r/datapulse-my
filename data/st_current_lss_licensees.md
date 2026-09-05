@@ -1,6 +1,6 @@
 ---
 dataset_id: st_current_lss_licensees
-last_checked: 2026-09-05T02:14:29Z
+last_checked: 2026-09-05T02:34:56Z
 status: fresh
 freshness_delta: 16 days
 next_expected_update: unknown
@@ -8,7 +8,7 @@ file_size_bytes: 12391
 file_count: null
 last_observed: null
 last_modified: 2026-08-19T05:11:46Z
-record_count: 109
+record_count: 80
 column_count: 7
 schema_version: unknown
 schema_drift: none
@@ -30,7 +30,7 @@ HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:14:29 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

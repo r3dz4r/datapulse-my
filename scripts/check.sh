@@ -420,11 +420,8 @@ PY
 extract_json_metrics() {
   local body_path="$1"
 
-  # CSV body fallback: jq can't parse CSV directly, but `wc -l` counts rows
-  # (including a partial last line). If the body isn't JSON, treat it as
-  # text and count newlines. We need this because the dgm_/dosm_ manifests
-  # point at .csv direct-download files on storage.dosm.gov.my and
-  # storage.data.gov.my. Estimated true row count = newlines - 1 (header).
+  # CSV body fallback: use Python's standards-compliant parser so quoted
+  # commas and embedded newlines remain part of one logical CSV record.
   # Note: redirect stderr to /dev/null because parquet / binary bodies
   # cause bash to emit "ignored null byte" warnings that otherwise leak
   # into our stdout JSON envelope.
@@ -446,28 +443,33 @@ extract_json_metrics() {
         }'
       return 0
     fi
-    local line_count column_count header_line
-    line_count="$(wc -l < "$body_path" 2>/dev/null | tr -d '[:space:]')"
-    header_line="$(head -n 1 "$body_path" 2>/dev/null | tr -d '\0' | head -c 4000 || true)"
-    if [[ "$line_count" =~ ^[0-9]+$ ]] && (( line_count > 0 )); then
-      # heuristic: any line without a comma is probably not CSV; refuse to
-      # report a count for it. most CSV files have comma-delimited headers.
-      if [[ "$header_line" == *,* ]]; then
-        column_count="$(printf '%s' "$header_line" | awk -F',' '{print NF}')"
-        [[ -z "$column_count" || ! "$column_count" =~ ^[0-9]+$ ]] && column_count="null"
-        jq -c -n \
-          --argjson rc "$(( line_count - 1 ))" \
-          --argjson cc "$column_count" \
-          '{
-            record_count: (if $rc >= 0 then $rc else null end),
-            column_count: $cc,
-            first_row: null,
-            first_record_timestamp: null,
-            body_format: "csv"
-          }' 2>/dev/null
-        return 0
-      fi
-    fi
+    python3 - "$body_path" <<'PY'
+import csv
+import json
+import sys
+
+null_metrics = {
+    "record_count": None,
+    "column_count": None,
+    "first_row": None,
+    "first_record_timestamp": None,
+    "body_format": "csv",
+}
+unknown_metrics = {**null_metrics, "body_format": "unknown"}
+
+try:
+    with open(sys.argv[1], encoding="utf-8-sig", newline="") as handle:
+        reader = csv.reader(handle, strict=True)
+        header = next(reader)
+        # Preserve the old fallback's refusal to identify one-column text as CSV.
+        if len(header) < 2:
+            print(json.dumps(unknown_metrics, separators=(",", ":")))
+        else:
+            print(json.dumps({**null_metrics, "record_count": sum(1 for _ in reader), "column_count": len(header)}, separators=(",", ":")))
+except (OSError, UnicodeError, csv.Error, StopIteration):
+    print(json.dumps(null_metrics, separators=(",", ":")))
+PY
+    return 0
   fi
 
   jq -c '

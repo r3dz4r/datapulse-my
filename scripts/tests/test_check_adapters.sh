@@ -8,6 +8,21 @@ trap 'rm -f "$fixture" "$invalid_policy"' EXIT
 
 DATAPULSE_CHECK_SOURCE_ONLY=true source "$repo_root/scripts/check.sh"
 
+# CSV metrics must be derived from logical records, not physical lines. This
+# fixture covers a UTF-8 BOM, CRLF delimiters, a quoted comma, and an embedded
+# newline in a quoted field.
+printf '\357\273\277name,address,licence\r\nAlpha,"Lot 1, Jalan Test",A-1\r\nBeta,"Unit 2\nBlock B",B-2\r\n' > "$fixture"
+csv_metrics="$(extract_json_metrics "$fixture")"
+[[ "$(jq -r '.body_format' <<< "$csv_metrics")" == "csv" ]]
+[[ "$(jq -r '.record_count' <<< "$csv_metrics")" == "2" ]]
+[[ "$(jq -r '.column_count' <<< "$csv_metrics")" == "3" ]]
+
+printf 'name,address\nAlpha,"unterminated\n' > "$fixture"
+malformed_csv_metrics="$(extract_json_metrics "$fixture")"
+[[ "$(jq -r '.body_format' <<< "$malformed_csv_metrics")" == "csv" ]]
+[[ "$(jq -r '.record_count' <<< "$malformed_csv_metrics")" == "null" ]]
+[[ "$(jq -r '.column_count' <<< "$malformed_csv_metrics")" == "null" ]]
+
 [[ "$(probe_adapter fuelprice)" == "direct" ]]
 [[ "$(probe_adapter met_weather)" == "weather" ]]
 [[ "$(probe_adapter doe_apims)" == "browser" ]]
