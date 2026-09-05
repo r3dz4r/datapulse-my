@@ -5,15 +5,15 @@ source_url: "https://www.st.gov.my/sites/default/files/2026-02/National_Energy_B
 source_name: "st.gov.my (ST)"
 licence: "Open Government Licence (Malaysia)"
 refresh_frequency: "annual"
-last_checked: 2026-09-05T00:00:00Z
+last_checked: 2026-09-04T23:20:55Z
 last_observed: null
-last_modified: null
+last_modified: 2026-03-31T15:22:19Z
 record_count: null
 column_count: null
-status: unknown
+status: fresh
 notes: "Unprobed Suruhanjaya Tenaga annual PDF source; health remains unknown until the first DataPulse probe."
 dataset_id: st_energy_balance_pdf
-freshness_delta: unknown
+freshness_delta: 157 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Suruhanjaya Tenaga (ST) via st.gov.my"
 
 ## Status
 
-**Status:** Unknown
+**Status:** Fresh
 
-**Freshness:** Unknown
+**Freshness:** 157 days
 
-No probe has been recorded yet.
+HTTP 200
 
 ## Last checked
 
-2026-09-05 at 00:00:00 UTC.
+2026-09-04 at 23:20:55 UTC.
 
 ## File size
 
-The checked resource size is not available until the first probe.
+The checked resource is 16,381,407 bytes.
 
 ## Provenance
 

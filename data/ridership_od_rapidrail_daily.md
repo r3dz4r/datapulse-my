@@ -1,10 +1,10 @@
 ---
 dataset_id: ridership_od_rapidrail_daily
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-09-04T22:06:50Z
 status: stale
-freshness_delta: 9 days
+freshness_delta: 11 days
 next_expected_update: daily
-record_count: 3656037
+record_count: 3939064
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Because the size of the complete dataset for each year since 2023 exceeds the row limit of Microsoft Excel (1,048,576), we recommend working with the data programatically, preferably using the parquet files provided.", "The serving filename rotates by UTC year; the health probe resolves it at runtime."]
@@ -19,17 +19,17 @@ attribution: Prasarana Malaysia Berhad and Ministry of Transport via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 9 days
+**Freshness:** 11 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-09-04 at 22:06:50 UTC.
 
 ## File size
 
-The checked resource is 183,490,345 bytes.
+The checked resource is 197,700,033 bytes.
 
 ## Provenance
 

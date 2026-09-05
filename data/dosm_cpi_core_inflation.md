@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_cpi_core_inflation
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-08-30T02:16:30Z
 status: aging
-freshness_delta: 76 days
+freshness_delta: 60 days
 next_expected_update: monthly
-record_count: 1414
+record_count: 1428
 date_range: 2018-02-01 to 2026-06-01
 schema_version: 1.0
 schema_drift: none
@@ -20,17 +20,17 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 76 days
+**Freshness:** 60 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-08-30 at 02:16:30 UTC.
 
 ## File size
 
-The checked resource is 30,978 bytes.
+The checked resource is 31,286 bytes.
 
 ## Provenance
 

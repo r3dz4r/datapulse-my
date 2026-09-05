@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_money_aggregates
-last_checked: 2026-08-16T02:09:20Z
-status: stale
-freshness_delta: 196 days
+last_checked: 2026-08-30T02:16:30Z
+status: aging
+freshness_delta: 90 days
 next_expected_update: overdue
-record_count: 1896
+record_count: 1944
 date_range: 2013-01-01 to 2026-02-01
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 196 days
+**Freshness:** 90 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-08-30 at 02:16:30 UTC.
 
 ## File size
 
-The checked resource is 75,535 bytes.
+The checked resource is 77,493 bytes.
 
 ## Provenance
 

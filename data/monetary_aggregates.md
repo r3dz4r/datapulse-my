@@ -5,15 +5,15 @@ source_url: "https://storage.data.gov.my/finsector/money_aggregates.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-08-16T02:09:20Z
-last_observed: 2026-02-01
-last_modified: 2026-04-05T20:22:44Z
-record_count: 1896
+last_checked: 2026-08-30T02:16:30Z
+last_observed: 2026-06-01
+last_modified: 2026-08-20T09:23:25Z
+record_count: 1944
 column_count: 3
-status: stale
+status: aging
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: monetary_aggregates
-freshness_delta: 196 days
+freshness_delta: 90 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Bank Negara Malaysia via data.gov.my"
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 196 days
+**Freshness:** 90 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-08-30 at 02:16:30 UTC.
 
 ## File size
 
-The checked resource is 75,535 bytes.
+The checked resource is 77,493 bytes.
 
 ## Provenance
 

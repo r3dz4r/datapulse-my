@@ -1,8 +1,8 @@
 ---
 dataset_id: bnm_kl_usd_myr
-last_checked: 2026-08-16T02:09:20Z
-status: aging
-freshness_delta: 2 days
+last_checked: 2026-09-05T02:11:03Z
+status: fresh
+freshness_delta: 1 days
 next_expected_update: daily (weekdays)
 schema_version: unknown
 schema_drift: none
@@ -16,15 +16,15 @@ attribution: Bank Negara Malaysia via BNM Open API
 
 ## Status
 
-**Status:** Aging
+**Status:** Fresh
 
-**Freshness:** 2 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-09-05 at 02:11:03 UTC.
 
 ## File size
 

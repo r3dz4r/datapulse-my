@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_lfs_month_sa
-last_checked: 2026-08-16T02:09:20Z
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-08-30T02:16:30Z
 status: stale
-freshness_delta: 107 days
+freshness_delta: 121 days
 next_expected_update: monthly
 record_count: 197
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 107 days
+**Freshness:** 121 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-08-30 at 02:16:30 UTC.
 
 ## File size
 

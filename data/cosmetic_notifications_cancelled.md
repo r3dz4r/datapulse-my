@@ -5,9 +5,9 @@ source_url: "https://storage.data.gov.my/healthcare/cosmetic_notifications_cance
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-08-30T02:16:30Z
 last_observed: null
-last_modified: 2026-08-15T23:51:05Z
+last_modified: 2026-08-29T23:11:09Z
 record_count: 124
 column_count: 5
 status: fresh
@@ -34,7 +34,7 @@ HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-08-30 at 02:16:30 UTC.
 
 ## File size
 

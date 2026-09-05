@@ -2,13 +2,30 @@
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dosm_gdp_qtr_real_sa_demand",
   "status": "aging",
-  "last_checked": "2026-08-16T02:09:20Z",
-  "freshness_days": 137,
+  "last_checked": "2026-08-30T02:16:30Z",
+  "freshness_days": 151,
   "next_expected_update": null,
   "refresh_frequency": "quarterly",
   "record_count": 276,
   "date_range": null,
-  "fields": [],
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "type",
+      "type": "string"
+    },
+    {
+      "name": "value",
+      "type": "number"
+    },
+    {
+      "name": "series",
+      "type": "string"
+    }
+  ],
   "checks": [
     {
       "name": "file_reachable",
@@ -32,8 +49,7 @@
     }
   ],
   "known_quirks": [
-    "Official catalogue caveat: Values for 2022, 2023 and 2024 may be revised in future releases. Furthermore, the sum of GDP for all expenditure types may not always equal to the values for overall GDP because of independent rounding to one decimal place. However, the differences are not obvious.",
-    "Fields are inferred at the next probe run."
+    "Official catalogue caveat: Values for 2022, 2023 and 2024 may be revised in future releases. Furthermore, the sum of GDP for all expenditure types may not always equal to the values for overall GDP because of independent rounding to one decimal place. However, the differences are not obvious."
   ],
   "breaking_changes": [],
   "reproducibility": {

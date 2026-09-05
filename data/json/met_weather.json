@@ -1,15 +1,15 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "met_weather",
-  "status": "fresh",
-  "last_checked": "2026-08-16T02:09:20Z",
-  "freshness_days": 0,
+  "status": "unknown-freshness",
+  "last_checked": "2026-09-04T22:06:50Z",
+  "freshness_days": null,
   "next_expected_update": null,
   "refresh_frequency": "daily",
-  "record_count": 2520,
+  "record_count": 3101,
   "date_range": {
-    "start": "2026-08-10",
-    "end": "2026-08-16"
+    "start": "2026-09-05",
+    "end": "2026-09-11"
   },
   "fields": [],
   "checks": [
@@ -21,12 +21,12 @@
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Probe measured 2520 record(s)"
+      "method": "Probe measured 3101 record(s)"
     },
     {
       "name": "freshness",
-      "status": "pass",
-      "method": "Health snapshot classifies the dataset as fresh"
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
     },
     {
       "name": "schema_stable",

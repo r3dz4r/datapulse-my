@@ -28,12 +28,10 @@ CANONICAL_KEYS = [
 
 # The source-owned register adds 389 accessible, server-rendered rows while
 # retaining the legacy embedded payload for machine consumers.
-# Ceilings were originally temporary headroom ('revise deliberately'); the
-# register source-owned row + embedded machine-payload growth (register Slice A)
-# legitimately exceeded the initial 1.9MB / ~1.0MB values, so revise upward to
-# reflect the deliberately-grown register. Revisit if the page grows further.
-MAX_HOMEPAGE_BYTES = 2_000_000
-MAX_EMBEDDED_DATA_BYTES = 1_100_000
+# The 412-row real health snapshot needs a 2.1MB ceiling while still retaining
+# a fixed, reviewable upper bound for the complete machine-readable payload.
+MAX_HOMEPAGE_BYTES = 2_100_000
+MAX_EMBEDDED_DATA_BYTES = 1_150_000
 EMBEDDED_DATA_BLOCK = re.compile(rb'<script id="embedded-data">.*?</script>', re.DOTALL)
 
 

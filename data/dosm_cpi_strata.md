@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_cpi_strata
-last_checked: 2026-08-16T02:09:20Z
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-08-30T02:16:30Z
 status: aging
-freshness_delta: 76 days
+freshness_delta: 60 days
 next_expected_update: monthly
-record_count: 5544
+record_count: 5572
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: When interpreting inflation rates derived from the CPI, it is important to remember that the rate of inflation experienced by a specific individual may be higher or lower than this number. This does not invalidate the CPI, which is meant to be an average value representative of the entire population."]
@@ -20,17 +20,17 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 76 days
+**Freshness:** 60 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-08-30 at 02:16:30 UTC.
 
 ## File size
 
-The checked resource is 428,067 bytes.
+The checked resource is 430,229 bytes.
 
 ## Provenance
 

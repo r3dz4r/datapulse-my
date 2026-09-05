@@ -5,15 +5,15 @@ source_url: "https://storage.data.gov.my/transportation/ktmb/komuter_utara_2026.
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "daily"
-last_checked: 2026-08-16T02:09:20Z
-last_observed: 2026-08-15
-last_modified: 2026-08-15T19:31:27Z
-record_count: 905700
+last_checked: 2026-09-04T22:06:50Z
+last_observed: 2026-09-04
+last_modified: 2026-09-04T19:31:32Z
+record_count: 988837
 column_count: 5
 status: fresh
 notes: "Tier-1 wave F newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: ridership_od_komuter_utara
-freshness_delta: 1 days
+freshness_delta: 0 days
 next_expected_update: "daily"
 schema_version: 1.0
 schema_drift: none
@@ -28,17 +28,17 @@ attribution: "Keretapi Tanah Melayu Berhad via data.gov.my"
 
 **Status:** Fresh
 
-**Freshness:** 1 days
+**Freshness:** 0 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-09-04 at 22:06:50 UTC.
 
 ## File size
 
-The checked resource is 37,140,652 bytes.
+The checked resource is 40,551,853 bytes.
 
 ## Provenance
 

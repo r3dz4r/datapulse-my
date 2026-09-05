@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-09-05T02:11:03Z",
-  "node_count": 408,
-  "edge_count": 8386,
+  "generated_at": "2026-09-05T02:14:29Z",
+  "node_count": 412,
+  "edge_count": 8436,
   "edge_kinds": {
-    "same_steward": 4135,
-    "same_agency": 4249,
+    "same_steward": 4141,
+    "same_agency": 4293,
     "same_geography": 0,
     "canonical_series": 1,
     "successor_to": 0,
     "shared_schema": 1
   },
   "coverage": {
-    "datasets_with_at_least_one_edge": 384,
+    "datasets_with_at_least_one_edge": 388,
     "isolated_datasets": [
       "almanak_astronomi",
       "cosmetics_manufacturers",
@@ -2324,6 +2324,30 @@
       "title": "Number of Electricity Consumers — Malaysia",
       "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
       "agency": "meih.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_current_cogen_licensees",
+      "title": "Current Co-Generation Licensees — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "myenergystats.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_current_ipp_licensees",
+      "title": "Current Independent Power Producer Licensees — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "myenergystats.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_current_lss_licensees",
+      "title": "Current Large-Scale Solar Licensees — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "myenergystats.st.gov.my (ST)"
+    },
+    {
+      "dataset_id": "st_current_re_licensees",
+      "title": "Current Renewable Energy Licensees — Malaysia",
+      "steward": "Suruhanjaya Tenaga (Malaysia Energy Commission)",
+      "agency": "myenergystats.st.gov.my (ST)"
     },
     {
       "dataset_id": "st_elesca",
@@ -53318,6 +53342,54 @@
     {
       "kind": "same_agency",
       "from": "st_cogenerators",
+      "to": "st_current_cogen_licensees",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_cogenerators",
+      "to": "st_current_ipp_licensees",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_cogenerators",
+      "to": "st_current_lss_licensees",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_cogenerators",
+      "to": "st_current_re_licensees",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_cogenerators",
       "to": "st_energy_balance_pdf",
       "weight": 1,
       "provenance": {
@@ -53330,7 +53402,487 @@
     {
       "kind": "same_agency",
       "from": "st_consumers",
+      "to": "st_current_cogen_licensees",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_consumers",
+      "to": "st_current_ipp_licensees",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_consumers",
+      "to": "st_current_lss_licensees",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_consumers",
+      "to": "st_current_re_licensees",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_consumers",
       "to": "st_energy_balance_pdf",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_cogen_licensees",
+      "to": "st_elesca",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_cogen_licensees",
+      "to": "st_energy_balance_pdf",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_cogen_licensees",
+      "to": "st_generation_mix_gwh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_cogen_licensees",
+      "to": "st_installed_capacity_mw",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_cogen_licensees",
+      "to": "st_ipps",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_cogen_licensees",
+      "to": "st_max_demand_mw",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_cogen_licensees",
+      "to": "st_re_projects",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_cogen_licensees",
+      "to": "st_sales_unit_gwh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_cogen_licensees",
+      "to": "st_sales_value_rm_million",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_ipp_licensees",
+      "to": "st_elesca",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_ipp_licensees",
+      "to": "st_energy_balance_pdf",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_ipp_licensees",
+      "to": "st_generation_mix_gwh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_ipp_licensees",
+      "to": "st_installed_capacity_mw",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_ipp_licensees",
+      "to": "st_ipps",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_ipp_licensees",
+      "to": "st_max_demand_mw",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_ipp_licensees",
+      "to": "st_re_projects",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_ipp_licensees",
+      "to": "st_sales_unit_gwh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_ipp_licensees",
+      "to": "st_sales_value_rm_million",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_lss_licensees",
+      "to": "st_elesca",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_lss_licensees",
+      "to": "st_energy_balance_pdf",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_lss_licensees",
+      "to": "st_generation_mix_gwh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_lss_licensees",
+      "to": "st_installed_capacity_mw",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_lss_licensees",
+      "to": "st_ipps",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_lss_licensees",
+      "to": "st_max_demand_mw",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_lss_licensees",
+      "to": "st_re_projects",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_lss_licensees",
+      "to": "st_sales_unit_gwh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_lss_licensees",
+      "to": "st_sales_value_rm_million",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_re_licensees",
+      "to": "st_elesca",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_re_licensees",
+      "to": "st_energy_balance_pdf",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_re_licensees",
+      "to": "st_generation_mix_gwh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_re_licensees",
+      "to": "st_installed_capacity_mw",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_re_licensees",
+      "to": "st_ipps",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_re_licensees",
+      "to": "st_max_demand_mw",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_re_licensees",
+      "to": "st_re_projects",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_re_licensees",
+      "to": "st_sales_unit_gwh",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "st_current_re_licensees",
+      "to": "st_sales_value_rm_million",
       "weight": 1,
       "provenance": {
         "matched_fields": [
@@ -106734,6 +107286,84 @@
       "kind": "same_steward",
       "from": "st_consumers",
       "to": "st_sales_value_rm_million",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_current_cogen_licensees",
+      "to": "st_current_ipp_licensees",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_current_cogen_licensees",
+      "to": "st_current_lss_licensees",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_current_cogen_licensees",
+      "to": "st_current_re_licensees",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_current_ipp_licensees",
+      "to": "st_current_lss_licensees",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_current_ipp_licensees",
+      "to": "st_current_re_licensees",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "st_current_lss_licensees",
+      "to": "st_current_re_licensees",
       "weight": 2,
       "provenance": {
         "matched_fields": [

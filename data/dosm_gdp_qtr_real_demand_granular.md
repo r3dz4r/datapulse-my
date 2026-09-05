@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_gdp_qtr_real_demand_granular
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-08-30T02:16:30Z
 status: fresh
-freshness_delta: 1 days
+freshness_delta: 15 days
 next_expected_update: quarterly
 record_count: 3504
 schema_version: unknown
@@ -19,13 +19,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 1 days
+**Freshness:** 15 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-08-30 at 02:16:30 UTC.
 
 ## File size
 

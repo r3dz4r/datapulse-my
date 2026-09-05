@@ -1,8 +1,8 @@
 ---
 dataset_id: legal_advisory_branch
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-08-30T02:16:30Z
 status: stale
-freshness_delta: 623 days
+freshness_delta: 637 days
 record_count: 1595
 schema_version: unknown
 schema_drift: none
@@ -18,13 +18,13 @@ attribution: Legal Aid Department via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 623 days
+**Freshness:** 637 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-08-30 at 02:16:30 UTC.
 
 ## File size
 

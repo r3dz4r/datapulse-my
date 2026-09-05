@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_hh_income_state
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-08-30T02:16:30Z
 status: stale
-freshness_delta: 958 days
+freshness_delta: 972 days
 next_expected_update: unknown
 record_count: 319
 date_range: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 958 days
+**Freshness:** 972 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-08-30 at 02:16:30 UTC.
 
 ## File size
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: births
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-09-04T22:06:50Z
 status: stale
-freshness_delta: 1112 days
+freshness_delta: 1131 days
 next_expected_update: daily
 schema_version: unknown
 schema_drift: none
@@ -18,13 +18,13 @@ attribution: National Registration Department via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1112 days
+**Freshness:** 1131 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-09-04 at 22:06:50 UTC.
 
 ## File size
 

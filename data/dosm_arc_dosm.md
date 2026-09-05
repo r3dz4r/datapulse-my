@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_arc_dosm
-last_checked: 2026-08-16T02:09:20Z
-last_checked: 2026-08-16T02:09:20Z
-status: aging
-freshness_delta: 2 days
+last_checked: 2026-09-04T22:06:50Z
+last_checked: 2026-09-04T22:06:50Z
+status: fresh
+freshness_delta: 1 days
 next_expected_update: daily
-record_count: 316
+record_count: 318
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: —"]
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Aging
+**Status:** Fresh
 
-**Freshness:** 2 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-09-04 at 22:06:50 UTC.
 
 ## File size
 
-The checked resource is 139,333 bytes.
+The checked resource is 140,223 bytes.
 
 ## Provenance
 

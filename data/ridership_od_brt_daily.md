@@ -1,11 +1,11 @@
 ---
 dataset_id: ridership_od_brt_daily
-last_checked: 2026-08-16T02:09:20Z
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-09-04T22:06:50Z
+last_checked: 2026-09-04T22:06:50Z
 status: stale
-freshness_delta: 9 days
+freshness_delta: 11 days
 next_expected_update: daily
-record_count: 13578
+record_count: 14632
 schema_version: unknown
 schema_drift: none
 known_quirks: ["The serving filename rotates by UTC year; the health probe resolves it at runtime."]
@@ -20,17 +20,17 @@ attribution: Prasarana Malaysia Berhad and Ministry of Transport via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 9 days
+**Freshness:** 11 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-09-04 at 22:06:50 UTC.
 
 ## File size
 
-The checked resource is 710,742 bytes.
+The checked resource is 765,938 bytes.
 
 ## Provenance
 

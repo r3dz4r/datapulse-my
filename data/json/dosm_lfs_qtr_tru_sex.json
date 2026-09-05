@@ -2,13 +2,30 @@
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dosm_lfs_qtr_tru_sex",
   "status": "stale",
-  "last_checked": "2026-08-16T02:09:20Z",
-  "freshness_days": 411,
+  "last_checked": "2026-08-30T02:16:30Z",
+  "freshness_days": 425,
   "next_expected_update": null,
   "refresh_frequency": "quarterly",
   "record_count": 210,
   "date_range": null,
-  "fields": [],
+  "fields": [
+    {
+      "name": "sex",
+      "type": "string"
+    },
+    {
+      "name": "tru",
+      "type": "number"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "variable",
+      "type": "string"
+    }
+  ],
   "checks": [
     {
       "name": "file_reachable",
@@ -32,8 +49,7 @@
     }
   ],
   "known_quirks": [
-    "Official catalogue caveat: The sum of each category may not always equal to the totals shown in related tables because of independent rounding to one decimal place. However, the differences are not obvious.",
-    "Fields are inferred at the next probe run."
+    "Official catalogue caveat: The sum of each category may not always equal to the totals shown in related tables because of independent rounding to one decimal place. However, the differences are not obvious."
   ],
   "breaking_changes": [],
   "reproducibility": {

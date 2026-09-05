@@ -1,12 +1,12 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "dgm_payments_transactions_fpx",
-  "status": "fresh",
-  "last_checked": "2026-08-16T02:09:20Z",
-  "freshness_days": 0,
+  "status": "aging",
+  "last_checked": "2026-09-04T22:06:50Z",
+  "freshness_days": 3,
   "next_expected_update": null,
   "refresh_frequency": "daily",
-  "record_count": 7254,
+  "record_count": 7302,
   "date_range": null,
   "fields": [
     {
@@ -35,12 +35,12 @@
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Probe measured 7254 record(s)"
+      "method": "Probe measured 7302 record(s)"
     },
     {
       "name": "freshness",
-      "status": "pass",
-      "method": "Health snapshot classifies the dataset as fresh"
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as aging"
     },
     {
       "name": "schema_stable",

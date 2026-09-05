@@ -1,9 +1,9 @@
 ---
 dataset_id: registration_transactions_all
-last_checked: 2026-08-16T02:09:20Z
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-09-04T22:06:50Z
+last_checked: 2026-09-04T22:06:50Z
 status: stale
-freshness_delta: 16 days
+freshness_delta: 35 days
 next_expected_update: daily
 record_count: 987887
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Road Transport Department Malaysia and Ministry of Transport via da
 
 **Status:** Stale
 
-**Freshness:** 16 days
+**Freshness:** 35 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-09-04 at 22:06:50 UTC.
 
 ## File size
 

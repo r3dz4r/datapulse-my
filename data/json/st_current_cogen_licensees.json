@@ -1,0 +1,71 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "st_current_cogen_licensees",
+  "status": "fresh",
+  "last_checked": "2026-09-05T02:14:29Z",
+  "freshness_days": 116,
+  "next_expected_update": null,
+  "refresh_frequency": "as-required",
+  "record_count": 63,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "No.",
+      "type": "integer"
+    },
+    {
+      "name": "Licensee",
+      "type": "string"
+    },
+    {
+      "name": "Installation Address",
+      "type": "string"
+    },
+    {
+      "name": "License Category",
+      "type": "string"
+    },
+    {
+      "name": "Kapasiti (MW)",
+      "type": "number"
+    },
+    {
+      "name": "Issued Date",
+      "type": "string"
+    },
+    {
+      "name": "Expiry Date",
+      "type": "string"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 63 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 7 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://myenergystats.st.gov.my/documents/d/guest/csv-senarai-lesen-cogen",
+    "access_method": "curl"
+  },
+  "licence": "Publisher licence not stated; portal disclaimer applies",
+  "attribution": "myenergystats.st.gov.my (ST) (other)"
+}

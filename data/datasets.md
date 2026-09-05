@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_datasets
-last_checked: 2026-08-16T02:09:20Z
-last_checked: 2026-08-16T02:09:20Z
-status: stale
-freshness_delta: 135 days
+last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-08-30T02:16:30Z
+status: fresh
+freshness_delta: 30 days
 next_expected_update: monthly
-record_count: 285
+record_count: 286
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: —"]
@@ -18,19 +18,19 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Fresh
 
-**Freshness:** 135 days
+**Freshness:** 30 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-08-30 at 02:16:30 UTC.
 
 ## File size
 
-The checked resource is 125,398 bytes.
+The checked resource is 125,778 bytes.
 
 ## Provenance
 

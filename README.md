@@ -10,7 +10,7 @@
 <!-- m8ven-verify: d1505f0f7e0429963789e95995216ca3 -->
 
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
-> any MCP-compatible client with one config block. Your agent gets **408 official
+> any MCP-compatible client with one config block. Your agent gets **412 official
 > Malaysian datasets** — including **30 GTFS transit feeds (KTMB, Prasarana,
 > BAS.MY)** — with declared licences and an honest ten-status trust taxonomy
 > instead of a blanket green checkmark.
@@ -95,7 +95,7 @@ counts missing freshness and row-count signals.
 frozen at the last known content date. This is not a freshness failure — it's a
 publisher decision.
 
-Current distribution (`_trust_summary`): [86 fresh](badges/status-fresh.svg) · [139 aging](badges/status-aging.svg) · [151 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [15 unknown-freshness](badges/status-unknown-freshness.svg) · [11 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [90 fresh](badges/status-fresh.svg) · [139 aging](badges/status-aging.svg) · [151 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [15 unknown-freshness](badges/status-unknown-freshness.svg) · [11 reference](badges/status-reference.svg)
 
 <!--
 Statuses with zero count are omitted. Full per-dataset health is in
@@ -209,7 +209,7 @@ Verified by mcpgrade: 100/100 (Grade A). The canonical tool count lives in `mcp.
 - 18 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 
 The public endpoint serves all 18 read-only tools over the
-408-dataset catalogue.
+412-dataset catalogue.
 <!-- END mcp-tools -->
 - 8 resources plus 1 resource template, including `datapulse://attestations` and the signed daily probe-attestation index.
 

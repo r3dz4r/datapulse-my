@@ -11,7 +11,7 @@ Working agreement for AI agents editing the public-facing documentation that aut
 ## Hard rules
 
 1. **Read-only-by-implication.** Datapulse MY's docs describe a system that is itself read-only. Do not write prose that suggests writes, mutations, or upstream interactions beyond what the code actually does.
-2. **Every external claim must be citeable.** Numbers ("408 datasets", "10-status taxonomy") must be reproducible from `datapulse.json` + `health/latest.json`. The scheduler wakes every 5 minutes but probes only due datasets under tiered cadence; never describe this as all datasets every five minutes.
+2. **Every external claim must be citeable.** Numbers ("412 datasets", "10-status taxonomy") must be reproducible from `datapulse.json` + `health/latest.json`. The scheduler wakes every 5 minutes but probes only due datasets under tiered cadence; never describe this as all datasets every five minutes.
 3. **No fabricated dataset IDs.** When examples cite datasets like `fuelprice`, `gtfs-static/prasarana?category=rapid-bus-kuantan`, `pharmaceutical_product_register`, verify they exist in `datapulse.json` first. See `scripts/check.py` for the verifier.
 4. **Methodology changes require an explicit version bump.** `health-methodology.md` and `health-methodology.html` carry a methodology_version field (currently `3`). Changes to the scoring formula, status taxonomy, or signal extraction require bumping this and updating consumers (`mcp/server.py`, dashboard rendering).
 5. **The audit docs (`AUDIT-*.md`, `DESIGN-AUDIT-*.md`) are immutable history.** They capture a point-in-time state. Add new audits, never edit old ones — even to fix typos.
@@ -40,7 +40,7 @@ Working agreement for AI agents editing the public-facing documentation that aut
 - **Markdown files:** sentence case headings. **Bold** for the one thing the section is teaching. No emoji in prose.
 - **Tables:** use real markdown tables, not bullets-with-em-dashes. Tables degrade to bullet groups when rich rendering is unavailable, but bullets don't degrade to tables.
 - **Citations:** link to `https://data-pulse.my/...` for self-references. Link to `https://data.gov.my/...` for upstream sources. Cite the date of the cited claim (`as of 2026-08-17`).
-- **Numbers:** always include units. "389" is meaningless; "389 datasets" is meaningful. "5-min" is ambiguous; "every 5 minutes" is unambiguous.
+- **Numbers:** always include units. "412" is meaningless; "412 datasets" is meaningful. "5-min" is ambiguous; "every 5 minutes" is unambiguous.
 - **Code blocks:** language-tagged (` ```bash `, ` ```python `, ` ```yaml `). Don't use untyped fences.
 - **Diagrams:** ASCII for terminal-renderable contexts (Slack, Telegram, mobile browsers); SVG/Mermaid for the website itself, in `assets/`.
 

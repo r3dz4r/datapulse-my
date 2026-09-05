@@ -5,15 +5,15 @@ source_url: "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/cov
 source_name: "github.com/MoH-Malaysia/kkmnow-data"
 licence: "MIT License"
 refresh_frequency: "daily"
-last_checked: 2026-09-04T00:00:00Z
-last_observed: null
+last_checked: 2026-09-04T22:06:50Z
+last_observed: 2022-09-09
 last_modified: null
-record_count: null
+record_count: 55
 column_count: null
-status: unknown
+status: stale
 notes: "Unprobed KKMNOW live-tail parquet source; health remains unknown until the first DataPulse probe."
 dataset_id: kkmnow_covidnow
-freshness_delta: unknown
+freshness_delta: 1456 days
 next_expected_update: "daily"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Ministry of Health Malaysia via GitHub kkmnow-data"
 
 ## Status
 
-**Status:** Unknown
+**Status:** Stale
 
-**Freshness:** Unknown
+**Freshness:** 1456 days
 
-No probe has been recorded yet.
+HTTP 200
 
 ## Last checked
 
-2026-09-04 at 00:00:00 UTC.
+2026-09-04 at 22:06:50 UTC.
 
 ## File size
 
-The checked resource size is not available until the first probe.
+The checked resource is 6,529 bytes.
 
 ## Provenance
 
