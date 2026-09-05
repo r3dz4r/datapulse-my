@@ -1,15 +1,15 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-05T06:25:18Z",
+  "checked_at": "2026-09-05T06:36:07Z",
   "_trust_summary": {
-    "checked_at": "2026-09-05T06:25:18Z",
+    "checked_at": "2026-09-05T06:36:07Z",
     "datasets_total": 412,
     "by_status": {
       "fresh": 94,
       "aging": 111,
-      "stale": 173,
+      "stale": 180,
       "discontinued": 1,
-      "degraded": 7,
+      "degraded": 0,
       "browser_dependent": 5,
       "unreachable": 0,
       "unknown": 0,
@@ -26,6 +26,10 @@
     "oldest_last_modified": "2023-09-15T07:20:46Z",
     "newest_last_modified": "2026-09-05T01:01:57Z",
     "stale_datasets": [
+      {
+        "dataset_id": "st_elesca",
+        "days_since_modified": 5726
+      },
       {
         "dataset_id": "dosm_crops_district_production",
         "days_since_modified": 3534
@@ -49,6 +53,30 @@
       {
         "dataset_id": "bnm_base_rate",
         "days_since_modified": 2221
+      },
+      {
+        "dataset_id": "st_consumers",
+        "days_since_modified": 2073
+      },
+      {
+        "dataset_id": "st_sales_value_rm_million",
+        "days_since_modified": 2073
+      },
+      {
+        "dataset_id": "st_sales_unit_gwh",
+        "days_since_modified": 2073
+      },
+      {
+        "dataset_id": "st_generation_mix_gwh",
+        "days_since_modified": 2073
+      },
+      {
+        "dataset_id": "st_max_demand_mw",
+        "days_since_modified": 2073
+      },
+      {
+        "dataset_id": "st_installed_capacity_mw",
+        "days_since_modified": 2073
       },
       {
         "dataset_id": "water_pollution_basin",
@@ -719,7 +747,7 @@
         "days_since_modified": 0.0010069444444444444
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-05T06:34:09Z"
+    "pipeline_heartbeat_at": "2026-09-05T06:39:37Z"
   },
   "datasets": [
     {
@@ -786,7 +814,7 @@
     },
     {
       "dataset_id": "eperolehan-diklankan",
-      "last_checked": "2026-09-05T06:16:33Z",
+      "last_checked": "2026-09-05T06:36:07Z",
       "namespace": "other",
       "url": "https://www.eperolehan.gov.my/quotation-tender-notice",
       "status": "browser-dependent",
@@ -1223,7 +1251,7 @@
     },
     {
       "dataset_id": "doe_apims",
-      "last_checked": "2026-09-05T06:16:33Z",
+      "last_checked": "2026-09-05T06:36:07Z",
       "namespace": "environment",
       "url": "https://eqms.doe.gov.my/APIMS/main",
       "status": "browser-dependent",
@@ -1244,7 +1272,7 @@
       "appendix_resource_count": null,
       "wait_seconds": 30,
       "stations": 8,
-      "timestamp": "04/09/2026, 23:16",
+      "timestamp": "04/09/2026, 23:35",
       "snapshot_chars": 9266,
       "record_count": null,
       "estimated_record_count": null,
@@ -1285,7 +1313,7 @@
     },
     {
       "dataset_id": "doe_rqims",
-      "last_checked": "2026-09-05T06:16:33Z",
+      "last_checked": "2026-09-05T06:36:07Z",
       "namespace": "environment",
       "url": "https://eqms.doe.gov.my/RQIMS/conti_river",
       "status": "browser-dependent",
@@ -1306,8 +1334,8 @@
       "appendix_resource_count": null,
       "wait_seconds": 30,
       "stations": 6,
-      "timestamp": "04/09/2026, 23:16",
-      "snapshot_chars": 41124,
+      "timestamp": "04/09/2026, 23:35",
+      "snapshot_chars": 41129,
       "record_count": null,
       "estimated_record_count": null,
       "record_count_estimated": false,
@@ -25448,10 +25476,10 @@
     },
     {
       "dataset_id": "st_installed_capacity_mw",
-      "last_checked": "2026-09-05T02:34:56Z",
+      "last_checked": "2026-09-05T06:36:07Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "degraded",
+      "status": "stale",
       "status_reason": null,
       "message": "ST report table returned a valid year",
       "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
@@ -25477,7 +25505,7 @@
       "incomplete": false,
       "column_count": 3,
       "first_row_hash": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -25510,10 +25538,10 @@
     },
     {
       "dataset_id": "st_max_demand_mw",
-      "last_checked": "2026-09-05T02:34:56Z",
+      "last_checked": "2026-09-05T06:36:07Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "degraded",
+      "status": "stale",
       "status_reason": null,
       "message": "ST report table returned a valid year",
       "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
@@ -25539,7 +25567,7 @@
       "incomplete": false,
       "column_count": 5,
       "first_row_hash": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -25572,10 +25600,10 @@
     },
     {
       "dataset_id": "st_generation_mix_gwh",
-      "last_checked": "2026-09-05T02:34:56Z",
+      "last_checked": "2026-09-05T06:36:07Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "degraded",
+      "status": "stale",
       "status_reason": null,
       "message": "ST report table returned a valid year",
       "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
@@ -25601,7 +25629,7 @@
       "incomplete": false,
       "column_count": 3,
       "first_row_hash": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -25634,10 +25662,10 @@
     },
     {
       "dataset_id": "st_sales_unit_gwh",
-      "last_checked": "2026-09-05T02:34:56Z",
+      "last_checked": "2026-09-05T06:36:07Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "degraded",
+      "status": "stale",
       "status_reason": null,
       "message": "ST report table returned a valid year",
       "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
@@ -25663,7 +25691,7 @@
       "incomplete": false,
       "column_count": 9,
       "first_row_hash": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -25696,10 +25724,10 @@
     },
     {
       "dataset_id": "st_sales_value_rm_million",
-      "last_checked": "2026-09-05T02:34:56Z",
+      "last_checked": "2026-09-05T06:36:07Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "degraded",
+      "status": "stale",
       "status_reason": null,
       "message": "ST report table returned a valid year",
       "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
@@ -25725,7 +25753,7 @@
       "incomplete": false,
       "column_count": 5,
       "first_row_hash": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -25758,10 +25786,10 @@
     },
     {
       "dataset_id": "st_consumers",
-      "last_checked": "2026-09-05T02:34:56Z",
+      "last_checked": "2026-09-05T06:36:07Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "degraded",
+      "status": "stale",
       "status_reason": null,
       "message": "ST report table returned a valid year",
       "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
@@ -25787,7 +25815,7 @@
       "incomplete": false,
       "column_count": 10,
       "first_row_hash": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -26006,10 +26034,10 @@
     },
     {
       "dataset_id": "st_elesca",
-      "last_checked": "2026-09-05T02:34:56Z",
+      "last_checked": "2026-09-05T06:36:07Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "degraded",
+      "status": "stale",
       "status_reason": null,
       "message": "ST report table returned a valid year",
       "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
@@ -26035,7 +26063,7 @@
       "incomplete": false,
       "column_count": 8,
       "first_row_hash": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
