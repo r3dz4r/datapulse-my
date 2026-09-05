@@ -447,8 +447,8 @@ def test_native_pages_stages_and_verifies_the_assembled_artifact_before_producti
     assert 'preview_branch="staging-${GITHUB_SHA:0:12}"' in preview_run
     assert 'preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"' in preview_run
     assert (
-        "website_origin=\"$(jq -er '.origins.website | select(type == \\\"string\\\" "
-        "and test(\\\"^https://[^/]+$\\\"))' config/public-surfaces.json)\""
+        "website_origin=\"$(jq -er '.origins.website | select(type == \"string\" "
+        "and test(\"^https://[^/]+$\"))' config/public-surfaces.json)\""
     ) in preview_run
     assert 'DATAPULSE_RELEASE_BASE_URL="$preview_origin"' in preview_run
     assert 'DATAPULSE_CANONICAL_BASE_URL="$website_origin"' in preview_run

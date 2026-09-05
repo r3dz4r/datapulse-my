@@ -511,7 +511,7 @@ jobs:
           set -Eeuo pipefail
           preview_branch="staging-${GITHUB_SHA:0:12}"
           preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"
-          website_origin="$(jq -er '.origins.website | select(type == \"string\" and test(\"^https://[^/]+$\"))' config/public-surfaces.json)"
+          website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)"
           DATAPULSE_RELEASE_BASE_URL="$preview_origin" \
             DATAPULSE_CANONICAL_BASE_URL="$website_origin" \
             bash scripts/verify_release_invariants.sh
