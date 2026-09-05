@@ -1,6 +1,6 @@
 {
   "schema": "datapulse/v1/dataset-reconciliation",
-  "generated_at": "2026-09-05T01:06:10Z",
+  "generated_at": "2026-09-05T02:11:03Z",
   "window_days": 0,
   "methodology": {
     "identity_precedence": [
@@ -22,11 +22,11 @@
   },
   "summary": {
     "datasets_total": 408,
-    "groups_total": 22,
-    "datasets_grouped": 44,
-    "datasets_single_source": 364,
+    "groups_total": 23,
+    "datasets_grouped": 54,
+    "datasets_single_source": 354,
     "by_verdict": {
-      "agree": 22,
+      "agree": 23,
       "discrepancy": 0,
       "different_granularity": 0,
       "insufficient_data": 0
@@ -533,6 +533,606 @@
           "record_count_within_tolerance": true,
           "content_date_delta_days": 0,
           "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "url:4bed1555a98590f2",
+      "logical_name": "Co-Generators — Malaysia",
+      "grouping_method": "exact_url",
+      "relationship": "equivalent",
+      "confidence": "high",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "members publish the same canonical URL: https://meih.st.gov.my/statistics",
+      "tolerances": {
+        "record_count_policy": "strict",
+        "record_count_tolerance_pct": 0.0,
+        "content_date_tolerance_days": 0
+      },
+      "members": [
+        {
+          "id": "st_cogenerators",
+          "name": "Co-Generators — Malaysia",
+          "source": "meih.st.gov.my (ST)",
+          "source_family": "energy commission",
+          "url": "https://meih.st.gov.my/statistics",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 14,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "st_consumers",
+          "name": "Number of Electricity Consumers — Malaysia",
+          "source": "meih.st.gov.my (ST)",
+          "source_family": "energy commission",
+          "url": "https://meih.st.gov.my/statistics",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 14,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "st_elesca",
+          "name": "Electrical Competency Certificates Issued — Malaysia",
+          "source": "meih.st.gov.my (ST)",
+          "source_family": "energy commission",
+          "url": "https://meih.st.gov.my/statistics",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 14,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "st_generation_mix_gwh",
+          "name": "Generation Mix (GWh) — Malaysia",
+          "source": "meih.st.gov.my (ST)",
+          "source_family": "energy commission",
+          "url": "https://meih.st.gov.my/statistics",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 14,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "st_installed_capacity_mw",
+          "name": "Installed Generation Capacity (MW) — Malaysia",
+          "source": "meih.st.gov.my (ST)",
+          "source_family": "energy commission",
+          "url": "https://meih.st.gov.my/statistics",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 14,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "st_ipps",
+          "name": "Independent Power Producers — Malaysia",
+          "source": "meih.st.gov.my (ST)",
+          "source_family": "energy commission",
+          "url": "https://meih.st.gov.my/statistics",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 14,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "st_max_demand_mw",
+          "name": "Maximum Demand (MW) — Malaysia",
+          "source": "meih.st.gov.my (ST)",
+          "source_family": "energy commission",
+          "url": "https://meih.st.gov.my/statistics",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 14,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "st_re_projects",
+          "name": "Renewable Energy Projects — Malaysia",
+          "source": "meih.st.gov.my (ST)",
+          "source_family": "energy commission",
+          "url": "https://meih.st.gov.my/statistics",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 14,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "st_sales_unit_gwh",
+          "name": "Electricity Sales by Unit (GWh) — Malaysia",
+          "source": "meih.st.gov.my (ST)",
+          "source_family": "energy commission",
+          "url": "https://meih.st.gov.my/statistics",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 14,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        },
+        {
+          "id": "st_sales_value_rm_million",
+          "name": "Electricity Sales by Value (RM million) — Malaysia",
+          "source": "meih.st.gov.my (ST)",
+          "source_family": "energy commission",
+          "url": "https://meih.st.gov.my/statistics",
+          "status": "unknown-freshness",
+          "availability_class": "available",
+          "record_count": 14,
+          "record_count_estimated": false,
+          "content_date": null,
+          "content_date_source": "none"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "st_cogenerators",
+          "right_id": "st_consumers",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_cogenerators",
+          "right_id": "st_elesca",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_cogenerators",
+          "right_id": "st_generation_mix_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_cogenerators",
+          "right_id": "st_installed_capacity_mw",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_cogenerators",
+          "right_id": "st_ipps",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_cogenerators",
+          "right_id": "st_max_demand_mw",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_cogenerators",
+          "right_id": "st_re_projects",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_cogenerators",
+          "right_id": "st_sales_unit_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_cogenerators",
+          "right_id": "st_sales_value_rm_million",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_consumers",
+          "right_id": "st_elesca",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_consumers",
+          "right_id": "st_generation_mix_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_consumers",
+          "right_id": "st_installed_capacity_mw",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_consumers",
+          "right_id": "st_ipps",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_consumers",
+          "right_id": "st_max_demand_mw",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_consumers",
+          "right_id": "st_re_projects",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_consumers",
+          "right_id": "st_sales_unit_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_consumers",
+          "right_id": "st_sales_value_rm_million",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_elesca",
+          "right_id": "st_generation_mix_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_elesca",
+          "right_id": "st_installed_capacity_mw",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_elesca",
+          "right_id": "st_ipps",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_elesca",
+          "right_id": "st_max_demand_mw",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_elesca",
+          "right_id": "st_re_projects",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_elesca",
+          "right_id": "st_sales_unit_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_elesca",
+          "right_id": "st_sales_value_rm_million",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_generation_mix_gwh",
+          "right_id": "st_installed_capacity_mw",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_generation_mix_gwh",
+          "right_id": "st_ipps",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_generation_mix_gwh",
+          "right_id": "st_max_demand_mw",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_generation_mix_gwh",
+          "right_id": "st_re_projects",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_generation_mix_gwh",
+          "right_id": "st_sales_unit_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_generation_mix_gwh",
+          "right_id": "st_sales_value_rm_million",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_installed_capacity_mw",
+          "right_id": "st_ipps",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_installed_capacity_mw",
+          "right_id": "st_max_demand_mw",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_installed_capacity_mw",
+          "right_id": "st_re_projects",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_installed_capacity_mw",
+          "right_id": "st_sales_unit_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_installed_capacity_mw",
+          "right_id": "st_sales_value_rm_million",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_ipps",
+          "right_id": "st_max_demand_mw",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_ipps",
+          "right_id": "st_re_projects",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_ipps",
+          "right_id": "st_sales_unit_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_ipps",
+          "right_id": "st_sales_value_rm_million",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_max_demand_mw",
+          "right_id": "st_re_projects",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_max_demand_mw",
+          "right_id": "st_sales_unit_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_max_demand_mw",
+          "right_id": "st_sales_value_rm_million",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_re_projects",
+          "right_id": "st_sales_unit_gwh",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_re_projects",
+          "right_id": "st_sales_value_rm_million",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
+          "availability_match": true
+        },
+        {
+          "left_id": "st_sales_unit_gwh",
+          "right_id": "st_sales_value_rm_million",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": true,
+          "content_date_delta_days": null,
+          "content_date_within_tolerance": null,
           "availability_match": true
         }
       ]
