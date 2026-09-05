@@ -1,0 +1,45 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "st_energy_balance_pdf",
+  "status": "fresh",
+  "last_checked": "2026-09-04T23:20:55Z",
+  "freshness_days": 157,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": null,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [
+    "The annual publication's freshness signal is the latest year-month in an extractable data table.",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://www.st.gov.my/sites/default/files/2026-02/National_Energy_Balance_2022.pdf",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "st.gov.my (ST) (other)"
+}
