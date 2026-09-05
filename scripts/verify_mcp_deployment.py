@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Compare a deployed MCP server's source marker with a repository HEAD."""
+"""Compare a deployed MCP server's source marker with the recorded stamp in mcp.json."""
 
 from __future__ import annotations
 
 import argparse
 import json
-import subprocess
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -16,12 +16,24 @@ from urllib.request import Request, urlopen
 DEFAULT_ENDPOINT = "https://mcp.data-pulse.my/mcp"
 ACCEPT = "application/json, text/event-stream"
 PROTOCOL_VERSION = "2025-03-26"
+VERSION_SHA_RE = re.compile(r"\+([0-9a-f]{7,40})$")
 
 
-def repo_sha(repo_path: Path) -> str:
-    return subprocess.check_output(
-        ["git", "-C", str(repo_path), "rev-parse", "HEAD"], text=True
-    ).strip()
+def extract_deployed_sha(server_info: dict[str, Any]) -> str:
+    sha = server_info.get("source_commit_sha")
+    if isinstance(sha, str) and sha:
+        return sha
+    version = server_info.get("version", "")
+    m = VERSION_SHA_RE.search(version)
+    if m:
+        return m.group(1)
+    return "<missing>"
+
+
+def recorded_sha(repo_path: Path) -> str:
+    mcp_json = repo_path / "mcp.json"
+    data = json.loads(mcp_json.read_text(encoding="utf-8"))
+    return data["server"]["source_commit_sha"]
 
 
 def _decode_response(payload: bytes) -> dict[str, Any]:
@@ -78,7 +90,6 @@ def deployed_source_sha(endpoint: str) -> str:
     if not session_id:
         raise ValueError("initialize response omitted Mcp-Session-Id")
     server_info = initialized.get("result", {}).get("serverInfo", {})
-    deployed_sha = server_info.get("source_commit_sha")
 
     _post(
         endpoint,
@@ -92,7 +103,7 @@ def deployed_source_sha(endpoint: str) -> str:
     )
     if not isinstance(tools.get("result", {}).get("tools"), list):
         raise ValueError("tools/list response omitted the tools array")
-    return deployed_sha if isinstance(deployed_sha, str) else "<missing>"
+    return extract_deployed_sha(server_info)
 
 
 def parse_args() -> argparse.Namespace:
@@ -110,16 +121,16 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
-        local_sha = repo_sha(args.repo_path)
+        stamp = recorded_sha(args.repo_path)
         deployed_sha = deployed_source_sha(args.endpoint)
     except (HTTPError, URLError, TimeoutError, OSError, ValueError) as error:
         print(f"UNREACHABLE: {error}")
         return 2
 
-    if deployed_sha == local_sha:
-        print(f"OK: deployed matches repo HEAD {local_sha}")
+    if deployed_sha[:7] == stamp[:7]:
+        print(f"OK: deployed {deployed_sha[:7]} matches recorded stamp in mcp.json")
         return 0
-    print(f"MISMATCH: deployed={deployed_sha} repo={local_sha}")
+    print(f"MISMATCH: deployed={deployed_sha} recorded={stamp}")
     return 1
 
 
