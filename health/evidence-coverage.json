@@ -1,23 +1,24 @@
 {
   "schema": "datapulse/v1/evidence-coverage",
-  "generated_at": "2026-09-05T02:11:03Z",
-  "dataset_denominator": 408,
+  "generated_at": "2026-09-05T03:56:12Z",
+  "dataset_denominator": 412,
   "source_window": {
     "trend_window_days": 14,
     "drift_window_days": 30,
     "daily_retention": {
       "input_available": true,
       "retention_days": 7,
-      "compacted_cycles": 88
+      "compacted_cycles": 95
     }
   },
   "trend_evidence": {
-    "evaluable_datasets": 353,
-    "insufficient_datasets": 55,
+    "evaluable_datasets": 352,
+    "insufficient_datasets": 60,
     "sample_day_distribution": {
-      "0": 31,
+      "0": 21,
+      "1": 14,
       "2": 5,
-      "7": 1,
+      "8": 1,
       "9": 371
     },
     "requirements": {
@@ -26,7 +27,7 @@
     }
   },
   "drift_evidence": {
-    "evaluable_datasets": 393,
+    "evaluable_datasets": 397,
     "insufficient_datasets": 15,
     "requirements": {
       "minimum_record_sample_days": 2,
@@ -36,14 +37,14 @@
   },
   "retained_history": {
     "raw": {
-      "datasets_with_observations": 408,
-      "observation_count": 532179,
-      "dataset_day_count": 3150
+      "datasets_with_observations": 412,
+      "observation_count": 529136,
+      "dataset_day_count": 3154
     },
     "compacted": {
       "datasets_with_observations": 389,
-      "observation_count": 389,
-      "dataset_day_count": 389
+      "observation_count": 778,
+      "dataset_day_count": 778
     }
   },
   "record_evidence": {
