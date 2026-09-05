@@ -375,7 +375,7 @@ def test_native_pages_scopes_attestation_key_setup_to_non_health_release_build()
     assert secret_expression not in verify_run
     assert secret_expression not in health_step.get("run", "")
     assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" not in health_step
-    assert _workflow().count(secret_expression) == 2
+    assert _workflow().count(secret_expression) == 3
 
     setup = (
         'if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then',
@@ -435,3 +435,41 @@ def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() ->
     assert "--retry-all-errors" in verify
     assert "exit 1" in verify
     assert re.search(r"embedded_health\[\"checked_at\"\].*health\[\"checked_at\"\]", verify, re.DOTALL)
+
+
+def test_sign_health_refreshes_chain_head_before_signing() -> None:
+    """The Sigstore statement must be generated from a freshly refreshed chain head."""
+    workflow = _workflow()
+    sign_health = workflow.split("  sign_health:\n", 1)[1].split("\n  deploy:\n", 1)[0]
+
+    assert "Refresh legacy chain head before signing" in sign_health
+    assert "bash scripts/refresh_chain_head.sh" in sign_health
+    assert "Generate deterministic health attestation statement" in sign_health
+    assert (
+        sign_health.index("Refresh legacy chain head before signing")
+        < sign_health.index("Generate deterministic health attestation statement")
+    )
+    refresh_step = sign_health.split(
+        "      - name: Refresh legacy chain head before signing\n", 1
+    )[1].split("      - name: Generate deterministic health attestation statement\n", 1)[0]
+
+    assert "if: needs.classify.outputs.health_only != 'true'" in refresh_step
+    assert "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}" in refresh_step
+    assert "bash scripts/refresh_chain_head.sh" in refresh_step
+
+
+def test_refresh_chain_head_script_fails_closed_without_a_signing_key() -> None:
+    """Missing key material must stop the refresh before any repository state changes."""
+    env = {key: value for key, value in os.environ.items() if key != "DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"}
+    result = subprocess.run(
+        ["bash", "scripts/refresh_chain_head.sh"],
+        check=False,
+        env=env,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+    )
+
+    assert result.returncode != 0
+    assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" in result.stderr
+    assert "gen_attestations" not in result.stdout

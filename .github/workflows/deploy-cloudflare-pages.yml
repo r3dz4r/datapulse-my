@@ -113,6 +113,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Refresh legacy chain head before signing
+        if: needs.classify.outputs.health_only != 'true'
+        env:
+          DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
+        run: |
+          set -Eeuo pipefail
+          if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then
+            echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json
+            chmod 600 /tmp/datapulse-attestation-key.json
+            export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json
+          else
+            echo "::error title=Chain head refresh requires DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE::the Sigstore signing step requires a fresh chain head, but the private key secret is not configured for this workflow run. Refusing to fall back silently."
+            exit 1
+          fi
+          bash scripts/refresh_chain_head.sh
+
       - name: Generate deterministic health attestation statement
         run: |
           set -Eeuo pipefail
