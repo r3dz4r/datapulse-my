@@ -4,6 +4,20 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## [0.11.1](https://github.com/r3dz4r/datapulse-my/compare/v0.11.0...v0.11.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **ci:** align Pages preview branch alias ([bf9c65e](https://github.com/r3dz4r/datapulse-my/commit/bf9c65e172b47c1fb3fba045b252f7bc96446d22))
+* **ci:** correct preview verifier shell quoting ([510dc19](https://github.com/r3dz4r/datapulse-my/commit/510dc1973747c46b5ec7b6fcaee5eebbae77e1dd))
+* **ci:** reuse served verifier for preview promotion ([c6e1a1c](https://github.com/r3dz4r/datapulse-my/commit/c6e1a1c0d2543684f93c54d33815dfd4709388fa))
+* **ci:** scope licence-source claim and align deploy-verify test with recorded stamp ([19c19bb](https://github.com/r3dz4r/datapulse-my/commit/19c19bbe5dcdc9a141d7cbb4da9bc8c7548ba851))
+* **ci:** stage Pages artifact before production promotion ([dc776a8](https://github.com/r3dz4r/datapulse-my/commit/dc776a8d0442f58dbb1175ba68d79d5a2dd85613))
+* **ci:** use bounded Pages preview alias ([4c5173f](https://github.com/r3dz4r/datapulse-my/commit/4c5173ff38e85cde83df06122f86ea3214df7208))
+* **scripts:** read MCP deploy stamp from version suffix and compare to mcp.json ([7747eba](https://github.com/r3dz4r/datapulse-my/commit/7747eba5fda2b91652b74d9893adb94a5fc17bff))
+* **tests:** rename mcp source-sync test to unique basename (pytest collision) ([6f8edce](https://github.com/r3dz4r/datapulse-my/commit/6f8edce7bb170539050a1f93223b646098cdde36))
+
 ## [0.11.0](https://github.com/r3dz4r/datapulse-my/compare/v0.10.0...v0.11.0) (2026-09-05)
 
 
