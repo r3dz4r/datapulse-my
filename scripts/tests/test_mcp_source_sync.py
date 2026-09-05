@@ -180,9 +180,10 @@ def test_verify_script_detects_mismatch() -> None:
             check=False,
             timeout=10,
         )
-        MockMCPHandler.source_commit_sha = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
-        ).strip()
+        recorded = json.loads((ROOT / "mcp.json").read_text(encoding="utf-8"))[
+            "server"
+        ]["source_commit_sha"]
+        MockMCPHandler.source_commit_sha = recorded
         match = subprocess.run(
             [
                 "python3",
@@ -204,7 +205,8 @@ def test_verify_script_detects_mismatch() -> None:
     assert mismatch.returncode == 1
     assert "MISMATCH: deployed=" in mismatch.stdout
     assert match.returncode == 0
-    assert "OK: deployed matches repo HEAD" in match.stdout
+    assert "OK: deployed" in match.stdout
+    assert "matches recorded stamp in mcp.json" in match.stdout
 
 
 def test_release_build_profile_includes_bump_step() -> None:

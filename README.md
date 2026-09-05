@@ -181,7 +181,7 @@ RAG systems, and internal knowledge tools to consume.
 - **RAG and knowledge-base ready:** drop the envelopes into a retrieval pipeline
   to ground chatbots and AI tools in current Malaysian public data.
 
-Of the 412 manifest datasets, 285 declare CC BY 4.0, 115 declare the Open Government Licence (Malaysia), 8 declare MIT (all `kkmnow_*` KKMNOW series), and 4 (the `st_current_*_licensees` Energy Commission licensee lists) declare no publisher-stated licence — for those four the upstream portal disclaimer applies. The authoritative per-dataset licence is `datapulse.json` → `.datasets[].licence`.
+Of the 412 manifest datasets, 285 declare CC BY 4.0, 115 declare the Open Government Licence (Malaysia), 8 declare MIT (all `kkmnow_*` KKMNOW series), and 4 (the `st_current_*_licensees` Energy Commission licensee lists) declare no publisher-stated licence — for those four the upstream portal disclaimer applies. The machine-readable per-dataset licence is `datapulse.json` → `.datasets[].licence`.
 
 Each entry is assessed with the honest ten-status trust taxonomy. Each entry retains its
 human-readable `steward` and supplies a stable `custodian` ID resolved through
