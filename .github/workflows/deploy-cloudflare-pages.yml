@@ -114,7 +114,6 @@ jobs:
           fetch-depth: 0
 
       - name: Refresh legacy chain head before signing
-        if: needs.classify.outputs.health_only != 'true'
         env:
           DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
         run: |
@@ -178,6 +177,14 @@ jobs:
           # later regenerate the top-level discovery manifest.
           cp .attestations/chain_head.json "$publication/chain_head.json"
           cp datapulse.json "$publication/datapulse.json"
+          test -s attestations/latest/chain_head.json
+          test -s attestations/latest/index.json
+          test -s attestations/latest/scores.json
+          test -s attestations/latest/binding.json
+          test -s .attestations/chain_head.json
+          test -s "$publication/datapulse.json"
+          cp -R attestations "$publication/attestations"
+          cp -R .attestations "$publication/.attestations"
 
       - name: Stage statement into Sigstore publication
         run: cp "$RUNNER_TEMP/health.latest.statement.json" "$RUNNER_TEMP/sigstore-publication/"
@@ -462,6 +469,15 @@ jobs:
             cp -R "$RUNNER_TEMP/preserved-attestations/attestations" _site/
             rm -f _site/attestations/latest/binding.json
             cp "$RUNNER_TEMP/preserved-attestations/docs/.well-known/datapulse-probe-keys.json" _site/.well-known/
+          fi
+          if [[ "${{ needs.classify.outputs.health_only }}" == "true" && "${{ needs.sign_health.outputs.signed }}" == "true" ]]; then
+            test -s "$RUNNER_TEMP/sigstore-publication/datapulse.json"
+            test -s "$RUNNER_TEMP/sigstore-publication/attestations/latest/chain_head.json"
+            rm -rf _site/attestations
+            rm -rf _site/.attestations
+            cp "$RUNNER_TEMP/sigstore-publication/datapulse.json" _site/datapulse.json
+            cp -R "$RUNNER_TEMP/sigstore-publication/attestations" _site/
+            cp -R "$RUNNER_TEMP/sigstore-publication/.attestations" _site/
           fi
           if [[ "${{ needs.sign_health.outputs.signed }}" == "true" ]]; then
             test -s "$RUNNER_TEMP/sigstore-publication/health.latest.sigstore.json"

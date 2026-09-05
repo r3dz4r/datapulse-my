@@ -453,9 +453,40 @@ def test_sign_health_refreshes_chain_head_before_signing() -> None:
         "      - name: Refresh legacy chain head before signing\n", 1
     )[1].split("      - name: Generate deterministic health attestation statement\n", 1)[0]
 
-    assert "if: needs.classify.outputs.health_only != 'true'" in refresh_step
+    assert "if: needs.classify.outputs.health_only != 'true'" not in refresh_step
     assert "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}" in refresh_step
     assert "bash scripts/refresh_chain_head.sh" in refresh_step
+
+
+def test_health_only_signed_artifact_carries_and_overlays_the_generated_attestation_plane() -> None:
+    """Health-only deployment must publish the generated sign-time trust plane."""
+    workflow = _workflow()
+    sign_health = workflow.split("  sign_health:\n", 1)[1].split("\n  deploy:\n", 1)[0]
+    sign_step = sign_health.split("      - name: Sign and verify current health DSSE bundle\n", 1)[1].split(
+        "      - name: Stage statement into Sigstore publication\n", 1
+    )[0]
+    assemble = workflow.split("      - name: Assemble canonical Pages artifact\n", 1)[1].split(
+        "      - name: Deploy canonical Cloudflare Pages artifact\n", 1
+    )[0]
+
+    assert 'test -s attestations/latest/chain_head.json' in sign_step
+    assert 'test -s attestations/latest/index.json' in sign_step
+    assert 'test -s attestations/latest/scores.json' in sign_step
+    assert 'test -s attestations/latest/binding.json' in sign_step
+    assert 'test -s .attestations/chain_head.json' in sign_step
+    assert 'test -s "$publication/datapulse.json"' in sign_step
+    assert 'cp -R attestations "$publication/attestations"' in sign_step
+    assert 'cp -R .attestations "$publication/.attestations"' in sign_step
+
+    overlay_condition = '"${{ needs.classify.outputs.health_only }}" == "true" && "${{ needs.sign_health.outputs.signed }}" == "true"'
+    assert overlay_condition in assemble
+    assert 'test -s "$RUNNER_TEMP/sigstore-publication/datapulse.json"' in assemble
+    assert 'test -s "$RUNNER_TEMP/sigstore-publication/attestations/latest/chain_head.json"' in assemble
+    assert 'rm -rf _site/attestations' in assemble
+    assert 'rm -rf _site/.attestations' in assemble
+    assert 'cp "$RUNNER_TEMP/sigstore-publication/datapulse.json" _site/datapulse.json' in assemble
+    assert 'cp -R "$RUNNER_TEMP/sigstore-publication/attestations" _site/' in assemble
+    assert 'cp -R "$RUNNER_TEMP/sigstore-publication/.attestations" _site/' in assemble
 
 
 def test_refresh_chain_head_script_fails_closed_without_a_signing_key() -> None:
