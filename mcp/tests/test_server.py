@@ -50,7 +50,7 @@ TOOL_PARAMETERS = {
     "trust_verdict": {"dataset_id"},
     "verify_attestation": {"reference", "replay_chain"},
     "find_by_licence": {"licence"},
-    "usage_summary": {"buyer_id", "since", "until"},
+    "usage_summary": {"since", "until"},
 }
 
 EXPECTED_TOOL_ANNOTATIONS = {
@@ -78,7 +78,7 @@ EXPECTED_TOOL_TITLES = {
     "trust_verdict": "Aggregate a Published Trust Verdict",
     "verify_attestation": "Verify a Signed Probe Attestation",
     "find_by_licence": "Scope Reusable Data by Licence",
-    "usage_summary": "Summarize Buyer Tool Usage",
+    "usage_summary": "Summarize Aggregate Tool Usage",
 }
 
 
@@ -614,7 +614,7 @@ async def test_search_datasets_returns_ranked_live_results() -> None:
     assert all(item["licence"] == "Creative Commons Attribution 4.0" for item in result.data)
 
 
-async def test_tool_call_logs_sanitized_usage(caplog: pytest.LogCaptureFixture) -> None:
+async def test_tool_call_logs_aggregate_safe_terminal_evidence(caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level("INFO", logger=server.logger.name)
 
     async with Client(server.mcp) as client:
@@ -623,23 +623,35 @@ async def test_tool_call_logs_sanitized_usage(caplog: pytest.LogCaptureFixture) 
     records = [record.getMessage() for record in caplog.records if record.name == server.logger.name]
     tool_logs = [record for record in records if record.startswith("mcp-tool:")]
     assert len(tool_logs) == 1
-    assert "tool=search_datasets" in tool_logs[0]
-    assert '"query":"fuel"' in tool_logs[0]
-    assert "timestamp=" in tool_logs[0]
+    journal = json.loads(tool_logs[0].partition(":")[2].lstrip())
+    assert journal["event"] == "mcp_tool_terminal"
+    assert journal["tool"] == "search_datasets"
+    assert journal["outcome"] == "success"
+    assert isinstance(journal["latency_ms"], int)
+    assert not {"query", "ip", "buyer_id", "request_id", "session_id", "client"} & set(journal)
     assert server._sanitise_tool_arg({"api_key": "should-not-appear"}) == {
         "api_key": "[REDACTED]"
     }
 
 
-async def test_usage_jsonl_sink_and_summary(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_identity(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
-    request = SimpleNamespace(headers={"x-buyer-id": "buyer-a", "x-request-id": "request-1"}, client=SimpleNamespace(host="127.0.0.1"))
-    monkeypatch.setattr(server, "get_http_request", lambda: request)
-    context = SimpleNamespace(message=SimpleNamespace(name="trust_verdict", arguments={"dataset_id": "fuelprice", "api_key": "secret"}), timestamp=datetime.now(timezone.utc))
+    context = SimpleNamespace(message=SimpleNamespace(name="trust_verdict", arguments={
+        "dataset_id": "fuelprice", "query": "private search phrase", "api_key": "secret",
+        "buyer_id": "buyer-a", "client_ip": "127.0.0.1", "request_id": "request-1",
+        "session_id": "session-1", "client": "client-1",
+    }), timestamp=datetime.now(timezone.utc))
     result = await server.ToolUsageLoggingMiddleware().on_call_tool(context, lambda _: _result({"score": {"score": 92.0, "methodology_version": 2}}))
     assert result["score"]["score"] == 92.0
     record = json.loads(next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8"))
-    assert record["buyer_id"] == "buyer-a" and record["args"]["api_key"] == "[REDACTED]"
+    forbidden = {"buyer_id", "client_ip", "request_id", "session_id", "client", "ip", "api_key", "query"}
+    assert not forbidden & set(record)
+    assert record["args"] == {"dataset_id": "fuelprice", "query_present": True}
+    assert record["outcome"] == "success"
+    assert isinstance(record["latency_ms"], int)
+    serialized = json.dumps(record)
+    for private_value in ("private search phrase", "secret", "buyer-a", "127.0.0.1", "request-1", "session-1", "client-1"):
+        assert private_value not in serialized
     day = datetime.now(timezone.utc).date().isoformat()
     (tmp_path / "2026-08-01.jsonl").write_text(json.dumps({"buyer_id": "buyer-a", "tool": "search_datasets", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
     (tmp_path / "2026-08-02.jsonl").write_text("\n".join(json.dumps(row) for row in [
@@ -648,13 +660,13 @@ async def test_usage_jsonl_sink_and_summary(monkeypatch: pytest.MonkeyPatch, tmp
         {"buyer_id": "other", "tool": "trust_verdict", "args": {"dataset_id": "ignored"}, "result_summary": {"score": 100}},
     ]) + "\n", encoding="utf-8")
     (tmp_path / "2026-08-03.jsonl").write_text(json.dumps({"buyer_id": "other", "tool": "get_dataset", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
-    summary = await server.usage_summary("buyer-a", "2026-08-01", "2026-08-03")
-    assert summary == {"total_calls": 3, "by_tool": {"search_datasets": 1, "get_dataset": 1, "trust_verdict": 1}, "by_dataset": {"fuelprice": 1, "cpi": 1}, "trust_distribution": {"75-89": 1}}
-    with pytest.raises(ValueError): await server.usage_summary("buyer-a", "2026-08-03", "2026-08-02")
-    with pytest.raises(ValueError): await server.usage_summary("buyer-a", "invalid", day)
+    summary = await server.usage_summary("2026-08-01", "2026-08-03")
+    assert summary == {"total_calls": 5, "by_outcome": {"unknown": 5}, "by_tool": {"search_datasets": 1, "get_dataset": 2, "trust_verdict": 2}, "by_dataset": {"fuelprice": 1, "cpi": 1, "ignored": 1}, "trust_distribution": {"75-89": 1, "90-100": 1}}
+    with pytest.raises(ValueError): await server.usage_summary("2026-08-03", "2026-08-02")
+    with pytest.raises(ValueError): await server.usage_summary("invalid", day)
 
 
-async def test_usage_summary_call_tool_aggregates_buyer_ledger(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+async def test_usage_summary_call_tool_aggregates_all_ledger_records(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
     (tmp_path / "2026-08-01.jsonl").write_text(
         json.dumps({"buyer_id": "buyer-a", "tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}}) + "\n",
@@ -674,15 +686,51 @@ async def test_usage_summary_call_tool_aggregates_buyer_ledger(monkeypatch: pyte
     async with Client(server.mcp) as client:
         result = await client.call_tool(
             "usage_summary",
-            {"buyer_id": "buyer-a", "since": "2026-08-01", "until": "2026-08-02"},
+            {"since": "2026-08-01", "until": "2026-08-02"},
         )
 
     assert result.data == {
-        "total_calls": 2,
-        "by_tool": {"get_dataset": 1, "trust_verdict": 1},
-        "by_dataset": {"fuelprice": 1, "cpi": 1},
-        "trust_distribution": {"90-100": 1},
+        "total_calls": 3,
+        "by_outcome": {"unknown": 3},
+        "by_tool": {"get_dataset": 1, "trust_verdict": 2},
+        "by_dataset": {"fuelprice": 1, "cpi": 1, "ignored": 1},
+        "trust_distribution": {"90-100": 2},
     }
+
+
+async def test_usage_middleware_records_one_terminal_error_and_reraises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    context = SimpleNamespace(message=SimpleNamespace(name="search_datasets", arguments={"query": "private phrase", "limit": 4}), timestamp=datetime.now(timezone.utc))
+
+    async def fail(_: object) -> None:
+        raise ValueError("private phrase must not be logged")
+
+    with pytest.raises(ValueError, match="private phrase"):
+        await server.ToolUsageLoggingMiddleware().on_call_tool(context, fail)
+
+    records = [json.loads(line) for line in next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8").splitlines()]
+    assert len(records) == 1
+    assert records == [{
+        "ts": records[0]["ts"], "tool": "search_datasets", "args": {"query_present": True, "limit": 4},
+        "result_summary": {}, "latency_ms": records[0]["latency_ms"], "outcome": "error",
+        "error": {"classification": "validation_error", "message": "tool call failed"},
+    }]
+
+
+async def test_usage_middleware_keeps_unknown_arguments_and_credentials_out_of_terminal_record(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    context = SimpleNamespace(message=SimpleNamespace(name="search_datasets", arguments={
+        "query": "never persist this phrase", "api_key": "secret", "request_id": "request-1",
+        "client": "caller", "limit": 2, "source": "OpenDOSM",
+    }), timestamp=datetime.now(timezone.utc))
+
+    await server.ToolUsageLoggingMiddleware().on_call_tool(context, lambda _: _result({"count": 1}))
+
+    serialized = next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8")
+    record = json.loads(serialized)
+    assert record["args"] == {"source": "OpenDOSM", "limit": 2, "query_present": True}
+    for forbidden in ("never persist this phrase", "secret", "request-1", "caller", "api_key", "request_id"):
+        assert forbidden not in serialized
 
 
 async def _result(value: dict) -> dict:

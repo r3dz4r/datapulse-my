@@ -59,7 +59,7 @@ For AI agents that look up canonical discovery paths before fetching:
 | `trust_verdict(dataset_id)` | Return published attestation facts, the unsigned methodology-versioned trust score, numeric components, and component_availability reasons, plus existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately. |
 | `verify_attestation(reference, replay_chain?)` | Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence. Returns `levels.L1.signature_valid` and `levels.L2.satisfied` for signature and replay status. |
 | `find_by_licence(licence)` | Return all datasets with the given licence, summarised. Use to enumerate what's available under a specific licence for compliance/reuse scoping. |
-| `usage_summary(buyer_id, since, until)` | Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range. |
+| `usage_summary(since, until)` | Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range. Legacy identity fields are ignored. |
 <!-- END mcp-tools -->
 
 ### Verify before trust

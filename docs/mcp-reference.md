@@ -584,7 +584,7 @@ Input schema:
 
 ### `usage_summary`
 
-Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range.
+Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range. Legacy identity fields are ignored.
 
 Input schema:
 
@@ -592,14 +592,6 @@ Input schema:
 {
   "additionalProperties": false,
   "properties": {
-    "buyer_id": {
-      "description": "Buyer identifier, e.g. 'pro-default' or 'anonymous'.",
-      "examples": [
-        "pro-default"
-      ],
-      "minLength": 1,
-      "type": "string"
-    },
     "since": {
       "description": "Inclusive ISO start date YYYY-MM-DD, e.g. '2026-08-01'.",
       "examples": [
@@ -616,7 +608,6 @@ Input schema:
     }
   },
   "required": [
-    "buyer_id",
     "since",
     "until"
   ],

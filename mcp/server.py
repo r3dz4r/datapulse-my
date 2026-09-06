@@ -26,7 +26,6 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 import mcp.types as mcp_types
 from fastmcp import FastMCP
-from fastmcp.server.dependencies import get_http_request
 from fastmcp.server.middleware import Middleware
 from mcp.types import Icon, Implementation as MCPImplementation, ToolAnnotations
 from pydantic import Field
@@ -48,7 +47,7 @@ from scripts.verify_per_dataset_receipt import BundleError, _decode_payload
 # replacing) the legacy stable FastMCP version. The verify script
 # reads this field and compares to the current repo HEAD to detect drift.
 FASTMCP_VERSION = "4.0.0b3"
-SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "7478fc7fcc0e8681af4069d7604547d2e2de1108")
+SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "848be6efbf98dfcee0778418c444f65d81645f09")
 SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "2026-09-06")
 SOURCE_VERSION_STRING = (
     f"v{FASTMCP_VERSION}+{SOURCE_COMMIT_SHA[:7]}"
@@ -134,25 +133,37 @@ def _sanitise_tool_arg(value: Any, *, key: str | None = None) -> Any:
     return value
 
 
-def _request_client_ip() -> str:
-    """Get the client address forwarded by the local reverse proxy."""
-    try:
-        request = get_http_request()
-        return (
-            request.headers.get("x-real-ip")
-            or request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
-            or (request.client.host if request.client else "unknown")
-        )
-    except RuntimeError:
-        return "unknown"
+def _usage_arguments(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Return only bounded public dimensions; never retain caller input text."""
+    safe: dict[str, Any] = {}
+    for name in ("dataset_id", "source", "licence", "status", "mode", "at_or_below_grade"):
+        value = arguments.get(name)
+        if isinstance(value, str):
+            safe[name] = value[:200]
+    dataset_ids = arguments.get("dataset_ids")
+    if isinstance(dataset_ids, list) and all(isinstance(item, str) for item in dataset_ids):
+        safe["dataset_ids"] = [item[:200] for item in dataset_ids[:50]]
+    for name in ("limit", "max_age_hours", "min_change_count"):
+        value = arguments.get(name)
+        if isinstance(value, int) and not isinstance(value, bool):
+            safe[name] = value
+    for name in ("min_reliability", "min_anomaly_rate"):
+        value = arguments.get(name)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            safe[name] = value
+    for name in ("include_proof_steps", "replay_chain"):
+        value = arguments.get(name)
+        if isinstance(value, bool):
+            safe[name] = value
+    if "query" in arguments:
+        safe["query_present"] = bool(arguments["query"])
+    return safe
 
 
-def _request_header(name: str, default: str) -> str:
-    """Read a gateway-provided request header when an HTTP request exists."""
-    try:
-        return get_http_request().headers.get(name, default)
-    except RuntimeError:
-        return default
+def _error_record(error: BaseException) -> dict[str, str]:
+    """Classify failures without recording potentially caller-supplied text."""
+    classification = "validation_error" if isinstance(error, ValueError) else "tool_error"
+    return {"classification": classification, "message": "tool call failed"}
 
 
 def _usage_dir() -> Path:
@@ -184,32 +195,41 @@ def _append_usage_record(record: dict[str, Any]) -> None:
 
 
 class ToolUsageLoggingMiddleware(Middleware):
-    """Log sanitized usage details for actual MCP tool calls only."""
+    """Emit one anonymous aggregate-safe terminal record per MCP tool call."""
 
     async def on_call_tool(self, context: Any, call_next: Any) -> Any:
         message = context.message
-        args = _sanitise_tool_arg(message.arguments or {})
-        client_ip = _request_client_ip()
-        logger.info(
-            "mcp-tool: tool=%s args=%s ip=%s timestamp=%s",
-            message.name,
-            json.dumps(args, ensure_ascii=False, separators=(",", ":")),
-            client_ip,
-            context.timestamp.isoformat(),
-        )
+        args = _usage_arguments(message.arguments or {})
         started = monotonic()
-        result = await call_next(context)
-        _append_usage_record({
+        record: dict[str, Any] = {
             "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
             "tool": message.name,
-            "buyer_id": _request_header("x-buyer-id", "anonymous"),
             "args": args,
-            "result_summary": _result_summary(message.name, result),
-            "latency_ms": round((monotonic() - started) * 1000),
-            "request_id": _request_header("x-request-id", getattr(context, "request_id", "unknown")),
-            "client_ip": client_ip,
-        })
-        return result
+        }
+        try:
+            result = await call_next(context)
+        except BaseException as error:
+            record.update({"result_summary": {}, "outcome": "error", "error": _error_record(error)})
+            raise
+        else:
+            record.update({"result_summary": _result_summary(message.name, result), "outcome": "success"})
+            return result
+        finally:
+            record["latency_ms"] = round((monotonic() - started) * 1000)
+            _append_usage_record(record)
+            journal = {
+                "event": "mcp_tool_terminal",
+                "ts": record["ts"],
+                "tool": record["tool"],
+                "outcome": record["outcome"],
+                "latency_ms": record["latency_ms"],
+            }
+            if "error" in record:
+                journal["error_classification"] = record["error"]["classification"]
+            logger.info(
+                "mcp-tool: %s",
+                json.dumps(journal, ensure_ascii=False, separators=(",", ":")),
+            )
 
 
 def _manifest_dataset_count(manifest_path: Path | None = None) -> int:
@@ -1856,25 +1876,24 @@ async def find_by_licence(
 
 
 @mcp.tool(
-    title="Summarize Buyer Tool Usage",
-    description="Aggregate one buyer's audit-ledger usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range.",
+    title="Summarize Aggregate Tool Usage",
+    description="Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range. Legacy identity fields are ignored.",
     icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
     meta=TOOL_META,
 )
 async def usage_summary(
-    buyer_id: Annotated[str, Field(min_length=1, description="Buyer identifier, e.g. 'pro-default' or 'anonymous'.", examples=["pro-default"])],
     since: Annotated[str, Field(description="Inclusive ISO start date YYYY-MM-DD, e.g. '2026-08-01'.", examples=["2026-08-01"])],
     until: Annotated[str, Field(description="Inclusive ISO end date YYYY-MM-DD, e.g. '2026-08-07'.", examples=["2026-08-07"])],
 ) -> dict[str, Any]:
-    """Aggregate persisted audit records for one buyer."""
+    """Aggregate persisted records without filtering or exposing caller identity."""
     try:
         start, end = date.fromisoformat(since), date.fromisoformat(until)
     except ValueError as exc:
         raise ValueError("since and until must be ISO dates (YYYY-MM-DD)") from exc
     if start > end:
         raise ValueError("since must be on or before until")
-    summary: dict[str, Any] = {"total_calls": 0, "by_tool": {}, "by_dataset": {}, "trust_distribution": {}}
+    summary: dict[str, Any] = {"total_calls": 0, "by_outcome": {}, "by_tool": {}, "by_dataset": {}, "trust_distribution": {}}
     current = start
     while current <= end:
         path = _usage_dir() / f"{current.isoformat()}.jsonl"
@@ -1886,9 +1905,11 @@ async def usage_summary(
                     continue
                 if not isinstance(record, dict):
                     continue
-                if record.get("buyer_id") != buyer_id:
-                    continue
                 summary["total_calls"] += 1
+                outcome = record.get("outcome", "unknown")
+                if not isinstance(outcome, str) or outcome not in {"success", "error"}:
+                    outcome = "unknown"
+                summary["by_outcome"][outcome] = summary["by_outcome"].get(outcome, 0) + 1
                 tool = record.get("tool", "unknown")
                 summary["by_tool"][tool] = summary["by_tool"].get(tool, 0) + 1
                 dataset_id = record.get("args", {}).get("dataset_id")

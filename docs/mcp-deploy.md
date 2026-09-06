@@ -54,6 +54,26 @@ headers, limits each client IP to an average of 60 requests per minute with a
 origin certificate protects the loopback hop between the tunnel and nginx;
 public TLS terminates at the Cloudflare edge.
 
+## Aggregate-only MCP telemetry
+
+The public MCP service remains anonymous and read-only. Future MCP operational
+telemetry is aggregate-only: a terminal record contains the timestamp, tool,
+allowlisted public filter dimensions or dataset identifiers needed for demand
+counts, bounded result summary, outcome, latency, and a bounded generic error
+classification. Free-form query text is represented only by a presence signal.
+
+It does not retain IP addresses, buyer IDs, request IDs, session IDs, client
+identity, user agents, credentials, or pseudonymous substitutes. Middleware
+writes exactly one terminal record for every successful call and every raised
+error; the original error still propagates to the MCP client. `usage_summary`
+therefore provides anonymous inclusive-date-range aggregates and counts legacy
+records without exposing or filtering by legacy identity fields.
+
+Anonymous edge or origin infrastructure metrics may describe aggregate traffic
+or failures, but they cannot restore caller-level visibility or be joined to
+MCP records. Edge/origin logs are separate operational surfaces and are not a
+source of individual caller telemetry for the MCP usage ledger.
+
 ## Verification
 
 FastMCP requires an initialized MCP session. A bare `tools/list` request returns

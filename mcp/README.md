@@ -9,7 +9,7 @@ write to the DataPulse MY data layer.
 Python 3.11 or newer and `uv` are recommended:
 
 ```bash
-uv run --with fastmcp,httpx python mcp/server.py
+uv run --isolated --prerelease=allow --with-requirements mcp/requirements.txt python mcp/server.py
 ```
 
 The Streamable HTTP endpoint starts at `http://127.0.0.1:8788/mcp` by default.
@@ -22,7 +22,7 @@ The integration tests use FastMCP's in-memory client while fetching the live
 published DataPulse MY JSON documents:
 
 ```bash
-uv run --with fastmcp,httpx pytest mcp/tests/ -v
+uv run --isolated --prerelease=allow --with-requirements mcp/requirements.txt --with pytest python -m pytest mcp/tests/ -v
 ```
 
 This directory is the server implementation only. Deployment and public

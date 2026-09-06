@@ -43,7 +43,7 @@ The M8ven tool trust score (currently D, 41/100) audits this server. Tool annota
 
 ```bash
 # 1. Run the test suite
-uv run --with fastmcp,httpx pytest mcp/tests/ -v
+uv run --isolated --prerelease=allow --with-requirements mcp/requirements.txt --with pytest python -m pytest mcp/tests/ -v
 
 # 2. Re-render the mcp.json catalog
 python scripts/gen_mcp_reference.py   # regenerates /mcp.json at repo root
