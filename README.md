@@ -624,10 +624,6 @@ when generated metadata is refreshed. A valid signature proves the integrity
 of DataPulse's attested observation, not that upstream data is semantically
 true. Every refresh publishes signed bundles to the public Rekor log.
 
-See [notes/2026-08-30-phase-5-verify-before-trust-sovereignty-one-pager.md](notes/2026-08-30-phase-5-verify-before-trust-sovereignty-one-pager.md)
-for the full positioning one-pager (sovereignty framing, no-competitor
-gap, distribution status).
-
 ## Monitoring
 
 - The VPS `datapulse-health.timer` wakes every 5 minutes and runs only the
