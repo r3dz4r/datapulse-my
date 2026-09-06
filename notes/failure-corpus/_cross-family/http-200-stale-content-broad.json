@@ -5,14 +5,14 @@
   "failure_type": "http_200_stale_content",
   "severity": "high",
   "first_observed_at": "2026-08-28T01:56:29Z",
-  "most_recent_observed_at": "2026-09-01T22:21:08Z",
+  "most_recent_observed_at": "2026-09-05T14:41:02Z",
   "affected_datasets": [],
   "evidence": {
-    "description": "144 of 389 datasets in the stated catalogue baseline (37%) showed stale status with HTTP 200. The latest local history retains the same 37% pattern; HTTP 200 does not imply freshness across BNM, DOSM, exchequer, hansard, GTFS, NPRA, and others.",
+    "description": "187 of 412 datasets in the stated catalogue baseline (45.4%) showed stale status with HTTP 200. HTTP 200 does not imply freshness across BNM, DOSM, exchequer, hansard, GTFS, NPRA, and others.",
     "live_signals": {
-      "total_datasets": 389,
-      "stale_http_200_count": 145,
-      "stale_http_200_pct": 37.3
+      "total_datasets": 412,
+      "stale_http_200_count": 187,
+      "stale_http_200_pct": 45.4
     },
     "example_history_lines": [
       {
@@ -48,7 +48,7 @@
   "served_verification": {
     "live_url": "https://www.data-pulse.my/health/latest.json",
     "expected_status": "200",
-    "last_verified": "2026-09-02"
+    "last_verified": "2026-09-06"
   },
   "recorded_at": "2026-09-01",
   "recorded_by": "Hermes (HS-04 dispatch)"
