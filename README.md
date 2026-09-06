@@ -4,9 +4,9 @@
 
 **Open in Google Colab:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb)
 
+[![datapulse-my MCP server](https://glama.ai/mcp/servers/r3dz4r/datapulse-my/badges/score.svg)](https://glama.ai/mcp/servers/r3dz4r/datapulse-my)
 [![M8ven Verified](https://m8ven.ai/badge/mcp/r3dz4r-datapulse-my-fsfgq3?variant=verified)](https://m8ven.ai/mcp/r3dz4r-datapulse-my-fsfgq3)
 [![mcpgrade](https://img.shields.io/badge/mcpgrade-100%2F100%20(Grade%20A)-success?style=flat&logo=anthropic)](https://www.npmjs.com/package/mcpgrade)
-[![datapulse-my MCP server](https://glama.ai/mcp/servers/r3dz4r/datapulse-my/badges/score.svg)](https://glama.ai/mcp/servers/r3dz4r/datapulse-my)
 <!-- m8ven-verify: d1505f0f7e0429963789e95995216ca3 -->
 
 > **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
