@@ -1,0 +1,55 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "sg_datagov_hdb_metadata",
+  "status": "unknown-freshness",
+  "last_checked": "2026-09-06T20:36:28Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 3,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "code",
+      "type": "integer"
+    },
+    {
+      "name": "data",
+      "type": "string"
+    },
+    {
+      "name": "errorMsg",
+      "type": "string"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 3 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://api-production.data.gov.sg/v2/public/api/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/metadata",
+    "access_method": "curl"
+  },
+  "licence": "Singapore Open Data Licence v1.0 (attribution required)",
+  "attribution": "data.gov.sg (government_open_data)"
+}

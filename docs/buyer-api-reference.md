@@ -57,7 +57,7 @@ Possible status codes are `401` (missing/invalid key), `404` (unknown resource),
 <!-- END buyer-api-endpoints -->
 
 <!-- BEGIN buyer-api-pagination -->
-List responses use `{"data": [...], "pagination": {"limit": 50, "next_cursor": "50", "total": 413}}`; `next_cursor` is `null` at the end.
+List responses use `{"data": [...], "pagination": {"limit": 50, "next_cursor": "50", "total": 418}}`; `next_cursor` is `null` at the end.
 <!-- END buyer-api-pagination -->
 All successful calls, failed authentication attempts, and rate-limit responses
 are append-only audit records with key label/hash, client IP, user agent, path,

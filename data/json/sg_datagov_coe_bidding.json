@@ -1,0 +1,51 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "sg_datagov_coe_bidding",
+  "status": "fresh",
+  "last_checked": "2026-09-06T20:36:28Z",
+  "freshness_days": 0,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 2,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "success",
+      "type": "boolean"
+    },
+    {
+      "name": "result",
+      "type": "string"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 2 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://data.gov.sg/api/action/datastore_search?resource_id=d_69b3380ad7e51aff3a7dcc84eba52b8a",
+    "access_method": "curl"
+  },
+  "licence": "Singapore Open Data Licence v1.0 (attribution required)",
+  "attribution": "data.gov.sg (transport)"
+}
