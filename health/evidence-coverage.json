@@ -1,6 +1,6 @@
 {
   "schema": "datapulse/v1/evidence-coverage",
-  "generated_at": "2026-09-06T13:08:13Z",
+  "generated_at": "2026-09-06T15:16:26Z",
   "dataset_denominator": 413,
   "source_window": {
     "trend_window_days": 14,
@@ -8,7 +8,7 @@
     "daily_retention": {
       "input_available": true,
       "retention_days": 7,
-      "compacted_cycles": 313
+      "compacted_cycles": 336
     }
   },
   "trend_evidence": {
@@ -16,8 +16,11 @@
     "insufficient_datasets": 61,
     "sample_day_distribution": {
       "0": 21,
-      "1": 20,
-      "4": 372
+      "1": 1,
+      "10": 370,
+      "2": 14,
+      "3": 5,
+      "9": 2
     },
     "requirements": {
       "minimum_sample_days": 3,
@@ -25,8 +28,8 @@
     }
   },
   "drift_evidence": {
-    "evaluable_datasets": 395,
-    "insufficient_datasets": 18,
+    "evaluable_datasets": 406,
+    "insufficient_datasets": 7,
     "requirements": {
       "minimum_record_sample_days": 2,
       "minimum_record_span_days": 1.0,
@@ -36,8 +39,8 @@
   "retained_history": {
     "raw": {
       "datasets_with_observations": 413,
-      "observation_count": 2065,
-      "dataset_day_count": 413
+      "observation_count": 509548,
+      "dataset_day_count": 3178
     },
     "compacted": {
       "datasets_with_observations": 389,
