@@ -84,6 +84,14 @@ def verify_records(records: list[dict[str, Any]], history: list[dict[str, Any]])
     """Return deterministic contract and live-history mismatches."""
     errors: list[str] = []
     seen: set[str] = set()
+    history_start = min(
+        (
+            datetime.fromisoformat(row["observed_at"].replace("Z", "+00:00"))
+            for row in history
+            if isinstance(row.get("observed_at"), str)
+        ),
+        default=None,
+    )
     for record in records:
         path = record.get("_path", "<record>")
         missing = REQUIRED_FIELDS - record.keys()
@@ -104,8 +112,15 @@ def verify_records(records: list[dict[str, Any]], history: list[dict[str, Any]])
             errors.append(f"{path}: unrecognized failure_id {failure_id!r}")
         elif (record["family"], record["failure_type"]) != expected:
             errors.append(f"{path}: unexpected failure_type or family for {failure_id}")
+        first_observed_at: datetime | None = None
+        most_recent_observed_at: datetime | None = None
         for field in ("recorded_at", "first_observed_at", "most_recent_observed_at"):
-            try: _parse_iso8601(record[field], field)
+            try:
+                _parse_iso8601(record[field], field)
+                if field == "first_observed_at":
+                    first_observed_at = datetime.fromisoformat(record[field].replace("Z", "+00:00"))
+                if field == "most_recent_observed_at":
+                    most_recent_observed_at = datetime.fromisoformat(record[field].replace("Z", "+00:00"))
             except ValueError as exc: errors.append(f"{path}: {exc}")
         if not isinstance(record["affected_datasets"], list): errors.append(f"{path}: affected_datasets must be a list")
         evidence = record["evidence"]
@@ -115,7 +130,18 @@ def verify_records(records: list[dict[str, Any]], history: list[dict[str, Any]])
         else:
             try: _parse_iso8601(served.get("last_verified"), "served_verification.last_verified")
             except ValueError as exc: errors.append(f"{path}: {exc}")
-        if isinstance(record["affected_datasets"], list):
+        historical_signal = (
+            history_start is not None
+            and (
+                (most_recent_observed_at is not None and most_recent_observed_at < history_start)
+                or (
+                    record["failure_type"] == "schema_shape_hash_churn"
+                    and first_observed_at is not None
+                    and first_observed_at < history_start
+                )
+            )
+        )
+        if isinstance(record["affected_datasets"], list) and not historical_signal:
             for dataset_id in record["affected_datasets"]:
                 if not isinstance(dataset_id, str) or not _signal_matches(record["failure_type"], dataset_id, history):
                     errors.append(f"{path}: {dataset_id!r} has no matching live-history signal for {record['failure_type']}")
