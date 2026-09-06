@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_ipi_domestic
-last_checked: 2026-08-30T02:16:30Z
-status: aging
-freshness_delta: 90 days
+last_checked: 2026-09-06T11:34:39Z
+status: stale
+freshness_delta: 97 days
 next_expected_update: monthly
 record_count: 6015
 date_range: 2015-01-01 to 2026-05-01
@@ -18,15 +18,15 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Aging
+**Status:** Stale
 
-**Freshness:** 90 days
+**Freshness:** 97 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-30 at 02:16:30 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

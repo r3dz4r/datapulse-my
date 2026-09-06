@@ -125,6 +125,24 @@ def test_embed_replaces_existing_data_block_with_all_dashboard_inputs(
     assert 'Live health snapshot: <a href="/health/latest.json"><time datetime="2026-08-17">2026-08-17</time></a>.' in html
 
 
+def test_dashboard_health_omits_only_status_values_redundant_with_staleness_status() -> None:
+    health = {
+        "datasets": [
+            {"dataset_id": "same", "status": "fresh", "staleness_status": "fresh", "url": "https://example.test/same", "request_url": "https://example.test/same"},
+            {"dataset_id": "different", "status": "stale", "staleness_status": "aging", "url": "https://example.test/original", "request_url": "https://example.test/redirected"},
+        ]
+    }
+
+    compact = embed_dashboard_data.dashboard_health_payload(health)
+
+    assert "staleness_status" not in compact["datasets"][0]
+    assert compact["datasets"][1]["staleness_status"] == "aging"
+    assert "request_url" not in compact["datasets"][0]
+    assert compact["datasets"][1]["request_url"] == "https://example.test/redirected"
+    assert health["datasets"][0]["staleness_status"] == "fresh"
+    assert health["datasets"][0]["request_url"] == "https://example.test/same"
+
+
 def test_production_homepage_is_the_source_owned_register_with_compatible_payload() -> None:
     """The explicit production path composes register rows with the legacy data API."""
     manifest = json.loads((ROOT / "datapulse.json").read_text(encoding="utf-8"))

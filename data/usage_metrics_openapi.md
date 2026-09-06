@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_usage_metrics_openapi
-last_checked: 2026-09-04T22:06:50Z
-last_checked: 2026-09-04T22:06:50Z
+last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-06T11:34:39Z
 status: fresh
-freshness_delta: 0 days
+freshness_delta: 1 days
 next_expected_update: daily
-record_count: 18446
+record_count: 18477
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Although the OpenAPI was live from 13 Sep 2023, disaggregated usage data is only available from 15 Dec 2023."]
@@ -20,17 +20,17 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 0 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-04 at 22:06:50 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 
-The checked resource is 1,283,839 bytes.
+The checked resource is 1,286,058 bytes.
 
 ## Provenance
 

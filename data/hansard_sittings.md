@@ -1,8 +1,8 @@
 ---
 dataset_id: hansard_sittings
-last_checked: 2026-08-30T02:16:30Z
-status: stale
-freshness_delta: 26 days
+last_checked: 2026-09-06T11:34:39Z
+status: fresh
+freshness_delta: 33 days
 next_expected_update: daily
 last_observed: 2026-08-04
 record_count: 6192
@@ -18,15 +18,15 @@ attribution: Parliament of Malaysia via Malaysian Parliament Digital Hansard
 
 ## Status
 
-**Status:** Stale
+**Status:** Fresh
 
-**Freshness:** 26 days
+**Freshness:** 33 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-30 at 02:16:30 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

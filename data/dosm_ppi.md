@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_ppi
-last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-09-06T11:34:39Z
 status: aging
-freshness_delta: 90 days
+freshness_delta: 67 days
 next_expected_update: monthly
-record_count: 581
+record_count: 584
 date_range: 2010-01-01 to 2026-06-01
 schema_version: 1.0
 schema_drift: none
@@ -20,17 +20,17 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 90 days
+**Freshness:** 67 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-30 at 02:16:30 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 
-The checked resource is 16,784 bytes.
+The checked resource is 16,874 bytes.
 
 ## Provenance
 

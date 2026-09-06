@@ -89,6 +89,18 @@
               "reference"
             ]
           },
+          "schema_fingerprint": {
+            "type": ["string", "null"],
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "sample_rows": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "active_rows": {
+            "type": ["object", "null"],
+            "additionalProperties": {"type": "integer", "minimum": 0}
+          },
           "anomaly_detected": {
             "type": "boolean"
           },

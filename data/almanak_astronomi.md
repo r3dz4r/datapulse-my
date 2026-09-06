@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_almanak_astronomi
-last_checked: 2026-09-04T22:06:50Z
-status: fresh
-freshness_delta: 0 days
+last_checked: 2026-09-06T11:34:39Z
+status: aging
+freshness_delta: 2 days
 next_expected_update: daily
 record_count: 538
 schema_version: unknown
@@ -17,15 +17,15 @@ attribution: Malaysian Meteorological Department via data.gov.my
 
 ## Status
 
-**Status:** Fresh
+**Status:** Aging
 
-**Freshness:** 0 days
+**Freshness:** 2 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-04 at 22:06:50 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

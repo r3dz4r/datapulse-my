@@ -1,8 +1,8 @@
 ---
 dataset_id: ridership_headline
-last_checked: 2026-09-04T22:06:50Z
+last_checked: 2026-09-06T11:34:39Z
 status: stale
-freshness_delta: 35 days
+freshness_delta: 37 days
 next_expected_update: daily
 record_count: 2769
 date_range: 2019-01-01 to 2026-06-30
@@ -20,13 +20,13 @@ attribution: Prasarana, KTMB, and Ministry of Transport Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 35 days
+**Freshness:** 37 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-04 at 22:06:50 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

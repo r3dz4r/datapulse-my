@@ -271,6 +271,12 @@ validate_adapter_config() {
         && probe_policy_value "$dataset_id" '.["st-energy"]["report-kind"]' >/dev/null \
         || { printf 'Probe policy error: %s st-energy adapter requires flow, event, and report kind\n' "$dataset_id" >&2; return 1; }
       ;;
+    arcgis-feature)
+      probe_policy_value "$dataset_id" '."arcgis-feature"["allowed-host"]' >/dev/null \
+        && probe_policy_value "$dataset_id" '."arcgis-feature"["required-fields"]' >/dev/null \
+        && probe_policy_value "$dataset_id" '."arcgis-feature"["allowed-fields"]' >/dev/null \
+        || { printf 'Probe policy error: %s arcgis-feature adapter requires a complete bounded configuration\n' "$dataset_id" >&2; return 1; }
+      ;;
     *)
       printf 'Probe policy error: %s has unsupported adapter %s\n' "$dataset_id" "$adapter" >&2
       return 1
@@ -891,6 +897,22 @@ check_weather_dataset() {
   emit "$dataset_id" "$source_url" "fresh" "HTTP ${http_status}" "$details"
 }
 
+check_arcgis_feature_dataset() {
+  local dataset_id="$1"
+  local source_url="$2"
+  local config result details
+
+  config="$(probe_policy_value "$dataset_id" '."arcgis-feature"')" || return 1
+  if ! result="$(python3 "$script_dir/probe_arcgis.py" --url "$source_url" --config "$config" 2>/dev/null)" \
+    || ! jq -e 'type == "object" and (.record_count | type == "number") and (.schema_fingerprint | type == "string")' >/dev/null 2>&1 <<< "$result"; then
+    emit "$dataset_id" "$source_url" "degraded" "ArcGIS read-only probe failed closed" \
+      '{"access_method":"ArcGIS FeatureServer read-only GET/query"}'
+    return 0
+  fi
+  details="$(jq -c '.' <<< "$result")"
+  emit "$dataset_id" "$source_url" "fresh" "ArcGIS FeatureServer bounded read-only probe succeeded" "$details"
+}
+
 check_direct_dataset() {
   local dataset_id="$1"
   local source_url="$2"
@@ -1405,6 +1427,9 @@ dispatch_policy_adapter() {
     weather)
       check_weather_dataset "$dataset_id" "$source_url"
       ;;
+    arcgis-feature)
+      check_arcgis_feature_dataset "$dataset_id" "$source_url"
+      ;;
     browser)
       wait_seconds="$(probe_policy_value "$dataset_id" '.browser["wait-seconds"]')" || return 1
       if ! check_browser_dataset "$dataset_id" "$source_url" "$wait_seconds" 1; then
@@ -1563,6 +1588,11 @@ build_health_snapshot() {
       end;
   def status_key($status):
     $status | gsub("-"; "_");
+  def content_epoch($value):
+    if $value == null then null
+    else (try ($value | fromdateiso8601)
+          catch (try (($value + "T00:00:00Z") | fromdateiso8601) catch null))
+    end;
 
   ($manifest[0].datasets // []) as $manifest_rows
   | ((($previous[0] // {}).datasets) // []) as $previous_rows
@@ -1581,17 +1611,16 @@ build_health_snapshot() {
            ($old.content_freshness_date // null)
          else null
          end) as $content_freshness_candidate
-      | (if $content_freshness_candidate == null then null
-         else (try (
-           (($content_freshness_candidate + "T00:00:00Z") | fromdateiso8601) as $content_epoch
-           | if $content_epoch <= $checked_epoch then $content_freshness_candidate else null end
-         ) catch null)
+      | (if content_epoch($content_freshness_candidate) as $content_epoch
+           | $content_epoch != null and $content_epoch <= $checked_epoch
+         then $content_freshness_candidate
+         else null
          end) as $content_freshness_date
       | (if (($policy_family == "data_gov_my_openapi" or $policy_family == "data_gov_my_storage")
              and ($probe.http_status | type) == "number"
              and $probe.http_status == 200
              and $content_freshness_date != null
-             and (($content_freshness_date + "T00:00:00Z" | fromdateiso8601) as $content_epoch
+             and (content_epoch($content_freshness_date) as $content_epoch
                  | ($checked_epoch - $content_epoch) > (365 * 86400))
              and (($old.content_freshness_date // null) == null
                   or $old.content_freshness_date == $content_freshness_date))
@@ -1600,10 +1629,10 @@ build_health_snapshot() {
          else (($last_modified | fromdateiso8601) as $modified
            | ([0, (($checked_epoch - $modified) / 86400 | floor)] | max))
          end) as $last_modified_age
-      | (if $content_freshness_date == null then null
-         else ((($content_freshness_date + "T00:00:00Z") | fromdateiso8601) as $content_date
-           | ([0, (($checked_epoch - $content_date) / 86400 | floor)] | max))
-         end) as $content_freshness_age
+      | (content_epoch($content_freshness_date) as $content_date
+         | if $content_date == null then null
+           else [0, (($checked_epoch - $content_date) / 86400 | floor)] | max
+           end) as $content_freshness_age
       | (($entry.refresh_frequency // "" | ascii_downcase) as $freq
          | if ($freq == "30 seconds" or $freq == "hourly") then
              ($probe.newest_vehicle_timestamp // null) as $newest_vehicle
@@ -1720,6 +1749,9 @@ build_health_snapshot() {
           incomplete: $incomplete,
           column_count: ($probe.column_count // null),
           first_row_hash: ($probe.first_row_hash // null),
+          schema_fingerprint: ($probe.schema_fingerprint // null),
+          sample_rows: ($probe.sample_rows // null),
+          active_rows: ($probe.active_rows // null),
           content_shape_changed: $shape_changed,
           locations: ($probe.locations // null),
           date_range: ($probe.date_range // null),

@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_drug_addicts_age
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-09-06T11:34:39Z
 status: fresh
-freshness_delta: 212 days
+freshness_delta: 234 days
 next_expected_update: annual
 record_count: 783
 date_range: 2015-01-01 to 2023-01-01
@@ -20,13 +20,13 @@ attribution: National Anti-Drugs Agency and Ministry of Home Affairs via data.go
 
 **Status:** Fresh
 
-**Freshness:** 212 days
+**Freshness:** 234 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

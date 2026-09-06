@@ -1,8 +1,8 @@
 ---
 dataset_id: water_consumption
-last_checked: 2026-08-16T02:09:20Z
+last_checked: 2026-09-06T11:34:39Z
 status: stale
-freshness_delta: 1688 days
+freshness_delta: 1709 days
 next_expected_update: annual
 schema_version: unknown
 schema_drift: none
@@ -18,13 +18,13 @@ attribution: National Water Services Commission via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1688 days
+**Freshness:** 1709 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-16 at 02:09:20 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

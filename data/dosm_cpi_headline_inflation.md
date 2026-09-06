@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_cpi_headline_inflation
-last_checked: 2026-08-30T02:16:30Z
-last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-06T11:34:39Z
 status: aging
-freshness_delta: 60 days
+freshness_delta: 67 days
 next_expected_update: monthly
 record_count: 7812
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 60 days
+**Freshness:** 67 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-30 at 02:16:30 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

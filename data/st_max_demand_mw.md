@@ -5,15 +5,15 @@ source_url: "https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPor
 source_name: "meih.st.gov.my (ST)"
 licence: "Open Government Licence (Malaysia)"
 refresh_frequency: "monthly"
-last_checked: 2026-09-04T23:41:11Z
-last_observed: null
+last_checked: 2026-09-06T11:34:39Z
+last_observed: 2021-01-01
 last_modified: null
-record_count: 14
-column_count: 55
-status: unknown-freshness
+record_count: 33
+column_count: 5
+status: stale
 notes: "Unprobed Suruhanjaya Tenaga MyEnergyStats HTML dashboard; health remains unknown until the first DataPulse probe."
 dataset_id: st_max_demand_mw
-freshness_delta: unknown
+freshness_delta: 2074 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Suruhanjaya Tenaga (ST) via meih.st.gov.my"
 
 ## Status
 
-**Status:** Unknown freshness
+**Status:** Stale
 
-**Freshness:** unknown
+**Freshness:** 2074 days
 
-HTTP 200
+ST report table returned a valid year
 
 ## Last checked
 
-2026-09-04 at 23:41:11 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 
-The checked resource is 78,297 bytes.
+The checked resource is 61,288 bytes.
 
 ## Provenance
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: trade_headline
-last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-09-06T11:34:39Z
 status: stale
-freshness_delta: 151 days
+freshness_delta: 158 days
 next_expected_update: overdue
 record_count: 743
 date_range: 2000-01-01 to 2026-04-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Stale
 
-**Freshness:** 151 days
+**Freshness:** 158 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-30 at 02:16:30 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

@@ -150,6 +150,32 @@ def _dump(document: object) -> str:
     )
 
 
+def dashboard_health_payload(health: object) -> object:
+    """Omit health fields only where their canonical counterparts match exactly."""
+    if not isinstance(health, dict) or not isinstance(health.get("datasets"), list):
+        return health
+    compact = health.copy()
+    rows: list[object] = []
+    for row in health["datasets"]:
+        if isinstance(row, dict):
+            redundant = {
+                key
+                for key, left, right in (
+                    ("staleness_status", row.get("staleness_status"), row.get("status")),
+                    ("request_url", row.get("request_url"), row.get("url")),
+                )
+                if left is not None and left == right
+            }
+            if redundant:
+                rows.append(
+                    {key: value for key, value in row.items() if key not in redundant}
+                )
+                continue
+        rows.append(row)
+    compact["datasets"] = rows
+    return compact
+
+
 def _atomic_write_text(path: Path, content: str) -> None:
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{path.name}.", dir=path.parent
@@ -420,7 +446,7 @@ def _render_page(
     data = (
         '<script id="embedded-data">\n'
         "    window.__DATAPULSE_DATA__ = {"
-        f"health: {_dump(health)}, "
+        f"health: {_dump(dashboard_health_payload(health))}, "
         f"manifest: {_dump(manifest)}, "
         f"dashboardFilters: {_dump(_load(filters_path))}, "
         f"dashboardSections: {_dump(_load(sections_path))}, "

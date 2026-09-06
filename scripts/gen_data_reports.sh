@@ -186,9 +186,11 @@ def refresh_report(row):
         raise ValueError(f"invalid dataset_id: {dataset_id!r}")
     path = DATA_DIR / f"{dataset_id}.md"
     if not path.exists():
-        return False
-
-    original = path.read_text(encoding="utf-8")
+        # A newly promoted dataset has no legacy report to preserve. Seed the
+        # smallest valid report here so every public derivative is generator-owned.
+        original = f"---\ndataset_id: {dataset_id}\n---\n\n# {dataset_id}\n"
+    else:
+        original = path.read_text(encoding="utf-8")
     frontmatter, body = split_frontmatter(original, dataset_id, row)
     updated = (
         "---\n"

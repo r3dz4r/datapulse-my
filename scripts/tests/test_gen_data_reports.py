@@ -82,8 +82,8 @@ def test_hand_authored_section_preserved() -> None:
         assert line in after
 
 
-def test_missing_report_is_skipped() -> None:
-    """A missing report is counted as skipped and is not created by the generator."""
+def test_missing_report_is_seeded_by_the_generator() -> None:
+    """A promoted dataset receives a minimal generated report without fixture edits."""
 
     result = run_generator(
         FIXTURE,
@@ -93,9 +93,15 @@ def test_missing_report_is_skipped() -> None:
     )
 
     assert result.returncode == 0, result.stderr
-    assert "Regenerated 1 dataset reports; skipped 1; failed 0." in result.stdout
-    assert result.outputs["data/alpha.md"] is None
-    assert result.outputs["data/beta.md"] is not None
+    assert "Regenerated 2 dataset reports; skipped 0; failed 0." in result.stdout
+    alpha = _report(result, "data/alpha.md")
+    beta = _report(result, "data/beta.md")
+
+    assert "dataset_id: alpha" in alpha
+    assert "**Status:** Fresh" in alpha
+    assert "Fixture alpha health is current." in alpha
+    assert "QUIRK_SENTINEL_TEST_DO_NOT_REMOVE_ALPHA" not in alpha
+    assert "QUIRK_SENTINEL_TEST_DO_NOT_REMOVE_BETA" in beta
 
 
 def test_malformed_health_skips_or_fails(tmp_path: Path) -> None:

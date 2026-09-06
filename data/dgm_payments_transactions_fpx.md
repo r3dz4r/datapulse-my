@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_payments_transactions_fpx
-last_checked: 2026-09-04T22:06:50Z
-status: aging
-freshness_delta: 3 days
+last_checked: 2026-09-06T11:34:39Z
+status: stale
+freshness_delta: 4 days
 next_expected_update: daily
 record_count: 7302
 date_range: 2020-01-01 to 2026-08-01
@@ -18,15 +18,15 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Aging
+**Status:** Stale
 
-**Freshness:** 3 days
+**Freshness:** 4 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-04 at 22:06:50 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

@@ -1,0 +1,44 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "mbpp_weather_stations",
+  "status": "fresh",
+  "last_checked": "2026-09-06T11:34:39Z",
+  "freshness_days": 0,
+  "next_expected_update": null,
+  "refresh_frequency": "hourly",
+  "record_count": 28,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via ArcGIS FeatureServer read-only GET/query"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 28 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 50 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://vip.mbpp.gov.my/vipserver/rest/services/Weather_Station/FeatureServer/50",
+    "access_method": "curl"
+  },
+  "licence": "MBPP Government Open Data Terms (attribution required)",
+  "attribution": "MBPP ArcGIS FeatureServer (weather)"
+}

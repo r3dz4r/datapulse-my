@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_electricity_supply
-last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-09-06T11:34:39Z
 status: stale
-freshness_delta: 820 days
+freshness_delta: 827 days
 next_expected_update: overdue
 record_count: 468
 date_range: 2018-01-01 to 2024-06-01
@@ -20,13 +20,13 @@ attribution: Energy Commission, DOSM, and Malaysian electricity utilities via da
 
 **Status:** Stale
 
-**Freshness:** 820 days
+**Freshness:** 827 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-30 at 02:16:30 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

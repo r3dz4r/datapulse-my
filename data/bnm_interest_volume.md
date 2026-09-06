@@ -1,6 +1,6 @@
 ---
 dataset_id: bnm_interest_volume
-last_checked: 2026-08-30T17:40:25Z
+last_checked: 2026-09-06T11:34:39Z
 status: fresh
 freshness_delta: 2 days
 next_expected_update: monthly
@@ -24,8 +24,8 @@ HTTP 200
 
 ## Last checked
 
-2026-08-30 at 17:40:25 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 
-The checked resource is 551 bytes.
+The checked resource is 524 bytes.

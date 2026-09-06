@@ -1,10 +1,10 @@
 ---
 dataset_id: pricecatcher
-last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-09-06T11:34:39Z
 status: fresh
-freshness_delta: 2 days
+freshness_delta: 1 days
 next_expected_update: 2026-08-31
-file_size_bytes: 2383329
+file_size_bytes: 228050
 file_count: 3 (main + 2 lookups)
 schema_version: 1.0
 schema_drift: none
@@ -20,17 +20,17 @@ attribution: KPDN Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 2 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-30 at 02:16:30 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 
-The checked resource is 2,383,329 bytes.
+The checked resource is 228,050 bytes.
 
 ## Schema
 

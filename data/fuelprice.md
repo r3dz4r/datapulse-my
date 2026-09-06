@@ -1,10 +1,10 @@
 ---
 dataset_id: fuelprice
-last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-09-06T11:34:39Z
 status: fresh
 freshness_delta: 3 days
 next_expected_update: 2026-08-06
-record_count: 951
+record_count: 953
 date_range: 2017-03-30 to 2026-07-30
 schema_version: 1.1
 schema_drift: none
@@ -31,11 +31,11 @@ HTTP 200
 
 ## Last checked
 
-2026-08-30 at 02:16:30 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 
-The checked resource is 206,152 bytes.
+The checked resource is 206,608 bytes.
 
 ## Known quirks
 

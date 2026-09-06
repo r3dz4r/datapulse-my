@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_static_ktmb
-last_checked: 2026-09-04T22:06:50Z
+last_checked: 2026-09-06T11:34:39Z
 status: fresh
 freshness_delta: 0 days
 record_count: 5269
@@ -25,7 +25,7 @@ HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-09-04 at 22:06:50 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

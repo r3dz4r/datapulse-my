@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_organ_pledges_state
-last_checked: 2026-09-04T22:06:50Z
-last_checked: 2026-09-04T22:06:50Z
+last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-06T11:34:39Z
 status: stale
-freshness_delta: 61 days
+freshness_delta: 63 days
 next_expected_update: daily
 record_count: 102112
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: National Transplant Resource Centre and Ministry of Health Malaysia
 
 **Status:** Stale
 
-**Freshness:** 61 days
+**Freshness:** 63 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-04 at 22:06:50 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

@@ -1,6 +1,6 @@
 ---
 dataset_id: doe_apims
-last_checked: 2026-09-05T02:11:03Z
+last_checked: 2026-09-06T11:01:25Z
 status: browser-dependent
 freshness_delta: 0 days
 next_expected_update: 2026-08-02T15:00:00Z
@@ -22,11 +22,11 @@ attribution: DOE Malaysia via MyEQMS
 
 **Freshness:** 0 days
 
-Browser check succeeded
+Camofox unavailable; browser check required
 
 ## Last checked
 
-2026-09-05 at 02:11:03 UTC.
+2026-09-06 at 11:01:25 UTC.
 
 ## File size
 

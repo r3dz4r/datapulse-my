@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_pekab40_screenings_state
-last_checked: 2026-09-04T22:06:50Z
+last_checked: 2026-09-06T11:34:39Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: daily
-record_count: 43184
+record_count: 43216
 date_range: 2019-04-15 to 2026-07-31
 schema_version: 1.0
 schema_drift: none
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-09-04 at 22:06:50 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 
-The checked resource is 1,018,462 bytes.
+The checked resource is 1,019,215 bytes.
 
 ## Provenance
 

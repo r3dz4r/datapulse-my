@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_employment_sector
-last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-09-06T11:34:39Z
 status: stale
-freshness_delta: 1702 days
+freshness_delta: 1709 days
 next_expected_update: unknown
 record_count: 198
 date_range: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1702 days
+**Freshness:** 1709 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-30 at 02:16:30 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 

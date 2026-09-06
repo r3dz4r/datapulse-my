@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_trade_sitc_1d
-last_checked: 2026-08-30T02:16:30Z
+last_checked: 2026-09-06T11:34:39Z
 status: aging
-freshness_delta: 90 days
+freshness_delta: 67 days
 next_expected_update: monthly
-record_count: 3498
+record_count: 3509
 date_range: 2000-01-01 to 2026-06-01
 schema_version: 1.0
 schema_drift: none
@@ -20,17 +20,17 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 90 days
+**Freshness:** 67 days
 
 HTTP 200
 
 ## Last checked
 
-2026-08-30 at 02:16:30 UTC.
+2026-09-06 at 11:34:39 UTC.
 
 ## File size
 
-The checked resource is 138,635 bytes.
+The checked resource is 139,083 bytes.
 
 ## Provenance
 

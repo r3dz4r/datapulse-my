@@ -29,7 +29,7 @@
   },
   "$defs": {
     "adapter": {
-      "enum": ["direct", "browser", "weather", "gtfs-static", "gtfs-realtime", "hansard-script", "st-energy"]
+      "enum": ["direct", "browser", "weather", "gtfs-static", "gtfs-realtime", "hansard-script", "st-energy", "arcgis-feature"]
     },
     "format": {
       "enum": ["csv", "json", "html", "xml", "pdf", "parquet"]
@@ -105,6 +105,21 @@
         }
       }
     },
+    "arcgis-feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed-host", "expected-layer-name", "required-fields", "allowed-fields", "timeout-seconds", "sample-limit", "max-response-bytes", "max-record-count"],
+      "properties": {
+        "allowed-host": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.-]*[a-z0-9]$"},
+        "expected-layer-name": {"type": "string", "minLength": 1},
+        "required-fields": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}},
+        "allowed-fields": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}},
+        "timeout-seconds": {"type": "integer", "minimum": 1, "maximum": 60},
+        "sample-limit": {"type": "integer", "minimum": 1, "maximum": 100},
+        "max-response-bytes": {"type": "integer", "minimum": 1024, "maximum": 10485760},
+        "max-record-count": {"type": "integer", "minimum": 1, "maximum": 1000000}
+      }
+    },
     "headers": {
       "type": "object",
       "minProperties": 1,
@@ -152,6 +167,7 @@
         "rolling": {"$ref": "#/$defs/rolling"},
         "browser": {"$ref": "#/$defs/browser"},
         "st-energy": {"$ref": "#/$defs/st-energy"},
+        "arcgis-feature": {"$ref": "#/$defs/arcgis-feature"},
         "dynamic-url": {"$ref": "#/$defs/dynamic-url"},
         "special-validator": {
           "enum": ["npra-registration-format", "npra-guidance-appendices"]
@@ -176,6 +192,11 @@
             "required": ["st-energy", "freshness", "url"],
             "properties": {"url": {"const": "https://meih.st.gov.my/statistics"}}
           }
+        }
+        ,
+        {
+          "if": {"properties": {"adapter": {"const": "arcgis-feature"}}, "required": ["adapter"]},
+          "then": {"required": ["arcgis-feature", "freshness"]}
         }
       ]
     }
