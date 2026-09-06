@@ -83,6 +83,40 @@ Freshness at a glance: call `get_freshness_summary()` for fresh, aging, stale, a
 - `datapulse://licences` — licence summary (grouped live from the manifest)
 - `datapulse://{dataset_id}` — full manifest entry for one dataset (on-demand)
 
+## Cite a Malaysian dataset the auditable way
+
+Run the four-call recipe before citing any Malaysian public dataset, then attach the citation block. Every call is read-only:
+
+1. `search_datasets(query, licence?, source?, limit?)` — find the candidate dataset.
+2. `get_dataset(dataset_id)` — inspect metadata and current health.
+3. `verify_dataset(dataset_id, include_proof_steps?)` — fail-closed Sigstore receipt check with artifact references.
+4. `get_provenance([dataset_id])` — emit citation-ready provenance and the evidence receipt.
+
+Refusal rule: call `trust_verdict(dataset_id)`; if the verdict is `WARN` or `STOP`, do not cite without a human-readable reason, and never omit the verdict from the citation block.
+
+Offline verification anchor (works when the MCP endpoint is unreachable):
+
+```bash
+cosign verify-blob-attestation --bundle https://www.data-pulse.my/signatures/health.latest.sigstore.json --certificate-identity https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main --certificate-oidc-issuer https://token.actions.githubusercontent.com --type https://www.data-pulse.my/predicates/health-snapshot/v1 https://www.data-pulse.my/health/latest.json
+```
+
+Citation block (`datapulse/v1/citation`):
+
+| Field | Source |
+|---|---|
+| `dataset_id` | caller's chosen identifier from step 1 |
+| `evidence_url` | `https://www.data-pulse.my/data/<dataset_id>.md` |
+| `observed_at` | from step 4 result |
+| `source_url` | canonical upstream URL from manifest |
+| `status` | from `health/latest.json` |
+| `methodology_version` | from `health/latest.json` |
+| `licence` | from manifest |
+| `fingerprint` | `shape-v1:sha256` from `health/latest.json` |
+| `datapulse_verdict` | one of `USE`, `WARN`, `REFERENCE-USE`, `STOP` (from the refusal rule) |
+| `limitations` | free-text string; never empty |
+
+See [Four-call recipe](docs/agent-workflow-malaysia-public-data.md) for the bounded workflow, refusal rule, and citation-block schema.
+
 ### Connect from Claude Desktop
 
 ```json
