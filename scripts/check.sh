@@ -913,6 +913,45 @@ check_arcgis_feature_dataset() {
   emit "$dataset_id" "$source_url" "fresh" "ArcGIS FeatureServer bounded read-only probe succeeded" "$details"
 }
 
+normalize_source_timestamp() {
+  local timestamp="$1"
+
+  # `date` accepts many human phrases; only accept the ISO timestamp shapes
+  # emitted by the source APIs before normalising them to the health schema's Z form.
+  [[ "$timestamp" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$ ]] || return 1
+  date -u -d "$timestamp" +'%Y-%m-%dT%H:%M:%SZ' 2>/dev/null
+}
+
+extract_sg_datagov_freshness() {
+  local dataset_id="$1"
+  local payload_file="$2"
+  local timestamp normalized newest=""
+  local jq_filter
+
+  case "$dataset_id" in
+    sg_datagov_hdb_resale_prices|sg_datagov_hdb_metadata)
+      jq_filter='.data.lastUpdatedAt? // empty'
+      ;;
+    sg_datagov_taxi_availability)
+      jq_filter='.features[]?.properties?.timestamp? // empty'
+      ;;
+    sg_datagov_weather_readings)
+      jq_filter='.items[]?.timestamp? // empty'
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+
+  while IFS= read -r timestamp; do
+    normalized="$(normalize_source_timestamp "$timestamp" || true)"
+    if [[ -n "$normalized" && ( -z "$newest" || "$normalized" > "$newest" ) ]]; then
+      newest="$normalized"
+    fi
+  done < <(jq -r "$jq_filter" "$payload_file" 2>/dev/null)
+  printf '%s\n' "$newest"
+}
+
 check_direct_dataset() {
   local dataset_id="$1"
   local source_url="$2"
@@ -1065,6 +1104,22 @@ check_direct_dataset() {
   fi
   if [[ -n "$content_freshness_date" ]]; then
     [[ "$content_freshness_date" != "null" ]] || content_freshness_date=""
+  fi
+  if [[ -z "$content_freshness_date" ]]; then
+    case "$dataset_id" in
+      sg_datagov_hdb_resale_prices)
+        # List rows carries observation months, not publication freshness. Its
+        # paired metadata document is the authoritative update clock.
+        if curl --location --silent --show-error --fail --max-time 20 \
+          --output "$content_body_file" \
+          'https://api-production.data.gov.sg/v2/public/api/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/metadata' 2>/dev/null; then
+          content_freshness_date="$(extract_sg_datagov_freshness "$dataset_id" "$content_body_file")"
+        fi
+        ;;
+      sg_datagov_hdb_metadata|sg_datagov_taxi_availability|sg_datagov_weather_readings)
+        content_freshness_date="$(extract_sg_datagov_freshness "$dataset_id" "$body_file")"
+        ;;
+    esac
   fi
   if [[ -z "$content_freshness_date" && "$date_source" == "data.gov.my-page" ]]; then
     metadata_page_url="$(data_gov_catalogue_page_url "$dataset_id" "$source_url" || true)"
