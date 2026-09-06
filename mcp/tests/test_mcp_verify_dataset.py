@@ -72,3 +72,14 @@ async def test_verify_dataset_returns_signed_receipt_bundle(monkeypatch: pytest.
     assert result.data["evidence"]["status"] == "fresh"
     assert result.data["bundle_ref"].endswith("/data/fuelprice.receipt.sigstore.json")
     assert result.data["verifier_output"] is None
+    hint = result.data["verification_hint"]
+    assert "tmpdir=$(mktemp -d)" in hint
+    assert "trap 'rm -rf \"$tmpdir\"' EXIT" in hint
+    assert "curl --fail --location --proto '=https' --proto-redir '=https' --silent --show-error" in hint
+    assert result.data["bundle_ref"] in hint
+    assert result.data["provenance_artifact_url"] in hint
+    assert '"$tmpdir/receipt.sigstore.json"' in hint
+    assert '"$tmpdir/receipt.evidence.json"' in hint
+    assert f"--certificate-identity {server.SIGSTORE_CERTIFICATE_IDENTITY}" in hint
+    assert f"--certificate-oidc-issuer {server.SIGSTORE_CERTIFICATE_OIDC_ISSUER}" in hint
+    assert f"--type {server.PER_DATASET_RECEIPT_PREDICATE_TYPE}" in hint

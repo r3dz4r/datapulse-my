@@ -1562,10 +1562,18 @@ async def verify_dataset(
         "certificate_identity": SIGSTORE_CERTIFICATE_IDENTITY,
         "certificate_oidc_issuer": SIGSTORE_CERTIFICATE_OIDC_ISSUER,
         "verification_hint": (
-            "Verify independently with cosign verify-blob-attestation --bundle "
-            f"{bundle_ref} --certificate-identity {SIGSTORE_CERTIFICATE_IDENTITY} "
+            "(\n"
+            "  tmpdir=$(mktemp -d) || exit 1\n"
+            "  trap 'rm -rf \"$tmpdir\"' EXIT\n"
+            "  curl --fail --location --proto '=https' --proto-redir '=https' --silent --show-error "
+            f"--output \"$tmpdir/receipt.sigstore.json\" {bundle_ref} && \\\n"
+            "  curl --fail --location --proto '=https' --proto-redir '=https' --silent --show-error "
+            f"--output \"$tmpdir/receipt.evidence.json\" {provenance_artifact_url} && \\\n"
+            "  cosign verify-blob-attestation --bundle \"$tmpdir/receipt.sigstore.json\" "
+            f"--certificate-identity {SIGSTORE_CERTIFICATE_IDENTITY} "
             f"--certificate-oidc-issuer {SIGSTORE_CERTIFICATE_OIDC_ISSUER} "
-            f"--type {PER_DATASET_RECEIPT_PREDICATE_TYPE} {provenance_artifact_url}"
+            f"--type {PER_DATASET_RECEIPT_PREDICATE_TYPE} \"$tmpdir/receipt.evidence.json\"\n"
+            ")"
         ),
         "provenance_artifact_url": provenance_artifact_url,
     }

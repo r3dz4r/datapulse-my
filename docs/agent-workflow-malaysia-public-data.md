@@ -29,18 +29,28 @@ Step 4  `get_provenance([dataset_id])`
 If the verdict is `WARN` or `STOP`, do not cite without a human-readable reason;
 do not invent provenance; do not omit the verdict from the citation block.
 
-## Offline verification one-liner
+## Offline verification
 
 The same health attestation can be verified offline against a Sigstore bundle
 without calling the MCP server. This is the citation anchor for any pipeline that
 needs to prove its evidence after the MCP endpoint is unreachable:
 
-    cosign verify-blob-attestation \
-      --bundle https://www.data-pulse.my/signatures/health.latest.sigstore.json \
-      --certificate-identity https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main \
-      --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-      --type https://www.data-pulse.my/predicates/health-snapshot/v1 \
-      https://www.data-pulse.my/health/latest.json
+    (
+      tmpdir=$(mktemp -d) || exit 1
+      trap 'rm -rf "$tmpdir"' EXIT
+      curl --fail --location --proto '=https' --proto-redir '=https' --silent --show-error \
+        --output "$tmpdir/health.latest.sigstore.json" \
+        https://www.data-pulse.my/signatures/health.latest.sigstore.json && \
+      curl --fail --location --proto '=https' --proto-redir '=https' --silent --show-error \
+        --output "$tmpdir/health.latest.json" \
+        https://www.data-pulse.my/health/latest.json && \
+      cosign verify-blob-attestation \
+        --bundle "$tmpdir/health.latest.sigstore.json" \
+        --certificate-identity https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main \
+        --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+        --type https://www.data-pulse.my/predicates/health-snapshot/v1 \
+        "$tmpdir/health.latest.json"
+    )
 
 ## Citation block (datapulse/v1/citation)
 

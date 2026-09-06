@@ -46,3 +46,12 @@ async def test_search_then_verify_returns_complete_fuelprice_answer(monkeypatch:
     assert verified.data["evidence"]["status"] == "fresh"
     assert verified.data["signed"] is True
     assert verified.data["bundle_ref"] and verified.data["verification_hint"]
+    hint = verified.data["verification_hint"]
+    assert "tmpdir=$(mktemp -d)" in hint
+    assert hint.count("curl --fail --location --proto '=https' --proto-redir '=https' --silent --show-error") == 2
+    assert "trap 'rm -rf \"$tmpdir\"' EXIT" in hint
+    assert '"$tmpdir/receipt.sigstore.json"' in hint
+    assert '"$tmpdir/receipt.evidence.json"' in hint
+    assert server.SIGSTORE_CERTIFICATE_IDENTITY in hint
+    assert server.SIGSTORE_CERTIFICATE_OIDC_ISSUER in hint
+    assert server.PER_DATASET_RECEIPT_PREDICATE_TYPE in hint
