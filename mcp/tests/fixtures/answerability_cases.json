@@ -33,10 +33,7 @@
       "name": "conflicting_evidence",
       "category": "conflicting_evidence",
       "request": {"dataset_id": "fuelprice", "scope": "latest retail fuel prices"},
-      "evidence": [
-        {"dataset_id": "fuelprice", "status": "fresh"},
-        {"dataset_id": "fuelprice", "status": "degraded"}
-      ],
+      "evidence": [{"dataset_id": "fuelprice", "status": "fresh"}, {"dataset_id": "fuelprice", "status": "degraded"}],
       "expected": {"action": "abstain", "reason": "conflicting_evidence", "evidence_required": true}
     },
     {
@@ -52,6 +49,83 @@
       "request": {"dataset_id": "not-a-datapulse-dataset", "scope": "latest value"},
       "evidence": [],
       "expected": {"action": "abstain", "reason": "no_supported_record", "evidence_required": true}
+    },
+    {
+      "name": "as_of_current_fresh",
+      "category": "temporal_current",
+      "request": {"dataset_id": "blood_donations", "scope": "donation availability", "as_of_date": "2026-09-06T16:55:00Z"},
+      "evidence": [
+        {"dataset_id": "blood_donations", "status": "aging", "observed_at": "2026-08-30T17:15:00Z", "cycle": "20260830T1715Z", "shape_hash": "a4c8f173"},
+        {"dataset_id": "blood_donations", "status": "fresh", "observed_at": "2026-09-06T16:55:00Z", "cycle": "20260906T1655Z", "shape_hash": "a4c8f173"}
+      ],
+      "expected": {"action": "answer", "reason": "supported_evidence", "evidence_required": true}
+    },
+    {
+      "name": "as_of_historical_valid",
+      "category": "temporal_historical",
+      "request": {"dataset_id": "dgm_payments_transactions_fpx", "scope": "FPX payment transactions", "as_of_date": "2026-08-30T17:15:00Z"},
+      "evidence": [
+        {"dataset_id": "dgm_payments_transactions_fpx", "status": "fresh", "observed_at": "2026-08-30T17:15:00Z", "cycle": "20260830T1715Z", "shape_hash": "932ab80e"},
+        {"dataset_id": "dgm_payments_transactions_fpx", "status": "stale", "observed_at": "2026-09-06T16:55:00Z", "cycle": "20260906T1655Z", "shape_hash": "932ab80e"}
+      ],
+      "expected": {"action": "answer", "reason": "historical_evidence", "evidence_required": true, "historical": true, "observed_at": "2026-08-30T17:15:00Z"}
+    },
+    {
+      "name": "as_of_before_first_observation",
+      "category": "temporal_unknown",
+      "request": {"dataset_id": "bnm_kijang_emas", "scope": "Kijang Emas prices", "as_of_date": "2026-08-29"},
+      "evidence": [
+        {"dataset_id": "bnm_kijang_emas", "status": "stale", "observed_at": "2026-08-30T17:15:00Z", "cycle": "20260830T1715Z", "shape_hash": "77ba9c42"},
+        {"dataset_id": "bnm_kijang_emas", "status": "aging", "observed_at": "2026-09-06T16:55:00Z", "cycle": "20260906T1655Z", "shape_hash": "77ba9c42"}
+      ],
+      "expected": {"action": "abstain", "reason": "no_supported_record", "evidence_required": true}
+    },
+    {
+      "name": "stale_presented_as_current",
+      "category": "temporal_unsafe",
+      "request": {"dataset_id": "currency_in_circulation", "scope": "currency in circulation"},
+      "evidence": [{"dataset_id": "currency_in_circulation", "status": "stale", "observed_at": "2026-09-06T16:55:00Z", "cycle": "20260906T1655Z", "shape_hash": "b0ee12f9"}],
+      "expected": {"action": "abstain", "reason": "unsafe_evidence", "evidence_required": true}
+    },
+    {
+      "name": "superseded_stale_selection",
+      "category": "temporal_conflict",
+      "request": {"dataset_id": "dgm_payments_transactions_fpx", "scope": "FPX payment transactions", "selected_observed_at": "2026-08-30T17:15:00Z"},
+      "evidence": [
+        {"dataset_id": "dgm_payments_transactions_fpx", "status": "stale", "observed_at": "2026-08-30T17:15:00Z", "cycle": "20260830T1715Z", "shape_hash": "932ab80e"},
+        {"dataset_id": "dgm_payments_transactions_fpx", "status": "fresh", "observed_at": "2026-09-06T16:55:00Z", "cycle": "20260906T1655Z", "shape_hash": "932ab80e"}
+      ],
+      "expected": {"action": "abstain", "reason": "conflicting_evidence", "evidence_required": true}
+    },
+    {
+      "name": "temporal_reference_only",
+      "category": "temporal_reference",
+      "request": {"dataset_id": "bnm_opr", "scope": "overnight policy rate", "as_of_date": "2026-09-06T16:55:00Z"},
+      "evidence": [
+        {"dataset_id": "bnm_opr", "status": "stale", "observed_at": "2026-08-30T17:15:00Z", "cycle": "20260830T1715Z", "shape_hash": "8facd2be"},
+        {"dataset_id": "bnm_opr", "status": "reference", "observed_at": "2026-09-06T16:55:00Z", "cycle": "20260906T1655Z", "shape_hash": "8facd2be"}
+      ],
+      "expected": {"action": "warn", "reason": "reference_only", "evidence_required": true}
+    },
+    {
+      "name": "temporal_uncertain",
+      "category": "temporal_uncertain",
+      "request": {"dataset_id": "bnm_kijang_emas", "scope": "Kijang Emas prices", "as_of_date": "2026-09-06T16:55:00Z"},
+      "evidence": [
+        {"dataset_id": "bnm_kijang_emas", "status": "stale", "observed_at": "2026-08-30T17:15:00Z", "cycle": "20260830T1715Z", "shape_hash": "77ba9c42"},
+        {"dataset_id": "bnm_kijang_emas", "status": "aging", "observed_at": "2026-09-06T16:55:00Z", "cycle": "20260906T1655Z", "shape_hash": "77ba9c42"}
+      ],
+      "expected": {"action": "warn", "reason": "uncertain_freshness", "evidence_required": true}
+    },
+    {
+      "name": "future_as_of_date",
+      "category": "temporal_future",
+      "request": {"dataset_id": "blood_donations", "scope": "donation availability", "as_of_date": "2026-09-07T00:00:00Z"},
+      "evidence": [
+        {"dataset_id": "blood_donations", "status": "aging", "observed_at": "2026-08-30T17:15:00Z", "cycle": "20260830T1715Z", "shape_hash": "a4c8f173"},
+        {"dataset_id": "blood_donations", "status": "fresh", "observed_at": "2026-09-06T16:55:00Z", "cycle": "20260906T1655Z", "shape_hash": "a4c8f173"}
+      ],
+      "expected": {"action": "answer", "reason": "supported_evidence", "evidence_required": true, "as_of_beyond_latest": true}
     }
   ]
 }

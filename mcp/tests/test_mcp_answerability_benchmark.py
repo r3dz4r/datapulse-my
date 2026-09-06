@@ -22,6 +22,17 @@ def _fixture() -> dict[str, object]:
     return json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
 
 
+def _case(name: str) -> dict[str, object]:
+    for case in _fixture()["cases"]:
+        if isinstance(case, dict) and case.get("name") == name:
+            return case
+    raise AssertionError(f"Missing fixture case: {name}")
+
+
+def _evaluate_case(name: str) -> dict[str, object]:
+    return answerability_benchmark.evaluate_candidate(_case(name))
+
+
 def test_fixture_cases_match_the_local_evidence_policy() -> None:
     fixture = _fixture()
 
@@ -67,6 +78,98 @@ def test_missing_dataset_identity_abstains_even_with_fresh_evidence() -> None:
 
     assert result["action"] == "abstain"
     assert result["reason"] == "underspecified"
+
+
+def test_as_of_current_fresh() -> None:
+    result = _evaluate_case("as_of_current_fresh")
+
+    assert result["action"] == "answer"
+    assert result["reason"] == "supported_evidence"
+
+
+def test_as_of_historical_valid_is_visibly_historical() -> None:
+    result = _evaluate_case("as_of_historical_valid")
+
+    assert result["action"] == "answer"
+    assert result["reason"] == "historical_evidence"
+    assert result["historical"] is True
+    assert result["observed_at"] == "2026-08-30T17:15:00Z"
+
+
+def test_as_of_before_first_observation_abstains() -> None:
+    result = _evaluate_case("as_of_before_first_observation")
+
+    assert result["action"] == "abstain"
+    assert result["reason"] == "no_supported_record"
+
+
+def test_stale_presented_as_current_abstains() -> None:
+    result = _evaluate_case("stale_presented_as_current")
+
+    assert result["action"] == "abstain"
+    assert result["reason"] == "unsafe_evidence"
+
+
+def test_superseded_stale_selection_abstains() -> None:
+    result = _evaluate_case("superseded_stale_selection")
+
+    assert result["action"] == "abstain"
+    assert result["reason"] == "conflicting_evidence"
+
+
+def test_temporal_reference_only_warns() -> None:
+    result = _evaluate_case("temporal_reference_only")
+
+    assert result["action"] == "warn"
+    assert result["reason"] == "reference_only"
+
+
+def test_temporal_uncertain_warns() -> None:
+    result = _evaluate_case("temporal_uncertain")
+
+    assert result["action"] == "warn"
+    assert result["reason"] == "uncertain_freshness"
+
+
+def test_future_as_of_date_uses_latest_evidence_without_future_claim() -> None:
+    result = _evaluate_case("future_as_of_date")
+
+    assert result["action"] == "answer"
+    assert result["reason"] == "supported_evidence"
+    assert result["as_of_beyond_latest"] is True
+
+
+def test_stale_only_as_of_date_still_abstains_before_temporal_verdict() -> None:
+    result = answerability_benchmark.evaluate_candidate(
+        {
+            "category": "temporal_precedence",
+            "request": {"dataset_id": "currency_in_circulation", "scope": "circulation", "as_of_date": "2026-09-07"},
+            "evidence": [{"dataset_id": "currency_in_circulation", "status": "stale", "observed_at": "2026-09-06T16:55:00Z"}],
+        }
+    )
+
+    assert result["action"] == "abstain"
+    assert result["reason"] == "unsafe_evidence"
+
+
+def test_explicit_superseded_stale_selection_conflicts_with_newer_fresh_evidence() -> None:
+    result = answerability_benchmark.evaluate_candidate(
+        {
+            "category": "temporal_precedence",
+            "request": {
+                "dataset_id": "dgm_payments_transactions_fpx",
+                "scope": "payment transactions",
+                "selected_observed_at": "2026-08-30T17:15:00Z",
+            },
+            "evidence": [
+                {"dataset_id": "dgm_payments_transactions_fpx", "status": "stale", "observed_at": "2026-08-30T17:15:00Z"},
+                {"dataset_id": "dgm_payments_transactions_fpx", "status": "fresh", "observed_at": "2026-09-06T16:55:00Z"},
+            ],
+        }
+    )
+
+    assert result["action"] == "abstain"
+    assert result["reason"] == "conflicting_evidence"
 
 
 @pytest.mark.parametrize(

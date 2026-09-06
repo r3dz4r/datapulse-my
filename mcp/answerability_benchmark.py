@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -29,14 +30,16 @@ SUPPORTED_STATUS = "fresh"
 REFERENCE_STATUS = "reference"
 
 
-def _result(category: object, action: str, reason: str) -> dict[str, object]:
+def _result(category: object, action: str, reason: str, **additions: object) -> dict[str, object]:
     """Return the fixed, JSON-serialisable answerability result shape."""
-    return {
+    result: dict[str, object] = {
         "action": action,
         "reason": reason,
         "evidence_required": True,
         "category": category if isinstance(category, str) else "unknown",
     }
+    result.update(additions)
+    return result
 
 
 def _has_required_request_shape(candidate: Mapping[str, object]) -> bool:
@@ -50,12 +53,8 @@ def _has_required_request_shape(candidate: Mapping[str, object]) -> bool:
     )
 
 
-def _evidence_classes(candidate: Mapping[str, object]) -> set[str]:
+def _evidence_classes(evidence: Sequence[object]) -> set[str]:
     """Classify statuses conservatively while preserving unrecognised unknowns."""
-    evidence = candidate.get("evidence")
-    if not isinstance(evidence, Sequence) or isinstance(evidence, (str, bytes)):
-        return set()
-
     classes: set[str] = set()
     for item in evidence:
         if not isinstance(item, Mapping):
@@ -79,13 +78,88 @@ def _evidence_classes(candidate: Mapping[str, object]) -> set[str]:
     return classes
 
 
+def _parse_observed_at(value: object) -> datetime | None:
+    """Parse ISO dates consistently without assigning a real-world meaning."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _select_temporal_evidence(
+    candidate: Mapping[str, object], evidence: Sequence[object]
+) -> tuple[Sequence[object], bool, bool, bool, bool]:
+    """Select the canonical vintage and report invalid or conflicting requests.
+
+    The boolean tuple is ``(is_temporal, invalid, conflicting, beyond_latest)``.
+    Legacy un-timestamped candidates deliberately retain aggregate evaluation.
+    """
+    request = candidate.get("request")
+    if not isinstance(request, Mapping):
+        return evidence, False, False, False, False
+
+    has_as_of = "as_of_date" in request
+    has_explicit_selection = "selected_observed_at" in request
+    has_observed_at = any(isinstance(item, Mapping) and "observed_at" in item for item in evidence)
+    if not (has_as_of or has_explicit_selection or has_observed_at):
+        return evidence, False, False, False, False
+
+    observations: list[tuple[datetime, object]] = []
+    for item in evidence:
+        if not isinstance(item, Mapping):
+            return evidence, True, True, False, False
+        observed_at = _parse_observed_at(item.get("observed_at"))
+        if observed_at is None:
+            return evidence, True, True, False, False
+        observations.append((observed_at, item))
+
+    latest_observed_at = max(observed_at for observed_at, _ in observations)
+    as_of = _parse_observed_at(request.get("as_of_date")) if has_as_of else None
+    if has_as_of and as_of is None:
+        return evidence, True, True, False, False
+
+    explicit_selection = (
+        _parse_observed_at(request.get("selected_observed_at")) if has_explicit_selection else None
+    )
+    if has_explicit_selection and explicit_selection is None:
+        return evidence, True, True, False, False
+    if explicit_selection is not None and explicit_selection not in {
+        observed_at for observed_at, _ in observations
+    }:
+        return evidence, True, True, False, False
+    if as_of is None and explicit_selection is not None and explicit_selection != latest_observed_at:
+        return evidence, True, False, True, False
+
+    selected_observed_at = latest_observed_at
+    beyond_latest = False
+    if as_of is not None:
+        eligible = [observed_at for observed_at, _ in observations if observed_at <= as_of]
+        if not eligible:
+            return (), True, False, False, False
+        selected_observed_at = max(eligible)
+        beyond_latest = as_of > latest_observed_at
+
+    return (
+        tuple(item for observed_at, item in observations if observed_at == selected_observed_at),
+        True,
+        False,
+        False,
+        beyond_latest,
+    )
+
+
 def evaluate_candidate(candidate: Mapping[str, object]) -> dict[str, object]:
     """Evaluate one local citation-evidence candidate using fixed precedence.
 
     Precedence is request shape, no record, conflicting safety classes, unsafe
-    evidence, uncertain freshness, reference-only evidence, then fresh support.
-    A fresh item can therefore never override a malformed request or unsafe
-    conflicting evidence.
+    evidence, temporal selection, then per-status verdicts. Timestamped
+    evidence is selected at the requested vintage before classification, while
+    un-timestamped legacy cases retain their aggregate safety checks.
     """
     category = candidate.get("category")
     if not _has_required_request_shape(candidate):
@@ -95,7 +169,17 @@ def evaluate_candidate(candidate: Mapping[str, object]) -> dict[str, object]:
     if not isinstance(evidence, Sequence) or isinstance(evidence, (str, bytes)) or not evidence:
         return _result(category, "abstain", "no_supported_record")
 
-    classes = _evidence_classes(candidate)
+    selected_evidence, is_temporal, invalid_temporal, temporal_conflict, beyond_latest = (
+        _select_temporal_evidence(candidate, evidence)
+    )
+    if invalid_temporal:
+        return _result(category, "abstain", "unsafe_evidence")
+    if temporal_conflict:
+        return _result(category, "abstain", "conflicting_evidence")
+    if not selected_evidence:
+        return _result(category, "abstain", "no_supported_record")
+
+    classes = _evidence_classes(selected_evidence)
     if len(classes) > 1:
         return _result(category, "abstain", "conflicting_evidence")
     if "unsafe" in classes:
@@ -105,6 +189,27 @@ def evaluate_candidate(candidate: Mapping[str, object]) -> dict[str, object]:
     if "reference" in classes:
         return _result(category, "warn", "reference_only")
     if "supported" in classes:
+        request = candidate.get("request")
+        as_of = request.get("as_of_date") if isinstance(request, Mapping) else None
+        observed_at = selected_evidence[0].get("observed_at") if isinstance(selected_evidence[0], Mapping) else None
+        if is_temporal and isinstance(as_of, str) and isinstance(observed_at, str):
+            selected_time = _parse_observed_at(observed_at)
+            evidence_times = [
+                _parse_observed_at(item.get("observed_at"))
+                for item in evidence
+                if isinstance(item, Mapping)
+            ]
+            latest_time = max(time for time in evidence_times if time is not None)
+            if selected_time is not None and selected_time < latest_time:
+                return _result(
+                    category,
+                    "answer",
+                    "historical_evidence",
+                    historical=True,
+                    observed_at=observed_at,
+                )
+        if beyond_latest:
+            return _result(category, "answer", "supported_evidence", as_of_beyond_latest=True)
         return _result(category, "answer", "supported_evidence")
     return _result(category, "abstain", "no_supported_record")
 
