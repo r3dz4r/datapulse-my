@@ -205,7 +205,7 @@ def _stage_source(tmp_path: Path) -> Path:
         "<!-- BEGIN featured-datasets -->\nold featured\n<!-- END featured-datasets -->\n",
         encoding="utf-8",
     )
-    (source / "docs").mkdir()
+    (source / "docs").mkdir(exist_ok=True)
     (source / "docs/assets").mkdir()
     shutil.copy2(ROOT / "docs/assets/site-nav.html", source / "docs/assets/site-nav.html")
     shutil.copy2(ROOT / "docs/index.html", source / "docs/index.html")

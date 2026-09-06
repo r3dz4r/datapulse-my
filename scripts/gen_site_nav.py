@@ -132,8 +132,12 @@ def inject_all(root: Path = ROOT, *, check: bool = False) -> list[Path]:
     changed: list[Path] = []
     for declared in surfaces["pages"]:
         name = "index.html" if declared == "/" else declared.removeprefix("/")
+        if declared != "/" and declared.endswith("/"):
+            name += "index.html"
         path = root / "docs" / name
         if not path.is_file():
+            if path.with_suffix(".md").is_file():
+                continue
             raise ValueError(f"declared navigation target is missing: {path}")
         source = path.read_text(encoding="utf-8")
         if render_injected(source, nav) == source:
