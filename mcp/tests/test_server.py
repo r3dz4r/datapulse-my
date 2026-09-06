@@ -123,13 +123,13 @@ async def test_modern_and_legacy_clients_preserve_discovery_surface_and_cache_hi
 
         assert len(tools.tools) == 18
         assert len(resources.resources) == 8
-        assert len(templates.resource_templates) == 1
+        assert len(templates.resource_templates) == 2
 
     async with Client(server.mcp, mode="legacy") as legacy:
         assert legacy.protocol_version == "2025-11-25"
         assert len(await legacy.list_tools()) == 18
         assert len(await legacy.list_resources()) == 8
-        assert len(await legacy.list_resource_templates()) == 1
+        assert len(await legacy.list_resource_templates()) == 2
 
 
 def install_attestation_fixture(monkeypatch: pytest.MonkeyPatch, *, tamper: str | None = None, anchored: bool = True) -> None:

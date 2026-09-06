@@ -2025,6 +2025,50 @@ async def licence_summary() -> str:
 
 
 @mcp.resource(
+    "datapulse://citation/{dataset_id}",
+    description="Canonical evidence-bound citation for one exact DataPulse MY dataset id.",
+    mime_type="application/json",
+)
+async def citation_resource(dataset_id: str) -> str:
+    """Return one citation object derived only from the published catalogue and health row."""
+    manifest, health = await _load_catalogue()
+    entry = next(
+        (item for item in manifest.get("datasets", []) if item.get("id") == dataset_id),
+        None,
+    )
+    if entry is None:
+        raise ValueError(f"Unknown dataset id: {dataset_id}")
+
+    health_record = _health_by_id(health).get(dataset_id, {})
+    status = health_record.get("status")
+    verdict = {
+        "fresh": "USE",
+        "aging": "WARN",
+        "unknown-freshness": "WARN",
+        "reference": "REFERENCE-USE",
+    }.get(status, "STOP")
+    return json.dumps(
+        {
+            "schema": "datapulse/v1/citation",
+            "dataset_id": dataset_id,
+            "evidence_url": f"https://www.data-pulse.my/data/{dataset_id}.md",
+            "observed_at": health_record.get("last_checked"),
+            "source_url": entry.get("url"),
+            "status": status,
+            "methodology_version": health.get("methodology_version"),
+            "licence": entry.get("licence"),
+            "fingerprint": health_record.get("first_row_hash"),
+            "datapulse_verdict": verdict,
+            "limitations": (
+                "DataPulse observes source conditions; it does not certify substantive truth, "
+                "legal compliance, or regulatory outcomes."
+            ),
+        },
+        ensure_ascii=False,
+    )
+
+
+@mcp.resource(
     "datapulse://{dataset_id}",
     description="Full published manifest entry for one exact DataPulse MY dataset id.",
     mime_type="application/json",
