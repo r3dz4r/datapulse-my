@@ -453,7 +453,10 @@ def test_mcp_reference_json_matches_runtime_schema() -> None:
         {"uri": "datapulse://index", "name": "dataset_index", "description": "Read first; lightweight list of all DataPulse MY dataset ids with current status, title, source, licence, and namespace.", "mimeType": "application/json"},
         {"uri": "datapulse://licences", "name": "licence_summary", "description": "Live count of DataPulse MY datasets grouped by licence.", "mimeType": "application/json"},
     ]
-    assert [item["uriTemplate"] for item in discovery["resource_templates"]] == ["datapulse://{dataset_id}"]
+    assert [item["uriTemplate"] for item in discovery["resource_templates"]] == [
+        "datapulse://{dataset_id}",
+        "datapulse://citation/{dataset_id}",
+    ]
     assert all(set(tool["annotations"]) == {"readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"} for tool in discovery["tools"])
 
 

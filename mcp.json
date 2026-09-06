@@ -5,7 +5,7 @@
   "server": {
     "name": "DataPulse MY",
     "version": "4.0.0b3",
-    "source_commit_sha": "45da36b487c7a329fc9c19adabb6d07c8976c3f3",
+    "source_commit_sha": "a2a5ab7c7624e257bf5760887252392661c1ffd3",
     "source_commit_date": "2026-09-06",
     "description": "Read-only access to DataPulse MY's Malaysian public dataset catalogue (412 datasets, 10-status health taxonomy, licence/attribution metadata).",
     "vendor": "DataPulse MY (open source)",
@@ -718,6 +718,12 @@
     }
   ],
   "resource_templates": [
+    {
+      "uriTemplate": "datapulse://citation/{dataset_id}",
+      "name": "citation_resource",
+      "description": "Canonical evidence-bound citation for one exact DataPulse MY dataset id.",
+      "mimeType": "application/json"
+    },
     {
       "uriTemplate": "datapulse://{dataset_id}",
       "name": "dataset_resource",

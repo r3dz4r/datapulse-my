@@ -637,4 +637,5 @@ Input schema:
 
 ## Resource templates
 
+- `datapulse://citation/{dataset_id}` — Canonical evidence-bound citation for one exact DataPulse MY dataset id.
 - `datapulse://{dataset_id}` — Full published manifest entry for one exact DataPulse MY dataset id.

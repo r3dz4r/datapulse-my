@@ -502,5 +502,24 @@ async def dataset_resource(dataset_id: str) -> str:
     return json.dumps(entry, ensure_ascii=False)
 
 
+@mcp.resource(
+    "datapulse://citation/{dataset_id}",
+    description="Canonical evidence-bound citation for one exact DataPulse MY dataset id.",
+    mime_type="application/json",
+)
+async def citation_resource(dataset_id: str) -> str:
+    """Return a deterministic citation fixture for generator discovery."""
+    return json.dumps(
+        {
+            "dataset_id": dataset_id,
+            "datapulse_verdict": "USE",
+            "schema": "datapulse/v1/citation",
+            "status": "fresh",
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+
+
 if __name__ == "__main__":
     mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT)
