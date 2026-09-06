@@ -334,3 +334,9 @@ def test_gate_8_fetches_public_methodology_path() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
     assert 'fetch "health-methodology.html" "health-methodology.html"' in script
     assert 'fetch "health-methodology.html" "$methodology_file"' not in script
+
+
+def test_generate_shell_references_allow_unattested_health_bypass() -> None:
+    generate_sh = (ROOT / "scripts/generate.sh").read_text(encoding="utf-8")
+    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" in generate_sh
+    assert "skipping attestation generation" in generate_sh

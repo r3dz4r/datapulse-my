@@ -292,14 +292,16 @@ def _stage_source(tmp_path: Path) -> Path:
     return source
 
 
-def _runner(tmp_path: Path, *arguments: str) -> Path:
+def _runner(tmp_path: Path, *arguments: str, extra_env: dict[str, str] | None = None) -> Path:
     name = "-".join(arg.lstrip("-") for arg in arguments)
     runner = tmp_path / f"runner-{name}.sh"
     command = " ".join(arguments)
-    runner.write_text(
-        f"#!/usr/bin/env bash\nset -euo pipefail\nbash scripts/generate.sh {command}\n",
-        encoding="utf-8",
-    )
+    lines = ["#!/usr/bin/env bash", "set -euo pipefail"]
+    if extra_env:
+        for key, value in extra_env.items():
+            lines.append(f"export {key}={value!r}")
+    lines.append(f"bash scripts/generate.sh {command}")
+    runner.write_text("\n".join(lines) + "\n", encoding="utf-8")
     runner.chmod(0o755)
     return runner
 
@@ -311,12 +313,14 @@ def _run_profile(
     list_mode: bool = False,
     outputs: tuple[str, ...] = (),
     source: Path | None = None,
+    extra_env: dict[str, str] | None = None,
 ) -> GeneratorRun:
     source = source or _stage_source(tmp_path)
     arguments = (profile, "--list") if list_mode else (profile,)
+    runner = _runner(tmp_path, *arguments, extra_env=extra_env)
     return run_generator(
         source,
-        _runner(tmp_path, *arguments),
+        runner,
         list(PROFILE_INPUTS),
         list(outputs),
     )
@@ -561,3 +565,39 @@ def test_help_message_includes_both_profiles(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     assert "health-cycle" in result.stdout
     assert "release-build" in result.stdout
+
+
+def _stage_source_with_keys(tmp_path: Path) -> Path:
+    source = _stage_source(tmp_path)
+    well_known = source / "docs/.well-known"
+    well_known.mkdir(parents=True, exist_ok=True)
+    (well_known / "datapulse-probe-keys.json").write_text("{}", encoding="utf-8")
+    return source
+
+
+def test_release_build_bypasses_attestation_with_allow_unattested(tmp_path: Path) -> None:
+    source = _stage_source_with_keys(tmp_path)
+    result = _run_profile(
+        tmp_path,
+        "release-build",
+        outputs=RELEASE_OUTPUTS,
+        source=source,
+        extra_env={"DATAPULSE_ALLOW_UNATTESTED_HEALTH": "1"},
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH=1" in result.stderr
+    assert "skipping attestation generation" in result.stderr
+    assert all(result.outputs[path] is not None for path in RELEASE_OUTPUTS)
+
+
+def test_release_build_hard_fails_attestation_without_bypass(tmp_path: Path) -> None:
+    source = _stage_source_with_keys(tmp_path)
+    result = _run_profile(
+        tmp_path,
+        "release-build",
+        source=source,
+    )
+
+    assert result.returncode != 0
+    assert "set DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE for attestation generation" in result.stderr
