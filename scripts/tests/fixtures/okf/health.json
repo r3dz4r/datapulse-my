@@ -1,0 +1,14 @@
+{
+  "schema": "datapulse/v0.4/dataset-health",
+  "checked_at": "2026-09-01T12:00:00Z",
+  "_trust_summary": {
+    "checked_at": "2026-09-01T12:00:00Z",
+    "datasets_total": 3,
+    "by_status": {"fresh": 2, "aging": 0, "stale": 1, "discontinued": 0, "degraded": 0, "browser_dependent": 0, "unreachable": 0, "unknown": 0, "unknown_freshness": 0, "reference": 0}
+  },
+  "datasets": [
+    {"dataset_id": "daily_sample", "last_checked": "2026-09-01T12:00:00Z", "url": "https://example.test/daily", "status": "fresh", "content_freshness_date": "2026-09-01", "header_timestamp": "2026-09-01T00:00:00Z", "column_count": 2, "schema_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "record_count": 4},
+    {"dataset_id": "realtime_sample", "last_checked": "2026-09-01T12:00:00Z", "url": "https://example.test/realtime", "status": "fresh", "content_freshness_date": "2026-09-01", "record_count": 5},
+    {"dataset_id": "stale_sample", "last_checked": "2026-09-01T12:00:00Z", "url": "https://example.test/stale", "status": "stale", "content_freshness_date": "2026-01-01", "record_count": 6, "status_reason": "Published source has not refreshed."}
+  ]
+}

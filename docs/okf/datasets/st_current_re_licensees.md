@@ -1,0 +1,37 @@
+---
+type: "Dataset"
+title: "Current Renewable Energy Licensees — Malaysia"
+description: "DataPulse projection of Current Renewable Energy Licensees — Malaysia from Suruhanjaya Tenaga (Malaysia Energy Commission)."
+resource: "https://myenergystats.st.gov.my/documents/d/guest/csv-senarai-lesen-re"
+tags: ["myenergystats.st.gov.my (ST)","non-vertical","as-required"]
+sources:
+  - {"id": "energy_commission","resource": "https://myenergystats.st.gov.my/documents/d/guest/csv-senarai-lesen-re","title": "Suruhanjaya Tenaga (Malaysia Energy Commission)"}
+generated: {"by": "process:datapulse-pipeline","at": "2026-09-05T00:00:00Z"}
+verified:
+  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+status: "stable"
+datapulse:licence: "Publisher licence not stated; portal disclaimer applies"
+datapulse:attribution: "Suruhanjaya Tenaga (Malaysia Energy Commission) via MyEnergyStats"
+datapulse:real_status: "fresh"
+datapulse:health_report: "/data/st_current_re_licensees.md"
+datapulse:methodology_version: 2
+datapulse:expected_record_count: null
+---
+
+# Summary
+
+Current Renewable Energy Licensees — Malaysia is published by Suruhanjaya Tenaga (Malaysia Energy Commission) and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+
+# Schema
+
+- `column_count`: `7`
+- `first_row_hash`: `shape-v1:f36b023e1a5de3aa514408ef9c325899fd297b7701aa148681893bb1a62ff4bd`
+- `record_count`: `800`
+
+# Quirks
+
+No probe quirks were recorded.
+
+# Health
+
+See the [published health report](/data/st_current_re_licensees.md). The probe is described by [the st_energy_statistics attested computation](/computations/st-energy-statistics.md).

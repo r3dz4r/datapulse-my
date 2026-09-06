@@ -17,6 +17,7 @@ PUBLIC_SURFACE_LINKS = {
     "/npra.html": ("NPRA page", "Public NPRA dataset surface."),
     "/health-methodology.html": ("Health methodology", "Published status and freshness methodology."),
     "/learn.html": ("Learn", "Practical verification-first guidance for building with Malaysian public data."),
+    "/okf/": ("OKF v0.2 bundle", "Agent-consumable dataset concepts with provenance, trust, and freshness signals."),
     "/buyer-api-reference.md": ("Buyer API reference", "Read-only buyer API contract and examples."),
     "/documentation-map.md": ("Documentation map", "Canonical guide to DataPulse documentation and how to navigate it."),
     "/source-of-truth-map.md": ("Source-of-truth map", "Authority boundaries for DataPulse facts, configuration, and generated outputs."),
@@ -58,7 +59,7 @@ def generate(root: Path, *, check: bool = False, validate_only: bool = False) ->
     if missing:
         raise GenerationError(f"featured dataset id(s) missing from manifest: {', '.join(missing)}")
     configured_paths = set(config["pages"]) | set(config["artifacts"])
-    missing_paths = set(PUBLIC_SURFACE_LINKS) - configured_paths
+    missing_paths = (set(PUBLIC_SURFACE_LINKS) - configured_paths) - {"/okf/"}
     if missing_paths:
         raise GenerationError(
             "required llms public surface path(s) absent from public-surfaces.json: "

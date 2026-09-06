@@ -1,0 +1,39 @@
+---
+type: "Dataset"
+title: "Teachers in Government Schools by District"
+description: "DataPulse projection of Teachers in Government Schools by District from Ministry of Education Malaysia."
+resource: "https://api.data.gov.my/data-catalogue?id=teachers_district"
+tags: ["data.gov.my (OpenAPI)","non-vertical","annual"]
+sources:
+  - {"id": "moe","resource": "https://api.data.gov.my/data-catalogue?id=teachers_district","title": "Ministry of Education Malaysia"}
+generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
+verified:
+  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+status: "stable"
+datapulse:licence: "Open Government Licence (Malaysia)"
+datapulse:attribution: "Ministry of Education Malaysia via data.gov.my"
+datapulse:real_status: "fresh"
+datapulse:health_report: "/data/teachers_district.md"
+datapulse:methodology_version: 2
+datapulse:expected_record_count: 8805
+stale_after: "2026-12-29T12:00:00Z"
+datapulse:stale_after_basis: "cadence"
+---
+
+# Summary
+
+Teachers in Government Schools by District is published by Ministry of Education Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+
+# Schema
+
+- `column_count`: `6`
+- `first_row_hash`: `shape-v1:a7ad384776e6652b0ba6383f1bcd4e44638964471c33f22063f186376a38fe10`
+- `record_count`: `8805`
+
+# Quirks
+
+publisher-likely-retired
+
+# Health
+
+See the [published health report](/data/teachers_district.md). The probe is described by [the data_gov_my_openapi attested computation](/computations/data-gov-my-openapi.md).

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://www.data-pulse.my/datapulse.schema.json",
+  "datasets": [
+    {
+      "id": "daily_sample",
+      "name": "Daily Sample",
+      "source": "sample-source",
+      "steward": "Sample Agency",
+      "custodian": "sample-agency",
+      "url": "https://example.test/daily",
+      "licence": "Open Government Licence",
+      "attribution": "Sample Agency",
+      "refresh_frequency": "daily (weekdays)",
+      "expected_record_count": 4,
+      "geo_coverage": "Malaysia",
+      "health_report": "data/daily_sample.md",
+      "namespace": "other",
+      "vertical": true,
+      "verified_at": "2026-09-01",
+      "freshness_policy": {"family": "data_gov_my", "content_date_field": "date", "interpretation": "publication_date", "discontinued_on_404": true, "reference_table": false, "notes": "Fixture policy."}
+    },
+    {
+      "id": "realtime_sample",
+      "name": "Realtime Sample",
+      "source": "sample-source",
+      "steward": "Sample Agency",
+      "custodian": "sample-agency",
+      "url": "https://example.test/realtime",
+      "licence": "Open Government Licence",
+      "attribution": "Sample Agency",
+      "refresh_frequency": "30 seconds",
+      "expected_record_count": 5,
+      "geo_coverage": "Malaysia",
+      "health_report": "data/realtime_sample.md",
+      "namespace": "other",
+      "verified_at": "2026-09-01",
+      "freshness_policy": {"family": "data_gov_my_openapi", "content_date_field": "date", "interpretation": "publication_date", "discontinued_on_404": true, "reference_table": false, "notes": "Fixture policy."}
+    },
+    {
+      "id": "stale_sample",
+      "name": "Stale Sample",
+      "source": "sample-source",
+      "steward": "Other Agency",
+      "custodian": "other-agency",
+      "url": "https://example.test/stale",
+      "licence": "Open Government Licence",
+      "attribution": "Other Agency",
+      "refresh_frequency": "monthly",
+      "expected_record_count": 6,
+      "geo_coverage": "Malaysia",
+      "health_report": "data/stale_sample.md",
+      "namespace": "other",
+      "verified_at": "2026-01-01",
+      "freshness_policy": {"family": "data_gov_my", "content_date_field": "date", "interpretation": "publication_date", "discontinued_on_404": true, "reference_table": false, "notes": "Fixture policy."}
+    }
+  ]
+}
