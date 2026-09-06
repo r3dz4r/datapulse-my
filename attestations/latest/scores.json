@@ -1,6 +1,6 @@
 {
   "schema": "datapulse/v1/trust-scores",
-  "generated_at": "2026-09-06T20:39:51Z",
+  "generated_at": "2026-09-06T20:43:41Z",
   "methodology_version": 3,
   "datasets": [
     {
@@ -14601,12 +14601,12 @@
     {
       "dataset_id": "sg_datagov_weather_readings",
       "methodology_version": 3,
-      "score": 50.0,
+      "score": 62.5,
       "components": {
         "freshness": 50,
         "reliability": 50,
         "trend": 50,
-        "drift": 50,
+        "drift": 100,
         "cross_source_agreement": 50
       },
       "component_availability": {
@@ -14623,8 +14623,8 @@
           "reason": "insufficient_history"
         },
         "drift": {
-          "available": false,
-          "reason": "insufficient_history"
+          "available": true,
+          "reason": "measured"
         },
         "cross_source_agreement": {
           "available": false,
