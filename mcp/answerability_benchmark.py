@@ -28,6 +28,17 @@ UNSAFE_STATUSES = frozenset(
 UNCERTAIN_STATUSES = frozenset({"aging", "unknown-freshness"})
 SUPPORTED_STATUS = "fresh"
 REFERENCE_STATUS = "reference"
+CLAIM_TYPES = frozenset(
+    {
+        "availability_observed",
+        "freshness_observed",
+        "status_observed",
+        "licence_evidence",
+        "record_count_observed",
+        "semantic_truth",
+    }
+)
+OVERCLAIM_TOKENS = ("authoritative", "official truth", "certified", "guaranteed", "accurate")
 
 
 def _result(category: object, action: str, reason: str, **additions: object) -> dict[str, object]:
@@ -40,6 +51,76 @@ def _result(category: object, action: str, reason: str, **additions: object) -> 
     }
     result.update(additions)
     return result
+
+
+def _claim_result(category: object, verdict: str, reason: str) -> dict[str, object]:
+    """Return a fixed result for a deterministic claim-support verdict."""
+    action = {
+        "supported": "answer",
+        "partial": "warn",
+        "unsupported": "abstain",
+        "unknown": "abstain",
+    }[verdict]
+    return _result(category, action, reason, claim_verdict=verdict)
+
+
+def _has_overclaim(claim: object) -> bool:
+    """Detect only the fixed, case-insensitive overclaim token list."""
+    return isinstance(claim, str) and any(token in claim.lower() for token in OVERCLAIM_TOKENS)
+
+
+def _claim_field(claim_type: str) -> str:
+    """Return the citation field that deterministically supports a claim type."""
+    return {
+        "availability_observed": "observed_at",
+        "freshness_observed": "observed_at",
+        "status_observed": "status",
+        "record_count_observed": "fingerprint",
+    }[claim_type]
+
+
+def evaluate_claim(candidate: Mapping[str, object]) -> dict[str, object]:
+    """Evaluate a claim solely against its supplied datapulse/v1/citation object.
+
+    The evaluator intentionally verifies observation support, not semantic truth
+    or source authority. All malformed or unrecognised input fails closed.
+    """
+    category = candidate.get("category")
+    citation = candidate.get("citation")
+    if not isinstance(citation, Mapping) or not isinstance(citation.get("dataset_id"), str) or not citation[
+        "dataset_id"
+    ].strip():
+        return _claim_result(category, "unknown", "malformed_citation")
+
+    claim_type = candidate.get("claim_type")
+    if not isinstance(claim_type, str) or claim_type not in CLAIM_TYPES:
+        return _claim_result(category, "unknown", "unclassified_claim")
+    if claim_type == "semantic_truth":
+        return _claim_result(category, "unsupported", "outside_evidence_scope")
+    if claim_type == "licence_evidence":
+        licence = citation.get("licence")
+        if isinstance(licence, str) and licence.strip():
+            verdict, reason = "supported", "supported_claim"
+        else:
+            verdict, reason = "unknown", "licence_unobserved"
+    else:
+        asserted = candidate.get("asserted")
+        field = _claim_field(claim_type)
+        citation_value = citation.get(field)
+        asserted_value = asserted.get(field) if isinstance(asserted, Mapping) else None
+        if citation_value is None or asserted_value != citation_value:
+            verdict, reason = "unsupported", "unsupported_claim"
+        elif citation.get("datapulse_verdict") == "USE":
+            verdict, reason = "supported", "supported_claim"
+        elif citation.get("datapulse_verdict") in {"WARN", "REFERENCE-USE"}:
+            verdict, reason = "partial", "partial_claim"
+        else:
+            verdict, reason = "unsupported", "unsupported_claim"
+
+    if _has_overclaim(candidate.get("claim")) and verdict in {"supported", "partial"}:
+        verdict = "partial" if verdict == "supported" else "unsupported"
+        reason = "overclaim"
+    return _claim_result(category, verdict, reason)
 
 
 def _has_required_request_shape(candidate: Mapping[str, object]) -> bool:
@@ -162,6 +243,8 @@ def evaluate_candidate(candidate: Mapping[str, object]) -> dict[str, object]:
     un-timestamped legacy cases retain their aggregate safety checks.
     """
     category = candidate.get("category")
+    if category == "claim_support":
+        return evaluate_claim(candidate)
     if not _has_required_request_shape(candidate):
         return _result(category, "abstain", "underspecified")
 

@@ -126,6 +126,87 @@
         {"dataset_id": "blood_donations", "status": "fresh", "observed_at": "2026-09-06T16:55:00Z", "cycle": "20260906T1655Z", "shape_hash": "a4c8f173"}
       ],
       "expected": {"action": "answer", "reason": "supported_evidence", "evidence_required": true, "as_of_beyond_latest": true}
+    },
+    {
+      "name": "claim_supported_use",
+      "category": "claim_support",
+      "claim": "The fuel price dataset was reachable on the observation date.",
+      "claim_type": "availability_observed",
+      "asserted": {"observed_at": "2026-09-06T16:55:00Z"},
+      "citation": {"dataset_id": "fuelprice", "observed_at": "2026-09-06T16:55:00Z", "datapulse_verdict": "USE"},
+      "expected": {"action": "answer", "reason": "supported_claim", "evidence_required": true, "claim_verdict": "supported"}
+    },
+    {
+      "name": "claim_partial_warn",
+      "category": "claim_support",
+      "claim": "The fuel price dataset status was aging.",
+      "claim_type": "status_observed",
+      "asserted": {"status": "aging"},
+      "citation": {"dataset_id": "fuelprice", "status": "aging", "datapulse_verdict": "WARN"},
+      "expected": {"action": "warn", "reason": "partial_claim", "evidence_required": true, "claim_verdict": "partial"}
+    },
+    {
+      "name": "claim_unsupported_stop",
+      "category": "claim_support",
+      "claim": "The fuel price dataset status was stale.",
+      "claim_type": "status_observed",
+      "asserted": {"status": "stale"},
+      "citation": {"dataset_id": "fuelprice", "status": "stale", "datapulse_verdict": "STOP"},
+      "expected": {"action": "abstain", "reason": "unsupported_claim", "evidence_required": true, "claim_verdict": "unsupported"}
+    },
+    {
+      "name": "claim_semantic_truth_blocked",
+      "category": "claim_support",
+      "claim": "The data is accurate.",
+      "claim_type": "semantic_truth",
+      "asserted": {},
+      "citation": {"dataset_id": "fuelprice", "datapulse_verdict": "USE"},
+      "expected": {"action": "abstain", "reason": "outside_evidence_scope", "evidence_required": true, "claim_verdict": "unsupported"}
+    },
+    {
+      "name": "claim_licence_supported",
+      "category": "claim_support",
+      "claim": "The citation provides licence evidence.",
+      "claim_type": "licence_evidence",
+      "asserted": {"licence": "Open Data"},
+      "citation": {"dataset_id": "fuelprice", "licence": "Open Data", "datapulse_verdict": "USE"},
+      "expected": {"action": "answer", "reason": "supported_claim", "evidence_required": true, "claim_verdict": "supported"}
+    },
+    {
+      "name": "claim_licence_unobserved",
+      "category": "claim_support",
+      "claim": "The citation provides licence evidence.",
+      "claim_type": "licence_evidence",
+      "asserted": {"licence": "Open Data"},
+      "citation": {"dataset_id": "fuelprice", "datapulse_verdict": "USE"},
+      "expected": {"action": "abstain", "reason": "licence_unobserved", "evidence_required": true, "claim_verdict": "unknown"}
+    },
+    {
+      "name": "claim_malformed_citation",
+      "category": "claim_support",
+      "claim": "The fuel price dataset was reachable on the observation date.",
+      "claim_type": "availability_observed",
+      "asserted": {"observed_at": "2026-09-06T16:55:00Z"},
+      "citation": null,
+      "expected": {"action": "abstain", "reason": "malformed_citation", "evidence_required": true, "claim_verdict": "unknown"}
+    },
+    {
+      "name": "claim_unclassified_type",
+      "category": "claim_support",
+      "claim": "The fuel price dataset is popular.",
+      "claim_type": "popularity",
+      "asserted": {},
+      "citation": {"dataset_id": "fuelprice", "datapulse_verdict": "USE"},
+      "expected": {"action": "abstain", "reason": "unclassified_claim", "evidence_required": true, "claim_verdict": "unknown"}
+    },
+    {
+      "name": "claim_overclaim_degrade",
+      "category": "claim_support",
+      "claim": "The authoritative fuel price dataset was reachable on the observation date.",
+      "claim_type": "availability_observed",
+      "asserted": {"observed_at": "2026-09-06T16:55:00Z"},
+      "citation": {"dataset_id": "fuelprice", "observed_at": "2026-09-06T16:55:00Z", "datapulse_verdict": "USE"},
+      "expected": {"action": "warn", "reason": "overclaim", "evidence_required": true, "claim_verdict": "partial"}
     }
   ]
 }

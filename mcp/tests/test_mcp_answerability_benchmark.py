@@ -139,6 +139,85 @@ def test_future_as_of_date_uses_latest_evidence_without_future_claim() -> None:
     assert result["as_of_beyond_latest"] is True
 
 
+def _assert_claim_case(name: str, verdict: str, action: str, reason: str) -> None:
+    result = _evaluate_case(name)
+
+    assert result["claim_verdict"] == verdict
+    assert result["action"] == action
+    assert result["reason"] == reason
+
+
+def test_claim_supported_use() -> None:
+    _assert_claim_case("claim_supported_use", "supported", "answer", "supported_claim")
+
+
+def test_claim_partial_warn() -> None:
+    _assert_claim_case("claim_partial_warn", "partial", "warn", "partial_claim")
+
+
+def test_claim_unsupported_stop() -> None:
+    _assert_claim_case("claim_unsupported_stop", "unsupported", "abstain", "unsupported_claim")
+
+
+def test_claim_semantic_truth_blocked() -> None:
+    _assert_claim_case("claim_semantic_truth_blocked", "unsupported", "abstain", "outside_evidence_scope")
+
+
+def test_claim_licence_supported() -> None:
+    _assert_claim_case("claim_licence_supported", "supported", "answer", "supported_claim")
+
+
+def test_claim_licence_unobserved() -> None:
+    _assert_claim_case("claim_licence_unobserved", "unknown", "abstain", "licence_unobserved")
+
+
+def test_claim_malformed_citation() -> None:
+    _assert_claim_case("claim_malformed_citation", "unknown", "abstain", "malformed_citation")
+
+
+def test_claim_unclassified_type() -> None:
+    _assert_claim_case("claim_unclassified_type", "unknown", "abstain", "unclassified_claim")
+
+
+def test_claim_overclaim_degrade() -> None:
+    _assert_claim_case("claim_overclaim_degrade", "partial", "warn", "overclaim")
+
+
+def test_semantic_truth_precedes_a_use_citation() -> None:
+    result = answerability_benchmark.evaluate_claim(
+        {
+            "category": "claim_support",
+            "claim": "The data is accurate.",
+            "claim_type": "semantic_truth",
+            "citation": {"dataset_id": "fuelprice", "datapulse_verdict": "USE"},
+        }
+    )
+
+    assert result["claim_verdict"] == "unsupported"
+    assert result["action"] == "abstain"
+    assert result["reason"] == "outside_evidence_scope"
+
+
+def test_overclaim_degrades_exactly_one_verdict_level() -> None:
+    result = answerability_benchmark.evaluate_claim(
+        {
+            "category": "claim_support",
+            "claim": "The authoritative fuel price dataset was reachable.",
+            "claim_type": "availability_observed",
+            "asserted": {"observed_at": "2026-09-06T16:55:00Z"},
+            "citation": {
+                "dataset_id": "fuelprice",
+                "observed_at": "2026-09-06T16:55:00Z",
+                "datapulse_verdict": "USE",
+            },
+        }
+    )
+
+    assert result["claim_verdict"] == "partial"
+    assert result["action"] == "warn"
+    assert result["reason"] == "overclaim"
+
+
 def test_stale_only_as_of_date_still_abstains_before_temporal_verdict() -> None:
     result = answerability_benchmark.evaluate_candidate(
         {
