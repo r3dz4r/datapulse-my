@@ -88,6 +88,24 @@ async def test_citation_resource_returns_canonical_evidence_fields(
     }
 
 
+async def test_citation_resource_falls_back_to_schema_fingerprint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest, health = _catalogue()
+    health["datasets"][0]["first_row_hash"] = None
+    health["datasets"][0]["schema_fingerprint"] = "schema-v1:abc123"
+
+    async def load_catalogue() -> tuple[dict, dict]:
+        return manifest, health
+
+    monkeypatch.setattr(server, "_load_catalogue", load_catalogue)
+
+    async with Client(server.mcp) as client:
+        result = await client.read_resource("datapulse://citation/fuelprice")
+
+    assert json.loads(result[0].text)["fingerprint"] == "schema-v1:abc123"
+
+
 @pytest.mark.parametrize(
     ("status", "verdict"),
     [("aging", "WARN"), ("reference", "REFERENCE-USE"), ("stale", "STOP")],

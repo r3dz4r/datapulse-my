@@ -2086,7 +2086,7 @@ async def citation_resource(dataset_id: str) -> str:
             "status": status,
             "methodology_version": health.get("methodology_version"),
             "licence": entry.get("licence"),
-            "fingerprint": health_record.get("first_row_hash"),
+            "fingerprint": health_record.get("first_row_hash") or health_record.get("schema_fingerprint"),
             "datapulse_verdict": verdict,
             "limitations": (
                 "DataPulse observes source conditions; it does not certify substantive truth, "
