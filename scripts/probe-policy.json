@@ -826,6 +826,56 @@
         "fingerprint-mode": "columns-only"
       }
     },
+    "sg_datagov_coe_bidding": {
+      "adapter": "direct",
+      "format": "json",
+      "url": "https://data.gov.sg/api/action/datastore_search?resource_id=d_69b3380ad7e51aff3a7dcc84eba52b8a",
+      "freshness": {
+        "family": "sg_datagov",
+        "extraction-mode": "structural-hash",
+        "fallback": "unknown-freshness"
+      }
+    },
+    "sg_datagov_hdb_resale_prices": {
+      "adapter": "direct",
+      "format": "json",
+      "url": "https://api-production.data.gov.sg/v2/public/api/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/list-rows",
+      "freshness": {
+        "family": "sg_datagov",
+        "extraction-mode": "structural-hash",
+        "fallback": "unknown-freshness"
+      }
+    },
+    "sg_datagov_hdb_metadata": {
+      "adapter": "direct",
+      "format": "json",
+      "url": "https://api-production.data.gov.sg/v2/public/api/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/metadata",
+      "freshness": {
+        "family": "sg_datagov",
+        "extraction-mode": "structural-hash",
+        "fallback": "unknown-freshness"
+      }
+    },
+    "sg_datagov_taxi_availability": {
+      "adapter": "direct",
+      "format": "json",
+      "url": "https://api.data.gov.sg/v1/transport/taxi-availability",
+      "freshness": {
+        "family": "sg_datagov",
+        "extraction-mode": "structural-hash",
+        "fallback": "unknown-freshness"
+      }
+    },
+    "sg_datagov_weather_readings": {
+      "adapter": "direct",
+      "format": "json",
+      "url": "https://api.data.gov.sg/v1/environment/air-temperature",
+      "freshness": {
+        "family": "sg_datagov",
+        "extraction-mode": "structural-hash",
+        "fallback": "unknown-freshness"
+      }
+    },
     "mbpp_weather_stations": {
       "adapter": "arcgis-feature",
       "freshness": {
