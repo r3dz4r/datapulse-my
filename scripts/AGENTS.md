@@ -54,6 +54,7 @@ Scripts are **read-and-execute**: every commit triggers the deterministic-safety
 | `embed_dashboard_data.py` | embed | `datapulse.json`, `health/latest.json`, `docs/.dashboard_*.json` | `docs/index.html` | `python3 -m pytest scripts/tests/test_embed_dashboard_data_shell.py -v` |
 | `verify_release_reproducible.py` | verify | all generated artifacts | exit 0/1 | `--rebuild-and-diff` |
 | `verify_repository_contract.py` | verify | repo invariants | exit 0/1 | -- |
+| `verify_public_internal_refs.py` | verify | tracked public files | exit 0/1 | -- |
 | `verify_mcp_deployment.py` | verify | live MCP endpoint | exit 0/1 | -- |
 | `validate_policy_schema.py` | validate | `~/.config/datapulse/policy.yaml` | exit 0/1 | -- |
 | `validate_at_runtime.py` | validate | various | exit 0/1 | -- |
