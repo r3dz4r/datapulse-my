@@ -223,7 +223,7 @@ catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 catalog_graph = json.loads((work / "catalog-graph.json").read_text())
 surfaces = load_public_surfaces(Path.cwd())
 
-assert surfaces["pages"] == ["/", "/npra.html", "/health-methodology.html", "/learn.html"]
+assert surfaces["pages"] == ["/", "/npra.html", "/health-methodology.html", "/learn.html", "/okf/"]
 assert "/buyer-api-reference.md" in surfaces["artifacts"]
 website, mcp_origin, api_origin = (surfaces["origins"][key] for key in ("website", "mcp", "api"))
 
@@ -481,7 +481,7 @@ def owned(path: Path, marker: str) -> str:
 
 dashboard_summary = owned(work / "index.html", "dashboard-summary")
 dashboard_trust = owned(work / "index.html", "dashboard-trust-facts")
-assert f'{len(manifest["datasets"])} Malaysian public datasets' in dashboard_summary
+assert f'{len(manifest["datasets"])} public datasets' in dashboard_summary
 assert f'{website}/health/latest.json' in dashboard_trust
 assert f'{len(manifest["datasets"])} datasets verified' in dashboard_trust
 npra_freshness = owned(work / "npra.html", "npra-freshness")

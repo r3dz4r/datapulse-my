@@ -88,6 +88,9 @@ def test_inject_all_replaces_only_whitelisted_existing_nav_blocks(tmp_path: Path
 
     for page in PAGES:
         (docs / page).write_text(f"<html><body>{old_nav}</body></html>\n", encoding="utf-8")
+    okf_markdown = docs / "okf/index.md"
+    okf_markdown.parent.mkdir()
+    okf_markdown.write_text("# Open Knowledge Foundation\n", encoding="utf-8")
     untouched = docs / "404.html"
     untouched.write_text("<html><body>No navigation here.</body></html>\n", encoding="utf-8")
     original_404 = untouched.read_bytes()
@@ -102,6 +105,7 @@ def test_inject_all_replaces_only_whitelisted_existing_nav_blocks(tmp_path: Path
         assert "<!-- BEGIN SITE-NAV (generated from assets/site-nav.html) -->" in rendered
         assert "<!-- END SITE-NAV -->" in rendered
     assert untouched.read_bytes() == original_404
+    assert okf_markdown.read_text(encoding="utf-8") == "# Open Knowledge Foundation\n"
     assert gen_site_nav.inject_all(tmp_path) == []
 
 

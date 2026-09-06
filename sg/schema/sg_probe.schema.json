@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema", "probe_run_at", "families"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "datapulse/v1/sg-probe"},
+    "probe_run_at": {"type": "string", "format": "date-time"},
+    "families": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"$ref": "#/$defs/family"}}
+  },
+  "$defs": {
+    "family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "request_url", "http_status", "probe_outcome", "observed_at", "record_count", "content_freshness_date", "schema_fingerprint", "sample_rows", "error_message"],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "request_url": {"type": "string", "format": "uri"},
+        "http_status": {"type": "integer", "minimum": 0},
+        "probe_outcome": {"enum": ["success", "error", "timeout"]},
+        "observed_at": {"type": "string", "format": "date-time"},
+        "record_count": {"type": ["integer", "null"], "minimum": 0},
+        "content_freshness_date": {"type": ["string", "null"], "format": "date-time"},
+        "schema_fingerprint": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "sample_rows": {"type": "array", "maxItems": 3, "items": {"type": "object"}},
+        "error_message": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
