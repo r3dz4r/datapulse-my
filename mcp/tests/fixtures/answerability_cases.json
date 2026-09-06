@@ -1,0 +1,57 @@
+{
+  "schema": "datapulse/v1/answerability-benchmark",
+  "cases": [
+    {
+      "name": "answerable_supported",
+      "category": "answerable_supported",
+      "request": {"dataset_id": "fuelprice", "scope": "latest retail fuel prices"},
+      "evidence": [{"dataset_id": "fuelprice", "status": "fresh"}],
+      "expected": {"action": "answer", "reason": "supported_evidence", "evidence_required": true}
+    },
+    {
+      "name": "uncertain_freshness",
+      "category": "uncertain_freshness",
+      "request": {"dataset_id": "fuelprice", "scope": "latest retail fuel prices"},
+      "evidence": [{"dataset_id": "fuelprice", "status": "unknown-freshness"}],
+      "expected": {"action": "warn", "reason": "uncertain_freshness", "evidence_required": true}
+    },
+    {
+      "name": "reference_only",
+      "category": "reference_only",
+      "request": {"dataset_id": "fuelprice", "scope": "source description"},
+      "evidence": [{"dataset_id": "fuelprice", "status": "reference"}],
+      "expected": {"action": "warn", "reason": "reference_only", "evidence_required": true}
+    },
+    {
+      "name": "unsafe_status",
+      "category": "unsafe_status",
+      "request": {"dataset_id": "fuelprice", "scope": "latest retail fuel prices"},
+      "evidence": [{"dataset_id": "fuelprice", "status": "stale"}],
+      "expected": {"action": "abstain", "reason": "unsafe_evidence", "evidence_required": true}
+    },
+    {
+      "name": "conflicting_evidence",
+      "category": "conflicting_evidence",
+      "request": {"dataset_id": "fuelprice", "scope": "latest retail fuel prices"},
+      "evidence": [
+        {"dataset_id": "fuelprice", "status": "fresh"},
+        {"dataset_id": "fuelprice", "status": "degraded"}
+      ],
+      "expected": {"action": "abstain", "reason": "conflicting_evidence", "evidence_required": true}
+    },
+    {
+      "name": "underspecified",
+      "category": "underspecified",
+      "request": {"scope": "latest retail fuel prices"},
+      "evidence": [{"dataset_id": "fuelprice", "status": "fresh"}],
+      "expected": {"action": "abstain", "reason": "underspecified", "evidence_required": true}
+    },
+    {
+      "name": "out_of_catalogue",
+      "category": "out_of_catalogue",
+      "request": {"dataset_id": "not-a-datapulse-dataset", "scope": "latest value"},
+      "evidence": [],
+      "expected": {"action": "abstain", "reason": "no_supported_record", "evidence_required": true}
+    }
+  ]
+}
