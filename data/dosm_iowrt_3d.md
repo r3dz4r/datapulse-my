@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_iowrt_3d
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 24 days
+freshness_delta: 23 days
 next_expected_update: monthly
 record_count: 5860
 schema_version: unknown
@@ -19,13 +19,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 24 days
+**Freshness:** 23 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

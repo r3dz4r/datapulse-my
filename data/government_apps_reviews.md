@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_government_apps_reviews
-last_checked: 2026-09-06T11:34:39Z
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 138 days
+freshness_delta: 137 days
 next_expected_update: monthly
 record_count: 1006
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 138 days
+**Freshness:** 137 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

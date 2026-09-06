@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_water_production
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 1709 days
+freshness_delta: 1708 days
 next_expected_update: overdue
 record_count: 345
 date_range: 2000-01-01 to 2022-01-01
@@ -20,13 +20,13 @@ attribution: SPAN, NRES, and DOSM via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1709 days
+**Freshness:** 1708 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

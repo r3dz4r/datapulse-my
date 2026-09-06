@@ -1,8 +1,8 @@
 ---
 dataset_id: population_state
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 248 days
+freshness_delta: 247 days
 next_expected_update: annual
 record_count: 270063
 date_range: 1970-01-01 to 2026-01-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 248 days
+**Freshness:** 247 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

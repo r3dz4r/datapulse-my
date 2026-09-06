@@ -1,6 +1,6 @@
 ---
 dataset_id: doe_rqims
-last_checked: 2026-09-06T11:01:25Z
+last_checked: 2026-09-06T13:01:21Z
 status: browser-dependent
 freshness_delta: 0 days
 next_expected_update: 2026-08-02T15:00:00Z
@@ -22,11 +22,11 @@ attribution: DOE Malaysia via MyEQMS
 
 **Freshness:** 0 days
 
-Camofox unavailable; browser check required
+Browser check succeeded
 
 ## Last checked
 
-2026-09-06 at 11:01:25 UTC.
+2026-09-06 at 13:01:21 UTC.
 
 ## File size
 

@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_static_mybas_kangar
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: fresh
 freshness_delta: 0 days
-record_count: 9734
+record_count: 16160
 content_freshness_date: 2026-12-31
 schema_version: GTFS
 schema_drift: none
@@ -25,11 +25,11 @@ HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 
-The checked resource is 73,936 bytes.
+The checked resource is 108,322 bytes.
 
 ## Provenance
 

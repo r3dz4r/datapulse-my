@@ -5,7 +5,7 @@ source_url: "https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPor
 source_name: "meih.st.gov.my (ST)"
 licence: "Open Government Licence (Malaysia)"
 refresh_frequency: "annual"
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 last_observed: 2023-01-01
 last_modified: null
 record_count: null
@@ -13,7 +13,7 @@ column_count: null
 status: stale
 notes: "Unprobed Suruhanjaya Tenaga MyEnergyStats HTML dashboard; health remains unknown until the first DataPulse probe."
 dataset_id: st_ipps
-freshness_delta: 1344 days
+freshness_delta: 1343 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Suruhanjaya Tenaga (ST) via meih.st.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 1344 days
+**Freshness:** 1343 days
 
 ST PDF report returned a valid document year
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

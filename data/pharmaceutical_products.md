@@ -5,10 +5,10 @@ source_url: "https://storage.data.gov.my/healthcare/pharmaceutical_products.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 last_observed: null
-last_modified: 2026-09-05T02:40:28Z
-record_count: 28243
+last_modified: 2026-09-04T01:08:17Z
+record_count: 28163
 column_count: 16
 status: fresh
 notes: "Tier-1 wave E newly verified direct-storage source; HTTP 200 and CSV header verified."
@@ -34,11 +34,11 @@ HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 
-The checked resource is 10,626,300 bytes.
+The checked resource is 10,593,852 bytes.
 
 ## Provenance
 

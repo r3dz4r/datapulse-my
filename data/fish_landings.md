@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_fish_landings
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 1010 days
+freshness_delta: 1009 days
 next_expected_update: overdue
 record_count: 1368
 date_range: 2018-01-01 to 2023-12-01
@@ -20,13 +20,13 @@ attribution: Department of Fisheries Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1010 days
+**Freshness:** 1009 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

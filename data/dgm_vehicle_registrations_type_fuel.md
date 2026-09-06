@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_vehicle_registrations_type_fuel
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 19 days
+freshness_delta: 18 days
 next_expected_update: monthly
 record_count: 10801
 date_range: 2000-01-01 to 2026-06-01
@@ -20,13 +20,13 @@ attribution: Road Transport Department Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 19 days
+**Freshness:** 18 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

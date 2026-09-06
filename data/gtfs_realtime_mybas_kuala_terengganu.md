@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_mybas_kuala_terengganu
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-06T13:01:21Z
 status: stale
-freshness_delta: 0.001412037037037037 days
-record_count: 19
+freshness_delta: 0.0012962962962962963 days
+record_count: 2
 content_freshness_date: 2026-08-03
 schema_version: GTFS
 schema_drift: none
@@ -19,17 +19,17 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Stale
 
-**Freshness:** 0.001412037037037037 days
+**Freshness:** 0.0012962962962962963 days
 
-HTTP 200; valid GTFS realtime protobuf (19 vehicles)
+HTTP 200; valid GTFS realtime protobuf (2 vehicles)
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-06 at 13:01:21 UTC.
 
 ## File size
 
-The checked resource is 1,609 bytes.
+The checked resource is 157 bytes.
 
 ## Provenance
 

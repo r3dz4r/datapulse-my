@@ -5,9 +5,9 @@ source_url: "https://storage.data.gov.my/healthcare/pharmaceutical_manufacturers
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 last_observed: null
-last_modified: 2026-09-05T02:40:26Z
+last_modified: 2026-09-04T01:08:15Z
 record_count: 289
 column_count: 8
 status: fresh
@@ -34,7 +34,7 @@ HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

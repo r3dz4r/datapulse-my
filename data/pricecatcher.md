@@ -1,10 +1,10 @@
 ---
 dataset_id: pricecatcher
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: fresh
 freshness_delta: 1 days
 next_expected_update: 2026-08-31
-file_size_bytes: 228050
+file_size_bytes: 188740
 file_count: 3 (main + 2 lookups)
 schema_version: 1.0
 schema_drift: none
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 
-The checked resource is 228,050 bytes.
+The checked resource is 188,740 bytes.
 
 ## Schema
 

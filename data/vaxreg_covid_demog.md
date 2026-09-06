@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/healthcare/vaxreg_covid_demog.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "annual"
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 last_observed: 2022-02-22
 last_modified: 2024-01-02T01:00:56Z
 record_count: 198560
@@ -13,7 +13,7 @@ column_count: 5
 status: stale
 notes: "Tier-1 wave G newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: vaxreg_covid_demog
-freshness_delta: 1657 days
+freshness_delta: 1656 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Ministry of Health Malaysia via data.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 1657 days
+**Freshness:** 1656 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

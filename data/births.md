@@ -1,6 +1,6 @@
 ---
 dataset_id: births
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-06T05:22:25Z
 status: stale
 freshness_delta: 1133 days
 next_expected_update: daily
@@ -24,7 +24,7 @@ HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-06 at 05:22:25 UTC.
 
 ## File size
 

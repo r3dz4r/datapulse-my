@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_gdp_qtr_real_sa
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 158 days
+freshness_delta: 157 days
 next_expected_update: unknown
 record_count: 46
 date_range: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 158 days
+**Freshness:** 157 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

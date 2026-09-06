@@ -5,10 +5,10 @@ source_url: "https://storage.data.gov.my/healthcare/cosmetic_notifications_cance
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 last_observed: null
-last_modified: 2026-09-05T02:40:31Z
-record_count: 125
+last_modified: 2026-09-04T01:08:20Z
+record_count: 124
 column_count: 5
 status: fresh
 notes: "Tier-1 wave E newly verified direct-storage source; HTTP 200 and CSV header verified."
@@ -34,11 +34,11 @@ HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 
-The checked resource is 14,282 bytes.
+The checked resource is 14,131 bytes.
 
 ## Provenance
 

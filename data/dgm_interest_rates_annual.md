@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_interest_rates_annual
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 3 days
+freshness_delta: 1 days
 next_expected_update: annual
 record_count: 707
 date_range: 1980-01-01 to 2025-01-01
@@ -20,13 +20,13 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 3 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

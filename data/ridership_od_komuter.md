@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/transportation/ktmb/komuter_2026.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "daily"
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-06T05:22:25Z
 last_observed: 2026-09-05
 last_modified: 2026-09-05T19:31:24Z
 record_count: 1247634
@@ -34,7 +34,7 @@ HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-06 at 05:22:25 UTC.
 
 ## File size
 

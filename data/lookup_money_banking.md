@@ -1,6 +1,6 @@
 ---
 dataset_id: lookup_money_banking
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: reference
 freshness_delta: unknown
 next_expected_update: as-required
@@ -24,7 +24,7 @@ HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 

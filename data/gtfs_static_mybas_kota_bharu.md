@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_static_mybas_kota_bharu
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 0 days
-record_count: 23778
+freshness_delta: 1 days
+record_count: 47556
 content_freshness_date: 2026-12-31
 schema_version: GTFS
 schema_drift: none
@@ -19,17 +19,17 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 0 days
+**Freshness:** 1 days
 
 HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 
-The checked resource is 165,098 bytes.
+The checked resource is 299,858 bytes.
 
 ## Provenance
 

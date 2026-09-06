@@ -1,9 +1,9 @@
 ---
 dataset_id: registrations_type_fuel
-last_checked: 2026-09-06T11:34:39Z
-last_checked: 2026-09-06T11:34:39Z
+last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 67 days
+freshness_delta: 66 days
 next_expected_update: monthly
 record_count: 10801
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Road Transport Department Malaysia and Ministry of Transport via da
 
 **Status:** Aging
 
-**Freshness:** 67 days
+**Freshness:** 66 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 11:34:39 UTC.
+2026-09-05 at 02:34:56 UTC.
 
 ## File size
 
