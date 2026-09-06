@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-09-06T19:31:10Z",
-  "node_count": 413,
-  "edge_count": 8436,
+  "generated_at": "2026-09-06T20:36:28Z",
+  "node_count": 418,
+  "edge_count": 8446,
   "edge_kinds": {
-    "same_steward": 4141,
+    "same_steward": 4151,
     "same_agency": 4293,
     "same_geography": 0,
     "canonical_series": 1,
@@ -11,7 +11,7 @@
     "shared_schema": 1
   },
   "coverage": {
-    "datasets_with_at_least_one_edge": 388,
+    "datasets_with_at_least_one_edge": 393,
     "isolated_datasets": [
       "almanak_astronomi",
       "cosmetics_manufacturers",
@@ -2313,6 +2313,36 @@
       "title": "SDG 16-2-2: Victims of Human Trafficking",
       "steward": "Ministry of Home Affairs Malaysia",
       "agency": "data.gov.my (OpenAPI)"
+    },
+    {
+      "dataset_id": "sg_datagov_coe_bidding",
+      "title": "COE Bidding Results (SG)",
+      "steward": "Singapore Government",
+      "agency": "data.gov.sg"
+    },
+    {
+      "dataset_id": "sg_datagov_hdb_metadata",
+      "title": "HDB Dataset Metadata (SG)",
+      "steward": "Singapore Government",
+      "agency": "data.gov.sg"
+    },
+    {
+      "dataset_id": "sg_datagov_hdb_resale_prices",
+      "title": "HDB Resale Flat Prices Jan-2017 onwards (SG)",
+      "steward": "Singapore Government",
+      "agency": "data.gov.sg"
+    },
+    {
+      "dataset_id": "sg_datagov_taxi_availability",
+      "title": "Taxi Availability real-time (SG)",
+      "steward": "Singapore Government",
+      "agency": "data.gov.sg"
+    },
+    {
+      "dataset_id": "sg_datagov_weather_readings",
+      "title": "Weather Readings real-time (SG)",
+      "steward": "Singapore Government",
+      "agency": "data.gov.sg"
     },
     {
       "dataset_id": "sppi_3d",
@@ -107072,6 +107102,136 @@
       "kind": "same_steward",
       "from": "sdg_04-6-1",
       "to": "sdg_10-c-1",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "sg_datagov_coe_bidding",
+      "to": "sg_datagov_hdb_metadata",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "sg_datagov_coe_bidding",
+      "to": "sg_datagov_hdb_resale_prices",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "sg_datagov_coe_bidding",
+      "to": "sg_datagov_taxi_availability",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "sg_datagov_coe_bidding",
+      "to": "sg_datagov_weather_readings",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "sg_datagov_hdb_metadata",
+      "to": "sg_datagov_hdb_resale_prices",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "sg_datagov_hdb_metadata",
+      "to": "sg_datagov_taxi_availability",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "sg_datagov_hdb_metadata",
+      "to": "sg_datagov_weather_readings",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "sg_datagov_hdb_resale_prices",
+      "to": "sg_datagov_taxi_availability",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "sg_datagov_hdb_resale_prices",
+      "to": "sg_datagov_weather_readings",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "sg_datagov_taxi_availability",
+      "to": "sg_datagov_weather_readings",
       "weight": 2,
       "provenance": {
         "matched_fields": [
