@@ -24,7 +24,7 @@ Form fields: Company Name · Website URL · Description (max 25 words) · Catego
 |---|---|
 | Company Name | DataPulse MY |
 | Website URL | https://www.data-pulse.my |
-| Description (limit 25 words) | Open-source AI-ready trust layer for 389 official Malaysian public datasets, with freshness, licences, and a public read-only MCP server. No API key. |
+| Description (limit 25 words) | Open-source AI-ready trust layer for 418 official Malaysian public datasets, with freshness, licences, and a public read-only MCP server. No API key. |
 | Category | AI Products (id=1) |
 
 Description word count: **22 words** ✅ (within the 25-word cap)
