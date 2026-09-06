@@ -83,11 +83,12 @@ Health is reported as `fresh`, `aging`, `stale`, `discontinued`, `degraded`,
 `reference`. Unknown freshness means the URL and content shape work, but neither
 a Last-Modified header nor a parseable content date proves when the data was
 updated. Reference means versioned lookup data is reachable and its record count
-is measured, while date-based freshness does not apply. The reference family
-splits into plain `reference`, `policy-reference` (policy state that stays valid
-until superseded — BNM OPR is current while unchanged, not stale), and
-`reference-current` (a lookup that must still pass freshness, such as a bank-rate
-table that can itself go stale). The public
+is measured, while date-based freshness does not apply. Within the catalogue,
+`data_type` refines the reference family without changing the status: `policy-reference`
+rows (policy state that stays valid until superseded — BNM OPR is current while
+unchanged, not stale) and `reference-current` rows (lookups that must still pass
+freshness, such as a bank-rate table that can itself go stale) are judged by their
+declared policy, while plain `reference` rows are static. The public
 [`_trust_summary`](health/latest.json) shows the distribution and explicitly
 counts missing freshness and row-count signals.
 
