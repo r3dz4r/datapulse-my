@@ -1,15 +1,15 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-07T01:51:15Z",
+  "checked_at": "2026-09-07T02:00:23Z",
   "_trust_summary": {
-    "checked_at": "2026-09-07T01:51:15Z",
+    "checked_at": "2026-09-07T02:00:23Z",
     "datasets_total": 418,
     "by_status": {
       "fresh": 86,
-      "aging": 115,
+      "aging": 114,
       "stale": 188,
       "discontinued": 1,
-      "degraded": 0,
+      "degraded": 1,
       "browser_dependent": 5,
       "unreachable": 0,
       "unknown": 0,
@@ -779,7 +779,7 @@
         "days_since_modified": 0.0010648148148148149
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-07T01:58:53Z"
+    "pipeline_heartbeat_at": "2026-09-07T02:04:31Z"
   },
   "datasets": [
     {
@@ -973,19 +973,19 @@
     },
     {
       "dataset_id": "exchangerates_daily_0900",
-      "last_checked": "2026-09-07T00:55:25Z",
+      "last_checked": "2026-09-07T02:00:23Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900",
-      "status": "aging",
+      "status": "degraded",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 7964241,
+      "content_length": 7965674,
       "last_modified": null,
-      "content_freshness_date": "2026-09-04",
-      "first_record_timestamp": "2003-05-02",
+      "content_freshness_date": "2026-09-07",
+      "first_record_timestamp": "2015-10-19",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
       "transition_registration_count": null,
@@ -996,16 +996,16 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 17171,
+      "record_count": 17174,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
       "column_count": 29,
-      "first_row_hash": "shape-v1:63b2273b90c7472f9b72d1f65bd27e35b3f45563f8205f2fa03df2ab601f75f7",
+      "first_row_hash": "shape-v1:2860600fb4e8ff017be607e235d83d858e3172a3b9d9f0309c26aa8c994b2191",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
-      "content_shape_changed": false,
+      "content_shape_changed": true,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -1019,8 +1019,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": false,
-      "staleness_days": 3,
-      "staleness_status": "aging",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -1032,13 +1032,13 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 3.0,
+        "latest_days": 0.0,
         "mode": "cadence_fallback"
       }
     },
     {
       "dataset_id": "exchangerates_daily_1130",
-      "last_checked": "2026-09-07T00:55:25Z",
+      "last_checked": "2026-09-07T02:00:23Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130",
       "status": "aging",
@@ -1103,7 +1103,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_1200",
-      "last_checked": "2026-09-07T00:55:25Z",
+      "last_checked": "2026-09-07T02:00:23Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
       "status": "aging",
@@ -1168,7 +1168,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_1700",
-      "last_checked": "2026-09-07T00:55:25Z",
+      "last_checked": "2026-09-07T02:00:23Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
       "status": "aging",
@@ -22788,7 +22788,7 @@
     },
     {
       "dataset_id": "bnm_kl_usd_myr",
-      "last_checked": "2026-09-07T00:55:25Z",
+      "last_checked": "2026-09-07T02:00:23Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/kl-usd-reference-rate",
       "status": "aging",
@@ -22977,7 +22977,7 @@
     },
     {
       "dataset_id": "bnm_interbank_swap",
-      "last_checked": "2026-09-07T00:55:25Z",
+      "last_checked": "2026-09-07T02:00:23Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/interbank-swap",
       "status": "aging",
