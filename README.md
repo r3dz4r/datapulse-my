@@ -121,7 +121,7 @@ frozen at the last known content date. This is not a freshness failure — it's 
 publisher decision.
 
 <!-- BEGIN readme-health -->
-Current distribution (`_trust_summary`): [93 fresh](badges/status-fresh.svg) · [109 aging](badges/status-aging.svg) · [187 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [9 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [93 fresh](badges/status-fresh.svg) · [107 aging](badges/status-aging.svg) · [189 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [9 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
 <!-- END readme-health -->
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
