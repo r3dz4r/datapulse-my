@@ -83,8 +83,10 @@ Rekor inclusion proof. A deliberate tamper test is built in via
   forward.** The historical 2026-08-15 → 2026-09-07 transition is disclosed as a
   sibling gap and has **not** been re-signed (re-signing history would break the
   external witness). Fresh-day evidence carries the strongest guarantees.
-- DataPulse **documents** official sources; it does not replace them. Verify the
-  official portal remains authoritative where that matters.
+- DataPulse **documents** official sources; it does not replace them. Where a
+  downstream decision depends on the official portal's current statement, go to
+  the portal — DataPulse reflects what that portal publishes, it is not that
+  portal.
 - The verification layer proves *existence, integrity and time of signing* — it
   cannot (by itself) prove the underlying government source was truthful. It
   makes the *observation* auditable, which is the strongest claim one platform
