@@ -87,3 +87,30 @@ def test_check_reports_stale_output_and_balanced_markers(tmp_path: Path) -> None
     assert subprocess.run(command, check=False).returncode != 0
     text = readme.read_text(encoding="utf-8")
     assert text.count("<!-- BEGIN readme-") == text.count("<!-- END readme-")
+
+
+def test_repository_template_is_the_canonical_public_readme_contract() -> None:
+    template = (ROOT / "scripts/templates/README.md.tmpl").read_text(encoding="utf-8")
+
+    assert template.startswith("# DataPulse\n")
+    assert template.count("## Who this serves") == 1
+    assert template.count("## Connect an AI agent") == 1
+    assert "## Who it is for" not in template
+    assert "## Use this for" not in template
+    assert "Authenticated buyer API" not in template
+    assert "DataPulse MY" not in template
+    assert template.index("## Legal") > template.index("## Privacy")
+    for marker in (
+        "readme-hero",
+        "readme-cover",
+        "readme-health",
+        "readme-licences",
+        "readme-inventory",
+        "readme-cadence",
+        "mcp-tools",
+        "public-discovery",
+    ):
+        assert template.count(f"<!-- BEGIN {marker} -->") == 1
+        assert template.count(f"<!-- END {marker} -->") == 1
+
+    assert not generate(ROOT, check=True)
