@@ -120,7 +120,7 @@ def test_served_mode_keeps_binding_verification_outside_the_local_exception() ->
 
     assert served_contract is not None
     assert 'python3 scripts/verify_attestation_binding.py "${binding_args[@]}"' in served_contract.group(1)
-    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" in served_contract.group(1)
+    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" not in served_contract.group(1)
 
 
 def test_fetch_retries_http_404_with_pages_budget(tmp_path: Path) -> None:
@@ -334,7 +334,7 @@ def test_gate_8_fetches_public_methodology_path() -> None:
     assert 'fetch "health-methodology.html" "$methodology_file"' not in script
 
 
-def test_generate_shell_references_allow_unattested_health_bypass() -> None:
+def test_generate_shell_rejects_ambient_allow_unattested_health_bypass() -> None:
     generate_sh = (ROOT / "scripts/generate.sh").read_text(encoding="utf-8")
-    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" in generate_sh
-    assert "skipping attestation generation" in generate_sh
+    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" not in generate_sh
+    assert "skipping attestation generation" not in generate_sh

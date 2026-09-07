@@ -40,15 +40,41 @@ with their operational owner.
 ## Pages deployment
 
 `.github/workflows/deploy-cloudflare-pages.yml` is the canonical native Pages
-publisher. It runs on relevant pushes and manual dispatch. A health-only commit
-with the `[skip deploy]` trailer takes its fast path: it treats
-`health/latest.json` as the canonical health input, regenerates the dashboard
-embed, and assembles `_site` once. Every deployment profile then follows the
-same promotion gate: deploy that assembled artifact to an isolated Cloudflare
-Pages preview alias, run the full release invariants against the preview, promote
-the same `_site` artifact to the production Pages branch, then run final served
-verification. The workflow rejects a missing health snapshot, timestamp or
-dataset-count drift, and any missing declared public surface.
+publisher. It runs on relevant pushes and manual dispatch. The default is a
+full release. The only health-only path is selected by the workflow's strict
+changed-path classifier: the push must include `health/latest.json` and every
+changed path must be an exact health-cycle generated-output owner. A source,
+workflow, documentation, unrecognized, mixed, or manually dispatched change
+therefore takes the full-release path. Commit messages and trailers never
+choose deployment mode.
+
+The health-only path treats `health/latest.json` as the canonical health input,
+regenerates the dashboard embed, and assembles `_site` once. Every deployment
+profile then follows the same promotion gate: deploy that assembled artifact to
+an isolated Cloudflare Pages preview alias, run the full release invariants
+against the preview, promote the same `_site` artifact to the production Pages
+branch, then run final served verification. The workflow rejects a missing
+health snapshot, timestamp or dataset-count drift, and any missing declared
+public surface.
+
+### Attestation state machine
+
+The signer job emits one typed state for the production decision:
+
+| State | Full release | Classifier-scoped health-only publication |
+| --- | --- | --- |
+| `signed` | Allowed after the normal generation, preview, and served-state gates | Allowed with the newly verified attestation plane |
+| `signer_down` | Rejected before artifact assembly or promotion | Allowed only after preserving and verifying the last served attestation plane; the new health state is not represented as newly signed |
+| Invalid, malformed, inconsistent, or verification-failed output | Rejected | Rejected |
+
+Signer installation availability and the signing request are the only bounded
+degradation boundary. A successful signer response must pass local cryptographic
+verification and artifact upload; any failure in those steps is fatal. There is
+no environment-variable override for production attestation decisions. In
+particular, `DATAPULSE_ALLOW_UNATTESTED_HEALTH` is not honored by the canonical
+workflow or generation profile. Manual recovery beyond this bounded
+health-only behavior is intentionally out of scope and requires a separate,
+protected operator workflow.
 
 Non-health releases retain the full `release-build` and release-invariant path
 before the same `_site` assembly and stage-before-promote gate. Preview aliases
@@ -160,8 +186,7 @@ bash scripts/verify_release_invariants.sh --local
 schemas, catalog, MCP advertisement, and legacy attestation structure, but does
 not claim that the checkout has a current signed health binding. Release-build
 and post-deploy verification run without `--local` and require the full binding
-contract; `DATAPULSE_ALLOW_UNATTESTED_HEALTH=1` remains the explicit
-health-only deployment exception.
+contract. Production has no ambient unsigned-health exception.
 
 Commit generated changes with their source change. Never push from a manual
 regeneration session; the operator reviews and pushes explicitly.

@@ -140,9 +140,6 @@ if ! $local_mode; then
   fi
 
   binding_args=(--root "$contract_root" --head-only)
-  if [[ "${DATAPULSE_ALLOW_UNATTESTED_HEALTH:-0}" == "1" ]]; then
-    binding_args+=(--allow-unattested-health)
-  fi
   if attestation_plane_state="$(
     python3 scripts/verify_attestation_plane_state.py \
       --planedir "$contract_root" --head-only

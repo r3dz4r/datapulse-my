@@ -135,18 +135,49 @@ def test_alias_verifier_rejects_cycles_wrong_locations_and_spa_fallback(
     assert result.returncode != 0
 
 
-def test_health_only_skip_deploy_push_still_runs_native_pages() -> None:
-    """The health trailer selects the fast path; it must never skip deployment."""
+def test_health_only_path_is_selected_only_by_the_generated_output_classifier() -> None:
+    """Commit messages must not choose a production deployment security mode."""
     workflow = _workflow()
 
     assert '"health/latest.json"' in workflow
-    assert "endsWith(github.event.head_commit.message, '[skip deploy]')" in workflow
+    assert "skip deploy" not in workflow.lower()
+    assert "head_commit.message" not in workflow
     assert "Embed canonical health dashboard (health-only path)" in workflow
     assert "if: needs.classify.outputs.health_only == 'true'" in workflow
     assert "if: needs.classify.outputs.health_only != 'true'" in workflow
     deploy_job = workflow.split("  deploy:\n", 1)[1].split("    steps:\n", 1)[0]
     assert "if:" not in deploy_job
     assert "Deploy canonical Cloudflare Pages artifact" in workflow
+
+
+def test_attestation_state_machine_fails_closed_outside_health_only_signer_degradation() -> None:
+    """Only a classifier-scoped signer outage may take the degraded publication path."""
+    workflow = _workflow()
+    parsed = yaml.safe_load(workflow)
+    sign_job = parsed["jobs"]["sign_health"]
+    deploy_steps = parsed["jobs"]["deploy"]["steps"]
+
+    assert sign_job["outputs"]["attestation_state"] == "${{ steps.attestation_result.outputs.state }}"
+    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" not in workflow
+    assert "--allow-unattested-health" not in workflow
+    assert workflow.count("continue-on-error: true") == 1
+    assert "Attempt pinned Cosign signer installation for health-only degradation" in workflow
+    assert "Require signed attestation for full release" in workflow
+    full_release_gate = next(
+        step for step in deploy_steps if step.get("name") == "Require signed attestation for full release"
+    )
+    assert full_release_gate["if"] == (
+        "needs.classify.outputs.health_only != 'true' && "
+        "needs.sign_health.outputs.attestation_state != 'signed'"
+    )
+    assert "signer_down" in full_release_gate["run"]
+    preserve = next(
+        step for step in deploy_steps if step.get("name") == "Preserve served attestation plane (health-only path)"
+    )
+    assert preserve["if"] == (
+        "needs.classify.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.attestation_state == 'signer_down'"
+    )
 
 
 def test_health_cycle_classifier_accepts_verified_multifile_commit_c9a2b943() -> None:
@@ -190,6 +221,11 @@ def test_health_cycle_classifier_fails_closed_for_mixed_source_and_health_input(
         ".github/workflows/ci.yml",
         "docs/health-methodology.md",
         "unrecognized/generated-output.json",
+        "health/unrecognized.json",
+        "record-evidence/pharmaceutical_products/nested/latest.json",
+        "attestations/latest/unrecognized.json",
+        ".attestations/latest/not-json.txt",
+        "deltas/not-json.txt",
     ),
 )
 def test_health_cycle_classifier_fails_closed_outside_generated_ownership(disallowed_path: str) -> None:
@@ -272,7 +308,7 @@ def test_health_only_signed_sigstore_bundle_skips_legacy_plane_preservation() ->
 
     assert preserve["if"] == (
         "needs.classify.outputs.health_only == 'true' && "
-        "needs.sign_health.outputs.signed != 'true'"
+        "needs.sign_health.outputs.attestation_state == 'signer_down'"
     )
     assert download["if"] == (
         "needs.sign_health.outputs.signed == 'true' || "
@@ -514,7 +550,7 @@ def test_health_only_signed_artifact_carries_and_overlays_the_generated_attestat
     upload = next(
         step
         for step in yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
-        if step.get("name") == "Upload verified optional Sigstore bundle"
+        if step.get("name") == "Upload verified Sigstore bundle"
     )
     sign_step = sign_health.split("      - name: Sign and verify current health DSSE bundle\n", 1)[1].split(
         "      - name: Stage statement into Sigstore publication\n", 1

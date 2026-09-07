@@ -616,7 +616,7 @@ def _stage_source_with_keys(tmp_path: Path) -> Path:
     return source
 
 
-def test_release_build_bypasses_attestation_with_allow_unattested(tmp_path: Path) -> None:
+def test_release_build_rejects_ambient_unattested_bypass(tmp_path: Path) -> None:
     source = _stage_source_with_keys(tmp_path)
     result = _run_profile(
         tmp_path,
@@ -626,10 +626,8 @@ def test_release_build_bypasses_attestation_with_allow_unattested(tmp_path: Path
         extra_env={"DATAPULSE_ALLOW_UNATTESTED_HEALTH": "1"},
     )
 
-    assert result.returncode == 0, result.stderr
-    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH=1" in result.stderr
-    assert "skipping attestation generation" in result.stderr
-    assert all(result.outputs[path] is not None for path in RELEASE_OUTPUTS)
+    assert result.returncode != 0
+    assert "set DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE for attestation generation" in result.stderr
 
 
 def test_release_build_hard_fails_attestation_without_bypass(tmp_path: Path) -> None:

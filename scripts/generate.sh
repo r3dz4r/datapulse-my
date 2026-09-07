@@ -315,12 +315,9 @@ for index in "${!generators[@]}"; do
       ;;
     gen_attestations.py)
       if [[ -z "${DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE:-}" ]]; then
-        if [[ -f docs/.well-known/datapulse-probe-keys.json ]] && [[ "${DATAPULSE_ALLOW_UNATTESTED_HEALTH:-0}" != "1" ]]; then
+        if [[ -f docs/.well-known/datapulse-probe-keys.json ]]; then
           printf 'set DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE for attestation generation\n' >&2
           exit 1
-        fi
-        if [[ -f docs/.well-known/datapulse-probe-keys.json ]]; then
-          printf 'WARNING: DATAPULSE_ALLOW_UNATTESTED_HEALTH=1; skipping attestation generation (health-only release; no signed binding produced)\n' >&2
         fi
         printf 'attestation generation skipped: no published key registry in this fixture\n'
         continue

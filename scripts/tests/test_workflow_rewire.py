@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import subprocess
+import textwrap
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -119,9 +120,9 @@ def test_cloudflare_workflow_permissions_and_concurrency_are_not_broadened() -> 
     concurrency = workflow["concurrency"]
 
     assert workflow["permissions"] == {"contents": "read"}
-    assert "cloudflare-pages-health" in concurrency["group"]
-    assert "cloudflare-pages-release" in concurrency["group"]
-    assert "[skip deploy]" in concurrency["cancel-in-progress"]
+    assert concurrency["group"] == "cloudflare-pages-production"
+    assert concurrency["cancel-in-progress"] is False
+    assert "[skip deploy]" not in _read(DEPLOY_WORKFLOW)
 
 
 def test_sigstore_oidc_is_isolated_to_a_least_privilege_job() -> None:
@@ -155,24 +156,35 @@ def test_sigstore_uses_pinned_cosign_dsse_semantics_and_explicit_identity() -> N
     assert "https://token.actions.githubusercontent.com" in signing
 
 
-def test_sigstore_failure_is_non_blocking_and_cannot_publish_partial_output() -> None:
+def test_sigstore_signer_down_is_explicit_and_partial_outputs_are_cleaned_up() -> None:
     parsed = yaml.safe_load(_read(DEPLOY_WORKFLOW))
     steps = parsed["jobs"]["sign_health"]["steps"]
     install = next(step for step in steps if step.get("id") == "install_cosign")
     sign = next(step for step in steps if step.get("id") == "sign_current_health")
     upload = next(step for step in steps if step.get("id") == "upload_sigstore")
+    attestation = next(step for step in steps if step.get("id") == "attestation_result")
     result = next(step for step in steps if step.get("id") == "sigstore_result")
 
     assert install["continue-on-error"] is True
-    assert sign["continue-on-error"] is True
-    assert upload["continue-on-error"] is True
+    assert "continue-on-error" not in sign
+    assert "continue-on-error" not in upload
+    assert sign["if"] == "steps.install_cosign.outcome == 'success'"
     assert ".health.latest.sigstore.json.tmp" in sign["run"]
+    assert "state=signer_down" in sign["run"]
     assert "verify_sigstore_bundle.py" in sign["run"]
     assert sign["run"].index("verify_sigstore_bundle.py") < sign["run"].index(
         'mv "$bundle_tmp" "$publication/health.latest.sigstore.json"'
     )
+    assert upload["if"] == "steps.sign_current_health.outputs.state == 'signed'"
+    assert parsed["jobs"]["sign_health"]["outputs"]["attestation_state"] == (
+        "${{ steps.attestation_result.outputs.state }}"
+    )
+    assert attestation["if"] == "always()"
+    assert "state=signer_down" in attestation["run"]
+    assert "state=signed" in attestation["run"]
+    assert "Signer output, verification, or publication was incomplete." in attestation["run"]
     assert result["if"] == "always()"
-    assert "::warning title=Sigstore health signing unavailable" in result["run"]
+    assert "rm -f \"$RUNNER_TEMP/sigstore-publication/.health.latest.sigstore.json.tmp\"" in result["run"]
     assert "signed=false" in result["run"]
     assert "signed=true" in result["run"]
 
@@ -189,39 +201,52 @@ def test_per_dataset_receipts_are_generated_signed_and_staged_for_every_deployme
     )
 
     assert "if" not in generate
-    assert sign["if"] == "steps.install_cosign.outcome == 'success'"
+    assert sign["if"] == "steps.sign_current_health.outputs.state == 'signed'"
     assert "python3 scripts/gen_per_dataset_receipt.py" in generate["run"]
     assert "python3 scripts/sign_per_dataset_receipts.py" in sign["run"]
     assert "python3 scripts/verify_per_dataset_receipt.py" in sign["run"]
     assert "--certificate-identity \"$SIGSTORE_IDENTITY\"" in sign["run"]
-    assert sign["continue-on-error"] is True
+    assert "continue-on-error" not in sign
+    assert "mkdir -p \"$publication/data\"" in sign["run"]
     assert result["if"] == "always()"
-    assert "needs.classify.outputs.health_only" not in result["run"]
+    assert "steps.sign_current_health.outputs.state" in result["run"]
+    assert "steps.sign_per_dataset.outcome" in result["run"]
+    assert "rm -rf \"$RUNNER_TEMP/sigstore-publication/data\"" in result["run"]
     assert "receipts_signed" in parsed["jobs"]["sign_health"]["outputs"]
     for suffix in ("evidence.json", "statement.json", "sigstore.json"):
         assert f'cp "$RUNNER_TEMP/sigstore-publication/data/"*.receipt.{suffix} _site/data/' in assemble["run"]
 
 
-def test_health_only_deployment_fails_closed_without_current_signed_receipts() -> None:
+def test_attestation_state_fails_closed_for_full_releases_and_preserves_valid_served_plane() -> None:
     parsed = yaml.safe_load(_read(DEPLOY_WORKFLOW))
     steps = parsed["jobs"]["deploy"]["steps"]
-    gate = next(
+    full_release_gate = next(
         step for step in steps
-        if step.get("name") == "Require current per-dataset receipts (health-only path)"
+        if step.get("name") == "Require signed attestation for full release"
+    )
+    preservation = next(
+        step for step in steps
+        if step.get("name") == "Preserve served attestation plane (health-only path)"
     )
     assemble_index = next(
         index for index, step in enumerate(steps)
         if step.get("name") == "Assemble canonical Pages artifact"
     )
-    gate_index = steps.index(gate)
 
-    assert gate["if"] == (
-        "needs.classify.outputs.health_only == 'true' && "
-        "needs.sign_health.outputs.receipts_signed != 'true'"
+    assert full_release_gate["if"] == (
+        "needs.classify.outputs.health_only != 'true' && "
+        "needs.sign_health.outputs.attestation_state != 'signed'"
     )
-    assert "exit 1" in gate["run"]
-    assert "new health snapshot would not have a current verified per-dataset receipt set" in gate["run"]
-    assert gate_index < assemble_index
+    assert "Full releases require attestation_state=signed" in full_release_gate["run"]
+    assert "exit 1" in full_release_gate["run"]
+    assert preservation["if"] == (
+        "needs.classify.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.attestation_state == 'signer_down'"
+    )
+    assert steps.index(preservation) < assemble_index
+    assert "verify_attestation_plane_state.py" in preservation["run"]
+    assert "served health/binding plane is inconsistent" in preservation["run"]
+    assert "exit 1" in preservation["run"]
 
 
 def test_cloudflare_publishes_only_a_current_verified_optional_bundle() -> None:
@@ -363,13 +388,76 @@ def test_cloudflare_fast_path_overwrites_checkout_release_proof_after_docs_copy(
 
 def test_cloudflare_health_only_classifier_is_scoped_to_pipeline_outputs() -> None:
     workflow = _read(DEPLOY_WORKFLOW)
-    classifier = workflow.split("      - id: classify\n", 1)[1].split("\n  deploy:", 1)[0]
+    classifier = workflow.split("      - id: classify\n", 1)[1].split("\n  sign_health:", 1)[0]
 
+    assert 'health_outputs = {' in classifier
     assert '"health/latest.json" in paths' in classifier
-    assert 'path.startswith("health/")' in classifier
-    assert 'path.startswith("attestations/latest/")' in classifier
+    for path in (
+        "health/latest.json",
+        "health/history.jsonl",
+        "health/history_daily.json",
+        "health/trends.json",
+        "health/drift.json",
+        "health/reconciliation.json",
+        "health/evidence-coverage.json",
+        "attestations/latest/binding.json",
+        "attestations/latest/chain_head.json",
+        "attestations/latest/index.json",
+        "attestations/latest/scores.json",
+        "catalog-graph.json",
+        "catalog-snapshot.json",
+        "changelog.json",
+        "feed.xml",
+    ):
+        assert f'"{path}"' in classifier
+    assert 'parts[0] == "record-evidence"' in classifier
+    assert 'parts[2] == "latest.json"' in classifier
+    assert 'parts[:2] == [".attestations", "latest"]' in classifier
+    assert 'parts[0] == "deltas"' in classifier
+    assert 'parts[1].endswith(".json")' in classifier
     assert 'path == ".attestations/chain_head.json"' in classifier
+    assert 'any(part in {"", ".", ".."} for part in parts)' in classifier
+    assert 'path.startswith("health/")' not in classifier
+    assert 'path.startswith("attestations/latest/")' not in classifier
     assert 'all(is_health_cycle_output(path) for path in paths)' in classifier
+
+    classifier_program = "from __future__ import annotations\n" + textwrap.dedent(
+        workflow.split("          from __future__ import annotations\n", 1)[1].split(
+            "          PY\n", 1
+        )[0]
+    )
+
+    def classify(paths: list[str]) -> int:
+        environment = os.environ.copy()
+        environment["HEALTH_CYCLE_CHANGED_PATHS"] = "\n".join(paths)
+        return subprocess.run(
+            ["python3", "-c", classifier_program],
+            env=environment,
+            check=False,
+        ).returncode
+
+    assert classify(
+        [
+            "health/latest.json",
+            "health/trends.json",
+            "record-evidence/dosm/latest.json",
+            "attestations/latest/binding.json",
+            ".attestations/latest/2026-09-08.json",
+            ".attestations/chain_head.json",
+            "deltas/2026-09-08.json",
+            "catalog-snapshot.json",
+        ]
+    ) == 0
+    for rejected_path in (
+        "health/../latest.json",
+        "health/unrelated.json",
+        "record-evidence/dosm/archive.json",
+        "attestations/latest/unrelated.json",
+        ".attestations/latest/../../chain_head.json",
+        "deltas/2026-09-08.txt",
+        "scripts/embed_dashboard_data.py",
+    ):
+        assert classify(["health/latest.json", rejected_path]) == 1
 
 
 def test_cloudflare_full_release_keeps_fresh_cryptographic_verification() -> None:
