@@ -103,15 +103,50 @@ def test_same_day_generation_is_byte_idempotent(tmp_path: Path) -> None:
     }
 
 
-def test_same_day_different_health_is_rejected_as_ambiguous(tmp_path: Path) -> None:
+def test_same_day_different_health_or_key_reuses_committed_dated_set(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
+    dated = root / "attestations/2026-08-15"
+    committed = {path.name: path.read_bytes() for path in dated.glob("*.json")}
     health = load(root / "health/latest.json")
     health["datasets"][0]["status"] = "stale"
     write(root / "health/latest.json", health)
+    other_key = tmp_path / "different-private-key.json"
+    write(other_key, {"key_id": "not-the-committed-key"})
+    (root / "attestations/latest/binding.json").write_text("{}\n")
 
-    with pytest.raises(ValueError, match="same-day attestation already exists"):
+    ga.generate(root, other_key, NOW + timedelta(hours=1))
+
+    assert committed == {path.name: path.read_bytes() for path in dated.glob("*.json")}
+    for name in ("chain_head.json", "index.json", "scores.json", "binding.json"):
+        contents = committed[name]
+        assert (root / "attestations/latest" / name).read_bytes() == contents
+
+
+def test_same_day_corrupt_dated_set_fails_closed_without_mutating_latest(tmp_path: Path) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, NOW)
+    latest_before = (root / "attestations/latest/binding.json").read_bytes()
+    binding = load(root / "attestations/2026-08-15/binding.json")
+    binding["payload"]["health"]["artifact_sha256"] = "0" * 64
+    write(root / "attestations/2026-08-15/binding.json", binding)
+
+    with pytest.raises(ValueError, match="corrupt or inconsistent"):
         ga.generate(root, key, NOW + timedelta(hours=1))
+
+    assert (root / "attestations/latest/binding.json").read_bytes() == latest_before
+
+
+def test_same_day_invalid_scores_fail_closed_without_mutating_latest(tmp_path: Path) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, NOW)
+    latest_before = (root / "attestations/latest/scores.json").read_bytes()
+    (root / "attestations/2026-08-15/scores.json").write_text("[]\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="corrupt or inconsistent"):
+        ga.generate(root, key, NOW + timedelta(hours=1))
+
+    assert (root / "attestations/latest/scores.json").read_bytes() == latest_before
 
 
 def test_older_dated_attestation_cannot_supersede_latest(tmp_path: Path) -> None:
@@ -261,19 +296,20 @@ def test_complete_rekor_reference_binds_the_same_health_digest(tmp_path: Path) -
     assert len(result["rekor"]["uuid"]) == 64
 
 
-def test_same_day_rekor_enrichment_is_additive_and_idempotent(tmp_path: Path) -> None:
+def test_same_day_rekor_reference_does_not_mutate_committed_binding(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
     legacy_before = (root / "attestations/2026-08-15/sample.json").read_bytes()
     reference = install_rekor_fixture(root, attach=False)
 
+    dated_binding = (root / "attestations/2026-08-15/binding.json").read_bytes()
     ga.generate(root, key, NOW + timedelta(hours=1), reference)
-    first_binding = (root / "attestations/latest/binding.json").read_bytes()
     ga.generate(root, key, NOW + timedelta(hours=2), reference)
 
     assert (root / "attestations/2026-08-15/sample.json").read_bytes() == legacy_before
-    assert (root / "attestations/latest/binding.json").read_bytes() == first_binding
-    assert verify_contract(root, now=NOW + timedelta(hours=2), require_rekor=True)["claims"]["rekor_witnessed"] is True
+    assert (root / "attestations/2026-08-15/binding.json").read_bytes() == dated_binding
+    assert (root / "attestations/latest/binding.json").read_bytes() == dated_binding
+    assert verify_contract(root, now=NOW + timedelta(hours=2))["claims"]["rekor_witnessed"] is False
 
 
 def test_missing_rekor_proof_reference_is_rejected(tmp_path: Path) -> None:
@@ -283,13 +319,12 @@ def test_missing_rekor_proof_reference_is_rejected(tmp_path: Path) -> None:
         verify_contract(root, now=NOW + timedelta(hours=1), require_rekor=True)
 
 
-def test_generator_rejects_missing_rekor_proof_before_updating_latest(tmp_path: Path) -> None:
+def test_same_day_rekor_proof_is_not_validated_or_published(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
     reference = install_rekor_fixture(root, missing_proof=True, attach=False)
 
-    with pytest.raises(ContractError, match="inclusion proof"):
-        ga.generate(root, key, NOW + timedelta(hours=1), reference)
+    ga.generate(root, key, NOW + timedelta(hours=1), reference)
 
     binding = load(root / "attestations/latest/binding.json")
     assert binding["claims"]["rekor_witnessed"] is False

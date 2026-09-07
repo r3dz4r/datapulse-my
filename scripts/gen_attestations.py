@@ -142,29 +142,84 @@ def score_rows(manifest: dict, health: dict, trends: dict, drift: dict, recon: d
         rows.append({"dataset_id":did,"methodology_version":3,"score":value,"components":components,"component_availability":component_availability,"observed_at":h.get("last_checked") if h else None})
     return {"schema":"datapulse/v1/trust-scores","generated_at":generated_at,"methodology_version":3,"datasets":rows}
 
+def reuse_existing_day(root: Path, day: str) -> bool:
+    """Verify an immutable dated set before refreshing the derived latest view."""
+    dated = root / "attestations" / day
+    if not dated.exists():
+        return False
+    if not dated.is_dir():
+        raise ValueError("same-day attestation is corrupt or inconsistent: dated set is not a directory")
+    required = ("binding.json", "chain_head.json", "index.json", "scores.json")
+    present = [name for name in required if (dated / name).is_file()]
+    if not present:
+        # Fresh-day Sigstore preparation may already have written its Rekor
+        # inputs below this directory; it has not created a dated set yet.
+        return False
+    if len(present) != len(required):
+        raise ValueError("same-day attestation is corrupt or inconsistent: dated set is incomplete")
+    try:
+        from scripts.verify_attestation_binding import ContractError, _load, _verify_legacy_plane, _verify_signature, verify_rekor_evidence
+    except ModuleNotFoundError:
+        from verify_attestation_binding import ContractError, _load, _verify_legacy_plane, _verify_signature, verify_rekor_evidence
+    try:
+        binding = _load(dated / "binding.json", "same-day binding")
+        index = _load(dated / "index.json", "same-day attestation index")
+        head = _load(dated / "chain_head.json", "same-day chain head")
+        _load(dated / "scores.json", "same-day trust scores")
+        payload = binding.get("payload")
+        if (
+            binding.get("schema") != "datapulse/v1/attestation-binding-envelope"
+            or not isinstance(payload, dict)
+            or payload.get("schema") != "datapulse/v1/attestation-binding"
+            or payload.get("date") != day
+            or payload.get("ed25519", {}).get("chain_head") != head.get("chain_head")
+            or payload.get("ed25519", {}).get("chain_head_ref") != f"attestations/{day}/chain_head.json"
+        ):
+            raise ContractError("same-day binding does not match its dated chain head")
+        registry = _load(root / "docs/.well-known/datapulse-probe-keys.json", "probe key registry")
+        key_id = payload.get("ed25519", {}).get("key_id")
+        matches = [row for row in registry.get("keys", []) if isinstance(row, dict) and row.get("key_id") == key_id]
+        if len(matches) != 1:
+            raise ContractError("same-day attestation key is missing or ambiguous")
+        public = Ed25519PublicKey.from_public_bytes(base64.b64decode(matches[0]["public_key_base64"], validate=True))
+        _verify_signature(public, payload, binding.get("signature_base64"), "same-day binding")
+        rekor = binding.get("rekor")
+        claims = {"artifact_signed": rekor is not None, "rekor_witnessed": rekor is not None, "source_truth_verified": False}
+        if binding.get("claims") != claims:
+            raise ContractError("same-day binding claims do not match its evidence")
+        if rekor is not None:
+            health = payload.get("health")
+            if not isinstance(health, dict) or not isinstance(health.get("artifact_sha256"), str):
+                raise ContractError("same-day binding health claim is invalid")
+            verify_rekor_evidence(root, rekor, health["artifact_sha256"])
+        _verify_legacy_plane(root, index, head, public, matches[0])
+        chain_index = _load(root / "attestations/chain-index.json", "chain index")
+        refs = [ref for ref in chain_index.get("heads", {}).values() if isinstance(ref, str) and ref.startswith(f"attestations/{day}/")]
+        if refs != [f"attestations/{day}/chain_head.json"]:
+            raise ContractError("duplicate-date attestation ambiguity detected")
+    except (ContractError, KeyError, TypeError, ValueError) as error:
+        raise ValueError(f"same-day attestation is corrupt or inconsistent: {error}") from error
+    latest = root / "attestations" / "latest"
+    if latest.exists(): shutil.rmtree(latest)
+    latest.mkdir(parents=True)
+    for filename in ("chain_head.json", "index.json", "scores.json", "binding.json"):
+        shutil.copy2(dated / filename, latest / filename)
+    return True
+
 def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | None = None) -> None:
+    day=now.date().isoformat()
+    latest = root / "attestations" / "latest"
+    latest_date=load(latest/"index.json").get("date") if (latest/"index.json").exists() else None
+    if isinstance(latest_date,str) and latest_date>day:
+        raise ValueError("older dated attestation cannot supersede latest")
+    if reuse_existing_day(root, day):
+        return
     manifest, health, trends, drift, recon = load_score_inputs(root); key=load(key_path)
     private=Ed25519PrivateKey.from_private_bytes(base64.b64decode(key["private_key_base64"])); public=base64.b64decode(key["public_key_base64"])
     if private.public_key().public_bytes(Encoding.Raw,PublicFormat.Raw)!=public: raise ValueError("private and public key do not match")
     registry=load(root/"docs/.well-known/datapulse-probe-keys.json"); row=next((r for r in registry["keys"] if r["key_id"]==key["key_id"]),None)
     if row is None or registry.get("current_key_id")!=key["key_id"] or row.get("status")!="active" or not(parse_time(row["not_before"])<=now<=parse_time(row["not_after"])): raise ValueError("signing key is not active")
-    day=now.date().isoformat(); generated_at=now.replace(microsecond=0).isoformat().replace("+00:00","Z"); base=root/"attestations"; dated=base/day; latest=base/"latest"; health_claim=health_binding(root,health); rekor=rekor_binding(root,rekor_reference,health_claim["artifact_sha256"]); latest_date=load(latest/"index.json").get("date") if (latest/"index.json").exists() else None
-    if isinstance(latest_date,str) and latest_date>day: raise ValueError("older dated attestation cannot supersede latest")
-    if dated.exists():
-        if latest_date!=day: raise ValueError("older dated attestation cannot supersede latest")
-        existing_path=dated/"binding.json"
-        if not existing_path.is_file(): raise ValueError("same-day attestation already exists without a binding contract")
-        existing=load(existing_path); payload=existing.get("payload",{})
-        if payload.get("date")!=day or payload.get("health")!=health_claim or payload.get("ed25519",{}).get("key_id")!=key["key_id"]: raise ValueError("same-day attestation already exists for different health or key inputs")
-        if rekor is not None:
-            current=existing.get("rekor")
-            if current not in (None,rekor): raise ValueError("same-day attestation already has different Rekor evidence")
-            existing["rekor"]=rekor; existing["claims"]={"artifact_signed":True,"rekor_witnessed":True,"source_truth_verified":False}; dump(existing_path,existing)
-        if latest.exists(): shutil.rmtree(latest)
-        latest.mkdir(parents=True)
-        for filename in ("chain_head.json","index.json","scores.json","binding.json"):
-            shutil.copy2(dated/filename,latest/filename)
-        return
+    generated_at=now.replace(microsecond=0).isoformat().replace("+00:00","Z"); base=root/"attestations"; dated=base/day; health_claim=health_binding(root,health); rekor=rekor_binding(root,rekor_reference,health_claim["artifact_sha256"])
     previous=load(latest/"chain_head.json")["chain_head"] if (latest/"chain_head.json").exists() else ZERO
     hp=root/"health/history.jsonl"; history=[json.loads(line) for line in hp.read_text(encoding="utf-8").splitlines() if line.strip()] if hp.exists() else []; health_by={r["dataset_id"]:r for r in health["datasets"]}; links=[]; refs={}
     for entry in sorted(manifest["datasets"],key=lambda r:r["id"]):

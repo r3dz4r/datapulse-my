@@ -287,7 +287,6 @@ def test_cloudflare_fast_path_preserves_valid_served_attestation_plane(tmp_path:
     health["checked_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
     health["datasets"][0]["last_checked"] = health["checked_at"]
     write(served_root / "health/latest.json", health)
-    ga.generate(served_root, key, now)
     ga.generate(served_root, key, now, fixture_rekor_reference(served_root, day))
     assert verify_contract(served_root, now=now + timedelta(hours=1))["claims"]["artifact_signed"] is True
 
