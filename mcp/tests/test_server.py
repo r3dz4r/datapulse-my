@@ -6,6 +6,7 @@ import json
 import base64
 import hashlib
 import sys
+import asyncio
 import httpx
 from datetime import datetime, timezone
 from importlib.metadata import version as package_version
@@ -1479,6 +1480,97 @@ async def test_verify_evidence_uses_cache_without_force_bypass(monkeypatch: pyte
     requests = install_fake_live_http(monkeypatch, [httpx.Response(200)])
     first = await server.verify_evidence("sample"); second = await server.verify_evidence("sample")
     assert len(requests) == 1 and first["cached"] is False and second["cached"] is True
+
+
+async def test_verify_evidence_expired_cache_is_not_presented_as_live(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"
+    manifest, health = _verification_fixture(url)
+    calls = 0
+
+    async def load() -> tuple[dict, dict]:
+        return manifest, health
+
+    async def fetch(value: str) -> dict:
+        nonlocal calls
+        calls += 1
+        return {"request_url": value, "final_url": value, "http_status": 200, "last_modified": None, "content_length": None}
+
+    key = ("sample", url, "now")
+    server._VERIFY_CACHE[key] = (server.monotonic() - server.VERIFY_CACHE_SECONDS, {"cached": False})
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    monkeypatch.setattr(server, "_fetch_live_receipts", fetch)
+
+    result = await server.verify_evidence("sample")
+
+    assert calls == 1
+    assert result["cached"] is False
+
+
+async def test_verify_evidence_does_not_serialize_unrelated_live_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    urls = {
+        "one": "https://api.data.gov.my/data-catalogue?id=one",
+        "two": "https://api.data.gov.my/data-catalogue?id=two",
+    }
+    manifest = {"datasets": [{"id": dataset_id, "url": url, "source": "data.gov.my"} for dataset_id, url in urls.items()]}
+    health = {"datasets": [{"dataset_id": dataset_id, "last_checked": dataset_id, "request_url": url, "access_dependency": "direct", "http_status": 200} for dataset_id, url in urls.items()]}
+
+    async def load() -> tuple[dict, dict]:
+        return manifest, health
+
+    both_started = asyncio.Event()
+    started: set[str] = set()
+
+    async def fetch(url: str) -> dict:
+        started.add(url)
+        if len(started) == 2:
+            both_started.set()
+        await asyncio.wait_for(both_started.wait(), timeout=0.1)
+        return {"request_url": url, "final_url": url, "http_status": 200, "last_modified": None, "content_length": None}
+
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    monkeypatch.setattr(server, "_fetch_live_receipts", fetch)
+
+    first, second = await asyncio.gather(
+        server.verify_evidence("one"), server.verify_evidence("two")
+    )
+
+    assert started == set(urls.values())
+    assert first["verdict"] == second["verdict"] == "match"
+
+
+async def test_verify_evidence_coalesces_identical_concurrent_live_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"
+    manifest, health = _verification_fixture(url)
+
+    async def load() -> tuple[dict, dict]:
+        return manifest, health
+
+    started = asyncio.Event()
+    release = asyncio.Event()
+    calls = 0
+
+    async def fetch(value: str) -> dict:
+        nonlocal calls
+        calls += 1
+        started.set()
+        await release.wait()
+        return {"request_url": value, "final_url": value, "http_status": 200, "last_modified": None, "content_length": None}
+
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    monkeypatch.setattr(server, "_fetch_live_receipts", fetch)
+    first = asyncio.create_task(server.verify_evidence("sample"))
+    await started.wait()
+    second = asyncio.create_task(server.verify_evidence("sample"))
+    await asyncio.sleep(0)
+    release.set()
+
+    initial, coalesced = await asyncio.gather(first, second)
+
+    assert calls == 1
+    assert initial["cached"] is False
+    assert coalesced["cached"] is True
 
 
 async def test_find_by_licence_returns_summary(live_data: tuple[dict, dict]) -> None:

@@ -93,7 +93,7 @@ COMPACT_EVIDENCE_FIELDS = (
     "first_row_hash", "anomaly_detected", "status",
 )
 _VERIFY_CACHE: dict[tuple[str, str, str | None], tuple[float, dict[str, Any]]] = {}
-_VERIFY_LOCK = asyncio.Lock()
+_VERIFY_IN_FLIGHT: dict[tuple[str, str, str | None], asyncio.Task[dict[str, Any]]] = {}
 CC_BY_4 = "Creative Commons Attribution 4.0"
 OGL_MY = "Open Government Licence (Malaysia)"
 LICENCE_ALIASES = {
@@ -1556,7 +1556,6 @@ async def verify_dataset(
     ] = False,
 ) -> dict[str, Any]:
     """Verify a published per-dataset Sigstore receipt without changing any artifacts."""
-    published_evidence = await get_evidence(dataset_id)
     manifest, health = await _load_catalogue()
     entry = {item["id"]: item for item in manifest.get("datasets", [])}.get(dataset_id)
     if entry is None:
@@ -1589,7 +1588,7 @@ async def verify_dataset(
         "dataset_id": dataset_id,
         "dataset": entry,
         "health": health_row,
-        "evidence": published_evidence["evidence"],
+        "evidence": _project_evidence(health_row, EVIDENCE_FIELDS),
         "signed": signed,
         "verifier_output": verifier_output[:4096] if include_proof_steps else None,
         "bundle_ref": bundle_ref,
@@ -1656,6 +1655,59 @@ _get_freshness_summary_tool.parameters.setdefault("required", [])
 mcp.add_tool(_get_freshness_summary_tool)
 
 
+async def _run_live_verification(
+    key: tuple[str, str, str | None], source_url: str, result: dict[str, Any]
+) -> dict[str, Any]:
+    """Perform one live receipt check and remove its coalescing entry on completion."""
+    try:
+        try:
+            live = await _fetch_live_receipts(source_url)
+        except _LiveVerificationBlocked as exc:
+            result["details"].append(str(exc))
+            return result
+        except httpx.RequestError as exc:
+            result["verdict"] = "unreachable"
+            result["details"].append(f"live request failed: {exc.__class__.__name__}")
+            _VERIFY_CACHE[key] = (monotonic(), deepcopy(result))
+            return result
+
+        result.update({
+            "live_request_url": live["request_url"],
+            "live_final_url": live["final_url"],
+            "live_http_status": live["http_status"],
+            "live_last_modified": live["last_modified"],
+            "live_content_length": live["content_length"],
+        })
+        recorded_request_url = result["recorded_request_url"]
+        result["request_url_match"] = source_url == recorded_request_url if isinstance(recorded_request_url, str) else None
+        recorded_http_status = result["recorded_http_status"]
+        result["http_status_match"] = live["http_status"] == recorded_http_status if isinstance(recorded_http_status, int) else None
+        recorded_last_modified = result["recorded_last_modified"]
+        if recorded_last_modified is not None or live["last_modified"] is not None:
+            result["last_modified_match"] = recorded_last_modified == live["last_modified"]
+        recorded_content_length = result["recorded_content_length"]
+        if isinstance(recorded_content_length, int) and isinstance(live["content_length"], int):
+            result["content_length_match"] = recorded_content_length == live["content_length"]
+
+        if not 200 <= live["http_status"] < 300:
+            result["verdict"] = "unreachable"
+            result["details"].append(f"live source returned HTTP {live['http_status']}")
+        else:
+            mismatches = [field for field in ("request_url_match", "http_status_match", "last_modified_match", "content_length_match") if result[field] is False]
+            result["verdict"] = "mismatch" if mismatches else "match"
+            result["details"].append(
+                ("transport receipt mismatch: " + ", ".join(mismatches))
+                if mismatches else "all comparable transport receipts match recorded evidence"
+            )
+        result["details"].append(
+            "content date, record count, and shape fingerprint require the canonical probe pipeline and were not recomputed"
+        )
+        _VERIFY_CACHE[key] = (monotonic(), deepcopy(result))
+        return result
+    finally:
+        _VERIFY_IN_FLIGHT.pop(key, None)
+
+
 async def verify_evidence(
     dataset_id: Annotated[
         str,
@@ -1687,55 +1739,22 @@ async def verify_evidence(
         return result
 
     key = (dataset_id, source_url, health_record.get("last_checked"))
-    async with _VERIFY_LOCK:
-        now = monotonic()
-        cached = _cached_verification_result(key, now)
-        if cached is not None:
-            return cached
-        try:
-            live = await _fetch_live_receipts(source_url)
-        except _LiveVerificationBlocked as exc:
-            result["details"].append(str(exc))
-            return result
-        except httpx.RequestError as exc:
-            result["verdict"] = "unreachable"
-            result["details"].append(f"live request failed: {exc.__class__.__name__}")
-            _VERIFY_CACHE[key] = (now, deepcopy(result))
-            return result
+    now = monotonic()
+    cached = _cached_verification_result(key, now)
+    if cached is not None:
+        return cached
 
-        result.update({
-            "live_request_url": live["request_url"],
-            "live_final_url": live["final_url"],
-            "live_http_status": live["http_status"],
-            "live_last_modified": live["last_modified"],
-            "live_content_length": live["content_length"],
-        })
-        recorded_request_url = health_record.get("request_url")
-        result["request_url_match"] = source_url == recorded_request_url if isinstance(recorded_request_url, str) else None
-        recorded_http_status = health_record.get("http_status")
-        result["http_status_match"] = live["http_status"] == recorded_http_status if isinstance(recorded_http_status, int) else None
-        recorded_last_modified = health_record.get("last_modified")
-        if recorded_last_modified is not None or live["last_modified"] is not None:
-            result["last_modified_match"] = recorded_last_modified == live["last_modified"]
-        recorded_content_length = health_record.get("content_length")
-        if isinstance(recorded_content_length, int) and isinstance(live["content_length"], int):
-            result["content_length_match"] = recorded_content_length == live["content_length"]
-
-        if not 200 <= live["http_status"] < 300:
-            result["verdict"] = "unreachable"
-            result["details"].append(f"live source returned HTTP {live['http_status']}")
-        else:
-            mismatches = [field for field in ("request_url_match", "http_status_match", "last_modified_match", "content_length_match") if result[field] is False]
-            result["verdict"] = "mismatch" if mismatches else "match"
-            result["details"].append(
-                ("transport receipt mismatch: " + ", ".join(mismatches))
-                if mismatches else "all comparable transport receipts match recorded evidence"
-            )
-        result["details"].append(
-            "content date, record count, and shape fingerprint require the canonical probe pipeline and were not recomputed"
-        )
-        _VERIFY_CACHE[key] = (now, deepcopy(result))
-        return result
+    task = _VERIFY_IN_FLIGHT.get(key)
+    coalesced = task is not None
+    if task is None:
+        task = asyncio.create_task(_run_live_verification(key, source_url, result))
+        _VERIFY_IN_FLIGHT[key] = task
+    verified = await asyncio.shield(task)
+    if coalesced:
+        verified = deepcopy(verified)
+        verified["cached"] = True
+        verified["cache_age_seconds"] = 0.0
+    return verified
 
 
 _verify_evidence_tool = FunctionTool.from_function(

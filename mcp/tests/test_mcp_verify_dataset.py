@@ -52,8 +52,11 @@ def _bundle_for(manifest: dict, health: dict) -> bytes:
 
 async def test_verify_dataset_returns_signed_receipt_bundle(monkeypatch: pytest.MonkeyPatch) -> None:
     manifest, health = _catalogue()
+    catalogue_loads = 0
 
     async def load_catalogue() -> tuple[dict, dict]:
+        nonlocal catalogue_loads
+        catalogue_loads += 1
         return manifest, health
 
     async def fetch_bytes(path: str) -> bytes:
@@ -83,3 +86,26 @@ async def test_verify_dataset_returns_signed_receipt_bundle(monkeypatch: pytest.
     assert f"--certificate-identity {server.SIGSTORE_CERTIFICATE_IDENTITY}" in hint
     assert f"--certificate-oidc-issuer {server.SIGSTORE_CERTIFICATE_OIDC_ISSUER}" in hint
     assert f"--type {server.PER_DATASET_RECEIPT_PREDICATE_TYPE}" in hint
+    assert catalogue_loads == 1
+
+
+async def test_verify_dataset_loads_published_catalogue_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    manifest, health = _catalogue()
+    loads = 0
+
+    async def load_catalogue() -> tuple[dict, dict]:
+        nonlocal loads
+        loads += 1
+        return manifest, health
+
+    async def fetch_bytes(_: str) -> bytes:
+        return _bundle_for(manifest, health)
+
+    monkeypatch.setattr(server, "_load_catalogue", load_catalogue)
+    monkeypatch.setattr(server, "_fetch_bytes", fetch_bytes)
+    monkeypatch.setattr(server, "_verify_sigstore_receipt", lambda **_: (True, "Verified OK"))
+
+    result = await server.verify_dataset("fuelprice")
+
+    assert loads == 1
+    assert result["signed"] is True
