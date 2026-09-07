@@ -101,6 +101,9 @@ jobs:
       - name: Verify distribution surfaces match canonical evidence
         run: python3 scripts/verify_distribution_sync.py
 
+      - name: Verify attestation chain forward-linearity seed
+        run: python3 scripts/verify_chain_linearity.py
+
       - name: Verify OpenWiki source contract
         run: python3 scripts/verify_openwiki.py
 
