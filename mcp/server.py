@@ -1,4 +1,4 @@
-"""Read-only FastMCP server for the published DataPulse MY catalogue."""
+"""Read-only FastMCP server for the published DataPulse catalogue."""
 
 from __future__ import annotations
 
@@ -256,7 +256,7 @@ def _manifest_dataset_count(manifest_path: Path | None = None) -> int:
 
 DATASET_COUNT = _manifest_dataset_count()
 SEARCH_DESCRIPTION = (
-    f"Search DataPulse MY's {DATASET_COUNT} Malaysian public datasets by "
+    f"Search DataPulse's {DATASET_COUNT} Malaysian public datasets by "
     "natural-language query. "
     "Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or "
     "source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked "
@@ -372,9 +372,20 @@ mcp_types.Implementation = SourceImplementation
 
 
 mcp = FastMCP(
-    "DataPulse MY",
+    "DataPulse",
     version=SOURCE_VERSION_STRING,
-    instructions="Read-only access to DataPulse MY's Malaysian public dataset catalogue.",
+    instructions=(
+        "DataPulse is a read-only evidence and freshness layer for 418 official Malaysian "
+        "public datasets. Use it for Malaysian data questions about currentness, freshness, "
+        "licence, provenance, reachability, schema or record drift, reliability, signed "
+        "evidence, or citation verification. Start with search_datasets; verify_dataset before "
+        "trusting a dataset; use get_evidence/get_provenance for evidence and citations; use "
+        "verify_evidence for live-vs-published comparison; use portfolio risk tools for "
+        "stale, anomaly, drift, or reliability questions. Qualify stale, degraded, "
+        "unreachable, browser-dependent, unknown, and unknown-freshness states. DataPulse "
+        "proves what an official source was observed to contain and when, not that upstream "
+        "data is semantically true."
+    ),
     middleware=[ToolUsageLoggingMiddleware()],
     # The catalogue is identical for unauthenticated callers. FastMCP 4 applies
     # these documented cache hints to modern cacheable discovery/resource results.
@@ -397,7 +408,7 @@ TOOL_ICONS = [
     )
 ]
 TOOL_META = {
-    "publisher": "DataPulse MY",
+    "publisher": "DataPulse",
     "publisher_url": "https://www.data-pulse.my/",
     "version": SOURCE_VERSION_STRING,
     "repository_url": "https://github.com/r3dz4r/datapulse-my",
@@ -406,7 +417,7 @@ TOOL_META = {
 
 
 async def _fetch_json(path: str) -> dict[str, Any]:
-    """Fetch one JSON document from the published DataPulse MY site."""
+    """Fetch one JSON document from the published DataPulse site."""
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
         response = await client.get(
             f"{DATA_BASE}/{path.lstrip('/')}", follow_redirects=True
@@ -1602,7 +1613,7 @@ async def get_freshness_summary() -> dict[str, Any]:
         if isinstance(record, dict) and record.get("status") in counts:
             counts[record["status"]] += 1
     return {
-        "summary": "Freshness summary for the latest published DataPulse MY health snapshot.",
+        "summary": "Freshness summary for the latest published DataPulse health snapshot.",
         "counts": counts,
         "dataset_total": len(records),
         "checked_at": health.get("checked_at"),
@@ -1750,7 +1761,7 @@ async def trust_verdict(
         "evidence": {"health": _project_evidence(health_row, EVIDENCE_FIELDS), "trend": trend, "drift": drift_row, "reconciliation": _reconciliation_for(dataset_id, reconciliation)},
         "score": score,
         "signature_ref": ref,
-        "citation_text": f"{entry['name']} — {entry['source']}; observed {envelope['payload']['observed_at']}; DataPulse MY attestation {ref}.",
+        "citation_text": f"{entry['name']} — {entry['source']}; observed {envelope['payload']['observed_at']}; DataPulse attestation {ref}.",
         "observed_at": envelope["payload"]["observed_at"],
         "verified_live_at": _latest_live_verification(dataset_id),
         "validity_notice": "Attestation publication is not signature verification or source-truth verification; call verify_attestation and verify_evidence for production use.",
@@ -1934,7 +1945,7 @@ async def usage_summary(
 @mcp.resource(
     "datapulse://index",
     description=(
-        "Read first; lightweight list of all DataPulse MY dataset ids with current "
+        "Read first; lightweight list of all DataPulse dataset ids with current "
         "status, title, source, licence, and namespace."
     ),
     mime_type="application/json",
@@ -1991,7 +2002,7 @@ async def trend_resource() -> str:
 @mcp.resource(
     "datapulse://reliability",
     description=(
-        "Live count of DataPulse MY datasets by evaluated publish-reliability grade; "
+        "Live count of DataPulse datasets by evaluated publish-reliability grade; "
         "reliability is timeliness, not uptime."
     ),
     mime_type="application/json",
@@ -2040,7 +2051,7 @@ async def attestation_resource() -> str:
 
 @mcp.resource(
     "datapulse://licences",
-    description="Live count of DataPulse MY datasets grouped by licence.",
+    description="Live count of DataPulse datasets grouped by licence.",
     mime_type="application/json",
 )
 async def licence_summary() -> str:
@@ -2055,7 +2066,7 @@ async def licence_summary() -> str:
 
 @mcp.resource(
     "datapulse://citation/{dataset_id}",
-    description="Canonical evidence-bound citation for one exact DataPulse MY dataset id.",
+    description="Canonical evidence-bound citation for one exact DataPulse dataset id.",
     mime_type="application/json",
 )
 async def citation_resource(dataset_id: str) -> str:
@@ -2099,7 +2110,7 @@ async def citation_resource(dataset_id: str) -> str:
 
 @mcp.resource(
     "datapulse://{dataset_id}",
-    description="Full published manifest entry for one exact DataPulse MY dataset id.",
+    description="Full published manifest entry for one exact DataPulse dataset id.",
     mime_type="application/json",
 )
 async def dataset_resource(dataset_id: str) -> str:

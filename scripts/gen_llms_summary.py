@@ -78,7 +78,7 @@ def generate(root: Path, *, check: bool = False, validate_only: bool = False) ->
         raise GenerationError(f"cannot read {path}: {error}") from error
     count = len(datasets)
     summary = (
-        f"> DataPulse MY publishes a machine-readable manifest of {count} official datasets.\n\n"
+        f"> DataPulse publishes a machine-readable manifest of {count} official datasets.\n\n"
         "Each manifest entry retains its human-readable `steward` and stable `custodian` publisher ID. "
         "Health anomaly fields explain freshness-delta outliers without adding statuses."
     )

@@ -3,12 +3,12 @@
   "schema": "datapulse/v1/mcp-advertisement",
   "mcp_version": "2026-07-28",
   "server": {
-    "name": "DataPulse MY",
+    "name": "DataPulse",
     "version": "4.0.0b3",
     "source_commit_sha": "988991ee4f652db8a717a576cd4191a98e2b2a16",
     "source_commit_date": "2026-09-07",
-    "description": "Read-only access to DataPulse MY's Malaysian public dataset catalogue (418 datasets, 10-status health taxonomy, licence/attribution metadata).",
-    "vendor": "DataPulse MY (open source)",
+    "description": "Read-only access to DataPulse's Malaysian public dataset catalogue (418 datasets, 10-status health taxonomy, licence/attribution metadata).",
+    "vendor": "DataPulse (open source)",
     "homepage": "https://www.data-pulse.my/",
     "repository": "https://github.com/r3dz4r/datapulse-my"
   },
@@ -33,7 +33,7 @@
   "tools": [
     {
       "name": "search_datasets",
-      "description": "Search DataPulse MY's 418 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence.",
+      "description": "Search DataPulse's 418 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -662,7 +662,7 @@
     {
       "uri": "datapulse://index",
       "name": "dataset_index",
-      "description": "Read first; lightweight list of all DataPulse MY dataset ids with current status, title, source, licence, and namespace.",
+      "description": "Read first; lightweight list of all DataPulse dataset ids with current status, title, source, licence, and namespace.",
       "mimeType": "application/json"
     },
     {
@@ -680,7 +680,7 @@
     {
       "uri": "datapulse://reliability",
       "name": "reliability_summary",
-      "description": "Live count of DataPulse MY datasets by evaluated publish-reliability grade; reliability is timeliness, not uptime.",
+      "description": "Live count of DataPulse datasets by evaluated publish-reliability grade; reliability is timeliness, not uptime.",
       "mimeType": "application/json"
     },
     {
@@ -704,7 +704,7 @@
     {
       "uri": "datapulse://licences",
       "name": "licence_summary",
-      "description": "Live count of DataPulse MY datasets grouped by licence.",
+      "description": "Live count of DataPulse datasets grouped by licence.",
       "mimeType": "application/json"
     }
   ],
@@ -712,13 +712,13 @@
     {
       "uriTemplate": "datapulse://citation/{dataset_id}",
       "name": "citation_resource",
-      "description": "Canonical evidence-bound citation for one exact DataPulse MY dataset id.",
+      "description": "Canonical evidence-bound citation for one exact DataPulse dataset id.",
       "mimeType": "application/json"
     },
     {
       "uriTemplate": "datapulse://{dataset_id}",
       "name": "dataset_resource",
-      "description": "Full published manifest entry for one exact DataPulse MY dataset id.",
+      "description": "Full published manifest entry for one exact DataPulse dataset id.",
       "mimeType": "application/json"
     }
   ]

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "DataPulse MY MCP advertisement",
+  "title": "DataPulse MCP advertisement",
   "type": "object",
   "required": ["$schema", "schema", "mcp_version", "server", "endpoint", "taxonomy", "tools", "resources", "resource_templates"],
   "properties": {
@@ -11,7 +11,7 @@
       "type": "object",
       "required": ["name", "version", "source_commit_sha", "source_commit_date", "description", "vendor", "homepage", "repository"],
       "properties": {
-        "name": {"const": "DataPulse MY"}, "version": {"type": "string"},
+        "name": {"const": "DataPulse"}, "version": {"type": "string"},
         "source_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
         "source_commit_date": {"type": "string", "format": "date"},
         "description": {"type": "string"}, "vendor": {"type": "string"},

@@ -135,7 +135,7 @@ def test_updates_count_from_manifest(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     output = (tmp_path / "llms.txt").read_text(encoding="utf-8")
-    assert "> DataPulse MY publishes a machine-readable manifest of 3 official datasets." in output
+    assert "> DataPulse publishes a machine-readable manifest of 3 official datasets." in output
     assert "Unrelated content stays byte-identical." in output
     assert "dataset-0" in output
     artifacts = output.split("<!-- BEGIN public-artifacts -->", 1)[1].split("<!-- END public-artifacts -->", 1)[0]

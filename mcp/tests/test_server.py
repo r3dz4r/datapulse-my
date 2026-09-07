@@ -109,6 +109,21 @@ def test_generated_mcp_catalogue_uses_current_protocol_and_wire_annotations() ->
     )
 
 
+def test_machine_facing_identity_is_canonical_across_discovery_surfaces() -> None:
+    """Pin the product identity used by registries and runtime metadata."""
+    mcp_document = json.loads((REPO_DIR / "mcp.json").read_text(encoding="utf-8"))
+    agent_document = json.loads((REPO_DIR / "agent.json").read_text(encoding="utf-8"))
+    server_document = json.loads((REPO_DIR / "server.json").read_text(encoding="utf-8"))
+
+    assert server.mcp.name == "DataPulse"
+    assert server.TOOL_META["publisher"] == "DataPulse"
+    assert mcp_document["server"]["name"] == "DataPulse"
+    assert agent_document["name"] == "DataPulse"
+    assert server_document["title"] == "DataPulse"
+    for document in (mcp_document, agent_document, server_document):
+        assert "DataPulse MY" not in json.dumps(document)
+
+
 async def test_modern_and_legacy_clients_preserve_discovery_surface_and_cache_hints() -> None:
     async with Client(server.mcp) as modern:
         tools = await modern.list_tools_mcp()
@@ -117,6 +132,21 @@ async def test_modern_and_legacy_clients_preserve_discovery_surface_and_cache_hi
         index = await modern.read_resource_mcp("datapulse://index")
 
         assert modern.protocol_version == "2026-07-28"
+        assert modern.server_info.name == "DataPulse"
+        assert modern.instructions == (
+            "DataPulse is a read-only evidence and freshness layer for 418 official Malaysian "
+            "public datasets. Use it for Malaysian data questions about currentness, freshness, "
+            "licence, provenance, reachability, schema or record drift, reliability, signed "
+            "evidence, or citation verification. Start with search_datasets; verify_dataset before "
+            "trusting a dataset; use get_evidence/get_provenance for evidence and citations; use "
+            "verify_evidence for live-vs-published comparison; use portfolio risk tools for "
+            "stale, anomaly, drift, or reliability questions. Qualify stale, degraded, "
+            "unreachable, browser-dependent, unknown, and unknown-freshness states. DataPulse "
+            "proves what an official source was observed to contain and when, not that upstream "
+            "data is semantically true."
+        )
+        capabilities = modern.server_capabilities.model_dump(by_alias=True, exclude_none=True)
+        assert {"tools", "resources", "prompts"} <= set(capabilities)
         for result in (tools, resources, templates, index):
             assert result.ttl_ms == 300_000
             assert result.cache_scope == "public"
@@ -511,7 +541,7 @@ async def test_tools_list_exposes_display_and_publisher_metadata() -> None:
             }
         ]
         assert payload["_meta"] == {
-            "publisher": "DataPulse MY",
+                "publisher": "DataPulse",
             "publisher_url": "https://www.data-pulse.my/",
             "version": server.SOURCE_VERSION_STRING,
             "repository_url": "https://github.com/r3dz4r/datapulse-my",

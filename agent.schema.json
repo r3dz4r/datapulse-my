@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "DataPulse MY agent manifest",
+  "title": "DataPulse agent manifest",
   "type": "object",
   "required": ["$schema", "schema", "@context", "@type", "@id", "name", "description", "url", "capabilities", "trust_model", "resources", "source", "last_updated"],
   "properties": {
     "$schema": {"type": "string", "format": "uri"}, "schema": {"const": "datapulse/v1/agent-manifest"},
     "@context": {"type": "string", "format": "uri"}, "@type": {"const": "WebSite"}, "@id": {"type": "string", "format": "uri"},
-    "name": {"const": "DataPulse MY"}, "description": {"type": "string"}, "url": {"type": "string", "format": "uri"},
+    "name": {"const": "DataPulse"}, "description": {"type": "string"}, "url": {"type": "string", "format": "uri"},
     "capabilities": {
       "type": "object", "required": ["data_access", "mcp_server", "verify_dataset", "get_freshness_summary"],
       "properties": {
