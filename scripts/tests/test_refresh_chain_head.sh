@@ -50,7 +50,7 @@ STUB
 same_day="$TEST_ROOT/same-day"
 make_repo "$same_day" true
 same_day_output="$TEST_ROOT/same-day.out"
-PATH="$same_day/bin:$PATH" bash "$same_day/scripts/refresh_chain_head.sh" fixture-private-key >"$same_day_output"
+DATAPULSE_REKOR_REFERENCE="attestations/$(date -u +%F)/health.sigstore.json" PATH="$same_day/bin:$PATH" bash "$same_day/scripts/refresh_chain_head.sh" fixture-private-key >"$same_day_output"
 [[ ! -e "$same_day/generator-invocations" ]] || fail 'same-day refresh invoked gen_attestations'
 rg -q 'already exists; refreshing latest/chain-head from committed set \(no re-sign\)' "$same_day_output"
 for name in chain_head.json index.json scores.json binding.json; do
@@ -68,8 +68,9 @@ rg -q 'dataset_count \(3\) does not match canonical health \(2\)' "$TEST_ROOT/mi
 
 first_day="$TEST_ROOT/first-day"
 make_repo "$first_day" false
-PATH="$first_day/bin:$PATH" bash "$first_day/scripts/refresh_chain_head.sh" fixture-private-key
+DATAPULSE_REKOR_REFERENCE="attestations/$(date -u +%F)/health.sigstore.json" PATH="$first_day/bin:$PATH" bash "$first_day/scripts/refresh_chain_head.sh" fixture-private-key
 [[ -s "$first_day/generator-invocations" ]] || fail 'first-of-day refresh did not invoke gen_attestations'
+rg -F -q -- "--rekor-reference attestations/$(date -u +%F)/health.sigstore.json" "$first_day/generator-invocations"
 [[ "$(jq -r '.chain_head' "$first_day/.attestations/chain_head.json")" == generated-head ]] || fail 'first-of-day refresh did not mirror generated chain head'
 
 printf 'refresh_chain_head.sh tests passed.\n'

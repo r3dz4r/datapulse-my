@@ -37,7 +37,11 @@ if [[ -d "$dated" && -f "$dated/binding.json" && -f "$dated/chain_head.json" ]];
     cp "$dated/$filename" "attestations/latest/$filename"
   done
 else
-  python3 scripts/gen_attestations.py --root . --private-key "$private_key"
+  generate_args=(--root . --private-key "$private_key")
+  if [[ -n "${DATAPULSE_REKOR_REFERENCE:-}" ]]; then
+    generate_args+=(--rekor-reference "$DATAPULSE_REKOR_REFERENCE")
+  fi
+  python3 scripts/gen_attestations.py "${generate_args[@]}"
 fi
 
 # gen_attestations.generate() copies the fresh head into attestations/latest/
