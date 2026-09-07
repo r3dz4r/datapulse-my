@@ -257,6 +257,28 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(ROOT / "docs/learn.html", source / "docs/learn.html")
     shutil.copy2(ROOT / "docs/npra.html", source / "docs/npra.html")
     shutil.copy2(ROOT / "docs/health-methodology.html", source / "docs/health-methodology.html")
+    for relative, replacements in {
+        "README.md": (
+            ("42 official datasets", "2 official datasets"),
+            ("42-dataset catalogue", "2-dataset catalogue"),
+            ("0-dataset catalogue", "2-dataset catalogue"),
+            ("0 datasets", "2 datasets"),
+        ),
+        "docs/index.html": (
+            ("418 datasets", "2 datasets"),
+            ("418 official datasets", "2 official datasets"),
+            ("418 of 2 datasets", "2 of 2 datasets"),
+        ),
+        "docs/learn.html": (
+            ("418 datasets", "2 datasets"),
+            ("18 read-only tools", "0 read-only tools"),
+        ),
+    }.items():
+        path = source / relative
+        text = path.read_text(encoding="utf-8")
+        for old, new in replacements:
+            text = text.replace(old, new)
+        path.write_text(text, encoding="utf-8")
     shutil.copytree(RELEASE_FIXTURE / "mcp", source / "mcp")
 
     metrics_cache = source / ".cache/datapulse/metrics_dataset_cumul.json"
@@ -279,6 +301,7 @@ def _stage_source(tmp_path: Path) -> Path:
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", scripts)
+    shutil.copy2(ROOT / "scripts/verify_distribution_sync.py", scripts)
     shutil.copy2(ROOT / "scripts/gen_anomaly.py", scripts / "gen_anomaly.py")
     subprocess.run(["git", "init", "-q"], cwd=source, check=True)
     subprocess.run(
