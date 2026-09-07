@@ -9,7 +9,7 @@ DataPulse exposes 18 read-only tools over 418 datasets and the 10-status health 
 
 ### `search_datasets`
 
-Search DataPulse's 418 Malaysian public datasets by natural-language query. Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked matches: id, title, source, licence, status, score. Use when an agent needs to find datasets covering a topic, by an agency, or under a specific licence.
+Use for discovery only: find DataPulse's 418 Malaysian public datasets by topic, source, or licence—for example, 'Malaysian public data inflation', licence and attribution, or a government dataset source. Returns ranked matches with id, title, source, licence, published status, and score. This is not trust verification: a status is published pipeline context, not proof that a dataset is current or reliable. For 'is this dataset current?' or verify before relying on data, use search_datasets → verify_dataset → get_provenance.
 
 Input schema:
 
@@ -18,9 +18,9 @@ Input schema:
   "additionalProperties": false,
   "properties": {
     "query": {
-      "description": "Free-text search terms; natural language is allowed, e.g. 'inflation cpi'.",
+      "description": "Topic or task phrasing for Malaysian public-data discovery only, e.g. 'Malaysian public data inflation'; verify a result separately.",
       "examples": [
-        "inflation cpi"
+        "Malaysian public data inflation"
       ],
       "minLength": 1,
       "type": "string"
@@ -35,7 +35,7 @@ Input schema:
         }
       ],
       "default": null,
-      "description": "Optional exact licence name or supported alias, e.g. 'CC BY 4.0'.",
+      "description": "Optional exact licence name or supported alias for reuse discovery, e.g. 'CC BY 4.0'; this does not verify attribution compliance.",
       "examples": [
         "CC BY 4.0",
         "Open Government Licence (Malaysia)"
@@ -51,7 +51,7 @@ Input schema:
         }
       ],
       "default": null,
-      "description": "Optional case-insensitive source-name substring, e.g. 'OpenDOSM'.",
+      "description": "Optional case-insensitive publisher/source filter, e.g. 'OpenDOSM'.",
       "examples": [
         "OpenDOSM",
         "data.gov.my",
@@ -60,7 +60,7 @@ Input schema:
     },
     "limit": {
       "default": 10,
-      "description": "Maximum ranked matches to return; integer from 1 to 50, e.g. 10.",
+      "description": "Maximum discovery matches to return; integer from 1 to 50, e.g. 10.",
       "maximum": 50,
       "minimum": 1,
       "type": "integer"
@@ -359,7 +359,7 @@ Input schema:
 
 ### `get_provenance`
 
-Return citation-ready provenance metadata for the listed dataset ids, plus compact pipeline-published evidence receipts: row probe time, HTTP status, request URL, access dependency, freshness source, content date, record count, shape fingerprint, anomaly flag, and status. Use when an agent must cite data and show the evidence behind the trust claim without recomputing it.
+Use when asked 'can I cite this source?', for licence and attribution, or for citation-ready provenance. Returns source, steward, licence, canonical URL, and compact published evidence context: probe time, transport, access dependency, freshness signal, schema drift / record-count drift context, anomaly flag, and status. You may cite the returned provenance and describe its published evidence; it is not a freshness guarantee and does not itself verify the source is current. For pre-trust use search_datasets → verify_dataset → get_provenance.
 
 Input schema:
 
@@ -368,7 +368,7 @@ Input schema:
   "additionalProperties": false,
   "properties": {
     "dataset_ids": {
-      "description": "JSON array of 1 to 50 canonical dataset IDs, e.g. ['fuelprice', 'pricecatcher'].",
+      "description": "JSON array of 1 to 50 canonical dataset IDs for provenance and citation, e.g. ['fuelprice', 'pricecatcher']; this is not a live freshness check.",
       "examples": [
         [
           "fuelprice",
@@ -392,7 +392,7 @@ Input schema:
 
 ### `get_evidence`
 
-Return the complete pipeline-published evidence receipt for one dataset id, including probe time, transport, access dependency, freshness, record-count, shape, tolerance, status, and anomaly fields. Use for a deep audit, e.g. get_evidence('fuelprice'); values are presented without MCP-side recomputation.
+Use for a deep evidence audit or to inspect a provenance and evidence receipt. Returns the complete published evidence receipt for one dataset: probe time, transport, access dependency, freshness, schema drift / record-count drift, tolerance, status, and anomaly fields. It reads published pipeline evidence, not a live source fetch: you may report what the pipeline observed, but must not infer the source is currently reachable or semantically true. Use it for a deep audit before or alongside verification. search_datasets → get_evidence → verify_evidence → verify_attestation.
 
 Input schema:
 
@@ -401,7 +401,7 @@ Input schema:
   "additionalProperties": false,
   "properties": {
     "dataset_id": {
-      "description": "Canonical dataset identifier for a deep receipt, e.g. 'fuelprice'.",
+      "description": "Canonical dataset identifier for its complete published evidence receipt, e.g. 'fuelprice'; this tool does not fetch the live source.",
       "examples": [
         "fuelprice"
       ],
@@ -418,7 +418,7 @@ Input schema:
 
 ### `verify_dataset`
 
-Verify one dataset before trust in a single read-only call. Returns dataset metadata, the published health and evidence rows, and a fail-closed Sigstore per-dataset receipt verification result with artifact references. Use verify_dataset('fuelprice') before relying on a dataset claim.
+This is the preferred single-call pre-trust check for 'is this dataset current?', stale, unknown-freshness, degraded, or browser-dependent questions, and whenever an agent must verify before relying on data. Returns dataset metadata, published health and evidence, and fail-closed signed receipt verification with artifact references. It verifies published artifacts, not a live source check: you may infer whether their receipt verifies, but must not infer current upstream availability or semantic truth. Use search_datasets → verify_dataset → get_provenance.
 
 Input schema:
 
@@ -427,7 +427,7 @@ Input schema:
   "additionalProperties": false,
   "properties": {
     "dataset_id": {
-      "description": "Canonical dataset identifier to verify before trust, e.g. 'fuelprice'.",
+      "description": "Canonical dataset identifier for the published pre-trust receipt check, e.g. 'fuelprice'; this does not perform a live source fetch.",
       "examples": [
         "fuelprice"
       ],
@@ -436,7 +436,7 @@ Input schema:
     },
     "include_proof_steps": {
       "default": false,
-      "description": "Include bounded Cosign verifier output for audit steps, e.g. false.",
+      "description": "Include bounded signed-receipt verifier diagnostics for an audit, e.g. false; the result still does not establish upstream semantic truth.",
       "examples": [
         false,
         true
@@ -468,7 +468,7 @@ Input schema:
 
 ### `verify_evidence`
 
-Perform a rate-limited live streamed GET for one direct-access dataset and compare transport receipts with the latest published evidence, e.g. verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints remain pipeline-only and are explicitly reported as unverified; results are ephemeral and never update health artifacts. Returns a dict with transport receipt fields and a `verdict` for downstream trust checks without re-fetching.
+Use when a fresh, rate-limited live-vs-published comparison is needed for a direct-access dataset, for example after asking whether a government dataset is reachable now. Performs a rate-limited live GET and returns comparable transport receipts plus a match, mismatch, or unreachable verdict. This live check is an observation, not semantic truth: it does not recompute content dates, record counts, or shape fingerprints. Results are ephemeral and do not update published health artifacts. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation.
 
 Input schema:
 
@@ -477,7 +477,7 @@ Input schema:
   "additionalProperties": false,
   "properties": {
     "dataset_id": {
-      "description": "Canonical direct-access dataset identifier to re-fetch, e.g. 'fuelprice'.",
+      "description": "Canonical direct-access dataset identifier for a rate-limited live transport observation, e.g. 'fuelprice'; browser-dependent sources cannot be fetched here.",
       "examples": [
         "fuelprice"
       ],
@@ -520,7 +520,7 @@ Input schema:
 
 ### `verify_attestation`
 
-Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence. Returns `levels.L1.signature_valid` and `levels.L2.satisfied` for signature and replay status.
+Use to verify a signed published probe attestation after an evidence audit. Returns L1 signature, key, time, and chain-link checks; optional L2 replay of daily heads to a Git-tag anchor; and L3 scope, which requires verify_evidence for live transport. A valid signature proves attestation integrity and scope, not upstream semantic truth or currentness. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation.
 
 Input schema:
 
@@ -529,7 +529,7 @@ Input schema:
   "additionalProperties": false,
   "properties": {
     "reference": {
-      "description": "Dataset id or relative digest reference, e.g. 'fuelprice'.",
+      "description": "Dataset id or safe relative published digest reference for signed-attestation verification, e.g. 'fuelprice'.",
       "examples": [
         "fuelprice",
         "attestations/2026-08-15/fuelprice.json"
@@ -539,7 +539,7 @@ Input schema:
     },
     "replay_chain": {
       "default": false,
-      "description": "Replay daily heads to the newest tag anchor, e.g. true for an auditor.",
+      "description": "Replay signed daily heads to a Git-tag anchor for L2 verification, e.g. true for an auditor.",
       "examples": [
         false,
         true

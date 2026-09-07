@@ -61,7 +61,7 @@ EXPECTED_TOOL_ANNOTATIONS = {
 }
 
 EXPECTED_TOOL_TITLES = {
-    "search_datasets": "Discover Malaysian Public Data",
+    "search_datasets": "Find Malaysian Public Data",
     "get_dataset": "Inspect Dataset Health and Details",
     "find_stale": "Identify Freshness and Schema Risks",
     "find_anomalies": "Identify Dataset Update Anomalies",
@@ -70,15 +70,51 @@ EXPECTED_TOOL_TITLES = {
     "find_unreliable": "Identify Unreliable Dataset Publishing",
     "find_schema_drift": "Identify Schema and Content Drift",
     "check_reconciliation": "Check Cross-Source Reconciliation",
-    "get_provenance": "Build Citation-Ready Provenance",
-    "get_evidence": "Inspect Published Evidence Receipts",
-    "verify_evidence": "Re-verify Source Transport Evidence",
-    "verify_dataset": "Verify Dataset Before Trust",
+    "get_provenance": "Cite Dataset Provenance",
+    "get_evidence": "Audit Published Evidence Receipt",
+    "verify_evidence": "Live-check Published Transport Evidence",
+    "verify_dataset": "Verify Dataset Before Relying",
     "get_freshness_summary": "Summarize Catalogue Freshness",
     "trust_verdict": "Aggregate a Published Trust Verdict",
-    "verify_attestation": "Verify a Signed Probe Attestation",
+    "verify_attestation": "Verify Signed Attestation Chain",
     "find_by_licence": "Scope Reusable Data by Licence",
     "usage_summary": "Summarize Aggregate Tool Usage",
+}
+
+PRIORITIZED_TOOL_METADATA = {
+    "search_datasets": (
+        "discovery only",
+        "not trust verification",
+        "by topic, source, or licence",
+        "search_datasets → verify_dataset → get_provenance",
+    ),
+    "verify_dataset": (
+        "preferred single-call pre-trust check",
+        "not a live source check",
+        "search_datasets → verify_dataset → get_provenance",
+    ),
+    "get_evidence": (
+        "complete published evidence receipt",
+        "not a live source fetch",
+        "before or alongside verification",
+        "search_datasets → get_evidence → verify_evidence → verify_attestation",
+    ),
+    "verify_evidence": (
+        "rate-limited live-vs-published comparison",
+        "not semantic truth",
+        "Results are ephemeral and do not update published health artifacts",
+        "search_datasets → get_evidence → verify_evidence → verify_attestation",
+    ),
+    "get_provenance": (
+        "citation-ready provenance",
+        "not a freshness guarantee",
+        "search_datasets → verify_dataset → get_provenance",
+    ),
+    "verify_attestation": (
+        "L1 signature",
+        "not upstream semantic truth",
+        "search_datasets → get_evidence → verify_evidence → verify_attestation",
+    ),
 }
 
 
@@ -122,6 +158,37 @@ def test_machine_facing_identity_is_canonical_across_discovery_surfaces() -> Non
     assert server_document["title"] == "DataPulse"
     for document in (mcp_document, agent_document, server_document):
         assert "DataPulse MY" not in json.dumps(document)
+
+
+async def test_prioritized_tool_metadata_routes_agents_without_overclaiming() -> None:
+    """Pin discovery triggers, evidence limits, and generated MCP parity."""
+    tools = {tool.name: tool for tool in await server.mcp.list_tools()}
+    generated = {
+        tool["name"]: tool
+        for tool in json.loads((REPO_DIR / "mcp.json").read_text(encoding="utf-8"))["tools"]
+    }
+
+    for tool_name, required_phrases in PRIORITIZED_TOOL_METADATA.items():
+        metadata = tools[tool_name]
+        assert metadata.title == EXPECTED_TOOL_TITLES[tool_name]
+        assert all(phrase in metadata.description for phrase in required_phrases)
+        assert generated[tool_name]["description"] == metadata.description
+        assert generated[tool_name]["inputSchema"] == metadata.parameters
+
+    assert tools["search_datasets"].parameters["properties"]["query"]["examples"] == [
+        "Malaysian public data inflation"
+    ]
+    assert tools["get_provenance"].parameters["properties"]["dataset_ids"]["examples"] == [
+        ["fuelprice", "pricecatcher"]
+    ]
+    for tool_name in ("get_evidence", "verify_evidence", "verify_dataset"):
+        assert tools[tool_name].parameters["properties"]["dataset_id"]["examples"] == [
+            "fuelprice"
+        ]
+    assert tools["verify_attestation"].parameters["properties"]["reference"]["examples"] == [
+        "fuelprice",
+        "attestations/2026-08-15/fuelprice.json",
+    ]
 
 
 async def test_modern_and_legacy_clients_preserve_discovery_surface_and_cache_hints() -> None:
@@ -478,7 +545,7 @@ async def test_tool_schemas_are_agent_ready(live_data: tuple[dict, dict]) -> Non
     assert tools["verify_evidence"].parameters["properties"]["dataset_id"]["examples"] == ["fuelprice"]
     assert tools["verify_dataset"].parameters["properties"]["dataset_id"]["examples"] == ["fuelprice"]
     assert tools["search_datasets"].parameters["properties"]["query"]["examples"] == [
-        "inflation cpi"
+        "Malaysian public data inflation"
     ]
     assert tools["search_datasets"].parameters["properties"]["licence"]["examples"] == [
         "CC BY 4.0",

@@ -256,12 +256,13 @@ def _manifest_dataset_count(manifest_path: Path | None = None) -> int:
 
 DATASET_COUNT = _manifest_dataset_count()
 SEARCH_DESCRIPTION = (
-    f"Search DataPulse's {DATASET_COUNT} Malaysian public datasets by "
-    "natural-language query. "
-    "Filter by licence (e.g. 'CC BY 4.0', 'Open Government Licence (Malaysia)') or "
-    "source ('OpenDOSM', 'data.gov.my', 'MET Malaysia', etc.). Returns ranked "
-    "matches: id, title, source, licence, status, score. Use when an agent needs to "
-    "find datasets covering a topic, by an agency, or under a specific licence."
+    f"Use for discovery only: find DataPulse's {DATASET_COUNT} Malaysian public datasets "
+    "by topic, source, or licence—for example, 'Malaysian public data inflation', "
+    "licence and attribution, or a government dataset source. Returns ranked matches "
+    "with id, title, source, licence, published status, and score. This is not trust "
+    "verification: a status is published pipeline context, not proof that a dataset is "
+    "current or reliable. For 'is this dataset current?' or verify before relying on data, "
+    "use search_datasets → verify_dataset → get_provenance."
 )
 GET_DATASET_DESCRIPTION = (
     "Return full detail for one dataset id, including its latest health status and "
@@ -309,31 +310,42 @@ CHECK_RECONCILIATION_DESCRIPTION = (
     "A discrepancy requires human review and does not prove either source is wrong."
 )
 GET_PROVENANCE_DESCRIPTION = (
-    "Return citation-ready provenance metadata for the listed dataset ids, plus "
-    "compact pipeline-published evidence receipts: row probe time, HTTP status, "
-    "request URL, access dependency, freshness source, content date, record count, "
-    "shape fingerprint, anomaly flag, and status. Use when an agent must cite data "
-    "and show the evidence behind the trust claim without recomputing it."
+    "Use when asked 'can I cite this source?', for licence and attribution, or for "
+    "citation-ready provenance. Returns source, steward, licence, canonical URL, and "
+    "compact published evidence context: probe time, transport, access dependency, "
+    "freshness signal, schema drift / record-count drift context, anomaly flag, and "
+    "status. You may cite the returned provenance and describe its published evidence; "
+    "it is not a freshness guarantee and does not itself verify the source is current. "
+    "For pre-trust use search_datasets → verify_dataset → get_provenance."
 )
 GET_EVIDENCE_DESCRIPTION = (
-    "Return the complete pipeline-published evidence receipt for one dataset id, "
-    "including probe time, transport, access dependency, freshness, record-count, "
-    "shape, tolerance, status, and anomaly fields. Use for a deep audit, e.g. "
-    "get_evidence('fuelprice'); values are presented without MCP-side recomputation."
+    "Use for a deep evidence audit or to inspect a provenance and evidence receipt. "
+    "Returns the complete published evidence receipt for one dataset: probe time, "
+    "transport, access dependency, freshness, schema drift / record-count drift, "
+    "tolerance, status, and anomaly fields. It reads published pipeline evidence, not "
+    "a live source fetch: you may report what the pipeline observed, but must not infer "
+    "the source is currently reachable or semantically true. Use it for a deep audit before "
+    "or alongside verification. "
+    "search_datasets → get_evidence → verify_evidence → verify_attestation."
 )
 VERIFY_EVIDENCE_DESCRIPTION = (
-    "Perform a rate-limited live streamed GET for one direct-access dataset and "
-    "compare transport receipts with the latest published evidence, e.g. "
-    "verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints "
-    "remain pipeline-only and are explicitly reported as unverified; results are "
-    "ephemeral and never update health artifacts. Returns a dict with transport receipt "
-    "fields and a `verdict` for downstream trust checks without re-fetching."
+    "Use when a fresh, rate-limited live-vs-published comparison is needed for a "
+    "direct-access dataset, for example after asking whether a government dataset is "
+    "reachable now. Performs a rate-limited live GET and returns comparable transport "
+    "receipts plus a match, mismatch, or unreachable verdict. This live check is an "
+    "observation, not semantic truth: it does not recompute content dates, record counts, "
+    "or shape fingerprints. Results are ephemeral and do not update published health artifacts. "
+    "For a deep audit use "
+    "search_datasets → get_evidence → verify_evidence → verify_attestation."
 )
 VERIFY_DATASET_DESCRIPTION = (
-    "Verify one dataset before trust in a single read-only call. Returns dataset "
-    "metadata, the published health and evidence rows, and a fail-closed Sigstore "
-    "per-dataset receipt verification result with artifact references. Use "
-    "verify_dataset('fuelprice') before relying on a dataset claim."
+    "This is the preferred single-call pre-trust check for 'is this dataset current?', stale, "
+    "unknown-freshness, degraded, or browser-dependent questions, and whenever an "
+    "agent must verify before relying on data. Returns dataset metadata, published "
+    "health and evidence, and fail-closed signed receipt verification with artifact "
+    "references. It verifies published artifacts, not a live source check: you may infer "
+    "whether their receipt verifies, but must not infer current upstream availability or "
+    "semantic truth. Use search_datasets → verify_dataset → get_provenance."
 )
 FRESHNESS_SUMMARY_DESCRIPTION = (
     "Return a freshness-at-a-glance summary of the published catalogue: fresh, "
@@ -350,10 +362,12 @@ TRUST_VERDICT_DESCRIPTION = (
     "This tool does not re-probe or verify the signature; call verify_attestation separately."
 )
 VERIFY_ATTESTATION_DESCRIPTION = (
-    "Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, "
-    "e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; "
-    "optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence. "
-    "Returns `levels.L1.signature_valid` and `levels.L2.satisfied` for signature and replay status."
+    "Use to verify a signed published probe attestation after an evidence audit. Returns "
+    "L1 signature, key, time, and chain-link checks; optional L2 replay of daily heads "
+    "to a Git-tag anchor; and L3 scope, which requires verify_evidence for live transport. "
+    "A valid signature proves attestation integrity and scope, not upstream semantic truth "
+    "or currentness. For a deep audit use search_datasets → get_evidence → "
+    "verify_evidence → verify_attestation."
 )
 
 class SourceImplementation(MCPImplementation):
@@ -683,7 +697,7 @@ def _search_score(entry: dict[str, Any], query: str) -> int:
 
 
 @mcp.tool(
-    title="Discover Malaysian Public Data",
+    title="Find Malaysian Public Data",
     description=SEARCH_DESCRIPTION,
     icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
@@ -695,17 +709,18 @@ async def search_datasets(
         Field(
             min_length=1,
             description=(
-                "Free-text search terms; natural language is allowed, e.g. "
-                "'inflation cpi'."
+                "Topic or task phrasing for Malaysian public-data discovery only, e.g. "
+                "'Malaysian public data inflation'; verify a result separately."
             ),
-            examples=["inflation cpi"],
+            examples=["Malaysian public data inflation"],
         ),
     ],
     licence: Annotated[
         str | None,
         Field(
             description=(
-                "Optional exact licence name or supported alias, e.g. 'CC BY 4.0'."
+                "Optional exact licence name or supported alias for reuse discovery, e.g. "
+                "'CC BY 4.0'; this does not verify attribution compliance."
             ),
             examples=["CC BY 4.0", "Open Government Licence (Malaysia)"],
         ),
@@ -714,7 +729,7 @@ async def search_datasets(
         str | None,
         Field(
             description=(
-                "Optional case-insensitive source-name substring, e.g. 'OpenDOSM'."
+                "Optional case-insensitive publisher/source filter, e.g. 'OpenDOSM'."
             ),
             examples=["OpenDOSM", "data.gov.my", "MET Malaysia"],
         ),
@@ -724,7 +739,7 @@ async def search_datasets(
         Field(
             ge=1,
             le=50,
-            description="Maximum ranked matches to return; integer from 1 to 50, e.g. 10.",
+            description="Maximum discovery matches to return; integer from 1 to 50, e.g. 10.",
         ),
     ] = 10,
 ) -> list[dict[str, Any]]:
@@ -1380,7 +1395,7 @@ mcp.add_tool(_check_reconciliation_tool)
 
 
 @mcp.tool(
-    title="Build Citation-Ready Provenance",
+    title="Cite Dataset Provenance",
     description=GET_PROVENANCE_DESCRIPTION,
     icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
@@ -1393,8 +1408,8 @@ async def get_provenance(
             min_length=1,
             max_length=50,
             description=(
-                "JSON array of 1 to 50 canonical dataset IDs, e.g. "
-                "['fuelprice', 'pricecatcher']."
+                "JSON array of 1 to 50 canonical dataset IDs for provenance and citation, "
+                "e.g. ['fuelprice', 'pricecatcher']; this is not a live freshness check."
             ),
             examples=[["fuelprice", "pricecatcher"]],
         ),
@@ -1438,7 +1453,10 @@ async def get_evidence(
         str,
         Field(
             min_length=1,
-            description="Canonical dataset identifier for a deep receipt, e.g. 'fuelprice'.",
+            description=(
+                "Canonical dataset identifier for its complete published evidence receipt, "
+                "e.g. 'fuelprice'; this tool does not fetch the live source."
+            ),
             examples=["fuelprice"],
         ),
     ],
@@ -1460,7 +1478,7 @@ async def get_evidence(
 
 _get_evidence_tool = FunctionTool.from_function(
     get_evidence,
-    title="Inspect Published Evidence Receipts",
+    title="Audit Published Evidence Receipt",
     description=GET_EVIDENCE_DESCRIPTION,
     icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
@@ -1519,14 +1537,20 @@ async def verify_dataset(
         str,
         Field(
             min_length=1,
-            description="Canonical dataset identifier to verify before trust, e.g. 'fuelprice'.",
+            description=(
+                "Canonical dataset identifier for the published pre-trust receipt check, "
+                "e.g. 'fuelprice'; this does not perform a live source fetch."
+            ),
             examples=["fuelprice"],
         ),
     ],
     include_proof_steps: Annotated[
         bool,
         Field(
-            description="Include bounded Cosign verifier output for audit steps, e.g. false.",
+            description=(
+                "Include bounded signed-receipt verifier diagnostics for an audit, e.g. false; "
+                "the result still does not establish upstream semantic truth."
+            ),
             examples=[False, True],
         ),
     ] = False,
@@ -1592,7 +1616,7 @@ async def verify_dataset(
 
 _verify_dataset_tool = FunctionTool.from_function(
     verify_dataset,
-    title="Verify Dataset Before Trust",
+    title="Verify Dataset Before Relying",
     description=VERIFY_DATASET_DESCRIPTION,
     icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
@@ -1637,7 +1661,10 @@ async def verify_evidence(
         str,
         Field(
             min_length=1,
-            description="Canonical direct-access dataset identifier to re-fetch, e.g. 'fuelprice'.",
+            description=(
+                "Canonical direct-access dataset identifier for a rate-limited live transport "
+                "observation, e.g. 'fuelprice'; browser-dependent sources cannot be fetched here."
+            ),
             examples=["fuelprice"],
         ),
     ],
@@ -1713,7 +1740,7 @@ async def verify_evidence(
 
 _verify_evidence_tool = FunctionTool.from_function(
     verify_evidence,
-    title="Re-verify Source Transport Evidence",
+    title="Live-check Published Transport Evidence",
     description=VERIFY_EVIDENCE_DESCRIPTION,
     icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
@@ -1809,8 +1836,8 @@ async def _verify_git_anchor(anchor: dict[str, Any], expected_head: str) -> bool
 
 
 async def verify_attestation(
-    reference: Annotated[str, Field(min_length=1, description="Dataset id or relative digest reference, e.g. 'fuelprice'.", examples=["fuelprice", "attestations/2026-08-15/fuelprice.json"])],
-    replay_chain: Annotated[bool, Field(description="Replay daily heads to the newest tag anchor, e.g. true for an auditor.", examples=[False, True])] = False,
+    reference: Annotated[str, Field(min_length=1, description="Dataset id or safe relative published digest reference for signed-attestation verification, e.g. 'fuelprice'.", examples=["fuelprice", "attestations/2026-08-15/fuelprice.json"])],
+    replay_chain: Annotated[bool, Field(description="Replay signed daily heads to a Git-tag anchor for L2 verification, e.g. true for an auditor.", examples=[False, True])] = False,
 ) -> dict[str, Any]:
     index, latest_head, _ = await _load_attestations()
     ref = _safe_attestation_ref(reference, index)
@@ -1844,7 +1871,7 @@ async def verify_attestation(
     return {"reference": reference, "digest_ref": ref, "dataset_id": payload.get("dataset_id"), "digest": envelope, "linked_chain_head": payload.get("previous_chain_head"), "latest_chain_head": latest_head.get("chain_head"), "levels": {"L1": {"covered": True, "satisfied": l1, "signature_valid": signature_valid, "key_registry_match": key_match, "key_time_valid": key_time_valid, "chain_link_valid": link_valid}, "L2": l2, "L3": {"covered": False, "satisfied": False, "reason": "call verify_evidence(dataset_id)"}}}
 
 
-_verify_attestation_tool = FunctionTool.from_function(verify_attestation, title="Verify a Signed Probe Attestation", description=VERIFY_ATTESTATION_DESCRIPTION, icons=TOOL_ICONS, annotations=READ_ONLY_TOOL_ANNOTATIONS, meta=TOOL_META)
+_verify_attestation_tool = FunctionTool.from_function(verify_attestation, title="Verify Signed Attestation Chain", description=VERIFY_ATTESTATION_DESCRIPTION, icons=TOOL_ICONS, annotations=READ_ONLY_TOOL_ANNOTATIONS, meta=TOOL_META)
 _verify_attestation_tool.parameters.setdefault("required", [])
 mcp.add_tool(_verify_attestation_tool)
 
