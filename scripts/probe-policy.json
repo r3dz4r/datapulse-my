@@ -29,38 +29,6 @@
       }
     }
   },
-  "sg_static_metadata": {
-    "sg_datagov_coe_bidding": {
-      "title": "COE Bidding Results (Singapore Land Transport Authority)",
-      "description": "Monthly Certificate of Entitlement bidding results by vehicle class: quota, premium, bids submitted, bids successful. Source: Singapore LTA via data.gov.sg.",
-      "publisher": "Land Transport Authority (Singapore)",
-      "frequency": "monthly"
-    },
-    "sg_datagov_hdb_resale_prices": {
-      "title": "HDB Resale Flat Prices (Singapore)",
-      "description": "Resale flat prices based on registration date from January 2017 onwards. Includes town, flat type, block, street name, storey range, floor area, flat model, lease commence date, remaining lease, and resale price. Source: Singapore Housing & Development Board via data.gov.sg.",
-      "publisher": "Housing & Development Board (Singapore)",
-      "frequency": "monthly"
-    },
-    "sg_datagov_hdb_metadata": {
-      "title": "HDB Resale Flat Prices — Dataset Metadata",
-      "description": "Column-level metadata for the HDB Resale Flat Prices dataset: column ids, titles, data types, and index positions. Source: Singapore Housing & Development Board via data.gov.sg.",
-      "publisher": "Housing & Development Board (Singapore)",
-      "frequency": "static"
-    },
-    "sg_datagov_taxi_availability": {
-      "title": "Real-time Singapore Taxi Availability",
-      "description": "Live position of available taxis across Singapore, refreshed every minute. GeoJSON FeatureCollection. Source: Singapore LTA via data.gov.sg.",
-      "publisher": "Land Transport Authority (Singapore)",
-      "frequency": "realtime"
-    },
-    "sg_datagov_weather_readings": {
-      "title": "Real-time Singapore Air Temperature Readings",
-      "description": "Air temperature readings from NEA weather stations across Singapore, refreshed every minute. Source: National Environment Agency via data.gov.sg.",
-      "publisher": "National Environment Agency (Singapore)",
-      "frequency": "realtime"
-    }
-  },
   "datasets": {
     "_parquet_probe_canary_kkmnow_blood": {
       "adapter": "direct",
@@ -918,74 +886,8 @@
       "arcgis-feature": {
         "allowed-host": "vip.mbpp.gov.my",
         "expected-layer-name": "Weather Station",
-        "required-fields": [
-          "station_id",
-          "station_name",
-          "city",
-          "region",
-          "country",
-          "latitude",
-          "longitude",
-          "rainrate_mm",
-          "wind_speed_last",
-          "active",
-          "last_updated",
-          "temperature_out_last_c",
-          "humidity_out_last",
-          "rainfall_day"
-        ],
-        "allowed-fields": [
-          "objectid",
-          "station_id",
-          "station_name",
-          "city",
-          "region",
-          "country",
-          "latitude",
-          "longitude",
-          "rainrate_mm",
-          "wind_speed_last",
-          "active",
-          "last_updated",
-          "globalid",
-          "wind_dir_of_prevail",
-          "bar",
-          "dew_point_last",
-          "heat_index_last",
-          "temperature_in_last_c",
-          "temperature_in_low_c",
-          "temperature_in_high_c",
-          "temperature_out_last_c",
-          "temperature_out_low_c",
-          "temperature_out_high_c",
-          "humidity_in_last",
-          "humidity_in_low",
-          "humidity_in_high",
-          "humidity_out_last",
-          "humidity_out_low",
-          "humidity_out_high",
-          "rain_storm_mm",
-          "rainfall_day",
-          "rainfall_mth",
-          "rainfall_year",
-          "wind_speed_high",
-          "dew_point_high",
-          "dew_point_low",
-          "heat_index_high",
-          "wind_chill_last",
-          "wind_chill_low",
-          "wet_bulb_last",
-          "wet_bulb_low",
-          "thw_index",
-          "mukim",
-          "dun",
-          "daerah",
-          "parlimen",
-          "wind_speed_warning",
-          "temperature_warning",
-          "rain_rate_warning",
-          "rain_rate_warning_duration"
-        ],
+        "required-fields": ["station_id", "station_name", "city", "region", "country", "latitude", "longitude", "rainrate_mm", "wind_speed_last", "active", "last_updated", "temperature_out_last_c", "humidity_out_last", "rainfall_day"],
+        "allowed-fields": ["objectid", "station_id", "station_name", "city", "region", "country", "latitude", "longitude", "rainrate_mm", "wind_speed_last", "active", "last_updated", "globalid", "wind_dir_of_prevail", "bar", "dew_point_last", "heat_index_last", "temperature_in_last_c", "temperature_in_low_c", "temperature_in_high_c", "temperature_out_last_c", "temperature_out_low_c", "temperature_out_high_c", "humidity_in_last", "humidity_in_low", "humidity_in_high", "humidity_out_last", "humidity_out_low", "humidity_out_high", "rain_storm_mm", "rainfall_day", "rainfall_mth", "rainfall_year", "wind_speed_high", "dew_point_high", "dew_point_low", "heat_index_high", "wind_chill_last", "wind_chill_low", "wet_bulb_last", "wet_bulb_low", "thw_index", "mukim", "dun", "daerah", "parlimen", "wind_speed_warning", "temperature_warning", "rain_rate_warning", "rain_rate_warning_duration"],
         "timeout-seconds": 20,
         "sample-limit": 3,
         "max-response-bytes": 1048576,
