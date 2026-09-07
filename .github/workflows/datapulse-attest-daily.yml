@@ -1,0 +1,75 @@
+name: Commit daily signed attestation envelopes
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  attest-and-commit:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Generate today's signed attestation envelopes
+        env:
+          DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
+        run: |
+          set -Eeuo pipefail
+          if [[ -z "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then
+            echo "::error title=Daily attestation requires DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE::the signing key secret is not configured; refusing to generate unsigned evidence."
+            exit 1
+          fi
+          key_path="$(mktemp "$RUNNER_TEMP/datapulse-attestation-key.XXXXXX")"
+          trap 'rm -f "$key_path"' EXIT
+          printf '%s' "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > "$key_path"
+          chmod 600 "$key_path"
+          export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE="$key_path"
+          bash scripts/refresh_chain_head.sh
+
+      - name: Commit dated envelopes when generation changed them
+        run: |
+          set -Eeuo pipefail
+          day="$(jq -er '.date | select(type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' attestations/latest/index.json)"
+          changed_paths="$({
+            git diff --name-only -- \
+              "attestations/$day" attestations/latest attestations/chain-index.json \
+              .attestations/chain_head.json datapulse.json
+            git ls-files --others --exclude-standard -- \
+              "attestations/$day" attestations/latest attestations/chain-index.json \
+              .attestations/chain_head.json datapulse.json
+          } | LC_ALL=C sort -u)"
+          message="$(printf '%s\n' "$changed_paths" | python3 scripts/attestation_commit_back.py --date "$day")"
+          if [[ -z "$message" ]]; then
+            echo "No dated attestation envelope changes to commit."
+            exit 0
+          fi
+          unexpected_paths="$({ git status --porcelain=v1 --untracked-files=all | cut -c4-; } | while IFS= read -r path; do
+            case "$path" in
+              "attestations/$day"/*|attestations/latest/*|attestations/chain-index.json|.attestations/chain_head.json|datapulse.json) ;;
+              *) printf '%s\n' "$path" ;;
+            esac
+          done)"
+          if [[ -n "$unexpected_paths" ]]; then
+            echo "::error title=Unexpected daily-attestation output::refusing to commit paths outside the attestation allowlist: $unexpected_paths"
+            exit 1
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- \
+            "attestations/$day" attestations/latest attestations/chain-index.json \
+            .attestations/chain_head.json datapulse.json
+          git commit -m "$message"
+          if ! git pull --rebase origin main; then
+            echo "::error title=Daily attestation rebase conflict::generated envelopes were committed locally but could not be rebased onto origin/main; refusing to force-push."
+            exit 1
+          fi
+          git push origin HEAD:main
