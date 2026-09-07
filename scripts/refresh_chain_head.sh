@@ -27,7 +27,18 @@ fi
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
-python3 scripts/gen_attestations.py --root . --private-key "$private_key"
+day="$(date -u +%F)"
+dated="$root/attestations/$day"
+if [[ -d "$dated" && -f "$dated/binding.json" && -f "$dated/chain_head.json" ]]; then
+  printf 'refresh_chain_head.sh: date %s dated attestation dir already exists; refreshing latest/chain-head from committed set (no re-sign)\n' "$day"
+  rm -rf attestations/latest
+  mkdir -p attestations/latest
+  for filename in chain_head.json index.json scores.json binding.json; do
+    cp "$dated/$filename" "attestations/latest/$filename"
+  done
+else
+  python3 scripts/gen_attestations.py --root . --private-key "$private_key"
+fi
 
 # gen_attestations.generate() copies the fresh head into attestations/latest/
 # but never into the top-level legacy envelope that
