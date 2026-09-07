@@ -1,0 +1,18 @@
+{
+  "schema": "evidence-graph/v1",
+  "graph_id": "sha256:0156848df613eb2c1277dd26892bc9bf40fdee518bd67dd6d9c8c03b02047846",
+  "generated_at": "2026-09-07T00:00:00Z",
+  "nodes": [
+    {"id": "dataset_fuelprice", "type": "dataset", "dataset_id": "fuelprice", "name": "Fuel prices", "source_url": "https://data.gov.my/data-catalogue/fuelprice"},
+    {"id": "observation_fuelprice", "type": "observation", "dataset_id": "fuelprice", "observed_at": "2026-09-07T00:00:00Z", "status": "fresh", "source_url": "https://data.gov.my/data-catalogue/fuelprice", "fingerprint": "row-shape-v1", "observation_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    {"id": "receipt_fuelprice", "type": "receipt", "observation_id": "observation_fuelprice", "receipt_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "receipt_kind": "health", "verification": "verified"},
+    {"id": "claim_fuelprice", "type": "claim", "observation_id": "observation_fuelprice", "claim_type": "availability", "text": "The observed source was available.", "support": "supported", "evidence_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    {"id": "reconciliation_fuelprice", "type": "reconciliation", "dataset_ids": ["fuelprice"], "verdict": "agreement", "basis": "One observed source."}
+  ],
+  "edges": [
+    {"id": "edge_observes", "type": "observes", "from": "dataset_fuelprice", "to": "observation_fuelprice"},
+    {"id": "edge_attested", "type": "attested_by", "from": "observation_fuelprice", "to": "receipt_fuelprice"},
+    {"id": "edge_supports", "type": "supports", "from": "receipt_fuelprice", "to": "claim_fuelprice"},
+    {"id": "edge_derived", "type": "derived_from", "from": "claim_fuelprice", "to": "observation_fuelprice"}
+  ]
+}
