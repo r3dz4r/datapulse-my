@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate signed daily probe attestations and unsigned trust scores."""
 from __future__ import annotations
-import argparse, base64, hashlib, json, shutil, subprocess
+import argparse, base64, hashlib, json, shutil, subprocess, urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
@@ -16,6 +16,89 @@ def load(path: Path) -> dict: return json.loads(path.read_text(encoding="utf-8")
 def dump(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True); path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 def sign(private: Ed25519PrivateKey, payload: dict) -> str: return base64.b64encode(private.sign(canonical(payload))).decode()
+
+def _nonempty(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+def _fetch_json(url: str) -> dict | None:
+    """Fetch one allowlisted Singapore catalog/realtime response."""
+    try:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "Mozilla/5.0 (compatible; DataPulseMY/1.0; +https://www.data-pulse.my)",
+            },
+        )
+        response = urllib.request.urlopen(request, timeout=10)
+        try:
+            if getattr(response, "status", 200) != 200:
+                return None
+            payload = json.loads(response.read())
+        finally:
+            response.close()
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+def enrich_sg_metadata(manifest: list[dict], probe_policy: dict) -> list[dict]:
+    """Fill Singapore manifest metadata from catalog APIs or policy fallbacks."""
+    static = probe_policy.get("sg_static_metadata", {})
+    if not isinstance(static, dict):
+        static = {}
+    api_count = 0
+    static_count = 0
+    metadata_cache: dict[str, dict | None] = {}
+    for entry in manifest:
+        dataset_id = entry.get("id")
+        url = entry.get("url")
+        if not isinstance(dataset_id, str) or not dataset_id.startswith("sg_"):
+            continue
+        source: dict[str, object] | None = None
+        from_api = False
+        if isinstance(url, str) and url.startswith("https://api-production.data.gov.sg/v2/public/api/datasets/"):
+            metadata_url = url.rsplit("/", 1)[0] + "/metadata"
+            if metadata_url not in metadata_cache:
+                metadata_cache[metadata_url] = _fetch_json(metadata_url)
+            payload = metadata_cache[metadata_url]
+            data = payload.get("data") if isinstance(payload, dict) else None
+            if isinstance(data, dict):
+                source = {
+                    "title": data.get("name"),
+                    "description": data.get("description"),
+                    "publisher": data.get("managedBy"),
+                    "last_updated_at": data.get("lastUpdatedAt"),
+                    "frequency": entry.get("frequency") or entry.get("refresh_frequency"),
+                }
+                from_api = True
+        elif isinstance(url, str) and url.startswith("https://api.data.gov.sg/v1/environment/"):
+            payload = _fetch_json(url)
+            items = payload.get("items") if isinstance(payload, dict) else None
+            timestamp = items[0].get("timestamp") if isinstance(items, list) and items and isinstance(items[0], dict) else None
+            source = {"last_updated_at": timestamp, "frequency": "realtime"}
+        elif isinstance(url, str) and url.startswith("https://api.data.gov.sg/v1/transport/"):
+            source = {"last_updated_at": "realtime (no static updated_at)", "frequency": "realtime"}
+        else:
+            source = {}
+        fallback = static.get(dataset_id)
+        if not isinstance(fallback, dict):
+            fallback = {}
+        if source is None or not any(_nonempty(source.get(field)) for field in ("title", "description", "publisher")):
+            source = {**fallback, **(source or {})}
+            if dataset_id == "sg_datagov_coe_bidding":
+                source["last_updated_at"] = "not provided by catalog API"
+        else:
+            for field, value in fallback.items():
+                source.setdefault(field, value)
+        if from_api:
+            api_count += 1
+        else:
+            static_count += 1
+        for field in ("title", "description", "publisher", "last_updated_at", "frequency"):
+            if not _nonempty(entry.get(field)) and source.get(field) is not None:
+                entry[field] = source[field]
+    print(f"enriched {api_count + static_count} sg_ datasets ({api_count} from API, {static_count} from static map)")
+    return manifest
 
 def health_binding(root: Path, health: dict) -> dict:
     datasets = health.get("datasets")
@@ -208,6 +291,12 @@ def reuse_existing_day(root: Path, day: str) -> bool:
 
 def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | None = None) -> None:
     day=now.date().isoformat()
+    manifest_path = root / "datapulse.json"
+    manifest = load(manifest_path)
+    policy_path = root / "scripts/probe-policy.json"
+    if policy_path.is_file():
+        enrich_sg_metadata(manifest.get("datasets", []), load(policy_path))
+        dump(manifest_path, manifest)
     latest = root / "attestations" / "latest"
     latest_date=load(latest/"index.json").get("date") if (latest/"index.json").exists() else None
     if isinstance(latest_date,str) and latest_date>day:
