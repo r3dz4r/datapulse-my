@@ -27,7 +27,7 @@ def test_kkmnow_datasets_have_complete_contract_records() -> None:
     approved_ids = _load_json("scripts/contract-scope.json")["json_envelope"]["approved_ids"]
     rows = {row["id"]: row for row in manifest["datasets"]}
     methodology_versions = {row["methodology_version"] for row in rows.values()}
-    assert methodology_versions == {2}
+    assert methodology_versions == {3}
     methodology_version = methodology_versions.pop()
 
     for dataset_id in TARGETS:
