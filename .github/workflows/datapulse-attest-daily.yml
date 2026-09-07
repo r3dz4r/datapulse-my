@@ -19,7 +19,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Generate today's signed attestation envelopes
+      - name: Provision today's Ed25519 attestation key
         env:
           DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
         run: |
@@ -28,12 +28,136 @@ jobs:
             echo "::error title=Daily attestation requires DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE::the signing key secret is not configured; refusing to generate unsigned evidence."
             exit 1
           fi
-          key_path="$(mktemp "$RUNNER_TEMP/datapulse-attestation-key.XXXXXX")"
-          trap 'rm -f "$key_path"' EXIT
+          key_path="$RUNNER_TEMP/datapulse-attestation-key.json"
           printf '%s' "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > "$key_path"
           chmod 600 "$key_path"
-          export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE="$key_path"
+          printf 'DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=%s\n' "$key_path" >> "$GITHUB_ENV"
+
+      - name: Decide whether today's Rekor witness is needed
+        id: rekor_guard
+        run: |
+          set -Eeuo pipefail
+          day="$(date -u +%F)"
+          rekor_dir="attestations/rekor/$day"
+          if [[ -d "attestations/$day" && -f "attestations/$day/binding.json" && -f "attestations/$day/chain_head.json" ]]; then
+            echo "Today's dated attestation set already exists; skipping Rekor upload."
+            printf 'needed=false\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          rm -rf -- "$rekor_dir"
+          mkdir -p "$rekor_dir"
+          printf 'needed=true\n' >> "$GITHUB_OUTPUT"
+          printf 'day=%s\n' "$day" >> "$GITHUB_OUTPUT"
+          printf 'rekor_dir=%s\n' "$rekor_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Install pinned Cosign signer
+        id: install_cosign
+        if: steps.rekor_guard.outputs.needed == 'true'
+        continue-on-error: true
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        with:
+          cosign-release: v3.1.3
+
+      - name: Generate and witness today's health DSSE statement in Rekor
+        id: produce_rekor_witness
+        if: steps.rekor_guard.outputs.needed == 'true' && steps.install_cosign.outcome == 'success'
+        continue-on-error: true
+        env:
+          REKOR_DIR: ${{ steps.rekor_guard.outputs.rekor_dir }}
+          SIGSTORE_IDENTITY: https://github.com/r3dz4r/datapulse-my/.github/workflows/datapulse-attest-daily.yml@refs/heads/main
+          SIGSTORE_ISSUER: https://token.actions.githubusercontent.com
+        run: |
+          set -Eeuo pipefail
+          # This is the prior committed head.  refresh_chain_head.sh remains the
+          # sole generator and will create today's head after consuming this proof.
+          test -s .attestations/chain_head.json
+          statement="$REKOR_DIR/health.statement.json"
+          bundle="$REKOR_DIR/health.sigstore.bundle.json"
+          reference="$REKOR_DIR/reference.json"
+          python3 scripts/gen_sigstore_bundle.py \
+            --health health/latest.json \
+            --manifest datapulse.json \
+            --legacy-chain-head .attestations/chain_head.json \
+            --source-commit "$GITHUB_SHA" \
+            --out "$statement"
+          cosign attest-blob \
+            --yes \
+            --statement "$statement" \
+            --bundle "$bundle" \
+            health/latest.json
+          python3 scripts/verify_sigstore_bundle.py \
+            --health health/latest.json \
+            --manifest datapulse.json \
+            --legacy-chain-head .attestations/chain_head.json \
+            --source-commit "$GITHUB_SHA" \
+            --bundle "$bundle" \
+            --certificate-identity "$SIGSTORE_IDENTITY" \
+            --certificate-oidc-issuer "$SIGSTORE_ISSUER" \
+            --cosign "$(command -v cosign)"
+          health_digest="$(sha256sum health/latest.json | awk '{print $1}')"
+          python3 - "$bundle" "$reference" "$health_digest" <<'PY'
+          import base64
+          import hashlib
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          bundle_path = Path(sys.argv[1])
+          reference_path = Path(sys.argv[2])
+          health_digest = sys.argv[3]
+          bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+          entries = bundle["verificationMaterial"]["tlogEntries"]
+          if not isinstance(entries, list) or len(entries) != 1:
+              raise ValueError("Sigstore bundle must contain exactly one Rekor entry")
+          entry = entries[0]
+          log_id = entry["logId"]["keyId"]
+          if not isinstance(log_id, str):
+              raise ValueError("Rekor LogID is missing")
+          if re.fullmatch(r"[0-9a-f]{64}", log_id) is None:
+              decoded = base64.b64decode(log_id, validate=True)
+              if len(decoded) != 32:
+                  raise ValueError("Rekor LogID is not a SHA-256 digest")
+              log_id = decoded.hex()
+          canonicalized_body = base64.b64decode(entry["canonicalizedBody"], validate=True)
+          proof = entry["inclusionProof"]
+          promise = entry["inclusionPromise"]
+          if not proof or not promise.get("signedEntryTimestamp"):
+              raise ValueError("Rekor bundle lacks an inclusion proof or signed entry timestamp")
+          reference = {
+              "schema": "datapulse/v1/sigstore-rekor-reference",
+              "artifact": "health/latest.json",
+              "artifact_sha256": health_digest,
+              "bundle": bundle_path.name,
+              "run_id": f"health-{health_digest}",
+              "rekor": {
+                  "log_id": log_id,
+                  "log_index": entry["logIndex"],
+                  "uuid": hashlib.sha256(canonicalized_body).hexdigest(),
+                  "inclusion_proof": True,
+                  "signed_entry_timestamp": True,
+              },
+          }
+          Path(reference_path).write_text(
+              json.dumps(reference, sort_keys=True, separators=(",", ":")) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          printf 'DATAPULSE_REKOR_REFERENCE=%s\n' "$reference" >> "$GITHUB_ENV"
+
+      - name: Warn when today's Rekor witness is unavailable
+        if: steps.rekor_guard.outputs.needed == 'true' && (steps.install_cosign.outcome != 'success' || steps.produce_rekor_witness.outcome != 'success')
+        run: |
+          echo "::warning title=Rekor witness unavailable::Cosign installation or Rekor upload/verification failed; generating today's Ed25519 binding without an external witness."
+
+      - name: Generate today's signed attestation envelopes
+        run: |
+          set -Eeuo pipefail
           bash scripts/refresh_chain_head.sh
+
+      - name: Remove ephemeral Ed25519 attestation key
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/datapulse-attestation-key.json"
 
       - name: Commit dated envelopes when generation changed them
         run: |
