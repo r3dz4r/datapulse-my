@@ -1,0 +1,439 @@
+# DataPulse MY
+
+**Live dashboard:** https://www.data-pulse.my
+
+**Open in Google Colab:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/r3dz4r/datapulse-my/blob/main/docs/trust-layer-notebook.ipynb)
+
+[![datapulse-my MCP server](https://glama.ai/mcp/servers/r3dz4r/datapulse-my/badges/score.svg)](https://glama.ai/mcp/servers/r3dz4r/datapulse-my)
+[![M8ven Verified](https://m8ven.ai/badge/mcp/r3dz4r-datapulse-my-fsfgq3?variant=verified)](https://m8ven.ai/mcp/r3dz4r-datapulse-my-fsfgq3)
+[![mcpgrade](https://img.shields.io/badge/mcpgrade-100%2F100%20(Grade%20A)-success?style=flat&logo=anthropic)](https://www.npmjs.com/package/mcpgrade)
+<!-- m8ven-verify: d1505f0f7e0429963789e95995216ca3 -->
+
+> **🤖 AI-agent-ready** — Wire DataPulse MY into Claude Desktop, Cursor, Cline, or
+> any MCP-compatible client with one config block. Your agent gets
+> <!-- BEGIN readme-hero -->
+> **N official Malaysian datasets** — including **G GTFS transit feeds (KTMB,
+> Prasarana, BAS.MY)** — with declared licences and an honest ten-status trust
+> taxonomy instead of a blanket green checkmark.
+> <!-- END readme-hero -->
+>
+> → [Connect your AI agent in 30 seconds](#ai-agent-ready--what-it-means-for-you)
+
+## This is DataPulse
+
+When an AI quote is wrong, it is often wrong because the **underlying data was
+stale, mis-licensed, or unverifiable** — not because the model hallucinated.
+An official-looking page does not tell an agent when the dataset behind it last
+updated, who published it, whether it may legally be reused, or whether the
+observation can be reproduced by a second party.
+
+DataPulse MY exists to make that uncertainty explicit. It is an open, read-only
+**verification layer for Malaysian public data**: it continuously probes
+<!-- BEGIN readme-cover -->**N official datasets**<!-- END readme-cover -->,
+and publishes — for each one — machine-readable *evidence* about whether the
+source is reachable, how fresh the content is, what licence applies, how the
+schema behaves, and when the observation was signed.
+
+It does **not** replace the official source. It documents, on an honest and
+reproducible basis, what the official portal states and whether that material is
+current, so you know what you are reusing or citing. The verification speaks
+for itself: every claim here is a live, checkable artefact, not a promise.
+
+## What we do, simply
+
+- **We watch the sources.** A scheduled probe revisits each dataset under its
+  declared cadence and records what it actually finds — reachability, an honest
+  freshness signal, schema shape, record counts, and collection quirks.
+- **We state the truth plainly.** Instead of a blanket green checkmark, each
+  dataset carries one of ten honest health statuses (`fresh`, `aging`, `stale`,
+  `discontinued`, `degraded`, `browser-dependent`, `unreachable`, `unknown`,
+  `unknown-freshness`, `reference`). A dataset that cannot be proven fresh is
+  labelled `unknown-freshness` — not silently treated as healthy.
+- **We publish evidence, not just claims.** Each dated observation is signed
+  and recorded to an immutable public log, so you can verify *when* DataPulse
+  observed the source and that the record has not been altered.
+- **We make it machine-readable first.** The whole portfolio is discoverable
+  from one index and queryable over a read-only MCP server, so an agent receives
+  the same freshness, licence, and provenance signal a careful human reviewer
+  would.
+
+## Who this serves
+
+- **AI builders and agent developers**, who want a model to check a Malaysian
+  figure's freshness and licence before it cites the number — without building a
+  bespoke integration or trusting a scraping pipeline.
+- **Researchers, analysts, and journalists**, who need to ground coursework,
+  a thesis, a dashboard, or a published figure in data whose currency and licence
+  they can actually verify.
+- **Compliance and regulatory-monitoring teams**, who must keep a tamper-evident
+  trail that an official figure was checked at a known time before it reached a
+  product or a public statement.
+- **Civic technologists and public servants**, who want a transparent,
+  reproducible view of how discoverable and reliably described public data is.
+
+## Why you can trust the verification
+
+Three independent, checkable layers. You do not have to take DataPulse's word —
+you can verify each with the published public key, the public Git source record,
+and the public transparency log:
+
+| Layer | What it proves | How to check it yourself |
+|---|---|---|
+| **Signed envelope** | Each per-dataset observation is **Ed25519-signed** over its exact content by a key in the published registry | `python3 scripts/verify_external.py` |
+| **Source of record** | The served observation **byte-matches** the versioned Git source | `python3 scripts/verify_external.py` |
+| **Temporal witness** | The health statement carries a **Rekor/Sigstore public-log inclusion proof** | `python3 scripts/verify_external.py` |
+
+Run it yourself, from anywhere, with no checkout and no DataPulse code:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/r3dz4r/datapulse-my/main/scripts/verify_external.py
+python3 verify_external.py
+```
+
+See [Verify DataPulse externally](docs/verify-datapulse-externally.md) for the
+full guide, and [our methodology](#dataset-health) below for how health is judged.
+
+A verification layer is only as honest as its method, so DataPulse deliberately
+tells you **when it cannot be sure** — a source that cannot be proven current is
+labelled accordingly, never silently marked healthy. That is the boundary we
+hold: the platform proves the integrity and timing of its *observations*, not
+that an upstream government figure is semantically true. That distinction is the
+whole point of an evidence layer, and we do not blur it.
+
+## Who it is for
+
+- **AI builders and AI-agent / LLM-app developers** wiring a model to the
+  read-only MCP server so it can check a Malaysian figure's freshness, licence,
+  and provenance before it cites the number.
+- **AI agents as consumers** discovering and querying the catalogue through
+  `llms.txt`, `agent.json`, and the read-only MCP endpoint without a browser,
+  receiving the same freshness, licence, schema-drift, and provenance evidence
+  a human reviewer would.
+- **University students, academics, and researchers** using the Colab notebook
+  to see which Malaysian official series is genuinely current versus reference
+  or stale before grounding coursework, a thesis, or a replication.
+- **Data scientists and analysts** distinguishing a series that stopped updating
+  (stale/discontinued) from a lookup/reference table that is fine as-is, before
+  building a model or dashboard.
+- **Compliance, validation, and regulatory-monitoring teams** keeping an
+  evidence/attestation trail (probe timestamp, content date, source, attestation)
+  that an official figure was checked before it appears in a product or external
+  communication.
+- **Journalists and fact-checkers** verifying a fuel price, inflation/CPI, rate,
+  ridership, or policy figure is current before publishing.
+- **Civic technologists** building reproducible pipelines on transparent health
+  metadata.
+- **Public servants** seeing the discoverability and reliability status of the
+  open data their agency publishes.
+
+## Use this for
+
+- **AI builder / agent developer:** give your agent a pre-citation trust check —
+  before it answers from a Malaysian dataset, have it call `verify_dataset` and
+  `get_freshness_summary` and caveat anything stale instead of asserting
+  currentness.
+- **AI agent consumer:** discover and query the catalogue via `llms.txt` plus the
+  read-only MCP endpoint, and receive freshness status, licence, schema-drift,
+  and provenance as structured context.
+- **Student / researcher:** ground a coursework or thesis figure in a dataset
+  whose freshness and licence you can actually verify, via the Colab notebook.
+- **Data scientist / analyst:** before modelling a series, tell one that stopped
+  updating (stale/discontinued) apart from a lookup/reference table that is fine
+  as-is.
+- **Compliance / validation team:** keep an evidence trail that an official
+  figure was checked at a known time before it appears in your product or
+  external communication.
+- **Journalist / fact-checker:** before citing a fuel price, inflation/CPI, rate,
+  or ridership figure, check its freshness so you are not publishing a stale
+  number.
+- **Civic technologist:** consume the machine-readable health envelopes in a
+  reproducible pipeline with transparent health metadata.
+- **Public servant:** see how discoverable and reliably described your agency's
+  published open data is.
+
+## Dataset health
+
+Health is reported as `fresh`, `aging`, `stale`, `discontinued`, `degraded`,
+`browser-dependent`, `unreachable`, `unknown`, `unknown-freshness`, or
+`reference`. Unknown freshness means the URL and content shape work, but neither
+a Last-Modified header nor a parseable content date proves when the data was
+updated. Reference means versioned lookup data is reachable and its record count
+is measured, while date-based freshness does not apply. Within the catalogue,
+`data_type` refines the reference family without changing the status: `policy-reference`
+rows (policy state that stays valid until superseded — BNM OPR is current while
+unchanged, not stale) and `reference-current` rows (lookups that must still pass
+freshness, such as a bank-rate table that can itself go stale) are judged by their
+declared policy, while plain `reference` rows are static. The public
+[`_trust_summary`](health/latest.json) shows the distribution and explicitly
+counts missing freshness and row-count signals.
+
+**Discontinued** — The source has stopped publishing new data. The data is
+frozen at the last known content date. This is not a freshness failure — it's a
+publisher decision.
+
+<!-- BEGIN readme-health -->
+Current distribution (`_trust_summary`): [fresh](badges/status-fresh.svg) · [aging](badges/status-aging.svg) · [stale](badges/status-stale.svg) · [discontinued](badges/status-discontinued.svg) · [degraded](badges/status-degraded.svg) · [browser-dependent](badges/status-browser-dependent.svg) · [unknown-freshness](badges/status-unknown-freshness.svg) · [reference](badges/status-reference.svg)
+<!-- END readme-health -->
+
+**Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
+
+> **⚠️ Status: active development.** Dashboards and health snapshots update as
+> probes complete. Per-dataset reports under `data/{id}.md` may briefly lag
+> behind the live health snapshot in `health/latest.json` (a regeneration gap
+> that is being closed). Coverage and quality improve with each tagged release;
+> expect rough edges. Track progress via the [GitHub Releases](../../releases)
+> page.
+
+### Browser-dependent datasets
+
+Five sources (currently 1.4% of the catalogue) require a real browser to probe because their
+source pages render client-side JavaScript: `eperolehan-diklankan`,
+`doe_apims`, `doe_rqims`, `doe_mqims`, and `kkm_idengue`.
+
+DataPulse uses **[Camofox](https://github.com/jo-inc/camofox-browser)**, a
+self-hosted patched headless-Chromium sidecar, to probe these. The probe path
+is [`check.sh`](scripts/check.sh) → Camofox sidecar → DOM snapshot →
+content-date extraction.
+
+**To enable browser probing:**
+
+1. Run the Camofox Docker sidecar on a reachable address (default
+   `http://localhost:9377`). The probe script and the GitHub Actions
+   workflow pick this up from the `CAMOFOX_BASE_URL` environment
+   variable; nothing in this repo encodes a public IP.
+2. Set `CAMOFOX_BASE_URL` to that address.
+3. Restart the timer with `systemctl restart datapulse-health.timer`.
+
+Without Camofox, those five datasets will sit at `browser-dependent` — the
+**honest** status: DataPulse cannot probe them without a browser, so it says
+so rather than failing silently. See
+[`scripts/smoke_browser_probes.sh`](scripts/smoke_browser_probes.sh) for
+isolated smoke tests.
+
+### Legal
+
+DataPulse probes publicly-published open-data sources. We do not bypass
+authentication, CAPTCHAs, or terms-of-service restrictions. Every source we
+probe is publicly available without login; the data is aggregate/non-personal;
+and the probe respects each dataset's declared refresh frequency.
+
+All scraping is rate-limited (5-minute cadence, dataset-tier cadence applied)
+and identifies itself via User-Agent. Sources we cannot probe without
+authentication, CAPTCHA bypass, or ToS violation are marked `unreachable` or
+`browser-dependent` — never silently scraped through a workaround.
+
+If you are a data source maintainer and would like DataPulse to adjust its probe
+cadence, exclude a dataset, or remove it from the manifest, please open a GitHub
+issue or contact the maintainers.
+
+## Methodology
+
+| Topic | DataPulse's position |
+|---|---|
+| **Health status** | Ten-status taxonomy, judged by reachability + an honest freshness signal (`Last-Modified`, parseable content date, or declared policy) — never a fabricated green checkmark. A series that stopped publishing is `discontinued` (a publisher decision, frozen data), not a freshness failure. |
+| **Licence** | Every dataset declares its licence machine-readably. <!-- BEGIN readme-licences -->[licence breakdown]<!-- END readme-licences --> A second party can reproduce this from `datapulse.json` → `.datasets[].licence`. |
+| **Freshness cadence** | Each dataset is probed on its own tiered schedule (5-minute timer, cadence-aware) — `daily` references, `weekly` fuel prices, `monthly` surveys, etc. Always with the human-readable `steward` and a stable `custodian` ID for publisher provenance. |
+| **Provenance** | Stable `custodian` per dataset; signed probe attestations per observation |
+| **Observed claim** | The platform proves what an official source was *observed to be at a known time* — it does not claim upstream data is semantically true |
+| **Read-only + lawful** | Publicly available, authenticated sources only — never bypassed; rate-limited; identifies itself to sources |
+| **Verification** | Fresh days are Rekor-witnessed; signed envelopes + Git source-of-record + public-log inclusion, checkable by anyone |
+
+## AI-agent-ready — what it means for you
+
+Give your organisation's AI tools current, licensed, and verified Malaysian
+public data without first building a custom integration. DataPulse MY makes the
+full portfolio discoverable from one self-describing index, ready for agents,
+RAG systems, and internal knowledge tools to consume.
+
+**What being AI-ready gives you**
+
+- **Zero integration work:** an AI agent or LLM/RAG system fetches one
+  [`llms.txt`](https://www.data-pulse.my/llms.txt) and can use the
+  entire portfolio immediately — no scraping, API-key setup, or data-format
+  reverse-engineering.
+- **Honest freshness signals:** a 5-minute timer probes datasets when their
+  cadence tier is due, separating HTTP
+  reachability, browser dependency, schema validity, and source freshness so
+  missing evidence is visible instead of being labelled healthy.
+  Consumers can also use `anomaly_detected` as an explainable, orthogonal
+  freshness-delta signal without changing the ten-status taxonomy.
+- **Machine-readable and licence-clear:** every dataset has a JSON envelope with
+  its schema, licence, and refresh cadence, giving legal and engineering teams
+  the information they need to approve and integrate it.
+- **Trustworthy for AI:** verified official sources and explicit licences let
+  agents cite and use the data without permission ambiguity.
+- **RAG and knowledge-base ready:** drop the envelopes into a retrieval pipeline
+  to ground chatbots and AI tools in current Malaysian public data.
+
+Each entry is assessed with the honest ten-status trust taxonomy. Each entry retains its
+human-readable `steward` and supplies a stable `custodian` ID resolved through
+[`custodians.json`](custodians.json) for publisher-level provenance.
+
+**Why this matters now.** AI agents are increasingly the buyers of structured
+public data — they retrieve and act on resources at machine speed, and the
+proportion of traffic that hits the human web from agents is already
+displacing the old "crawl → index → human visits → ad impression" bargain
+that funded open publishers. The workloads that survive that shift are the
+ones that publish clean, attested, licence-clear resources an agent can
+consume without re-deriving trust from scratch. DataPulse MY is built for
+that: one self-describing index, one MCP endpoint, ten honest health
+statuses, and signed probe attestations — so an agent can answer a question
+about Malaysian public data without first having to verify the data
+exists, is current, and is licensed for the use it is about to make of it.
+
+### MCP server (read-only)
+
+DataPulse MY also exposes an AI-ready, read-only MCP server so agents can query
+the catalogue natively:
+
+- Endpoint: `https://mcp.data-pulse.my/mcp` (Streamable HTTP, no auth)
+Graded by [mcpgrade](https://www.npmjs.com/package/mcpgrade) — replay with `bash scripts/audit_mcpgrade.sh` (pinned version, writes `artifacts/mcpgrade/`). The canonical tool count lives in `mcp.json` / `agent.json`.
+
+<!-- BEGIN mcp-tools -->
+- tools listed here
+<!-- END mcp-tools -->
+
+`get_evidence` exposes pipeline receipts; `verify_evidence` performs cached
+transport-only live checks and does not update health.
+
+Connect from Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "datapulse-my": {
+      "transport": "streamable-http",
+      "url": "https://mcp.data-pulse.my/mcp"
+    }
+  }
+}
+```
+
+See [`llms.txt`](https://www.data-pulse.my/llms.txt) for the full
+discovery index, and [`docs/mcp-deploy.md`](./docs/mcp-deploy.md) for the
+deployment architecture.
+
+### Authenticated buyer API
+
+Paying integrations use the separate, versioned `/api/v1/` buyer API. It uses
+`X-API-Key` authentication, durable per-key request limits, and audit logs;
+the public MCP endpoint above remains intentionally unauthenticated. See the
+[buyer API reference](./docs/buyer-api-reference.md) for endpoint and operator
+details.
+
+### How to consume the data
+
+<!-- BEGIN public-discovery -->
+- [LLM index](https://www.data-pulse.my/llms.txt)
+- [Agent manifest](https://www.data-pulse.my/agent.json)
+- [MCP advertisement](https://www.data-pulse.my/mcp.json)
+- [Sitemap](https://www.data-pulse.my/sitemap.xml)
+- [MCP endpoint](https://mcp.data-pulse.my/mcp)
+<!-- END public-discovery -->
+
+**For humans wiring their own agents:** see the [MCP server](#mcp-server-read-only)
+section below for the Claude Desktop / Cursor / Cline config block, or the full
+integration guide at [`docs/mcp-deploy.md`](./docs/mcp-deploy.md).
+
+**Wire it into Claude Desktop** via `claude_desktop_config.json` (30 seconds, no
+API key):
+
+```json
+{
+  "mcpServers": {
+    "datapulse-my": {
+      "transport": "streamable-http",
+      "url": "https://mcp.data-pulse.my/mcp"
+    }
+  }
+}
+```
+
+Restart Claude Desktop, confirm the hammer icon shows "datapulse-my" with the
+read-only tools listed above. Cursor / Cline use the same JSON in their MCP config panel.
+
+## Included datasets
+
+<!-- BEGIN readme-inventory -->
+The dataset inventory is auto-generated from `datapulse.json`, grouped by
+publisher (`custodian`), with each dataset linking its health report.
+<!-- END readme-inventory -->
+
+## Current coverage
+
+### Refresh cadence
+
+<!-- BEGIN readme-cadence -->
+| Dataset | Refresh cadence (auto-generated) |
+| --- | --- |
+<!-- END readme-cadence -->
+
+DataPulse MY currently tracks the portfolio declared in `datapulse.json`.
+
+## How to use it
+
+Start with [`datapulse.json`](datapulse.json) to discover datasets and their
+official sources. Follow each `health_report` link for a plain-language
+assessment, or consume the matching file under `data/json/` in an automated
+workflow.
+
+For example, a data pipeline can inspect `status`, `content_freshness_date`, and
+`freshness_signal_source` before processing a source, while a researcher can
+review the known quirks before designing a collection method.
+
+## External verification
+
+For a clone-less, independent check of the published Ed25519 dataset envelope,
+GitHub source parity, and Rekor/Sigstore health witness, see
+[Verify DataPulse externally](docs/verify-datapulse-externally.md).
+
+Every dataset in this catalogue ships with a **publicly-signed Sigstore
+DSSE evidence receipt** that an agent can verify offline, without trusting
+the DataPulse server. An agent (human or MCP) can obtain, for any dataset,
+the full health row + evidence + signed-receipt-verification in **three MCP
+tool calls or fewer**: `verify_dataset` → `get_freshness_summary`. The standard
+offline path is the `verify_external.py` command above.
+
+For the portfolio-level health bundle, verify
+`/signatures/health.latest.sigstore.json` with the exact companion manifest
+at `/signatures/datapulse.json`. That signed-manifest snapshot is distinct
+from `/datapulse.json`, the current discovery manifest: the latter can change
+when generated metadata is refreshed. A valid signature proves the integrity
+of DataPulse's attested observation, not that upstream data is semantically
+true. Every refresh publishes signed bundles to the public Rekor log.
+
+## Monitoring
+
+- The VPS `datapulse-health.timer` wakes every 5 minutes and runs only the
+  datasets whose cadence tier is due.
+- GitHub Actions performs a full weekly probe as a fallback and republishes the
+  generated health, badge, feed, README, catalog snapshot, and delta artifacts.
+- RSS feed — available.
+- Status badges — available.
+- More datasets — planned.
+
+## Adopt a dataset
+
+Know a Malaysian public dataset that deserves dependable health metadata?
+Adopt it: verify its source and licence, document its schema and quirks, and
+submit a health report. See [CONTRIBUTING.md](CONTRIBUTING.md) for the expected
+three-file contribution model.
+
+New contributors can start with the repository's
+[Good first issues](https://github.com/r3dz4r/datapulse-my/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22)
+or propose a dataset through the GitHub issue forms. Maintainers use
+`good first issue` (yellow), `adopt-a-dataset` (blue), `freshness-check`
+(blue), `bug` (red), `documentation` (blue), `question` (purple), and
+`wontfix` (gray) to route contributions.
+
+## Licence
+
+DataPulse MY is released under the [MIT License](LICENSE). Source datasets
+remain subject to the licences and attribution requirements stated in their
+individual health reports.
+
+## Privacy
+
+See [PRIVACY.md](PRIVACY.md) for what DataPulse collects (transient operational
+logs for rate limiting and usage aggregation) and what it does not collect
+(no credentials, no accounts, no personal data).

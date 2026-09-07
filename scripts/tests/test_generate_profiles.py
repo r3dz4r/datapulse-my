@@ -6,6 +6,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -27,7 +28,7 @@ GENERATORS = (
     "gen_data_reports.sh",
     "gen_badges.sh",
     "gen_status_legend.sh",
-    "gen_readme_summary.sh",
+    "gen_readme.py",
     "gen_llms_summary.py",
     "gen_public_discovery.py",
     "stamp_manifest_origin.py",
@@ -98,11 +99,13 @@ RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
 PROFILE_INPUTS = (
     ".git",
     "datapulse.json",
+    "custodians.json",
     "reconciliation_groups.json",
     "health",
     "README.md",
     "llms.txt",
     "docs",
+    "data",
     "agent.json",
     "mcp.json",
     "mcp",
@@ -133,6 +136,7 @@ def _stage_source(tmp_path: Path) -> Path:
             {
                 "name": f"{dataset_id.title()} Dataset",
                 "namespace": "other",
+                "custodian": "fixture-agency",
                 "licence": "CC BY 4.0",
                 "real_status": "active",
                 "steward": "Fixture Agency",
@@ -144,6 +148,8 @@ def _stage_source(tmp_path: Path) -> Path:
             }
         )
     _write_json(source / "datapulse.json", manifest)
+    _write_json(source / "custodians.json", {"custodians": {}})
+    (source / "data").mkdir()
     _write_json(source / "reconciliation_groups.json", {"schema": "datapulse/v1/reconciliation-groups", "groups": []})
 
     health = json.loads(HEALTH_FIXTURE.read_text(encoding="utf-8"))
@@ -303,6 +309,11 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", scripts)
     shutil.copy2(ROOT / "scripts/verify_distribution_sync.py", scripts)
     shutil.copy2(ROOT / "scripts/gen_anomaly.py", scripts / "gen_anomaly.py")
+    subprocess.run(
+        [sys.executable, "scripts/gen_readme.py", "--root", str(source)],
+        cwd=source,
+        check=True,
+    )
     subprocess.run(["git", "init", "-q"], cwd=source, check=True)
     subprocess.run(
         ["git", "config", "user.email", "test@example.invalid"],
@@ -511,6 +522,13 @@ def test_release_build_is_deterministic_on_second_run(tmp_path: Path) -> None:
 
     assert first.returncode == second.returncode == 0, first.stderr or second.stderr
     assert all(diff.values())
+
+
+def test_release_fixture_stages_readme_generator(tmp_path: Path) -> None:
+    source = _stage_source(tmp_path)
+
+    assert (source / "scripts/gen_readme.py").is_file()
+    assert (source / "scripts/templates/README.md.tmpl").is_file()
 
 
 def test_stops_on_first_failure(tmp_path: Path) -> None:
