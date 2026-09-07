@@ -20,7 +20,13 @@ GENERATORS = {
     "readme": ROOT / "scripts/gen_readme_summary.sh",
     "rss": ROOT / "scripts/gen_rss.sh",
 }
-BASE_INPUTS = ["datapulse.json", "health/latest.json", "README.md", "badges"]
+BASE_INPUTS = [
+    "datapulse.json",
+    "health/latest.json",
+    "README.md",
+    "badges",
+    "custodians.json",
+]
 EXPECTED_OUTPUTS = {
     "badges": [
         "badges/alpha.svg",
@@ -47,16 +53,56 @@ STATUSES = (
 
 def _stage_fixture(tmp_path: Path) -> Path:
     source = tmp_path / "source"
-    for relative in ("datapulse.json", "health/latest.json", "README.md"):
+    for relative in (
+        "datapulse.json",
+        "health/latest.json",
+        "README.md",
+        "custodians.json",
+    ):
         destination = source / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes((FIXTURE / relative).read_bytes())
+        source_path = FIXTURE / relative
+        if not source_path.is_file():
+            source_path = ROOT / relative
+        content = source_path.read_bytes()
+        if relative == "datapulse.json":
+            document = json.loads(content)
+            for row in document["datasets"]:
+                dataset_id = row["id"]
+                row.update(
+                    {
+                        "name": f"{dataset_id} fixture dataset",
+                        "licence": "Open Data Commons Open Database License",
+                        "custodian": "fixture",
+                        "refresh_frequency": "daily",
+                        "health_report": f"data/{dataset_id}.md",
+                    }
+                )
+            content = json.dumps(document, indent=2).encode() + b"\n"
+        if relative == "README.md":
+            content += (
+                b"\n<!-- BEGIN mcp-tools -->\n"
+                b"- fixture tools\n"
+                b"<!-- END mcp-tools -->\n"
+                b"\n<!-- BEGIN public-discovery -->\n"
+                b"- fixture discovery\n"
+                b"<!-- END public-discovery -->\n"
+            )
+        destination.write_bytes(content)
     (source / "badges").mkdir()
     scripts = source / "scripts"
     scripts.mkdir()
     staged_legend = scripts / "gen_status_legend.sh"
     staged_legend.write_bytes(GENERATORS["legend"].read_bytes())
     staged_legend.chmod(GENERATORS["legend"].stat().st_mode)
+    staged_readme = scripts / "gen_readme.py"
+    staged_readme.write_bytes((ROOT / "scripts/gen_readme.py").read_bytes())
+    staged_readme.chmod((ROOT / "scripts/gen_readme.py").stat().st_mode)
+    staged_shared = scripts / "public_surface_generation.py"
+    staged_shared.write_bytes((ROOT / "scripts/public_surface_generation.py").read_bytes())
+    template = scripts / "templates/README.md.tmpl"
+    template.parent.mkdir()
+    template.write_bytes((ROOT / "scripts/templates/README.md.tmpl").read_bytes())
     return source
 
 
@@ -69,6 +115,14 @@ def _run(
     inputs = list(BASE_INPUTS)
     if name == "badges":
         inputs.append("scripts/gen_status_legend.sh")
+    elif name == "readme":
+        inputs.extend(
+            (
+                "scripts/gen_readme.py",
+                "scripts/public_surface_generation.py",
+                "scripts/templates/README.md.tmpl",
+            )
+        )
     return run_generator(
         source,
         GENERATORS[name],
@@ -127,8 +181,9 @@ def test_gen_readme_summary_replaces_marker(tmp_path: Path) -> None:
     assert "[1 fresh]" in text
     assert "[1 stale]" in text
     assert "2 official datasets" in text
-    assert "2-dataset catalogue" in text
-    assert "42" not in text
+    assert "alpha fixture dataset" in text
+    assert "daily" in text
+    assert "**42 official datasets**" not in text
 
 
 def test_gen_rss_produces_valid_xml(tmp_path: Path) -> None:
@@ -210,16 +265,30 @@ def test_badge_output_is_valid_svg(tmp_path: Path) -> None:
         assert dataset_id in relative
 
 
-def test_readme_summary_marker_missing_fails(tmp_path: Path) -> None:
+def test_gen_readme_fails_closed_when_manifest_missing(tmp_path: Path) -> None:
     source = _stage_fixture(tmp_path)
-    (source / "README.md").write_text(
-        "# README without a trust summary marker\n", encoding="utf-8"
+    readme_inputs = [
+        value
+        for value in BASE_INPUTS
+        if value != "datapulse.json"
+    ]
+    readme_inputs.extend(
+        (
+            "scripts/gen_readme.py",
+            "scripts/public_surface_generation.py",
+            "scripts/templates/README.md.tmpl",
+        )
+    )
+    result = run_generator(
+        source,
+        GENERATORS["readme"],
+        readme_inputs,
+        EXPECTED_OUTPUTS["readme"],
     )
 
-    result = _run(source, "readme")
-
     assert result.returncode != 0
-    assert "Could not replace trust summary block" in result.stderr
+    assert "datapulse.json" in result.stderr
+    assert "cannot read" in result.stderr
 
 
 @pytest.mark.parametrize("name", tuple(GENERATORS))
@@ -230,6 +299,14 @@ def test_deterministic_second_run_for_all_generators(
     inputs = list(BASE_INPUTS)
     if name == "badges":
         inputs.append("scripts/gen_status_legend.sh")
+    elif name == "readme":
+        inputs.extend(
+            (
+                "scripts/gen_readme.py",
+                "scripts/public_surface_generation.py",
+                "scripts/templates/README.md.tmpl",
+            )
+        )
 
     first, second, diff = run_generator_twice(
         source,
