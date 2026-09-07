@@ -596,7 +596,11 @@ For example, a data pipeline can inspect `status`, `content_freshness_date`, and
 `freshness_signal_source` before processing a source, while a researcher can
 review the known quirks before designing a collection method.
 
-## Verify before trust
+## External verification
+
+For a clone-less, independent check of the published Ed25519 dataset envelope,
+GitHub source parity, and Rekor/Sigstore health witness, see
+[Verify DataPulse externally](docs/verify-datapulse-externally.md).
 
 Every dataset in this catalogue ships with a **publicly-signed Sigstore
 DSSE evidence receipt** that an agent can verify offline, without trusting
