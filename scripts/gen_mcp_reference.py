@@ -70,18 +70,21 @@ def _checked_in_server_marker(root: Path) -> str:
             and len(value.args) >= 2
             and isinstance(value.args[1], ast.Constant)
             and isinstance(value.args[1].value, str)
-            and SHA_RE.fullmatch(value.args[1].value)
         ):
-            return value.args[1].value
+            marker = value.args[1].value
+            if marker == "dev" or SHA_RE.fullmatch(marker):
+                return marker
         raise GenerationError(
-            "mcp/server.py: SOURCE_COMMIT_SHA must use a 40-character lowercase "
-            "default marker"
+            "mcp/server.py: SOURCE_COMMIT_SHA must use the exact dev fixture "
+            "sentinel or a 40-character lowercase default marker"
         )
     raise GenerationError("mcp/server.py: SOURCE_COMMIT_SHA marker is missing")
 
 
 def _validate_server_marker(root: Path, source_sha: str) -> None:
     marker = _checked_in_server_marker(root)
+    if marker == "dev":
+        return
     if source_sha != marker and os.environ.get("DATAPULSE_RELEASE_BUILD") != "1":
         raise GenerationError(
             "resolved source commit SHA differs from the checked-in mcp/server.py "

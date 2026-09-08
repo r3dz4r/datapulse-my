@@ -46,6 +46,17 @@ def test_direct_generation_rejects_a_different_source_marker() -> None:
         )
 
 
+def test_direct_generation_accepts_injected_sha_for_dev_fixture_marker(tmp_path: Path) -> None:
+    server = tmp_path / "mcp" / "server.py"
+    server.parent.mkdir()
+    server.write_text(
+        'import os\nSOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "dev")\n',
+        encoding="utf-8",
+    )
+
+    gen_mcp_reference._validate_server_marker(tmp_path, OTHER_SHA)
+
+
 def test_release_build_accepts_an_injected_source_marker(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
