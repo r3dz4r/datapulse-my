@@ -186,6 +186,47 @@ def test_semantic_scoring_keeps_no_citation_tasks_citation_free(tmp_path: Path) 
     assert report["tasks"][7]["scores"]["citation"] == 0
 
 
+def test_semantic_scoring_fails_closed_when_required_receipt_evidence_is_missing(tmp_path: Path) -> None:
+    suite = _suite()
+    trace = _trace(suite)
+    trace["tasks"][0]["attempt"].pop("evidence")
+
+    report = score_agent_trace.score_trace(
+        _write_json(tmp_path / "suite.json", suite), _write_json(tmp_path / "trace.json", trace)
+    )
+
+    result = report["tasks"][0]
+    assert result["scores"]["citation"] == 0
+    assert result["passed"] is False
+
+
+def test_semantic_scoring_fails_closed_for_an_unrecognised_outcome(tmp_path: Path) -> None:
+    suite = _suite()
+    trace = _trace(suite)
+    trace["tasks"][0]["attempt"]["outcome"]["outcome"] = "invented"
+
+    report = score_agent_trace.score_trace(
+        _write_json(tmp_path / "suite.json", suite), _write_json(tmp_path / "trace.json", trace)
+    )
+
+    result = report["tasks"][0]
+    assert result["scores"]["outcome"] == 0
+    assert result["passed"] is False
+
+
+def test_semantic_scoring_preserves_explicit_unknown_abstention(tmp_path: Path) -> None:
+    suite = _suite()
+
+    report = score_agent_trace.score_trace(
+        _write_json(tmp_path / "suite.json", suite), _write_json(tmp_path / "trace.json", _trace(suite))
+    )
+
+    result = report["tasks"][6]
+    assert result["outcome"] == "unknown"
+    assert result["action"] == "abstain"
+    assert result["passed"] is True
+
+
 def test_rejects_trace_missing_a_suite_task() -> None:
     suite = _suite()
     trace = _trace(suite)
