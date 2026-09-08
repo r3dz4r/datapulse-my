@@ -20,6 +20,7 @@ from pathlib import Path
 from time import monotonic
 from typing import Any
 from urllib.parse import urljoin, urlsplit
+from uuid import uuid4
 
 import httpx
 from cryptography.exceptions import InvalidSignature
@@ -113,6 +114,9 @@ RELIABILITY_GRADE_RANK = {
 
 logger = logging.getLogger("uvicorn.error")
 logger.setLevel(logging.INFO)
+
+# Random at process start so operators can reconcile records without retaining caller identity.
+PROCESS_INSTANCE_ID = uuid4().hex
 
 
 def _sanitise_tool_arg(value: Any, *, key: str | None = None) -> Any:
@@ -213,6 +217,8 @@ class ToolUsageLoggingMiddleware(Middleware):
             "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
             "tool": message.name,
             "args": args,
+            "call_id": uuid4().hex,
+            "process_instance_id": PROCESS_INSTANCE_ID,
         }
         try:
             result = await call_next(context)
@@ -231,6 +237,8 @@ class ToolUsageLoggingMiddleware(Middleware):
                 "tool": record["tool"],
                 "outcome": record["outcome"],
                 "latency_ms": record["latency_ms"],
+                "call_id": record["call_id"],
+                "process_instance_id": record["process_instance_id"],
             }
             if "error" in record:
                 journal["error_classification"] = record["error"]["classification"]

@@ -748,8 +748,11 @@ async def test_tool_call_logs_aggregate_safe_terminal_evidence(caplog: pytest.Lo
     }
 
 
-async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_identity(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_identity(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
     monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    caplog.set_level("INFO", logger=server.logger.name)
     context = SimpleNamespace(message=SimpleNamespace(name="trust_verdict", arguments={
         "dataset_id": "fuelprice", "query": "private search phrase", "api_key": "secret",
         "buyer_id": "buyer-a", "client_ip": "127.0.0.1", "request_id": "request-1",
@@ -763,6 +766,14 @@ async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_ide
     assert record["args"] == {"dataset_id": "fuelprice", "query_present": True}
     assert record["outcome"] == "success"
     assert isinstance(record["latency_ms"], int)
+    journal = json.loads(next(
+        log.getMessage().partition(":")[2].lstrip()
+        for log in caplog.records
+        if log.name == server.logger.name and log.getMessage().startswith("mcp-tool:")
+    ))
+    assert record["call_id"] == journal["call_id"]
+    assert record["process_instance_id"] == journal["process_instance_id"]
+    assert record["process_instance_id"] == server.PROCESS_INSTANCE_ID
     serialized = json.dumps(record)
     for private_value in ("private search phrase", "secret", "buyer-a", "127.0.0.1", "request-1", "session-1", "client-1"):
         assert private_value not in serialized
@@ -812,8 +823,11 @@ async def test_usage_summary_call_tool_aggregates_all_ledger_records(monkeypatch
     }
 
 
-async def test_usage_middleware_records_one_terminal_error_and_reraises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+async def test_usage_middleware_records_one_terminal_error_and_reraises(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
     monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    caplog.set_level("INFO", logger=server.logger.name)
     context = SimpleNamespace(message=SimpleNamespace(name="search_datasets", arguments={"query": "private phrase", "limit": 4}), timestamp=datetime.now(timezone.utc))
 
     async def fail(_: object) -> None:
@@ -824,11 +838,21 @@ async def test_usage_middleware_records_one_terminal_error_and_reraises(monkeypa
 
     records = [json.loads(line) for line in next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8").splitlines()]
     assert len(records) == 1
-    assert records == [{
+    assert records[0] == {
         "ts": records[0]["ts"], "tool": "search_datasets", "args": {"query_present": True, "limit": 4},
         "result_summary": {}, "latency_ms": records[0]["latency_ms"], "outcome": "error",
         "error": {"classification": "validation_error", "message": "tool call failed"},
-    }]
+        "call_id": records[0]["call_id"],
+        "process_instance_id": records[0]["process_instance_id"],
+    }
+    journal = json.loads(next(
+        log.getMessage().partition(":")[2].lstrip()
+        for log in caplog.records
+        if log.name == server.logger.name and log.getMessage().startswith("mcp-tool:")
+    ))
+    assert records[0]["call_id"] == journal["call_id"]
+    assert records[0]["process_instance_id"] == journal["process_instance_id"]
+    assert records[0]["process_instance_id"] == server.PROCESS_INSTANCE_ID
 
 
 async def test_usage_middleware_keeps_unknown_arguments_and_credentials_out_of_terminal_record(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
