@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import base64
 import hashlib
+import re
 import sys
 import asyncio
 import httpx
@@ -1329,23 +1330,45 @@ async def test_get_provenance_returns_citation_fields(live_data: tuple[dict, dic
     assert all("evidence" in item for item in result.data)
     assert all(item["last_verified"] == next(row["last_checked"] for row in health["datasets"] if row["dataset_id"] == item["id"]) for item in result.data)
     assert all(item["licence_url"].startswith("https://") for item in result.data)
+    assert all(re.fullmatch(r"sha256:[0-9a-f]{64}", item["receipt_digest"]) for item in result.data)
 
 
 async def test_get_evidence_projects_complete_published_receipt(monkeypatch: pytest.MonkeyPatch) -> None:
     row = {field: f"value-{field}" for field in server.EVIDENCE_FIELDS}
-    manifest = {"datasets": [{"id": "sample"}]}
+    row.update({
+        "content_length": 123,
+        "first_record_timestamp": "value-first_record_timestamp",
+        "record_count_within_tolerance": True,
+        "last_modified": "value-last_modified",
+        "freshness_signal": "value-freshness_signal",
+    })
+    manifest = {"datasets": [{"id": "sample", "licence": server.CC_BY_4}]}
     health = {"schema": "datapulse/v0.4/dataset-health", "checked_at": "snapshot", "datasets": [{**row, "dataset_id": "sample"}]}
     async def load() -> tuple[dict, dict]: return manifest, health
     monkeypatch.setattr(server, "_load_catalogue", load)
     result = await server.get_evidence("sample")
+    expected_digest = "sha256:" + hashlib.sha256(
+        server.receipt_statement_bytes(
+            server.canonical_evidence_row(health["datasets"][0], manifest["datasets"][0])
+        )
+    ).hexdigest()
     assert result["evidence"] == {field: row[field] for field in server.EVIDENCE_FIELDS}
+    assert result["receipt_digest"] == expected_digest
+    assert re.fullmatch(r"sha256:[0-9a-f]{64}", result["receipt_digest"])
     assert result["evidence_url"] == "https://www.data-pulse.my/data/sample.receipt.evidence.json"
     assert result["receipt_bundle_url"] == "https://www.data-pulse.my/data/sample.receipt.sigstore.json"
 
 
 async def test_get_evidence_call_tool_returns_published_receipt(monkeypatch: pytest.MonkeyPatch) -> None:
     row = {field: f"value-{field}" for field in server.EVIDENCE_FIELDS}
-    manifest = {"datasets": [{"id": "sample"}]}
+    row.update({
+        "content_length": 123,
+        "first_record_timestamp": "value-first_record_timestamp",
+        "record_count_within_tolerance": True,
+        "last_modified": "value-last_modified",
+        "freshness_signal": "value-freshness_signal",
+    })
+    manifest = {"datasets": [{"id": "sample", "licence": server.CC_BY_4}]}
     health = {"schema": "datapulse/v0.4/dataset-health", "checked_at": "snapshot", "datasets": [{**row, "dataset_id": "sample"}]}
 
     async def load() -> tuple[dict, dict]:
@@ -1359,6 +1382,7 @@ async def test_get_evidence_call_tool_returns_published_receipt(monkeypatch: pyt
     assert result.data["dataset_id"] == "sample"
     assert result.data["evidence_available"] is True
     assert result.data["evidence"] == {field: row[field] for field in server.EVIDENCE_FIELDS}
+    assert re.fullmatch(r"sha256:[0-9a-f]{64}", result.data["receipt_digest"])
     assert result.data["evidence_url"] == "https://www.data-pulse.my/data/sample.receipt.evidence.json"
     assert result.data["receipt_bundle_url"] == "https://www.data-pulse.my/data/sample.receipt.sigstore.json"
 
@@ -1368,6 +1392,7 @@ async def test_get_evidence_keeps_missing_receipts_explicit(monkeypatch: pytest.
     monkeypatch.setattr(server, "_load_catalogue", load)
     result = await server.get_evidence("sample")
     assert result["evidence_available"] is False
+    assert "receipt_digest" not in result
     assert set(result["evidence"]) == set(server.EVIDENCE_FIELDS)
     assert all(value is None for value in result["evidence"].values())
 
@@ -1375,13 +1400,73 @@ async def test_get_evidence_keeps_missing_receipts_explicit(monkeypatch: pytest.
 async def test_get_provenance_includes_compact_receipts_and_row_probe_time(monkeypatch: pytest.MonkeyPatch) -> None:
     url = "https://api.data.gov.my/data-catalogue?id=sample"
     manifest = {"datasets": [{"id": "sample", "steward": "Agency", "source": "Publisher", "licence": server.CC_BY_4, "url": url}]}
-    row = {"dataset_id": "sample", "last_checked": "row-time", "access_method": "direct", "http_status": 200, "request_url": url, "access_dependency": "direct", "freshness_signal_source": "content_date_parse", "content_freshness_date": "2026-08-14", "record_count": 10, "first_row_hash": "shape-v1:abc", "anomaly_detected": False, "status": "fresh"}
+    row = {"dataset_id": "sample", "last_checked": "row-time", "access_method": "direct", "http_status": 200, "request_url": url, "access_dependency": "direct", "freshness_signal_source": "content_date_parse", "freshness_signal": "content_date", "content_freshness_date": "2026-08-14", "record_count": 10, "record_count_within_tolerance": True, "first_row_hash": "shape-v1:abc", "anomaly_detected": False, "status": "fresh", "message": "published", "content_length": 123, "first_record_timestamp": "2026-08-14T00:00:00Z", "last_modified": "2026-08-14T00:00:00Z"}
     health = {"schema": "schema", "checked_at": "snapshot", "datasets": [row]}
     async def load() -> tuple[dict, dict]: return manifest, health
     monkeypatch.setattr(server, "_load_catalogue", load)
     result = await server.get_provenance(["sample"])
+    expected_digest = "sha256:" + hashlib.sha256(
+        server.receipt_statement_bytes(
+            server.canonical_evidence_row(row, manifest["datasets"][0])
+        )
+    ).hexdigest()
     assert result[0]["last_verified"] == "row-time"
+    assert result[0]["receipt_digest"] == expected_digest
     assert result[0]["evidence"] == {**{field: row.get(field) for field in server.COMPACT_EVIDENCE_FIELDS}, "available": True, "snapshot_checked_at": "snapshot"}
+
+
+async def test_get_provenance_keeps_missing_receipts_explicit(monkeypatch: pytest.MonkeyPatch) -> None:
+    manifest = {"datasets": [{"id": "sample", "licence": server.CC_BY_4}]}
+    async def load() -> tuple[dict, dict]: return manifest, {"schema": "schema", "checked_at": "snapshot", "datasets": []}
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    result = await server.get_provenance(["sample"])
+    assert result[0]["evidence"]["available"] is False
+    assert "receipt_digest" not in result[0]
+
+
+async def test_receipt_digest_matches_verify_and_citation_surfaces(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://api.data.gov.my/data-catalogue?id=sample"
+    manifest_entry = {"id": "sample", "licence": server.CC_BY_4, "source": "Publisher", "url": url}
+    manifest = {"datasets": [manifest_entry]}
+    row = {
+        "dataset_id": "sample",
+        "last_checked": "row-time",
+        "status": "fresh",
+        "message": "published",
+        "request_url": url,
+        "access_method": "direct",
+        "http_status": 200,
+        "content_length": 123,
+        "last_modified": "2026-08-14T00:00:00Z",
+        "content_freshness_date": "2026-08-14",
+        "first_record_timestamp": "2026-08-14T00:00:00Z",
+        "record_count": 10,
+        "record_count_within_tolerance": True,
+        "freshness_signal": "content_date",
+        "freshness_signal_source": "content_date_parse",
+    }
+    health = {"schema": "schema", "checked_at": "snapshot", "methodology_version": "v1", "datasets": [row]}
+
+    async def load() -> tuple[dict, dict]:
+        return manifest, health
+
+    async def fail_fetch(path: str) -> bytes:
+        raise httpx.HTTPError(path)
+
+    monkeypatch.setattr(server, "_load_catalogue", load)
+    monkeypatch.setattr(server, "_fetch_bytes", fail_fetch)
+    evidence = await server.get_evidence("sample")
+    provenance = await server.get_provenance(["sample"])
+    verification = await server.verify_dataset("sample")
+    citation = json.loads(await server.citation_resource("sample"))
+
+    digests = {
+        evidence["receipt_digest"],
+        provenance[0]["receipt_digest"],
+        verification["receipt_digest"],
+        citation["receipt_digest"],
+    }
+    assert len(digests) == 1
 
 
 def install_fake_live_http(monkeypatch: pytest.MonkeyPatch, responses: list[httpx.Response | Exception]) -> list[httpx.Request]:

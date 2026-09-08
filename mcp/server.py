@@ -47,7 +47,7 @@ from scripts.verify_per_dataset_receipt import BundleError, _decode_payload
 # replacing) the legacy stable FastMCP version. The verify script
 # reads this field and compares to the current repo HEAD to detect drift.
 FASTMCP_VERSION = "4.0.0b3"
-SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "4dd4285f9e2c9c929d8c1d1c8fc45c2ab8e05986")
+SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "9e00a80956b8f4d9a6b6169209938b2d8cc3d014")
 SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "2026-09-08")
 SOURCE_VERSION_STRING = (
     f"v{FASTMCP_VERSION}+{SOURCE_COMMIT_SHA[:7]}"
@@ -131,6 +131,14 @@ def _sanitise_tool_arg(value: Any, *, key: str | None = None) -> Any:
     if isinstance(value, tuple):
         return [_sanitise_tool_arg(item) for item in value]
     return value
+
+
+def _published_receipt_digest(
+    health_row: dict[str, Any], manifest_entry: dict[str, Any]
+) -> str:
+    """Return the digest binding one published health row to its receipt bytes."""
+    canonical_evidence = canonical_evidence_row(health_row, manifest_entry)
+    return f"sha256:{hashlib.sha256(receipt_statement_bytes(canonical_evidence)).hexdigest()}"
 
 
 def _usage_arguments(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -1433,24 +1441,25 @@ async def get_provenance(
     for dataset_id in dataset_ids:
         entry = manifest_by_id[dataset_id]
         health_record = health_records.get(dataset_id, {})
-        provenance.append(
-            {
-                "id": dataset_id,
-                "steward": entry.get("steward"),
-                "source": entry.get("source"),
-                "licence": entry.get("licence"),
-                "licence_url": LICENCE_URLS.get(entry.get("licence")),
-                "url": entry.get("url"),
-                "access_method": health_record.get("access_method", "unknown"),
-                "last_verified": health_record.get("last_checked"),
-                "schema_version": health.get("schema"),
-                "evidence": {
-                    **_project_evidence(health_record, COMPACT_EVIDENCE_FIELDS),
-                    "available": bool(health_record),
-                    "snapshot_checked_at": health.get("checked_at"),
-                },
-            }
-        )
+        item = {
+            "id": dataset_id,
+            "steward": entry.get("steward"),
+            "source": entry.get("source"),
+            "licence": entry.get("licence"),
+            "licence_url": LICENCE_URLS.get(entry.get("licence")),
+            "url": entry.get("url"),
+            "access_method": health_record.get("access_method", "unknown"),
+            "last_verified": health_record.get("last_checked"),
+            "schema_version": health.get("schema"),
+            "evidence": {
+                **_project_evidence(health_record, COMPACT_EVIDENCE_FIELDS),
+                "available": bool(health_record),
+                "snapshot_checked_at": health.get("checked_at"),
+            },
+        }
+        if health_record:
+            item["receipt_digest"] = _published_receipt_digest(health_record, entry)
+        provenance.append(item)
     return provenance
 
 
@@ -1473,7 +1482,7 @@ async def get_evidence(
     if dataset_id not in manifest_by_id:
         raise ValueError(f"Unknown dataset id: {dataset_id}")
     health_record = _health_by_id(health).get(dataset_id, {})
-    return {
+    result = {
         "dataset_id": dataset_id,
         "schema_version": health.get("schema"),
         "snapshot_checked_at": health.get("checked_at"),
@@ -1482,6 +1491,11 @@ async def get_evidence(
         "receipt_bundle_url": f"{DATA_BASE}/data/{dataset_id}.receipt.sigstore.json",
         "evidence": _project_evidence(health_record, EVIDENCE_FIELDS),
     }
+    if health_record:
+        result["receipt_digest"] = _published_receipt_digest(
+            health_record, manifest_by_id[dataset_id]
+        )
+    return result
 
 
 _get_evidence_tool = FunctionTool.from_function(
@@ -1573,7 +1587,7 @@ async def verify_dataset(
         raise ValueError(f"Dataset has no published health row: {dataset_id}")
 
     canonical_evidence = canonical_evidence_row(health_row, entry)
-    receipt_digest = f"sha256:{hashlib.sha256(receipt_statement_bytes(canonical_evidence)).hexdigest()}"
+    receipt_digest = _published_receipt_digest(health_row, entry)
     statement = generate_per_dataset_statement(dataset_id, canonical_evidence)
     bundle_ref = f"{DATA_BASE}/data/{dataset_id}.receipt.sigstore.json"
     statement_ref = f"{DATA_BASE}/data/{dataset_id}.receipt.statement.json"
@@ -2145,7 +2159,7 @@ async def citation_resource(dataset_id: str) -> str:
     if health_record is None:
         raise ValueError(f"Dataset has no published health row: {dataset_id}")
     canonical_evidence = canonical_evidence_row(health_record, entry)
-    receipt_digest = f"sha256:{hashlib.sha256(receipt_statement_bytes(canonical_evidence)).hexdigest()}"
+    receipt_digest = _published_receipt_digest(health_record, entry)
     status = health_record.get("status")
     verdict = {
         "fresh": "USE",
