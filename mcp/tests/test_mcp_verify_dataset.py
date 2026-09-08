@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -73,6 +75,14 @@ async def test_verify_dataset_returns_signed_receipt_bundle(monkeypatch: pytest.
     assert result.data["signed"] is True
     assert result.data["health"]["dataset_id"] == "fuelprice"
     assert result.data["evidence"]["status"] == "fresh"
+    canonical_evidence = server.canonical_evidence_row(
+        health["datasets"][0], manifest["datasets"][0]
+    )
+    expected_digest = (
+        f"sha256:{hashlib.sha256(server.receipt_statement_bytes(canonical_evidence)).hexdigest()}"
+    )
+    assert re.fullmatch(r"sha256:[0-9a-f]{64}", result.data["receipt_digest"])
+    assert result.data["receipt_digest"] == expected_digest
     assert result.data["bundle_ref"].endswith("/data/fuelprice.receipt.sigstore.json")
     assert result.data["verifier_output"] is None
     hint = result.data["verification_hint"]
@@ -109,3 +119,18 @@ async def test_verify_dataset_loads_published_catalogue_once(monkeypatch: pytest
 
     assert loads == 1
     assert result["signed"] is True
+
+
+def test_receipt_digest_changes_when_canonical_evidence_changes() -> None:
+    manifest, health = _catalogue()
+    canonical_evidence = server.canonical_evidence_row(
+        health["datasets"][0], manifest["datasets"][0]
+    )
+    digest = hashlib.sha256(server.receipt_statement_bytes(canonical_evidence)).hexdigest()
+
+    changed_evidence = {**canonical_evidence, "status": "stale"}
+    changed_digest = hashlib.sha256(
+        server.receipt_statement_bytes(changed_evidence)
+    ).hexdigest()
+
+    assert changed_digest != digest

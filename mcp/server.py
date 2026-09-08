@@ -1573,6 +1573,7 @@ async def verify_dataset(
         raise ValueError(f"Dataset has no published health row: {dataset_id}")
 
     canonical_evidence = canonical_evidence_row(health_row, entry)
+    receipt_digest = f"sha256:{hashlib.sha256(receipt_statement_bytes(canonical_evidence)).hexdigest()}"
     statement = generate_per_dataset_statement(dataset_id, canonical_evidence)
     bundle_ref = f"{DATA_BASE}/data/{dataset_id}.receipt.sigstore.json"
     statement_ref = f"{DATA_BASE}/data/{dataset_id}.receipt.statement.json"
@@ -1597,6 +1598,7 @@ async def verify_dataset(
         "dataset": entry,
         "health": health_row,
         "evidence": _project_evidence(health_row, EVIDENCE_FIELDS),
+        "receipt_digest": receipt_digest,
         "signed": signed,
         "verifier_output": verifier_output[:4096] if include_proof_steps else None,
         "bundle_ref": bundle_ref,
@@ -2139,7 +2141,11 @@ async def citation_resource(dataset_id: str) -> str:
     if entry is None:
         raise ValueError(f"Unknown dataset id: {dataset_id}")
 
-    health_record = _health_by_id(health).get(dataset_id, {})
+    health_record = _health_by_id(health).get(dataset_id)
+    if health_record is None:
+        raise ValueError(f"Dataset has no published health row: {dataset_id}")
+    canonical_evidence = canonical_evidence_row(health_record, entry)
+    receipt_digest = f"sha256:{hashlib.sha256(receipt_statement_bytes(canonical_evidence)).hexdigest()}"
     status = health_record.get("status")
     verdict = {
         "fresh": "USE",
@@ -2153,6 +2159,7 @@ async def citation_resource(dataset_id: str) -> str:
             "dataset_id": dataset_id,
             "evidence_url": f"https://www.data-pulse.my/data/{dataset_id}.md",
             "receipt_evidence_url": f"{DATA_BASE}/data/{dataset_id}.receipt.evidence.json",
+            "receipt_digest": receipt_digest,
             "observed_at": health_record.get("last_checked"),
             "source_url": entry.get("url"),
             "status": status,
