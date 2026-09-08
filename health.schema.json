@@ -93,6 +93,31 @@
             "type": ["string", "null"],
             "pattern": "^sha256:[0-9a-f]{64}$"
           },
+          "quality_profile": {
+            "description": "Additive, evidence-bounded six-dimension metadata readiness profile. It is not a semantic-quality score or certification.",
+            "type": "object",
+            "required": ["profile_version", "policy_id", "dimensions", "overall", "limitations"],
+            "properties": {
+              "profile_version": {"const": "datapulse-quality-profile/v1"},
+              "policy_id": {"const": "datapulse-quality-readiness/v1"},
+              "dimensions": {
+                "type": "object",
+                "required": ["fair", "licensing", "provenance", "governance", "reproducibility", "catalogue_readiness"],
+                "properties": {
+                  "fair": {"$ref": "#/$defs/qualityDimension"},
+                  "licensing": {"$ref": "#/$defs/qualityDimension"},
+                  "provenance": {"$ref": "#/$defs/qualityDimension"},
+                  "governance": {"$ref": "#/$defs/qualityDimension"},
+                  "reproducibility": {"$ref": "#/$defs/qualityDimension"},
+                  "catalogue_readiness": {"$ref": "#/$defs/qualityDimension"}
+                },
+                "additionalProperties": false
+              },
+              "overall": {"enum": ["ready", "not_ready", "indeterminate"]},
+              "limitations": {"type": "array", "items": {"type": "string"}}
+            },
+            "additionalProperties": false
+          },
           "sample_rows": {
             "type": ["integer", "null"],
             "minimum": 0
@@ -124,5 +149,54 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "qualityEvidenceRef": {
+      "type": "object",
+      "required": ["source", "path"],
+      "properties": {
+        "source": {"enum": ["manifest", "health"]},
+        "path": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "qualityCheck": {
+      "type": "object",
+      "required": ["check_id", "state", "reason_codes", "evidence_refs", "limitations"],
+      "properties": {
+        "check_id": {"type": "string", "pattern": "^[a-z_]+\\.[a-z0-9_]+$"},
+        "state": {"enum": ["pass", "fail", "unknown", "not_applicable"]},
+        "reason_codes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "evidence_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/qualityEvidenceRef"}},
+        "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      },
+      "additionalProperties": false
+    },
+    "qualityDimension": {
+      "type": "object",
+      "required": ["state", "checks", "coverage", "reason_codes", "evidence_refs", "limitations", "policy_basis"],
+      "properties": {
+        "state": {"enum": ["pass", "fail", "unknown", "not_applicable"]},
+        "checks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/qualityCheck"}},
+        "coverage": {
+          "type": "object",
+          "required": ["applicable", "evaluated", "passed", "failed", "unknown", "not_applicable"],
+          "properties": {
+            "applicable": {"type": "integer", "minimum": 0},
+            "evaluated": {"type": "integer", "minimum": 0},
+            "passed": {"type": "integer", "minimum": 0},
+            "failed": {"type": "integer", "minimum": 0},
+            "unknown": {"type": "integer", "minimum": 0},
+            "not_applicable": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "reason_codes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "evidence_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/qualityEvidenceRef"}},
+        "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "policy_basis": {"const": "datapulse-quality-readiness/v1"}
+      },
+      "additionalProperties": false
+    }
+  }
 }
