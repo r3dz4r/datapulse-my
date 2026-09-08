@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "DOSM via OpenDOSM"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/dosm_lfs_year.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 40
 stale_after: "2024-07-01T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

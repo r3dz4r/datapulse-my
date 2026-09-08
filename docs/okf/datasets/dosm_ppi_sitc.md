@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Department of Statistics Malaysia via data.gov.my"
 datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_ppi_sitc.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 5229
 stale_after: "2026-08-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

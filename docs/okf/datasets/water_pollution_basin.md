@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Department of Environment Malaysia via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/water_pollution_basin.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 198
 stale_after: "2022-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

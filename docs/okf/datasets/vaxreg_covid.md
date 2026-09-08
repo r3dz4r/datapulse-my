@@ -8,13 +8,13 @@ sources:
   - {"id": "kkm","resource": "https://api.data.gov.my/data-catalogue?id=vaxreg_covid","title": "Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-06T05:22:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Ministry of Health Malaysia via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/vaxreg_covid.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 6205
 stale_after: "2022-02-23T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Ministry of Education Malaysia via data.gov.my"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/teachers_district.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 8805
 stale_after: "2026-12-29T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

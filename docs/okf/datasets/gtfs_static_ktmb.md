@@ -8,13 +8,13 @@ sources:
   - {"id": "ktmb","resource": "https://api.data.gov.my/gtfs-static/ktmb","title": "Keretapi Tanah Melayu Berhad (KTMB)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-06T05:22:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "KTMB via data.gov.my GTFS API"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/gtfs_static_ktmb.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 ---
 
@@ -24,7 +24,7 @@ GTFS Static — KTMB Rail Schedule is published by Keretapi Tanah Melayu Berhad 
 
 # Schema
 
-- `record_count`: `5269`
+- `record_count`: `5196`
 
 # Quirks
 

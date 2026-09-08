@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/pharmaceutical_products_cancelled.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 1594
 stale_after: "2026-06-09T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

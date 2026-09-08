@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/cosmetic_notifications_cancelled.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 123
 ---
 

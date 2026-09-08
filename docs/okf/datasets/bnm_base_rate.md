@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Bank Negara Malaysia via BNM Open API"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/bnm_base_rate.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 12
 stale_after: "2020-09-21T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

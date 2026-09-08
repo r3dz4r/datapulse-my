@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Digital Department and Ministry of Digital via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/government_apps_reviews.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 1006
 stale_after: "2026-06-06T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

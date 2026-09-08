@@ -378,6 +378,11 @@
 * [SDG 10-C-1: Remittance Costs as a % of the Amount Remitted](sdg_10-c-1.md) - data.gov.my (OpenAPI).
 * [SDG 16-1-1: Victims of Intentional Homicide](sdg_16-1-1.md) - data.gov.my (OpenAPI).
 * [SDG 16-2-2: Victims of Human Trafficking](sdg_16-2-2.md) - data.gov.my (OpenAPI).
+* [COE Bidding Results (SG)](sg_datagov_coe_bidding.md) - data.gov.sg.
+* [HDB Dataset Metadata (SG)](sg_datagov_hdb_metadata.md) - data.gov.sg.
+* [HDB Resale Flat Prices Jan-2017 onwards (SG)](sg_datagov_hdb_resale_prices.md) - data.gov.sg.
+* [Taxi Availability real-time (SG)](sg_datagov_taxi_availability.md) - data.gov.sg.
+* [Weather Readings real-time (SG)](sg_datagov_weather_readings.md) - data.gov.sg.
 * [Quarterly Services Producer Price Index by Group](sppi_3d.md) - OpenDOSM (also indexed by data.gov.my).
 * [Co-Generators — Malaysia](st_cogenerators.md) - meih.st.gov.my (ST).
 * [Number of Electricity Consumers — Malaysia](st_consumers.md) - meih.st.gov.my (ST).

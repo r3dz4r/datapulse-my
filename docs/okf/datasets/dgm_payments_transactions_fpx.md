@@ -8,13 +8,13 @@ sources:
   - {"id": "bnm","resource": "https://storage.data.gov.my/finsector/payments/trnsc_daily_fpx.csv","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-06T05:22:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Bank Negara Malaysia via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/dgm_payments_transactions_fpx.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 ---
 

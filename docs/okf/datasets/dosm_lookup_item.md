@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Ministry of Domestic Trade and Cost of Living and Department of Statistics Malaysia via data.gov.my"
 datapulse:real_status: "reference"
 datapulse:health_report: "/data/dosm_lookup_item.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 ---
 

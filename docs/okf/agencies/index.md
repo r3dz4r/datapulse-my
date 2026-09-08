@@ -41,5 +41,6 @@
 * [prasarana](./prasarana/) - Published dataset index.
 * [prisons](./prisons/) - Published dataset index.
 * [protecthealth](./protecthealth/) - Published dataset index.
+* [sg-datagov](./sg-datagov/) - Published dataset index.
 * [span](./span/) - Published dataset index.
 * [tnb](./tnb/) - Published dataset index.

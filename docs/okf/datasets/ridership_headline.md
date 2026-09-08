@@ -8,13 +8,13 @@ sources:
   - {"id": "mot","resource": "https://storage.data.gov.my/transportation/ridership_headline.csv","title": "Ministry of Transport Malaysia and public transport operators"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-06T05:22:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Prasarana, KTMB, and Ministry of Transport Malaysia via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/ridership_headline.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 stale_after: "2026-08-01T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

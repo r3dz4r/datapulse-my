@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Accountant General’s Department of Malaysia via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/federal_finance_year_de.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 756
 stale_after: "2023-05-19T00:00:00Z"
 datapulse:stale_after_basis: "cadence"

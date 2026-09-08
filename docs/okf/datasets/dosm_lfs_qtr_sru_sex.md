@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Department of Statistics Malaysia via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/dosm_lfs_qtr_sru_sex.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 210
 stale_after: "2025-11-16T00:00:00Z"
 datapulse:stale_after_basis: "cadence"

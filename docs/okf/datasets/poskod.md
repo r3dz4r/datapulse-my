@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Malaysian Communications and Multimedia Commission via data.gov.my"
 datapulse:real_status: "reference"
 datapulse:health_report: "/data/poskod.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 2932
 ---
 

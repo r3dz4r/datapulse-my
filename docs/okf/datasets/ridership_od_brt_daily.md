@@ -8,13 +8,13 @@ sources:
   - {"id": "prasarana","resource": "https://storage.data.gov.my/transportation/bus/brt_2026_daily.csv","title": "Prasarana Malaysia Berhad and Ministry of Transport"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-06T05:22:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Prasarana Malaysia Berhad and Ministry of Transport via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/ridership_od_brt_daily.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 stale_after: "2026-08-25T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

@@ -8,15 +8,15 @@ sources:
   - {"id": "jdn","resource": "https://api.data.gov.my/data-catalogue?id=metrics_dataset_cumul","title": "National Digital Department and Ministry of Digital"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-06T05:22:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Digital Department and Ministry of Digital via data.gov.my"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/metrics_dataset_cumul.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 281
-stale_after: "2026-09-06T12:00:00Z"
+stale_after: "2026-09-07T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 

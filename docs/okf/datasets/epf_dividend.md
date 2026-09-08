@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Employees Provident Fund via data.gov.my"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/epf_dividend.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 ---
 

@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Tenaga Nasional Berhad via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/electricity_consumption.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 468
 stale_after: "2024-07-17T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

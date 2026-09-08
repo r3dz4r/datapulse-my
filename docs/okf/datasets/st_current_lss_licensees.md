@@ -14,7 +14,7 @@ datapulse:licence: "Publisher licence not stated; portal disclaimer applies"
 datapulse:attribution: "Suruhanjaya Tenaga (Malaysia Energy Commission) via MyEnergyStats"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/st_current_lss_licensees.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 ---
 

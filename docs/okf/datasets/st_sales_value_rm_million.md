@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Suruhanjaya Tenaga (ST) via meih.st.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/st_sales_value_rm_million.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 stale_after: "2021-02-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

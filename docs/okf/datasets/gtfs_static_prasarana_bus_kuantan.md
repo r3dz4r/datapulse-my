@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Prasarana Malaysia Berhad via data.gov.my GTFS API"
 datapulse:real_status: "discontinued"
 datapulse:health_report: "/data/gtfs_static_prasarana_bus_kuantan.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 ---
 

@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "DOE Malaysia via MyEQMS"
 datapulse:real_status: "browser-dependent"
 datapulse:health_report: "/data/doe_mqims.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 stale_after: "2026-10-20T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

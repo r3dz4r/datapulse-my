@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Department of Statistics Malaysia via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/hh_poverty_state.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 stale_after: "2024-02-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

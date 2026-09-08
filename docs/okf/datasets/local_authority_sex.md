@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Ministry of Housing and Local Government via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/local_authority_sex.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 stale_after: "2023-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

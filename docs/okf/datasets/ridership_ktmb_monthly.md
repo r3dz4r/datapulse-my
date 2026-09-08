@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Keretapi Tanah Melayu Berhad via data.gov.my"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/ridership_ktmb_monthly.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 290
 stale_after: "2026-09-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

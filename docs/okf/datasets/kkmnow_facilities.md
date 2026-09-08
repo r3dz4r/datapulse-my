@@ -14,7 +14,7 @@ datapulse:licence: "MIT License"
 datapulse:attribution: "Ministry of Health Malaysia via GitHub kkmnow-data"
 datapulse:real_status: "unknown-freshness"
 datapulse:health_report: "/data/kkmnow_facilities.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 ---
 

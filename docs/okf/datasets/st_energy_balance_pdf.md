@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Suruhanjaya Tenaga (ST) via st.gov.my"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/st_energy_balance_pdf.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 ---
 

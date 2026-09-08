@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Immigration Department of Malaysia via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/arrivals.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 10000
 stale_after: "2024-11-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

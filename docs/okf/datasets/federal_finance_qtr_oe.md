@@ -14,7 +14,7 @@ datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Accountant General's Department of Malaysia via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/federal_finance_qtr_oe.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 stale_after: "2024-05-18T00:00:00Z"
 datapulse:stale_after_basis: "cadence"

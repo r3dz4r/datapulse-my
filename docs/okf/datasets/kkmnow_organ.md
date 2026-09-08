@@ -8,15 +8,15 @@ sources:
   - {"id": "kkm","resource": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/organ_01_timeseries.parquet","title": "Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-06T05:22:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
 status: "stable"
 datapulse:licence: "MIT License"
 datapulse:attribution: "Ministry of Health Malaysia via GitHub kkmnow-data"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/kkmnow_organ.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-09-06T12:00:00Z"
+stale_after: "2026-09-07T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -26,7 +26,7 @@ KKMNOW Organ Donation Pledges and Deaths is published by Ministry of Health Mala
 
 # Schema
 
-- `record_count`: `1681`
+- `record_count`: `1682`
 
 # Quirks
 

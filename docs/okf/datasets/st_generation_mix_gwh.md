@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Suruhanjaya Tenaga (ST) via meih.st.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/st_generation_mix_gwh.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: null
 stale_after: "2022-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

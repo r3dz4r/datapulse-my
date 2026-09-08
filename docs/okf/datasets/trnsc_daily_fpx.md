@@ -8,13 +8,13 @@ sources:
   - {"id": "paynet","resource": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_fpx","title": "Payments Network Malaysia and Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-06T05:22:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Payments Network Malaysia and Bank Negara Malaysia via data.gov.my"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/trnsc_daily_fpx.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 7218
 stale_after: "2026-09-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"

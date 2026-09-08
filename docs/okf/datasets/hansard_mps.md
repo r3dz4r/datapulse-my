@@ -14,7 +14,7 @@ datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Parliament of Malaysia via Malaysian Parliament Digital Hansard"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/hansard_mps.md"
-datapulse:methodology_version: 2
+datapulse:methodology_version: 3
 datapulse:expected_record_count: 2017
 stale_after: "2026-12-17T00:00:00Z"
 datapulse:stale_after_basis: "default_90d"
