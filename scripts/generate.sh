@@ -209,6 +209,10 @@ case "$profile" in
     ;;
 esac
 
+if [[ "$profile" == "release-build" ]]; then
+  environment+=("DATAPULSE_RELEASE_BUILD=1")
+fi
+
 if (( ${#generators[@]} != ${#outputs[@]} )); then
   printf 'generate.sh: profile %s has %d generators but %d output entries\n' \
     "$profile" "${#generators[@]}" "${#outputs[@]}" >&2

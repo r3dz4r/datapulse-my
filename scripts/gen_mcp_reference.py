@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import ast
 import os
 import re
 import sys
@@ -43,6 +44,50 @@ def _source_identity(sha: str | None, date: str | None) -> tuple[str, str]:
     if not resolved_date or not DATE_RE.fullmatch(resolved_date):
         raise GenerationError("source commit date must be explicitly injected as YYYY-MM-DD")
     return resolved_sha, resolved_date
+
+
+def _checked_in_server_marker(root: Path) -> str:
+    """Read the default source marker from server source without executing it."""
+    path = root / "mcp/server.py"
+    try:
+        source = path.read_text(encoding="utf-8")
+        module = ast.parse(source, filename=str(path))
+    except (OSError, UnicodeError, SyntaxError) as error:
+        raise GenerationError(f"cannot parse checked-in MCP server marker: {error}") from error
+    for node in module.body:
+        if not isinstance(node, ast.Assign) or not any(
+            isinstance(target, ast.Name) and target.id == "SOURCE_COMMIT_SHA"
+            for target in node.targets
+        ):
+            continue
+        value = node.value
+        if (
+            isinstance(value, ast.Call)
+            and isinstance(value.func, ast.Attribute)
+            and isinstance(value.func.value, ast.Name)
+            and value.func.value.id == "os"
+            and value.func.attr == "getenv"
+            and len(value.args) >= 2
+            and isinstance(value.args[1], ast.Constant)
+            and isinstance(value.args[1].value, str)
+            and SHA_RE.fullmatch(value.args[1].value)
+        ):
+            return value.args[1].value
+        raise GenerationError(
+            "mcp/server.py: SOURCE_COMMIT_SHA must use a 40-character lowercase "
+            "default marker"
+        )
+    raise GenerationError("mcp/server.py: SOURCE_COMMIT_SHA marker is missing")
+
+
+def _validate_server_marker(root: Path, source_sha: str) -> None:
+    marker = _checked_in_server_marker(root)
+    if source_sha != marker and os.environ.get("DATAPULSE_RELEASE_BUILD") != "1":
+        raise GenerationError(
+            "resolved source commit SHA differs from the checked-in mcp/server.py "
+            "marker; align the source identity for direct generation or use "
+            "scripts/generate.sh release-build for the explicit release-build override"
+        )
 
 
 def _manifest(root: Path) -> list[dict[str, Any]]:
@@ -228,6 +273,7 @@ async def generate(root: Path, *, source_sha: str | None = None, source_date: st
     if missing_featured:
         raise GenerationError(f"featured dataset id(s) missing from manifest: {', '.join(sorted(missing_featured))}")
     resolved_sha, resolved_date = _source_identity(source_sha, source_date)
+    _validate_server_marker(root, resolved_sha)
     tools = list(await server.mcp.list_tools())
     resources = list(await server.mcp.list_resources())
     templates = list(await server.mcp.list_resource_templates())
