@@ -1,0 +1,58 @@
+{
+  "annotations": {
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true,
+    "readOnlyHint": true
+  },
+  "capabilities": [
+    "get_data_passport",
+    "get_data_passport.dataset_id"
+  ],
+  "contract_version": "1.0.0",
+  "dataset_count": 418,
+  "description": "Return one bounded, machine-readable Dataset Passport v1 for a canonical dataset ID. It reads the published Passport artifact only; it does not fetch an upstream source or create evidence. The Passport describes observed metadata and evidence availability, not semantic truth, completeness, certification, legal permission, safety, or AI admission.",
+  "displayName": "get_data_passport",
+  "endpoint": {
+    "method": "POST",
+    "transport": "streamable-http",
+    "url": "https://mcp.data-pulse.my/mcp"
+  },
+  "identifier": "urn:air:data-pulse.my:mcp:get_data_passport",
+  "input_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "dataset_id": {
+        "description": "Canonical dataset identifier for its published Passport v1, e.g. 'fuelprice'.",
+        "examples": [
+          "fuelprice"
+        ],
+        "minLength": 1,
+        "type": "string"
+      }
+    },
+    "required": [
+      "dataset_id"
+    ],
+    "type": "object"
+  },
+  "source": {
+    "commit_sha": "418f39e8b89b218422b2361361b080531e8db023",
+    "manifest": "mcp.json"
+  },
+  "specVersion": "1.0",
+  "tags": [
+    "evidence",
+    "malaysia",
+    "passport",
+    "provenance",
+    "read-only",
+    "trust-layer"
+  ],
+  "tool_type": "mcp-tool",
+  "verification": {
+    "model": "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)",
+    "verification_command": "cosign verify-blob --bundle <dataset>.sigstore.json --certificate-identity <oidc-identity> --certificate-oidc-issuer https://token.actions.githubusercontent.com",
+    "verification_metadata_url": "https://www.data-pulse.my/llms.txt"
+  }
+}

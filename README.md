@@ -181,9 +181,9 @@ provenance evidence available to a human reviewer.
 Graded by [mcpgrade](https://www.npmjs.com/package/mcpgrade) — replay with `bash scripts/audit_mcpgrade.sh` (pinned version, writes `artifacts/mcpgrade/`). The canonical tool count lives in `mcp.json` / `agent.json`.
 
 <!-- BEGIN mcp-tools -->
-- 18 tools: `search_datasets`, `get_dataset`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
+- 19 tools: `search_datasets`, `get_dataset`, `get_data_passport`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 
-The public endpoint serves all 18 read-only tools over the
+The public endpoint serves all 19 read-only tools over the
 418-dataset catalogue.
 <!-- END mcp-tools -->
 

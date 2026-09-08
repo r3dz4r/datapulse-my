@@ -68,7 +68,7 @@ async def test_citation_resource_is_discoverable_and_preserves_surface_counts() 
         "datapulse://{dataset_id}",
         "datapulse://citation/{dataset_id}",
     }
-    assert len(tools.tools) == 18
+    assert len(tools.tools) == 19
     assert len(resources.resources) == 8
     citation_template = next(
         template

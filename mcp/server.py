@@ -279,6 +279,12 @@ GET_DATASET_DESCRIPTION = (
     "metadata for a dataset found via search_datasets and distinguish "
     "unknown-freshness from proven stale data."
 )
+GET_DATA_PASSPORT_DESCRIPTION = (
+    "Return one bounded, machine-readable Dataset Passport v1 for a canonical dataset ID. "
+    "It reads the published Passport artifact only; it does not fetch an upstream source or "
+    "create evidence. The Passport describes observed metadata and evidence availability, not "
+    "semantic truth, completeness, certification, legal permission, safety, or AI admission."
+)
 FIND_STALE_DESCRIPTION = (
     "Return datasets whose status is aging, stale, or degraded, plus datasets missing "
     "from the latest health snapshot. Use when an agent needs to know which data has "
@@ -875,6 +881,36 @@ async def get_dataset(
         "last_verified": health.get("checked_at"),
         "schema_version": health.get("schema"),
     }
+
+
+@mcp.tool(
+    title="Read Dataset Evidence Passport",
+    description=GET_DATA_PASSPORT_DESCRIPTION,
+    icons=TOOL_ICONS,
+    annotations=READ_ONLY_TOOL_ANNOTATIONS,
+    meta=TOOL_META,
+)
+async def get_data_passport(
+    dataset_id: Annotated[
+        str,
+        Field(
+            min_length=1,
+            description="Canonical dataset identifier for its published Passport v1, e.g. 'fuelprice'.",
+            examples=["fuelprice"],
+        ),
+    ],
+) -> dict[str, Any]:
+    """Read one bounded published Passport artifact without network access to an upstream."""
+    manifest = await _load_manifest()
+    known_ids = {item.get("id") for item in manifest.get("datasets", []) if isinstance(item, dict)}
+    if dataset_id not in known_ids:
+        return {"dataset_id": dataset_id, "evidence_available": False, "error": "unknown_dataset_id"}
+    passport = await _fetch_json(f"data/passports/{dataset_id}.json")
+    if passport.get("schema") != "datapulse/v1/dataset-passport":
+        return {"dataset_id": dataset_id, "evidence_available": False, "error": "passport_unavailable_or_unsupported"}
+    if len(json.dumps(passport, ensure_ascii=False, separators=(",", ":")).encode("utf-8")) > 262_144:
+        return {"dataset_id": dataset_id, "evidence_available": False, "error": "passport_exceeds_response_bound"}
+    return {"dataset_id": dataset_id, "evidence_available": True, "passport": passport}
 
 
 def _snapshot_age_seconds(checked_at: str | None) -> int | None:

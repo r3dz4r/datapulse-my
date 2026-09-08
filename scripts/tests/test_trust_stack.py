@@ -58,12 +58,10 @@ def test_all_five_local_companion_fixtures_validate_against_their_schemas() -> N
         )
 
 
-def test_existing_public_mcp_contract_is_unchanged() -> None:
+def test_public_mcp_contract_exposes_nineteen_read_only_tools() -> None:
     advertisement = json.loads((ROOT / "mcp.json").read_text())
     assert advertisement["endpoint"]["auth_required"] is False
-    # The generated catalogue currently exposes 18 tools; this local slice must
-    # preserve that observed public contract rather than regenerate it.
-    assert len(advertisement["tools"]) == 18
+    assert len(advertisement["tools"]) == 19
     assert all(
         set(tool["annotations"])
         == {"readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"}

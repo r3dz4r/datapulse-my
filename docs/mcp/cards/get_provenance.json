@@ -11,7 +11,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return citation-ready provenance metadata for the listed dataset ids, plus compact pipeline-published evidence receipts: row probe time, HTTP status, request URL, access dependency, freshness source, content date, record count, shape fingerprint, anomaly flag, and status. Use when an agent must cite data and show the evidence behind the trust claim without recomputing it.",
+  "description": "Use when asked 'can I cite this source?', for licence and attribution, or for citation-ready provenance. Returns source, steward, licence/attribution context, canonical URL, and compact published evidence context: probe time, transport, access dependency, freshness signal, schema drift / record-count drift context, anomaly flag, and status. Bind a citation to dataset identity, source/evidence URL, observed-at or last-checked time, DataPulse status/verdict, licence/attribution, and a receipt/evidence digest when available. You may cite the returned provenance and describe its published evidence; it is not a freshness guarantee and does not itself verify the source is current. For pre-trust use search_datasets → verify_dataset → get_provenance.",
   "displayName": "get_provenance",
   "endpoint": {
     "method": "POST",
@@ -23,7 +23,7 @@
     "additionalProperties": false,
     "properties": {
       "dataset_ids": {
-        "description": "JSON array of 1 to 50 canonical dataset IDs, e.g. ['fuelprice', 'pricecatcher'].",
+        "description": "JSON array of 1 to 50 canonical dataset IDs for provenance and citation, e.g. ['fuelprice', 'pricecatcher']; this is not a live freshness check.",
         "examples": [
           [
             "fuelprice",
@@ -44,7 +44,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "44ffcc004f2b267ed63b1bd03ddf27a254792b11",
+    "commit_sha": "418f39e8b89b218422b2361361b080531e8db023",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

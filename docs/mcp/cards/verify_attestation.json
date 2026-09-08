@@ -12,7 +12,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Verify a published Ed25519 probe attestation by canonical dataset id or safe relative digest reference, e.g. 'fuelprice' or 'attestations/2026-08-15/fuelprice.json'. L1 checks signature/key validity; optional L2 replays daily heads to a Git-tag anchor; L3 is provided by verify_evidence. Returns `levels.L1.signature_valid` and `levels.L2.satisfied` for signature and replay status.",
+  "description": "Use to verify a signed published probe attestation after an evidence audit. Returns L1 signature, key, time, and chain-link checks; optional L2 replay of daily heads to a Git-tag anchor; and L3 scope, which requires verify_evidence for live transport. A valid signature proves attestation integrity and scope, not upstream semantic truth or currentness. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation.",
   "displayName": "verify_attestation",
   "endpoint": {
     "method": "POST",
@@ -24,7 +24,7 @@
     "additionalProperties": false,
     "properties": {
       "reference": {
-        "description": "Dataset id or relative digest reference, e.g. 'fuelprice'.",
+        "description": "Dataset id or safe relative published digest reference for signed-attestation verification, e.g. 'fuelprice'.",
         "examples": [
           "fuelprice",
           "attestations/2026-08-15/fuelprice.json"
@@ -34,7 +34,7 @@
       },
       "replay_chain": {
         "default": false,
-        "description": "Replay daily heads to the newest tag anchor, e.g. true for an auditor.",
+        "description": "Replay signed daily heads to a Git-tag anchor for L2 verification, e.g. true for an auditor.",
         "examples": [
           false,
           true
@@ -48,7 +48,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "44ffcc004f2b267ed63b1bd03ddf27a254792b11",
+    "commit_sha": "418f39e8b89b218422b2361361b080531e8db023",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

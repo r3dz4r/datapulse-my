@@ -126,6 +126,33 @@
       }
     },
     {
+      "name": "get_data_passport",
+      "description": "Return one bounded, machine-readable Dataset Passport v1 for a canonical dataset ID. It reads the published Passport artifact only; it does not fetch an upstream source or create evidence. The Passport describes observed metadata and evidence availability, not semantic truth, completeness, certification, legal permission, safety, or AI admission.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "description": "Canonical dataset identifier for its published Passport v1, e.g. 'fuelprice'.",
+            "examples": [
+              "fuelprice"
+            ],
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
       "name": "find_stale",
       "description": "Return datasets whose status is aging, stale, or degraded, plus datasets missing from the latest health snapshot. Use when an agent needs to know which data has a freshness or schema-validity risk.",
       "inputSchema": {

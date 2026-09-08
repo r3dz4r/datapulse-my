@@ -37,6 +37,7 @@ pytestmark = pytest.mark.anyio
 TOOL_PARAMETERS = {
     "search_datasets": {"query", "licence", "source", "limit"},
     "get_dataset": {"dataset_id"},
+    "get_data_passport": {"dataset_id"},
     "find_stale": {"max_age_hours"},
     "find_anomalies": {"limit", "mode", "min_reliability"},
     "find_deteriorating": {"limit", "min_anomaly_rate"},
@@ -65,6 +66,7 @@ EXPECTED_TOOL_ANNOTATIONS = {
 EXPECTED_TOOL_TITLES = {
     "search_datasets": "Find Malaysian Public Data",
     "get_dataset": "Inspect Dataset Health and Details",
+    "get_data_passport": "Read Dataset Evidence Passport",
     "find_stale": "Identify Freshness and Schema Risks",
     "find_anomalies": "Identify Dataset Update Anomalies",
     "find_deteriorating": "Identify Deteriorating Dataset Trends",
@@ -233,13 +235,13 @@ async def test_modern_and_legacy_clients_preserve_discovery_surface_and_cache_hi
             assert result.ttl_ms == 300_000
             assert result.cache_scope == "public"
 
-        assert len(tools.tools) == 18
+        assert len(tools.tools) == 19
         assert len(resources.resources) == 8
         assert len(templates.resource_templates) == 2
 
     async with Client(server.mcp, mode="legacy") as legacy:
         assert legacy.protocol_version == "2025-11-25"
-        assert len(await legacy.list_tools()) == 18
+        assert len(await legacy.list_tools()) == 19
         assert len(await legacy.list_resources()) == 8
         assert len(await legacy.list_resource_templates()) == 2
 

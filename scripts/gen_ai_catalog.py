@@ -33,6 +33,7 @@ TAGS: dict[str, list[str]] = {
     "check_reconciliation": ["malaysia", "read-only", "reconciliation", "trust-layer", "validation"],
     "get_provenance": ["evidence", "malaysia", "provenance", "read-only", "trust-layer"],
     "get_evidence": ["evidence", "malaysia", "read-only", "receipts", "trust-layer"],
+    "get_data_passport": ["evidence", "malaysia", "passport", "provenance", "read-only", "trust-layer"],
     "verify_dataset": ["evidence", "malaysia", "read-only", "trust-layer", "verification"],
     "get_freshness_summary": ["freshness", "malaysia", "read-only", "summary", "trust-layer"],
     "verify_evidence": ["evidence", "malaysia", "read-only", "transport", "verification"],

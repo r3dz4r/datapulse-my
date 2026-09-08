@@ -11,7 +11,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Perform a rate-limited live streamed GET for one direct-access dataset and compare transport receipts with the latest published evidence, e.g. verify_evidence('fuelprice'). Content dates, row counts, and shape fingerprints remain pipeline-only and are explicitly reported as unverified; results are ephemeral and never update health artifacts. Returns a dict with transport receipt fields and a `verdict` for downstream trust checks without re-fetching.",
+  "description": "Use when a fresh, rate-limited live-vs-published comparison is needed for a direct-access dataset, for example after asking whether a government dataset is reachable now. Performs a rate-limited live GET and returns comparable transport receipts plus a match, mismatch, unreachable, or not_verifiable verdict. This live check is an observation, not semantic truth: it does not recompute content dates, record counts, or shape fingerprints. Results are ephemeral and do not update published health artifacts. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation.",
   "displayName": "verify_evidence",
   "endpoint": {
     "method": "POST",
@@ -23,7 +23,7 @@
     "additionalProperties": false,
     "properties": {
       "dataset_id": {
-        "description": "Canonical direct-access dataset identifier to re-fetch, e.g. 'fuelprice'.",
+        "description": "Canonical direct-access dataset identifier for a rate-limited live transport observation, e.g. 'fuelprice'; browser-dependent sources cannot be fetched here.",
         "examples": [
           "fuelprice"
         ],
@@ -37,7 +37,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "44ffcc004f2b267ed63b1bd03ddf27a254792b11",
+    "commit_sha": "418f39e8b89b218422b2361361b080531e8db023",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

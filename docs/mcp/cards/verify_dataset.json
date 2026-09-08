@@ -12,7 +12,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Verify one dataset before trust in a single read-only call. Returns dataset metadata, the published health and evidence rows, and a fail-closed Sigstore per-dataset receipt verification result with artifact references. Use verify_dataset('fuelprice') before relying on a dataset claim.",
+  "description": "This is the preferred single-call pre-trust check for 'is this dataset current?', stale, unknown-freshness, degraded, or browser-dependent questions, and whenever an agent must verify before relying on data. Returns dataset metadata, published evidence and fail-closed signed receipt verification with artifact references. It verifies published artifacts, not a live source check: you may infer whether their receipt verifies, but must not infer current upstream availability or semantic truth. Use search_datasets → verify_dataset → get_provenance.",
   "displayName": "verify_dataset",
   "endpoint": {
     "method": "POST",
@@ -24,7 +24,7 @@
     "additionalProperties": false,
     "properties": {
       "dataset_id": {
-        "description": "Canonical dataset identifier to verify before trust, e.g. 'fuelprice'.",
+        "description": "Canonical dataset identifier for the published pre-trust receipt check, e.g. 'fuelprice'; this does not perform a live source fetch.",
         "examples": [
           "fuelprice"
         ],
@@ -33,7 +33,7 @@
       },
       "include_proof_steps": {
         "default": false,
-        "description": "Include bounded Cosign verifier output for audit steps, e.g. false.",
+        "description": "Include bounded signed-receipt verifier diagnostics for an audit, e.g. false; the result still does not establish upstream semantic truth.",
         "examples": [
           false,
           true
@@ -47,7 +47,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "44ffcc004f2b267ed63b1bd03ddf27a254792b11",
+    "commit_sha": "418f39e8b89b218422b2361361b080531e8db023",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

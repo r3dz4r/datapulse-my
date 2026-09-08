@@ -1,0 +1,943 @@
+{
+  "health_evidence": {
+    "access_dependency": "direct",
+    "access_method": "direct curl",
+    "anomaly_reliability": {
+      "anomaly_detected": true,
+      "anomaly_detection": {
+        "latest_days": 0.0011921296296296296,
+        "mean_days": null,
+        "metric": "freshness_delta_days",
+        "mode": "cadence_fallback",
+        "sample_days": 7,
+        "stdev_days": null,
+        "threshold_days": 0.0010416666666666667,
+        "window_days": 14
+      }
+    },
+    "expected_record_count": null,
+    "freshness_signal": "content-date-parse",
+    "freshness_signal_source": "content_date_parse",
+    "http_status": 200,
+    "incomplete": false,
+    "last_checked": "2026-09-08T14:37:44Z",
+    "record_count": 96,
+    "record_count_estimated": false,
+    "schema_shape": {
+      "column_count": null,
+      "content_shape_changed": false,
+      "first_row_hash": null
+    },
+    "status": "stale"
+  },
+  "identity": {
+    "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-penang",
+    "custodian": "prasarana",
+    "dataset_id": "gtfs_realtime_prasarana_bus_penang",
+    "declared_verified_at": "2026-08-04",
+    "geography": "Penang",
+    "name": "GTFS Realtime — Rapid Penang Bus Vehicle Positions",
+    "namespace": "transport",
+    "observed_verified_at": "2026-09-08T14:37:44Z",
+    "source": "data.gov.my (GTFS API)",
+    "steward": "Prasarana Malaysia Berhad"
+  },
+  "intended_use": {
+    "declared_coverage": {
+      "geography": "Penang"
+    },
+    "declared_purpose": {
+      "reason": "declared_purpose_not_present_in_canonical_manifest",
+      "state": "not_evaluated"
+    }
+  },
+  "licence_and_attribution": {
+    "attribution": "Prasarana Malaysia Berhad via data.gov.my GTFS API",
+    "declared_licence": "Creative Commons Attribution 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "limitation": "Declared metadata and evidence only; not legal advice or legal permission."
+  },
+  "limitations": [
+    "This passport is evidence about observed metadata and state, not semantic truth, completeness, certification, legal permission, safety, or AI admission.",
+    "Unavailable evidence is explicit and must not be read as a neutral or favourable result."
+  ],
+  "lineage": {
+    "catalogue_relationships": {
+      "graph_reference": "catalog-graph.json",
+      "limitation": "Catalogue relationships are literal metadata context, not full transformation lineage.",
+      "relationship_edges": [
+        {
+          "from": "gtfs_realtime_prasarana_bus_kl",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "gtfs_realtime_prasarana_bus_penang",
+          "weight": 2
+        },
+        {
+          "from": "gtfs_realtime_prasarana_bus_mrtfeeder",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "gtfs_realtime_prasarana_bus_penang",
+          "weight": 2
+        },
+        {
+          "from": "gtfs_realtime_prasarana_bus_penang",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "gtfs_static_prasarana_bus_kl",
+          "weight": 2
+        },
+        {
+          "from": "gtfs_realtime_prasarana_bus_penang",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "gtfs_static_prasarana_bus_kuantan",
+          "weight": 2
+        },
+        {
+          "from": "gtfs_realtime_prasarana_bus_penang",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "gtfs_static_prasarana_bus_mrtfeeder",
+          "weight": 2
+        },
+        {
+          "from": "gtfs_realtime_prasarana_bus_penang",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "gtfs_static_prasarana_bus_penang",
+          "weight": 2
+        },
+        {
+          "from": "gtfs_realtime_prasarana_bus_penang",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "gtfs_static_prasarana_rail_kl",
+          "weight": 2
+        }
+      ]
+    },
+    "transformation_lineage": {
+      "reason": "full_transformation_lineage_not_published",
+      "state": "not_evaluated"
+    }
+  },
+  "quality_profile": {
+    "dimensions": {
+      "catalogue_readiness": {
+        "checks": [
+          {
+            "check_id": "catalogue_readiness.stable_id",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].id",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "A stable local ID does not establish external catalogue identity."
+            ],
+            "reason_codes": [
+              "id_declared"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "catalogue_readiness.identity_metadata",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].name",
+                "source": "manifest"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].steward",
+                "source": "manifest"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].source",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "Identity metadata is declared catalogue context, not semantic validation."
+            ],
+            "reason_codes": [
+              "identity_metadata_declared"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "catalogue_readiness.health_report",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].health_report",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "A health-report link is a local reference, not an availability guarantee."
+            ],
+            "reason_codes": [
+              "health_report_declared"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "catalogue_readiness.manifest_health_parity",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].id",
+                "source": "manifest"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].dataset_id",
+                "source": "health"
+              }
+            ],
+            "limitations": [
+              "Parity is limited to this snapshot and manifest pair."
+            ],
+            "reason_codes": [
+              "manifest_health_id_match"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "catalogue_readiness.schema_valid_envelope",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].id",
+                "source": "manifest"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].dataset_id",
+                "source": "health"
+              }
+            ],
+            "limitations": [
+              "Schema validity checks structure only; it does not validate content semantics."
+            ],
+            "reason_codes": [
+              "input_envelopes_schema_valid"
+            ],
+            "state": "pass"
+          }
+        ],
+        "coverage": {
+          "applicable": 5,
+          "evaluated": 5,
+          "failed": 0,
+          "not_applicable": 0,
+          "passed": 5,
+          "unknown": 0
+        },
+        "evidence_refs": [
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].id",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].name",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].steward",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].source",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].health_report",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].id",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].dataset_id",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].id",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].dataset_id",
+            "source": "health"
+          }
+        ],
+        "limitations": [
+          "Catalogue readiness means recorded metadata is structurally sufficient for this named policy, not that the dataset is true or safe."
+        ],
+        "policy_basis": "datapulse-quality-readiness/v1",
+        "reason_codes": [
+          "id_declared",
+          "identity_metadata_declared",
+          "health_report_declared",
+          "manifest_health_id_match",
+          "input_envelopes_schema_valid"
+        ],
+        "state": "pass"
+      },
+      "fair": {
+        "checks": [
+          {
+            "check_id": "fair.catalogue_metadata",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].id",
+                "source": "manifest"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].name",
+                "source": "manifest"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].url",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "Checks declared catalogue fields, not FAIR compliance."
+            ],
+            "reason_codes": [
+              "catalogue_metadata_declared"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "fair.observed_access",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].request_url",
+                "source": "health"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].status",
+                "source": "health"
+              }
+            ],
+            "limitations": [
+              "Records one observed access signal; it does not promise continuing access."
+            ],
+            "reason_codes": [
+              "observed_access_signal_present"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "fair.shape_metadata",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].schema_fingerprint",
+                "source": "health"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].first_row_hash",
+                "source": "health"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].column_count",
+                "source": "health"
+              }
+            ],
+            "limitations": [
+              "Shape metadata is not a semantic interoperability assessment."
+            ],
+            "reason_codes": [
+              "shape_metadata_missing"
+            ],
+            "state": "unknown"
+          },
+          {
+            "check_id": "fair.reuse_metadata",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].licence",
+                "source": "manifest"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].attribution",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "Declared reuse metadata is not legal or FAIR certification."
+            ],
+            "reason_codes": [
+              "reuse_metadata_declared"
+            ],
+            "state": "pass"
+          }
+        ],
+        "coverage": {
+          "applicable": 4,
+          "evaluated": 3,
+          "failed": 0,
+          "not_applicable": 0,
+          "passed": 3,
+          "unknown": 1
+        },
+        "evidence_refs": [
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].id",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].name",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].url",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].request_url",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].status",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].schema_fingerprint",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].first_row_hash",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].column_count",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].licence",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].attribution",
+            "source": "manifest"
+          }
+        ],
+        "limitations": [
+          "FAIR-relevant metadata is recorded without inferring FAIR compliance."
+        ],
+        "policy_basis": "datapulse-quality-readiness/v1",
+        "reason_codes": [
+          "catalogue_metadata_declared",
+          "observed_access_signal_present",
+          "shape_metadata_missing",
+          "reuse_metadata_declared"
+        ],
+        "state": "unknown"
+      },
+      "governance": {
+        "checks": [
+          {
+            "check_id": "governance.methodology_version",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].methodology_version",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "Version metadata identifies a declared method, not its adequacy."
+            ],
+            "reason_codes": [
+              "methodology_version_declared"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "governance.status_reason_slot",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].status",
+                "source": "health"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].status_reason",
+                "source": "health"
+              }
+            ],
+            "limitations": [
+              "A present reason slot may be null for a given health observation."
+            ],
+            "reason_codes": [
+              "status_reason_slot_present"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "governance.declared_cadence",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].data_type",
+                "source": "manifest"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].refresh_frequency",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "Cadence is explicitly not applicable only to manifest-declared reference data; otherwise it is not evidence that the publisher followed it."
+            ],
+            "reason_codes": [
+              "refresh_frequency_declared"
+            ],
+            "state": "pass"
+          }
+        ],
+        "coverage": {
+          "applicable": 3,
+          "evaluated": 3,
+          "failed": 0,
+          "not_applicable": 0,
+          "passed": 3,
+          "unknown": 0
+        },
+        "evidence_refs": [
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].methodology_version",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].status",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].status_reason",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].data_type",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].refresh_frequency",
+            "source": "manifest"
+          }
+        ],
+        "limitations": [
+          "Governance checks declaration and observation fields, not institutional governance compliance."
+        ],
+        "policy_basis": "datapulse-quality-readiness/v1",
+        "reason_codes": [
+          "methodology_version_declared",
+          "status_reason_slot_present",
+          "refresh_frequency_declared"
+        ],
+        "state": "pass"
+      },
+      "licensing": {
+        "checks": [
+          {
+            "check_id": "licensing.declared_licence",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].licence",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "A declared licence is not a legal interpretation or validation."
+            ],
+            "reason_codes": [
+              "licence_declared"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "licensing.declared_attribution",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].attribution",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "A declared attribution is not a legal interpretation or validation."
+            ],
+            "reason_codes": [
+              "attribution_declared"
+            ],
+            "state": "pass"
+          }
+        ],
+        "coverage": {
+          "applicable": 2,
+          "evaluated": 2,
+          "failed": 0,
+          "not_applicable": 0,
+          "passed": 2,
+          "unknown": 0
+        },
+        "evidence_refs": [
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].licence",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].attribution",
+            "source": "manifest"
+          }
+        ],
+        "limitations": [
+          "Missing or ambiguous licensing evidence remains unknown; no legal conclusion is made."
+        ],
+        "policy_basis": "datapulse-quality-readiness/v1",
+        "reason_codes": [
+          "licence_declared",
+          "attribution_declared"
+        ],
+        "state": "pass"
+      },
+      "provenance": {
+        "checks": [
+          {
+            "check_id": "provenance.source_url",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].url",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "A source URL identifies a declared source, not its truth."
+            ],
+            "reason_codes": [
+              "url_declared"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "provenance.steward_or_custodian",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].steward",
+                "source": "manifest"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].custodian",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "Declared publisher metadata is not independent attribution verification."
+            ],
+            "reason_codes": [
+              "publisher_metadata_declared"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "provenance.observation",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].last_checked",
+                "source": "health"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].request_url",
+                "source": "health"
+              }
+            ],
+            "limitations": [
+              "The observation records a probe boundary, not upstream content truth."
+            ],
+            "reason_codes": [
+              "observation_reference_present"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "provenance.source_observed_boundary",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].url",
+                "source": "manifest"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].request_url",
+                "source": "health"
+              }
+            ],
+            "limitations": [
+              "Different declared and observed URLs are preserved rather than resolved automatically."
+            ],
+            "reason_codes": [
+              "source_observed_boundary_recorded"
+            ],
+            "state": "pass"
+          }
+        ],
+        "coverage": {
+          "applicable": 4,
+          "evaluated": 4,
+          "failed": 0,
+          "not_applicable": 0,
+          "passed": 4,
+          "unknown": 0
+        },
+        "evidence_refs": [
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].url",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].steward",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].custodian",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].last_checked",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].request_url",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].url",
+            "source": "manifest"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].request_url",
+            "source": "health"
+          }
+        ],
+        "limitations": [
+          "Provenance records declared and observed boundaries; it does not certify source authority or truth."
+        ],
+        "policy_basis": "datapulse-quality-readiness/v1",
+        "reason_codes": [
+          "url_declared",
+          "publisher_metadata_declared",
+          "observation_reference_present",
+          "source_observed_boundary_recorded"
+        ],
+        "state": "pass"
+      },
+      "reproducibility": {
+        "checks": [
+          {
+            "check_id": "reproducibility.shape_fingerprint",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].schema_fingerprint",
+                "source": "health"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].first_row_hash",
+                "source": "health"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].column_count",
+                "source": "health"
+              }
+            ],
+            "limitations": [
+              "Shape signals are bounded structural observations, not a complete reproducibility proof."
+            ],
+            "reason_codes": [
+              "shape_fingerprint_missing"
+            ],
+            "state": "unknown"
+          },
+          {
+            "check_id": "reproducibility.retrieval_timestamp",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].last_checked",
+                "source": "health"
+              }
+            ],
+            "limitations": [
+              "A retrieval timestamp does not reproduce the remote response by itself."
+            ],
+            "reason_codes": [
+              "last_checked_declared"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "reproducibility.record_count",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].record_count",
+                "source": "health"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].record_count_estimated",
+                "source": "health"
+              },
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].record_count_within_tolerance",
+                "source": "health"
+              }
+            ],
+            "limitations": [
+              "A count is an observed or estimated measurement, not a completeness guarantee."
+            ],
+            "reason_codes": [
+              "record_count_observed"
+            ],
+            "state": "pass"
+          },
+          {
+            "check_id": "reproducibility.attestation_reference",
+            "evidence_refs": [
+              {
+                "path": "datasets['gtfs_realtime_prasarana_bus_penang'].attestation_ref",
+                "source": "manifest"
+              }
+            ],
+            "limitations": [
+              "A declared reference is not verified here; missing evidence remains unknown."
+            ],
+            "reason_codes": [
+              "attestation_ref_declared"
+            ],
+            "state": "pass"
+          }
+        ],
+        "coverage": {
+          "applicable": 4,
+          "evaluated": 3,
+          "failed": 0,
+          "not_applicable": 0,
+          "passed": 3,
+          "unknown": 1
+        },
+        "evidence_refs": [
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].schema_fingerprint",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].first_row_hash",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].column_count",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].last_checked",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].record_count",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].record_count_estimated",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].record_count_within_tolerance",
+            "source": "health"
+          },
+          {
+            "path": "datasets['gtfs_realtime_prasarana_bus_penang'].attestation_ref",
+            "source": "manifest"
+          }
+        ],
+        "limitations": [
+          "Reproducibility evidence is limited to recorded probe metadata and references; no replay guarantee is made."
+        ],
+        "policy_basis": "datapulse-quality-readiness/v1",
+        "reason_codes": [
+          "shape_fingerprint_missing",
+          "last_checked_declared",
+          "record_count_observed",
+          "attestation_ref_declared"
+        ],
+        "state": "unknown"
+      }
+    },
+    "limitations": [
+      "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
+    ],
+    "overall": "indeterminate",
+    "policy_id": "datapulse-quality-readiness/v1",
+    "profile_version": "datapulse-quality-profile/v1"
+  },
+  "record_evidence": {
+    "reason": "record_evidence_not_enabled_for_dataset",
+    "state": "not_evaluated"
+  },
+  "reproducibility_and_evidence": {
+    "attestation": "attestations/2026-09-07/gtfs_realtime_prasarana_bus_penang.json",
+    "chain_reference": "attestations/2026-09-07/chain_head.json",
+    "source_digest": {
+      "reason": "canonical_source_digest_not_available",
+      "state": "not_evaluated"
+    },
+    "source_envelope": {
+      "reason": "json_envelope_not_available_for_dataset",
+      "state": "not_evaluated"
+    },
+    "verification_method": "deterministic_local_projection_of_current_canonical_inputs",
+    "witness_reference": {
+      "reason": "witness_reference_not_available",
+      "state": "not_evaluated"
+    }
+  },
+  "schema": "datapulse/v1/dataset-passport",
+  "sensitivity_and_pii": {
+    "reason": "sensitivity_or_pii_classification_not_evaluated",
+    "state": "not_evaluated"
+  }
+}

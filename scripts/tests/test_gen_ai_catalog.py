@@ -41,12 +41,12 @@ def test_no_did_field_in_host(tmp_path: Path) -> None:
     assert "identifier" not in _catalog(root)["host"]
 
 
-def test_eighteen_entries_match_mcp_json(tmp_path: Path) -> None:
+def test_entries_match_mcp_json_tool_count(tmp_path: Path) -> None:
     root = _fixture_root(tmp_path)
     assert _generate(root).returncode == 0
     names = [tool["name"] for tool in json.loads((root / "mcp.json").read_text())["tools"]]
     entries = _catalog(root)["entries"]
-    assert len(entries) == 18
+    assert len(entries) == len(names)
     assert [entry["displayName"] for entry in entries] == sorted(names)
 
 

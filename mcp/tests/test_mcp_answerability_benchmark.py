@@ -287,5 +287,5 @@ async def test_importing_the_benchmark_does_not_change_mcp_discovery_surface() -
         tools = await client.list_tools_mcp()
         resources = await client.list_resources_mcp()
 
-    assert len(tools.tools) == 18
+    assert len(tools.tools) == 19
     assert len(resources.resources) == 8
