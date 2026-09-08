@@ -91,6 +91,7 @@ PRIORITIZED_TOOL_METADATA = {
     ),
     "verify_dataset": (
         "preferred single-call pre-trust check",
+        "published evidence and fail-closed signed receipt verification",
         "not a live source check",
         "search_datasets → verify_dataset → get_provenance",
     ),
@@ -102,12 +103,14 @@ PRIORITIZED_TOOL_METADATA = {
     ),
     "verify_evidence": (
         "rate-limited live-vs-published comparison",
+        "not_verifiable",
         "not semantic truth",
         "Results are ephemeral and do not update published health artifacts",
         "search_datasets → get_evidence → verify_evidence → verify_attestation",
     ),
     "get_provenance": (
         "citation-ready provenance",
+        "licence/attribution context",
         "not a freshness guarantee",
         "search_datasets → verify_dataset → get_provenance",
     ),
@@ -176,6 +179,11 @@ async def test_prioritized_tool_metadata_routes_agents_without_overclaiming() ->
         assert generated[tool_name]["description"] == metadata.description
         assert generated[tool_name]["inputSchema"] == metadata.parameters
 
+    assert "search_datasets → verify_dataset → get_evidence or get_provenance" in server.mcp.instructions
+    assert "unknown-freshness requires abstention or an explicitly qualified answer" in server.mcp.instructions
+    assert "not semantic truth of every upstream value" in server.mcp.instructions
+    assert "offline signed-attestation verification is distinct from live transport verification" in server.mcp.instructions
+
     assert tools["search_datasets"].parameters["properties"]["query"]["examples"] == [
         "Malaysian public data inflation"
     ]
@@ -205,13 +213,18 @@ async def test_modern_and_legacy_clients_preserve_discovery_surface_and_cache_hi
             "DataPulse is a read-only evidence and freshness layer for 418 official Malaysian "
             "public datasets. Use it for Malaysian data questions about currentness, freshness, "
             "licence, provenance, reachability, schema or record drift, reliability, signed "
-            "evidence, or citation verification. Start with search_datasets; verify_dataset before "
-            "trusting a dataset; use get_evidence/get_provenance for evidence and citations; use "
-            "verify_evidence for live-vs-published comparison; use portfolio risk tools for "
-            "stale, anomaly, drift, or reliability questions. Qualify stale, degraded, "
-            "unreachable, browser-dependent, unknown, and unknown-freshness states. DataPulse "
-            "proves what an official source was observed to contain and when, not that upstream "
-            "data is semantically true."
+            "evidence, or citation verification. For a currentness/provenance claim use "
+            "search_datasets → verify_dataset → get_evidence or get_provenance. verify_dataset "
+            "verifies published evidence and signed receipts; get_evidence returns observation "
+            "fields and receipt/evidence references; get_provenance returns citation metadata and "
+            "source/licence context. verify_evidence is a rate-limited live transport comparison "
+            "and can be not_verifiable; offline signed-attestation verification is distinct from "
+            "live transport verification. Cite dataset identity, source/evidence URL, observed-at "
+            "or last-checked time, DataPulse status/verdict, licence/attribution, and receipt/evidence "
+            "digest when available. Stale, discontinued, unreachable, degraded, and unknown-freshness "
+            "evidence cannot support a currentness claim; unknown-freshness requires abstention or an "
+            "explicitly qualified answer. DataPulse verifies observations about a source, not semantic "
+            "truth of every upstream value."
         )
         capabilities = modern.server_capabilities.model_dump(by_alias=True, exclude_none=True)
         assert {"tools", "resources", "prompts"} <= set(capabilities)
@@ -1326,6 +1339,8 @@ async def test_get_evidence_projects_complete_published_receipt(monkeypatch: pyt
     monkeypatch.setattr(server, "_load_catalogue", load)
     result = await server.get_evidence("sample")
     assert result["evidence"] == {field: row[field] for field in server.EVIDENCE_FIELDS}
+    assert result["evidence_url"] == "https://www.data-pulse.my/data/sample.receipt.evidence.json"
+    assert result["receipt_bundle_url"] == "https://www.data-pulse.my/data/sample.receipt.sigstore.json"
 
 
 async def test_get_evidence_call_tool_returns_published_receipt(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1344,6 +1359,8 @@ async def test_get_evidence_call_tool_returns_published_receipt(monkeypatch: pyt
     assert result.data["dataset_id"] == "sample"
     assert result.data["evidence_available"] is True
     assert result.data["evidence"] == {field: row[field] for field in server.EVIDENCE_FIELDS}
+    assert result.data["evidence_url"] == "https://www.data-pulse.my/data/sample.receipt.evidence.json"
+    assert result.data["receipt_bundle_url"] == "https://www.data-pulse.my/data/sample.receipt.sigstore.json"
 
 
 async def test_get_evidence_keeps_missing_receipts_explicit(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -311,10 +311,12 @@ CHECK_RECONCILIATION_DESCRIPTION = (
 )
 GET_PROVENANCE_DESCRIPTION = (
     "Use when asked 'can I cite this source?', for licence and attribution, or for "
-    "citation-ready provenance. Returns source, steward, licence, canonical URL, and "
+    "citation-ready provenance. Returns source, steward, licence/attribution context, canonical URL, and "
     "compact published evidence context: probe time, transport, access dependency, "
     "freshness signal, schema drift / record-count drift context, anomaly flag, and "
-    "status. You may cite the returned provenance and describe its published evidence; "
+    "status. Bind a citation to dataset identity, source/evidence URL, observed-at or "
+    "last-checked time, DataPulse status/verdict, licence/attribution, and a receipt/evidence "
+    "digest when available. You may cite the returned provenance and describe its published evidence; "
     "it is not a freshness guarantee and does not itself verify the source is current. "
     "For pre-trust use search_datasets → verify_dataset → get_provenance."
 )
@@ -322,7 +324,7 @@ GET_EVIDENCE_DESCRIPTION = (
     "Use for a deep evidence audit or to inspect a provenance and evidence receipt. "
     "Returns the complete published evidence receipt for one dataset: probe time, "
     "transport, access dependency, freshness, schema drift / record-count drift, "
-    "tolerance, status, and anomaly fields. It reads published pipeline evidence, not "
+    "tolerance, status, anomaly fields, and receipt/evidence references. It reads published pipeline evidence, not "
     "a live source fetch: you may report what the pipeline observed, but must not infer "
     "the source is currently reachable or semantically true. Use it for a deep audit before "
     "or alongside verification. "
@@ -332,7 +334,7 @@ VERIFY_EVIDENCE_DESCRIPTION = (
     "Use when a fresh, rate-limited live-vs-published comparison is needed for a "
     "direct-access dataset, for example after asking whether a government dataset is "
     "reachable now. Performs a rate-limited live GET and returns comparable transport "
-    "receipts plus a match, mismatch, or unreachable verdict. This live check is an "
+    "receipts plus a match, mismatch, unreachable, or not_verifiable verdict. This live check is an "
     "observation, not semantic truth: it does not recompute content dates, record counts, "
     "or shape fingerprints. Results are ephemeral and do not update published health artifacts. "
     "For a deep audit use "
@@ -342,7 +344,7 @@ VERIFY_DATASET_DESCRIPTION = (
     "This is the preferred single-call pre-trust check for 'is this dataset current?', stale, "
     "unknown-freshness, degraded, or browser-dependent questions, and whenever an "
     "agent must verify before relying on data. Returns dataset metadata, published "
-    "health and evidence, and fail-closed signed receipt verification with artifact "
+    "evidence and fail-closed signed receipt verification with artifact "
     "references. It verifies published artifacts, not a live source check: you may infer "
     "whether their receipt verifies, but must not infer current upstream availability or "
     "semantic truth. Use search_datasets → verify_dataset → get_provenance."
@@ -392,13 +394,17 @@ mcp = FastMCP(
         "DataPulse is a read-only evidence and freshness layer for 418 official Malaysian "
         "public datasets. Use it for Malaysian data questions about currentness, freshness, "
         "licence, provenance, reachability, schema or record drift, reliability, signed "
-        "evidence, or citation verification. Start with search_datasets; verify_dataset before "
-        "trusting a dataset; use get_evidence/get_provenance for evidence and citations; use "
-        "verify_evidence for live-vs-published comparison; use portfolio risk tools for "
-        "stale, anomaly, drift, or reliability questions. Qualify stale, degraded, "
-        "unreachable, browser-dependent, unknown, and unknown-freshness states. DataPulse "
-        "proves what an official source was observed to contain and when, not that upstream "
-        "data is semantically true."
+        "evidence, or citation verification. For a currentness/provenance claim use "
+        "search_datasets → verify_dataset → get_evidence or get_provenance. verify_dataset "
+        "verifies published evidence and signed receipts; get_evidence returns observation fields "
+        "and receipt/evidence references; get_provenance returns citation metadata and source/licence "
+        "context. verify_evidence is a rate-limited live transport comparison and can be not_verifiable; "
+        "offline signed-attestation verification is distinct from live transport verification. Cite "
+        "dataset identity, source/evidence URL, observed-at or last-checked time, DataPulse "
+        "status/verdict, licence/attribution, and receipt/evidence digest when available. Stale, "
+        "discontinued, unreachable, degraded, and unknown-freshness evidence cannot support a "
+        "currentness claim; unknown-freshness requires abstention or an explicitly qualified answer. "
+        "DataPulse verifies observations about a source, not semantic truth of every upstream value."
     ),
     middleware=[ToolUsageLoggingMiddleware()],
     # The catalogue is identical for unauthenticated callers. FastMCP 4 applies
@@ -1472,6 +1478,8 @@ async def get_evidence(
         "schema_version": health.get("schema"),
         "snapshot_checked_at": health.get("checked_at"),
         "evidence_available": bool(health_record),
+        "evidence_url": f"{DATA_BASE}/data/{dataset_id}.receipt.evidence.json",
+        "receipt_bundle_url": f"{DATA_BASE}/data/{dataset_id}.receipt.sigstore.json",
         "evidence": _project_evidence(health_record, EVIDENCE_FIELDS),
     }
 
@@ -2112,7 +2120,13 @@ async def licence_summary() -> str:
 
 @mcp.resource(
     "datapulse://citation/{dataset_id}",
-    description="Canonical evidence-bound citation for one exact DataPulse dataset id.",
+    description=(
+        "Canonical evidence-bound citation for one exact DataPulse dataset id. Cite identity, "
+        "source/evidence URL, observed-at, DataPulse status/verdict, licence/attribution, and "
+        "receipt/evidence digest when available. Stale, discontinued, unreachable, degraded, and "
+        "unknown-freshness cannot support a currentness claim; unknown-freshness needs abstention "
+        "or an explicitly qualified answer."
+    ),
     mime_type="application/json",
 )
 async def citation_resource(dataset_id: str) -> str:
@@ -2138,6 +2152,7 @@ async def citation_resource(dataset_id: str) -> str:
             "schema": "datapulse/v1/citation",
             "dataset_id": dataset_id,
             "evidence_url": f"https://www.data-pulse.my/data/{dataset_id}.md",
+            "receipt_evidence_url": f"{DATA_BASE}/data/{dataset_id}.receipt.evidence.json",
             "observed_at": health_record.get("last_checked"),
             "source_url": entry.get("url"),
             "status": status,
@@ -2148,6 +2163,10 @@ async def citation_resource(dataset_id: str) -> str:
             "limitations": (
                 "DataPulse observes source conditions; it does not certify substantive truth, "
                 "legal compliance, or regulatory outcomes."
+            ),
+            "citation_guidance": (
+                "Cite dataset_id, source_url or evidence_url, observed_at, status or "
+                "datapulse_verdict, licence/attribution, and a receipt/evidence digest when available."
             ),
         },
         ensure_ascii=False,

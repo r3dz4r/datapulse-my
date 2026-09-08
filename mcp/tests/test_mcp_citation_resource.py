@@ -55,6 +55,13 @@ async def test_citation_resource_is_discoverable_and_preserves_surface_counts() 
     }
     assert len(tools.tools) == 18
     assert len(resources.resources) == 8
+    citation_template = next(
+        template
+        for template in templates.resource_templates
+        if template.uri_template == "datapulse://citation/{dataset_id}"
+    )
+    assert "receipt/evidence digest when available" in citation_template.description
+    assert "unknown-freshness" in citation_template.description
 
 
 async def test_citation_resource_returns_canonical_evidence_fields(
@@ -74,6 +81,7 @@ async def test_citation_resource_returns_canonical_evidence_fields(
         "schema": "datapulse/v1/citation",
         "dataset_id": "fuelprice",
         "evidence_url": "https://www.data-pulse.my/data/fuelprice.md",
+        "receipt_evidence_url": "https://www.data-pulse.my/data/fuelprice.receipt.evidence.json",
         "observed_at": "2026-09-06T01:02:03Z",
         "source_url": "https://api.data.gov.my/fuelprice",
         "status": "fresh",
@@ -84,6 +92,10 @@ async def test_citation_resource_returns_canonical_evidence_fields(
         "limitations": (
             "DataPulse observes source conditions; it does not certify substantive truth, "
             "legal compliance, or regulatory outcomes."
+        ),
+        "citation_guidance": (
+            "Cite dataset_id, source_url or evidence_url, observed_at, status or "
+            "datapulse_verdict, licence/attribution, and a receipt/evidence digest when available."
         ),
     }
 

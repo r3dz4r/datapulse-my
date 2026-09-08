@@ -359,7 +359,7 @@ Input schema:
 
 ### `get_provenance`
 
-Use when asked 'can I cite this source?', for licence and attribution, or for citation-ready provenance. Returns source, steward, licence, canonical URL, and compact published evidence context: probe time, transport, access dependency, freshness signal, schema drift / record-count drift context, anomaly flag, and status. You may cite the returned provenance and describe its published evidence; it is not a freshness guarantee and does not itself verify the source is current. For pre-trust use search_datasets → verify_dataset → get_provenance.
+Use when asked 'can I cite this source?', for licence and attribution, or for citation-ready provenance. Returns source, steward, licence/attribution context, canonical URL, and compact published evidence context: probe time, transport, access dependency, freshness signal, schema drift / record-count drift context, anomaly flag, and status. Bind a citation to dataset identity, source/evidence URL, observed-at or last-checked time, DataPulse status/verdict, licence/attribution, and a receipt/evidence digest when available. You may cite the returned provenance and describe its published evidence; it is not a freshness guarantee and does not itself verify the source is current. For pre-trust use search_datasets → verify_dataset → get_provenance.
 
 Input schema:
 
@@ -392,7 +392,7 @@ Input schema:
 
 ### `get_evidence`
 
-Use for a deep evidence audit or to inspect a provenance and evidence receipt. Returns the complete published evidence receipt for one dataset: probe time, transport, access dependency, freshness, schema drift / record-count drift, tolerance, status, and anomaly fields. It reads published pipeline evidence, not a live source fetch: you may report what the pipeline observed, but must not infer the source is currently reachable or semantically true. Use it for a deep audit before or alongside verification. search_datasets → get_evidence → verify_evidence → verify_attestation.
+Use for a deep evidence audit or to inspect a provenance and evidence receipt. Returns the complete published evidence receipt for one dataset: probe time, transport, access dependency, freshness, schema drift / record-count drift, tolerance, status, anomaly fields, and receipt/evidence references. It reads published pipeline evidence, not a live source fetch: you may report what the pipeline observed, but must not infer the source is currently reachable or semantically true. Use it for a deep audit before or alongside verification. search_datasets → get_evidence → verify_evidence → verify_attestation.
 
 Input schema:
 
@@ -418,7 +418,7 @@ Input schema:
 
 ### `verify_dataset`
 
-This is the preferred single-call pre-trust check for 'is this dataset current?', stale, unknown-freshness, degraded, or browser-dependent questions, and whenever an agent must verify before relying on data. Returns dataset metadata, published health and evidence, and fail-closed signed receipt verification with artifact references. It verifies published artifacts, not a live source check: you may infer whether their receipt verifies, but must not infer current upstream availability or semantic truth. Use search_datasets → verify_dataset → get_provenance.
+This is the preferred single-call pre-trust check for 'is this dataset current?', stale, unknown-freshness, degraded, or browser-dependent questions, and whenever an agent must verify before relying on data. Returns dataset metadata, published evidence and fail-closed signed receipt verification with artifact references. It verifies published artifacts, not a live source check: you may infer whether their receipt verifies, but must not infer current upstream availability or semantic truth. Use search_datasets → verify_dataset → get_provenance.
 
 Input schema:
 
@@ -468,7 +468,7 @@ Input schema:
 
 ### `verify_evidence`
 
-Use when a fresh, rate-limited live-vs-published comparison is needed for a direct-access dataset, for example after asking whether a government dataset is reachable now. Performs a rate-limited live GET and returns comparable transport receipts plus a match, mismatch, or unreachable verdict. This live check is an observation, not semantic truth: it does not recompute content dates, record counts, or shape fingerprints. Results are ephemeral and do not update published health artifacts. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation.
+Use when a fresh, rate-limited live-vs-published comparison is needed for a direct-access dataset, for example after asking whether a government dataset is reachable now. Performs a rate-limited live GET and returns comparable transport receipts plus a match, mismatch, unreachable, or not_verifiable verdict. This live check is an observation, not semantic truth: it does not recompute content dates, record counts, or shape fingerprints. Results are ephemeral and do not update published health artifacts. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation.
 
 Input schema:
 
@@ -628,5 +628,5 @@ Input schema:
 
 ## Resource templates
 
-- `datapulse://citation/{dataset_id}` — Canonical evidence-bound citation for one exact DataPulse dataset id.
+- `datapulse://citation/{dataset_id}` — Canonical evidence-bound citation for one exact DataPulse dataset id. Cite identity, source/evidence URL, observed-at, DataPulse status/verdict, licence/attribution, and receipt/evidence digest when available. Stale, discontinued, unreachable, degraded, and unknown-freshness cannot support a currentness claim; unknown-freshness needs abstention or an explicitly qualified answer.
 - `datapulse://{dataset_id}` — Full published manifest entry for one exact DataPulse dataset id.

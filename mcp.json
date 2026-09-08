@@ -33,7 +33,7 @@
   "tools": [
     {
       "name": "search_datasets",
-      "description": "Use for discovery only: find DataPulse's 418 Malaysian public datasets by topic, source, or licence\u2014for example, 'Malaysian public data inflation', licence and attribution, or a government dataset source. Returns ranked matches with id, title, source, licence, published status, and score. This is not trust verification: a status is published pipeline context, not proof that a dataset is current or reliable. For 'is this dataset current?' or verify before relying on data, use search_datasets \u2192 verify_dataset \u2192 get_provenance.",
+      "description": "Use for discovery only: find DataPulse's 418 Malaysian public datasets by topic, source, or licence—for example, 'Malaysian public data inflation', licence and attribution, or a government dataset source. Returns ranked matches with id, title, source, licence, published status, and score. This is not trust verification: a status is published pipeline context, not proof that a dataset is current or reliable. For 'is this dataset current?' or verify before relying on data, use search_datasets → verify_dataset → get_provenance.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -392,7 +392,7 @@
     },
     {
       "name": "get_provenance",
-      "description": "Use when asked 'can I cite this source?', for licence and attribution, or for citation-ready provenance. Returns source, steward, licence, canonical URL, and compact published evidence context: probe time, transport, access dependency, freshness signal, schema drift / record-count drift context, anomaly flag, and status. You may cite the returned provenance and describe its published evidence; it is not a freshness guarantee and does not itself verify the source is current. For pre-trust use search_datasets \u2192 verify_dataset \u2192 get_provenance.",
+      "description": "Use when asked 'can I cite this source?', for licence and attribution, or for citation-ready provenance. Returns source, steward, licence/attribution context, canonical URL, and compact published evidence context: probe time, transport, access dependency, freshness signal, schema drift / record-count drift context, anomaly flag, and status. Bind a citation to dataset identity, source/evidence URL, observed-at or last-checked time, DataPulse status/verdict, licence/attribution, and a receipt/evidence digest when available. You may cite the returned provenance and describe its published evidence; it is not a freshness guarantee and does not itself verify the source is current. For pre-trust use search_datasets → verify_dataset → get_provenance.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -426,7 +426,7 @@
     },
     {
       "name": "get_evidence",
-      "description": "Use for a deep evidence audit or to inspect a provenance and evidence receipt. Returns the complete published evidence receipt for one dataset: probe time, transport, access dependency, freshness, schema drift / record-count drift, tolerance, status, and anomaly fields. It reads published pipeline evidence, not a live source fetch: you may report what the pipeline observed, but must not infer the source is currently reachable or semantically true. Use it for a deep audit before or alongside verification. search_datasets \u2192 get_evidence \u2192 verify_evidence \u2192 verify_attestation.",
+      "description": "Use for a deep evidence audit or to inspect a provenance and evidence receipt. Returns the complete published evidence receipt for one dataset: probe time, transport, access dependency, freshness, schema drift / record-count drift, tolerance, status, anomaly fields, and receipt/evidence references. It reads published pipeline evidence, not a live source fetch: you may report what the pipeline observed, but must not infer the source is currently reachable or semantically true. Use it for a deep audit before or alongside verification. search_datasets → get_evidence → verify_evidence → verify_attestation.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -453,7 +453,7 @@
     },
     {
       "name": "verify_dataset",
-      "description": "This is the preferred single-call pre-trust check for 'is this dataset current?', stale, unknown-freshness, degraded, or browser-dependent questions, and whenever an agent must verify before relying on data. Returns dataset metadata, published health and evidence, and fail-closed signed receipt verification with artifact references. It verifies published artifacts, not a live source check: you may infer whether their receipt verifies, but must not infer current upstream availability or semantic truth. Use search_datasets \u2192 verify_dataset \u2192 get_provenance.",
+      "description": "This is the preferred single-call pre-trust check for 'is this dataset current?', stale, unknown-freshness, degraded, or browser-dependent questions, and whenever an agent must verify before relying on data. Returns dataset metadata, published evidence and fail-closed signed receipt verification with artifact references. It verifies published artifacts, not a live source check: you may infer whether their receipt verifies, but must not infer current upstream availability or semantic truth. Use search_datasets → verify_dataset → get_provenance.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -505,7 +505,7 @@
     },
     {
       "name": "verify_evidence",
-      "description": "Use when a fresh, rate-limited live-vs-published comparison is needed for a direct-access dataset, for example after asking whether a government dataset is reachable now. Performs a rate-limited live GET and returns comparable transport receipts plus a match, mismatch, or unreachable verdict. This live check is an observation, not semantic truth: it does not recompute content dates, record counts, or shape fingerprints. Results are ephemeral and do not update published health artifacts. For a deep audit use search_datasets \u2192 get_evidence \u2192 verify_evidence \u2192 verify_attestation.",
+      "description": "Use when a fresh, rate-limited live-vs-published comparison is needed for a direct-access dataset, for example after asking whether a government dataset is reachable now. Performs a rate-limited live GET and returns comparable transport receipts plus a match, mismatch, unreachable, or not_verifiable verdict. This live check is an observation, not semantic truth: it does not recompute content dates, record counts, or shape fingerprints. Results are ephemeral and do not update published health artifacts. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -559,7 +559,7 @@
     },
     {
       "name": "verify_attestation",
-      "description": "Use to verify a signed published probe attestation after an evidence audit. Returns L1 signature, key, time, and chain-link checks; optional L2 replay of daily heads to a Git-tag anchor; and L3 scope, which requires verify_evidence for live transport. A valid signature proves attestation integrity and scope, not upstream semantic truth or currentness. For a deep audit use search_datasets \u2192 get_evidence \u2192 verify_evidence \u2192 verify_attestation.",
+      "description": "Use to verify a signed published probe attestation after an evidence audit. Returns L1 signature, key, time, and chain-link checks; optional L2 replay of daily heads to a Git-tag anchor; and L3 scope, which requires verify_evidence for live transport. A valid signature proves attestation integrity and scope, not upstream semantic truth or currentness. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -712,7 +712,7 @@
     {
       "uriTemplate": "datapulse://citation/{dataset_id}",
       "name": "citation_resource",
-      "description": "Canonical evidence-bound citation for one exact DataPulse dataset id.",
+      "description": "Canonical evidence-bound citation for one exact DataPulse dataset id. Cite identity, source/evidence URL, observed-at, DataPulse status/verdict, licence/attribution, and receipt/evidence digest when available. Stale, discontinued, unreachable, degraded, and unknown-freshness cannot support a currentness claim; unknown-freshness needs abstention or an explicitly qualified answer.",
       "mimeType": "application/json"
     },
     {
