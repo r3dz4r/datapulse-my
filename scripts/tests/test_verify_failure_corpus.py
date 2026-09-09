@@ -70,9 +70,9 @@ def test_modified_record_fails(tmp_path: Path, history: list[dict[str, object]])
 @SKIP_NO_HISTORY
 def test_lying_about_affected_datasets_fails(tmp_path: Path, history: list[dict[str, object]]) -> None:
     corpus = _copy_corpus(tmp_path)
-    path = corpus / "bnm-open-api" / "http-200-stale-content.json"
+    path = corpus / "gtfs-api" / "realtime-zero-vehicles-outside-off-peak.json"
     record = json.loads(path.read_text(encoding="utf-8"))
-    record["affected_datasets"] = ["bnm_interest_rate"]
+    record["affected_datasets"] = ["synthetic_dataset"]
     path.write_text(json.dumps(record), encoding="utf-8")
     errors = verify_records(load_records(corpus), history)
     assert any("no matching live-history signal" in error for error in errors)
