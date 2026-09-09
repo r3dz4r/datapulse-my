@@ -22,7 +22,14 @@ def _stage(root: Path) -> None:
         },
         "pages": ["/", "/npra.html", "/health-methodology.html"],
         "compatibility_aliases": [{"path": "/landing.html", "target": "/"}],
-        "artifacts": ["/buyer-api-reference.md", "/llms.txt", "/agent.json", "/mcp.json"],
+        "artifacts": [
+            "/buyer-api-reference.md",
+            "/llms.txt",
+            "/agent.json",
+            "/mcp.json",
+            "/ai-catalog.json",
+            "/agent-workflow-malaysia-public-data.md",
+        ],
         "featured_dataset_ids": ["alpha"],
     }
     (root / "config").mkdir()
@@ -68,7 +75,11 @@ def test_generation_is_deterministic_and_preserves_unowned_prose(tmp_path: Path)
         "https://www.data-pulse.my/llms.txt",
         "https://www.data-pulse.my/agent.json",
         "https://www.data-pulse.my/mcp.json",
+        "https://www.data-pulse.my/ai-catalog.json",
+        "https://www.data-pulse.my/agent-workflow-malaysia-public-data.md",
     ]
+
+    assert "https://www.data-pulse.my/.well-known/ai-catalog.json" not in first["sitemap.xml"].decode()
 
 
 def test_marker_failure_changes_no_output(tmp_path: Path) -> None:

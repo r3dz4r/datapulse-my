@@ -26,7 +26,13 @@ def _config() -> dict:
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
         "pages": ["/", "/npra.html", "/health-methodology.html"],
-        "artifacts": ["/llms.txt", "/agent.json", "/mcp.json"],
+        "artifacts": [
+            "/llms.txt",
+            "/agent.json",
+            "/mcp.json",
+            "/ai-catalog.json",
+            "/agent-workflow-malaysia-public-data.md",
+        ],
         "featured_dataset_ids": ["alpha"],
     }
 
@@ -49,7 +55,11 @@ def _write_config(root: Path, document: dict) -> None:
 
 def test_load_public_surfaces_accepts_strict_config(tmp_path: Path) -> None:
     _write_config(tmp_path, _config())
-    assert load_public_surfaces(tmp_path)["origins"]["website"] == "https://www.data-pulse.my"
+    loaded = load_public_surfaces(tmp_path)
+    assert loaded["origins"]["website"] == "https://www.data-pulse.my"
+    assert "/ai-catalog.json" in loaded["artifacts"]
+    assert "/agent-workflow-malaysia-public-data.md" in loaded["artifacts"]
+    assert "/.well-known/ai-catalog.json" not in loaded["artifacts"]
 
 
 @pytest.mark.parametrize(

@@ -225,7 +225,7 @@ That is the whole shape of a defensible answer: **find → inspect → verify.**
 - [Live health](https://www.data-pulse.my/health/latest.json) — the current
   freshness snapshot these tools read (and no-auth, so you can compare tool
   output to the raw JSON).
-- [Agent workflows](https://www.data-pulse.my/agent-workflows.html) — deeper
+- [Agent workflows](https://www.data-pulse.my/agent-workflows.md) — deeper
   integration patterns.
 - [Evidence receipt spec](https://www.data-pulse.my/evidence-receipt-spec.html) —
   the format of the signed evidence artefacts.

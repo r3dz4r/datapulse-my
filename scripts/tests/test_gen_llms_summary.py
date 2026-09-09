@@ -23,6 +23,10 @@ DOCUMENTATION_ARTIFACTS = [
     "/enterprise-governance.md",
     "/integration-patterns.md",
 ]
+DISCOVERY_ARTIFACTS = [
+    "/ai-catalog.json",
+    "/agent-workflow-malaysia-public-data.md",
+]
 
 
 def _write_public_surface_fixture(
@@ -44,6 +48,7 @@ def _write_public_surface_fixture(
             "compatibility_aliases": [{"path": "/landing.html", "target": "/"}],
             "artifacts": [
                 "/buyer-api-reference.md",
+                *DISCOVERY_ARTIFACTS,
                 *(DOCUMENTATION_ARTIFACTS if include_documentation else []),
                 "/llms.txt",
                 "/datapulse.json",
@@ -172,6 +177,10 @@ def test_renders_configured_documentation_artifacts(tmp_path: Path) -> None:
     )[1].split("<!-- END public-artifacts -->", 1)[0]
     for documentation_path in DOCUMENTATION_ARTIFACTS:
         assert f"https://www.data-pulse.my{documentation_path}" in artifacts
+
+    for discovery_path in DISCOVERY_ARTIFACTS:
+        assert f"https://www.data-pulse.my{discovery_path}" in artifacts
+    assert "https://www.data-pulse.my/.well-known/ai-catalog.json" not in artifacts
 
 
 def test_removes_per_dataset_bullets_absent_from_manifest(tmp_path: Path) -> None:
