@@ -247,6 +247,7 @@ def _stage_source(tmp_path: Path) -> Path:
         (ROOT / "config/public-surfaces.json").read_text(encoding="utf-8")
     )
     surfaces["pages"] = production_surfaces["pages"]
+    surfaces["artifacts"] = production_surfaces["artifacts"]
     surfaces["compatibility_aliases"] = production_surfaces["compatibility_aliases"]
     if "/buyer-api-reference.md" not in surfaces["artifacts"]:
         surfaces["artifacts"].append("/buyer-api-reference.md")
