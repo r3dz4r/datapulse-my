@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import json
 import logging
 from pathlib import Path
@@ -22,9 +22,12 @@ EXPECTED = {
     "gtfs-api-discontinued-line-404": ("gtfs_api", "discontinued_line_404"),
     "gtfs-api-schema-shape-hash-churn": ("gtfs_api", "schema_shape_hash_churn"),
     "cross-family-http-200-stale-content-broad": ("cross-family", "http_200_stale_content"),
+    "cross-family-duplicate-observation-key-distinct-cycle": ("cross-family", "duplicate_observation_key_distinct_cycle"),
+    "gtfs-api-realtime-zero-vehicles-outside-off-peak": ("gtfs_api", "realtime_zero_vehicles_outside_off_peak"),
 }
 FAMILIES = {"bnm_open_api", "gtfs_api", "cross-family"}
-FAILURE_TYPES = {"http_200_stale_content", "schema_shape_hash_churn", "row_date_missing_200", "realtime_zero_vehicles_off_peak", "discontinued_line_404"}
+FAILURE_TYPES = {"http_200_stale_content", "schema_shape_hash_churn", "row_date_missing_200", "realtime_zero_vehicles_off_peak", "realtime_zero_vehicles_outside_off_peak", "discontinued_line_404", "duplicate_observation_key_distinct_cycle"}
+MYT = timezone(timedelta(hours=8))
 
 
 def _parse_iso8601(value: Any, field: str) -> None:
@@ -77,7 +80,32 @@ def _signal_matches(failure_type: str, dataset_id: str, history: list[dict[str, 
         return any(row.get("status") == "discontinued" and row.get("http_status") == 404 for row in rows)
     if failure_type == "realtime_zero_vehicles_off_peak":
         return any(row.get("probe_outcome") == "success" and row.get("record_count") == 0 for row in rows)
+    if failure_type == "realtime_zero_vehicles_outside_off_peak":
+        return any(_is_successful_zero_vehicle_outside_off_peak(row) for row in rows)
     return True
+
+
+def _is_successful_zero_vehicle_outside_off_peak(row: dict[str, Any]) -> bool:
+    """Return whether a successful realtime zero falls outside 01:00-05:00 MYT."""
+    observed_at = row.get("observed_at")
+    if not isinstance(observed_at, str):
+        return False
+    try:
+        observed_myt = datetime.fromisoformat(observed_at.replace("Z", "+00:00")).astimezone(MYT)
+    except ValueError:
+        return False
+    return row.get("probe_outcome") == "success" and row.get("record_count") == 0 and not 1 <= observed_myt.hour < 5
+
+
+def _has_duplicate_observation_key_distinct_cycles(history: list[dict[str, Any]]) -> bool:
+    """Return whether distinct probe cycles share one dataset observation timestamp."""
+    cycles_by_key: dict[tuple[str, str], set[str]] = {}
+    for row in history:
+        dataset_id, observed_at, cycle = row.get("dataset_id"), row.get("observed_at"), row.get("cycle")
+        if not all(isinstance(value, str) for value in (dataset_id, observed_at, cycle)):
+            continue
+        cycles_by_key.setdefault((dataset_id, observed_at), set()).add(cycle)
+    return any(len(cycles) > 1 for cycles in cycles_by_key.values())
 
 
 def verify_records(records: list[dict[str, Any]], history: list[dict[str, Any]]) -> list[str]:
@@ -145,7 +173,7 @@ def verify_records(records: list[dict[str, Any]], history: list[dict[str, Any]])
             for dataset_id in record["affected_datasets"]:
                 if not isinstance(dataset_id, str) or not _signal_matches(record["failure_type"], dataset_id, history):
                     errors.append(f"{path}: {dataset_id!r} has no matching live-history signal for {record['failure_type']}")
-        if record["family"] == "cross-family":
+        if record["family"] == "cross-family" and record["failure_type"] == "http_200_stale_content":
             signals = evidence.get("live_signals", {}) if isinstance(evidence, dict) else {}
             latest_at = max((row.get("observed_at", "") for row in history), default="")
             latest = [row for row in history if row.get("observed_at") == latest_at]
@@ -153,6 +181,8 @@ def verify_records(records: list[dict[str, Any]], history: list[dict[str, Any]])
             baseline = signals.get("stale_http_200_pct") if isinstance(signals, dict) else None
             if not isinstance(baseline, (int, float)) or abs(actual - baseline) > 5:
                 errors.append(f"{path}: stale HTTP-200 percentage {actual:.1f} contradicts baseline {baseline!r}")
+        if record["family"] == "cross-family" and record["failure_type"] == "duplicate_observation_key_distinct_cycle" and not _has_duplicate_observation_key_distinct_cycles(history):
+            errors.append(f"{path}: duplicate observation key has no distinct live-history cycles")
     if seen != set(EXPECTED): errors.append(f"required failure records mismatch: missing={sorted(set(EXPECTED) - seen)}, extra={sorted(seen - set(EXPECTED))}")
     return errors
 

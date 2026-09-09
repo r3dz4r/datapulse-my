@@ -87,3 +87,50 @@ def test_field_missing_fails(tmp_path: Path, history: list[dict[str, object]]) -
     path.write_text(json.dumps(record), encoding="utf-8")
     errors = verify_records(load_records(corpus), history)
     assert any("missing required fields" in error for error in errors)
+
+
+def test_duplicate_observation_key_requires_distinct_cycles(
+    tmp_path: Path, history: list[dict[str, object]]
+) -> None:
+    corpus = _copy_corpus(tmp_path)
+    synthetic_history = [
+        {
+            "dataset_id": "synthetic_dataset",
+            "observed_at": "2026-09-02T16:31:05Z",
+            "cycle": "2026-09-02T16:30",
+        },
+        {
+            "dataset_id": "synthetic_dataset",
+            "observed_at": "2026-09-02T16:31:05Z",
+            "cycle": "2026-09-02T16:35",
+        },
+    ]
+    errors = verify_records(load_records(corpus), synthetic_history)
+    assert not any("duplicate observation key" in error for error in errors)
+
+    errors = verify_records(load_records(corpus), synthetic_history[:1])
+    assert any("duplicate observation key" in error for error in errors)
+
+
+def test_zero_vehicle_outside_off_peak_requires_successful_observation(
+    tmp_path: Path, history: list[dict[str, object]]
+) -> None:
+    corpus = _copy_corpus(tmp_path)
+    record_path = corpus / "gtfs-api" / "realtime-zero-vehicles-outside-off-peak.json"
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    record["affected_datasets"] = ["gtfs_realtime_prasarana_bus_kl"]
+    record_path.write_text(json.dumps(record), encoding="utf-8")
+    synthetic_history = [
+        {
+            "dataset_id": "gtfs_realtime_prasarana_bus_kl",
+            "observed_at": "2026-09-02T16:31:05Z",
+            "probe_outcome": "success",
+            "record_count": 0,
+        }
+    ]
+    errors = verify_records(load_records(corpus), synthetic_history)
+    assert not any("realtime_zero_vehicles_outside_off_peak" in error for error in errors)
+
+    synthetic_history[0]["record_count"] = 1
+    errors = verify_records(load_records(corpus), synthetic_history)
+    assert any("realtime_zero_vehicles_outside_off_peak" in error for error in errors)

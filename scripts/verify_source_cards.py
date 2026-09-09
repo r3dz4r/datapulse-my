@@ -116,6 +116,8 @@ def verify_gtfs_api_card(card: dict[str, Any], history_path: Path) -> list[str]:
         errors.append(f"GTFS failure_examples must list {KUANTAN_DATASET}")
     if not any("zero vehicles" in quirk and "off-peak" in quirk for quirk in quirks):
         errors.append("GTFS known_quirks must mention the off-peak zero-vehicle pattern")
+    if not any("zero-vehicle" in quirk and "outside" in quirk and "off-peak" in quirk for quirk in quirks):
+        errors.append("GTFS known_quirks must mention successful zero vehicles outside off-peak")
     if "protobuf" not in card.get("access_method", "").lower():
         errors.append("GTFS access_method must mention protobuf for realtime")
     return errors

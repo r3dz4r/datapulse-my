@@ -26,7 +26,8 @@ REQUIRED_FIELDS = {
 FAMILIES = {"bnm_open_api", "gtfs_api", "cross-family"}
 FAILURE_TYPES = {
     "http_200_stale_content", "schema_shape_hash_churn", "row_date_missing_200",
-    "realtime_zero_vehicles_off_peak", "discontinued_line_404",
+    "realtime_zero_vehicles_off_peak", "realtime_zero_vehicles_outside_off_peak",
+    "discontinued_line_404", "duplicate_observation_key_distinct_cycle",
 }
 
 
@@ -41,7 +42,7 @@ def _parse_iso8601(value: object) -> None:
 
 def test_each_failure_record_has_required_fields() -> None:
     records = _records()
-    assert len(records) == 7
+    assert len(records) == 9
     for record in records:
         assert REQUIRED_FIELDS <= record.keys()
         assert isinstance(record["affected_datasets"], list)
@@ -77,7 +78,11 @@ def test_cross_family_corpus_baseline() -> None:
     latest_at = max(record["observed_at"] for record in history)
     latest = [record for record in history if record["observed_at"] == latest_at]
     actual = 100 * sum(record.get("status") == "stale" and record.get("http_status") == 200 for record in latest) / len(latest)
-    cross_family = next(record for record in _records() if record["family"] == "cross-family")
+    cross_family = next(
+        record
+        for record in _records()
+        if record["failure_id"] == "cross-family-http-200-stale-content-broad"
+    )
     evidence = cross_family["evidence"]
     assert isinstance(evidence, dict)
     signals = evidence["live_signals"]
