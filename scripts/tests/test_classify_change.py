@@ -42,6 +42,33 @@ def test_exact_health_cycle_outputs_require_latest_snapshot() -> None:
     assert not is_health_only_change(("health/trends.json",))
 
 
+def test_actual_health_cycle_commit_d4cae64e6_is_health_only() -> None:
+    assert is_health_only_change(
+        (
+            "attestations/latest/scores.json",
+            "badges/exchangerates_daily_0900.svg",
+            "badges/gtfs_realtime_mybas_johor.svg",
+            "badges/gtfs_realtime_mybas_melaka.svg",
+            "badges/gtfs_realtime_mybas_seremban_a.svg",
+            "badges/sg_datagov_weather_readings.svg",
+            "badges/status-degraded.svg",
+            "badges/status-fresh.svg",
+            "badges/status-stale.svg",
+            "catalog-graph.json",
+            "catalog-snapshot.json",
+            "changelog.json",
+            "feed.xml",
+            "health/drift.json",
+            "health/evidence-coverage.json",
+            "health/history_daily.json",
+            "health/latest.json",
+            "health/reconciliation.json",
+            "health/trends.json",
+            "record-evidence/pharmaceutical_products/latest.json",
+        )
+    )
+
+
 @pytest.mark.parametrize(
     "path",
     (
@@ -54,7 +81,8 @@ def test_exact_health_cycle_outputs_require_latest_snapshot() -> None:
         "health/unrecognized.json",
         "data/pharmaceutical_products.md",
         "data/passports/pharmaceutical_products.json",
-        "badges/status-fresh.svg",
+        "badges/status-fresh.txt",
+        "badges/.svg",
         "badges/nested/status.svg",
         "deltas/nested/change.json",
         "deltas/change.json.txt",

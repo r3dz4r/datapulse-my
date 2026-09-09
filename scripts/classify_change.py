@@ -58,6 +58,8 @@ def is_health_cycle_output(path: str) -> bool:
         return True
     if len(parts) == 2 and parts[0] == "deltas":
         return bool(parts[1].removesuffix(".json")) and parts[1].endswith(".json")
+    if len(parts) == 2 and parts[0] == "badges":
+        return bool(parts[1].removesuffix(".svg")) and parts[1].endswith(".svg")
     if len(parts) == 3 and parts[0] == "record-evidence":
         return bool(parts[1]) and parts[2] == "latest.json"
     if len(parts) == 3 and parts[:2] == [".attestations", "latest"]:
