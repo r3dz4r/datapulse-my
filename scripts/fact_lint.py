@@ -45,7 +45,6 @@ CANONICAL_DOCS = (
     "docs/trust-contract.md",
     "docs/status-semantics.md",
     "docs/evidence-receipt-spec.md",
-    "docs/agent-quickstart.md",
     "docs/agent-workflows.md",
     "docs/dataset-lifecycle.md",
     "docs/incident-response.md",

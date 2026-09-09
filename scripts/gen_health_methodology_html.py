@@ -29,7 +29,7 @@ SOURCE = ROOT / "docs/health-methodology.md"
 TEMPLATE = ROOT / "scripts/templates/health-methodology.html.tmpl"
 OUTPUT = ROOT / "docs/health-methodology.html"
 
-# The generic documentation chrome shared by the three other doc pages.
+# The generic documentation chrome shared by the remaining doc pages.
 GENERIC_TEMPLATE = ROOT / "scripts/templates/docs-page.html.tmpl"
 
 
@@ -51,12 +51,6 @@ def docs_manifest() -> list[DocPage]:
             ROOT / "docs/mcp-reference.md",
             GENERIC_TEMPLATE,
             ROOT / "docs/mcp-reference.html",
-        ),
-        DocPage(
-            "agent-quickstart",
-            ROOT / "docs/agent-quickstart.md",
-            GENERIC_TEMPLATE,
-            ROOT / "docs/agent-quickstart.html",
         ),
         DocPage(
             "datapulse-intro",
@@ -140,7 +134,7 @@ def _render_entry(entry: DocPage, pandoc: str) -> int:
     os.close(descriptor)
     temporary = Path(temporary_name)
     try:
-        product_name = load_public_surfaces(ROOT)["product_name"] if entry.key in {"mcp-reference", "agent-quickstart"} else None
+        product_name = load_public_surfaces(ROOT)["product_name"] if entry.key == "mcp-reference" else None
         subprocess.run(
             pandoc_command(pandoc, entry.source, entry.template, temporary, title, product_name),
             check=True,

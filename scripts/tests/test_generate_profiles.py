@@ -47,6 +47,7 @@ GENERATORS = (
     "gen_jsonld_catalog.py",
     "gen_register_page.py",
     "gen_mcp_reference.py",
+    "inject_openwiki_canonical_facts.py",
     "gen_dashboard_filters.py",
     "gen_dashboard_sections.py",
     "embed_dashboard_data.py",
@@ -109,6 +110,7 @@ PROFILE_INPUTS = (
     "agent.json",
     "mcp.json",
     "mcp",
+    "openwiki",
     "config",
     "api",
     "health.schema.json",
@@ -213,6 +215,7 @@ def _stage_source(tmp_path: Path) -> Path:
     )
     (source / "docs").mkdir(exist_ok=True)
     (source / "docs/assets").mkdir()
+    shutil.copytree(ROOT / "openwiki", source / "openwiki")
     shutil.copy2(ROOT / "docs/assets/site-nav.html", source / "docs/assets/site-nav.html")
     shutil.copy2(ROOT / "docs/index.html", source / "docs/index.html")
     shutil.copy2(ROOT / "docs/buyer-api-reference.md", source / "docs/buyer-api-reference.md")
@@ -224,7 +227,6 @@ def _stage_source(tmp_path: Path) -> Path:
         RELEASE_FIXTURE / "docs/mcp-reference.md",
         source / "docs/mcp-reference.md",
     )
-    shutil.copy2(ROOT / "docs/agent-quickstart.md", source / "docs/agent-quickstart.md")
     shutil.copy2(ROOT / "docs/datapulse-intro.md", source / "docs/datapulse-intro.md")
     shutil.copy2(RELEASE_FIXTURE / "mcp.json", source / "mcp.json")
     shutil.copy2(RELEASE_FIXTURE / "agent.json", source / "agent.json")

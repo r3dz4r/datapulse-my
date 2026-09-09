@@ -88,7 +88,6 @@ Use this response pattern:
 
 ## Related documents
 
-- [Agent quickstart](agent-quickstart.md)
 - [Status semantics](status-semantics.md)
 - [Evidence receipt specification](evidence-receipt-spec.md)
 - [Trust contract](trust-contract.md)

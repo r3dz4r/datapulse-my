@@ -25,7 +25,6 @@ PUBLIC_SURFACE_LINKS = {
     "/trust-contract.md": ("Trust contract", "Public contract for using and interpreting published evidence."),
     "/status-semantics.md": ("Status semantics", "Meaning and handling guidance for published dataset statuses."),
     "/evidence-receipt-spec.md": ("Evidence receipt specification", "Structure and interpretation of dataset evidence receipts."),
-    "/agent-quickstart.md": ("Agent quickstart", "Minimal verification-first workflow for AI agents."),
     "/agent-workflows.md": ("Agent workflows", "Reusable agent workflows for discovery and evidence checks."),
     "/dataset-lifecycle.md": ("Dataset lifecycle", "Dataset state transitions and maintenance lifecycle."),
     "/incident-response.md": ("Incident response", "Procedures for investigating public-data incidents."),

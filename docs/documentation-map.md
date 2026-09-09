@@ -7,7 +7,6 @@ DataPulse documentation is part of the public evidence contract. This map tells 
 | Need | Canonical document |
 |---|---|
 | Understand the product and its boundaries | [Trust contract](trust-contract.md) |
-| Connect an agent | [Agent quickstart](agent-quickstart.md) |
 | Complete a real evidence workflow | [Agent workflows](agent-workflows.md) |
 | Interpret a health status | [Status semantics](status-semantics.md) |
 | Understand a receipt or evidence object | [Evidence receipt specification](evidence-receipt-spec.md) |
@@ -59,11 +58,10 @@ splits) is owned by [health-methodology.md](health-methodology.md) and
 
 ### Agent or application builder
 
-1. [Agent quickstart](agent-quickstart.md)
-2. [Agent workflows](agent-workflows.md)
-3. [Status semantics](status-semantics.md)
-4. [Evidence receipt specification](evidence-receipt-spec.md)
-5. [Integration patterns](integration-patterns.md)
+1. [Agent workflows](agent-workflows.md)
+2. [Status semantics](status-semantics.md)
+3. [Evidence receipt specification](evidence-receipt-spec.md)
+4. [Integration patterns](integration-patterns.md)
 
 ### Analyst or researcher
 

@@ -225,8 +225,6 @@ That is the whole shape of a defensible answer: **find → inspect → verify.**
 - [Live health](https://www.data-pulse.my/health/latest.json) — the current
   freshness snapshot these tools read (and no-auth, so you can compare tool
   output to the raw JSON).
-- [Agent quickstart](https://www.data-pulse.my/agent-quickstart.html) —
-  five-minute onboarding for AI agents that must cite Malaysian data correctly.
 - [Agent workflows](https://www.data-pulse.my/agent-workflows.html) — deeper
   integration patterns.
 - [Evidence receipt spec](https://www.data-pulse.my/evidence-receipt-spec.html) —

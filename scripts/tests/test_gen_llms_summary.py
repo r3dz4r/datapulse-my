@@ -16,7 +16,6 @@ DOCUMENTATION_ARTIFACTS = [
     "/trust-contract.md",
     "/status-semantics.md",
     "/evidence-receipt-spec.md",
-    "/agent-quickstart.md",
     "/agent-workflows.md",
     "/dataset-lifecycle.md",
     "/incident-response.md",

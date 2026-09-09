@@ -262,33 +262,6 @@ def _reference(config: dict[str, Any], datasets: list[dict[str, Any]], taxonomy:
     return "\n".join(lines).rstrip() + "\n"
 
 
-def _agent_quickstart_blocks(config: dict[str, Any], datasets: list[dict[str, Any]], tools: list[object]) -> tuple[str, str]:
-    """Render the two current-fact blocks owned inside the hand-authored guide."""
-    product_name = config["product_name"]
-    endpoint = f"{config['origins']['mcp']}/mcp"
-    identity = "\n".join((
-        f"# {product_name} — Agent Quickstart", "",
-        f"> {product_name} is a **read-only evidence layer** for Malaysian public datasets. "
-        "The live catalogue and machine advertisements are authoritative for current coverage.",
-    ))
-    rows = [
-        "## Step 2 — Connect to the MCP server", "",
-        f"{product_name} exposes {len(tools)} read-only tools over {len(datasets)} datasets at `{endpoint}`.",
-        "Transport: **Streamable HTTP**. The live `mcp.json` advertisement is the authority for the current capability set.",
-        "", "**Connector config** (Claude / Cursor / OpenAI / generic agents):", "",
-        "```json", "{", '  "mcpServers": {', '    "datapulse": {',
-        f'      "url": "{endpoint}",', '      "transport": "streamable-http",',
-        f'      "description": "{product_name} — read-only evidence layer for Malaysian public datasets"',
-        "    }", "  }", "}", "```", "", "### Current tools", "",
-        "| Tool | Use when |", "| --- | --- |",
-    ]
-    for tool in tools:
-        description = (tool.description or "").replace("|", "\\|").replace("\n", " ")
-        rows.append(f"| `{tool.name}` | {description} |")
-    rows.extend(("", "**Raw HTTP clients:** use the protocol-valid initialize → initialized → tools/list sequence in [MCP deployment](mcp-deploy.md). Do not send a legacy one-step tool-request payload directly to the Streamable HTTP endpoint."))
-    return identity, "\n".join(rows)
-
-
 async def generate(root: Path, *, source_sha: str | None = None, source_date: str | None = None, check: bool = False, validate_only: bool = False) -> bool:
     """Validate and render every MCP-owned output before publishing any of them."""
     config = load_public_surfaces(root)
@@ -335,16 +308,6 @@ async def generate(root: Path, *, source_sha: str | None = None, source_date: st
         root / "agent.json": serialize_json(agent_document),
         root / "docs/mcp-reference.md": _reference(config, datasets, taxonomy, tools, resources, templates),
     }
-    quickstart = root / "docs/agent-quickstart.md"
-    try:
-        quickstart_original = quickstart.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as error:
-        raise GenerationError(f"cannot read {quickstart}: {error}") from error
-    identity, quickstart_mcp = _agent_quickstart_blocks(config, datasets, tools)
-    outputs[quickstart] = replace_owned_block(
-        replace_owned_block(quickstart_original, "agent-quickstart-identity", identity),
-        "agent-quickstart-mcp", quickstart_mcp,
-    )
     block = _mcp_block(tools)
     readme_body = f"- {len(tools)} tools: " + ", ".join(f"`{tool.name}`" for tool in tools) + f"\n\nThe public endpoint serves all {len(tools)} read-only tools over the\n{len(datasets)}-dataset catalogue."
     deploy_body = (

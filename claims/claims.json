@@ -25,19 +25,8 @@
       "scope_statement": "DataPulse is authoritative for the registry itself (the catalogue and machine advertisements). It is NOT authoritative for upstream sources — those upstream maintainers own their own authoritative signals.",
       "evidence_source": "datapulse.json + scripts/embed_dashboard_data.py",
       "last_audit_date": "2026-09-02",
-      "re_audit_trigger": "Any change to docs/agent-quickstart.md or new docs/ pages referencing authority.",
-      "allowed_occurrences": [
-        {
-          "path": "docs/agent-quickstart.md",
-          "line_range_or_pattern": "line 13 (registry/catalogue scope)",
-          "justification": "The phrase 'authoritative' is qualified in this occurrence to refer to the DataPulse registry, not underlying sources. The sentence structure makes this scope explicit."
-        },
-        {
-          "path": "docs/agent-quickstart.md",
-          "line_range_or_pattern": "line 219 (Never-upgrade guideline)",
-          "justification": "This is a 'Never upgrade X to Y' guideline for future contributors — it names the phrase precisely so future copy does not regress to it. The lint should not flag this occurrence."
-        }
-      ],
+      "re_audit_trigger": "Any new docs/ page referencing authority.",
+      "allowed_occurrences": [],
       "forbidden_in": [
         "docs/**/*.md",
         "docs/**/*.html",
@@ -151,8 +140,7 @@
       "forbidden_in": [
         "README.md",
         "llms.txt",
-        "docs/learn.html",
-        "docs/agent-quickstart.md"
+        "docs/learn.html"
       ],
       "notes": "Forbidden anywhere except docs/health-methodology.html."
     },
