@@ -13,6 +13,7 @@ from scripts.public_surface_generation import load_public_surfaces
 def _stage(root: Path) -> None:
     config = {
         "schema": "datapulse/v1/public-surfaces",
+        "product_name": "DataPulse",
         "origins": {
             "website": "https://www.data-pulse.my",
             "mcp": "https://mcp.data-pulse.my",
@@ -27,7 +28,8 @@ def _stage(root: Path) -> None:
     (root / "config").mkdir()
     (root / "config/public-surfaces.json").write_text(json.dumps(config) + "\n")
     (root / "config/public-surfaces.schema.json").write_text(json.dumps({
-        "properties": {"origins": {"properties": {
+        "required": ["schema", "product_name", "origins", "pages", "artifacts", "featured_dataset_ids"],
+        "properties": {"product_name": {"const": "DataPulse"}, "origins": {"properties": {
             "website": {"const": "https://www.data-pulse.my"},
             "mcp": {"const": "https://mcp.data-pulse.my"},
             "api": {"const": "https://api.data-pulse.my"},

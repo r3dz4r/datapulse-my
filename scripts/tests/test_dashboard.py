@@ -240,12 +240,13 @@ def test_marker_failure_preserves_all_dashboard_targets(tmp_path: Path) -> None:
     config.mkdir()
     (config / "public-surfaces.json").write_text(json.dumps({
         "schema": "datapulse/v1/public-surfaces",
+        "product_name": "DataPulse",
         "origins": {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"},
         "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html"],
         "artifacts": ["/buyer-api-reference.md"], "featured_dataset_ids": ["alpha"],
     }) + "\n", encoding="utf-8")
     (config / "public-surfaces.schema.json").write_text(json.dumps({
-        "properties": {"origins": {"required": ["website", "mcp", "api", "repository"], "properties": {key: {"const": value} for key, value in {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}.items()}, "additionalProperties": False}}, "additionalProperties": False,
+        "required": ["schema", "product_name", "origins", "pages", "artifacts", "featured_dataset_ids"], "properties": {"product_name": {"const": "DataPulse"}, "origins": {"required": ["website", "mcp", "api", "repository"], "properties": {key: {"const": value} for key, value in {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}.items()}, "additionalProperties": False}}, "additionalProperties": False,
     }) + "\n", encoding="utf-8")
     manifest = tmp_path / "datapulse.json"
     health = tmp_path / "health.json"
@@ -271,12 +272,13 @@ def test_embed_preserves_canonical_jsonld_site_metadata(tmp_path: Path) -> None:
     config.mkdir()
     (config / "public-surfaces.json").write_text(json.dumps({
         "schema": "datapulse/v1/public-surfaces",
+        "product_name": "DataPulse",
         "origins": {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"},
         "pages": ["/", "/landing.html", "/npra.html", "/health-methodology.html"],
         "artifacts": ["/buyer-api-reference.md"], "featured_dataset_ids": ["alpha"],
     }) + "\n", encoding="utf-8")
     (config / "public-surfaces.schema.json").write_text(json.dumps({
-        "properties": {"origins": {"required": ["website", "mcp", "api", "repository"], "properties": {key: {"const": value} for key, value in {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}.items()}, "additionalProperties": False}}, "additionalProperties": False,
+        "required": ["schema", "product_name", "origins", "pages", "artifacts", "featured_dataset_ids"], "properties": {"product_name": {"const": "DataPulse"}, "origins": {"required": ["website", "mcp", "api", "repository"], "properties": {key: {"const": value} for key, value in {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}.items()}, "additionalProperties": False}}, "additionalProperties": False,
     }) + "\n", encoding="utf-8")
     manifest = tmp_path / "datapulse.json"
     health = tmp_path / "health.json"

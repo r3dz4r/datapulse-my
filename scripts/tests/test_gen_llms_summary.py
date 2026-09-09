@@ -34,6 +34,7 @@ def _write_public_surface_fixture(
     (config_dir / "public-surfaces.json").write_text(
         json.dumps({
             "schema": "datapulse/v1/public-surfaces",
+            "product_name": "DataPulse",
             "origins": {
                 "website": "https://www.data-pulse.my",
                 "mcp": "https://mcp.data-pulse.my",
@@ -66,9 +67,10 @@ def _write_public_surface_fixture(
     (config_dir / "public-surfaces.schema.json").write_text(
         json.dumps({
             "type": "object",
-            "required": ["schema", "origins", "pages", "artifacts", "featured_dataset_ids"],
+            "required": ["schema", "product_name", "origins", "pages", "artifacts", "featured_dataset_ids"],
             "properties": {
                 "schema": {"const": "datapulse/v1/public-surfaces"},
+                "product_name": {"const": "DataPulse"},
                 "origins": {
                     "type": "object",
                     "required": ["website", "mcp", "api", "repository"],

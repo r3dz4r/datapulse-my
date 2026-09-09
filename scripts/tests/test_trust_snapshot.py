@@ -12,6 +12,7 @@ FAKE_DATE = "2026-08-09"
 
 PUBLIC_SURFACES = {
     "schema": "datapulse/v1/public-surfaces",
+    "product_name": "DataPulse",
     "origins": {
         "website": "https://www.data-pulse.my",
         "mcp": "https://mcp.data-pulse.my",
@@ -94,7 +95,9 @@ def _make_repo(tmp_path: Path, *, short_history: bool = False) -> Path:
     (config / "public-surfaces.schema.json").write_text(
         json.dumps(
             {
+                "required": ["schema", "product_name", "origins", "pages", "artifacts", "featured_dataset_ids"],
                 "properties": {
+                    "product_name": {"const": "DataPulse"},
                     "origins": {
                         "properties": {
                             key: {"const": value}
