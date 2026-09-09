@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import sys
+import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -19,15 +21,41 @@ ROOT = Path(__file__).resolve().parents[2]
 VERIFY_SCRIPT = ROOT / "scripts/verify_release_invariants.sh"
 
 
-def test_local_gate_accepts_pre_generation_source_without_binding() -> None:
-    """CI validates source contracts before release-build creates a binding."""
-    completed = subprocess.run(
-        ["bash", str(VERIFY_SCRIPT), "--local"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+def test_local_gate_accepts_readme_prepared_source_without_binding() -> None:
+    """Source CI prepares README before validating a checkout without a binding."""
+    with tempfile.TemporaryDirectory() as worktree_dir:
+        worktree = Path(worktree_dir)
+        subprocess.run(
+            ["git", "worktree", "add", "--detach", str(worktree), "HEAD"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        try:
+            prepared = subprocess.run(
+                [sys.executable, "scripts/gen_readme.py"],
+                cwd=worktree,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            assert prepared.returncode == 0, prepared.stderr
+            completed = subprocess.run(
+                ["bash", str(worktree / "scripts/verify_release_invariants.sh"), "--local"],
+                cwd=worktree,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        finally:
+            subprocess.run(
+                ["git", "worktree", "remove", "--force", str(worktree)],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
 
     assert completed.returncode == 0, completed.stderr
     assert "Local pre-generation attestation structure: PASS" in completed.stdout
@@ -338,3 +366,12 @@ def test_generate_shell_rejects_ambient_allow_unattested_health_bypass() -> None
     generate_sh = (ROOT / "scripts/generate.sh").read_text(encoding="utf-8")
     assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" not in generate_sh
     assert "skipping attestation generation" not in generate_sh
+
+
+def test_release_build_generates_readme_before_public_surface_preflight() -> None:
+    generate_sh = (ROOT / "scripts/generate.sh").read_text(encoding="utf-8")
+    release_profile = generate_sh.split('  release-build)\n', 1)[1].split('  *)\n', 1)[0]
+
+    assert release_profile.index('"gen_readme.py"') < release_profile.index('"public_surface_preflight"')
+    assert release_profile.count('"gen_readme.py"') == 1
+    assert "python3 scripts/gen_readme.py --validate-only" in generate_sh

@@ -112,5 +112,3 @@ def test_repository_template_is_the_canonical_public_readme_contract() -> None:
     ):
         assert template.count(f"<!-- BEGIN {marker} -->") == 1
         assert template.count(f"<!-- END {marker} -->") == 1
-
-    assert not generate(ROOT, check=True)

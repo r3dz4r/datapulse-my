@@ -135,6 +135,7 @@ case "$profile" in
     description="$(profile_description "$profile")"
     generators=(
       "bump_mcp_source_version.py"
+      "gen_readme.py"
       "public_surface_preflight"
       "stamp_manifest_origin.py"
       "gen_mcp_reference.py"
@@ -144,7 +145,6 @@ case "$profile" in
       "gen_data_reports.sh"
       "gen_health_methodology.py"
       "gen_badges.sh"
-      "gen_readme.py"
       "gen_rss.sh"
       "gen_catalog_snapshot.py"
       "gen_health_history.py"
@@ -169,6 +169,7 @@ case "$profile" in
     )
     outputs=(
       "mcp/server.py source identity and mcp.json provenance"
+      "README.md (dataset counts and trust-summary block)"
       "validation only (config, schemas, source identity, and all P5A markers)"
       'datapulse.json $schema canonical origin stamp'
       "mcp.json; agent.json; docs/mcp-reference.md; llms.txt MCP tools block; README.md MCP tools block; docs/mcp-deploy.md MCP tools block"
@@ -178,7 +179,6 @@ case "$profile" in
       "data/<id>.md"
       "docs/health-methodology.md"
       "badges/<id>.svg; badges/status-*.svg; badges/index.svg"
-      "README.md (dataset counts, trust-summary block, and MCP tools block)"
       "feed.xml"
       "catalog-snapshot.json; changelog.json (deprecated alias)"
       "health/history.jsonl; health/history_daily.json"

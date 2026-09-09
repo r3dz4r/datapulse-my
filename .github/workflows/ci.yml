@@ -110,6 +110,9 @@ jobs:
               raise SystemExit("legacy release proof format: missing " + "; ".join(missing))
           PY
 
+      - name: Generate README from canonical inputs
+        run: python3 scripts/gen_readme.py
+
       - name: Run repository-contract and MCP tests
         run: python3 -m pytest -q scripts/tests/ mcp/tests/
 

@@ -72,13 +72,24 @@ def test_systemd_unit_does_not_reintroduce_superseded_generators() -> None:
 def test_systemd_unit_preserves_scoped_commit() -> None:
     exec_start = _exec_start(_read(SYSTEMD_UNIT))
     expected = (
-        "health/ deltas/ record-evidence/ badges/ feed.xml README.md "
+        "health/ deltas/ record-evidence/ badges/ feed.xml "
         "catalog-snapshot.json changelog.json attestations/ datapulse.json"
     )
 
     git_add = re.search(r"git add ([^;\n]+)", exec_start)
     assert git_add is not None
     assert git_add.group(1) == expected
+    assert "README.md" not in exec_start
+
+
+def test_source_ci_generates_readme_before_running_source_tests() -> None:
+    workflow = yaml.safe_load(_read(ROOT / ".github/workflows/ci.yml"))
+    steps = workflow["jobs"]["deterministic-safety-net"]["steps"]
+    generate = next(step for step in steps if step.get("name") == "Generate README from canonical inputs")
+    tests = next(step for step in steps if step.get("name") == "Run repository-contract and MCP tests")
+
+    assert generate["run"] == "python3 scripts/gen_readme.py"
+    assert steps.index(generate) < steps.index(tests)
 
 
 def test_systemd_unit_emits_lock_skip_telemetry() -> None:
