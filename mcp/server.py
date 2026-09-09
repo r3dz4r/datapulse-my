@@ -8,6 +8,7 @@ import json
 import base64
 import hashlib
 import asyncio
+import contextvars
 import logging
 import shutil
 import subprocess
@@ -117,6 +118,9 @@ logger.setLevel(logging.INFO)
 
 # Random at process start so operators can reconcile records without retaining caller identity.
 PROCESS_INSTANCE_ID = uuid4().hex
+HTTP_REQUEST_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "datapulse_http_request_id", default=None
+)
 
 
 def _sanitise_tool_arg(value: Any, *, key: str | None = None) -> Any:
@@ -206,6 +210,60 @@ def _append_usage_record(record: dict[str, Any]) -> None:
         logger.exception("mcp-tool: unable to persist usage record")
 
 
+class HTTPRequestCorrelationMiddleware:
+    """Add anonymous per-exchange correlation to the HTTP transport only."""
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request_id = uuid4().hex
+        token = HTTP_REQUEST_ID.set(request_id)
+        status: int | None = None
+
+        async def send_with_correlation(message: dict[str, Any]) -> None:
+            nonlocal status
+            if message.get("type") == "http.response.start":
+                status = message.get("status")
+                headers = list(message.get("headers", []))
+                headers.append((b"x-datapulse-request-id", request_id.encode("ascii")))
+                message = {**message, "headers": headers}
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_with_correlation)
+        except BaseException:
+            if status is None:
+                status = 500
+            raise
+        finally:
+            if scope.get("path") == "/mcp":
+                try:
+                    journal = {
+                        "event": "mcp_http",
+                        "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+                        "http_request_id": request_id,
+                        "method": scope.get("method", ""),
+                        "path": "/mcp",
+                        "status": status if status is not None else 500,
+                    }
+                    logger.info(
+                        "mcp-http: %s",
+                        json.dumps(journal, ensure_ascii=False, separators=(",", ":")),
+                    )
+                except Exception:
+                    # Telemetry must never change the public anonymous HTTP contract.
+                    try:
+                        logger.exception("mcp-http: unable to emit HTTP record")
+                    except Exception:
+                        pass
+            HTTP_REQUEST_ID.reset(token)
+
+
 class ToolUsageLoggingMiddleware(Middleware):
     """Emit one anonymous aggregate-safe terminal record per MCP tool call."""
 
@@ -230,22 +288,34 @@ class ToolUsageLoggingMiddleware(Middleware):
             return result
         finally:
             record["latency_ms"] = round((monotonic() - started) * 1000)
-            _append_usage_record(record)
-            journal = {
-                "event": "mcp_tool_terminal",
-                "ts": record["ts"],
-                "tool": record["tool"],
-                "outcome": record["outcome"],
-                "latency_ms": record["latency_ms"],
-                "call_id": record["call_id"],
-                "process_instance_id": record["process_instance_id"],
-            }
-            if "error" in record:
-                journal["error_classification"] = record["error"]["classification"]
-            logger.info(
-                "mcp-tool: %s",
-                json.dumps(journal, ensure_ascii=False, separators=(",", ":")),
-            )
+            http_request_id = HTTP_REQUEST_ID.get()
+            if http_request_id is not None:
+                record["http_request_id"] = http_request_id
+            try:
+                _append_usage_record(record)
+                journal = {
+                    "event": "mcp_tool_terminal",
+                    "ts": record["ts"],
+                    "tool": record["tool"],
+                    "outcome": record["outcome"],
+                    "latency_ms": record["latency_ms"],
+                    "call_id": record["call_id"],
+                    "process_instance_id": record["process_instance_id"],
+                }
+                if http_request_id is not None:
+                    journal["http_request_id"] = http_request_id
+                if "error" in record:
+                    journal["error_classification"] = record["error"]["classification"]
+                logger.info(
+                    "mcp-tool: %s",
+                    json.dumps(journal, ensure_ascii=False, separators=(",", ":")),
+                )
+            except Exception:
+                # A telemetry sink failure must not reject an otherwise valid tool call.
+                try:
+                    logger.exception("mcp-tool: unable to emit terminal record")
+                except Exception:
+                    pass
 
 
 def _manifest_dataset_count(manifest_path: Path | None = None) -> int:
@@ -2256,4 +2326,9 @@ async def dataset_resource(dataset_id: str) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT)
+    mcp.run(
+        transport="http",
+        host=MCP_HOST,
+        port=MCP_PORT,
+        middleware=[HTTPRequestCorrelationMiddleware],
+    )

@@ -748,6 +748,153 @@ async def test_tool_call_logs_aggregate_safe_terminal_evidence(caplog: pytest.Lo
     }
 
 
+class _ASGIResponse:
+    def __init__(self, status: int = 200, body: bytes = b"ok") -> None:
+        self.status = status
+        self.body = body
+
+    async def __call__(self, scope: dict, receive: object, send: object) -> None:
+        await send({
+            "type": "http.response.start",
+            "status": self.status,
+            "headers": [(b"content-type", b"text/plain")],
+        })
+        await send({"type": "http.response.body", "body": self.body})
+
+
+async def _run_asgi_request(
+    app: object,
+    *,
+    path: str = "/mcp",
+    status: int = 200,
+    body: bytes = b"ok",
+) -> list[dict]:
+    sent: list[dict] = []
+
+    async def receive() -> dict:
+        return {"type": "http.request", "body": b"private body"}
+
+    async def send(message: dict) -> None:
+        sent.append(message)
+
+    response_app = _ASGIResponse(status=status, body=body) if app == "response" else app
+    await response_app(
+        {"type": "http", "method": "POST", "path": path, "headers": []},
+        receive,
+        send,
+    )
+    return sent
+
+
+async def test_http_correlation_adds_opaque_response_header_and_safe_journal(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level("INFO", logger=server.logger.name)
+    sent = await _run_asgi_request(
+        server.HTTPRequestCorrelationMiddleware(_ASGIResponse(status=204, body=b"private body")),
+    )
+
+    headers = dict(sent[0]["headers"])
+    request_id = headers[b"x-datapulse-request-id"].decode()
+    assert re.fullmatch(r"[0-9a-f]{32}", request_id)
+    assert sent[0]["status"] == 204
+    assert sent[1]["body"] == b"private body"
+    http_logs = [
+        record.getMessage()
+        for record in caplog.records
+        if record.name == server.logger.name and record.getMessage().startswith("mcp-http:")
+    ]
+    assert len(http_logs) == 1
+    journal = json.loads(http_logs[0].partition(":")[2].lstrip())
+    assert set(journal) == {"event", "ts", "http_request_id", "method", "path", "status"}
+    assert journal == {
+        "event": "mcp_http",
+        "ts": journal["ts"],
+        "http_request_id": request_id,
+        "method": "POST",
+        "path": "/mcp",
+        "status": 204,
+    }
+    serialized = json.dumps(journal)
+    for forbidden in ("127.0.0.1", "x-secret", "private body", "arguments", "identity", "cookie"):
+        assert forbidden not in serialized
+
+
+async def test_http_correlation_links_tool_records_and_is_absent_outside_http(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    caplog.set_level("INFO", logger=server.logger.name)
+    request_id = "a" * 32
+    token = server.HTTP_REQUEST_ID.set(request_id)
+    try:
+        context = SimpleNamespace(
+            message=SimpleNamespace(name="search_datasets", arguments={"query": "fuel"}),
+            timestamp=datetime.now(timezone.utc),
+        )
+        await server.ToolUsageLoggingMiddleware().on_call_tool(context, lambda _: _result({"count": 1}))
+    finally:
+        server.HTTP_REQUEST_ID.reset(token)
+
+    record = json.loads(next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8"))
+    journal = json.loads(next(
+        log.getMessage().partition(":")[2].lstrip()
+        for log in caplog.records
+        if log.name == server.logger.name and log.getMessage().startswith("mcp-tool:")
+    ))
+    assert record["http_request_id"] == request_id
+    assert journal["http_request_id"] == request_id
+
+    isolated_path = tmp_path / "isolated"
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(isolated_path))
+    await server.ToolUsageLoggingMiddleware().on_call_tool(context, lambda _: _result({"count": 1}))
+    isolated_record = json.loads(next(isolated_path.glob("*.jsonl")).read_text(encoding="utf-8"))
+    assert "http_request_id" not in isolated_record
+    isolated_journal = json.loads(next(
+        log.getMessage().partition(":")[2].lstrip()
+        for log in reversed(caplog.records)
+        if log.name == server.logger.name and log.getMessage().startswith("mcp-tool:")
+    ))
+    assert "http_request_id" not in isolated_journal
+
+
+async def test_http_telemetry_errors_preserve_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def broken_app(scope: dict, receive: object, send: object) -> None:
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"still served"})
+
+    def fail_log(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("telemetry sink unavailable")
+
+    monkeypatch.setattr(server.logger, "info", fail_log)
+    sent = await _run_asgi_request(server.HTTPRequestCorrelationMiddleware(broken_app))
+    assert sent[0]["status"] == 200
+    assert sent[1]["body"] == b"still served"
+    assert any(name == b"x-datapulse-request-id" for name, _ in sent[0]["headers"])
+
+
+async def test_http_correlation_resets_context_after_app_error(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    async def failing_app(scope: dict, receive: object, send: object) -> None:
+        raise RuntimeError("request failed")
+
+    caplog.set_level("INFO", logger=server.logger.name)
+    with pytest.raises(RuntimeError, match="request failed"):
+        await _run_asgi_request(server.HTTPRequestCorrelationMiddleware(failing_app))
+
+    assert server.HTTP_REQUEST_ID.get() is None
+    http_logs = [
+        record.getMessage()
+        for record in caplog.records
+        if record.name == server.logger.name and record.getMessage().startswith("mcp-http:")
+    ]
+    assert len(http_logs) == 1
+    assert json.loads(http_logs[0].partition(":")[2].lstrip())["status"] == 500
+
+
 async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_identity(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
