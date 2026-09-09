@@ -15,8 +15,10 @@ from typing import NamedTuple
 
 try:  # Support both ``python scripts/...`` and package imports in tests.
     from scripts import gen_site_nav
+    from scripts.public_surface_generation import load_public_surfaces
 except ImportError:
     import gen_site_nav
+    from public_surface_generation import load_public_surfaces
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,8 +75,8 @@ def extract_title(source: Path) -> str:
     raise ValueError(f"Source has no level-one title: {source}")
 
 
-def pandoc_command(pandoc: str, source: Path, template: Path, output: Path, title: str) -> list[str]:
-    return [
+def pandoc_command(pandoc: str, source: Path, template: Path, output: Path, title: str, product_name: str | None = None) -> list[str]:
+    command = [
         pandoc,
         "--standalone",
         "--from=gfm",
@@ -85,6 +87,9 @@ def pandoc_command(pandoc: str, source: Path, template: Path, output: Path, titl
         str(output),
         str(source),
     ]
+    if product_name is not None:
+        command.insert(5, f"--metadata=product_name:{product_name}")
+    return command
 
 
 # Each page template's hero carries the single page ``<h1>`` (``id="hero-title"``).
@@ -135,8 +140,9 @@ def _render_entry(entry: DocPage, pandoc: str) -> int:
     os.close(descriptor)
     temporary = Path(temporary_name)
     try:
+        product_name = load_public_surfaces(ROOT)["product_name"] if entry.key in {"mcp-reference", "agent-quickstart"} else None
         subprocess.run(
-            pandoc_command(pandoc, entry.source, entry.template, temporary, title),
+            pandoc_command(pandoc, entry.source, entry.template, temporary, title, product_name),
             check=True,
         )
         body = temporary.read_text(encoding="utf-8")

@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: Dataset Manifest, Health Evidence, and Schema
-description: The canonical contract for DataPulse MY dataset metadata and the generated health, report, envelope, sample, licence, namespace, and discovery surfaces. Use it to make registry changes without creating mismatched or stale derived artifacts.
+description: The canonical contract for DataPulse dataset metadata and the generated health, report, envelope, sample, licence, namespace, and discovery surfaces. Use it to make registry changes without creating mismatched or stale derived artifacts.
 tags: [datasets, manifest, schema, health, provenance]
 verified:
   - by: openwiki/0.4.3
@@ -38,7 +38,7 @@ generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:52:57.734Z" }
 
 # Dataset Manifest, Health Evidence, and Schema
 
-DataPulse MY's canonical origin is **https://www.data-pulse.my**. The source of truth for the portfolio is the root `datapulse.json` manifest: the current live count derived from its `datasets` array is **389 datasets**. The public MCP surface exposes **16 read-only tools** over that catalogue; it is another read-only consumer of repository data, not a second registry.
+DataPulse's canonical origin is **https://www.data-pulse.my**. The source of truth for the portfolio is the root `datapulse.json` manifest: the current live count derived from its `datasets` array is **418 datasets**. The public MCP surface exposes **19 read-only tools** over that catalogue; it is another read-only consumer of repository data, not a second registry.
 
 This page describes current repository contracts only. Historical audits, dated design notes, and older wiki prose are not current metadata. For operational ownership and deployment checks, see [/openwiki/operations.md](/openwiki/operations.md); for agent/tool discovery, see [/openwiki/mcp.md](/openwiki/mcp.md).
 
@@ -60,11 +60,11 @@ Every row requires these fields:
 
 `steward` remains human-readable metadata; `custodian` is the stable publishing-agency identifier resolved through `custodians.json`. The focused custodian tests require every manifest custodian to be non-empty, require the manifest ID set to equal the registry ID set, and pin important aliases such as BNM, DOSM, MET, and KTMB. Change an agency identity through that registry rather than inventing a spelling in one row.
 
-`real_status` describes the upstream lifecycle (`live` or `discontinued`) and is distinct from probe health. `discontinued`, `verified_at`, and `discontinued_reason` are operator-applied lifecycle evidence. A source publisher remains authoritative for the dataset's content and lifecycle; DataPulse MY observes and reports it, but does not become the official publisher.
+`real_status` describes the upstream lifecycle (`live` or `discontinued`) and is distinct from probe health. `discontinued`, `verified_at`, and `discontinued_reason` are operator-applied lifecycle evidence. A source publisher remains authoritative for the dataset's content and lifecycle; DataPulse observes and reports it, but does not become the official publisher.
 
 ## One cycle: manifest to evidence to derived surfaces
 
-A full run probes the manifest's official URLs. A due run selects only rows whose cadence has elapsed, with optional `--tier` and `--cadence-minutes` filters. The scheduler waking periodically must not be described as probing all 389 datasets on every wake.
+A full run probes the manifest's official URLs. A due run selects only rows whose cadence has elapsed, with optional `--tier` and `--cadence-minutes` filters. The scheduler waking periodically must not be described as probing all 418 datasets on every wake.
 
 ```mermaid
 flowchart TD
@@ -109,7 +109,7 @@ A `last_modified` header or parsed content date is evidence used by the classifi
 
 `health_report` points to a report path matching `data/[A-Za-z0-9_-]+.md`. `scripts/gen_data_reports.sh` owns generated report sections and health frontmatter values, including status, last checked, freshness, counts, and file size. It preserves the human-authored explanatory sections. One legacy exception, `eperolehan-diklankan`, has no original frontmatter; the generator supplies compatible fields without inventing measurements.
 
-Reports explain observed coverage, schema fields, known quirks, breaking changes, samples, reproducibility, licence, and attribution. They must say what was observed and how, not imply that DataPulse MY publishes or guarantees the source data.
+Reports explain observed coverage, schema fields, known quirks, breaking changes, samples, reproducibility, licence, and attribution. They must say what was observed and how, not imply that DataPulse publishes or guarantees the source data.
 
 ### Machine envelope: `data/json/<id>.json`
 
@@ -127,7 +127,7 @@ Samples under `samples/` are small, source-downloaded examples used to make sche
 
 A dataset URL is repeated across surfaces: manifest, health row or request URL, dashboard embedding, non-GTFS envelope reproducibility metadata, and JSON-LD `sameAs`. `scripts/check_url_drift.py` compares these literal values and reports missing or mismatched URLs; it also checks the allowed cadence vocabulary and flags cadence observations that are informationally late. URL drift must remain aligned before publishing a metadata change. A corrected official URL therefore requires updating the manifest and regenerating every owned surface, not patching one output.
 
-The public-surface registry lists the canonical website, MCP, API, repository, and published artifacts including `datapulse.json`, `datapulse.schema.json`, `health/latest.json`, trends, drift, reconciliation, RSS, changelog, agent and MCP manifests, JSON-LD catalog, and badges. `llms.txt` is generated discovery prose and currently advertises the same 389-dataset catalogue and 16 read-only tools. These are discovery projections, not alternate sources of truth.
+The public-surface registry lists the canonical website, MCP, API, repository, and published artifacts including `datapulse.json`, `datapulse.schema.json`, `health/latest.json`, trends, drift, reconciliation, RSS, changelog, agent and MCP manifests, JSON-LD catalog, and badges. `llms.txt` is generated discovery prose and currently advertises the same 418-dataset catalogue and 19 read-only tools. These are discovery projections, not alternate sources of truth.
 
 `catalog-snapshot.json` is generated by `scripts/gen_catalog_snapshot.py` from manifest plus health. It records totals by namespace, licence, and lifecycle and emits compact per-dataset status rows; its `changelog.json` output is a deprecated one-release byte-identical alias. `catalog-graph.json` is generated from literal declared relationships and requires manifest and health ID sets to match. It emits only deterministic edges such as same steward, same agency, same geography, canonical series, successor, and shared schema; it does no fuzzy matching or network access.
 
@@ -154,12 +154,13 @@ The generator ownership boundary is operational: do not hand-edit `health/latest
 ## Current discovery facts
 
 - Canonical origin: **https://www.data-pulse.my**
-- Live manifest count: **389 datasets**
-- Cross-surface MCP capability: **16 read-only tools**
+- Live manifest count: **418 datasets**
+- Cross-surface MCP capability: **19 read-only tools**
 - Primary machine-readable entrypoints: `datapulse.json`, `health/latest.json`, `data/json/<id>.json` where applicable, and the generated catalog/discovery artifacts
 
 ## Canonical facts
 
+- Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 389 datasets
-- MCP server: 16 read-only tools
+- Datasets: 418 datasets
+- MCP server: 19 read-only tools

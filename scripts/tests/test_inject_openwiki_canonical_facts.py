@@ -45,6 +45,7 @@ def _build_fixture(
         root / "config/public-surfaces.json",
         {
             "schema": "datapulse/v1/public-surfaces",
+            "product_name": "DataPulse",
             "origins": {
                 "website": website,
                 "mcp": "https://mcp.data-pulse.my",
@@ -61,6 +62,7 @@ def _build_fixture(
         {
             "additionalProperties": False,
             "properties": {
+                "product_name": {"const": "DataPulse"},
                 "origins": {
                     "additionalProperties": False,
                     "properties": {
@@ -83,8 +85,8 @@ def _build_fixture(
         (root / "random.txt").write_text("untouched\n", encoding="utf-8")
 
 
-def _required_literals(website: str, datasets_count: int, tools_count: int) -> tuple[str, str, str]:
-    return website, f"{datasets_count} datasets", f"{tools_count} read-only tools"
+def _required_literals(website: str, datasets_count: int, tools_count: int) -> tuple[str, str, str, str]:
+    return "DataPulse", website, f"{datasets_count} datasets", f"{tools_count} read-only tools"
 
 
 def test_inject_adds_all_three_required_literals(tmp_path: Path) -> None:
@@ -92,12 +94,13 @@ def test_inject_adds_all_three_required_literals(tmp_path: Path) -> None:
     results = inject_canonical_facts(tmp_path)
 
     assert results  # 4 page results, one per allowlisted file
-    website_literal, datasets_literal, tools_literal = _required_literals(
+    product_literal, website_literal, datasets_literal, tools_literal = _required_literals(
         "https://www.data-pulse.my", 3, 2
     )
     for relative, status in results:
         assert status == "injected", f"{relative} should have been rewritten"
         text = (tmp_path / relative).read_text(encoding="utf-8")
+        assert product_literal in text, f"{relative} missing product literal"
         assert website_literal in text, f"{relative} missing website literal"
         assert datasets_literal in text, f"{relative} missing datasets literal"
         assert tools_literal in text, f"{relative} missing tools literal"
@@ -139,6 +142,45 @@ def test_inject_replaces_stale_count_literals(tmp_path: Path) -> None:
     assert "12 read-only tools" not in text
     assert "389 datasets" in text
     assert "16 read-only tools" in text
+
+
+def test_inject_replaces_the_stale_product_name(tmp_path: Path) -> None:
+    _build_fixture(tmp_path, page_body="DataPulse MY describes 3 datasets and 2 read-only tools.\n")
+    inject_canonical_facts(tmp_path)
+
+    text = (tmp_path / "openwiki/mcp.md").read_text(encoding="utf-8")
+    assert "DataPulse MY" not in text
+    assert "DataPulse" in text
+
+
+def test_inject_replaces_arbitrary_stale_current_counts(tmp_path: Path) -> None:
+    _build_fixture(tmp_path, page_body="Current coverage: 999 datasets and 77 read-only tools.\n")
+    inject_canonical_facts(tmp_path)
+
+    text = (tmp_path / "openwiki/quickstart.md").read_text(encoding="utf-8")
+    assert "999 datasets" not in text
+    assert "77 read-only tools" not in text
+    assert "3 datasets" in text
+    assert "2 read-only tools" in text
+
+
+def test_inject_rewrites_hyphenated_and_bare_tool_count_forms(tmp_path: Path) -> None:
+    body = (
+        "The same 999-dataset catalogue is exposed by 77-read-only-tool access.\n"
+        "The MCP server currently lists 16 tools and 77-read-only-tools.\n"
+    )
+    _build_fixture(tmp_path, page_body=body)
+    inject_canonical_facts(tmp_path)
+
+    text = (tmp_path / "openwiki/mcp.md").read_text(encoding="utf-8")
+    assert "999-dataset" not in text
+    assert "77-read-only-tool" not in text
+    assert "77-read-only-tools" not in text
+    assert "16 tools" not in text
+    assert "3-dataset" in text
+    assert "2-read-only-tool access" in text
+    assert "2-read-only-tools" in text
+    assert "2 tools" in text
 
 
 def test_inject_rewrites_obsolete_apex_host(tmp_path: Path) -> None:
@@ -254,4 +296,3 @@ def test_forbidden_claims_are_neutralized() -> None:
     # Idempotency
     fixed2 = _neutralize_forbidden_claims(fixed)
     assert fixed == fixed2
-

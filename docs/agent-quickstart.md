@@ -1,5 +1,5 @@
 ---
-title: Agent Quickstart — DataPulse MY
+title: Agent Quickstart — DataPulse
 description: 5-minute onboarding for AI agents. Connect via MCP, fetch evidence, and cite it correctly.
 version: 1.1
 last_updated: 2026-09-01
@@ -7,13 +7,13 @@ audience: AI agents and their operators
 visibility: public, read-only, no auth
 ---
 
-# DataPulse MY — Agent Quickstart
+<!-- BEGIN agent-quickstart-identity -->
+# DataPulse — Agent Quickstart
 
-> DataPulse MY is a **read-only evidence layer** for Malaysian public
-> datasets. The live catalogue and machine advertisements are authoritative
-> for current coverage. This document is the 5-minute onboarding for any agent
-> that wants to **cite Malaysian data correctly** without scraping, fabricating,
-> or overclaiming.
+> DataPulse is a **read-only evidence layer** for Malaysian public datasets. The live catalogue and machine advertisements are authoritative for current coverage.
+<!-- END agent-quickstart-identity -->
+
+This document is the 5-minute onboarding for any agent that wants to **cite Malaysian data correctly** without scraping, fabricating, or overclaiming.
 
 **Read this first** if your agent is about to claim knowledge about any
 dataset hosted at `data.gov.my`, `BNM`, `DOSM`, `DOE`, `KKM`, `KPDN`,
@@ -53,41 +53,52 @@ Or just `GET https://www.data-pulse.my/llms.txt` from inside your agent.
 
 ---
 
+<!-- BEGIN agent-quickstart-mcp -->
 ## Step 2 — Connect to the MCP server
 
-The read-only MCP server is reachable at:
-
-```
-https://mcp.data-pulse.my/mcp
-```
-
-Transport: **Streamable HTTP**. The live `mcp.json` advertisement is the authority
-for the current capability set. Common first calls include:
-
-| Tool | What it gives |
-| --- | --- |
-| `search_datasets` | Find candidate datasets by topic, source, or licence. |
-| `get_dataset` | Inspect one dataset’s metadata and latest observed health. |
-| `get_evidence` | Retrieve evidence for one dataset. |
-| `get_provenance` | Inspect source and observation lineage. |
-| `verify_evidence` | Verify the relevant evidence object. |
-| `trust_verdict` | Request a policy-scoped decision posture. |
+DataPulse exposes 19 read-only tools over 418 datasets at `https://mcp.data-pulse.my/mcp`.
+Transport: **Streamable HTTP**. The live `mcp.json` advertisement is the authority for the current capability set.
 
 **Connector config** (Claude / Cursor / OpenAI / generic agents):
 
 ```json
 {
   "mcpServers": {
-    "datapulse-my": {
+    "datapulse": {
       "url": "https://mcp.data-pulse.my/mcp",
       "transport": "streamable-http",
-      "description": "DataPulse MY — read-only evidence layer for Malaysian public datasets"
+      "description": "DataPulse — read-only evidence layer for Malaysian public datasets"
     }
   }
 }
 ```
 
+### Current tools
+
+| Tool | Use when |
+| --- | --- |
+| `search_datasets` | Use for discovery only: find DataPulse's 418 Malaysian public datasets by topic, source, or licence—for example, 'Malaysian public data inflation', licence and attribution, or a government dataset source. Returns ranked matches with id, title, source, licence, published status, and score. This is not trust verification: a status is published pipeline context, not proof that a dataset is current or reliable. For 'is this dataset current?' or verify before relying on data, use search_datasets → verify_dataset → get_provenance. |
+| `get_dataset` | Return full detail for one dataset id, including its latest health status and last-verified timestamp, content_freshness_date, and freshness_signal_source (last_modified, content_parse, or none). Use to fetch the provenance/citation metadata for a dataset found via search_datasets and distinguish unknown-freshness from proven stale data. |
+| `get_data_passport` | Return one bounded, machine-readable Dataset Passport v1 for a canonical dataset ID. It reads the published Passport artifact only; it does not fetch an upstream source or create evidence. The Passport describes observed metadata and evidence availability, not semantic truth, completeness, certification, legal permission, safety, or AI admission. |
+| `find_stale` | Return datasets whose status is aging, stale, or degraded, plus datasets missing from the latest health snapshot. Use when an agent needs to know which data has a freshness or schema-validity risk. |
+| `find_anomalies` | Return datasets flagged by the latest published anomaly detection (anomalies), ranked by how far the observed update interval exceeds its threshold. Optionally require a minimum publish-reliability grade; includes pipeline-computed anomaly and reliability evidence so agents do not recompute it. |
+| `find_deteriorating` | Return datasets whose published freshness trend is deteriorating, ranked by staleness slope. Optionally require a minimum historical anomaly rate; includes pipeline-computed trend and reliability evidence so agents do not recompute it. |
+| `find_recovering` | Return datasets whose published freshness trend is recovering, with the fastest staleness reductions first. Includes pipeline-computed trend and publish-reliability evidence. |
+| `find_unreliable` | Return datasets whose evaluated publish-reliability grade is at or below a threshold (the unreliable ones), with the worst grades and lowest on-time percentages first. Reliability measures timeliness of successful freshness observations, not uptime; sample days are included so agents can judge evidence depth. |
+| `find_schema_drift` | Return datasets with published structural or record-count drift evidence, ranked with structural changes first. Optionally require a minimum number of structural transitions; includes pipeline-computed evidence so agents do not infer drift from freshness alone. |
+| `check_reconciliation` | Return the published cross-source reconciliation group for a dataset name or id, including per-member counts, dates, statuses, tolerances, and contextual deltas. A discrepancy requires human review and does not prove either source is wrong. |
+| `get_provenance` | Use when asked 'can I cite this source?', for licence and attribution, or for citation-ready provenance. Returns source, steward, licence/attribution context, canonical URL, and compact published evidence context: probe time, transport, access dependency, freshness signal, schema drift / record-count drift context, anomaly flag, and status. Bind a citation to dataset identity, source/evidence URL, observed-at or last-checked time, DataPulse status/verdict, licence/attribution, and a receipt/evidence digest when available. You may cite the returned provenance and describe its published evidence; it is not a freshness guarantee and does not itself verify the source is current. For pre-trust use search_datasets → verify_dataset → get_provenance. |
+| `get_evidence` | Use for a deep evidence audit or to inspect a provenance and evidence receipt. Returns the complete published evidence receipt for one dataset: probe time, transport, access dependency, freshness, schema drift / record-count drift, tolerance, status, anomaly fields, and receipt/evidence references. It reads published pipeline evidence, not a live source fetch: you may report what the pipeline observed, but must not infer the source is currently reachable or semantically true. Use it for a deep audit before or alongside verification. search_datasets → get_evidence → verify_evidence → verify_attestation. |
+| `verify_dataset` | This is the preferred single-call pre-trust check for 'is this dataset current?', stale, unknown-freshness, degraded, or browser-dependent questions, and whenever an agent must verify before relying on data. Returns dataset metadata, published evidence and fail-closed signed receipt verification with artifact references. It verifies published artifacts, not a live source check: you may infer whether their receipt verifies, but must not infer current upstream availability or semantic truth. Use search_datasets → verify_dataset → get_provenance. |
+| `get_freshness_summary` | Return a freshness-at-a-glance summary of the published catalogue: fresh, aging, stale, and reference counts plus the latest health check time. |
+| `verify_evidence` | Use when a fresh, rate-limited live-vs-published comparison is needed for a direct-access dataset, for example after asking whether a government dataset is reachable now. Performs a rate-limited live GET and returns comparable transport receipts plus a match, mismatch, unreachable, or not_verifiable verdict. This live check is an observation, not semantic truth: it does not recompute content dates, record counts, or shape fingerprints. Results are ephemeral and do not update published health artifacts. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation. |
+| `trust_verdict` | Return published attestation facts, the unsigned methodology-versioned trust score, numeric components, and component_availability reasons, plus existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately. |
+| `verify_attestation` | Use to verify a signed published probe attestation after an evidence audit. Returns L1 signature, key, time, and chain-link checks; optional L2 replay of daily heads to a Git-tag anchor; and L3 scope, which requires verify_evidence for live transport. A valid signature proves attestation integrity and scope, not upstream semantic truth or currentness. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation. |
+| `find_by_licence` | Return all datasets with the given licence, summarised. Use to enumerate what's available under a specific licence for compliance/reuse scoping. |
+| `usage_summary` | Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range. Legacy identity fields are ignored. |
+
 **Raw HTTP clients:** use the protocol-valid initialize → initialized → tools/list sequence in [MCP deployment](mcp-deploy.md). Do not send a legacy one-step tool-request payload directly to the Streamable HTTP endpoint.
+<!-- END agent-quickstart-mcp -->
 
 ---
 
@@ -124,7 +135,7 @@ field semantics. Do not infer missing values.
 
 The right way to cite a receipt in your answer:
 
-> *"Per DataPulse MY (retrieved YYYY-MM-DDTHH:MMZ), the dataset `<id>` is
+> *"Per DataPulse (retrieved YYYY-MM-DDTHH:MMZ), the dataset `<id>` is
 > currently `<status>`, with source identity `<id>` published by `<publisher>`
 > under `<licence>`, `<N>` records observed. Decision posture: USE."*
 
@@ -209,7 +220,7 @@ and the [source-of-truth map](source-of-truth-map.md).
 
 ## Honest posture — what to repeat to your user
 
-When your agent cites DataPulse MY:
+When your agent cites DataPulse:
 
 1. **Always cite the retrieved-at timestamp.**
 2. **Use the literal field names** the receipt uses (`Source identity`, `Publisher`,

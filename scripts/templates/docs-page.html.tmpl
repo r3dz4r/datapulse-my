@@ -6,8 +6,8 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="DataPulse MY public documentation.">
-  <title>$title$ | DataPulse MY</title>
+  <meta name="description" content="$if(product_name)$$product_name$$else$DataPulse MY$endif$ public documentation.">
+  <title>$title$ | $if(product_name)$$product_name$$else$DataPulse MY$endif$</title>
   <link rel="stylesheet" href="/assets/datapulse.css">
 </head>
 <body>
@@ -29,7 +29,7 @@
       <div class="wrap">
         <p class="eyebrow">DATAPULSE · DOCUMENTATION</p>
         <h1 id="hero-title">$title$</h1>
-        <p class="hero-copy">Public documentation for the DataPulse MY read-only trust layer.</p>
+        <p class="hero-copy">Public documentation for the $if(product_name)$$product_name$$else$DataPulse MY$endif$ read-only trust layer.</p>
       </div>
     </section>
     <section id="documentation-content">

@@ -13,20 +13,26 @@ in ``openwiki/{quickstart,datasets,mcp,operations}.md``:
 * a literal of the form ``<N> read-only tools`` where ``N`` equals the length
   of the ``tools`` array in ``mcp.json`` at the repo root
 
+Count claims may use spaces or hyphens (for example ``418 datasets``,
+``418-dataset``, ``19 read-only tools``, ``19-read-only-tool``, or ``19 tools``);
+the injector rewrites the numeric component while preserving the surrounding
+prose form.
+
 It also rejects (case-insensitive) the obsolete apex host
-``https://data-pulse.my`` and the stale counts ``122 datasets`` and
-``12 read-only tools``. The OpenWiki generator occasionally emits content
-that fails one or more of these checks.
+``https://data-pulse.my`` and stale current count claims in any supported
+space- or hyphen-separated form. The OpenWiki generator occasionally emits
+content that fails one or more of these checks.
 
 This post-processor is the deterministic safety net that rewrites the four
 allowed pages to satisfy the contract:
 
 1. Strip any previously-injected ``## Canonical facts`` section (idempotent).
-2. Replace stale count literals with the current count.
-3. Rewrite the obsolete apex host to the canonical ``www.`` host (using a
+2. Replace arbitrary stale current count literals with the current count.
+3. Replace the obsolete public product name with the canonical config name.
+4. Rewrite the obsolete apex host to the canonical ``www.`` host (using a
    negative lookbehind so a URL that already starts with ``www.`` is
    untouched).
-4. Append a fresh ``## Canonical facts`` section listing the three required
+5. Append a fresh ``## Canonical facts`` section listing the canonical facts
    literals, sourced from the same three config files the verifier reads.
 
 Writes are atomic (``<path>.tmp`` then ``os.replace``). ``--dry-run``
@@ -88,10 +94,15 @@ _CANONICAL_BLOCK_RE = re.compile(
 
 _SECTION_TEMPLATE = (
     "## Canonical facts\n\n"
+    "- Product: {product_name}\n"
     "- Canonical website: {website}\n"
     "- Datasets: {datasets_count} datasets\n"
     "- MCP server: {tools_count} read-only tools\n"
 )
+
+_DATASET_COUNT_RE = re.compile(r"\b\d+(?=[ -]datasets?\b)", re.IGNORECASE)
+_READ_ONLY_TOOL_COUNT_RE = re.compile(r"\b\d+(?=[ -]read-only[ -]tools?\b)", re.IGNORECASE)
+_TOOL_COUNT_RE = re.compile(r"\b\d+(?=[ -]tools?\b)", re.IGNORECASE)
 
 
 class InjectError(Exception):
@@ -117,13 +128,16 @@ def _load_count(root: Path, manifest: str, key: str) -> int:
     return len(items)
 
 
-def _stale_literals(datasets_count: int, tools_count: int) -> dict[str, str]:
-    """Map stale count substrings to their current replacement."""
-    mapping: dict[str, str] = {
-        "122 datasets": f"{datasets_count} datasets",
-        "12 read-only tools": f"{tools_count} read-only tools",
-    }
-    return mapping
+def _rewrite_current_counts(text: str, datasets_count: int, tools_count: int) -> str:
+    """Replace count numbers while preserving prose and compound-word forms."""
+    text = _DATASET_COUNT_RE.sub(str(datasets_count), text)
+    text = _READ_ONLY_TOOL_COUNT_RE.sub(str(tools_count), text)
+    return _TOOL_COUNT_RE.sub(str(tools_count), text)
+
+
+def _rewrite_stale_brand(text: str, product_name: str) -> str:
+    """Keep the four current derivatives on the configured public identity."""
+    return re.sub(r"\bDataPulse MY\b", product_name, text, flags=re.IGNORECASE)
 
 
 def _strip_existing_block(text: str) -> str:
@@ -181,8 +195,9 @@ def _neutralize_forbidden_claims(text: str) -> str:
     return text
 
 
-def _canonical_section(website: str, datasets_count: int, tools_count: int) -> str:
+def _canonical_section(product_name: str, website: str, datasets_count: int, tools_count: int) -> str:
     body = _SECTION_TEMPLATE.format(
+        product_name=product_name,
         website=website,
         datasets_count=datasets_count,
         tools_count=tools_count,
@@ -222,14 +237,17 @@ def inject_canonical_facts(root: Path, *, dry_run: bool = False) -> list[tuple[s
     verifier.
     """
     website = _load_website(root)
+    try:
+        product_name = load_public_surfaces(root)["product_name"]
+    except GenerationError as error:
+        raise InjectError(f"cannot read canonical product name from public-surfaces: {error}") from error
     if "www.data-pulse.my" not in website:
         raise InjectError(
             f"canonical website {website!r} does not include the www. subdomain; refusing to inject"
         )
     datasets_count = _load_count(root, "datapulse.json", "datasets")
     tools_count = _load_count(root, "mcp.json", "tools")
-    stale = _stale_literals(datasets_count, tools_count)
-    section = _canonical_section(website, datasets_count, tools_count)
+    section = _canonical_section(product_name, website, datasets_count, tools_count)
 
     results: list[tuple[str, str]] = []
     for relative in PAGES:
@@ -238,7 +256,8 @@ def inject_canonical_facts(root: Path, *, dry_run: bool = False) -> list[tuple[s
             raise InjectError(f"missing required page: {relative}")
         original = path.read_text(encoding="utf-8")
         rewritten = _strip_existing_block(original)
-        rewritten = _rewrite_stale_literals(rewritten, stale)
+        rewritten = _rewrite_stale_brand(rewritten, product_name)
+        rewritten = _rewrite_current_counts(rewritten, datasets_count, tools_count)
         rewritten = _rewrite_obsolete_url(rewritten)
         rewritten = _neutralize_forbidden_claims(rewritten)
         # Strip any trailing blank lines so we can append the section cleanly,

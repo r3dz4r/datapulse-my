@@ -4,6 +4,7 @@
   "type": "object",
   "required": [
     "schema",
+    "product_name",
     "origins",
     "pages",
     "artifacts",
@@ -12,6 +13,7 @@
   ],
   "properties": {
     "schema": {"const": "datapulse/v1/public-surfaces"},
+    "product_name": {"const": "DataPulse"},
     "origins": {
       "type": "object",
       "required": ["website", "mcp", "api", "repository"],

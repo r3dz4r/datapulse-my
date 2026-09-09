@@ -151,8 +151,8 @@ printf 'live=%s head=%s\n' "$live_count" "$head_count"
 test "$live_count" -eq "$head_count"
 ```
 
-The expected count at this revision is `389`. If the assertion fails, do not
-merge: the MCP server is stale and the manifest-count claim is false.
+The expected count is the manifest-derived value printed above. If the assertion fails, do not
+merge: the MCP server and manifest are out of sync.
 
 ## Source-to-deployment sync
 

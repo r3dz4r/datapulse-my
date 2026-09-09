@@ -15,12 +15,12 @@ ROOT = Path(__file__).resolve().parents[2]
 def _fixture(root: Path) -> None:
     (root / "config").mkdir(parents=True)
     (root / "openwiki").mkdir()
-    (root / "config/public-surfaces.json").write_text(json.dumps({"schema": "datapulse/v1/public-surfaces", "origins": {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}, "pages": ["/"], "artifacts": ["/llms.txt"], "featured_dataset_ids": ["alpha"]}), encoding="utf-8")
-    (root / "config/public-surfaces.schema.json").write_text(json.dumps({"additionalProperties": False, "properties": {"origins": {"additionalProperties": False, "properties": {"website": {"const": "https://www.data-pulse.my"}, "mcp": {"const": "https://mcp.data-pulse.my"}, "api": {"const": "https://api.data-pulse.my"}, "repository": {"const": "https://github.com/r3dz4r/datapulse-my"}}}}}), encoding="utf-8")
+    (root / "config/public-surfaces.json").write_text(json.dumps({"schema": "datapulse/v1/public-surfaces", "product_name": "DataPulse", "origins": {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}, "pages": ["/"], "artifacts": ["/llms.txt"], "featured_dataset_ids": ["alpha"]}), encoding="utf-8")
+    (root / "config/public-surfaces.schema.json").write_text(json.dumps({"additionalProperties": False, "properties": {"product_name": {"const": "DataPulse"}, "origins": {"additionalProperties": False, "properties": {"website": {"const": "https://www.data-pulse.my"}, "mcp": {"const": "https://mcp.data-pulse.my"}, "api": {"const": "https://api.data-pulse.my"}, "repository": {"const": "https://github.com/r3dz4r/datapulse-my"}}}}}), encoding="utf-8")
     (root / "datapulse.json").write_text('{"datasets":[{"id":"alpha"}]}', encoding="utf-8")
     (root / "mcp.json").write_text('{"tools":[{"name":"alpha"}]}', encoding="utf-8")
     (root / "openwiki/INSTRUCTIONS.md").write_text("https://www.data-pulse.my\n", encoding="utf-8")
-    page = "https://www.data-pulse.my\n1 datasets\n1 read-only tools\n"
+    page = "DataPulse\nhttps://www.data-pulse.my\n1 datasets\n1 read-only tools\n"
     for name in ("quickstart.md", "datasets.md", "mcp.md", "operations.md"):
         (root / "openwiki" / name).write_text(page, encoding="utf-8")
 
@@ -46,7 +46,20 @@ def test_source_only_verifier_supports_documented_invocations(command: tuple[str
     assert "OpenWiki verification passed" in completed.stdout
 
 
-@pytest.mark.parametrize("stale", ["122 datasets", "12 read-only tools", "https://data-pulse.my"])
+@pytest.mark.parametrize(
+    "stale",
+    [
+        "DataPulse MY",
+        "122 datasets",
+        "12 read-only tools",
+        "77 datasets",
+        "41 read-only tools",
+        "999-dataset",
+        "77-read-only-tool",
+        "16 tools",
+        "https://data-pulse.my",
+    ],
+)
 def test_verifier_rejects_stale_current_facts(tmp_path: Path, stale: str) -> None:
     _fixture(tmp_path)
     page = tmp_path / "openwiki/quickstart.md"

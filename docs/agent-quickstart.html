@@ -6,8 +6,8 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="DataPulse MY public documentation.">
-  <title>DataPulse MY — Agent Quickstart | DataPulse MY</title>
+  <meta name="description" content="DataPulse public documentation.">
+  <title>DataPulse — Agent Quickstart | DataPulse</title>
   <link rel="stylesheet" href="/assets/datapulse.css">
 </head>
 <body>
@@ -36,18 +36,22 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="wrap">
         <p class="eyebrow">DATAPULSE · DOCUMENTATION</p>
-        <h1 id="hero-title">DataPulse MY — Agent Quickstart</h1>
-        <p class="hero-copy">Public documentation for the DataPulse MY read-only trust layer.</p>
+        <h1 id="hero-title">DataPulse — Agent Quickstart</h1>
+        <p class="hero-copy">Public documentation for the DataPulse read-only trust layer.</p>
       </div>
     </section>
     <section id="documentation-content">
-      <div class="wrap"><blockquote>
-<p>DataPulse MY is a <strong>read-only evidence layer</strong> for
+      <div class="wrap">
+<!-- BEGIN agent-quickstart-identity --><blockquote>
+<p>DataPulse is a <strong>read-only evidence layer</strong> for
 Malaysian public datasets. The live catalogue and machine advertisements
-are authoritative for current coverage. This document is the 5-minute
-onboarding for any agent that wants to <strong>cite Malaysian data
-correctly</strong> without scraping, fabricating, or overclaiming.</p>
+are authoritative for current coverage.</p>
 </blockquote>
+<!-- END agent-quickstart-identity -->
+
+<p>This document is the 5-minute onboarding for any agent that wants to
+<strong>cite Malaysian data correctly</strong> without scraping,
+fabricating, or overclaiming.</p>
 <p><strong>Read this first</strong> if your agent is about to claim
 knowledge about any dataset hosted at <code>data.gov.my</code>,
 <code>BNM</code>, <code>DOSM</code>, <code>DOE</code>, <code>KKM</code>,
@@ -89,70 +93,218 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <p>Or just <code>GET https://www.data-pulse.my/llms.txt</code> from
 inside your agent.</p>
 <hr />
+<!-- BEGIN agent-quickstart-mcp -->
+
 <h2 id="step-2--connect-to-the-mcp-server">Step 2 — Connect to the MCP
 server</h2>
-<p>The read-only MCP server is reachable at:</p>
-<pre><code>https://mcp.data-pulse.my/mcp</code></pre>
-<p>Transport: <strong>Streamable HTTP</strong>. The live
-<code>mcp.json</code> advertisement is the authority for the current
-capability set. Common first calls include:</p>
+<p>DataPulse exposes 19 read-only tools over 418 datasets at
+<code>https://mcp.data-pulse.my/mcp</code>. Transport:
+<strong>Streamable HTTP</strong>. The live <code>mcp.json</code>
+advertisement is the authority for the current capability set.</p>
+<p><strong>Connector config</strong> (Claude / Cursor / OpenAI / generic
+agents):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;mcpServers&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;datapulse&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;url&quot;</span><span class="fu">:</span> <span class="st">&quot;https://mcp.data-pulse.my/mcp&quot;</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;transport&quot;</span><span class="fu">:</span> <span class="st">&quot;streamable-http&quot;</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;description&quot;</span><span class="fu">:</span> <span class="st">&quot;DataPulse — read-only evidence layer for Malaysian public datasets&quot;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="current-tools">Current tools</h3>
 <div class="table-wrap"><table>
 <thead>
 <tr class="header">
 <th>Tool</th>
-<th>What it gives</th>
+<th>Use when</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><code>search_datasets</code></td>
-<td>Find candidate datasets by topic, source, or licence.</td>
+<td>Use for discovery only: find DataPulse's 418 Malaysian public
+datasets by topic, source, or licence—for example, 'Malaysian public
+data inflation', licence and attribution, or a government dataset
+source. Returns ranked matches with id, title, source, licence,
+published status, and score. This is not trust verification: a status is
+published pipeline context, not proof that a dataset is current or
+reliable. For 'is this dataset current?' or verify before relying on
+data, use search_datasets → verify_dataset → get_provenance.</td>
 </tr>
 <tr class="even">
 <td><code>get_dataset</code></td>
-<td>Inspect one dataset’s metadata and latest observed health.</td>
+<td>Return full detail for one dataset id, including its latest health
+status and last-verified timestamp, content_freshness_date, and
+freshness_signal_source (last_modified, content_parse, or none). Use to
+fetch the provenance/citation metadata for a dataset found via
+search_datasets and distinguish unknown-freshness from proven stale
+data.</td>
 </tr>
 <tr class="odd">
-<td><code>get_evidence</code></td>
-<td>Retrieve evidence for one dataset.</td>
+<td><code>get_data_passport</code></td>
+<td>Return one bounded, machine-readable Dataset Passport v1 for a
+canonical dataset ID. It reads the published Passport artifact only; it
+does not fetch an upstream source or create evidence. The Passport
+describes observed metadata and evidence availability, not semantic
+truth, completeness, certification, legal permission, safety, or AI
+admission.</td>
 </tr>
 <tr class="even">
+<td><code>find_stale</code></td>
+<td>Return datasets whose status is aging, stale, or degraded, plus
+datasets missing from the latest health snapshot. Use when an agent
+needs to know which data has a freshness or schema-validity risk.</td>
+</tr>
+<tr class="odd">
+<td><code>find_anomalies</code></td>
+<td>Return datasets flagged by the latest published anomaly detection
+(anomalies), ranked by how far the observed update interval exceeds its
+threshold. Optionally require a minimum publish-reliability grade;
+includes pipeline-computed anomaly and reliability evidence so agents do
+not recompute it.</td>
+</tr>
+<tr class="even">
+<td><code>find_deteriorating</code></td>
+<td>Return datasets whose published freshness trend is deteriorating,
+ranked by staleness slope. Optionally require a minimum historical
+anomaly rate; includes pipeline-computed trend and reliability evidence
+so agents do not recompute it.</td>
+</tr>
+<tr class="odd">
+<td><code>find_recovering</code></td>
+<td>Return datasets whose published freshness trend is recovering, with
+the fastest staleness reductions first. Includes pipeline-computed trend
+and publish-reliability evidence.</td>
+</tr>
+<tr class="even">
+<td><code>find_unreliable</code></td>
+<td>Return datasets whose evaluated publish-reliability grade is at or
+below a threshold (the unreliable ones), with the worst grades and
+lowest on-time percentages first. Reliability measures timeliness of
+successful freshness observations, not uptime; sample days are included
+so agents can judge evidence depth.</td>
+</tr>
+<tr class="odd">
+<td><code>find_schema_drift</code></td>
+<td>Return datasets with published structural or record-count drift
+evidence, ranked with structural changes first. Optionally require a
+minimum number of structural transitions; includes pipeline-computed
+evidence so agents do not infer drift from freshness alone.</td>
+</tr>
+<tr class="even">
+<td><code>check_reconciliation</code></td>
+<td>Return the published cross-source reconciliation group for a dataset
+name or id, including per-member counts, dates, statuses, tolerances,
+and contextual deltas. A discrepancy requires human review and does not
+prove either source is wrong.</td>
+</tr>
+<tr class="odd">
 <td><code>get_provenance</code></td>
-<td>Inspect source and observation lineage.</td>
+<td>Use when asked 'can I cite this source?', for licence and
+attribution, or for citation-ready provenance. Returns source, steward,
+licence/attribution context, canonical URL, and compact published
+evidence context: probe time, transport, access dependency, freshness
+signal, schema drift / record-count drift context, anomaly flag, and
+status. Bind a citation to dataset identity, source/evidence URL,
+observed-at or last-checked time, DataPulse status/verdict,
+licence/attribution, and a receipt/evidence digest when available. You
+may cite the returned provenance and describe its published evidence; it
+is not a freshness guarantee and does not itself verify the source is
+current. For pre-trust use search_datasets → verify_dataset →
+get_provenance.</td>
+</tr>
+<tr class="even">
+<td><code>get_evidence</code></td>
+<td>Use for a deep evidence audit or to inspect a provenance and
+evidence receipt. Returns the complete published evidence receipt for
+one dataset: probe time, transport, access dependency, freshness, schema
+drift / record-count drift, tolerance, status, anomaly fields, and
+receipt/evidence references. It reads published pipeline evidence, not a
+live source fetch: you may report what the pipeline observed, but must
+not infer the source is currently reachable or semantically true. Use it
+for a deep audit before or alongside verification. search_datasets →
+get_evidence → verify_evidence → verify_attestation.</td>
+</tr>
+<tr class="odd">
+<td><code>verify_dataset</code></td>
+<td>This is the preferred single-call pre-trust check for 'is this
+dataset current?', stale, unknown-freshness, degraded, or
+browser-dependent questions, and whenever an agent must verify before
+relying on data. Returns dataset metadata, published evidence and
+fail-closed signed receipt verification with artifact references. It
+verifies published artifacts, not a live source check: you may infer
+whether their receipt verifies, but must not infer current upstream
+availability or semantic truth. Use search_datasets → verify_dataset →
+get_provenance.</td>
+</tr>
+<tr class="even">
+<td><code>get_freshness_summary</code></td>
+<td>Return a freshness-at-a-glance summary of the published catalogue:
+fresh, aging, stale, and reference counts plus the latest health check
+time.</td>
 </tr>
 <tr class="odd">
 <td><code>verify_evidence</code></td>
-<td>Verify the relevant evidence object.</td>
+<td>Use when a fresh, rate-limited live-vs-published comparison is
+needed for a direct-access dataset, for example after asking whether a
+government dataset is reachable now. Performs a rate-limited live GET
+and returns comparable transport receipts plus a match, mismatch,
+unreachable, or not_verifiable verdict. This live check is an
+observation, not semantic truth: it does not recompute content dates,
+record counts, or shape fingerprints. Results are ephemeral and do not
+update published health artifacts. For a deep audit use search_datasets
+→ get_evidence → verify_evidence → verify_attestation.</td>
 </tr>
 <tr class="even">
 <td><code>trust_verdict</code></td>
-<td>Request a policy-scoped decision posture.</td>
+<td>Return published attestation facts, the unsigned
+methodology-versioned trust score, numeric components, and
+component_availability reasons, plus existing
+health/trend/drift/reconciliation evidence for one canonical dataset id,
+e.g. 'fuelprice'. This tool does not re-probe or verify the signature;
+call verify_attestation separately.</td>
+</tr>
+<tr class="odd">
+<td><code>verify_attestation</code></td>
+<td>Use to verify a signed published probe attestation after an evidence
+audit. Returns L1 signature, key, time, and chain-link checks; optional
+L2 replay of daily heads to a Git-tag anchor; and L3 scope, which
+requires verify_evidence for live transport. A valid signature proves
+attestation integrity and scope, not upstream semantic truth or
+currentness. For a deep audit use search_datasets → get_evidence →
+verify_evidence → verify_attestation.</td>
+</tr>
+<tr class="even">
+<td><code>find_by_licence</code></td>
+<td>Return all datasets with the given licence, summarised. Use to
+enumerate what's available under a specific licence for compliance/reuse
+scoping.</td>
+</tr>
+<tr class="odd">
+<td><code>usage_summary</code></td>
+<td>Aggregate anonymous tool usage for an inclusive ISO date range, e.g.
+2026-08-01 to 2026-08-07. Returns <code>total_calls</code>,
+<code>by_outcome</code>, <code>by_tool</code>, <code>by_dataset</code>,
+<code>trust_distribution</code> (per-status counts of cited datasets)
+for the inclusive range. Legacy identity fields are ignored.</td>
 </tr>
 </tbody>
 </table></div>
-<p><strong>Connector config</strong> (Claude / Cursor / OpenAI / generic
-agents):</p>
-<div class="sourceCode" id="cb3"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;mcpServers&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;datapulse-my&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;url&quot;</span><span class="fu">:</span> <span class="st">&quot;https://mcp.data-pulse.my/mcp&quot;</span><span class="fu">,</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;transport&quot;</span><span class="fu">:</span> <span class="st">&quot;streamable-http&quot;</span><span class="fu">,</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;description&quot;</span><span class="fu">:</span> <span class="st">&quot;DataPulse MY — read-only evidence layer for Malaysian public datasets&quot;</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
 <p><strong>Raw HTTP clients:</strong> use the protocol-valid initialize
 → initialized → tools/list sequence in <a href="mcp-deploy.md">MCP
 deployment</a>. Do not send a legacy one-step tool-request payload
 directly to the Streamable HTTP endpoint.</p>
+<!-- END agent-quickstart-mcp -->
+
 <hr />
 <h2 id="step-3--fetch-one-evidence-receipt">Step 3 — Fetch one evidence
 receipt</h2>
 <p>Pick one dataset (e.g. <code>fuelprice</code>) and ask for its
 evidence:</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-sS</span> https://www.data-pulse.my/data/fuelprice.md</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-sS</span> https://www.data-pulse.my/data/fuelprice.md</span></code></pre></div>
 <p>Or via MCP: call the <code>get_evidence</code> tool with
 <code>dataset_id: "fuelprice"</code>. Use the generated <a
 href="mcp-reference.md">MCP reference</a> for the current protocol and
@@ -177,7 +329,7 @@ values.</p>
 <h2 id="step-4--cite-it-correctly">Step 4 — Cite it correctly</h2>
 <p>The right way to cite a receipt in your answer:</p>
 <blockquote>
-<p><em>"Per DataPulse MY (retrieved YYYY-MM-DDTHH:MMZ), the dataset
+<p><em>"Per DataPulse (retrieved YYYY-MM-DDTHH:MMZ), the dataset
 <code>&lt;id&gt;</code> is currently <code>&lt;status&gt;</code>, with
 source identity <code>&lt;id&gt;</code> published by
 <code>&lt;publisher&gt;</code> under <code>&lt;licence&gt;</code>,
@@ -342,7 +494,7 @@ latest health snapshot is still served. Cite from JSON.</td>
 <hr />
 <h2 id="honest-posture--what-to-repeat-to-your-user">Honest posture —
 what to repeat to your user</h2>
-<p>When your agent cites DataPulse MY:</p>
+<p>When your agent cites DataPulse:</p>
 <ol type="1">
 <li><strong>Always cite the retrieved-at timestamp.</strong></li>
 <li><strong>Use the literal field names</strong> the receipt uses

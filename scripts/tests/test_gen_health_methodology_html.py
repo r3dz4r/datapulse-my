@@ -16,11 +16,11 @@ def test_extract_title_and_pandoc_command(tmp_path: Path) -> None:
 
     assert renderer.extract_title(source) == "Health methodology"
     command = renderer.pandoc_command(
-        "pandoc", source, tmp_path / "template", tmp_path / "output", "Health methodology"
+        "pandoc", source, tmp_path / "template", tmp_path / "output", "Health methodology", "DataPulse"
     )
     assert command == [
         "pandoc", "--standalone", "--from=gfm", "--to=html5",
-        "--metadata=title:Health methodology", f"--template={tmp_path / 'template'}",
+        "--metadata=title:Health methodology", "--metadata=product_name:DataPulse", f"--template={tmp_path / 'template'}",
         "--output", str(tmp_path / "output"), str(source),
     ]
 

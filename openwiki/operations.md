@@ -1,7 +1,7 @@
 ---
 type: operational concept
 title: Health Operations, Release Workflows, and Safe Change Boundaries
-description: Operational ownership, health-cycle and release-build workflows, publication topology, attestation and rollback constraints, and focused verification for DataPulse MY. Use this page to choose the safe generation profile, deployment path, and failure response.
+description: Operational ownership, health-cycle and release-build workflows, publication topology, attestation and rollback constraints, and focused verification for DataPulse. Use this page to choose the safe generation profile, deployment path, and failure response.
 tags: [operations, releases, health, deployment, verification, safety]
 verified:
   - by: openwiki/0.4.3
@@ -50,9 +50,8 @@ generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:52:57.734Z" }
 
 # Health Operations, Release Workflows, and Safe Change Boundaries
 
-DataPulse MY publishes its canonical website at **https://www.data-pulse.my**. The
-current catalog contains **389 datasets** and the MCP surface advertises **16
-read-only tools**. This page describes repository-backed responsibilities and
+DataPulse publishes its canonical website at **https://www.data-pulse.my**. The
+current catalog contains **418 datasets** and the MCP surface advertises **19 read-only tools**. This page describes repository-backed responsibilities and
 verification; a definition, URL, or unit file is not evidence that external
 infrastructure is currently running.
 
@@ -293,6 +292,7 @@ is a source/pre-generation contract and does not claim a current signed binding.
 
 ## Canonical facts
 
+- Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 389 datasets
-- MCP server: 16 read-only tools
+- Datasets: 418 datasets
+- MCP server: 19 read-only tools

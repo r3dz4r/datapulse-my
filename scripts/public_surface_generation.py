@@ -17,6 +17,7 @@ PUBLIC_SURFACES_SCHEMA = "datapulse/v1/public-surfaces"
 MARKER_RE = re.compile(r"<!-- (BEGIN|END) ([a-z0-9][a-z0-9-]*) -->")
 ALLOWED_CONFIG_KEYS = {
     "schema",
+    "product_name",
     "origins",
     "pages",
     "compatibility_aliases",
@@ -95,6 +96,10 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
         raise GenerationError(f"{path}: missing key(s): {', '.join(sorted(missing))}")
     if document["schema"] != PUBLIC_SURFACES_SCHEMA:
         raise GenerationError(f"{path}: unsupported schema {document['schema']!r}")
+    product_name = document["product_name"]
+    expected_product_name = schema.get("properties", {}).get("product_name", {}).get("const")
+    if not isinstance(product_name, str) or not product_name or product_name != expected_product_name:
+        raise GenerationError(f"{path}: product_name violates canonical schema constraint")
     origins = document["origins"]
     if not isinstance(origins, dict):
         raise GenerationError(f"{path}: origins must be an object")
@@ -136,6 +141,7 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
         raise GenerationError(f"{path}: featured_dataset_ids must be a unique non-empty string array")
     return {
         "schema": document["schema"],
+        "product_name": product_name,
         "origins": validated_origins,
         "pages": pages,
         "compatibility_aliases": validated_aliases,

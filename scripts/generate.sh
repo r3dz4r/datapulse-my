@@ -139,6 +139,7 @@ case "$profile" in
       "public_surface_preflight"
       "stamp_manifest_origin.py"
       "gen_mcp_reference.py"
+      "inject_openwiki_canonical_facts.py"
       "gen_llms_summary.py"
       "gen_public_discovery.py"
       "gen_dashboard_sections.py"
@@ -173,6 +174,7 @@ case "$profile" in
       "validation only (config, schemas, source identity, and all P5A markers)"
       'datapulse.json $schema canonical origin stamp'
       "mcp.json; agent.json; docs/mcp-reference.md; llms.txt MCP tools block; README.md MCP tools block; docs/mcp-deploy.md MCP tools block"
+      "openwiki/{quickstart,datasets,mcp,operations}.md canonical facts"
       "llms.txt catalog-summary and featured-datasets blocks"
       "sitemap.xml; robots.txt public-discovery block; README.md public-discovery block; llms.txt public-discovery block"
       "docs/.dashboard_sections.json"
@@ -253,6 +255,7 @@ command_for() {
       printf 'DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" bash scripts/%s' "$1"
       ;;
     gen_json_envelope.py) printf 'python3 scripts/%s --force' "$1" ;;
+    inject_openwiki_canonical_facts.py) printf 'python3 scripts/%s --root .' "$1" ;;
     gen_health_history.py) printf 'python3 scripts/%s --compact' "$1" ;;
     gen_attestations.py) printf 'DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=... python3 scripts/%s --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"' "$1" ;;
     *.py) printf 'python3 scripts/%s' "$1" ;;
@@ -303,6 +306,11 @@ for index in "${!generators[@]}"; do
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
         env "${environment[@]}" \
         python3 "scripts/$generator" --force
+      ;;
+    inject_openwiki_canonical_facts.py)
+      DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
+        env "${environment[@]}" \
+        python3 "scripts/$generator" --root .
       ;;
     gen_health_history.py)
       if [[ -z "${DATAPULSE_ARCHIVES_DIR:-}" ]]; then

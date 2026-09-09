@@ -480,13 +480,18 @@
       "config/landing-page.json",
       "datapulse.json",
       "health.schema.json",
-      "mcp/server.py"
+      "mcp/server.py",
+      "scripts/inject_openwiki_canonical_facts.py"
     ],
     "full_outputs": [
       "mcp.json",
       "agent.json",
       "sitemap.xml",
       "docs/mcp-reference.md",
+      "openwiki/quickstart.md",
+      "openwiki/datasets.md",
+      "openwiki/mcp.md",
+      "openwiki/operations.md",
       "docs/buyer-api-reference.md",
       "docs/landing.html",
       "docs/dashboard.html",
@@ -497,6 +502,7 @@
       "llms.txt": ["catalog-summary", "mcp-tools", "public-discovery", "featured-datasets", "public-artifacts"],
       "robots.txt": ["public-discovery"],
       "docs/mcp-deploy.md": ["mcp-tools"],
+      "docs/agent-quickstart.md": ["agent-quickstart-identity", "agent-quickstart-mcp"],
       "docs/buyer-api-reference.md": ["buyer-api-host", "buyer-api-quickstart", "buyer-api-limits", "buyer-api-endpoints", "buyer-api-pagination"],
       "docs/index.html": ["dashboard-summary", "dashboard-trust-facts", "changelog-strip"],
       "docs/npra.html": ["npra-freshness", "npra-connect", "npra-surfaces"]
@@ -580,6 +586,56 @@
       "ownership": "marker-owned",
       "fixture": "scripts/tests/test_python_generators.py::test_mcp_reference_json_matches_runtime_schema",
       "invariant": "MCP runtime/tool parity and unique ordered marker replacement"
+    },
+    {
+      "surface": "docs/agent-quickstart.md",
+      "markers": ["agent-quickstart-identity", "agent-quickstart-mcp"],
+      "canonical_inputs": ["mcp/server.py", "config/public-surfaces.json", "datapulse.json", "health.schema.json"],
+      "generator": "scripts/gen_mcp_reference.py",
+      "profiles": ["release-build"],
+      "ownership": "marker-owned",
+      "fixture": "scripts/tests/test_gen_mcp_reference.py",
+      "invariant": "canonical product identity, endpoint, dataset count, and ordered live tool metadata"
+    },
+    {
+      "surface": "openwiki/quickstart.md",
+      "markers": [],
+      "canonical_inputs": ["config/public-surfaces.json", "datapulse.json", "mcp.json"],
+      "generator": "scripts/inject_openwiki_canonical_facts.py",
+      "profiles": ["release-build"],
+      "ownership": "full-output",
+      "fixture": "scripts/tests/test_inject_openwiki_canonical_facts.py",
+      "invariant": "allowlisted canonical facts injection is idempotent"
+    },
+    {
+      "surface": "openwiki/datasets.md",
+      "markers": [],
+      "canonical_inputs": ["config/public-surfaces.json", "datapulse.json", "mcp.json"],
+      "generator": "scripts/inject_openwiki_canonical_facts.py",
+      "profiles": ["release-build"],
+      "ownership": "full-output",
+      "fixture": "scripts/tests/test_inject_openwiki_canonical_facts.py",
+      "invariant": "allowlisted canonical facts injection is idempotent"
+    },
+    {
+      "surface": "openwiki/mcp.md",
+      "markers": [],
+      "canonical_inputs": ["config/public-surfaces.json", "datapulse.json", "mcp.json"],
+      "generator": "scripts/inject_openwiki_canonical_facts.py",
+      "profiles": ["release-build"],
+      "ownership": "full-output",
+      "fixture": "scripts/tests/test_inject_openwiki_canonical_facts.py",
+      "invariant": "allowlisted canonical facts injection is idempotent"
+    },
+    {
+      "surface": "openwiki/operations.md",
+      "markers": [],
+      "canonical_inputs": ["config/public-surfaces.json", "datapulse.json", "mcp.json"],
+      "generator": "scripts/inject_openwiki_canonical_facts.py",
+      "profiles": ["release-build"],
+      "ownership": "full-output",
+      "fixture": "scripts/tests/test_inject_openwiki_canonical_facts.py",
+      "invariant": "allowlisted canonical facts injection is idempotent"
     },
     {
       "surface": "docs/buyer-api-reference.md",

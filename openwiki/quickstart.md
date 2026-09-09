@@ -1,7 +1,7 @@
 ---
 type: operational concept
-title: DataPulse MY Wiki Quickstart
-description: Route coding agents through DataPulse MY’s read-only trust-layer boundary to the dataset contract, MCP integration, or operations and contribution guidance. Use this page to identify the authoritative artifact, safe change owner, and focused verification path before editing.
+title: DataPulse Wiki Quickstart
+description: Route coding agents through DataPulse’s read-only trust-layer boundary to the dataset contract, MCP integration, or operations and contribution guidance. Use this page to identify the authoritative artifact, safe change owner, and focused verification path before editing.
 tags: [quickstart, routing, read-only, datasets, MCP, operations]
 verified:
   - by: openwiki/0.4.3
@@ -36,17 +36,16 @@ sources:
 generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:52:57.734Z" }
 ---
 
-# DataPulse MY Wiki Quickstart
+# DataPulse Wiki Quickstart
 
-DataPulse MY is a read-only metadata and evidence layer around upstream public
+DataPulse is a read-only metadata and evidence layer around upstream public
 datasets. It records what an upstream source publishes, its declared licence and
 provenance, observed access and freshness signals, schema/record evidence, and
 known quirks; it is **not the official publisher**. Upstream sources remain
 authoritative for substantive data, content, licensing, and attribution.
 
 The canonical website origin is **https://www.data-pulse.my**. The current
-manifest contains **389 datasets**, and the public MCP catalogue exposes **16
-read-only tools**. Treat those as live facts from the sources of record, not as
+manifest contains **418 datasets**, and the public MCP catalogue exposes **19 read-only tools**. Treat those as live facts from the sources of record, not as
 values to copy from an older page.
 
 ## Start here: route the task
@@ -175,6 +174,7 @@ workflow, not as a reason to patch a derived JSON file manually.
 
 ## Canonical facts
 
+- Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 389 datasets
-- MCP server: 16 read-only tools
+- Datasets: 418 datasets
+- MCP server: 19 read-only tools

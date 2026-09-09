@@ -36,6 +36,9 @@ FORBIDDEN_CLAIMS = (
     "agent reputation",
     "regulatory certification",
 )
+_DATASET_COUNT_RE = re.compile(r"\b(?P<count>\d+)(?=[ -]datasets?\b)", re.IGNORECASE)
+_READ_ONLY_TOOL_COUNT_RE = re.compile(r"\b(?P<count>\d+)(?=[ -]read-only[ -]tools?\b)", re.IGNORECASE)
+_TOOL_COUNT_RE = re.compile(r"\b(?P<count>\d+)(?=[ -]tools?\b)", re.IGNORECASE)
 
 
 class VerificationError(Exception):
@@ -52,9 +55,11 @@ def _load_object(path: Path) -> dict[str, Any]:
     return value
 
 
-def _facts(root: Path) -> tuple[str, int, int]:
+def _facts(root: Path) -> tuple[str, str, int, int]:
     try:
-        website = load_public_surfaces(root)["origins"]["website"]
+        public = load_public_surfaces(root)
+        website = public["origins"]["website"]
+        product_name = public["product_name"]
     except GenerationError as error:
         raise VerificationError(str(error)) from error
     manifest = _load_object(root / "datapulse.json")
@@ -65,7 +70,11 @@ def _facts(root: Path) -> tuple[str, int, int]:
         raise VerificationError("datapulse.json must contain a non-empty datasets array")
     if not isinstance(tools, list) or not tools:
         raise VerificationError("mcp.json must contain a non-empty tools array")
-    return website, len(datasets), len(tools)
+    return product_name, website, len(datasets), len(tools)
+
+
+def _has_stale_count(text: str, current: int, pattern: re.Pattern[str]) -> bool:
+    return any(int(match.group("count")) != current for match in pattern.finditer(text))
 
 
 def _changed_paths(root: Path, base: str) -> set[str]:
@@ -93,7 +102,7 @@ def _managed_instruction_change(root: Path, base: str, relative: str) -> bool:
 
 def verify(root: Path, *, generated: bool, changed_from: str | None = None) -> None:
     """Verify canonical facts and the derivative-output ownership boundary."""
-    website, datasets, tools = _facts(root)
+    product_name, website, datasets, tools = _facts(root)
     instructions = root / "openwiki/INSTRUCTIONS.md"
     if not instructions.is_file() or website not in instructions.read_text(encoding="utf-8"):
         raise VerificationError("openwiki/INSTRUCTIONS.md must name the canonical website origin")
@@ -110,16 +119,23 @@ def verify(root: Path, *, generated: bool, changed_from: str | None = None) -> N
     missing = [path for path in sorted(REQUIRED_PAGES) if not (root / path).is_file()]
     if missing:
         raise VerificationError("missing generated OpenWiki page(s): " + ", ".join(missing))
-    required_facts = (website, f"{datasets} datasets", f"{tools} read-only tools")
+    required_facts = (product_name, website, f"{datasets} datasets", f"{tools} read-only tools")
     for relative in sorted(REQUIRED_PAGES):
         text = (root / relative).read_text(encoding="utf-8")
         folded = text.casefold()
+        if "datapulse my" in folded:
+            raise VerificationError(f"{relative} uses the obsolete public product name")
         if "https://data-pulse.my" in text:
             raise VerificationError(f"{relative} uses the obsolete apex website origin")
         if any(claim in folded for claim in FORBIDDEN_CLAIMS):
             raise VerificationError(f"{relative} contains an unsupported claim")
-        if "122 datasets" in folded or "12 read-only tools" in folded:
-            raise VerificationError(f"{relative} contains stale current facts")
+        if _has_stale_count(text, datasets, _DATASET_COUNT_RE):
+            raise VerificationError(f"{relative} contains stale dataset count facts")
+        stale_tool_count = _has_stale_count(text, tools, _READ_ONLY_TOOL_COUNT_RE) or _has_stale_count(
+            text, tools, _TOOL_COUNT_RE
+        )
+        if stale_tool_count:
+            raise VerificationError(f"{relative} contains stale MCP tool count facts")
         if not all(fact in text for fact in required_facts):
             raise VerificationError(f"{relative} is missing canonical current facts")
 

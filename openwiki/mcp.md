@@ -1,7 +1,7 @@
 ---
 type: "Reference"
 title: "Read-only MCP and Buyer API Integrations"
-description: "Reference for DataPulse MY's unauthenticated read-only MCP contract, published-artifact flow, deployment verification, and the separate authenticated buyer API, billing, quota, and NPRA boundary."
+description: "Reference for DataPulse's unauthenticated read-only MCP contract, published-artifact flow, deployment verification, and the separate authenticated buyer API, billing, quota, and NPRA boundary."
 tags: ["MCP", "buyer API", "integrations", "billing", "deployment"]
 verified:
   - by: openwiki/0.4.3
@@ -44,12 +44,12 @@ generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:52:57.734Z" }
 
 # Read-only MCP and Buyer API Integrations
 
-DataPulse MY has two deliberately separate integration surfaces:
+DataPulse has two deliberately separate integration surfaces:
 
 - **Public MCP:** `POST https://mcp.data-pulse.my/mcp`, unauthenticated, for reading the published Malaysian catalogue and its derived evidence artifacts.
 - **Buyer API:** `https://api.data-pulse.my/api/v1/`, authenticated with `X-API-Key`, for operational access, billing lifecycle, and the paid NPRA proxy.
 
-The canonical website origin is **https://www.data-pulse.my**. The current catalogue contains **389 datasets** and the MCP advertisement describes **16 read-only tools**. `mcp.json` is the generated wire-level advertisement, while `mcp/server.py` is the implementation contract; current source and tests take precedence over older documentation.
+The canonical website origin is **https://www.data-pulse.my**. The current catalogue contains **418 datasets** and the MCP advertisement describes **19 read-only tools**. `mcp.json` is the generated wire-level advertisement, while `mcp/server.py` is the implementation contract; current source and tests take precedence over older documentation.
 
 ## Public MCP contract
 
@@ -79,7 +79,7 @@ sequenceDiagram
 
 All tools advertise `readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`, and `openWorldHint: true`. FastMCP applies a public five-minute cache hint (`ttl_ms: 300000`, scope `public`) to discovery and cacheable resource results. Tool calls are logged with bounded, credential-redacted arguments and a result summary; usage records are written as daily JSONL under `DATAPULSE_USAGE_DIR` (default `/var/lib/datapulse/usage`). This ledger is for usage reporting, not a data mutation path.
 
-### The 16 read-only tools
+### The 19 read-only tools
 
 The authoritative list and schemas are in `mcp.json`:
 
@@ -94,7 +94,7 @@ The authoritative list and schemas are in `mcp.json`:
 | `find_unreliable` | Return low publish-reliability grades; reliability means timeliness of successful freshness observations, not uptime. |
 | `find_schema_drift` | Return published structural or record-count drift, optionally requiring structural transitions. |
 | `check_reconciliation` | Resolve a dataset ID or exact name to its published cross-source group; discrepancies require human review and do not prove which source is wrong. |
-| `get_provenance` | Return citation metadata and compact pipeline evidence for 1–50 dataset IDs. |
+| `get_provenance` | Return citation metadata and compact pipeline evidence for 1–418 dataset IDs. |
 | `get_evidence` | Return the complete published evidence receipt without MCP-side recomputation. |
 | `verify_evidence` | Perform a constrained ephemeral transport check for one direct-access dataset. |
 | `trust_verdict` | Join published attestation facts, unsigned methodology-versioned score, and existing health/trend/drift/reconciliation evidence; it does not verify signatures or re-probe. |
@@ -106,7 +106,7 @@ The authoritative list and schemas are in `mcp.json`:
 
 The server exposes eight fixed JSON resources and one template, as advertised by `mcp.json`:
 
-- `datapulse://index` — lightweight ID, status, title, source, licence, and namespace index for all 389 datasets.
+- `datapulse://index` — lightweight ID, status, title, source, licence, and namespace index for all 418 datasets.
 - `datapulse://anomalies` — current anomaly results.
 - `datapulse://trends` — freshness trend and publish-reliability artifact.
 - `datapulse://reliability` — counts by reliability grade.
@@ -142,7 +142,7 @@ uv run --with fastmcp,httpx python mcp/server.py
 
 The local defaults are `DATA_BASE=https://www.data-pulse.my`, `MCP_HOST=127.0.0.1`, and `MCP_PORT=8788`; `REQUEST_TIMEOUT_SECONDS` is 30. The release process updates the source marker using `scripts/bump_mcp_source_version.py`. To verify a deployment, `scripts/verify_mcp_deployment.py` performs the protocol-valid initialize/initialized/tools-list sequence, reads `serverInfo.source_commit_sha`, and compares it with `git rev-parse HEAD`. It reports `UNREACHABLE` when the endpoint cannot be inspected and `MISMATCH` when source and deployment differ; a successful discovery is not proof that every published artifact is current.
 
-Focused MCP tests use FastMCP's in-memory client plus checked-in/live artifacts. They assert the current protocol, all 16 tools, eight resources and one template, cache hints, read-only annotations, tool parameter contracts, evidence limitations, attestation tamper rejection, drift/reconciliation behavior, and live-artifact matching. Network access is required for the live portions:
+Focused MCP tests use FastMCP's in-memory client plus checked-in/live artifacts. They assert the current protocol, all 19 tools, eight resources and one template, cache hints, read-only annotations, tool parameter contracts, evidence limitations, attestation tamper rejection, drift/reconciliation behavior, and live-artifact matching. Network access is required for the live portions:
 
 ```sh
 uv run --with fastmcp,httpx pytest mcp/tests/ -v
@@ -210,10 +210,11 @@ python3 -m unittest scripts/tests/test_buyer_api.py scripts/tests/test_npra_paid
 
 Use `/openwiki/datasets.md` for catalogue semantics and `/openwiki/operations.md` for health-generation operations. This page is the integration boundary: MCP is public, read-only, and artifact-backed; the buyer API is authenticated, audited, rate-limited, and owns paid entitlement state. Neither boundary should be widened by adding secrets, browser-dependent probing, MCP-side health writes, or direct exposure of the NPRA engine.
 
-Canonical facts: **https://www.data-pulse.my**, **389 datasets**, and **16 read-only tools**.
+Canonical facts: **https://www.data-pulse.my**, **418 datasets**, and **19 read-only tools**.
 
 ## Canonical facts
 
+- Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 389 datasets
-- MCP server: 16 read-only tools
+- Datasets: 418 datasets
+- MCP server: 19 read-only tools
