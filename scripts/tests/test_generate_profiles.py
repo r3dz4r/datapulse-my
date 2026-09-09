@@ -277,7 +277,7 @@ def _stage_source(tmp_path: Path) -> Path:
         ),
         "docs/learn.html": (
             ("418 datasets", "2 datasets"),
-            ("18 read-only tools", "0 read-only tools"),
+            ("19 read-only tools", "0 read-only tools"),
         ),
     }.items():
         path = source / relative
