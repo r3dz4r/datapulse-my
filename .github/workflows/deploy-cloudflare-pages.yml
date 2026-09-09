@@ -474,8 +474,24 @@ jobs:
           test ! -e _site/_redirects
           test -s _site/health/latest.json
 
+      - name: Record deterministic release artifact manifest
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify_release_artifact.py create \
+            --site _site \
+            --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
+            --source-commit "$GITHUB_SHA"
+
       - name: Install preview release invariant dependencies
         run: python -m pip install jsonschema --requirement mcp/requirements.txt
+
+      - name: Verify release artifact before preview deployment
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify_release_artifact.py verify \
+            --site _site \
+            --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
+            --source-commit "$GITHUB_SHA"
 
       - name: Deploy isolated Cloudflare Pages preview artifact
         id: deploy_preview
@@ -504,6 +520,22 @@ jobs:
             --sigstore-publication "$RUNNER_TEMP/sigstore-publication" \
             --source-commit "$GITHUB_SHA" \
             --cosign "$(command -v cosign || true)"
+
+      - name: Verify release artifact after preview served verification
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify_release_artifact.py verify \
+            --site _site \
+            --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
+            --source-commit "$GITHUB_SHA"
+
+      - name: Verify release artifact before canonical production deployment
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify_release_artifact.py verify \
+            --site _site \
+            --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
+            --source-commit "$GITHUB_SHA"
 
       - name: Deploy canonical Cloudflare Pages artifact
         id: deploy

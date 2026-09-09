@@ -493,6 +493,68 @@ def test_native_pages_stages_and_verifies_the_assembled_artifact_before_producti
     )
 
 
+def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manifest() -> None:
+    """No `_site` generation may occur after its temp-only inventory is recorded."""
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    manifest_create_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Record deterministic release artifact manifest"
+    )
+    preview_verify_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Verify release artifact before preview deployment"
+    )
+    preview_served_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Verify isolated Pages preview before production promotion"
+    )
+    post_preview_verify_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Verify release artifact after preview served verification"
+    )
+    promotion_verify_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Verify release artifact before canonical production deployment"
+    )
+    production_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Deploy canonical Cloudflare Pages artifact"
+    )
+
+    assert manifest_create_index == next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Assemble canonical Pages artifact"
+    ) + 1
+    assert preview_verify_index < next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Deploy isolated Cloudflare Pages preview artifact"
+    )
+    assert preview_served_index + 1 == post_preview_verify_index
+    assert post_preview_verify_index + 1 == promotion_verify_index
+    assert promotion_verify_index + 1 == production_index
+
+    manifest_path = '"$RUNNER_TEMP/release-artifact-manifest.json"'
+    lifecycle_indices = (
+        manifest_create_index,
+        preview_verify_index,
+        post_preview_verify_index,
+        promotion_verify_index,
+    )
+    for index in lifecycle_indices:
+        run = steps[index]["run"]
+        assert "python3 scripts/verify_release_artifact.py" in run
+        assert manifest_path in run
+        assert '--source-commit "$GITHUB_SHA"' in run
+    assert " create " in steps[manifest_create_index]["run"]
+    assert all(" verify " in steps[index]["run"] for index in lifecycle_indices[1:])
+
+    for step in steps[manifest_create_index + 1 :]:
+        run = step.get("run", "")
+        assert "scripts/generate.sh" not in run
+        assert "scripts/embed_dashboard_data.py" not in run
+        assert "scripts/gen_" not in run
+
+
 def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() -> None:
     workflow = _workflow()
     verify = _served_verifier()
