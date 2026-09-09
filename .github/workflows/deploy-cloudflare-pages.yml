@@ -26,8 +26,9 @@ permissions:
   contents: read
 
 concurrency:
-  # Every production candidate serializes through the same promotion lane.
-  # Deployment mode is decided solely by the checked output-path classifier.
+  # Every production candidate, including health-only candidates, shares one
+  # non-cancelable promotion lane. This prevents a stale health run from
+  # promoting after a newer source release.
   group: cloudflare-pages-production
   cancel-in-progress: false
 
@@ -50,71 +51,7 @@ jobs:
           echo "health_only=false" >> "$GITHUB_OUTPUT"
           [[ "${GITHUB_EVENT_NAME}" == "push" ]] || exit 0
           git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null || exit 0
-          changed="$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA")"
-          # Health-cycle generators own only the exact generated files and shapes
-          # below. Any other path,
-          # including a source or workflow change, must use the release profile.
-          if HEALTH_CYCLE_CHANGED_PATHS="$changed" python3 - <<'PY'
-          from __future__ import annotations
-
-          import os
-
-
-          paths = [path for path in os.environ["HEALTH_CYCLE_CHANGED_PATHS"].splitlines() if path]
-          root_outputs = {
-              "catalog-graph.json",
-              "catalog-snapshot.json",
-              "changelog.json",
-              "feed.xml",
-          }
-          health_outputs = {
-              "health/latest.json",
-              "health/history.jsonl",
-              "health/history_daily.json",
-              "health/trends.json",
-              "health/drift.json",
-              "health/reconciliation.json",
-              "health/evidence-coverage.json",
-          }
-          latest_attestation_outputs = {
-              "attestations/latest/binding.json",
-              "attestations/latest/chain_head.json",
-              "attestations/latest/index.json",
-              "attestations/latest/scores.json",
-          }
-
-
-          def is_health_cycle_output(path: str) -> bool:
-              parts = path.split("/")
-              if any(part in {"", ".", ".."} for part in parts):
-                  return False
-              if path in health_outputs:
-                  return True
-              if (
-                  len(parts) == 3
-                  and parts[0] == "record-evidence"
-                  and parts[1]
-                  and parts[2] == "latest.json"
-              ):
-                  return True
-              if path in latest_attestation_outputs:
-                  return True
-              if path == ".attestations/chain_head.json":
-                  return True
-              if len(parts) == 3 and parts[:2] == [".attestations", "latest"] and parts[2].endswith(".json"):
-                  return True
-              if len(parts) == 2 and parts[0] == "deltas" and parts[1].endswith(".json"):
-                  return True
-              return path in root_outputs
-
-
-          raise SystemExit(
-              0
-              if "health/latest.json" in paths and paths and all(is_health_cycle_output(path) for path in paths)
-              else 1
-          )
-          PY
-          then
+          if git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" | python3 scripts/classify_change.py; then
             echo "health_only=true" >> "$GITHUB_OUTPUT"
           fi
 

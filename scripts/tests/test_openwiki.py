@@ -66,7 +66,9 @@ def test_workflow_uses_locked_local_runtime_and_pr_only_contract() -> None:
     assert "peter-evans/create-pull-request" in workflow
     assert "git push" not in workflow
     assert "continue-on-error" not in workflow and "|| true" not in workflow
-    assert '"!openwiki/**"' in workflow
+    # OpenWiki is intentionally manual/weekly, never a production-push dependency.
+    on_block = workflow.split("on:\n", 1)[1].split("\njobs:", 1)[0]
+    assert "push" not in {key.strip() for key in [line.split(":", 1)[0] for line in on_block.splitlines() if ":" in line]}
 
 
 def test_normal_ci_runs_source_verifier_without_a_bypass() -> None:

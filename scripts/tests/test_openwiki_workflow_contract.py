@@ -20,10 +20,8 @@ def _workflow_on(workflow: dict[object, object]) -> dict[str, object]:
 def test_openwiki_triggers_are_manual_or_weekly_and_exclude_health_cycles() -> None:
     workflow = yaml.safe_load(OPENWIKI_WORKFLOW.read_text(encoding="utf-8"))
     triggers = _workflow_on(workflow)
-    push = triggers.get("push", {})
-    paths = push.get("paths", []) if isinstance(push, dict) else []
 
-    assert "health/latest.json" not in paths
+    assert "push" not in triggers
     assert "workflow_dispatch" in triggers
     assert triggers.get("schedule") == [{"cron": "0 8 * * 1"}]
 

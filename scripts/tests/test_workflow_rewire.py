@@ -14,6 +14,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from scripts.classify_change import is_health_only_change
+
 from scripts import gen_attestations as ga
 from scripts.tests.test_attestations import fixture_rekor_reference, fixture_root, write
 from scripts.verify_attestation_binding import verify_contract
@@ -122,6 +124,8 @@ def test_cloudflare_workflow_permissions_and_concurrency_are_not_broadened() -> 
     assert workflow["permissions"] == {"contents": "read"}
     assert concurrency["group"] == "cloudflare-pages-production"
     assert concurrency["cancel-in-progress"] is False
+    assert "concurrency" not in workflow["jobs"]["sign_health"]
+    assert "concurrency" not in workflow["jobs"]["deploy"]
     assert "[skip deploy]" not in _read(DEPLOY_WORKFLOW)
 
 
@@ -390,54 +394,12 @@ def test_cloudflare_health_only_classifier_is_scoped_to_pipeline_outputs() -> No
     workflow = _read(DEPLOY_WORKFLOW)
     classifier = workflow.split("      - id: classify\n", 1)[1].split("\n  sign_health:", 1)[0]
 
-    assert 'health_outputs = {' in classifier
-    assert '"health/latest.json" in paths' in classifier
-    for path in (
-        "health/latest.json",
-        "health/history.jsonl",
-        "health/history_daily.json",
-        "health/trends.json",
-        "health/drift.json",
-        "health/reconciliation.json",
-        "health/evidence-coverage.json",
-        "attestations/latest/binding.json",
-        "attestations/latest/chain_head.json",
-        "attestations/latest/index.json",
-        "attestations/latest/scores.json",
-        "catalog-graph.json",
-        "catalog-snapshot.json",
-        "changelog.json",
-        "feed.xml",
-    ):
-        assert f'"{path}"' in classifier
-    assert 'parts[0] == "record-evidence"' in classifier
-    assert 'parts[2] == "latest.json"' in classifier
-    assert 'parts[:2] == [".attestations", "latest"]' in classifier
-    assert 'parts[0] == "deltas"' in classifier
-    assert 'parts[1].endswith(".json")' in classifier
-    assert 'path == ".attestations/chain_head.json"' in classifier
-    assert 'any(part in {"", ".", ".."} for part in parts)' in classifier
-    assert 'path.startswith("health/")' not in classifier
-    assert 'path.startswith("attestations/latest/")' not in classifier
-    assert 'all(is_health_cycle_output(path) for path in paths)' in classifier
+    assert "python3 scripts/classify_change.py" in classifier
+    assert "python3 - <<'PY'" not in classifier
+    assert "HEALTH_CYCLE_CHANGED_PATHS" not in classifier
 
-    classifier_program = "from __future__ import annotations\n" + textwrap.dedent(
-        workflow.split("          from __future__ import annotations\n", 1)[1].split(
-            "          PY\n", 1
-        )[0]
-    )
-
-    def classify(paths: list[str]) -> int:
-        environment = os.environ.copy()
-        environment["HEALTH_CYCLE_CHANGED_PATHS"] = "\n".join(paths)
-        return subprocess.run(
-            ["python3", "-c", classifier_program],
-            env=environment,
-            check=False,
-        ).returncode
-
-    assert classify(
-        [
+    assert is_health_only_change(
+        (
             "health/latest.json",
             "health/trends.json",
             "record-evidence/dosm/latest.json",
@@ -446,8 +408,8 @@ def test_cloudflare_health_only_classifier_is_scoped_to_pipeline_outputs() -> No
             ".attestations/chain_head.json",
             "deltas/2026-09-08.json",
             "catalog-snapshot.json",
-        ]
-    ) == 0
+        )
+    )
     for rejected_path in (
         "health/../latest.json",
         "health/unrelated.json",
@@ -457,7 +419,30 @@ def test_cloudflare_health_only_classifier_is_scoped_to_pipeline_outputs() -> No
         "deltas/2026-09-08.txt",
         "scripts/embed_dashboard_data.py",
     ):
-        assert classify(["health/latest.json", rejected_path]) == 1
+        assert not is_health_only_change(("health/latest.json", rejected_path))
+
+
+def test_health_and_source_candidates_share_the_non_cancelable_promotion_lane() -> None:
+    workflow = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+
+    assert workflow["concurrency"] == {
+        "group": "cloudflare-pages-production",
+        "cancel-in-progress": False,
+    }
+    for job_name in ("classify", "sign_health", "deploy"):
+        assert "concurrency" not in workflow["jobs"][job_name]
+
+
+def test_ci_and_release_please_delegate_health_path_decisions_to_shared_classifier() -> None:
+    ci = _read(ROOT / ".github/workflows/ci.yml")
+    release_please = _read(ROOT / ".github/workflows/release-please.yml")
+
+    for workflow in (ci, release_please):
+        assert workflow.count("python3 scripts/classify_change.py") == 1
+        assert "git diff --name-only" in workflow
+    assert "health-integrity:" in ci
+    assert "needs.classify.outputs.health_only == 'true'" in ci
+    assert "if: needs.classify.outputs.health_only != 'true'" in release_please
 
 
 def test_cloudflare_full_release_keeps_fresh_cryptographic_verification() -> None:

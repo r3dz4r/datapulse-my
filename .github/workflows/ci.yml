@@ -13,7 +13,31 @@ env:
   DOTFILES_DIR: /home/runner/work/datapulse-my/datapulse-my/.dotfiles
 
 jobs:
+  classify:
+    name: Classify changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      health_only: ${{ steps.classify.outputs.health_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: classify
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          echo "health_only=false" >> "$GITHUB_OUTPUT"
+          [[ "${GITHUB_EVENT_NAME}" == "push" ]] || exit 0
+          git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null || exit 0
+          if git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" | python3 scripts/classify_change.py; then
+            echo "health_only=true" >> "$GITHUB_OUTPUT"
+          fi
+
   deterministic-safety-net:
+    needs: classify
+    if: github.event_name == 'pull_request' || needs.classify.outputs.health_only != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -115,3 +139,25 @@ jobs:
 
       - name: Lint current documentation facts
         run: python3 scripts/fact_lint.py
+
+  health-integrity:
+    needs: classify
+    if: github.event_name == 'push' && needs.classify.outputs.health_only == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install health integrity dependencies
+        run: python3 -m pip install jsonschema
+
+      - name: Validate health snapshot and attestation lineage
+        run: |
+          python3 -m jsonschema -i health/latest.json health.schema.json
+          python3 scripts/verify_chain_linearity.py

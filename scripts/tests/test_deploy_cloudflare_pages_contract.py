@@ -6,11 +6,12 @@ import re
 import os
 from pathlib import Path
 import subprocess
-import sys
 import textwrap
 
 import pytest
 import yaml
+
+from scripts.classify_change import is_health_only_change
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,24 +27,8 @@ def _served_verifier() -> str:
     return SERVED_VERIFIER.read_text(encoding="utf-8")
 
 
-def _health_cycle_classifier() -> str:
-    """Return the workflow's path classifier as an executable Python fixture."""
-    classify = _workflow().split("      - id: classify\n", 1)[1].split("\n  deploy:\n", 1)[0]
-    match = re.search(r"python3 - <<'PY'\n(?P<script>.*?)\n\s*PY", classify, re.DOTALL)
-    assert match is not None, "the health-cycle classifier must be executable and contract-tested"
-    return textwrap.dedent(match.group("script"))
-
-
 def _classifies_as_health_only(paths: tuple[str, ...]) -> bool:
-    result = subprocess.run(
-        [sys.executable, "-c", _health_cycle_classifier()],
-        check=False,
-        env={**os.environ, "HEALTH_CYCLE_CHANGED_PATHS": "\n".join(paths)},
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode in (0, 1), result.stderr
-    return result.returncode == 0
+    return is_health_only_change(paths)
 
 
 def _alias_helper() -> str:
@@ -139,7 +124,8 @@ def test_health_only_path_is_selected_only_by_the_generated_output_classifier() 
     """Commit messages must not choose a production deployment security mode."""
     workflow = _workflow()
 
-    assert '"health/latest.json"' in workflow
+    classify = workflow.split("      - id: classify\n", 1)[1].split("\n  sign_health:\n", 1)[0]
+    assert "python3 scripts/classify_change.py" in classify
     assert "skip deploy" not in workflow.lower()
     assert "head_commit.message" not in workflow
     assert "Embed canonical health dashboard (health-only path)" in workflow
@@ -148,6 +134,17 @@ def test_health_only_path_is_selected_only_by_the_generated_output_classifier() 
     deploy_job = workflow.split("  deploy:\n", 1)[1].split("    steps:\n", 1)[0]
     assert "if:" not in deploy_job
     assert "Deploy canonical Cloudflare Pages artifact" in workflow
+
+
+def test_pages_concurrency_serializes_all_production_candidates() -> None:
+    workflow = yaml.safe_load(_workflow())
+
+    assert workflow["concurrency"] == {
+        "group": "cloudflare-pages-production",
+        "cancel-in-progress": False,
+    }
+    assert "concurrency" not in workflow["jobs"]["sign_health"]
+    assert "concurrency" not in workflow["jobs"]["deploy"]
 
 
 def test_attestation_state_machine_fails_closed_outside_health_only_signer_degradation() -> None:

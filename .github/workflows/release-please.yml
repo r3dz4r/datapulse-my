@@ -4,22 +4,6 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "health/**"
-      - "badges/**"
-      - "deltas/**"
-      - "record-evidence/**"
-      - "feed.xml"
-      - "data/**"
-      - "changelog.json"
-      - "catalog-snapshot.json"
-      - "catalog-graph.json"
-      - "attestations/**"
-      # README.md stays NOT ignored: an operator doc/README edit is a real
-      # release intent. Only the regenerated outputs above (and health/badges/
-      # deltas/data) are pure pipeline results and must not fire Release Please.
-      # Without these, every chore(health) tick re-runs release-please and
-      # exhausts the GitHub App installation rate limit (~60 req/hr).
 
 # Cancel in-flight runs when a new push lands. Without this, a burst of
 # timer pushes (every ~5 min) spawns parallel release-please runs that
@@ -37,7 +21,30 @@ permissions:
   pull-requests: write
 
 jobs:
+  classify:
+    name: Classify changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      health_only: ${{ steps.classify.outputs.health_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: classify
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          echo "health_only=false" >> "$GITHUB_OUTPUT"
+          git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null || exit 0
+          if git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" | python3 scripts/classify_change.py; then
+            echo "health_only=true" >> "$GITHUB_OUTPUT"
+          fi
+
   release-please:
+    needs: classify
+    if: needs.classify.outputs.health_only != 'true'
     runs-on: ubuntu-latest
     steps:
       - id: release
