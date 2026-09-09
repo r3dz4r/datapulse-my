@@ -62,7 +62,7 @@ unreachable | unknown | unknown_freshness | reference`).
 | Freshness classification | 10-status taxonomy (listed above) |
 | Access | read-only, no auth, public |
 | MCP endpoint | `https://mcp.data-pulse.my/mcp` |
-| MCP tools | 18 read-only tools (canonical list in `mcp.json`) |
+| MCP tools | 19 read-only tools (canonical list in `mcp.json`) |
 
 ---
 
@@ -85,7 +85,7 @@ For the full freshness methodology and the meaning of each status, see
 
 ## 3. Tour of the core capabilities
 
-The MCP server exposes 18 read-only tools in four clusters. For each, this
+The MCP server exposes 19 read-only tools in four clusters. For each, this
 section shows the call and explains the **shape** of what comes back — every
 value is an illustration of structure, not a current claim. Read the
 [MCP reference](https://www.data-pulse.my/mcp-reference.html) for exact schemas
@@ -221,7 +221,7 @@ That is the whole shape of a defensible answer: **find → inspect → verify.**
 ## 5. Where to go next
 
 - [MCP reference](https://www.data-pulse.my/mcp-reference.html) — the generated
-  schema and signature for every one of the 18 tools; the exact field semantics.
+  schema and signature for every one of the 19 tools; the exact field semantics.
 - [Live health](https://www.data-pulse.my/health/latest.json) — the current
   freshness snapshot these tools read (and no-auth, so you can compare tool
   output to the raw JSON).
