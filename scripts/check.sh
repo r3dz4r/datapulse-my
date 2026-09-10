@@ -1715,9 +1715,11 @@ build_health_snapshot() {
           or (($expected_record_count | type) == "number"
             and ($probe.record_count | type) == "number"
             and $probe.record_count < $expected_record_count)) as $incomplete
-      | (($expected_record_count | type) == "number"
-          and ($probe.record_count | type) == "number"
-          and $probe.record_count >= ($expected_record_count * 0.5)) as $within_tolerance
+      | (if ($expected_record_count | type) == "number"
+            and ($probe.record_count | type) == "number" then
+           $probe.record_count >= ($expected_record_count * 0.5)
+         else null
+         end) as $within_tolerance
       | ([$probe.http_status, $probe.last_modified, $probe.content_freshness_date,
           $probe.first_record_timestamp, $probe.snapshot_chars, $probe.record_count,
           $probe.timestamp, $probe.header_timestamp, $probe.newest_vehicle_timestamp]
