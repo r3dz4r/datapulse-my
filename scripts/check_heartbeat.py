@@ -19,6 +19,7 @@ STAGES = {
     "deltas",
     "validate",
     "publish",
+    "passports",
     "mcp-sync",
     "attestation-score",
     "evidence",
