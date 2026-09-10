@@ -31,6 +31,7 @@ from fastmcp import FastMCP
 from fastmcp.server.middleware import Middleware
 from mcp.types import Icon, Implementation as MCPImplementation, ToolAnnotations
 from pydantic import Field
+from starlette.middleware import Middleware as StarletteMiddleware
 from fastmcp.tools import FunctionTool
 from typing_extensions import Annotated
 
@@ -262,6 +263,11 @@ class HTTPRequestCorrelationMiddleware:
                     except Exception:
                         pass
             HTTP_REQUEST_ID.reset(token)
+
+
+# FastMCP passes HTTP middleware through to Starlette, whose application
+# builder requires wrapper entries rather than bare ASGI middleware classes.
+HTTP_MIDDLEWARE = [StarletteMiddleware(HTTPRequestCorrelationMiddleware)]
 
 
 class ToolUsageLoggingMiddleware(Middleware):
@@ -2330,5 +2336,5 @@ if __name__ == "__main__":
         transport="http",
         host=MCP_HOST,
         port=MCP_PORT,
-        middleware=[HTTPRequestCorrelationMiddleware],
+        middleware=HTTP_MIDDLEWARE,
     )

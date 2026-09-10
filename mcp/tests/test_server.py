@@ -9,6 +9,8 @@ import re
 import sys
 import asyncio
 import httpx
+import subprocess
+import textwrap
 from datetime import datetime, timezone
 from importlib.metadata import version as package_version
 from pathlib import Path
@@ -893,6 +895,45 @@ async def test_http_correlation_resets_context_after_app_error(
     ]
     assert len(http_logs) == 1
     assert json.loads(http_logs[0].partition(":")[2].lstrip())["status"] == 500
+
+
+def test_installed_runtime_http_app_starts_with_starlette_middleware_wrapper() -> None:
+    """Use the deployed venv to guard FastMCP's Starlette middleware contract."""
+    production_python = Path("/home/redza/.local/share/datapulse-mcp/venv/bin/python")
+    script = textwrap.dedent(
+        """
+        import asyncio
+        import re
+        import sys
+        from pathlib import Path
+
+        import httpx
+
+        sys.path.insert(0, str(Path.cwd() / "mcp"))
+        import server
+
+        async def check() -> None:
+            app = server.mcp.http_app(middleware=server.HTTP_MIDDLEWARE)
+            async with app.router.lifespan_context(app):
+                transport = httpx.ASGITransport(app=app)
+                async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+                    response = await client.get("/mcp")
+            assert response.status_code < 500
+            assert response.status_code not in {401, 403}
+            assert "www-authenticate" not in response.headers
+            assert re.fullmatch(r"[0-9a-f]{32}", response.headers["x-datapulse-request-id"])
+
+        asyncio.run(check())
+        """
+    )
+    result = subprocess.run(
+        [str(production_python), "-c", script],
+        cwd=REPO_DIR,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_identity(
