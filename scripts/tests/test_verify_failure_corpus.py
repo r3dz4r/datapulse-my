@@ -89,6 +89,7 @@ def test_field_missing_fails(tmp_path: Path, history: list[dict[str, object]]) -
     assert any("missing required fields" in error for error in errors)
 
 
+@SKIP_NO_HISTORY
 def test_duplicate_observation_key_requires_distinct_cycles(
     tmp_path: Path, history: list[dict[str, object]]
 ) -> None:
@@ -112,6 +113,7 @@ def test_duplicate_observation_key_requires_distinct_cycles(
     assert any("duplicate observation key" in error for error in errors)
 
 
+@SKIP_NO_HISTORY
 def test_zero_vehicle_outside_off_peak_requires_successful_observation(
     tmp_path: Path, history: list[dict[str, object]]
 ) -> None:
