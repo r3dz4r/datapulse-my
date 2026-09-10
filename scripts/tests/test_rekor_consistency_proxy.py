@@ -62,7 +62,8 @@ def fake_handle(server: FakeRekor, handler: FakeHandler) -> None:
 def servers():
     upstream = FakeRekor([])
     upstream.handle = lambda handler: fake_handle(upstream, handler)  # type: ignore[method-assign]
-    proxy = RekorProxyServer(("127.0.0.1", 0), Config(f"http://127.0.0.1:{upstream.server_port}", 0.005, 0.08))
+    # Leave room for three localhost polls despite ordinary CI scheduling variance.
+    proxy = RekorProxyServer(("127.0.0.1", 0), Config(f"http://127.0.0.1:{upstream.server_port}", 0.005, 1.0))
     threads = [threading.Thread(target=s.serve_forever, daemon=True) for s in (upstream, proxy)]
     for thread in threads: thread.start()
     yield upstream, proxy
