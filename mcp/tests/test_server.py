@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import base64
 import hashlib
+import os
 import re
 import sys
 import asyncio
@@ -898,8 +899,14 @@ async def test_http_correlation_resets_context_after_app_error(
 
 
 def test_installed_runtime_http_app_starts_with_starlette_middleware_wrapper() -> None:
-    """Use the deployed venv to guard FastMCP's Starlette middleware contract."""
+    """Use the production venv, or CI's runner, to guard the startup contract."""
     production_python = Path("/home/redza/.local/share/datapulse-mcp/venv/bin/python")
+    if production_python.is_file() and os.access(production_python, os.X_OK):
+        runtime_python = production_python
+        runtime_description = "production virtualenv"
+    else:
+        runtime_python = Path(sys.executable)
+        runtime_description = "current test runner fallback"
     script = textwrap.dedent(
         """
         import asyncio
@@ -927,13 +934,13 @@ def test_installed_runtime_http_app_starts_with_starlette_middleware_wrapper() -
         """
     )
     result = subprocess.run(
-        [str(production_python), "-c", script],
+        [str(runtime_python), "-c", script],
         cwd=REPO_DIR,
         text=True,
         capture_output=True,
         check=False,
     )
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 0, f"{runtime_description} failed: {result.stderr}"
 
 
 async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_identity(
