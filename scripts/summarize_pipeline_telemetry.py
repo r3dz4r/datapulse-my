@@ -23,6 +23,7 @@ STAGES = frozenset(
         "publish",
         "mcp-sync",
         "attestation-score",
+        "passports",
         "evidence",
         "sigstore-request",
     }
