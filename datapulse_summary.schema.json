@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataPulse public summary",
+  "type": "object",
+  "required": ["schema", "generated_at", "source_checked_at", "datasets_total", "by_status", "mcp", "source_artifacts"],
+  "properties": {
+    "schema": {"const": "datapulse/v0.1/public-summary"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "source_checked_at": {"type": "string", "format": "date-time"},
+    "datasets_total": {"type": "integer", "minimum": 0},
+    "by_status": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "mcp": {
+      "type": "object",
+      "required": ["tools_advertised", "source"],
+      "properties": {
+        "tools_advertised": {"type": ["integer", "null"], "minimum": 0},
+        "source": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "source_artifacts": {"type": "object", "additionalProperties": {"type": "string"}}
+  },
+  "additionalProperties": false
+}
