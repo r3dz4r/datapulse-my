@@ -20,17 +20,15 @@ def test_registry_is_unique_and_matches_literal_handler_routes() -> None:
         if isinstance(node, ast.Constant) and isinstance(node.value, str)
     }
     registered = {(route.method, route.path) for route in public_routes()}
-    assert len(registered) == len(public_routes()) == 15
-    literal = {"/api/v1/health", "/api/v1/datasets", "/api/v1/deltas", "/api/v1/snapshot", "/api/v1/keys/me", "/api/v1/paddle/webhook", "/api/v1/paddle/redeem"}
+    assert len(registered) == len(public_routes()) == 7
+    literal = {"/api/v1/health", "/api/v1/datasets", "/api/v1/deltas", "/api/v1/snapshot"}
     assert literal <= strings
     assert literal <= {route.path for route in public_routes() if "{" not in route.path}
-    assert {"health", "changes", "product", "manufacturer", "importer"} <= strings
     assert "/api/v1/datasets/" in strings
     assert "/api/v1/deltas/" in strings
-    assert "/api/v1/npra/" in strings
-    assert {route.path for route in public_routes() if route.method == "POST"} == {
-        "/api/v1/paddle/webhook", "/api/v1/paddle/redeem"
-    }
+    paid_routes = {"/api/v1/paddle/webhook", "/api/v1/paddle/redeem", "/api/v1/keys/me", "/api/v1/npra/"}
+    assert not paid_routes & strings
+    assert not {route.path for route in public_routes() if route.method == "POST"}
 
 
 def test_public_pagination_metadata_matches_runtime_bounds() -> None:

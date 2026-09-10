@@ -493,9 +493,6 @@ assert f'{sum(row["status"] == "fresh" for row in npra_records)} fresh' in npra_
 assert f'{sum(row["status"] == "stale" for row in npra_records)} stale' in npra_freshness
 assert f'{mcp_origin}/mcp' in owned(work / "npra.html", "npra-connect")
 assert website in owned(work / "npra.html", "npra-surfaces")
-npra_source = (work / "npra.html").read_text(encoding="utf-8")
-assert f"{api_origin}/api/v1/paddle/redeem" in npra_source
-assert f"{api_origin}/api/v1/keys/me" in npra_source
 landing = (work / "landing.html").read_text(encoding="utf-8")
 assert landing.startswith("<!doctype html>\n<!-- generated: scripts/gen_landing_page.py;")
 assert '<link rel="canonical" href="/">' in landing

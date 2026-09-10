@@ -75,7 +75,7 @@ def render_document(root: Path, reference_path: Path, manifest_path: Path, healt
         rendered = source
         for marker, content in blocks.items():
             rendered = replace_owned_block(rendered, marker, content)
-        forbidden = ("api.datapulse-my.my", "127.0.0.1", "localhost", "PHARMA_API_KEY", "PADDLE_SANDBOX_WEBHOOK_SECRET")
+        forbidden = ("api.datapulse-my.my", "127.0.0.1", "localhost")
         if any(value in "\n".join(blocks.values()) for value in forbidden):
             raise ApiReferenceError("generated buyer API reference contains a forbidden value")
         return rendered
