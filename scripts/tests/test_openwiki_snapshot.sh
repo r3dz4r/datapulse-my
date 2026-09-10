@@ -59,6 +59,7 @@ if [[ $* == *' exec '* || $1 == exec || $* == *'openwiki code --update --print'*
   done
   [[ -n $snapshot ]] || exit 41
   [[ -n ${OPENWIKI_TEST_CWD_LOG:-} ]] && printf '%s\n' "$PWD" >"$OPENWIKI_TEST_CWD_LOG"
+  [[ -n ${OPENWIKI_TEST_ENV_LOG:-} ]] && printf '%s/%s\n' "$OPENWIKI_PROVIDER" "$OPENWIKI_MODEL_ID" >"$OPENWIKI_TEST_ENV_LOG"
   printf '{"cwd":"%s"}\n' "$PWD" >"$PWD/openwiki/.run.json"
   for page in quickstart.md datasets.md mcp.md operations.md; do
     printf 'new %s\n' "$page" >"$snapshot/openwiki/$page"
@@ -109,9 +110,10 @@ repo="$TEST_ROOT/success"
 make_repo "$repo"
 write_npm_stub "$repo"
 target_head=$(git -C "$repo" rev-parse HEAD)
-run_case "$repo" env OPENWIKI_TEST_CWD_LOG="$TEST_ROOT/success.cwd"
+run_case "$repo" env OPENWIKI_TEST_CWD_LOG="$TEST_ROOT/success.cwd" OPENWIKI_TEST_ENV_LOG="$TEST_ROOT/success.env"
 [[ $(<"$TEST_ROOT/success.cwd") != "$repo" ]] || fail 'successful OpenWiki ran from the target checkout'
 [[ $(<"$TEST_ROOT/success.cwd") == "${TMPDIR:-/tmp}/datapulse-openwiki-snapshot-"* ]] || fail 'successful OpenWiki did not run from the detached snapshot'
+[[ $(<"$TEST_ROOT/success.env") == 'gemini/gemini-3.6-flash' ]] || fail 'successful OpenWiki did not use Gemini 3.6 Flash'
 [[ $(git -C "$repo" rev-parse HEAD) == "$target_head" ]] || fail 'successful snapshot verification changed target HEAD'
 [[ ! -e "$repo/openwiki/.run.json" ]] || fail 'successful generation wrote target run metadata'
 for page in quickstart.md datasets.md mcp.md operations.md; do

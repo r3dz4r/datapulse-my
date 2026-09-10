@@ -100,8 +100,8 @@ load_openwiki_environment() {
     set +a
     set -u
   fi
-  export OPENWIKI_PROVIDER=openai
-  export OPENWIKI_MODEL_ID=gpt-5.6-luna
+  export OPENWIKI_PROVIDER=gemini
+  export OPENWIKI_MODEL_ID=gemini-3.6-flash
   export OPENWIKI_TELEMETRY_DISABLED=1
 }
 
