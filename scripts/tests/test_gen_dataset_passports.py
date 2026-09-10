@@ -48,8 +48,19 @@ def test_passport_preserves_missing_expected_count_and_non_ready_profile() -> No
     health = next(row for row in snapshot["datasets"] if row["dataset_id"] == entry["id"])
     passport = build_passport(ROOT, entry, health, graph, attestations)
     assert passport["health_evidence"]["expected_record_count"] is None
+    assert passport["health_evidence"]["record_count_within_tolerance"] is None
     states = {row["quality_profile"]["overall"] for row in snapshot["datasets"]}
     assert {"ready", "indeterminate", "not_ready"} <= states
+
+
+def test_passport_projects_current_health_status_and_timestamp() -> None:
+    manifest, snapshot, graph, attestations = _inputs()
+    entry = next(row for row in manifest["datasets"] if row["id"] == "exchangerates_daily_0900")
+    health = next(row for row in snapshot["datasets"] if row["dataset_id"] == entry["id"])
+    passport = build_passport(ROOT, entry, health, graph, attestations)
+    assert passport["health_evidence"]["status"] == health["status"]
+    assert passport["health_evidence"]["last_checked"] == health["last_checked"]
+    assert passport["identity"]["observed_verified_at"] == health["last_checked"]
 
 
 def test_record_evidence_is_pilot_bounded_and_lineage_is_not_transformation_claim() -> None:

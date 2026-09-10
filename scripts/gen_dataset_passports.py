@@ -91,6 +91,7 @@ def build_passport(root: Path, entry: dict[str, Any], health: dict[str, Any], gr
     if attestation_ref is not None and not isinstance(attestation_ref, str):
         raise PassportError(f"attestation index has invalid reference for {dataset_id}")
     geography = _nullable_string(entry.get("geo_coverage"))
+    expected_record_count = health.get("expected_record_count", entry.get("expected_record_count"))
     return {
         "schema": PASSPORT_SCHEMA,
         "identity": {
@@ -111,7 +112,9 @@ def build_passport(root: Path, entry: dict[str, Any], health: dict[str, Any], gr
         "health_evidence": {
             "status": health["status"], "last_checked": _nullable_string(health.get("last_checked")),
             "freshness_signal": _nullable_string(health.get("freshness_signal")), "freshness_signal_source": _nullable_string(health.get("freshness_signal_source")),
-            "record_count": health.get("record_count"), "expected_record_count": health.get("expected_record_count", entry.get("expected_record_count")), "record_count_estimated": health.get("record_count_estimated"), "incomplete": health.get("incomplete"),
+            "record_count": health.get("record_count"), "expected_record_count": expected_record_count,
+            "record_count_within_tolerance": health.get("record_count_within_tolerance") if type(expected_record_count) is int else None,
+            "record_count_estimated": health.get("record_count_estimated"), "incomplete": health.get("incomplete"),
             "http_status": health.get("http_status"), "access_method": _nullable_string(health.get("access_method")), "access_dependency": _nullable_string(health.get("access_dependency")),
             "schema_shape": {"column_count": health.get("column_count"), "first_row_hash": _nullable_string(health.get("first_row_hash")), "content_shape_changed": health.get("content_shape_changed")},
             "anomaly_reliability": {"anomaly_detected": health.get("anomaly_detected"), "anomaly_detection": health.get("anomaly_detection")},

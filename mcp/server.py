@@ -986,14 +986,30 @@ async def get_data_passport(
 ) -> dict[str, Any]:
     """Read one bounded published Passport artifact without network access to an upstream."""
     manifest = await _load_manifest()
-    known_ids = {item.get("id") for item in manifest.get("datasets", []) if isinstance(item, dict)}
-    if dataset_id not in known_ids:
+    entry = next((item for item in manifest.get("datasets", []) if isinstance(item, dict) and item.get("id") == dataset_id), None)
+    if entry is None:
         return {"dataset_id": dataset_id, "evidence_available": False, "error": "unknown_dataset_id"}
+    health = await _load_health()
+    health_record = _health_by_id(health).get(dataset_id)
+    if health_record is None:
+        return {"dataset_id": dataset_id, "evidence_available": False, "error": "current_health_evidence_unavailable"}
     passport = await _fetch_json(f"data/passports/{dataset_id}.json")
     if passport.get("schema") != "datapulse/v1/dataset-passport":
         return {"dataset_id": dataset_id, "evidence_available": False, "error": "passport_unavailable_or_unsupported"}
     if len(json.dumps(passport, ensure_ascii=False, separators=(",", ":")).encode("utf-8")) > 262_144:
         return {"dataset_id": dataset_id, "evidence_available": False, "error": "passport_exceeds_response_bound"}
+    expected_record_count = health_record.get("expected_record_count", entry.get("expected_record_count"))
+    passport["identity"]["observed_verified_at"] = health_record.get("last_checked")
+    passport["health_evidence"] = {
+        "status": health_record.get("status"), "last_checked": health_record.get("last_checked"),
+        "freshness_signal": health_record.get("freshness_signal"), "freshness_signal_source": health_record.get("freshness_signal_source"),
+        "record_count": health_record.get("record_count"), "expected_record_count": expected_record_count,
+        "record_count_within_tolerance": health_record.get("record_count_within_tolerance") if type(expected_record_count) is int else None,
+        "record_count_estimated": health_record.get("record_count_estimated"), "incomplete": health_record.get("incomplete"),
+        "http_status": health_record.get("http_status"), "access_method": health_record.get("access_method"), "access_dependency": health_record.get("access_dependency"),
+        "schema_shape": {"column_count": health_record.get("column_count"), "first_row_hash": health_record.get("first_row_hash"), "content_shape_changed": health_record.get("content_shape_changed")},
+        "anomaly_reliability": {"anomaly_detected": health_record.get("anomaly_detected"), "anomaly_detection": health_record.get("anomaly_detection")},
+    }
     return {"dataset_id": dataset_id, "evidence_available": True, "passport": passport}
 
 
