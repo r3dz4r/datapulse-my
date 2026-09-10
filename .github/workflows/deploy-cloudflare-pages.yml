@@ -432,7 +432,7 @@ jobs:
             test -s "$RUNNER_TEMP/preserved-release-proof/release-verification.md"
             cp "$RUNNER_TEMP/preserved-release-proof/release-verification.md" _site/release-verification.md
           fi
-          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
+          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json datapulse_summary.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
           cp -R health deltas record-evidence badges samples data _site/
           if [[ "${{ needs.sign_health.outputs.receipts_signed }}" == "true" ]]; then
             cp "$RUNNER_TEMP/sigstore-publication/data/"*.receipt.evidence.json _site/data/

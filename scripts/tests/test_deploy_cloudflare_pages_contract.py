@@ -265,6 +265,15 @@ def test_native_pages_preserves_full_release_build_and_surface_contract() -> Non
     assert "normalized alias redirects again" in verifier
 
 
+def test_pages_assembly_includes_bounded_public_summary_artifact() -> None:
+    """The explicit root-file copy list must publish the advertised summary."""
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    assemble = next(step for step in steps if step.get("name") == "Assemble canonical Pages artifact")
+    root_file_copy = next(command for command in assemble["run"].splitlines() if command.startswith("cp llms.txt"))
+
+    assert "datapulse_summary.json" in root_file_copy
+
+
 def test_health_only_legacy_release_proof_accepts_generated_and_verified_timestamps() -> None:
     workflow = _workflow()
     preserve_step = workflow.split(
