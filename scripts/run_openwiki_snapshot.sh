@@ -100,8 +100,8 @@ load_openwiki_environment() {
     set +a
     set -u
   fi
-  export OPENWIKI_PROVIDER=gemini
-  export OPENWIKI_MODEL_ID=gemini-3.6-flash
+  # Provider/model come from ~/.openwiki/.env; do not hardcode here so the
+  # canonical snapshot runner follows the operator-managed credential file.
   export OPENWIKI_TELEMETRY_DISABLED=1
 }
 

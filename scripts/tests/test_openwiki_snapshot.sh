@@ -113,7 +113,7 @@ target_head=$(git -C "$repo" rev-parse HEAD)
 run_case "$repo" env OPENWIKI_TEST_CWD_LOG="$TEST_ROOT/success.cwd" OPENWIKI_TEST_ENV_LOG="$TEST_ROOT/success.env"
 [[ $(<"$TEST_ROOT/success.cwd") != "$repo" ]] || fail 'successful OpenWiki ran from the target checkout'
 [[ $(<"$TEST_ROOT/success.cwd") == "${TMPDIR:-/tmp}/datapulse-openwiki-snapshot-"* ]] || fail 'successful OpenWiki did not run from the detached snapshot'
-[[ $(<"$TEST_ROOT/success.env") == 'gemini/gemini-3.6-flash' ]] || fail 'successful OpenWiki did not use Gemini 3.6 Flash'
+[[ $(<"$TEST_ROOT/success.env") == "${OPENWIKI_PROVIDER:-gemini}/${OPENWIKI_MODEL_ID:-gemini-3.6-flash}" ]] || fail 'successful OpenWiki did not use the pinned provider/model'
 [[ $(git -C "$repo" rev-parse HEAD) == "$target_head" ]] || fail 'successful snapshot verification changed target HEAD'
 [[ ! -e "$repo/openwiki/.run.json" ]] || fail 'successful generation wrote target run metadata'
 for page in quickstart.md datasets.md mcp.md operations.md; do
