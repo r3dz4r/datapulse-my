@@ -52,6 +52,7 @@ def _write_public_surface_fixture(
                 *(DOCUMENTATION_ARTIFACTS if include_documentation else []),
                 "/llms.txt",
                 "/datapulse.json",
+                "/datapulse_summary.json",
                 "/datapulse.schema.json",
                 "/health/latest.json",
                 "/health/trends.json",
