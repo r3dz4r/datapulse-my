@@ -649,8 +649,9 @@ class="sourceCode json"><code class="sourceCode json"><span id="cb18-1"><a href=
 <p>Aggregate anonymous tool usage for an inclusive ISO date range, e.g.
 2026-08-01 to 2026-08-07. Returns <code>total_calls</code>,
 <code>by_outcome</code>, <code>by_tool</code>, <code>by_dataset</code>,
-<code>trust_distribution</code> (per-status counts of cited datasets)
-for the inclusive range. Legacy identity fields are ignored.</p>
+and <code>trust_distribution</code> (counts of returned trust verdicts
+by published score band: 90-100, 75-89, 50-74, 25-49, 0-24) for the
+inclusive range. Legacy identity fields are ignored.</p>
 <p>Input schema:</p>
 <div class="sourceCode" id="cb19"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
