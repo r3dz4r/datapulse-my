@@ -42,6 +42,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Check out r3dz4r/dotfiles (contract checks reference dotfiles/system/* and dotfiles/scripts/*)
         uses: actions/checkout@v4
@@ -130,6 +133,9 @@ jobs:
 
       - name: Verify distribution surfaces match canonical evidence
         run: python3 scripts/verify_distribution_sync.py
+
+      - name: Verify release identity consistency
+        run: python3 scripts/release_identity.py --check
 
       - name: Verify attestation chain forward-linearity seed
         run: python3 scripts/verify_chain_linearity.py

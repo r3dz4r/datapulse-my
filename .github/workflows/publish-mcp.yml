@@ -30,19 +30,29 @@ jobs:
 
       - name: Publish server to MCP Registry
         run: |
-          # Idempotency guard: the registry rejects duplicate versions
-          # ("invalid version: cannot publish duplicate version"). The
-          # registry version (server.json "version", source-SHA stamped)
-          # is decoupled from release-please tags, so re-publishing an
-          # already-published version is expected on later releases.
-          # Skip quietly when the version is already live.
-          REGISTRY_URL="https://registry.modelcontextprotocol.io"
-          NAME="io.github.r3dz4r/datapulse-my"
-          VERSION="$(python3 -c "import json; print(json.load(open('server.json'))['version'])")"
-          EXISTING="$(curl -fsS "${REGISTRY_URL}/v0/servers/${NAME//\//%2F}/versions" 2>/dev/null || true)"
-          if echo "$EXISTING" | grep -q "\"version\":\"${VERSION}\""; then
-            echo "Version ${VERSION} already published to MCP Registry — skipping."
+          # Stamp the release-please manifest version into server.json so
+          # mcp-publisher advertises that single authority, not a stale
+          # checkout copy of server.json.
+          python3 scripts/release_identity.py --write
+          VERSION="$(python3 -c "import json; print(json.load(open('.release-please-manifest.json'))['.'])")"
+          # Content comparison replaces the version-string grep. A live
+          # version whose title/description still says "DataPulse MY" / 389
+          # must publish, not skip. Exit 2 is unverifiable: never publish.
+          set +e
+          python3 scripts/verify_registry_distribution.py --check
+          STATUS=$?
+          set -e
+          if [ "$STATUS" -eq 0 ]; then
+            echo "registry entry already matches canonical surfaces; skipping"
             exit 0
+          fi
+          if [ "$STATUS" -eq 2 ]; then
+            echo "cannot determine registry distribution; refusing to publish"
+            exit 2
+          fi
+          if [ "$STATUS" -ne 1 ]; then
+            echo "unexpected verifier exit ${STATUS}; refusing to publish"
+            exit "$STATUS"
           fi
           echo "Publishing version ${VERSION} to MCP Registry..."
           ./mcp-publisher publish

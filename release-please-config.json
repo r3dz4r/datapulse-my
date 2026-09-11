@@ -10,6 +10,9 @@
       "include-v-in-tag": true,
       "version-file": "VERSION.txt",
       "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        { "type": "json", "path": "server.json", "jsonpath": "$.version" }
+      ],
       "changelog-sections": [
         { "type": "feat", "section": "Features" },
         { "type": "fix", "section": "Bug Fixes" },
