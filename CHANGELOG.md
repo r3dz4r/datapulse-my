@@ -14,6 +14,80 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.6.0](https://github.com/r3dz4r/datapulse-my/compare/v3.5.0...v3.6.0) (2026-09-11)
+
+
+### Features
+
+* **attestation:** enforce shared signing workflow contract ([80dd926](https://github.com/r3dz4r/datapulse-my/commit/80dd926b751cb10e384072ab70ee629ca53c25ba))
+* **audit:** extend HS-05 failure corpus ([b0f2e35](https://github.com/r3dz4r/datapulse-my/commit/b0f2e35186997371bb0f6d59d8299a4f740e6de3))
+* **mcp:** add deterministic agent task suite ([dbcbdd0](https://github.com/r3dz4r/datapulse-my/commit/dbcbdd0df630a30af4e5f080509e480830ec491b))
+* **mcp:** add privacy-preserving HTTP request correlation ([91d1813](https://github.com/r3dz4r/datapulse-my/commit/91d1813a0c565162469014fd4d8710a808e5b960))
+* **mcp:** bind evidence tools to receipt digests ([be25713](https://github.com/r3dz4r/datapulse-my/commit/be2571329bc1d38b57b5766f3b77b07411b082fd))
+* **mcp:** clarify citation and verification contract ([38f601d](https://github.com/r3dz4r/datapulse-my/commit/38f601d70d35a9984c672db2e38a6eb3231129f4))
+* **mcp:** complete private MCPVerse benchmark lane ([3bb58e0](https://github.com/r3dz4r/datapulse-my/commit/3bb58e02e7c4172d59179d2b1afd792ee0dfc0f6))
+* **mcp:** expose receipt digests ([4ff7deb](https://github.com/r3dz4r/datapulse-my/commit/4ff7debd8294f7825cd218ea6b3d272e6cb92b4d))
+* **mcp:** improve tool selection metadata ([8345353](https://github.com/r3dz4r/datapulse-my/commit/83453539e83ef7cc3ed9973ac747e3d4fd80f668))
+* **mcp:** optimize DataPulse discovery metadata ([f67c239](https://github.com/r3dz4r/datapulse-my/commit/f67c23982b1ed0ce77f4238fa77728f932a31f9b))
+* **observability:** add sanitized pipeline run receipts ([fcb17e4](https://github.com/r3dz4r/datapulse-my/commit/fcb17e448a0f55d2e0c61ecb02fb2785e2b1475a))
+* **passport:** complete evidence-bounded dataset passport contracts ([586f601](https://github.com/r3dz4r/datapulse-my/commit/586f601d47c89eef7e9ae25f66444e7356c84838))
+* **public:** add datapulse_summary.json rollup for downstream consumers ([cf3f394](https://github.com/r3dz4r/datapulse-my/commit/cf3f3948c78d87419d73a06085bb7fa52d084a44))
+* **quality:** publish additive six-dimension readiness profiles ([7584a4e](https://github.com/r3dz4r/datapulse-my/commit/7584a4e623b543a65b7074233b8727d54b394166))
+* **readme:** full deterministic README auto-generator (owned-block composition) ([006e416](https://github.com/r3dz4r/datapulse-my/commit/006e4169e1593ab15708238205134383eca37864))
+* **release:** bind preview and production to one artifact ([0919413](https://github.com/r3dz4r/datapulse-my/commit/0919413c6ec832554d621090b49b0cacd5e375e3))
+* **release:** one version authority with a fail-closed identity gate ([9840d17](https://github.com/r3dz4r/datapulse-my/commit/9840d17853cb7d6943fe9622bd88c5341ef01e69))
+* **sg:** enrich 5 Singapore dataset metadata from catalog API + static map ([e4b5300](https://github.com/r3dz4r/datapulse-my/commit/e4b530052e1972ee1f57870ed2d7327a0299d4ad))
+* **shadow:** add non-authoritative health candidate contract ([91690a2](https://github.com/r3dz4r/datapulse-my/commit/91690a25d3588f04635d9d5d1cc111be43f3bc43))
+* **trust:** add local evidence graph contract ([1c6644f](https://github.com/r3dz4r/datapulse-my/commit/1c6644f4eab0955c4d9d617d59ad45500c950ccd))
+
+
+### Bug Fixes
+
+* **attestations:** reuse valid same-day evidence ([27541ba](https://github.com/r3dz4r/datapulse-my/commit/27541ba0e196e6e14e9227f20edc191ae7bf7431))
+* **ci:** authenticate release automation with a GitHub App token ([d292a32](https://github.com/r3dz4r/datapulse-my/commit/d292a32ac921af46bcc1cf7ed2fa428ecf5a1d56))
+* **ci:** authenticate the anchor job with the App token too ([f82bc80](https://github.com/r3dz4r/datapulse-my/commit/f82bc800ac33517644ae9ae7cfca784123cef1bd))
+* **ci:** classify generated passports and public summary as health-cycle outputs ([7a10708](https://github.com/r3dz4r/datapulse-my/commit/7a107087503c6ff5862f3b39a6b68c78680d834d))
+* **ci:** classify health badge outputs correctly ([22603b4](https://github.com/r3dz4r/datapulse-my/commit/22603b4d25ed0317316dbe6521e544eb38043339))
+* **ci:** give release automation a non-GITHUB_TOKEN credential ([f702381](https://github.com/r3dz4r/datapulse-my/commit/f702381f064fa376e675c9ee4e9c2a466546addb))
+* **ci:** harden production attestation gate ([f6eb99f](https://github.com/r3dz4r/datapulse-my/commit/f6eb99f3360d4fa034fd57d2e9ada82a45a461db))
+* **ci:** isolate health-only workflow runs ([0a4c518](https://github.com/r3dz4r/datapulse-my/commit/0a4c518e88ecfe34690370cf58c8b7d04b391c4a))
+* **ci:** make release reproducibility deterministic with a shared envelope source cache ([db6388d](https://github.com/r3dz4r/datapulse-my/commit/db6388d741b79ea11a24c4a93e19baab74e66775))
+* **ci:** restore audit contract fixtures ([829a23f](https://github.com/r3dz4r/datapulse-my/commit/829a23f99a79fab4ca4fc60ac49b2aed852f6ff2))
+* **ci:** separate README generation from health commits ([16482fa](https://github.com/r3dz4r/datapulse-my/commit/16482fa801c155801b72e9eefba279d2e35b7a07))
+* **discovery:** register agent catalog and workflow routes ([497df77](https://github.com/r3dz4r/datapulse-my/commit/497df770c2235242cbaed467a013030004f35b4e))
+* **docs:** align MCP tool counts with canonical catalogue ([15159fb](https://github.com/r3dz4r/datapulse-my/commit/15159fb95f3fce71f85131b8c66e7590b6ce5cd6))
+* **docs:** link agent workflows markdown ([c9d0bba](https://github.com/r3dz4r/datapulse-my/commit/c9d0bbab665009fc9d2702d444d562b043a3f579))
+* **docs:** refresh generated MCP reference ([7ab25be](https://github.com/r3dz4r/datapulse-my/commit/7ab25be68961f4bed8549acbf3aa0f827b57ce4a))
+* **health:** preserve unknown record tolerance ([5099d10](https://github.com/r3dz4r/datapulse-my/commit/5099d10a5cda715efe6c23f4d76f0d500a99fe41))
+* **health:** record passport telemetry stage ([9ec6add](https://github.com/r3dz4r/datapulse-my/commit/9ec6add3d1a1e942a8d39b453ff590e88299b01b))
+* **mcp:** correlate usage ledger and journal events ([2c66a1a](https://github.com/r3dz4r/datapulse-my/commit/2c66a1a2ea550b7986c354a3abbdc3c51dfb9811))
+* **mcp:** enforce canonical public-surface facts ([db93b9e](https://github.com/r3dz4r/datapulse-my/commit/db93b9edf1c92e0e562ec4eab2d3ca8d62a6787e))
+* **mcp:** guard source identity generation ([1cbf6bc](https://github.com/r3dz4r/datapulse-my/commit/1cbf6bc7d7a17e3248aa6ec83a32154a8e90c54e))
+* **mcp:** preserve dev fixture source marker ([fdc34d9](https://github.com/r3dz4r/datapulse-my/commit/fdc34d9d56278f76fb95323ebd982a2b7b43967d))
+* **mcp:** publish on content drift, not a version-string match ([67ca204](https://github.com/r3dz4r/datapulse-my/commit/67ca2044816eb45ab9b0b9fb6351280421a1a457))
+* **mcp:** synchronize dataset passport health ([e8676e7](https://github.com/r3dz4r/datapulse-my/commit/e8676e7ed95903d2cf6840f92bf3e5ecc72181ed))
+* **mcp:** use Starlette middleware wrapper ([fcae241](https://github.com/r3dz4r/datapulse-my/commit/fcae24120d86a7971000b566fb193db9e0510b8a))
+* **pages:** publish public summary artifact ([5681d22](https://github.com/r3dz4r/datapulse-my/commit/5681d225d4a8cab3c73fc926982ee3e7692d857e))
+* **release:** assert the registry's latest is the released version ([11e09d6](https://github.com/r3dz4r/datapulse-my/commit/11e09d66de19da350f1283b97355e3892d3384e8))
+* **release:** close the release path — identity gate, content-aware publication, release-safe tag semantics ([3b54718](https://github.com/r3dz4r/datapulse-my/commit/3b547180e4d2902eb28104e3f306b9dec39f46a8))
+* **release:** deprecate superseded registry versions after publishing ([5a347bd](https://github.com/r3dz4r/datapulse-my/commit/5a347bdbf4c91bc03ce641273214a7d9be18a6ea))
+* **release:** deprecate superseded registry versions so one stays active ([fc5e6f1](https://github.com/r3dz4r/datapulse-my/commit/fc5e6f18f1d7d511fe38302de27273e13aa15fca))
+* **release:** make server.json release-managed by release automation ([4cc71bc](https://github.com/r3dz4r/datapulse-my/commit/4cc71bcbe7896073381b608babd0c0c17ccfd824))
+* **release:** re-base the version line to 3.5.0 so the registry's latest resolves correctly ([d61b77a](https://github.com/r3dz4r/datapulse-my/commit/d61b77a9e6db04c339a1ffc6363482bf5eb1cb2d))
+* **release:** treat a tag behind the manifest as a release in flight ([8143177](https://github.com/r3dz4r/datapulse-my/commit/81431775e0267306bd06ec15326d6c2652b21d31))
+* **schema:** allow title/description/publisher/last_updated_at/frequency on dataset ([59d6cc8](https://github.com/r3dz4r/datapulse-my/commit/59d6cc8324fee3205d759425489dd9c80169b0b5))
+* **telemetry:** accept the passports stage in the run receipt summarizer ([bb01f54](https://github.com/r3dz4r/datapulse-my/commit/bb01f54580482d40c0eaed1b3a01c43d24cd6895))
+
+
+### Performance Improvements
+
+* **mcp:** reduce verification latency tail ([6e5e48a](https://github.com/r3dz4r/datapulse-my/commit/6e5e48a88195831fa04fd74acdc69904de668a24))
+
+
+### Reverts
+
+* roll back SG metadata enrichment (e4b53005 + 59d6cc83) ([9dcdeb7](https://github.com/r3dz4r/datapulse-my/commit/9dcdeb77fb5ab23415b24e4ee5862e2f450d0774))
+
 ## [0.13.0](https://github.com/r3dz4r/datapulse-my/compare/v0.12.0...v0.13.0) (2026-09-11)
 
 
