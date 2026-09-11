@@ -4,6 +4,16 @@ This is the chronological project history. Live dataset state belongs in
 [`health/latest.json`](health/latest.json) and generated machine-readable state
 belongs in [`changelog.json`](changelog.json).
 
+## Version line re-based to 3.5.0 (2026-09-11)
+
+Release numbering continues from the MCP Registry's existing `3.4.x` line rather than the
+repository's previous `0.x` line. The registry determines a server's *latest* version by
+comparing versions as semver across every published, non-deleted version, and its highest
+published version was `3.4.6` — so a `0.x` release can never become the registry's latest and
+consumers kept resolving a superseded entry. Publishing above `3.4.6` is the only mechanism the
+registry provides. All earlier releases remain tagged and published; only the numbering continues
+from this point.
+
 ## [0.13.0](https://github.com/r3dz4r/datapulse-my/compare/v0.12.0...v0.13.0) (2026-09-11)
 
 

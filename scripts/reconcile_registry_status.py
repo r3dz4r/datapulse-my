@@ -6,6 +6,13 @@ earlier ones, so the registry accumulated active versions ranked by version
 number: 3.4.6 stayed active AND isLatest with stale content while 0.13.0 held
 the canonical content. This reconciler deprecates every other active version
 after each release. It never uses ``deleted`` and never mutates the target.
+
+The post-state check also asserts the released version carries ``isLatest``.
+The registry moves ``isLatest`` only at publish time (or when a status change
+deletes the current holder) and ranks it by semver across every non-deleted
+version, so a release below the standing highest version can satisfy "exactly
+one active version" while consumers still resolve the older entry through
+``GET /versions/latest``. That gap is what the isLatest assertion closes.
 """
 
 from __future__ import annotations
@@ -129,6 +136,25 @@ def entry_status(entry: dict[str, Any]) -> str | None:
     return status if isinstance(status, str) else None
 
 
+def entry_is_latest(entry: dict[str, Any]) -> bool:
+    """The official-registry isLatest flag; missing meta or field means False."""
+    meta = entry.get("_meta")
+    if not isinstance(meta, dict):
+        return False
+    official = meta.get(META_KEY)
+    if not isinstance(official, dict):
+        return False
+    return official.get("isLatest") is True
+
+
+def latest_version(entries: list[dict[str, Any]]) -> str | None:
+    """The version carrying isLatest, if any entry does."""
+    for entry in entries:
+        if entry_is_latest(entry):
+            return entry_version(entry)
+    return None
+
+
 def active_versions(entries: list[dict[str, Any]]) -> list[str]:
     """Versions whose official status is exactly ``active``, in payload order."""
     active: list[str] = []
@@ -247,7 +273,19 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
-    print(f"registry reconciled: single active version {args.target}")
+    holder = latest_version(entries)
+    if holder != args.target:
+        print(
+            f"post-state check failed: active versions: {', '.join(observed)}; "
+            f"isLatest carried by: {holder or '(none)'}, expected {args.target}. "
+            "The registry ranks isLatest by semver across non-deleted versions "
+            "and moves it only at publish time, so a higher version is standing: "
+            "the released version cannot become the registry's latest until a "
+            "version above it is published",
+            file=sys.stderr,
+        )
+        return 1
+    print(f"registry reconciled: single active version {args.target} carrying isLatest")
     return 0
 
 
