@@ -13,7 +13,7 @@ def commit_message_for_changed_paths(changed_paths: Iterable[str], day: str) -> 
     dated_prefix = f"attestations/{day}/"
     if not any(path.startswith(dated_prefix) for path in changed_paths):
         return None
-    return f"chore(attestations): commit signed envelopes for {day} [skip deploy]"
+    return f"chore(attestations): commit signed envelopes for {day}"
 
 
 def main() -> int:
