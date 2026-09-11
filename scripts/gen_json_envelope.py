@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import io
 import json
 import multiprocessing
 import os
 import re
+import tempfile
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -28,13 +30,85 @@ def load_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def _source_cache_paths(cache_dir: Path, url: str) -> tuple[Path, Path]:
+    key = hashlib.sha256(url.encode("utf-8")).hexdigest()
+    return cache_dir / f"{key}.bin", cache_dir / f"{key}.json"
+
+
+def _replace_file(path: Path, data: bytes) -> None:
+    handle, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        dir=path.parent,
+    )
+    try:
+        with os.fdopen(handle, "wb") as temporary:
+            temporary.write(data)
+        os.replace(temporary_name, path)
+    except OSError:
+        try:
+            os.unlink(temporary_name)
+        except OSError:
+            pass
+        raise
+
+
+def _read_cached_source(cache_dir: Path, url: str) -> tuple[bytes, str | None] | None:
+    bin_path, json_path = _source_cache_paths(cache_dir, url)
+    if not bin_path.is_file() or not json_path.is_file():
+        return None
+    try:
+        payload = bin_path.read_bytes()
+        metadata = json.loads(json_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+        return None
+    if not isinstance(metadata, dict) or "content_type" not in metadata:
+        return None
+    content_type = metadata["content_type"]
+    if content_type is not None and not isinstance(content_type, str):
+        return None
+    return payload, content_type
+
+
+def _write_cached_source(
+    cache_dir: Path, url: str, payload: bytes, content_type: str | None
+) -> None:
+    bin_path, json_path = _source_cache_paths(cache_dir, url)
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        _replace_file(bin_path, payload)
+        _replace_file(
+            json_path, json.dumps({"content_type": content_type}).encode("utf-8")
+        )
+    except OSError:
+        # Cache writes are best-effort; a failure must not fail generation.
+        return
+
+
 def fetch_source(url: str) -> tuple[bytes, str | None]:
+    # Follow DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD: the cache env is only a
+    # location. A miss populates on first use because envelope sources are too
+    # large to commit, unlike the pinned metrics cache.
+    cache_dir_value = os.environ.get("DATAPULSE_ENVELOPE_SOURCE_CACHE")
+    cache_dir = (
+        Path(cache_dir_value)
+        if os.environ.get("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD") == "1"
+        and cache_dir_value
+        else None
+    )
+    if cache_dir is not None:
+        cached = _read_cached_source(cache_dir, url)
+        if cached is not None:
+            return cached
     request = urllib.request.Request(
         url,
         headers={"Range": f"bytes=0-{MAX_SOURCE_BYTES - 1}", "User-Agent": "DataPulse-envelope-generator/0.1"},
     )
     with urllib.request.urlopen(request, timeout=20) as response:
-        return response.read(MAX_SOURCE_BYTES), response.headers.get_content_type()
+        payload, content_type = response.read(MAX_SOURCE_BYTES), response.headers.get_content_type()
+    if cache_dir is not None:
+        _write_cached_source(cache_dir, url, payload, content_type)
+    return payload, content_type
 
 
 def scalar_type(value: Any) -> str | None:

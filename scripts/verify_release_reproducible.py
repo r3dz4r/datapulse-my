@@ -398,10 +398,40 @@ def _write_hash_table(path: Path, hashes: dict[str, str]) -> None:
         raise SetupFailure(f"could not write metadata {path}: {error}") from error
 
 
+def _record_envelope_source_cache(cache_dir: Path, metadata: Path) -> None:
+    skipped: list[str] = []
+    pairs: list[tuple[str, str]] = []
+    if cache_dir.is_dir():
+        for path in sorted(cache_dir.glob("*.bin"), key=lambda item: item.name):
+            try:
+                payload_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+            except OSError:
+                skipped.append(path.name)
+                continue
+            pairs.append((path.name, payload_hash))
+    digest = hashlib.sha256()
+    for filename, payload_hash in pairs:
+        digest.update(filename.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(bytes.fromhex(payload_hash))
+        digest.update(b"\n")
+    record: dict[str, object] = {
+        "algorithm": "sha256",
+        "digest": digest.hexdigest(),
+        "entry_count": len(pairs),
+    }
+    if skipped:
+        record["skipped"] = skipped
+    path = metadata / "envelope-source-cache.json"
+    path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"Envelope source cache digest: {record['digest']} ({record['entry_count']} entries)")
+
+
 def _build(
     source: Path, workdir: Path, git_dir: str, verification_time: str,
     source_sha: str = "0123456789abcdef0123456789abcdef01234567",
     source_date: str = "2026-08-08",
+    source_cache: Path | None = None,
 ) -> BuildCapture:
     _copy_source(workdir)
     environment = {
@@ -415,6 +445,8 @@ def _build(
         "DATAPULSE_SOURCE_COMMIT_SHA": source_sha,
         "DATAPULSE_SOURCE_COMMIT_DATE": source_date,
     }
+    if source_cache is not None:
+        environment["DATAPULSE_ENVELOPE_SOURCE_CACHE"] = str(source_cache)
     key_path = os.environ.get("DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE")
     if key_path:
         environment["DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"] = key_path
@@ -555,41 +587,70 @@ def verify(workdir_root: Path, output: Path, reproduction: str) -> int:
     except OSError as error:
         raise SetupFailure(f"could not prepare workdir root {workdir_root}: {error}") from error
 
-    source_sha = _run_git("rev-parse", "HEAD")
-    source_date = _run_git("show", "-s", "--format=%cs", source_sha)
-    git_dir = _run_git("rev-parse", "--absolute-git-dir")
-    verification_time = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
-    metadata = _workdir(workdir_root, "datapulse-release-meta-")
-    first_workdir = _workdir(workdir_root, "datapulse-release-A-")
-    first = _build(ROOT, first_workdir, git_dir, verification_time, source_sha, source_date)
-    _write_hash_table(metadata / "first_run.json", first.hashes)
-
     try:
-        shutil.rmtree(first_workdir)
+        source_cache = Path(tempfile.mkdtemp(prefix="datapulse-envelope-cache-"))
     except OSError as error:
-        raise SetupFailure(f"could not wipe first workdir {first_workdir}: {error}") from error
+        raise SetupFailure(f"could not create envelope source cache: {error}") from error
 
-    second_workdir = _workdir(workdir_root, "datapulse-release-B-")
-    second = _build(ROOT, second_workdir, git_dir, verification_time, source_sha, source_date)
-    _write_hash_table(metadata / "second_run.json", second.hashes)
-
-    summary = _summary(source_sha, first, second, reproduction, ROOT)
+    metadata: Path | None = None
     try:
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(summary, encoding="utf-8")
-    except OSError as error:
-        raise SetupFailure(f"could not write verification summary {output}: {error}") from error
+        source_sha = _run_git("rev-parse", "HEAD")
+        source_date = _run_git("show", "-s", "--format=%cs", source_sha)
+        git_dir = _run_git("rev-parse", "--absolute-git-dir")
+        verification_time = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+        metadata = _workdir(workdir_root, "datapulse-release-meta-")
+        first_workdir = _workdir(workdir_root, "datapulse-release-A-")
+        first = _build(
+            ROOT, first_workdir, git_dir, verification_time, source_sha, source_date,
+            source_cache=source_cache,
+        )
+        _write_hash_table(metadata / "first_run.json", first.hashes)
 
-    if first.hashes != second.hashes:
-        _print_diff(first.hashes, second.hashes)
-        raise VerificationFailure("isolated release builds were not byte-identical")
+        try:
+            shutil.rmtree(first_workdir)
+        except OSError as error:
+            raise SetupFailure(f"could not wipe first workdir {first_workdir}: {error}") from error
 
-    print(f"First-run hashes: {metadata / 'first_run.json'}")
-    print(f"Second-run hashes: {metadata / 'second_run.json'}")
-    print(f"Second build retained at: {second_workdir}")
-    print(f"Verification summary: {output}")
-    print(f"OK: both builds produced byte-identical outputs ({len(first.hashes)} files)")
-    return 0
+        second_workdir = _workdir(workdir_root, "datapulse-release-B-")
+        second = _build(
+            ROOT, second_workdir, git_dir, verification_time, source_sha, source_date,
+            source_cache=source_cache,
+        )
+        _write_hash_table(metadata / "second_run.json", second.hashes)
+
+        summary = _summary(source_sha, first, second, reproduction, ROOT)
+        try:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(summary, encoding="utf-8")
+        except OSError as error:
+            raise SetupFailure(f"could not write verification summary {output}: {error}") from error
+
+        if first.hashes != second.hashes:
+            _print_diff(first.hashes, second.hashes)
+            raise VerificationFailure("isolated release builds were not byte-identical")
+
+        print(f"First-run hashes: {metadata / 'first_run.json'}")
+        print(f"Second-run hashes: {metadata / 'second_run.json'}")
+        print(f"Second build retained at: {second_workdir}")
+        print(f"Verification summary: {output}")
+        print(f"OK: both builds produced byte-identical outputs ({len(first.hashes)} files)")
+        return 0
+    finally:
+        if metadata is not None:
+            try:
+                _record_envelope_source_cache(source_cache, metadata)
+            except OSError as error:
+                print(
+                    f"WARNING: could not record envelope source cache digest: {error}",
+                    file=sys.stderr,
+                )
+        try:
+            shutil.rmtree(source_cache)
+        except OSError as error:
+            print(
+                f"WARNING: could not wipe envelope source cache {source_cache}: {error}",
+                file=sys.stderr,
+            )
 
 
 def main() -> int:
