@@ -318,8 +318,66 @@ def test_post_state_with_is_latest_absent_exits_one(tmp_path: Path) -> None:
     assert "(none)" in output
 
 
-def test_version_authorities_agree_at_rebased_3_5_0() -> None:
-    """Pin the re-base: all three version authorities read exactly 3.5.0."""
+REBASE_FLOOR = "3.5.0"
+
+
+def _semver_tuple(value: str) -> tuple[int, ...]:
+    """Parse a plain numeric X.Y.Z version into a semantically comparable tuple."""
+    parts = value.split(".")
+    if len(parts) != 3 or not all(part.isascii() and part.isdigit() for part in parts):
+        raise ValueError(f"not a plain numeric X.Y.Z version: {value!r}")
+    return tuple(int(part) for part in parts)
+
+
+def version_authority_problems(
+    manifest: str,
+    version_txt: str,
+    server_json: str,
+) -> list[str]:
+    """Cross-check the three version authorities; empty list means healthy.
+
+    Unparseable values are reported as problems, never raised past this
+    function. Disagreement is reported naming the outlier. An agreed version
+    below REBASE_FLOOR is reported because the MCP Registry ranks isLatest
+    by semver across all non-deleted versions, so it could never win isLatest.
+    """
+    labeled = (
+        ("manifest", manifest),
+        ("VERSION.txt", version_txt),
+        ("server.json", server_json),
+    )
+    problems: list[str] = []
+    parsed: list[tuple[int, ...]] = []
+    for label, value in labeled:
+        try:
+            parsed.append(_semver_tuple(value))
+        except ValueError as error:
+            problems.append(f"{label}: {error}")
+    if problems:
+        return problems
+    groups: dict[str, list[str]] = {}
+    for label, value in labeled:
+        groups.setdefault(value, []).append(label)
+    if len(groups) > 1:
+        described = ", ".join(
+            f"{value} ({', '.join(labels)})" for value, labels in groups.items()
+        )
+        problems.append(f"version authorities disagree: {described}")
+        return problems
+    if parsed[0] < _semver_tuple(REBASE_FLOOR):
+        problems.append(
+            f"agreed version {manifest} is below the {REBASE_FLOOR} re-base floor "
+            "(the MCP Registry ranks isLatest by semver across non-deleted "
+            "versions, so it could never win isLatest)"
+        )
+    return problems
+
+
+def test_version_authorities_agree_and_never_fall_below_rebase_floor() -> None:
+    """Release Please bumps all three authorities together, so the durable
+    invariants are agreement (drift is the real hazard) and the 3.5.0 floor:
+    the MCP Registry ranks isLatest by semver across all non-deleted
+    versions, so a version below 3.5.0 can never win isLatest."""
     root = Path(__file__).resolve().parents[2]
     manifest = json.loads(
         (root / ".release-please-manifest.json").read_text(encoding="utf-8")
@@ -327,9 +385,61 @@ def test_version_authorities_agree_at_rebased_3_5_0() -> None:
     version_txt = (root / "VERSION.txt").read_text(encoding="utf-8").strip()
     server_json = json.loads((root / "server.json").read_text(encoding="utf-8"))
 
-    assert manifest == {".": "3.5.0"}
-    assert version_txt == "3.5.0"
-    assert server_json["version"] == "3.5.0"
+    assert (
+        version_authority_problems(
+            manifest.get(".", ""),
+            version_txt,
+            server_json.get("version", ""),
+        )
+        == []
+    )
+
+
+def test_authority_problems_release_bump_is_healthy() -> None:
+    # The release-PR case the old equality pin broke: all three authorities
+    # move together to the new version.
+    assert version_authority_problems("3.6.0", "3.6.0", "3.6.0") == []
+
+
+def test_authority_problems_current_rebase_version_is_healthy() -> None:
+    assert version_authority_problems("3.5.0", "3.5.0", "3.5.0") == []
+
+
+def test_authority_problems_catches_drift_between_authorities() -> None:
+    problems = version_authority_problems("3.6.0", "3.5.0", "3.6.0")
+
+    assert problems != []
+    assert any("VERSION.txt" in problem for problem in problems)
+
+
+def test_authority_problems_catches_regression_below_floor() -> None:
+    problems = version_authority_problems("3.4.6", "3.4.6", "3.4.6")
+
+    assert problems != []
+    assert any(REBASE_FLOOR in problem for problem in problems)
+
+
+def test_authority_problems_rejects_empty_version_without_raising() -> None:
+    problems = version_authority_problems("", "3.5.0", "3.5.0")
+
+    assert problems != []
+    assert any("manifest" in problem for problem in problems)
+
+
+def test_authority_problems_rejects_prerelease_suffix_without_raising() -> None:
+    problems = version_authority_problems("3.5.0-rc1", "3.5.0-rc1", "3.5.0-rc1")
+
+    assert problems != []
+    assert any("rc1" in problem for problem in problems)
+
+
+def test_authority_floor_comparison_is_semantic_not_lexicographic() -> None:
+    # "3.10.0" sorts BELOW "3.5.0" as a string ('1' < '5'), so a naive
+    # string comparison would flag it as a regression; semantically it sits
+    # above the floor and must be healthy.
+    assert "3.10.0" < REBASE_FLOOR
+    assert _semver_tuple("3.10.0") > _semver_tuple(REBASE_FLOOR)
+    assert version_authority_problems("3.10.0", "3.10.0", "3.10.0") == []
 
 
 def test_publish_workflow_contains_wired_reconcile_step() -> None:
