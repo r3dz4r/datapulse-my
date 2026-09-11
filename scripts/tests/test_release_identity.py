@@ -242,3 +242,35 @@ def test_config_without_extra_files_fails_the_authority_assertions() -> None:
 
     with pytest.raises(AssertionError):
         _assert_release_advances_version_authorities(config)
+
+
+def test_tag_behind_manifest_is_release_in_flight_exits_zero(tmp_path: Path) -> None:
+    root = tmp_path / "tag-behind"
+    older = "0.11.0"
+    _stage(root, tag=f"v{older}")
+
+    # Two-sided proof: the staged fixture is a genuine string mismatch, so the
+    # old strict-equality tag limb would reject it; only ordered comparison
+    # (tag older than manifest = release in flight) can pass it.
+    identity = _load_identity_module().load_release_identity(root)
+    assert identity.tag is not None
+    assert identity.tag != identity.manifest
+
+    result = _run(root, "--check")
+
+    assert result.returncode == 0, result.stderr
+    assert (
+        f"note: tag {older} is behind the manifest {MANIFEST} (release in flight)"
+        in result.stdout
+    )
+
+
+def test_unparseable_tag_fails_closed_exits_one(tmp_path: Path) -> None:
+    root = tmp_path / "tag-unparseable"
+    _stage(root, tag="vNext")
+
+    result = _run(root, "--check")
+
+    assert result.returncode == 1
+    output = result.stdout + result.stderr
+    assert f"disagree: manifest={MANIFEST} tag=Next" in output

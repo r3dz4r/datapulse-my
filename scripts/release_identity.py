@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
-"""Fail closed when version-bearing files disagree with the release-please manifest."""
+"""Fail closed when version-bearing files disagree with the release-please manifest.
+
+The newest v* tag is compared to the manifest as an ordered version: a tag
+older than the manifest is a release in flight (release-please tags only after
+the merge lands), while a tag newer than the manifest is real drift.
+"""
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -83,17 +89,22 @@ def write_server_version(root: Path, version: str) -> None:
 
 
 def first_disagreement(identity: ReleaseIdentity) -> tuple[str, str, str, str] | None:
-    """Return (left_source, left_value, right_source, right_value) vs the manifest."""
+    """Return (left_source, left_value, right_source, right_value) vs the manifest.
+
+    Files must match the manifest exactly. The tag is compared as an ordered
+    version: equal or older agrees (older = release in flight), newer is drift,
+    and a value that is not a dotted numeric version fails closed exactly like
+    the old strict string comparison did.
+    """
     baseline = identity.manifest
-    candidates: list[tuple[str, str]] = [
+    for name, value in (
         ("version_txt", identity.version_txt),
         ("server_json", identity.server_json),
-    ]
-    if identity.tag is not None:
-        candidates.append(("tag", identity.tag))
-    for name, value in candidates:
+    ):
         if value != baseline:
             return ("manifest", baseline, name, value)
+    if identity.tag is not None and not _tag_agrees_with_manifest(identity.tag, baseline):
+        return ("manifest", baseline, "tag", identity.tag)
     return None
 
 
@@ -128,7 +139,35 @@ def main(argv: list[str] | None = None) -> int:
         if disagreement is not None:
             left, left_value, right, right_value = disagreement
             print(f"disagree: {left}={left_value} {right}={right_value}")
+        elif identity.tag is not None and _tag_is_behind(identity.tag, identity.manifest):
+            print(
+                f"note: tag {identity.tag} is behind the manifest "
+                f"{identity.manifest} (release in flight)"
+            )
     return 0 if agree else 1
+
+
+def _parse_dotted_version(value: str) -> tuple[int, ...] | None:
+    """Return the numeric components of a dotted version; None when not one."""
+    if re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", value) is None:
+        return None
+    return tuple(int(part) for part in value.split("."))
+
+
+def _tag_is_behind(tag: str, manifest: str) -> bool:
+    """True only when both parse and the tag is strictly older than the manifest."""
+    tag_parts = _parse_dotted_version(tag)
+    manifest_parts = _parse_dotted_version(manifest)
+    return (
+        tag_parts is not None
+        and manifest_parts is not None
+        and tag_parts < manifest_parts
+    )
+
+
+def _tag_agrees_with_manifest(tag: str, manifest: str) -> bool:
+    """Equal or older tags agree (older = release in flight); anything else fails closed."""
+    return tag == manifest or _tag_is_behind(tag, manifest)
 
 
 def _read_text(path: Path) -> str:
