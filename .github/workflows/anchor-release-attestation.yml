@@ -15,10 +15,15 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'autorelease: pending')
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
       - run: python -m pip install cryptography==50.0.0
       - name: Fetch and verify latest signed head
@@ -50,7 +55,7 @@ jobs:
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
       - name: Add anchor trailer to PR body
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -Eeuo pipefail
           head="$(jq -er .chain_head .attestations/chain_head.json)"
