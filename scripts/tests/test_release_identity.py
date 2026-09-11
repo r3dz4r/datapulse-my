@@ -1,15 +1,31 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import subprocess
 import sys
 from pathlib import Path
+from types import ModuleType
+
+import pytest
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "release_identity.py"
+RELEASE_CONFIG = Path(__file__).resolve().parents[2] / "release-please-config.json"
+ROOT_PACKAGE = "."
+VERSION_JSONPATH = "$.version"
 MANIFEST = "0.12.0"
 OTHER_VERSION = "9.9.9"
 SERVER_MARKER = "preserve-me"
+
+
+def _load_identity_module() -> ModuleType:
+    spec = importlib.util.spec_from_file_location("release_identity", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def _write_json(path: Path, value: object) -> None:
@@ -172,3 +188,57 @@ def test_positive_control_agreeing_fixture_passes_and_disagreeing_fixture_fails(
     disagree_output = disagree_result.stdout + disagree_result.stderr
     assert MANIFEST in disagree_output
     assert OTHER_VERSION in disagree_output
+
+
+def _assert_release_advances_version_authorities(config: object) -> None:
+    """Every file authority of release_identity.py must be bumped by release-please.
+
+    The manifest (release-please's own state) and the tag are advanced by
+    release-please unconditionally; VERSION.txt and server.json only advance
+    when the config says so. Their names are taken from the identity script's
+    own constants so this contract cannot drift from the gate it protects.
+    """
+    identity = _load_identity_module()
+    assert isinstance(config, dict)
+    packages = config.get("packages")
+    assert isinstance(packages, dict)
+    package = packages.get(ROOT_PACKAGE)
+    assert isinstance(package, dict)
+    assert package.get("version-file") == identity.VERSION_TXT_NAME, (
+        "VERSION.txt authority must be advanced via version-file"
+    )
+    extra_files = package.get("extra-files")
+    assert isinstance(extra_files, list), (
+        "server.json authority must be advanced via extra-files"
+    )
+    server_entries = [
+        entry
+        for entry in extra_files
+        if isinstance(entry, dict) and entry.get("path") == identity.SERVER_JSON_NAME
+    ]
+    assert server_entries, (
+        f"{identity.SERVER_JSON_NAME} must be an extra-file of the '.' package"
+    )
+    for entry in server_entries:
+        assert entry.get("type") == "json"
+        assert entry.get("jsonpath") == VERSION_JSONPATH, (
+            f"extra-files entry for {identity.SERVER_JSON_NAME} must target "
+            f"{VERSION_JSONPATH}"
+        )
+
+
+def test_release_config_advances_every_identity_authority() -> None:
+    config = json.loads(RELEASE_CONFIG.read_text(encoding="utf-8"))
+
+    _assert_release_advances_version_authorities(config)
+
+
+def test_config_without_extra_files_fails_the_authority_assertions() -> None:
+    config = json.loads(RELEASE_CONFIG.read_text(encoding="utf-8"))
+    assert isinstance(config, dict)
+    package = config["packages"][ROOT_PACKAGE]
+    assert isinstance(package, dict)
+    package.pop("extra-files", None)
+
+    with pytest.raises(AssertionError):
+        _assert_release_advances_version_authorities(config)
