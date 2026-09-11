@@ -124,7 +124,7 @@ python3 scripts/check_heartbeat.py # recent pipeline activity
 ## What is NOT in this repo
 
 - **The deploy VPS state** — `~/.config/systemd/user/datapulse-health.timer`, `~/.config/systemd/system/datapulse-health.service`, env vars in `/etc/systemd/system/datapulse-health.service`
-- **Honcho observations** — query via the Honcho API at `http://100.74.84.121:8000/v3/workspaces/redza-prod/...`
+- **Honcho observations** — query via the Honcho API at `http://127.0.0.1:8000/v3/workspaces/redza-prod/...`
 - **The MCP deployment** — separate code path through the deploy-cloudflare-pages.yml workflow + the headroom-proxy service
 - **datapulse.my Cloudflare config** — DNS, TLS, cache rules (if any); owner is the operator's Cloudflare account
 - **Upstream data sources** — `data.gov.my`, `BNM`, `DOSM` etc. are read but never owned

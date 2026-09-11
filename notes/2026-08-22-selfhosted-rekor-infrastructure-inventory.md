@@ -4,11 +4,8 @@ Status: read-only design review; no infrastructure changes performed.
 
 ## Host capacity
 
-- Host: Ubuntu Linux 6.8.0-138-generic, x86_64.
-- CPUs: 6.
-- Memory: 11 GiB total, approximately 5.1 GiB available at probe time.
-- Root filesystem: 96 GiB total, 61 GiB used, 36 GiB available (64%).
-- Tailnet IPv4: `100.74.84.121`.
+- Host: a single-node Ubuntu Linux VPS, x86_64.
+- Capacity: low single-digit CPU cores, ~11 GiB RAM, with roughly a third of the root filesystem free at probe time. Exact figures are intentionally omitted — re-measure before deployment.
 
 This is enough capacity for a bounded private proof-of-concept only after resource limits and backup capacity are defined. It is not evidence of production-grade HA capacity.
 
@@ -16,12 +13,12 @@ This is enough capacity for a bounded private proof-of-concept only after resour
 
 No `rekor`, `trillian`, `bao`, `vault`, or `cosign` binary/service/container is installed.
 
-Occupied or active service boundaries observed:
+Occupied or active service boundaries observed (exact ports and bindings intentionally omitted — re-measure before deployment):
 
-- Honcho PostgreSQL: `127.0.0.1:5432`.
-- Malaysia data engine PostgreSQL: `0.0.0.0:54329`.
-- Existing services/listeners: `100.74.84.121:3000`, `100.74.84.121:3002`, `127.0.0.1:8000`, `100.74.84.121:8000`, `127.0.0.1:8787`, `127.0.0.1:8788`, `127.0.0.1:8791`, `0.0.0.0:8080`, `0.0.0.0:9102`, and HTTPS/SSH listeners.
-- Docker already hosts multiple PostgreSQL, Redis, MinIO, ClickHouse, Firecrawl, Buzz, Camofox, and data-engine workloads.
+- A loopback-bound PostgreSQL for Honcho.
+- A PostgreSQL listener for the Malaysia data engine, bound to all interfaces; the firewall posture protecting it is a separate verification item.
+- A spread of loopback-, tailnet-, and wildcard-bound service listeners across the Honcho, headroom, Buzz, Camofox, Firecrawl and data-engine stacks, plus the usual HTTPS/SSH listeners.
+- Docker already hosts multiple database, object-store, analytics, scraping and application workloads.
 
 Do not reuse an existing database, Docker network, volume, service account, or listener without a separate review. Do not select a port from assumption; choose one after the deployment topology and private binding are approved.
 
