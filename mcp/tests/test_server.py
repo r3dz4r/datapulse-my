@@ -1070,6 +1070,113 @@ async def _result(value: dict) -> dict:
     return value
 
 
+async def test_usage_ledger_populates_result_summary_from_real_trust_verdict_call(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    install_attestation_fixture(monkeypatch)
+
+    async def catalogue():
+        return (
+            {"datasets": [{"id": "sample", "name": "Sample", "source": "Agency"}]},
+            {"datasets": [{"dataset_id": "sample", "status": "fresh", "last_checked": "2026-08-15T00:00:00Z"}]},
+        )
+
+    async def trends():
+        return {"datasets": [{"dataset_id": "sample", "trend": "stable"}]}
+
+    async def drift():
+        return {"datasets": [{"dataset_id": "sample", "verdict": "stable"}]}
+
+    async def recon():
+        return {"groups": []}
+
+    monkeypatch.setattr(server, "_load_catalogue", catalogue)
+    monkeypatch.setattr(server, "_load_trends", trends)
+    monkeypatch.setattr(server, "_load_drift", drift)
+    monkeypatch.setattr(server, "_load_reconciliation", recon)
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("trust_verdict", {"dataset_id": "sample"})
+
+    assert result.data["score"]["score"] == 90.0
+    records = [json.loads(line) for line in next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8").splitlines()]
+    trust_records = [record for record in records if record["tool"] == "trust_verdict"]
+    assert len(trust_records) == 1
+    trust_record = trust_records[0]
+    assert trust_record["outcome"] == "success"
+    assert trust_record["result_summary"] != {}
+    assert isinstance(trust_record["result_summary"].get("score"), (int, float))
+    assert isinstance(trust_record["result_summary"].get("methodology_version"), int)
+    assert "facts" not in trust_record["result_summary"]
+
+    day = trust_record["ts"][:10]
+    summary = await server.usage_summary(day, day)
+    assert summary["total_calls"] == 1
+    assert summary["by_tool"] == {"trust_verdict": 1}
+    assert summary["trust_distribution"] != {}
+    assert summary["trust_distribution"] == {"90-100": 1}
+
+
+async def test_usage_middleware_unwraps_tool_result_envelope(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    context = SimpleNamespace(message=SimpleNamespace(name="get_dataset", arguments={"dataset_id": "fuelprice"}), timestamp=datetime.now(timezone.utc))
+    await server.ToolUsageLoggingMiddleware().on_call_tool(
+        context,
+        lambda _: _result(SimpleNamespace(structured_content=None, content=[SimpleNamespace(text=json.dumps({"count": 7, "status": "fresh"}))])),
+    )
+    await server.ToolUsageLoggingMiddleware().on_call_tool(
+        context,
+        lambda _: _result(SimpleNamespace(structured_content=None, content=[SimpleNamespace(text="not json")])),
+    )
+    records = [json.loads(line) for line in next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8").splitlines()]
+    assert [record["outcome"] for record in records] == ["success", "success"]
+    assert [record["result_summary"] for record in records] == [{"count": 7, "status": "fresh"}, {}]
+
+
+async def test_usage_middleware_separates_upstream_read_failures_from_internal(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    context = SimpleNamespace(message=SimpleNamespace(name="trust_verdict", arguments={"dataset_id": "sample"}), timestamp=datetime.now(timezone.utc))
+
+    async def fail_upstream(_: object) -> None:
+        raise httpx.ConnectError("secret upstream diagnostic")
+
+    with pytest.raises(httpx.ConnectError):
+        await server.ToolUsageLoggingMiddleware().on_call_tool(context, fail_upstream)
+
+    (record,) = [json.loads(line) for line in next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8").splitlines()]
+    assert record["outcome"] == "error"
+    assert record["error"] == {"classification": "upstream_read_error", "message": "tool call failed"}
+    assert "secret upstream diagnostic" not in json.dumps(record)
+
+
+@pytest.mark.parametrize(
+    ("error", "classification"),
+    [
+        (ValueError("caller-supplied detail"), "validation_error"),
+        (httpx.ConnectError("upstream diagnostic"), "upstream_read_error"),
+        (httpx.ReadTimeout("upstream diagnostic"), "upstream_read_error"),
+        (ConnectionError("upstream diagnostic"), "upstream_read_error"),
+        (TimeoutError("upstream diagnostic"), "upstream_read_error"),
+        (FileNotFoundError("upstream diagnostic"), "upstream_read_error"),
+        (KeyError("internal diagnostic"), "internal_error"),
+        (RuntimeError("internal diagnostic"), "internal_error"),
+    ],
+)
+def test_usage_error_record_uses_closed_vocabulary_with_constant_message(
+    error: BaseException, classification: str
+) -> None:
+    record = server._error_record(error)
+    assert record == {"classification": classification, "message": "tool call failed"}
+    assert server.USAGE_ERROR_CLASSIFICATIONS == frozenset(
+        {"validation_error", "upstream_read_error", "internal_error"}
+    )
+
+
 async def test_search_datasets_exact_title_scores_above_partial() -> None:
     async with Client(server.mcp) as client:
         exact = await client.call_tool(
