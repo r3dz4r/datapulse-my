@@ -17,6 +17,7 @@ ROOT_OUTPUTS = frozenset(
         "catalog-graph.json",
         "catalog-snapshot.json",
         "changelog.json",
+        "datapulse_summary.json",
         "feed.xml",
     }
 )
@@ -60,6 +61,8 @@ def is_health_cycle_output(path: str) -> bool:
         return bool(parts[1].removesuffix(".json")) and parts[1].endswith(".json")
     if len(parts) == 2 and parts[0] == "badges":
         return bool(parts[1].removesuffix(".svg")) and parts[1].endswith(".svg")
+    if len(parts) == 3 and parts[:2] == ["data", "passports"]:
+        return bool(parts[2].removesuffix(".json")) and parts[2].endswith(".json")
     if len(parts) == 3 and parts[0] == "record-evidence":
         return bool(parts[1]) and parts[2] == "latest.json"
     if len(parts) == 3 and parts[:2] == [".attestations", "latest"]:
