@@ -136,8 +136,6 @@ This project uses [release-please](https://github.com/googleapis/release-please)
 | `perf:` | patch | `perf(scoring): cache title matches` |
 | `feat!:` or `BREAKING CHANGE:` | major (x.0.0) | `feat!: change tool schema` |
 | `chore:`, `docs:`, `refactor:`, `style:`, `test:`, `ci:` | none | (hidden from changelog) |
-| Any commit with `[skip release]` footer | none | `chore(health): update [skip release]` |
-
-Daily health/dataset-output commits should include `[skip release]` in the commit body or footer to avoid bloating the changelog. The existing `chore(health): ... [skip deploy]` pattern selects the health-only fast path in the Cloudflare Pages workflow; release-please respects the same footer convention.
+Daily health/dataset-output commits stay out of the changelog by their commit **type**, not by a footer: `changelog-sections` in `release-please-config.json` hides `chore`, `docs`, and `refactor`. The `chore(health): ... [skip deploy]` trailer is likewise a label, not a gate — the Pages health-only fast path is chosen by `scripts/classify_change.py` from the changed paths (the `classify` job in `.github/workflows/deploy-cloudflare-pages.yml`), and no workflow or config reads the trailer. Two tests assert it stays out of the deploy workflow: `scripts/tests/test_workflow_rewire.py` and `scripts/tests/test_deploy_cloudflare_pages_contract.py`.
 
 After a release-please PR is merged, the `Publish to MCP Registry` workflow (`.github/workflows/publish-mcp.yml`) auto-fires on the new tag push and refreshes the official MCP Registry entry.

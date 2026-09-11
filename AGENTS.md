@@ -118,7 +118,7 @@ python3 scripts/check_heartbeat.py # recent pipeline activity
 
 - **Python:** `from __future__ import annotations` on every file. Type hints required on all public functions. Absolute imports preferred. Stdlib + `requests` + `pydantic` + `cryptography` only — small dep tree.
 - **Markdown under `docs/`:** public-facing. Date-stamped changelog entries. Citations to upstream sources where claims are made.
-- **Commit messages:** conventional-commit-ish. `[skip deploy]` trailer on chore(health) commits selects the Cloudflare Pages health-only fast path. **Without** the trailer on operator commits.
+- **Commit messages:** conventional-commit-ish. The `[skip deploy]` trailer on chore(health) commits is a convention, **not a gate**: the Pages health-only fast path comes from `scripts/classify_change.py` classifying the changed *paths*, and no workflow or config reads the trailer. **Without** the trailer on operator commits (full release path).
 - **Inline comments:** explain *why*, not *what*. The next agent reading should learn the operator's reasoning.
 
 ## What is NOT in this repo
