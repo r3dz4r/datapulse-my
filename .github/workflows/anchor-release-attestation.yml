@@ -44,22 +44,15 @@ jobs:
           PY
           mkdir -p .attestations
           cp "$work/head.json" .attestations/chain_head.json
-      - name: Commit anchor to release PR branch
-        run: |
-          set -Eeuo pipefail
-          git diff --quiet -- .attestations/chain_head.json && exit 0
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add .attestations/chain_head.json
-          git commit -m 'chore(release): anchor attestation chain head'
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
-      - name: Add anchor trailer to PR body
+      - name: Comment anchor trailer on PR
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -Eeuo pipefail
           head="$(jq -er .chain_head .attestations/chain_head.json)"
-          body="$(gh pr view ${{ github.event.pull_request.number }} --json body --jq '.body // ""')"
           trailer="Attestation-Chain-Head: ${head}"
-          body="$(printf '%s\n' "$body" | sed -E '/^Attestation-Chain-Head: [0-9a-f]{64}$/d')"
-          gh pr edit ${{ github.event.pull_request.number }} --body "$(printf '%s\n\n%s\n' "$body" "$trailer")"
+          if gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[].body' | grep -Fqx "$trailer"; then
+            echo "Anchor trailer already posted for ${head}; skipping."
+            exit 0
+          fi
+          gh pr comment ${{ github.event.pull_request.number }} --body "$trailer"

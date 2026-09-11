@@ -5,7 +5,7 @@ from __future__ import annotations
 from scripts.attestation_commit_back import commit_message_for_changed_paths
 
 
-def test_returns_skip_deploy_message_when_a_dated_envelope_changed() -> None:
+def test_returns_commit_message_when_a_dated_envelope_changed() -> None:
     message = commit_message_for_changed_paths(
         (
             "attestations/2026-09-07/dataset-123.json",
@@ -17,7 +17,7 @@ def test_returns_skip_deploy_message_when_a_dated_envelope_changed() -> None:
         "2026-09-07",
     )
 
-    assert message == "chore(attestations): commit signed envelopes for 2026-09-07 [skip deploy]"
+    assert message == "chore(attestations): commit signed envelopes for 2026-09-07"
 
 
 def test_returns_none_when_only_refreshed_aliases_changed() -> None:
