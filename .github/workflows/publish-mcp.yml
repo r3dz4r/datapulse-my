@@ -56,3 +56,11 @@ jobs:
           fi
           echo "Publishing version ${VERSION} to MCP Registry..."
           ./mcp-publisher publish
+
+      - name: Reconcile registry lifecycle status
+        run: |
+          VERSION="$(python3 -c "import json; print(json.load(open('.release-please-manifest.json'))['.'])")"
+          python3 scripts/reconcile_registry_status.py \
+            --server-name io.github.r3dz4r/datapulse-my \
+            --target "$VERSION" \
+            --publisher-bin ./mcp-publisher
