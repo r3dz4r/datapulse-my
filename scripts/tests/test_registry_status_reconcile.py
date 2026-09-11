@@ -21,6 +21,7 @@ META_KEY = "io.modelcontextprotocol.registry/official"
 from scripts.reconcile_registry_status import (  # noqa: E402
     active_versions,
     build_plan,
+    entry_is_latest,
     extract_entries,
 )
 
@@ -165,8 +166,8 @@ def test_apply_invokes_publisher_per_planned_version_flags_before_positionals(
     tmp_path: Path,
 ) -> None:
     payload = _payload(
-        _entry("0.13.0", "active"),
-        _entry("3.4.6", "active", is_latest=True),
+        _entry("0.13.0", "active", is_latest=True),
+        _entry("3.4.6", "active", is_latest=False),
         _entry("9.9.9", "active"),
         _entry("1.0.0", "deprecated"),
     )
@@ -245,6 +246,90 @@ def test_post_state_with_two_active_versions_exits_nonzero(tmp_path: Path) -> No
     output = result.stdout + result.stderr
     assert "0.13.0" in output
     assert "3.4.6" in output
+
+
+def test_entry_is_latest_defaults_to_false_when_meta_or_field_missing() -> None:
+    no_meta = {"server": {"version": "3.5.0"}}
+    no_official = {"server": {"version": "3.5.0"}, "_meta": {}}
+    no_field = {"_meta": {META_KEY: {"status": "active"}}}
+
+    assert entry_is_latest(no_meta) is False
+    assert entry_is_latest(no_official) is False
+    assert entry_is_latest(no_field) is False
+    assert entry_is_latest(_entry("3.5.0", "active", is_latest=True)) is True
+
+
+def test_post_state_with_target_carrying_is_latest_exits_zero(tmp_path: Path) -> None:
+    # True registry shape once the release line outranks the standing entry:
+    # the published version is the only active one AND carries isLatest.
+    payload = _payload(
+        _entry("3.5.0", "active", is_latest=True),
+        _entry("3.4.6", "active", is_latest=False),
+    )
+    fixture = tmp_path / "versions.json"
+    fixture.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    stub = _stub_publisher(tmp_path)
+
+    result, record = _run(fixture, "3.5.0", stub=stub, stub_env={"RECONCILE_STUB_MUTATE": "1"})
+
+    assert result.returncode == 0, result.stderr
+    assert [argv[-1] for argv in _invocations(record)] == ["3.4.6"]
+    assert "isLatest" in result.stdout
+
+
+def test_post_state_with_is_latest_on_other_version_exits_one(tmp_path: Path) -> None:
+    # The stub only flips status, never isLatest: after deprecating 3.4.6 the
+    # target is the sole active version but isLatest stays on the superseded
+    # higher version — exactly the consumer-facing failure this assertion closes.
+    payload = _payload(
+        _entry("3.5.0", "active", is_latest=False),
+        _entry("3.4.6", "active", is_latest=True),
+    )
+    fixture = tmp_path / "versions.json"
+    fixture.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    stub = _stub_publisher(tmp_path)
+
+    result, _ = _run(fixture, "3.5.0", stub=stub, stub_env={"RECONCILE_STUB_MUTATE": "1"})
+
+    assert result.returncode == 1
+    output = result.stdout + result.stderr
+    assert "isLatest" in output
+    assert "3.4.6" in output
+    assert "3.5.0" in output
+
+
+def test_post_state_with_is_latest_absent_exits_one(tmp_path: Path) -> None:
+    # Absence is not a pass: a payload with no isLatest field anywhere must
+    # fail the post-state check, not default its way through it.
+    entry = {
+        "server": {"name": SERVER_NAME, "version": "3.5.0", "title": "DataPulse"},
+        "_meta": {META_KEY: {"status": "active"}},
+    }
+    payload = {"servers": [entry], "metadata": {}}
+    fixture = tmp_path / "versions.json"
+    fixture.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    stub = _stub_publisher(tmp_path)
+
+    result, _ = _run(fixture, "3.5.0", stub=stub)
+
+    assert result.returncode == 1
+    output = result.stdout + result.stderr
+    assert "isLatest" in output
+    assert "(none)" in output
+
+
+def test_version_authorities_agree_at_rebased_3_5_0() -> None:
+    """Pin the re-base: all three version authorities read exactly 3.5.0."""
+    root = Path(__file__).resolve().parents[2]
+    manifest = json.loads(
+        (root / ".release-please-manifest.json").read_text(encoding="utf-8")
+    )
+    version_txt = (root / "VERSION.txt").read_text(encoding="utf-8").strip()
+    server_json = json.loads((root / "server.json").read_text(encoding="utf-8"))
+
+    assert manifest == {".": "3.5.0"}
+    assert version_txt == "3.5.0"
+    assert server_json["version"] == "3.5.0"
 
 
 def test_publish_workflow_contains_wired_reconcile_step() -> None:
