@@ -73,3 +73,14 @@ def test_handles_unexpected_status_keys(tmp_path: Path) -> None:
 
     with pytest.raises(GenerationError):
         generate(tmp_path)
+
+
+def test_committed_summary_matches_committed_health_snapshot() -> None:
+    root = Path(__file__).resolve().parents[2]
+    summary = json.loads((root / "datapulse_summary.json").read_text(encoding="utf-8"))
+    health = json.loads((root / "health/latest.json").read_text(encoding="utf-8"))
+    trust = health["_trust_summary"]
+    remediations = "python3 scripts/gen_public_summary.py"
+    assert summary["source_checked_at"] == trust["checked_at"], remediations
+    assert summary["datasets_total"] == trust["datasets_total"], remediations
+    assert summary["by_status"] == trust["by_status"], remediations
