@@ -50,7 +50,9 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # A non-GITHUB_TOKEN credential is required here: events created with
+          # GITHUB_TOKEN produce held runs that never satisfy required checks.
+          token: ${{ secrets.CROSS_REPO_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
       - uses: actions/checkout@v4
@@ -60,7 +62,7 @@ jobs:
       - name: Assert and publish attestation anchor
         if: steps.release.outputs.release_created == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CROSS_REPO_TOKEN }}
           TAG: ${{ steps.release.outputs.tag_name }}
         run: |
           set -Eeuo pipefail
