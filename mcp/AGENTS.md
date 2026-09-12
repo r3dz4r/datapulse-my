@@ -16,6 +16,7 @@ The M8ven tool trust score (currently D, 41/100) audits this server. Tool annota
 4. **Pydantic or `Annotated` input schemas.** All tool inputs must declare a typed schema. `dict[str, Any]` inputs are forbidden — they fail M8ven's "Tool inputs are validated" check.
 5. **Tests live in `mcp/tests/`.** Every new tool needs at least one integration test using FastMCP's in-memory client. Run `uv run --with fastmcp,httpx pytest mcp/tests/ -v` before pushing.
 6. **Secrets never flow to network.** Do not add code that reads env vars and exfiltrates them, even for "debug logging." M8ven's secret-flow analysis is positive for this server today; preserve it.
+7. **Commit and push atomically — never leave an unpushed commit on `main`.** `scripts/datapulse-pipeline.sh` (`assert_managed_commits`, ~line 121) walks **every commit above `origin/main`** and fails the run unless each one has a pipeline-managed subject *and* touches only artifact paths (`health/*`, `badges/*`, `docs/*`, `deltas/*`, `data/passports/*`, `catalog-*.json`, `attestations/latest/scores.json`, and a few more). `mcp/*` is **not** on that allowlist, so a code commit left unpushed here fails the health pipeline on its next run (~10 minute cadence) with `control-plane degraded: local-only commit is not pipeline-managed`. Commit and push as one operation. If the push fails, revert the commit (`git reset --soft HEAD~1`) rather than leaving it local — an uncommitted working tree is safe, an unpushed commit is not.
 
 ## Style conventions
 
@@ -55,6 +56,8 @@ jq '.tools | length' mcp.json
 jq '.tools[] | select(.annotations == null) | .name' mcp.json
 # should return empty
 ```
+
+**Then commit and push in the same operation** (see hard rule 7). A commit that sits above `origin/main` fails the next health-pipeline run, because `assert_managed_commits` rejects any commit whose paths are outside the artifact allowlist.
 
 ## Pre-flight checklist (for dispatch briefs)
 
