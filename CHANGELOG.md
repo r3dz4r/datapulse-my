@@ -14,6 +14,26 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.6.0](https://github.com/r3dz4r/datapulse-my/compare/v3.5.0...v3.6.0) (2026-09-12)
+
+
+### Features
+
+* **health:** fingerprint structure for non-tabular sources ([a7b0b36](https://github.com/r3dz4r/datapulse-my/commit/a7b0b366667850130faec1a69650d4c712d2c6df))
+* **mcp:** attribute MCP requests to their source in the journal ([0746ed2](https://github.com/r3dz4r/datapulse-my/commit/0746ed2364d3a2be8600bd78b4b00177163ab4ad))
+* **mcp:** declare usage ledger schema era ([33f0e1d](https://github.com/r3dz4r/datapulse-my/commit/33f0e1d03ce3be16effa5f4ee2673d7e5a6577be))
+* **okf:** pin each Attested Computation's sources by content digest ([0b779f2](https://github.com/r3dz4r/datapulse-my/commit/0b779f26a575e2b1ddb23ca282ef820dd77e0aec))
+
+
+### Bug Fixes
+
+* **attestation:** stop the anchor job writing to the release PR branch ([8da3974](https://github.com/r3dz4r/datapulse-my/commit/8da3974a1d5054f989988b887d919880edbc2b6a))
+* **attestation:** stop the anchor job writing to the release PR branch ([56b8686](https://github.com/r3dz4r/datapulse-my/commit/56b86866d355d26cdf1d3a388959aabff3a9c812))
+* **health:** record shape_basis only as a positive finding ([1c6e264](https://github.com/r3dz4r/datapulse-my/commit/1c6e264bbccf82e065440eed25a12897f5439bd1))
+* **mcp:** populate usage result summaries and classify usage errors ([a96163a](https://github.com/r3dz4r/datapulse-my/commit/a96163adce18d01a02dd27f2c48f301bf405523e))
+* **okf:** bind Attested Computation trust state to the method ([dcd824f](https://github.com/r3dz4r/datapulse-my/commit/dcd824f7514de68dcb5bf9164569c412a9246862))
+* **okf:** name the real attester in Attested Computation concepts ([a0090b0](https://github.com/r3dz4r/datapulse-my/commit/a0090b07e26488e14968d275368a7c738df3d3b8))
+
 ## [0.13.0](https://github.com/r3dz4r/datapulse-my/compare/v0.12.0...v0.13.0) (2026-09-11)
 
 
