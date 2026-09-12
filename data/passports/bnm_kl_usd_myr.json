@@ -20,14 +20,14 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-09-12T19:30:27Z",
+    "last_checked": "2026-09-12T20:34:19Z",
     "record_count": 2,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
       "column_count": null,
       "content_shape_changed": false,
-      "first_row_hash": null
+      "first_row_hash": "shape-v1:97f7c0f86ff1a2a9aeadf939bbeba9ac76f66ceb8dbf8c434c8db98606cdf9fa"
     },
     "status": "fresh"
   },
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Kuala Lumpur USD/MYR Reference Rate",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-09-12T19:30:27Z",
+    "observed_verified_at": "2026-09-12T20:34:19Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -595,9 +595,9 @@
               "Shape metadata is not a semantic interoperability assessment."
             ],
             "reason_codes": [
-              "shape_metadata_missing"
+              "shape_metadata_observed"
             ],
-            "state": "unknown"
+            "state": "pass"
           },
           {
             "check_id": "fair.reuse_metadata",
@@ -622,11 +622,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 3,
+          "evaluated": 4,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 3,
-          "unknown": 1
+          "passed": 4,
+          "unknown": 0
         },
         "evidence_refs": [
           {
@@ -677,10 +677,10 @@
         "reason_codes": [
           "catalogue_metadata_declared",
           "observed_access_signal_present",
-          "shape_metadata_missing",
+          "shape_metadata_observed",
           "reuse_metadata_declared"
         ],
-        "state": "unknown"
+        "state": "pass"
       },
       "governance": {
         "checks": [
@@ -996,9 +996,9 @@
               "Shape signals are bounded structural observations, not a complete reproducibility proof."
             ],
             "reason_codes": [
-              "shape_fingerprint_missing"
+              "shape_fingerprint_observed"
             ],
-            "state": "unknown"
+            "state": "pass"
           },
           {
             "check_id": "reproducibility.retrieval_timestamp",
@@ -1059,11 +1059,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 3,
+          "evaluated": 4,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 3,
-          "unknown": 1
+          "passed": 4,
+          "unknown": 0
         },
         "evidence_refs": [
           {
@@ -1104,18 +1104,18 @@
         ],
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
-          "shape_fingerprint_missing",
+          "shape_fingerprint_observed",
           "last_checked_declared",
           "record_count_observed",
           "attestation_ref_declared"
         ],
-        "state": "unknown"
+        "state": "pass"
       }
     },
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "indeterminate",
+    "overall": "ready",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },
