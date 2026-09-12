@@ -771,6 +771,7 @@ async def _run_asgi_request(
     path: str = "/mcp",
     status: int = 200,
     body: bytes = b"ok",
+    client: tuple[str, int] | None = None,
 ) -> list[dict]:
     sent: list[dict] = []
 
@@ -782,7 +783,7 @@ async def _run_asgi_request(
 
     response_app = _ASGIResponse(status=status, body=body) if app == "response" else app
     await response_app(
-        {"type": "http", "method": "POST", "path": path, "headers": []},
+        {"type": "http", "method": "POST", "path": path, "headers": [], "client": client},
         receive,
         send,
     )
@@ -795,6 +796,7 @@ async def test_http_correlation_adds_opaque_response_header_and_safe_journal(
     caplog.set_level("INFO", logger=server.logger.name)
     sent = await _run_asgi_request(
         server.HTTPRequestCorrelationMiddleware(_ASGIResponse(status=204, body=b"private body")),
+        client=("8.8.8.8", 45678),
     )
 
     headers = dict(sent[0]["headers"])
@@ -809,11 +811,15 @@ async def test_http_correlation_adds_opaque_response_header_and_safe_journal(
     ]
     assert len(http_logs) == 1
     journal = json.loads(http_logs[0].partition(":")[2].lstrip())
-    assert set(journal) == {"event", "ts", "http_request_id", "method", "path", "status"}
+    assert set(journal) == {
+        "event", "ts", "http_request_id", "client_host", "client_class", "method", "path", "status"
+    }
     assert journal == {
         "event": "mcp_http",
         "ts": journal["ts"],
         "http_request_id": request_id,
+        "client_host": "8.8.8.8",
+        "client_class": "routable",
         "method": "POST",
         "path": "/mcp",
         "status": 204,
@@ -821,6 +827,36 @@ async def test_http_correlation_adds_opaque_response_header_and_safe_journal(
     serialized = json.dumps(journal)
     for forbidden in ("127.0.0.1", "x-secret", "private body", "arguments", "identity", "cookie"):
         assert forbidden not in serialized
+
+
+@pytest.mark.parametrize(
+    ("client", "expected_host", "expected_class"),
+    [
+        (("127.0.0.1", 12345), "127.0.0.1", "loopback"),
+        (("10.0.0.1", 12345), "10.0.0.1", "private/link-local"),
+        (("not-an-address", 12345), None, "absent"),
+        (None, None, "absent"),
+    ],
+)
+async def test_http_correlation_journal_carries_client_origin_and_class(
+    client: tuple[str, int] | None,
+    expected_host: str | None,
+    expected_class: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level("INFO", logger=server.logger.name)
+    await _run_asgi_request(
+        server.HTTPRequestCorrelationMiddleware(_ASGIResponse()),
+        client=client,
+    )
+
+    journal = json.loads(next(
+        record.getMessage().partition(":")[2].lstrip()
+        for record in caplog.records
+        if record.name == server.logger.name and record.getMessage().startswith("mcp-http:")
+    ))
+    assert journal["client_host"] == expected_host
+    assert journal["client_class"] == expected_class
 
 
 async def test_http_correlation_links_tool_records_and_is_absent_outside_http(
@@ -846,6 +882,7 @@ async def test_http_correlation_links_tool_records_and_is_absent_outside_http(
         if log.name == server.logger.name and log.getMessage().startswith("mcp-tool:")
     ))
     assert record["http_request_id"] == request_id
+    assert not {"client_host", "client_class", "client_ip"}.intersection(record)
     assert journal["http_request_id"] == request_id
 
     isolated_path = tmp_path / "isolated"

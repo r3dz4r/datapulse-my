@@ -7,6 +7,7 @@ import re
 import json
 import base64
 import hashlib
+import ipaddress
 import asyncio
 import contextvars
 import logging
@@ -280,10 +281,29 @@ class HTTPRequestCorrelationMiddleware:
         finally:
             if scope.get("path") == "/mcp":
                 try:
+                    client = scope.get("client")
+                    client_host = client[0] if isinstance(client, (list, tuple)) and client else None
+                    client_class = "absent"
+                    if isinstance(client_host, str):
+                        try:
+                            client_address = ipaddress.ip_address(client_host)
+                        except ValueError:
+                            client_host = None
+                        else:
+                            if client_address.is_loopback:
+                                client_class = "loopback"
+                            elif client_address.is_link_local:
+                                client_class = "private/link-local"
+                            elif client_address.is_private:
+                                client_class = "private/link-local"
+                            else:
+                                client_class = "routable"
                     journal = {
                         "event": "mcp_http",
                         "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
                         "http_request_id": request_id,
+                        "client_host": client_host,
+                        "client_class": client_class,
                         "method": scope.get("method", ""),
                         "path": "/mcp",
                         "status": status if status is not None else 500,
