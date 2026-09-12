@@ -184,6 +184,8 @@ def _usage_arguments(arguments: dict[str, Any]) -> dict[str, Any]:
 USAGE_ERROR_CLASSIFICATIONS = frozenset(
     {"validation_error", "upstream_read_error", "internal_error"}
 )
+# Declares the aggregate-safe correlated record shape without retaining caller identity.
+USAGE_LEDGER_SCHEMA_ERA = "anonymous-correlated"
 
 
 def _error_record(error: BaseException) -> dict[str, str]:
@@ -335,6 +337,7 @@ class ToolUsageLoggingMiddleware(Middleware):
         started = monotonic()
         record: dict[str, Any] = {
             "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+            "schema_era": USAGE_LEDGER_SCHEMA_ERA,
             "tool": message.name,
             "args": args,
             "call_id": uuid4().hex,

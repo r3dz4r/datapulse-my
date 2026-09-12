@@ -996,6 +996,7 @@ async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_ide
     forbidden = {"buyer_id", "client_ip", "request_id", "session_id", "client", "ip", "api_key", "query"}
     assert not forbidden & set(record)
     assert record["args"] == {"dataset_id": "fuelprice", "query_present": True}
+    assert record["schema_era"] == server.USAGE_LEDGER_SCHEMA_ERA
     assert record["outcome"] == "success"
     assert isinstance(record["latency_ms"], int)
     journal = json.loads(next(
@@ -1071,7 +1072,8 @@ async def test_usage_middleware_records_one_terminal_error_and_reraises(
     records = [json.loads(line) for line in next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8").splitlines()]
     assert len(records) == 1
     assert records[0] == {
-        "ts": records[0]["ts"], "tool": "search_datasets", "args": {"query_present": True, "limit": 4},
+        "ts": records[0]["ts"], "schema_era": server.USAGE_LEDGER_SCHEMA_ERA,
+        "tool": "search_datasets", "args": {"query_present": True, "limit": 4},
         "result_summary": {}, "latency_ms": records[0]["latency_ms"], "outcome": "error",
         "error": {"classification": "validation_error", "message": "tool call failed"},
         "call_id": records[0]["call_id"],
