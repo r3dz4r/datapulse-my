@@ -177,9 +177,22 @@ def _usage_arguments(arguments: dict[str, Any]) -> dict[str, Any]:
     return safe
 
 
+# Closed vocabulary: actionable runtime faults (upstream/network reads) must be
+# distinguishable from consumer input and from unexpected internal failures,
+# without ever storing exception text.
+USAGE_ERROR_CLASSIFICATIONS = frozenset(
+    {"validation_error", "upstream_read_error", "internal_error"}
+)
+
+
 def _error_record(error: BaseException) -> dict[str, str]:
     """Classify failures without recording potentially caller-supplied text."""
-    classification = "validation_error" if isinstance(error, ValueError) else "tool_error"
+    if isinstance(error, ValueError):
+        classification = "validation_error"
+    elif isinstance(error, (httpx.HTTPError, OSError, asyncio.TimeoutError)):
+        classification = "upstream_read_error"
+    else:
+        classification = "internal_error"
     return {"classification": classification, "message": "tool call failed"}
 
 
@@ -187,8 +200,31 @@ def _usage_dir() -> Path:
     return Path(os.environ.get("DATAPULSE_USAGE_DIR", "/var/lib/datapulse/usage"))
 
 
+def _unwrap_tool_result(result: Any) -> Any:
+    """Unwrap FastMCP's ToolResult envelope so summaries see the tool payload.
+
+    Middleware hooks receive the wrapped result, not the tool's returned dict:
+    prefer structured content, else the first text content item parsed as JSON.
+    Duck-typed so direct calls with raw dict/list values keep working.
+    """
+    if isinstance(result, (dict, list)):
+        return result
+    structured = getattr(result, "structured_content", None)
+    if structured is not None:
+        return structured
+    for item in getattr(result, "content", None) or ():
+        text = getattr(item, "text", None)
+        if isinstance(text, str):
+            try:
+                return json.loads(text)
+            except ValueError:
+                return result
+    return result
+
+
 def _result_summary(tool: str, result: Any) -> dict[str, Any]:
     """Keep the audit ledger useful without copying full tool responses."""
+    result = _unwrap_tool_result(result)
     if isinstance(result, list):
         return {"count": len(result)}
     if tool == "trust_verdict" and isinstance(result, dict):
@@ -2102,7 +2138,7 @@ async def find_by_licence(
 
 @mcp.tool(
     title="Summarize Aggregate Tool Usage",
-    description="Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, `trust_distribution` (per-status counts of cited datasets) for the inclusive range. Legacy identity fields are ignored.",
+    description="Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, and `trust_distribution` (counts of returned trust verdicts by published score band: 90-100, 75-89, 50-74, 25-49, 0-24) for the inclusive range. Legacy identity fields are ignored.",
     icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
     meta=TOOL_META,
