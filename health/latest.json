@@ -1,15 +1,15 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-12T06:35:05Z",
+  "checked_at": "2026-09-12T06:43:31Z",
   "_trust_summary": {
-    "checked_at": "2026-09-12T06:35:05Z",
+    "checked_at": "2026-09-12T06:43:31Z",
     "datasets_total": 418,
     "by_status": {
-      "fresh": 104,
-      "aging": 121,
+      "fresh": 106,
+      "aging": 122,
       "stale": 164,
       "discontinued": 1,
-      "degraded": 3,
+      "degraded": 0,
       "browser_dependent": 5,
       "unreachable": 0,
       "unknown": 0,
@@ -55,31 +55,31 @@
         "days_since_modified": 2228
       },
       {
+        "dataset_id": "st_consumers",
+        "days_since_modified": 2080
+      },
+      {
+        "dataset_id": "st_sales_value_rm_million",
+        "days_since_modified": 2080
+      },
+      {
+        "dataset_id": "st_sales_unit_gwh",
+        "days_since_modified": 2080
+      },
+      {
+        "dataset_id": "st_max_demand_mw",
+        "days_since_modified": 2080
+      },
+      {
+        "dataset_id": "st_installed_capacity_mw",
+        "days_since_modified": 2080
+      },
+      {
         "dataset_id": "dosm_mineral_extraction",
         "days_since_modified": 2080
       },
       {
-        "dataset_id": "st_consumers",
-        "days_since_modified": 2073
-      },
-      {
-        "dataset_id": "st_sales_value_rm_million",
-        "days_since_modified": 2073
-      },
-      {
-        "dataset_id": "st_sales_unit_gwh",
-        "days_since_modified": 2073
-      },
-      {
         "dataset_id": "st_generation_mix_gwh",
-        "days_since_modified": 2073
-      },
-      {
-        "dataset_id": "st_max_demand_mw",
-        "days_since_modified": 2073
-      },
-      {
-        "dataset_id": "st_installed_capacity_mw",
         "days_since_modified": 2073
       },
       {
@@ -683,7 +683,7 @@
         "days_since_modified": 0.0009375
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-12T06:43:10Z"
+    "pipeline_heartbeat_at": "2026-09-12T06:51:35Z"
   },
   "datasets": [
     {
@@ -288743,10 +288743,10 @@
     },
     {
       "dataset_id": "bnm_interest_rate",
-      "last_checked": "2026-09-12T02:36:04Z",
+      "last_checked": "2026-09-12T06:43:31Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/interest-rate",
-      "status": "degraded",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.bnm.gov.my/public/interest-rate",
@@ -288775,7 +288775,7 @@
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -289558,10 +289558,10 @@
     },
     {
       "dataset_id": "bnm_interest_volume",
-      "last_checked": "2026-09-12T02:36:04Z",
+      "last_checked": "2026-09-12T06:43:31Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/interest-volume",
-      "status": "degraded",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.bnm.gov.my/public/interest-volume",
@@ -289590,7 +289590,7 @@
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -296069,10 +296069,10 @@
     },
     {
       "dataset_id": "cpi_state_inflation",
-      "last_checked": "2026-09-12T02:36:04Z",
+      "last_checked": "2026-09-12T06:43:31Z",
       "namespace": "economy",
       "url": "https://api.data.gov.my/data-catalogue?id=cpi_state_inflation",
-      "status": "degraded",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=cpi_state_inflation",
@@ -296101,7 +296101,7 @@
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -325382,7 +325382,7 @@
     },
     {
       "dataset_id": "st_installed_capacity_mw",
-      "last_checked": "2026-09-05T06:36:07Z",
+      "last_checked": "2026-09-12T06:43:31Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
       "status": "stale",
@@ -325411,6 +325411,9 @@
       "incomplete": false,
       "column_count": 3,
       "first_row_hash": null,
+      "schema_fingerprint": null,
+      "sample_rows": null,
+      "active_rows": null,
       "content_shape_changed": false,
       "locations": null,
       "date_range": null,
@@ -325424,8 +325427,8 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
-      "record_count_within_tolerance": false,
-      "staleness_days": 2073,
+      "record_count_within_tolerance": null,
+      "staleness_days": 2080,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -325438,7 +325441,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
-        "latest_days": 2073.0,
+        "latest_days": 2080.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -326194,7 +326197,7 @@
     },
     {
       "dataset_id": "st_max_demand_mw",
-      "last_checked": "2026-09-05T06:36:07Z",
+      "last_checked": "2026-09-12T06:43:31Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
       "status": "stale",
@@ -326223,6 +326226,9 @@
       "incomplete": false,
       "column_count": 5,
       "first_row_hash": null,
+      "schema_fingerprint": null,
+      "sample_rows": null,
+      "active_rows": null,
       "content_shape_changed": false,
       "locations": null,
       "date_range": null,
@@ -326236,8 +326242,8 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
-      "record_count_within_tolerance": false,
-      "staleness_days": 2073,
+      "record_count_within_tolerance": null,
+      "staleness_days": 2080,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -326250,7 +326256,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
-        "latest_days": 2073.0,
+        "latest_days": 2080.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -327818,7 +327824,7 @@
     },
     {
       "dataset_id": "st_sales_unit_gwh",
-      "last_checked": "2026-09-05T06:36:07Z",
+      "last_checked": "2026-09-12T06:43:31Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
       "status": "stale",
@@ -327847,6 +327853,9 @@
       "incomplete": false,
       "column_count": 9,
       "first_row_hash": null,
+      "schema_fingerprint": null,
+      "sample_rows": null,
+      "active_rows": null,
       "content_shape_changed": false,
       "locations": null,
       "date_range": null,
@@ -327860,8 +327869,8 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
-      "record_count_within_tolerance": false,
-      "staleness_days": 2073,
+      "record_count_within_tolerance": null,
+      "staleness_days": 2080,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -327874,7 +327883,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
-        "latest_days": 2073.0,
+        "latest_days": 2080.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -328630,7 +328639,7 @@
     },
     {
       "dataset_id": "st_sales_value_rm_million",
-      "last_checked": "2026-09-05T06:36:07Z",
+      "last_checked": "2026-09-12T06:43:31Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
       "status": "stale",
@@ -328659,6 +328668,9 @@
       "incomplete": false,
       "column_count": 5,
       "first_row_hash": null,
+      "schema_fingerprint": null,
+      "sample_rows": null,
+      "active_rows": null,
       "content_shape_changed": false,
       "locations": null,
       "date_range": null,
@@ -328672,8 +328684,8 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
-      "record_count_within_tolerance": false,
-      "staleness_days": 2073,
+      "record_count_within_tolerance": null,
+      "staleness_days": 2080,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -328686,7 +328698,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
-        "latest_days": 2073.0,
+        "latest_days": 2080.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -329442,7 +329454,7 @@
     },
     {
       "dataset_id": "st_consumers",
-      "last_checked": "2026-09-05T06:36:07Z",
+      "last_checked": "2026-09-12T06:43:31Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
       "status": "stale",
@@ -329471,6 +329483,9 @@
       "incomplete": false,
       "column_count": 10,
       "first_row_hash": null,
+      "schema_fingerprint": null,
+      "sample_rows": null,
+      "active_rows": null,
       "content_shape_changed": false,
       "locations": null,
       "date_range": null,
@@ -329484,8 +329499,8 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
-      "record_count_within_tolerance": false,
-      "staleness_days": 2073,
+      "record_count_within_tolerance": null,
+      "staleness_days": 2080,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -329498,7 +329513,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
-        "latest_days": 2073.0,
+        "latest_days": 2080.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {

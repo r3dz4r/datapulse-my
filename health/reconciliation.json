@@ -1,6 +1,6 @@
 {
   "schema": "datapulse/v1/dataset-reconciliation",
-  "generated_at": "2026-09-12T06:35:05Z",
+  "generated_at": "2026-09-12T06:43:31Z",
   "window_days": 0,
   "methodology": {
     "identity_precedence": [
@@ -26,8 +26,8 @@
     "datasets_grouped": 54,
     "datasets_single_source": 364,
     "by_verdict": {
-      "agree": 21,
-      "discrepancy": 2,
+      "agree": 22,
+      "discrepancy": 1,
       "different_granularity": 0,
       "insufficient_data": 0
     }
@@ -207,9 +207,9 @@
       "grouping_method": "seed",
       "relationship": "equivalent",
       "confidence": "reviewed",
-      "verdict": "discrepancy",
-      "requires_human_review": true,
-      "reason": "one or more comparable publication signals exceed the declared tolerance",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
       "rationale": "Reviewed OpenDOSM CSV and data.gov.my catalogue presentations of the same DOSM series.",
       "tolerances": {
         "record_count_policy": "strict",
@@ -223,8 +223,8 @@
           "source": "data.gov.my",
           "source_family": "dosm",
           "url": "https://api.data.gov.my/data-catalogue?id=cpi_state_inflation",
-          "status": "degraded",
-          "availability_class": "failed",
+          "status": "aging",
+          "availability_class": "available",
           "record_count": 44352,
           "record_count_estimated": false,
           "content_date": "2026-07-01",
@@ -253,7 +253,7 @@
           "record_count_within_tolerance": true,
           "content_date_delta_days": 0,
           "content_date_within_tolerance": true,
-          "availability_match": false
+          "availability_match": true
         }
       ]
     },
