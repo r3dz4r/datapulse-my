@@ -5,6 +5,7 @@ import pytest
 
 from scripts.shape_fingerprint import (
     fingerprint_csv_headers,
+    fingerprint_archive_member_headers,
     fingerprint_json,
     fingerprint_untyped,
 )
@@ -54,6 +55,28 @@ def test_csv_header_order_and_names_are_structural() -> None:
     )
     assert fingerprint_csv_headers(baseline) != fingerprint_csv_headers(
         'id,"display,name",state\n1,"Alpha, One",Johor\n'
+    )
+
+
+def test_archive_member_headers_ignore_member_order_and_row_values() -> None:
+    baseline = fingerprint_archive_member_headers(
+        [
+            ("stops.txt", "stop_id,stop_name\nS1,Central\n"),
+            ("routes.txt", "route_id,route_name\nR1,Blue\n"),
+        ]
+    )
+
+    assert baseline == fingerprint_archive_member_headers(
+        [
+            ("routes.txt", "route_id,route_name\nR9,Green\n"),
+            ("stops.txt", "stop_id,stop_name\nS9,Harbour\n"),
+        ]
+    )
+    assert baseline != fingerprint_archive_member_headers(
+        [
+            ("routes.txt", "route_id,route_long_name\nR9,Green\n"),
+            ("stops.txt", "stop_id,stop_name\nS9,Harbour\n"),
+        ]
     )
 
 

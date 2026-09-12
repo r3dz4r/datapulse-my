@@ -13,6 +13,7 @@ import hashlib
 import io
 import json
 import sys
+from collections.abc import Iterable
 
 
 FINGERPRINT_VERSION = "shape-v1"
@@ -68,6 +69,30 @@ def fingerprint_csv_headers(text: str) -> str:
     if normalized_headers:
         normalized_headers[0] = normalized_headers[0].lstrip("\ufeff")
     return _fingerprint({"type": "csv", "headers": normalized_headers})
+
+
+def fingerprint_archive_member_headers(
+    members: Iterable[tuple[str, str]],
+) -> str:
+    """Fingerprint sorted archive member names and their CSV header rows.
+
+    Callers supply extracted text rather than archive bytes so ZIP timestamps,
+    compression settings, and member ordering cannot influence the digest.
+    """
+    descriptor = []
+    for name, text in sorted(members, key=lambda member: (member[0], member[1])):
+        reader = csv.reader(io.StringIO(text), strict=True)
+        try:
+            headers = next(reader)
+        except StopIteration as exc:
+            raise ValueError(f"archive member {name!r} has no header row") from exc
+        normalized_headers = [header.strip() for header in headers]
+        if normalized_headers:
+            normalized_headers[0] = normalized_headers[0].lstrip("\ufeff")
+        descriptor.append({"name": name, "headers": normalized_headers})
+    if not descriptor:
+        raise ValueError("archive has no file members")
+    return _fingerprint({"type": "archive", "members": descriptor})
 
 
 def fingerprint_untyped(_: str | bytes) -> None:

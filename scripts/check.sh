@@ -837,7 +837,7 @@ check_weather_dataset() {
   local source_url="$2"
   local http_status content_length record_count locations date_start date_end details
   local content_freshness_date
-  local column_count first_row_hash
+  local column_count first_row_hash shape_basis
 
   if ! http_status="$(curl --location --silent --show-error \
     --max-time "$curl_timeout" \
@@ -863,6 +863,7 @@ check_weather_dataset() {
   record_count="$(jq 'length' "$body_file")"
   column_count="$(jq 'if length > 0 and (.[0] | type) == "object" then (.[0] | keys | length) else null end' "$body_file")"
   first_row_hash="$(jq -cS '.[0] // null' "$body_file" | python3 "$script_dir/shape_fingerprint.py" --json)"
+  shape_basis="json-array"
   locations="$(jq '[.[].location.location_id] | unique | length' "$body_file")"
   date_start="$(jq -r '[.[].date] | min // empty' "$body_file")"
   date_end="$(jq -r '[.[].date] | max // empty' "$body_file")"
@@ -876,6 +877,7 @@ check_weather_dataset() {
     --argjson record_count "$record_count" \
     --argjson column_count "$column_count" \
     --arg first_row_hash "$first_row_hash" \
+    --arg shape_basis "$shape_basis" \
     --argjson locations "$locations" \
     --arg date_start "$date_start" \
     --arg date_end "$date_end" \
@@ -888,6 +890,7 @@ check_weather_dataset() {
       record_count: $record_count,
       column_count: $column_count,
       first_row_hash: $first_row_hash,
+      shape_basis: $shape_basis,
       locations: $locations,
       date_range: {start: ($date_start // null), end: ($date_end // null)},
       content_freshness_date: (
@@ -959,7 +962,7 @@ check_direct_dataset() {
   local http_status content_length first_record_timestamp details last_modified
   local content_freshness_date content_request_url date_field extraction_mode content_format
   local date_source metadata_page_url
-  local metrics record_count column_count first_row_hash first_row body_format
+  local metrics record_count column_count first_row_hash first_row body_format shape_basis
   local estimated_record_count record_count_estimated incomplete
   local probe_status probe_message registration_metrics
   local registration_format_compatible legacy_registration_count
@@ -1053,10 +1056,16 @@ check_direct_dataset() {
   fi
   if [[ "$first_row" != "null" ]]; then
     first_row_hash="$(printf '%s' "$first_row" | python3 "$script_dir/shape_fingerprint.py" --json)"
+    shape_basis="json-array"
   elif [[ "$body_format" == "csv" ]]; then
     first_row_hash="$(python3 "$script_dir/shape_fingerprint.py" --csv-headers < "$body_file")"
+    shape_basis="csv-headers"
+  elif [[ "$body_format" == "json" ]]; then
+    first_row_hash="$(python3 "$script_dir/shape_fingerprint.py" --json < "$body_file")"
+    shape_basis="json-object"
   else
     first_row_hash=""
+    shape_basis="untyped"
   fi
   first_record_timestamp="$(jq -r '.first_record_timestamp // empty' <<< "$metrics")"
   content_freshness_date=""
@@ -1159,6 +1168,7 @@ check_direct_dataset() {
     --argjson record_count "$record_count" \
     --argjson column_count "$column_count" \
     --arg first_row_hash "$first_row_hash" \
+    --arg shape_basis "$shape_basis" \
     --arg first_record_timestamp "$first_record_timestamp" \
     --argjson estimated_record_count "$estimated_record_count" \
     --argjson record_count_estimated "$record_count_estimated" \
@@ -1188,6 +1198,7 @@ check_direct_dataset() {
       transition_registration_count: $transition_registration_count,
       invalid_registration_count: $invalid_registration_count,
       first_row_hash: (if $first_row_hash == "" then null else $first_row_hash end),
+      shape_basis: $shape_basis,
       first_record_timestamp: (
         if $first_record_timestamp == "" then null else $first_record_timestamp end
       )
@@ -1617,7 +1628,11 @@ if $due_mode && (( expected_count == 0 )) && [[ -s "$previous_file" ]]; then
   exit 0
 fi
 
-checked_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+checked_at="${DATAPULSE_CHECKED_AT:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}"
+if ! date -u -d "$checked_at" +'%Y-%m-%dT%H:%M:%SZ' >/dev/null 2>&1; then
+  printf 'Invalid DATAPULSE_CHECKED_AT: %s\n' "$checked_at" >&2
+  exit 2
+fi
 checked_epoch="$(date -u -d "$checked_at" +%s)"
 build_health_snapshot() {
   jq -s \
@@ -1806,6 +1821,7 @@ build_health_snapshot() {
           incomplete: $incomplete,
           column_count: ($probe.column_count // null),
           first_row_hash: ($probe.first_row_hash // null),
+          shape_basis: ($probe.shape_basis // "untyped"),
           schema_fingerprint: ($probe.schema_fingerprint // null),
           sample_rows: ($probe.sample_rows // null),
           active_rows: ($probe.active_rows // null),

@@ -93,6 +93,10 @@
             "type": ["string", "null"],
             "pattern": "^sha256:[0-9a-f]{64}$"
           },
+          "shape_basis": {
+            "type": ["string", "null"],
+            "enum": ["json-array", "json-object", "csv-headers", "archive-member-headers", "untyped", null]
+          },
           "quality_profile": {
             "description": "Additive, evidence-bounded six-dimension metadata readiness profile. It is not a semantic-quality score or certification.",
             "type": "object",

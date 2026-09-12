@@ -116,8 +116,42 @@ JSON
 jq -e '
   (.datasets | length) == 1
   and (.datasets[0].first_row_hash | startswith("shape-v1:"))
+  and .datasets[0].shape_basis == "json-array"
   and .datasets[0].content_shape_changed == false
 ' "$fixture_dir/full-output.json" >/dev/null
+
+# A JSON object without a row array still has a value-insensitive structural
+# contract. This must not fall through to the binary/untyped path.
+mkdir "$fixture_dir/object" "$fixture_dir/object-bin"
+cp "$fixture_dir/full/manifest.json" "$fixture_dir/object/manifest.json"
+cat > "$fixture_dir/object-bin/curl" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+output_path=""
+headers_path=""
+while (( $# > 0 )); do
+  case "$1" in
+    --output) output_path="$2"; shift 2 ;;
+    --dump-header) headers_path="$2"; shift 2 ;;
+    --max-time|--write-out) shift 2 ;;
+    *) shift ;;
+  esac
+done
+[[ -z "$output_path" || "$output_path" == "/dev/null" ]] \
+  || printf '{"meta":{"version":"one"},"rate":3.0}\n' > "$output_path"
+[[ -z "$headers_path" ]] \
+  || printf 'HTTP/1.1 200 OK\r\nLast-Modified: Sat, 08 Aug 2026 12:00:00 GMT\r\n\r\n' > "$headers_path"
+printf '200'
+SH
+chmod +x "$fixture_dir/object-bin/curl"
+(
+  cd "$fixture_dir/object"
+  PATH="$fixture_dir/object-bin:$PATH" bash "$repo_root/scripts/check.sh" manifest.json
+) > "$fixture_dir/object-output.json"
+jq -e '
+  .datasets[0].shape_basis == "json-object"
+  and (.datasets[0].first_row_hash | startswith("shape-v1:"))
+' "$fixture_dir/object-output.json" >/dev/null
 
 mkdir "$fixture_dir/full-comparison"
 cp "$fixture_dir/full/manifest.json" "$fixture_dir/full-comparison/manifest.json"
@@ -170,6 +204,7 @@ jq -e '
   and .datasets[0].staleness_status == "fresh"
   and .datasets[0].newest_vehicle_timestamp > 0
   and .datasets[0].content_freshness_date == "2000-01-01"
+  and .datasets[0].shape_basis == "untyped"
   and .datasets[0].staleness_days < 0.00045
 ' "$fixture_dir/realtime-fresh-output.json" >/dev/null
 

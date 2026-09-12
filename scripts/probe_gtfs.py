@@ -15,6 +15,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+try:
+    from scripts.shape_fingerprint import fingerprint_archive_member_headers
+except ModuleNotFoundError:  # Direct script execution places scripts/ on sys.path.
+    from shape_fingerprint import fingerprint_archive_member_headers
+
 
 REQUIRED_STATIC_FILES = (
     "agency.txt",
@@ -108,6 +113,18 @@ def _row_count(archive: zipfile.ZipFile, name: str) -> int:
         return max(0, sum(1 for _ in io.TextIOWrapper(raw, encoding="utf-8-sig", newline="")) - 1)
 
 
+def _archive_member_headers(archive: zipfile.ZipFile) -> list[tuple[str, str]]:
+    """Read only CSV header lines; archive metadata and row values are ignored."""
+    members = []
+    for info in archive.infolist():
+        if info.is_dir():
+            continue
+        with archive.open(info) as raw:
+            header = io.TextIOWrapper(raw, encoding="utf-8-sig", newline="").readline()
+        members.append((info.filename, header))
+    return members
+
+
 def select_realtime_timestamp(
     header_timestamp: int,
     vehicle_timestamps: list[int],
@@ -161,6 +178,9 @@ def check_gtfs_static_dataset(
                 name.removesuffix(".txt"): _row_count(archive, name)
                 for name in REQUIRED_STATIC_FILES
             }
+            shape_fingerprint = fingerprint_archive_member_headers(
+                _archive_member_headers(archive)
+            )
             with archive.open("calendar.txt") as raw:
                 rows = csv.DictReader(
                     io.TextIOWrapper(raw, encoding="utf-8-sig", newline="")
@@ -198,6 +218,8 @@ def check_gtfs_static_dataset(
         "message": "HTTP 200; valid GTFS static ZIP",
         **counts,
         "record_count": max(counts["stops"], counts["trips"], counts["stop_times"]),
+        "first_row_hash": shape_fingerprint,
+        "shape_basis": "archive-member-headers",
         "date_range": {"start": start_iso, "end": content_date},
         "content_freshness_date": content_date,
     }
