@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from io import BytesIO
+import subprocess
 import zipfile
 
 from scripts.probe_gtfs import _archive_member_headers, select_realtime_timestamp
+from scripts.probe_gtfs import check_gtfs_realtime_dataset
 from scripts.shape_fingerprint import fingerprint_archive_member_headers
 
 
@@ -39,6 +41,21 @@ def test_newest_non_future_vehicle_timestamp_is_used_without_header() -> None:
     )
 
     assert selected == newest_timestamp
+
+
+def test_realtime_payload_examined_but_invalid_is_untyped(monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(
+        "scripts.probe_gtfs._curl",
+        lambda args, timeout: subprocess.CompletedProcess(args, 0, b"not-a-protobuf200", b""),
+    )
+
+    result = check_gtfs_realtime_dataset(
+        "gtfs_realtime_test", "https://example.invalid/feed.pb", tmp_path / "feed.pb", 1
+    )
+
+    assert result["status"] == "degraded"
+    assert result["shape_basis"] == "untyped"
+    assert "first_row_hash" not in result
 
 
 def test_gtfs_archive_fingerprint_ignores_zip_metadata_and_member_order() -> None:

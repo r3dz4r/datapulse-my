@@ -248,6 +248,7 @@ def check_gtfs_realtime_dataset(
     if status < 200 or status >= 300:
         return details | {"status": "unreachable", "message": f"HTTP {status}"}
 
+    details["shape_basis"] = "untyped"
     _save_first_sample(sample_path, payload)
     try:
         from google.transit import gtfs_realtime_pb2

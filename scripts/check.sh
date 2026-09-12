@@ -807,7 +807,7 @@ check_browser_dataset() {
     details="$(jq -cn \
       --arg access_method 'Camofox' \
       --argjson wait_seconds "$wait_seconds" \
-      '{access_method: $access_method, wait_seconds: $wait_seconds}')"
+      '{access_method: $access_method, wait_seconds: $wait_seconds, shape_basis: "untyped"}')"
     emit "$dataset_id" "$source_url" "browser-dependent" "Camofox tab close failed" "$details"
     return 0
   fi
@@ -827,7 +827,8 @@ check_browser_dataset() {
       snapshot_chars: $snapshot_chars,
       content_freshness_date: (
         if $content_freshness_date == "" then null else $content_freshness_date end
-      )
+      ),
+      shape_basis: "untyped"
     }')"
   emit "$dataset_id" "$source_url" "browser-dependent" "Browser check succeeded" "$details"
 }
@@ -1821,7 +1822,7 @@ build_health_snapshot() {
           incomplete: $incomplete,
           column_count: ($probe.column_count // null),
           first_row_hash: ($probe.first_row_hash // null),
-          shape_basis: ($probe.shape_basis // "untyped"),
+          shape_basis: ($probe.shape_basis // null),
           schema_fingerprint: ($probe.schema_fingerprint // null),
           sample_rows: ($probe.sample_rows // null),
           active_rows: ($probe.active_rows // null),

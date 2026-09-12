@@ -164,6 +164,39 @@ cp "$fixture_dir/full/manifest.json" "$fixture_dir/full-comparison/manifest.json
 jq -e '.datasets_compared == 1 and (.differences | length) == 1' \
   "$fixture_dir/full-comparison-report.json" >/dev/null
 
+# A probe result without a shape digest must default to null, while an
+# explicitly examined shapeless payload must retain its legitimate basis.
+mkdir "$fixture_dir/binary" "$fixture_dir/binary-bin"
+cat > "$fixture_dir/binary/manifest.json" <<'JSON'
+{"datasets":[{"id":"captured-binary","url":"https://example.invalid/captured.bin","refresh_frequency":"daily","namespace":"test"}]}
+JSON
+cat > "$fixture_dir/binary-bin/curl" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+output_path=""
+headers_path=""
+while (( $# > 0 )); do
+  case "$1" in
+    --output) output_path="$2"; shift 2 ;;
+    --dump-header) headers_path="$2"; shift 2 ;;
+    --max-time|--write-out) shift 2 ;;
+    *) shift ;;
+  esac
+done
+[[ -z "$output_path" || "$output_path" == "/dev/null" ]] \
+  || printf '\000binary-payload' > "$output_path"
+[[ -z "$headers_path" ]] \
+  || printf 'HTTP/1.1 200 OK\r\nLast-Modified: Sat, 08 Aug 2026 12:00:00 GMT\r\n\r\n' > "$headers_path"
+printf '200'
+SH
+chmod +x "$fixture_dir/binary-bin/curl"
+(
+  cd "$fixture_dir/binary"
+  PATH="$fixture_dir/binary-bin:$PATH" bash "$repo_root/scripts/check.sh" manifest.json
+) > "$fixture_dir/binary-output.json"
+jq -e '.datasets[0].shape_basis == "untyped"' \
+  "$fixture_dir/binary-output.json" >/dev/null
+
 # Realtime GTFS staleness: a live 30-second feed must classify `fresh` from its
 # second-resolution vehicle timestamp, not from the day-granular calendar date.
 # The fixture pins content_freshness_date to an ancient calendar date so the
@@ -178,7 +211,7 @@ for arg in "$@"; do
     *probe_gtfs.py)
       now="$(date -u +%s)"
       ts=$(( now - GTFS_AGE_SECONDS ))
-      printf '{"dataset_id":"gtfs_realtime_mybas_ipoh","url":"https://example.invalid/rt.pb","request_url":"https://example.invalid/rt.pb","access_method":"direct curl","http_status":200,"content_length":1200,"status":"fresh","message":"HTTP 200; valid GTFS realtime protobuf (22 vehicles)","vehicle_count":22,"record_count":22,"header_timestamp":%s,"newest_vehicle_timestamp":%s,"content_freshness_date":"2000-01-01"}\n' "$ts" "$ts"
+      printf '{"dataset_id":"gtfs_realtime_mybas_ipoh","url":"https://example.invalid/rt.pb","request_url":"https://example.invalid/rt.pb","access_method":"direct curl","http_status":200,"content_length":1200,"status":"fresh","message":"HTTP 200; valid GTFS realtime protobuf (22 vehicles)","vehicle_count":22,"record_count":22,"header_timestamp":%s,"newest_vehicle_timestamp":%s,"content_freshness_date":"2000-01-01","shape_basis":"untyped"}\n' "$ts" "$ts"
       exit 0
       ;;
   esac
