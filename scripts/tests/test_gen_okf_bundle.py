@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -107,6 +109,40 @@ def test_fixed_reference_staleness_direction_matches_health_status(tmp_path: Pat
             assert instant > fixed_reference
         elif status == "stale":
             assert instant <= fixed_reference
+
+
+def test_computation_sources_are_pinned_by_content_digest(tmp_path: Path) -> None:
+    output = tmp_path / "okf"
+    _generate(output)
+
+    concepts = [path for path in sorted((output / "computations").glob("*.md")) if path.name != "index.md"]
+    assert len(concepts) >= 2
+    for path in concepts:
+        frontmatter = _frontmatter(path)
+        assert frontmatter is not None
+        sources = frontmatter["sources"]
+        assert isinstance(sources, list)
+        assert len(sources) == 3
+        digests: list[str] = []
+        for entry in sources:
+            assert isinstance(entry, dict)
+            digest = entry.get("digest")
+            resource = entry.get("resource")
+            assert isinstance(digest, str)
+            assert isinstance(resource, str)
+            assert re.fullmatch(r"sha256:[0-9a-f]{64}", digest)
+            # Independent recomputation catches hashing the wrong file,
+            # hashing the resource string instead of its bytes, or switching
+            # algorithm. Sensitivity -- the digest actually moving when a
+            # closure script changes -- is gated by the golden fixture
+            # comparison in test_matches_golden_fixture, not by this
+            # recomputation, which is why both gates exist.
+            expected = "sha256:" + hashlib.sha256((ROOT / resource).read_bytes()).hexdigest()
+            assert digest == expected
+            digests.append(digest)
+        # A copy-paste that stamps one file's digest onto all three entries
+        # would otherwise pass recomputation.
+        assert len(set(digests)) > 1
 
 
 @pytest.mark.parametrize(

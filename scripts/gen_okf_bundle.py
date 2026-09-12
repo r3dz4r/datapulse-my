@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -184,22 +185,48 @@ def _dataset_document(entry: dict[str, Any], row: dict[str, Any], family: str) -
     )
 
 
+def _plus_days(iso_timestamp: str, days: int) -> str:
+    """Return a Z-suffixed UTC timestamp exactly ``days`` after ``iso_timestamp``."""
+    moment = datetime.fromisoformat(iso_timestamp.replace("Z", "+00:00"))
+    return (moment + timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _source_digest(relative_path: str) -> str:
+    """Return ``sha256:<hex>`` over the bytes of a repo-relative source file."""
+    try:
+        payload = (ROOT / relative_path).read_bytes()
+    except OSError as error:
+        raise OkfBundleError(f"cannot read source file to digest: {relative_path}: {error}") from error
+    return "sha256:" + hashlib.sha256(payload).hexdigest()
+
+
 def _computation_document(family: str, checked_at: str) -> str:
+    sources: list[dict[str, object]] = [
+        {"id": "receipt-generator", "resource": "scripts/gen_per_dataset_receipt.py", "title": "Per-dataset receipt generator", "digest": _source_digest("scripts/gen_per_dataset_receipt.py")},
+        {"id": "receipt-verifier", "resource": "scripts/verify_per_dataset_receipt.py", "title": "Per-dataset receipt verifier (attester)", "digest": _source_digest("scripts/verify_per_dataset_receipt.py")},
+        {"id": "bundle-signer", "resource": "scripts/gen_sigstore_bundle.py", "title": "Sigstore bundle statement helpers", "digest": _source_digest("scripts/gen_sigstore_bundle.py")},
+    ]
+    description = (
+        f"Deterministic DataPulse health probe receipt projection for the {family} family."
+        " This date governs the probe method, not data freshness; per-dataset freshness signals live on the Dataset concepts."
+    )
     frontmatter = _frontmatter(
         [
             ("type", "Attested Computation"),
             ("title", f"DataPulse probe family: {family}"),
-            ("description", f"Deterministic DataPulse health probe receipt projection for the {family} family."),
+            ("description", description),
             ("status", "stable"),
             ("runtime", "datapulse-pipeline"),
             ("parameters", [{"name": "dataset_id", "type": "string", "required": True}]),
             ("executor", {"resource": "scripts/gen_per_dataset_receipt.py", "receipt": ["dataset_id", "last_checked", "http_status", "content_freshness_date", "record_count"]}),
-            ("attester", {"resource": "docs/datapulse-intro.md#verify-one-dataset"}),
+            ("attester", {"resource": "scripts/verify_per_dataset_receipt.py"}),
+            ("sources", sources),
             ("generated", {"by": PIPELINE_ACTOR, "at": checked_at}),
             ("verified", [{"by": HEALTH_ACTOR, "at": checked_at}]),
+            ("stale_after", _plus_days(checked_at, 90)),
         ]
     )
-    return f"{frontmatter}\n\n# Computation\n\nRun the recorded DataPulse probe pipeline for the supplied `dataset_id` and inspect the declared receipt fields.\n"
+    return f"{frontmatter}\n\n# Computation\n\nRun the recorded DataPulse probe pipeline for the supplied `dataset_id` and inspect the declared receipt fields. Hash the bytes of each declared `sources` path with sha256 and compare against its recorded `digest`; a mismatch means the recipe moved since this bundle was generated.\n"
 
 
 def _log(changelog: dict[str, Any], dataset_count: int) -> str:
