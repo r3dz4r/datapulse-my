@@ -194,7 +194,7 @@ def _computation_document(family: str, checked_at: str) -> str:
             ("runtime", "datapulse-pipeline"),
             ("parameters", [{"name": "dataset_id", "type": "string", "required": True}]),
             ("executor", {"resource": "scripts/gen_per_dataset_receipt.py", "receipt": ["dataset_id", "last_checked", "http_status", "content_freshness_date", "record_count"]}),
-            ("attester", {"resource": "docs/datapulse-intro.md#verify-one-dataset"}),
+            ("attester", {"resource": "scripts/verify_per_dataset_receipt.py"}),
             ("generated", {"by": PIPELINE_ACTOR, "at": checked_at}),
             ("verified", [{"by": HEALTH_ACTOR, "at": checked_at}]),
         ]
