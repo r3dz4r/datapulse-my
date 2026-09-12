@@ -3,24 +3,24 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": null,
+        "latest_days": 144.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "not_evaluated",
-        "sample_days": 1,
+        "mode": "cadence_fallback",
+        "sample_days": 0,
         "stdev_days": null,
-        "threshold_days": null,
+        "threshold_days": 90,
         "window_days": 14
       }
     },
     "expected_record_count": 573,
-    "freshness_signal": "no-header",
-    "freshness_signal_source": "none",
+    "freshness_signal": "content-date-parse",
+    "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-09-05T02:34:56Z",
+    "last_checked": "2026-09-12T02:36:04Z",
     "record_count": 573,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:101c63d85701da74ec0b905747de62146763f8f4c9c5158da90d7c2bb4afb9bd"
     },
-    "status": "unknown-freshness"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=government_apps_downloads",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Downloads of Government Mobile Applications",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-09-05T02:34:56Z",
+    "observed_verified_at": "2026-09-12T02:36:04Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "National Digital Department and Ministry of Digital"
   },
