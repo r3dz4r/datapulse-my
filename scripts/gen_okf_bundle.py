@@ -184,19 +184,36 @@ def _dataset_document(entry: dict[str, Any], row: dict[str, Any], family: str) -
     )
 
 
+def _plus_days(iso_timestamp: str, days: int) -> str:
+    """Return a Z-suffixed UTC timestamp exactly ``days`` after ``iso_timestamp``."""
+    moment = datetime.fromisoformat(iso_timestamp.replace("Z", "+00:00"))
+    return (moment + timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def _computation_document(family: str, checked_at: str) -> str:
+    sources: list[dict[str, object]] = [
+        {"id": "receipt-generator", "resource": "scripts/gen_per_dataset_receipt.py", "title": "Per-dataset receipt generator"},
+        {"id": "receipt-verifier", "resource": "scripts/verify_per_dataset_receipt.py", "title": "Per-dataset receipt verifier (attester)"},
+        {"id": "bundle-signer", "resource": "scripts/gen_sigstore_bundle.py", "title": "Sigstore bundle statement helpers"},
+    ]
+    description = (
+        f"Deterministic DataPulse health probe receipt projection for the {family} family."
+        " This date governs the probe method, not data freshness; per-dataset freshness signals live on the Dataset concepts."
+    )
     frontmatter = _frontmatter(
         [
             ("type", "Attested Computation"),
             ("title", f"DataPulse probe family: {family}"),
-            ("description", f"Deterministic DataPulse health probe receipt projection for the {family} family."),
+            ("description", description),
             ("status", "stable"),
             ("runtime", "datapulse-pipeline"),
             ("parameters", [{"name": "dataset_id", "type": "string", "required": True}]),
             ("executor", {"resource": "scripts/gen_per_dataset_receipt.py", "receipt": ["dataset_id", "last_checked", "http_status", "content_freshness_date", "record_count"]}),
             ("attester", {"resource": "scripts/verify_per_dataset_receipt.py"}),
+            ("sources", sources),
             ("generated", {"by": PIPELINE_ACTOR, "at": checked_at}),
             ("verified", [{"by": HEALTH_ACTOR, "at": checked_at}]),
+            ("stale_after", _plus_days(checked_at, 90)),
         ]
     )
     return f"{frontmatter}\n\n# Computation\n\nRun the recorded DataPulse probe pipeline for the supplied `dataset_id` and inspect the declared receipt fields.\n"
