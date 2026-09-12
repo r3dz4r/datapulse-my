@@ -5,15 +5,16 @@
   "failure_type": "http_200_stale_content",
   "severity": "high",
   "first_observed_at": "2026-08-28T01:56:29Z",
-  "most_recent_observed_at": "2026-09-05T14:41:02Z",
+  "most_recent_observed_at": "2026-09-13T04:34:19Z",
   "affected_datasets": [],
   "evidence": {
-    "description": "187 of 412 datasets in the stated catalogue baseline (45.4%) showed stale status with HTTP 200. HTTP 200 does not imply freshness across BNM, DOSM, exchequer, hansard, GTFS, NPRA, and others.",
+    "description": "163 of 418 datasets in the 2026-09-13 catalogue measurement (39.0%) showed stale status with HTTP 200. HTTP 200 does not imply freshness across BNM, DOSM, exchequer, hansard, GTFS, NPRA, and others; consumers checking only HTTP status would misread a substantial group of stale datasets as fresh.",
     "live_signals": {
-      "total_datasets": 412,
-      "stale_http_200_count": 187,
-      "stale_http_200_pct": 45.4
+      "total_datasets": 418,
+      "stale_http_200_count": 163,
+      "stale_http_200_pct": 39.0
     },
+    "remeasurement_justification": "The baseline moved because the catalogue genuinely freshened, not because detection was weakened. Comparing the committed 2026-09-05 snapshot (rev 01f1efdde, stale 180) with the 2026-09-13 measurement (stale 163): 21 datasets left stale (15 to aging, 6 to fresh), while only 4 entered stale (2 from aging, 1 from fresh, 1 from unknown-freshness). Healthy statuses also increased: fresh 94 -> 105 and aging 111 -> 124. The catalogue grew from 412 to 418 datasets. Movement in both directions shows detection is still classifying normally while datasets are moving to better statuses.",
     "example_history_lines": [
       {
         "dataset_id": "air_pollution",
@@ -48,7 +49,7 @@
   "served_verification": {
     "live_url": "https://www.data-pulse.my/health/latest.json",
     "expected_status": "200",
-    "last_verified": "2026-09-06"
+    "last_verified": "2026-09-13"
   },
   "recorded_at": "2026-09-01",
   "recorded_by": "Hermes (HS-04 dispatch)"
