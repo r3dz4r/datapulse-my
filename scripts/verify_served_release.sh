@@ -84,7 +84,7 @@ fi
 if [[ "$health_only" == true ]]; then staged_proof="$RUNNER_TEMP/preserved-release-proof/release-verification.md"; else staged_proof="docs/release-verification.md"; fi
 test -s "$staged_proof" || fail "staged release proof is missing"; fetch "release reproducibility proof" "$base_url/release-verification.md" "$smoke_dir/release-verification.md"; cmp -s "$staged_proof" "$smoke_dir/release-verification.md" || fail "served release proof differs from staged artifact"
 python3 - "$smoke_dir/release-verification.md" "$source_commit" "$smoke_dir/health/latest.json" mcp.json "$health_only" <<'PY'
-import json,sys
+import json,re,sys
 from pathlib import Path
 proof, sha, health_path, mcp_path, health_only=sys.argv[1:]; contents=Path(proof).read_text(encoding='utf-8')
 if health_only == 'true':
@@ -101,7 +101,7 @@ from pathlib import Path
 dashboard=Path(sys.argv[1]).read_text(); projection=json.loads(Path(sys.argv[2]).read_text()); health=json.loads(Path(sys.argv[3]).read_text())
 if "'/health/index.json'" not in dashboard: raise SystemExit('dashboard does not fetch the served health projection')
 if not isinstance(projection,dict) or not isinstance(projection.get('datasets'),list): raise SystemExit('dashboard health projection has no dataset array')
-if projection.get('checked_at') != health.get('checked_at'): raise SystemExit('dashboard health projection checked_at differs from served health/latest.json')
+if not (projection.get('checked_at') and health.get('checked_at')) or projection['checked_at'] < health['checked_at']: raise SystemExit('dashboard health projection is older than served health/latest.json (the edge copy must be at least as fresh as the deployed snapshot)')
 if len(projection['datasets']) != len(health['datasets']): raise SystemExit('dashboard health projection dataset count differs from served health/latest.json')
 if not all(isinstance(row,dict) and isinstance(row.get('dataset_id'),str) for row in projection['datasets']): raise SystemExit('dashboard health projection datasets are invalid')
 if {row['dataset_id'] for row in projection['datasets']} != {row['dataset_id'] for row in health['datasets']}: raise SystemExit('dashboard health projection dataset IDs differ from served health/latest.json')
