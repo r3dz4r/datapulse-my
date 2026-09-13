@@ -68,7 +68,16 @@ grep -Fq "'/health/index.json'" "$smoke_dir/index.html" || fail "origin root doe
 observed_register_rows="$(grep -o '<article class="register-row' "$smoke_dir/index.html" | wc -l)"; [[ "$observed_register_rows" -eq "$expected_dataset_count" ]] || fail "origin root register rows mismatch: expected $expected_dataset_count, observed $observed_register_rows"
 grep -q 'DataPulse MY' "$smoke_dir/index.html" && fail "origin root retains the retired product-name alias"
 fetch_alias landing.html "$base_url/landing.html"; fetch_alias landing "$base_url/landing"; fetch_alias dashboard "$base_url/dashboard"
-fetch "health snapshot" "$base_url/health/latest.json" "$smoke_dir/health/latest.json"; cmp -s "$site_dir/health/latest.json" "$smoke_dir/health/latest.json" || fail "served canonical health differs from the deployed bytes"
+fetch "health snapshot" "$base_url/health/latest.json" "$smoke_dir/health/latest.json"
+python3 - "$site_dir/health/latest.json" "$smoke_dir/health/latest.json" <<'PY'
+import json,sys
+from pathlib import Path
+built, served = (json.loads(Path(path).read_text(encoding='utf-8')) for path in sys.argv[1:])
+if not (built.get('checked_at') and served.get('checked_at')) or served['checked_at'] < built['checked_at']:
+ raise SystemExit('served health snapshot is older than the assembled snapshot')
+if not isinstance(served.get('datasets'), list) or len(served['datasets']) != len(built.get('datasets', [])):
+ raise SystemExit('served health snapshot dataset count differs from the assembled snapshot')
+PY
 fetch "dashboard health projection" "$base_url/health/index.json" "$smoke_dir/health/index.json"
 sigstore_path="signatures/health.latest.sigstore.json"
 if [[ "$sigstore_signed" == true ]]; then

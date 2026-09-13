@@ -32,6 +32,14 @@ def _health(path: Path) -> None:
             "name": "Name", "url": "https://example.test", "quality_profile": {"large": True},
         }],
     }), encoding="utf-8")
+    for name in (
+        "history_daily.json",
+        "drift.json",
+        "trends.json",
+        "reconciliation.json",
+        "evidence-coverage.json",
+    ):
+        (path.parent / name).write_text(json.dumps({"name": name}), encoding="utf-8")
 
 
 def test_projection_is_exactly_allowlisted_and_stable(tmp_path: Path) -> None:
@@ -71,3 +79,18 @@ def test_dry_run_makes_no_network_call(tmp_path: Path, monkeypatch: object) -> N
 
     monkeypatch.setattr(module, "request_bytes", fail_request)  # type: ignore[attr-defined]
     assert module.main(["--health", str(health), "--dry-run"]) == 0
+
+
+def test_publish_skips_byte_identical_values(tmp_path: Path, monkeypatch: object) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+    payloads = module.health_payloads(health)
+    writes: list[str] = []
+
+    monkeypatch.setattr(module, "resolve_account_id", lambda *_args: "account")
+    monkeypatch.setattr(module, "read_value", lambda _base, _account, _token, key: payloads[key])
+    monkeypatch.setattr(module, "publish_value", lambda _base, _account, _token, key, _payload: writes.append(key))
+
+    assert module.publish_unchanged_aware("https://api.example.test", "token", payloads) == (0, len(payloads))
+    assert writes == []

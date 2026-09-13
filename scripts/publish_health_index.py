@@ -23,6 +23,14 @@ NAMESPACE_ID = "043b3f20337f4744a21de947f35c67f0"
 DEFAULT_API_BASE = "https://api.cloudflare.com/client/v4"
 KEY = "health-index.json"
 VERIFY_KEY = "health-index.test.json"
+HEALTH_ARTIFACTS = (
+    "latest.json",
+    "history_daily.json",
+    "drift.json",
+    "trends.json",
+    "reconciliation.json",
+    "evidence-coverage.json",
+)
 CONNECT_TIMEOUT_SECONDS = 5.0
 TOTAL_TIMEOUT_SECONDS = 15.0
 DATASET_KEYS = (
@@ -99,7 +107,13 @@ def _deadline_handler(_signum: int, _frame: object) -> None:
     raise RequestDeadlineExceeded("total timeout")
 
 
-def request_bytes(method: str, url: str, token: str, body: bytes | None = None) -> tuple[int, bytes]:
+def request_bytes(
+    method: str,
+    url: str,
+    token: str,
+    body: bytes | None = None,
+    allowed_statuses: tuple[int, ...] = (),
+) -> tuple[int, bytes]:
     """Make one bounded HTTP request with separate connect and total limits."""
     parsed = urlsplit(url)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
@@ -119,7 +133,7 @@ def request_bytes(method: str, url: str, token: str, body: bytes | None = None) 
         connection.request(method, path, body=body, headers=headers)
         response = connection.getresponse()
         payload = response.read()
-        if not 200 <= response.status < 300:
+        if not 200 <= response.status < 300 and response.status not in allowed_statuses:
             raise PublishError(f"HTTP {response.status}")
         return response.status, payload
     except RequestDeadlineExceeded:
@@ -166,30 +180,71 @@ def key_url(api_base: str, account_id: str, key: str) -> str:
     return f"{api_base.rstrip('/')}/accounts/{account_id}/storage/kv/namespaces/{NAMESPACE_ID}/values/{quote(key, safe='')}"
 
 
-def publish(api_base: str, token: str, key: str, payload: bytes) -> int:
+def read_value(api_base: str, account_id: str, token: str, key: str) -> bytes | None:
+    """Return one KV value, or None when the key has not been published yet."""
+    status, payload = request_bytes(
+        "GET", key_url(api_base, account_id, key), token, allowed_statuses=(404,)
+    )
+    return None if status == 404 else payload
+
+
+def publish_value(api_base: str, account_id: str, token: str, key: str, payload: bytes) -> int:
     """Write one KV value and return its HTTP status."""
-    account_id = resolve_account_id(api_base, token)
     status, _ = request_bytes("PUT", key_url(api_base, account_id, key), token, payload)
     return status
 
 
-def verify(api_base: str, token: str, payload: bytes, expected_value: bytes | None = None) -> tuple[int, int, int]:
+def publish(api_base: str, token: str, key: str, payload: bytes) -> int:
+    """Write one KV value and return its HTTP status."""
+    account_id = resolve_account_id(api_base, token)
+    return publish_value(api_base, account_id, token, key, payload)
+
+
+def health_payloads(health_path: Path) -> dict[str, bytes]:
+    """Return the dashboard projection and every health artifact keyed by URL path."""
+    payloads = {KEY: build_projection(health_path)}
+    health_dir = health_path.parent
+    for name in HEALTH_ARTIFACTS:
+        payloads[f"health/{name}"] = (health_dir / name).read_bytes()
+    return payloads
+
+
+def publish_unchanged_aware(api_base: str, token: str, payloads: dict[str, bytes]) -> tuple[int, int]:
+    """Publish only changed values, returning (written, unchanged) counts."""
+    account_id = resolve_account_id(api_base, token)
+    written = unchanged = 0
+    for key, payload in payloads.items():
+        if read_value(api_base, account_id, token, key) == payload:
+            unchanged += 1
+            continue
+        publish_value(api_base, account_id, token, key, payload)
+        written += 1
+    return written, unchanged
+
+
+def verify(
+    api_base: str,
+    token: str,
+    payload: bytes,
+    expected_value: bytes | None = None,
+    key: str = VERIFY_KEY,
+) -> tuple[int, int, int]:
     """Round-trip an isolated verification key and remove it on success or failure."""
     write_status: int | None = None
     try:
-        write_status = publish(api_base, token, VERIFY_KEY, payload)
+        write_status = publish(api_base, token, key, payload)
         account_id = resolve_account_id(api_base, token)
-        read_status, received = request_bytes("GET", key_url(api_base, account_id, VERIFY_KEY), token)
+        read_status, received = request_bytes("GET", key_url(api_base, account_id, key), token)
         expected = expected_value if expected_value is not None else payload
         if received != expected:
             raise PublishError("round-trip byte mismatch")
-        delete_status, _ = request_bytes("DELETE", key_url(api_base, account_id, VERIFY_KEY), token)
+        delete_status, _ = request_bytes("DELETE", key_url(api_base, account_id, key), token)
         return write_status, read_status, delete_status
     except PublishError:
         if write_status is not None:
             try:
                 account_id = resolve_account_id(api_base, token)
-                request_bytes("DELETE", key_url(api_base, account_id, VERIFY_KEY), token)
+                request_bytes("DELETE", key_url(api_base, account_id, key), token)
             except PublishError:
                 pass
         raise
@@ -211,12 +266,12 @@ def main(argv: list[str] | None = None) -> int:
     """Run the publisher; normal publication intentionally remains non-fatal."""
     args = parser().parse_args(argv)
     try:
-        payload = build_projection(args.health)
+        payloads = health_payloads(args.health)
     except (OSError, json.JSONDecodeError, PublishError) as exc:
         print(f"health index publish failed: {exc}", file=sys.stderr)
         return 1 if args.verify else 0
     if args.dry_run:
-        print(f"health index dry-run: {len(payload)} bytes", file=sys.stderr)
+        print(f"health index dry-run: {len(payloads)} keys, {sum(map(len, payloads.values()))} bytes", file=sys.stderr)
         return 0
     try:
         token = read_token()
@@ -224,11 +279,13 @@ def main(argv: list[str] | None = None) -> int:
             raise PublishError("KV credential unavailable: token is empty")
         if args.verify:
             expected = args.verify_expected_value.encode("utf-8") if args.verify_expected_value is not None else None
-            write_status, read_status, delete_status = verify(args.api_base, token, payload, expected)
-            print(f"health index verify succeeded: {len(payload)} bytes (write HTTP {write_status}, read HTTP {read_status}, delete HTTP {delete_status})", file=sys.stderr)
+            for key, payload in payloads.items():
+                verify_key = VERIFY_KEY if key == KEY else f"{key}.test"
+                verify(args.api_base, token, payload, expected if key == KEY else None, verify_key)
+            print(f"health index verify succeeded: {len(payloads)} keys", file=sys.stderr)
         else:
-            status = publish(args.api_base, token, KEY, payload)
-            print(f"health index publish succeeded: {len(payload)} bytes (HTTP {status})", file=sys.stderr)
+            written, unchanged = publish_unchanged_aware(args.api_base, token, payloads)
+            print(f"health index publish succeeded: {written} written, {unchanged} unchanged", file=sys.stderr)
         return 0
     except PublishError as exc:
         prefix = "health index verify failed" if args.verify else "health index publish failed"
