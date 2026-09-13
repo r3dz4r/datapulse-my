@@ -1,6 +1,6 @@
 """Stage allowlists must stay in lockstep between the emitter and the summarizer.
 
-``check_heartbeat.py`` gates which stages can be *written* (argparse ``choices``).
+``check_heartbeat.py`` gates which stages can be *written* (a closed validator).
 ``summarize_pipeline_telemetry.py`` gates which stages can be *summarized*. They
 are maintained as two independent lists, so adding a stage to the emitter alone
 breaks the run receipt **silently**: the summarizer raises ``unknown stage``, the
@@ -115,3 +115,18 @@ def test_the_passports_regression_is_covered() -> None:
     """The exact stage whose absence broke receipts from 2026-09-10T06:30 onward."""
     assert "passports" in _stages("emitter", EMITTER)
     assert "passports" in _stages("summarizer", SUMMARIZER)
+
+
+def test_summarizer_preserves_valid_substage_names(tmp_path: Path) -> None:
+    module = _load("datapulse_summarizer_substage", SUMMARIZER)
+    event = {
+        "ts": "2026-09-11T00:00:00Z",
+        "stage": "deltas.gen_rss",
+        "status": "success",
+        "cycle": "substage-cycle",
+        "duration_ms": 404000,
+        "extra": {},
+    }
+    parsed = module.parse_event(event, 1)
+    receipt = module.build_receipt([parsed], "substage-cycle", "health-cycle", "abcdef1", "1234567")
+    assert list(receipt["stages"]) == ["deltas.gen_rss"]

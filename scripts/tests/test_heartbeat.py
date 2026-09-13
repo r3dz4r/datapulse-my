@@ -7,19 +7,61 @@ import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/check_heartbeat.py"
 
 
 def _append(log: Path, *args: str) -> None:
-    result = subprocess.run(
+    result = _run_append(log, *args)
+    assert result.returncode == 0, result.stderr
+
+
+def _run_append(log: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
         [sys.executable, str(SCRIPT), "append", *args],
         env={"DATAPULSE_TELEMETRY_FILE": str(log)},
         capture_output=True,
         text=True,
         check=False,
     )
+
+
+@pytest.mark.parametrize(
+    "stage",
+    [
+        "probe",
+        "history",
+        "snapshot",
+        "deltas",
+        "validate",
+        "publish",
+        "passports",
+        "mcp-sync",
+        "attestation-score",
+        "evidence",
+        "sigstore-request",
+    ],
+)
+def test_all_root_stages_are_accepted(tmp_path: Path, stage: str) -> None:
+    result = _run_append(tmp_path / f"{stage}.jsonl", "--stage", stage, "--duration", "1", "--status", "success")
     assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("stage", ["deltas.gen_rss", "publish.mcp-sync"])
+def test_substages_are_accepted(tmp_path: Path, stage: str) -> None:
+    result = _run_append(tmp_path / "stages.jsonl", "--stage", stage, "--duration", "1", "--status", "success")
+    assert result.returncode == 0, result.stderr
+    assert json.loads((tmp_path / "stages.jsonl").read_text(encoding="utf-8"))["stage"] == stage
+
+
+@pytest.mark.parametrize("stage", ["nonsense.foo", "deltas.", "Deltas.gen_rss", "deltas.gen rss"])
+def test_invalid_substages_are_rejected_with_root_guidance(tmp_path: Path, stage: str) -> None:
+    result = _run_append(tmp_path / "stages.jsonl", "--stage", stage, "--duration", "1", "--status", "success")
+    assert result.returncode != 0
+    assert "accepted roots:" in result.stderr
+    assert "deltas" in result.stderr
 
 
 def test_heartbeat_writes_structured_line(tmp_path: Path) -> None:

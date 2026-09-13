@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -26,6 +27,18 @@ STAGES = {
     "sigstore-request",
 }
 STATUSES = {"success", "fail", "skipped"}
+SUBSTAGE_TOKEN = re.compile(r"[a-z0-9][a-z0-9_-]*")
+
+
+def parse_stage(value: str) -> str:
+    """Validate a root stage or a closed-vocabulary sub-stage."""
+    root, separator, token = value.partition(".")
+    if root in STAGES and (not separator or SUBSTAGE_TOKEN.fullmatch(token)):
+        return value
+    roots = ", ".join(sorted(STAGES))
+    raise argparse.ArgumentTypeError(
+        f"must be a stage root or root.token; accepted roots: {roots}"
+    )
 
 
 def parse_ts(value: str) -> datetime:
@@ -66,7 +79,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     append = subparsers.add_parser("append", help="append one stage completion event")
-    append.add_argument("--stage", required=True, choices=sorted(STAGES))
+    append.add_argument("--stage", required=True, type=parse_stage)
     append.add_argument("--duration", required=True, type=int)
     append.add_argument("--status", required=True, choices=sorted(STATUSES))
     append.add_argument("--cycle", default=os.environ.get("DATAPULSE_CYCLE"))

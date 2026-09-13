@@ -33,6 +33,7 @@ SAFE_METADATA_KEYS = frozenset(
     {"result", "non_fatal", "exit_code", "lag_ms", "publication_lag_ms", "source"}
 )
 SECRET_PATTERN = re.compile(r"(?:api[_-]?key|authorization|bearer|password|private[_-]?key|secret|token)", re.IGNORECASE)
+SUBSTAGE_TOKEN = re.compile(r"[a-z0-9][a-z0-9_-]*")
 SCHEMA = "datapulse/v1/pipeline-run-receipt"
 MODES = frozenset({"health-cycle", "release-build", "audit", "shadow-health"})
 COMMIT_PATTERN = re.compile(r"[0-9a-f]{7,64}")
@@ -40,6 +41,12 @@ COMMIT_PATTERN = re.compile(r"[0-9a-f]{7,64}")
 
 class TelemetryError(ValueError):
     """Raised when telemetry cannot safely support a receipt."""
+
+
+def is_valid_stage(value: str) -> bool:
+    """Return whether a stage uses a known root and optional valid sub-stage."""
+    root, separator, token = value.partition(".")
+    return root in STAGES and (not separator or SUBSTAGE_TOKEN.fullmatch(token) is not None)
 
 
 def parse_commit_identifier(value: str) -> str:
@@ -94,7 +101,7 @@ def parse_event(value: object, line_number: int) -> dict[str, Any]:
     status = value.get("status")
     cycle = value.get("cycle")
     duration_ms = value.get("duration_ms")
-    if not isinstance(stage, str) or stage not in STAGES:
+    if not isinstance(stage, str) or not is_valid_stage(stage):
         raise TelemetryError(f"line {line_number}: unknown stage")
     if not isinstance(status, str) or status not in STATUSES:
         raise TelemetryError(f"line {line_number}: unknown status")
