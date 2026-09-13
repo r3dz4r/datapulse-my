@@ -1,6 +1,6 @@
 # Historical observation envelope contract
 
-Contract version: `historical-observation/v1` — defined 2026-09-13.
+Contract version: `historical-observation/v2` — defined 2026-09-13.
 Machine contract: [`historical-observation.schema.json`](https://github.com/r3dz4r/datapulse-my/blob/main/historical-observation.schema.json) (JSON Schema draft 2020-12).
 
 ## Purpose
@@ -33,7 +33,10 @@ Not in scope for this phase: capturing bytes, storing envelopes, signing or
 verifying them, generating Merkle proofs, exposing any MCP tool, route or
 resource, and any change to the ten-status health taxonomy or to
 `health.schema.json`, `datapulse.schema.json`, `record-evidence.schema.json`,
-`passport.schema.json`, or the attestation canonical form.
+`passport.schema.json`, or the attestation canonical form. Per-content-field
+provenance (one entry per field of the delivered payload) arrives with the
+normalisation profile in a later phase; this extension covers envelope members
+only.
 
 ## Envelope members
 
@@ -44,7 +47,7 @@ string or a positive default.
 
 | Member | Meaning |
 |---|---|
-| `schema` | Constant `historical-observation/v1` |
+| `schema` | Constant `historical-observation/v2` |
 | `observation_id` | Stable id of this observation (`obs-…`), unique across datasets and cycles |
 | `dataset_id` | Manifest id of the observed dataset |
 | `source_identity` | Declared or independently supported identity of the source, with a basis and a fixed limitation |
@@ -78,6 +81,36 @@ string or a positive default.
 | `publisher_credential` | Reserved; must be null in this phase |
 | `verifier_credential` | Reserved; must be null in this phase |
 | `replay_state` | One of the six replay vocabulary values below |
+| `field_provenance` | One closed-vocabulary measurement-provenance entry for every other envelope member |
+
+## Field-level provenance
+
+`field_provenance` records whether this observation determined each envelope
+member. It is not decoration: the validator requires one entry for every
+other member and rejects a null or explicit `unknown` value marked measured.
+
+- `copied_from_source` — the value is the source's own bytes/headers, reproduced
+- `declared_by_source` — the value is what the source asserts about itself
+- `platform_computed` — DataPulse computed it from captured material (ids, digests, roots, counts, instants)
+- `configured_by_policy` — the value comes from DataPulse's own declared retention or normalisation policy
+- `not_delivered` — the source did not deliver this member
+- `not_measured` — no mechanism in this platform measures it
+- `not_applicable` — the member does not apply to this observation
+- `unknown` — measurement was attempted and did not resolve
+- `state` — whether THIS observation determined a value for the member
+- `derived` — true exactly when DataPulse is the origin of the value rather than the source
+
+`counters` are over the delivered records of this observation: `rows` is
+records delivered (the same value on every entry that carries counters),
+`delivered` is records carrying a value for the member, `empty` is records
+where it was present but empty, `stringified` is records whose value was
+rendered as a string for the projection, and `truncated` is records where the
+value was truncated. Counters are null for members that are not measured over
+delivered records; non-null counters are permitted only for `declared`,
+`observed`, `shape_fingerprint`, and `normalized_projection`.
+
+An unmeasured member is not a defect. A measured member is not a claim of
+truth.
 
 ## Digest namespaces
 
@@ -243,6 +276,8 @@ values:
   only as current as that digest;
 - unknowns are explicit: members listed in `unknown_reasons` are not silently
   defaulted.
+- which members this observation actually measured, and why a member is
+  unmeasured, from `field_provenance`.
 
 ## What a consumer may not conclude
 
@@ -260,6 +295,8 @@ values:
   declarations — they are never inferred from one another;
 - that `replay_state` implies the ten-status taxonomy or vice versa (both
   non-implication rules).
+- that an absent value was measured, or that `basis: platform_computed` makes
+  a value true.
 
 Each envelope additionally carries its own `claim_boundary`, which must
 state `may_conclude` and `may_not_conclude` for that specific observation.
@@ -269,15 +306,19 @@ state `may_conclude` and `may_not_conclude` for that specific observation.
 1. Validate against `historical-observation.schema.json` with a draft 2020-12
    validator (`Draft202012Validator`). Schema validity is the entry
    condition, not the conclusion.
-2. Check the coupling rules held: unknowns are reasoned, digests match capture
+2. Run `python3 scripts/validate_historical_observation.py PATH [PATH ...]`.
+   This is the second gate after schema validity: it exits 0 when every input
+   passes, 1 when an envelope violates a named provenance rule, and 2 on a
+   usage or read error.
+3. Check the coupling rules held: unknowns are reasoned, digests match capture
    state, replay claims have captures, previous-digest has previous-id.
-3. To verify one observation: recompute `observation_digest` over the
+4. To verify one observation: recompute `observation_digest` over the
    canonical envelope; if the cycle set is available, check membership
    against `cycle_root`.
-4. To verify currency: compare the envelope's `contract_digest` against the
+5. To verify currency: compare the envelope's `contract_digest` against the
    digest of the code you trust; a mismatch means the verification belongs to
    a different code contract (check `invalidated_by` / `superseded_by`).
-5. Treat any failed, incomplete, or unsupported step as a bounded failure:
+6. Treat any failed, incomplete, or unsupported step as a bounded failure:
    the envelope supports weaker conclusions, not stronger ones.
 
 A matching identifier without a matching digest is not sufficient. A valid
@@ -299,9 +340,14 @@ signature without semantic ground truth is not sufficient.
 
 ## Change policy
 
-This contract is versioned as `historical-observation/v1`. Adding a member or
+This contract is versioned as `historical-observation/v2`. Adding a member or
 opening a reserved member is a material change: it requires a new schema
 version, a new `contract_digest` for consuming code, and explicit re-review —
 prior verifications do not carry forward silently. Tightening a rule is
 likewise a version change; loosening one requires operator sign-off because
 it widens what the system can claim.
+
+Version 2 applied that rule to itself. It adds the required
+`field_provenance` block and the measurement rules the validator enforces,
+which is both an added member and a tightened rule. No v1 producer or stored
+envelope exists, so nothing migrates.

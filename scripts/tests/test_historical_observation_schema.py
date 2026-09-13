@@ -1,4 +1,4 @@
-"""Contract tests for the historical-observation/v1 envelope schema.
+"""Contract tests for the historical-observation/v2 envelope schema.
 
 Fixtures live inline in this file on purpose: the envelope contract must be
 defensible before any capture, storage or signing code exists, and every
@@ -58,6 +58,7 @@ EXPECTED_MEMBERS = {
     "publisher_credential",
     "verifier_credential",
     "replay_state",
+    "field_provenance",
 }
 
 # .attestations/chain_head.json publishes bare 64-hex values for chain_head,
@@ -80,8 +81,8 @@ VERIFICATION_LIMITATION = (
 
 
 def _captured_envelope() -> dict[str, Any]:
-    return {
-        "schema": "historical-observation/v1",
+    envelope = {
+        "schema": "historical-observation/v2",
         "observation_id": "obs-fuelprice-20260913t000642z",
         "dataset_id": "fuelprice",
         "source_identity": {
@@ -159,6 +160,38 @@ def _captured_envelope() -> dict[str, Any]:
         "verifier_credential": None,
         "replay_state": "replayable",
     }
+    counters = {"rows": None, "delivered": None, "empty": None, "stringified": None, "truncated": None}
+    source_supplied = {
+        "source_url", "source_content_date", "source_version", "source_identity", "declared", "observed",
+    }
+    declared_by_source = {"source_identity", "declared"}
+    configured_by_policy = {"capture_policy"}
+    members = list(envelope.items())
+    envelope["field_provenance"] = {}
+    for name, value in members:
+        if value is None:
+            basis, derived, state, reason = "not_measured", False, "unmeasured", "unresolved"
+        elif name in source_supplied:
+            basis = "declared_by_source" if name in declared_by_source else "copied_from_source"
+            derived, state, reason = False, "measured", None
+        elif name in configured_by_policy:
+            basis, derived, state, reason = "configured_by_policy", True, "measured", None
+        else:
+            basis, derived, state, reason = "platform_computed", True, "measured", None
+        envelope["field_provenance"][name] = {
+            "basis": basis,
+            "derived": derived,
+            "state": state,
+            "not_measured_reason": reason,
+            "transform": None,
+            "counters": counters.copy(),
+        }
+    for name in ("publisher_credential", "verifier_credential"):
+        envelope["field_provenance"][name] = {
+            "basis": "not_applicable", "derived": False, "state": "not_applicable",
+            "not_measured_reason": "does_not_apply", "transform": None, "counters": counters.copy(),
+        }
+    return envelope
 
 
 def _metadata_only_envelope() -> dict[str, Any]:
@@ -203,6 +236,12 @@ def test_valid_envelope_validates_cleanly() -> None:
     assert _errors(_captured_envelope()) == []
 
 
+def test_fixture_exercises_both_derived_biconditional_branches() -> None:
+    entries = _captured_envelope()["field_provenance"].values()
+    assert any(entry["derived"] is True and entry["basis"] in {"platform_computed", "configured_by_policy"} for entry in entries)
+    assert any(entry["derived"] is False and entry["basis"] not in {"platform_computed", "configured_by_policy"} for entry in entries)
+
+
 def test_missing_required_member_is_rejected_for_that_member() -> None:
     envelope = _captured_envelope()
     del envelope["observation_digest"]
@@ -211,6 +250,64 @@ def test_missing_required_member_is_rejected_for_that_member() -> None:
 
     assert errors
     assert _failing(errors, [], "required", "observation_digest")
+
+
+def test_field_provenance_is_required() -> None:
+    envelope = _captured_envelope()
+    del envelope["field_provenance"]
+    assert _failing(_errors(envelope), [], "required", "field_provenance")
+
+
+def test_field_provenance_key_set_is_pinned() -> None:
+    envelope = _captured_envelope()
+    provenance = envelope["field_provenance"]
+    provenance["outside"] = provenance["schema"].copy()
+    assert any("outside" in error.message for error in _errors(envelope))
+
+    envelope = _captured_envelope()
+    del envelope["field_provenance"]["schema"]
+    assert _failing(_errors(envelope), ["field_provenance"], "minProperties")
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (["basis"], "invented"),
+        (["state"], "maybe"),
+        (["not_measured_reason"], "because"),
+    ],
+)
+def test_field_provenance_closed_vocabularies_reject_unknown_values(
+    path: list[str], value: str
+) -> None:
+    envelope = _captured_envelope()
+    envelope["field_provenance"]["schema"][path[0]] = value
+    assert any(error.validator in {"enum", "oneOf"} for error in _errors(envelope))
+
+
+def test_field_provenance_state_reason_and_derived_couplings_are_enforced() -> None:
+    envelope = _captured_envelope()
+    entry = envelope["field_provenance"]["schema"]
+    entry["not_measured_reason"] = "unresolved"
+    assert _errors(envelope)
+
+    envelope = _captured_envelope()
+    entry = envelope["field_provenance"]["schema"]
+    entry["state"] = "unmeasured"
+    entry["not_measured_reason"] = None
+    assert _errors(envelope)
+
+    envelope = _captured_envelope()
+    entry = envelope["field_provenance"]["schema"]
+    entry["basis"] = "platform_computed"
+    entry["derived"] = False
+    assert _errors(envelope)
+
+
+def test_field_provenance_negative_counter_is_rejected() -> None:
+    envelope = _captured_envelope()
+    envelope["field_provenance"]["schema"]["counters"]["rows"] = -1
+    assert _failing(_errors(envelope), ["field_provenance", "schema", "counters", "rows"], "minimum")
 
 
 def test_explicit_unknown_source_version_is_representable() -> None:

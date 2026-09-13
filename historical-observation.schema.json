@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://data-pulse.my/historical-observation.schema.json",
-  "title": "DataPulse MY historical-observation/v1 envelope",
+  "title": "DataPulse MY historical-observation/v2 envelope",
   "description": "Contract for one filed historical observation of an upstream dataset. The envelope records what was requested, what was actually captured, how it was normalised, and what a consumer may conclude. It deliberately cannot express freshness or authority claims; those live on separate axes.",
   "type": "object",
   "required": [
@@ -38,11 +38,12 @@
     "observed",
     "publisher_credential",
     "verifier_credential",
-    "replay_state"
+    "replay_state",
+    "field_provenance"
   ],
   "properties": {
     "schema": {
-      "const": "historical-observation/v1"
+      "const": "historical-observation/v2"
     },
     "observation_id": {
       "description": "Stable identifier of this observation, unique across all datasets and cycles.",
@@ -301,6 +302,16 @@
     "replay_state": {
       "description": "Whether, and how far, the source content can be reconstructed from what this observation retains. A separate axis from the ten health statuses: a fresh health status does not imply replayable, and a replayable capture does not imply semantic truth.",
       "enum": ["replayable", "metadata_only", "partial", "incomparable", "not_replayable", "unknown"]
+    },
+    "field_provenance": {
+      "description": "Per-envelope-member measurement provenance. Every other envelope member has exactly one entry.",
+      "type": "object",
+      "propertyNames": {
+        "enum": ["attestation_ref", "capture_policy", "capture_status", "change_from_previous", "claim_boundary", "contract_digest", "cycle_root", "dataset_id", "declared", "invalidated_by", "normalization_profile_version", "normalized_projection", "observation_digest", "observation_id", "observed", "observed_at", "observed_request_url", "previous_observation_digest", "previous_observation_id", "publisher_credential", "replay_state", "retrieved_at", "schema", "shape_fingerprint", "source_content_date", "source_digest", "source_identity", "source_url", "source_version", "superseded_by", "unknown_reasons", "verification", "verifier_credential", "witness_refs"]
+      },
+      "minProperties": 34,
+      "maxProperties": 34,
+      "additionalProperties": {"$ref": "#/$defs/fieldProvenanceEntry"}
     }
   },
   "additionalProperties": false,
@@ -380,6 +391,38 @@
         }
       },
       "additionalProperties": false
+    },
+    "fieldProvenanceEntry": {
+      "type": "object",
+      "required": ["basis", "derived", "state", "not_measured_reason", "transform", "counters"],
+      "properties": {
+        "basis": {"enum": ["copied_from_source", "declared_by_source", "platform_computed", "configured_by_policy", "not_delivered", "not_measured", "not_applicable", "unknown"]},
+        "derived": {"type": "boolean"},
+        "state": {"enum": ["measured", "unmeasured", "not_applicable"]},
+        "not_measured_reason": {"oneOf": [{"type": "null"}, {"enum": ["source_did_not_deliver", "no_instrument", "capture_not_attempted", "capture_failed", "not_extractable", "does_not_apply", "unresolved"]}]},
+        "transform": {"type": ["string", "null"], "minLength": 1},
+        "counters": {
+          "type": "object",
+          "required": ["rows", "delivered", "empty", "stringified", "truncated"],
+          "properties": {
+            "rows": {"type": ["integer", "null"], "minimum": 0},
+            "delivered": {"type": ["integer", "null"], "minimum": 0},
+            "empty": {"type": ["integer", "null"], "minimum": 0},
+            "stringified": {"type": ["integer", "null"], "minimum": 0},
+            "truncated": {"type": ["integer", "null"], "minimum": 0}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {"if": {"properties": {"state": {"const": "measured"}}}, "then": {"properties": {"not_measured_reason": {"type": "null"}}}},
+        {"if": {"properties": {"state": {"not": {"const": "measured"}}}}, "then": {"properties": {"not_measured_reason": {"not": {"type": "null"}}}}},
+        {"if": {"properties": {"state": {"const": "not_applicable"}}}, "then": {"properties": {"not_measured_reason": {"const": "does_not_apply"}}}},
+        {"if": {"properties": {"not_measured_reason": {"const": "does_not_apply"}}}, "then": {"properties": {"state": {"const": "not_applicable"}}}},
+        {"if": {"properties": {"basis": {"enum": ["platform_computed", "configured_by_policy"]}}}, "then": {"properties": {"derived": {"const": true}}}, "else": {"properties": {"derived": {"const": false}}}},
+        {"if": {"properties": {"counters": {"properties": {"rows": {"type": "null"}}}}}, "then": {"properties": {"counters": {"properties": {"delivered": {"type": "null"}, "empty": {"type": "null"}, "stringified": {"type": "null"}, "truncated": {"type": "null"}}}}}, "else": {"properties": {"counters": {"properties": {"delivered": {"type": "integer"}, "empty": {"type": "integer"}, "stringified": {"type": "integer"}, "truncated": {"type": "integer"}}}}}}
+      ]
     }
   }
 }
