@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -11,6 +12,7 @@ import pytest
 from scripts import gen_attestations as ga
 from scripts.tests.test_attestations import fixture_rekor_reference, fixture_root
 from scripts.verify_attestation_binding import ContractError
+from scripts.verify_sigstore_bundle import verify_bundle
 
 
 def test_matching_rekor_reference_marks_new_binding_as_witnessed(tmp_path: Path) -> None:
@@ -25,6 +27,24 @@ def test_matching_rekor_reference_marks_new_binding_as_witnessed(tmp_path: Path)
         "reference_ref": "attestations/rekor-fixture/reference.json",
         "bundle_ref": "attestations/rekor-fixture/bundle.json",
     }
+
+
+def test_rekor_dsse_fixture_is_accepted_by_sigstore_and_binding_verifiers(tmp_path: Path) -> None:
+    root, _key = fixture_root(tmp_path)
+    reference = fixture_rekor_reference(root, "rekor-fixture")
+    bundle = reference.parent / "bundle.json"
+    digest = hashlib.sha256((root / "health/latest.json").read_bytes()).hexdigest()
+
+    assert verify_bundle(
+        health=root / "health/latest.json",
+        manifest=root / "datapulse.json",
+        chain_head=root / ".attestations/chain_head.json",
+        source_commit="c" * 40,
+        bundle=bundle,
+        identity="https://example.test/identity",
+        issuer="https://example.test/issuer",
+    )["subject_sha256"] == digest
+    ga.generate(root, _key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc), reference)
 
 
 def test_mismatched_rekor_reference_is_rejected_before_binding(tmp_path: Path) -> None:

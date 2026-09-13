@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, PublicFormat
 
 from scripts import gen_attestations as ga
+from scripts.gen_sigstore_bundle import generate_statement, statement_bytes
 
 
 def write(path: Path, value: object) -> None:
@@ -27,12 +28,13 @@ def fixture_root(tmp_path: Path) -> tuple[Path, Path]:
     key = tmp_path / "private.json"
     write(key, {"key_id": key_id, "private_key_base64": base64.b64encode(raw).decode(), "public_key_base64": base64.b64encode(pub).decode()})
     write(tmp_path / "docs/.well-known/datapulse-probe-keys.json", {"schema":"datapulse/v1/probe-key-registry", "current_key_id":key_id, "keys":[{"key_id":key_id,"public_key_base64":base64.b64encode(pub).decode(),"not_before":"2026-01-01T00:00:00Z","not_after":"2027-01-01T00:00:00Z","status":"active"}]})
-    write(tmp_path / "datapulse.json", {"datasets":[{"id":"sample","name":"Sample","source":"Agency","url":"https://example.test/data","refresh_frequency":"daily"}]})
-    write(tmp_path / "health/latest.json", {"checked_at":"2026-08-15T00:00:00Z","datasets":[{"dataset_id":"sample","last_checked":"2026-08-15T00:00:00Z","request_url":"https://example.test/data","access_dependency":"direct","status":"fresh","staleness_days":0,"first_row_hash":"shape-v1:"+"a"*64}]})
+    write(tmp_path / "datapulse.json", {"datasets":[{"id":"sample","name":"Sample","source":"Agency","url":"https://example.test/data","refresh_frequency":"daily","methodology_version":1}]})
+    write(tmp_path / "health/latest.json", {"schema":"datapulse/v0.4/dataset-health","checked_at":"2026-08-15T00:00:00Z","_trust_summary":{},"datasets":[{"dataset_id":"sample","last_checked":"2026-08-15T00:00:00Z","request_url":"https://example.test/data","access_dependency":"direct","status":"fresh","staleness_days":0,"first_row_hash":"shape-v1:"+"a"*64}]})
     write(tmp_path / "health/trends.json", {"datasets":[{"dataset_id":"sample","publish_on_time_pct":100,"trend":"stable"}]})
     write(tmp_path / "health/drift.json", {"datasets":[{"dataset_id":"sample","verdict":"stable"}]})
     write(tmp_path / "health/reconciliation.json", {"groups":[]})
     (tmp_path / "health/history.jsonl").write_text(json.dumps({"dataset_id":"sample","observed_at":"2026-08-15T00:00:00Z"})+"\n")
+    write(tmp_path / ".attestations/chain_head.json", {"schema":"datapulse/v1/daily-chain-head-envelope","chain_head":"b" * 64,"payload":{"dataset_count":1}})
     return tmp_path, key
 
 
@@ -47,8 +49,15 @@ def fixture_rekor_reference(root: Path, name: str) -> Path:
         bundle_path,
         {
             "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
-            "messageSignature": {
-                "messageDigest": {"algorithm": "SHA2_256", "digest": digest}
+            "dsseEnvelope": {
+                "payloadType": "application/vnd.in-toto+json",
+                "payload": base64.b64encode(statement_bytes(generate_statement(
+                    root / "health/latest.json",
+                    root / "datapulse.json",
+                    root / ".attestations/chain_head.json",
+                    "c" * 40,
+                ))).decode("ascii"),
+                "signatures": [{"sig": base64.b64encode(b"fixture signature").decode("ascii")}],
             },
             "verificationMaterial": {
                 "tlogEntries": [
