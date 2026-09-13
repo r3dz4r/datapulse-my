@@ -40,6 +40,58 @@ def _exec_start(unit: str) -> str:
     return unit.split("ExecStart=", 1)[1].split("\nStandardOutput=", 1)[0]
 
 
+def _github_path_matches(pattern: str, path: str) -> bool:
+    """Return whether a whole repository-relative path matches a GitHub glob."""
+    expression = ""
+    index = 0
+    while index < len(pattern):
+        if pattern.startswith("**", index):
+            expression += ".*"
+            index += 2
+        elif pattern[index] == "*":
+            expression += "[^/]*"
+            index += 1
+        else:
+            expression += re.escape(pattern[index])
+            index += 1
+    return re.fullmatch(expression, path) is not None
+
+
+def _deploy_trigger_matches(changed_paths: list[str]) -> bool:
+    """Return whether any changed path matches the workflow's push allowlist."""
+    workflow = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+    patterns = workflow[True]["push"]["paths"]
+    return any(
+        _github_path_matches(pattern, path)
+        for pattern in patterns
+        for path in changed_paths
+    )
+
+
+def test_cloudflare_push_trigger_is_code_plane_allowlist() -> None:
+    workflow = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+
+    assert workflow[True]["push"]["paths"] == [
+        "docs/**",
+        "scripts/**",
+        "mcp/**",
+        "functions/**",
+        "config/public-surfaces.json",
+        ".github/workflows/deploy-cloudflare-pages.yml",
+        "datapulse.json",
+        "mcp.json",
+        "requirements.txt",
+    ]
+
+
+def test_cloudflare_push_trigger_excludes_health_cycles_and_keeps_code_plane() -> None:
+    assert not _deploy_trigger_matches(["health/latest.json", "health/trends.json"])
+    assert _deploy_trigger_matches(["docs/index.html"])
+    assert _deploy_trigger_matches(["scripts/publish_health_index.py"])
+    assert _deploy_trigger_matches(["functions/health/[[path]].js"])
+    assert _deploy_trigger_matches(["health/latest.json", "docs/index.html"])
+
+
 def test_llms_owned_blocks_do_not_publish_legacy_or_docs_urls() -> None:
     contents = _read(ROOT / "llms.txt")
     owned_blocks = re.findall(r"(?ms)<!-- BEGIN [^>]+ -->(.*?)<!-- END [^>]+ -->", contents)
@@ -106,7 +158,7 @@ def test_cloudflare_workflow_uses_release_build_and_declared_inputs() -> None:
 
     assert "bash scripts/generate.sh release-build" in workflow
     assert '"scripts/**"' in paths_block
-    assert '"health/**"' in paths_block
+    assert '"health/**"' not in paths_block
     assert "cloudflare/wrangler-action@v3" in workflow
     assert "actions/deploy-pages" not in workflow
 
@@ -469,7 +521,7 @@ def test_cloudflare_workflow_retains_dynamic_public_artifact_contracts() -> None
     workflow = _read(DEPLOY_WORKFLOW)
     paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
 
-    assert '"health/**"' in paths_block
+    assert '"health/**"' not in paths_block
     served = _read(SERVED_VERIFIER)
     assert 'fetch "dataset register" "$base_url/"' in served
     assert 'fetch_alias dashboard "$base_url/dashboard"' in served

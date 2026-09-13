@@ -5,22 +5,14 @@ on:
     branches: [main]
     paths:
       - "docs/**"
-      - "health/**"
-      - "deltas/**"
-      - "record-evidence/**"
-      - "attestations/**"
-      - ".attestations/**"
-      - "badges/**"
-      - "samples/**"
-      - "data/**"
-      - "*.json"
-      - "*.xml"
-      - "*.txt"
       - "scripts/**"
       - "mcp/**"
       - "functions/**"
       - "config/public-surfaces.json"
       - ".github/workflows/deploy-cloudflare-pages.yml"
+      - "datapulse.json"
+      - "mcp.json"
+      - "requirements.txt"
   workflow_dispatch:
 
 permissions:
