@@ -246,8 +246,8 @@ values:
 
 ## What a consumer may not conclude
 
-- that the content is fresh, authoritative, complete, or correct — freshness
-  lives on the health axis, authority is never certified (rules 4 and 5);
+- that the content is fresh, complete, or correct — freshness lives on the
+  health axis, and authority is never certified (rules 4 and 5);
 - that a `verified` verification status implies anything about freshness or
   semantic truth;
 - that a matching `shape_fingerprint` implies matching content (rule 2);
