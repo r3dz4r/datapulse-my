@@ -99,7 +99,17 @@ proof, sha, health_path, mcp_path, health_only=sys.argv[1:]; contents=Path(proof
 if health_only == 'true':
  required={'release-proof title':r'^# Release reproducibility verification$','verification timestamp':r'^- (?:Generated|Verified) at: `[^`\\n]+`$','Source SHA':r'^- Source SHA: `[0-9a-f]{7,64}`$','Profile result':r'^- Profile result: .+$','Total files built':r'^- Total files built: .+$','hash table':r'^\\| Path category \\| File count \\| First-run hash \\| Second-run hash \\| Match\\? \\|$','hash table category row':r'^\\| (?![-: ]+\\|)[^|]+ \\| \\d+ \\|','Reproduction section':r'^## Reproduction$'}; missing=[k for k,v in required.items() if not re.search(v,contents,re.M)]
 else:
- health=json.loads(Path(health_path).read_text()); tools=json.loads(Path(mcp_path).read_text())['tools']; required=('<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->','- Status: `current generated release proof`',f'- Source SHA: `{sha}`',f"- Health checked at: `{health['checked_at']}`",f"- Dataset count: `{len(health['datasets'])}`",f'- MCP tool count: `{len(tools)}`','- Protocol result: `byte-identical isolated release-build runs`'); missing=[v for v in required if v not in contents]
+ health=json.loads(Path(health_path).read_text()); tools=json.loads(Path(mcp_path).read_text())['tools']; required=('<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->','- Status: `current generated release proof`',f'- Source SHA: `{sha}`',f'- MCP tool count: `{len(tools)}`','- Protocol result: `byte-identical isolated release-build runs`'); missing=[v for v in required if v not in contents]
+# The served health snapshot is the edge copy, refreshed by the pipeline every few minutes; the
+# proof is pinned to the deployed commit. They share a clock only at build time, so the proof's
+# stamp must not be NEWER than what is served -- an equality check here fails for the rest of the
+# deploy's life, and a stale proof goes unnoticed while it does.
+m=re.search(r'^- Health checked at: `([^`]+)`$', contents, re.M)
+if not m: missing.append('- Health checked at: `<timestamp>`')
+elif not health.get('checked_at') or m.group(1) > health['checked_at']: missing.append(f'- Health checked at: `{m.group(1)}` (not at or before served health {health.get("checked_at")})')
+m=re.search(r'^- Dataset count: `(\d+)`$', contents, re.M)
+if not m: missing.append('- Dataset count: `<n>`')
+elif len(health.get('datasets', [])) < int(m.group(1)): missing.append(f'- Dataset count: `{m.group(1)}` (exceeds served {len(health.get("datasets", []))})')
 if missing: raise SystemExit('release proof drift: '+'; '.join(missing))
 PY
 mapfile -t pages < <(jq -er '.pages[]' config/public-surfaces.json); mapfile -t artifacts < <(jq -er '.artifacts[]' config/public-surfaces.json)
