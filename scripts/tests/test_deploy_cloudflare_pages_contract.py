@@ -579,15 +579,17 @@ def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() ->
     assert '[[ "$observed_register_rows" -eq "$expected_dataset_count" ]]' in verify
     assert "origin root register rows mismatch: expected $expected_dataset_count, observed $observed_register_rows" in verify
     assert "389 register rows" not in verify
+    assert "'/health/index.json'" in verify
     assert 'fetch "health snapshot" "$base_url/health/latest.json"' in verify
+    assert 'fetch "dashboard health projection" "$base_url/health/index.json" "$smoke_dir/health/index.json"' in verify
     assert 'for path in "${pages[@]}" "${artifacts[@]}"' in verify
-    assert "embedded dashboard checked_at differs from served health/latest.json" in verify
-    assert "embedded dashboard dataset count differs from served health/latest.json" in verify
-    assert "dashboard dataset-card count differs from served health/latest.json" in verify
+    assert "dashboard health projection checked_at differs from served health/latest.json" in verify
+    assert "dashboard health projection dataset count differs from served health/latest.json" in verify
+    assert "dashboard health projection dataset IDs differ from served health/latest.json" in verify
     assert "--proto '=https'" in verify
     assert "--retry-all-errors" in verify
     assert "exit 1" in verify
-    assert "embedded['checked_at'] != health['checked_at']" in verify
+    assert "projection.get('checked_at') != health.get('checked_at')" in verify
 
 
 def test_sign_health_refreshes_chain_head_before_signing() -> None:

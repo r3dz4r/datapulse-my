@@ -64,11 +64,12 @@ sleep 30
 expected_dataset_count="$(jq -er '.datasets | select(type == "array" and length > 0) | length' "$site_dir/datapulse.json")" || fail "assembled manifest has no dataset array"
 fetch "dataset register" "$base_url/" "$smoke_dir/index.html"
 grep -q '<title>DataPulse Dataset Register</title>' "$smoke_dir/index.html" || fail "origin root is not the DataPulse dataset register"
-grep -q '__DATAPULSE_DATA__' "$smoke_dir/index.html" || fail "origin root has no embedded register health payload"
+grep -Fq "'/health/index.json'" "$smoke_dir/index.html" || fail "origin root does not fetch the dashboard health projection"
 observed_register_rows="$(grep -o '<article class="register-row' "$smoke_dir/index.html" | wc -l)"; [[ "$observed_register_rows" -eq "$expected_dataset_count" ]] || fail "origin root register rows mismatch: expected $expected_dataset_count, observed $observed_register_rows"
 grep -q 'DataPulse MY' "$smoke_dir/index.html" && fail "origin root retains the retired product-name alias"
 fetch_alias landing.html "$base_url/landing.html"; fetch_alias landing "$base_url/landing"; fetch_alias dashboard "$base_url/dashboard"
 fetch "health snapshot" "$base_url/health/latest.json" "$smoke_dir/health/latest.json"; cmp -s "$site_dir/health/latest.json" "$smoke_dir/health/latest.json" || fail "served canonical health differs from the deployed bytes"
+fetch "dashboard health projection" "$base_url/health/index.json" "$smoke_dir/health/index.json"
 sigstore_path="signatures/health.latest.sigstore.json"
 if [[ "$sigstore_signed" == true ]]; then
   staged_bundle="$publication_dir/health.latest.sigstore.json"; staged_manifest="$publication_dir/datapulse.json"; test -s "$staged_bundle" || fail "verified Sigstore bundle is missing from the deploy job"; test -s "$staged_manifest" || fail "signed manifest snapshot is missing from the deploy job"
@@ -83,7 +84,7 @@ fi
 if [[ "$health_only" == true ]]; then staged_proof="$RUNNER_TEMP/preserved-release-proof/release-verification.md"; else staged_proof="docs/release-verification.md"; fi
 test -s "$staged_proof" || fail "staged release proof is missing"; fetch "release reproducibility proof" "$base_url/release-verification.md" "$smoke_dir/release-verification.md"; cmp -s "$staged_proof" "$smoke_dir/release-verification.md" || fail "served release proof differs from staged artifact"
 python3 - "$smoke_dir/release-verification.md" "$source_commit" "$smoke_dir/health/latest.json" mcp.json "$health_only" <<'PY'
-import json,re,sys
+import json,sys
 from pathlib import Path
 proof, sha, health_path, mcp_path, health_only=sys.argv[1:]; contents=Path(proof).read_text(encoding='utf-8')
 if health_only == 'true':
@@ -94,15 +95,16 @@ if missing: raise SystemExit('release proof drift: '+'; '.join(missing))
 PY
 mapfile -t pages < <(jq -er '.pages[]' config/public-surfaces.json); mapfile -t artifacts < <(jq -er '.artifacts[]' config/public-surfaces.json)
 for path in "${pages[@]}" "${artifacts[@]}"; do [[ "$path" == / || "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "unsafe declared public path: $path"; if [[ "$path" == */ ]]; then declared_file="$(find "$site_dir${path}" -type f -print -quit)" || fail "declared collection is missing: $path"; [[ -n "$declared_file" ]] || fail "declared collection is empty: $path"; path="/${declared_file#"$site_dir/"}"; fi; fetch "declared public surface $path" "$base_url$path" "$smoke_dir/surfaces${path%/}/index"; done
-python3 - "$smoke_dir/index.html" "$smoke_dir/health/latest.json" <<'PY'
-import json,re,sys
+python3 - "$smoke_dir/index.html" "$smoke_dir/health/index.json" "$smoke_dir/health/latest.json" <<'PY'
+import json,sys
 from pathlib import Path
-dashboard=Path(sys.argv[1]).read_text(); health=json.loads(Path(sys.argv[2]).read_text()); match=re.search(r'window\.__DATAPULSE_DATA__\s*=\s*\{health:\s*',dashboard)
-if match is None: raise SystemExit('dashboard has no embedded health payload')
-embedded,_=json.JSONDecoder().raw_decode(dashboard[match.end():])
-if embedded['checked_at'] != health['checked_at']: raise SystemExit('embedded dashboard checked_at differs from served health/latest.json')
-if len(embedded['datasets']) != len(health['datasets']): raise SystemExit('embedded dashboard dataset count differs from served health/latest.json')
-if dashboard.count('"health_report":') != len(health['datasets']): raise SystemExit('dashboard dataset-card count differs from served health/latest.json')
+dashboard=Path(sys.argv[1]).read_text(); projection=json.loads(Path(sys.argv[2]).read_text()); health=json.loads(Path(sys.argv[3]).read_text())
+if "'/health/index.json'" not in dashboard: raise SystemExit('dashboard does not fetch the served health projection')
+if not isinstance(projection,dict) or not isinstance(projection.get('datasets'),list): raise SystemExit('dashboard health projection has no dataset array')
+if projection.get('checked_at') != health.get('checked_at'): raise SystemExit('dashboard health projection checked_at differs from served health/latest.json')
+if len(projection['datasets']) != len(health['datasets']): raise SystemExit('dashboard health projection dataset count differs from served health/latest.json')
+if not all(isinstance(row,dict) and isinstance(row.get('dataset_id'),str) for row in projection['datasets']): raise SystemExit('dashboard health projection datasets are invalid')
+if {row['dataset_id'] for row in projection['datasets']} != {row['dataset_id'] for row in health['datasets']}: raise SystemExit('dashboard health projection dataset IDs differ from served health/latest.json')
 PY
 expected_dataset_count="$(jq -er '.datasets | select(type == "array" and length > 0) | length' "$smoke_dir/health/latest.json")" || fail "served health has no dataset array"
 for kind in trends drift reconciliation; do fetch "$kind snapshot" "$base_url/health/$kind.json" "$smoke_dir/$kind.json"; done
