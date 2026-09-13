@@ -13,12 +13,19 @@ from scripts import gen_attestations as ga
 from scripts.tests.test_attestations import fixture_root, fixture_root_with_rekor, write
 from scripts.verify_attestation_binding import (
     ContractError,
+    _verify_merkle_proof,
+    verify_rekor_evidence,
     verify_contract,
     verify_unbound_legacy_plane,
 )
 
 
 NOW = datetime(2026, 8, 15, 1, tzinfo=timezone.utc)
+REAL_BUNDLE = (
+    Path(__file__).parent
+    / "fixtures/sigstore_rekor_migration/real_cosign_dsse_bundle.json"
+)
+REAL_BUNDLE_SHA256 = "595f6cb71d21af1fb0be64ec1e3156b3471c2025c60ab6f535e23d63db5a9fda"
 
 
 def generated_root(tmp_path: Path) -> Path:
@@ -33,6 +40,42 @@ def load(path: Path) -> dict:
 
 def dump(path: Path, value: object) -> None:
     path.write_text(json.dumps(value) + "\n", encoding="utf-8")
+
+
+def real_bundle_reference(root: Path) -> tuple[dict, str]:
+    """Build the reference exactly as the daily workflow's inline Python does."""
+    assert hashlib.sha256(REAL_BUNDLE.read_bytes()).hexdigest() == REAL_BUNDLE_SHA256
+    bundle = load(REAL_BUNDLE)
+    entry = bundle["verificationMaterial"]["tlogEntries"][0]
+    statement = json.loads(base64.b64decode(bundle["dsseEnvelope"]["payload"]))
+    subject_digest = statement["subject"][0]["digest"]["sha256"]
+    log_id = base64.b64decode(entry["logId"]["keyId"], validate=True).hex()
+    directory = root / "attestations/real-rekor"
+    directory.mkdir(parents=True)
+    bundle_path = directory / REAL_BUNDLE.name
+    shutil.copy2(REAL_BUNDLE, bundle_path)
+    reference = {
+        "schema": "datapulse/v1/sigstore-rekor-reference",
+        "artifact": "health/latest.json",
+        "artifact_sha256": subject_digest,
+        "bundle": bundle_path.name,
+        "run_id": f"health-{subject_digest}",
+        "rekor": {
+            "log_id": log_id,
+            "log_index": entry["logIndex"],
+            "uuid": hashlib.sha256(
+                base64.b64decode(entry["canonicalizedBody"], validate=True)
+            ).hexdigest(),
+            "inclusion_proof": True,
+            "signed_entry_timestamp": True,
+        },
+    }
+    reference_path = directory / "reference.json"
+    dump(reference_path, reference)
+    return {
+        "reference_ref": "attestations/real-rekor/reference.json",
+        "bundle_ref": f"attestations/real-rekor/{bundle_path.name}",
+    }, subject_digest
 
 
 def test_clean_fixture_binds_health_chain_dataset_set_time_and_active_key(tmp_path: Path) -> None:
@@ -329,6 +372,39 @@ def test_missing_rekor_proof_reference_is_rejected(tmp_path: Path) -> None:
     install_rekor_fixture(root, missing_proof=True)
     with pytest.raises(ContractError, match="inclusion proof"):
         verify_contract(root, now=NOW + timedelta(hours=1), require_rekor=True)
+
+
+def test_real_cosign_dsse_bundle_accepts_protobuf_integer_proof(tmp_path: Path) -> None:
+    root, _key = fixture_root(tmp_path)
+    metadata, subject_digest = real_bundle_reference(root)
+
+    # The fixture health bytes are deliberately small and do not hash to the
+    # published bundle's immutable DSSE subject. This focused test therefore
+    # supplies that subject digest, which is the binding verified by this path.
+    result = verify_rekor_evidence(root, metadata, subject_digest)
+
+    assert result["log_index"] == "2819296084"
+
+
+def test_real_cosign_dsse_bundle_rejects_a_tampered_root_hash(tmp_path: Path) -> None:
+    root, _key = fixture_root(tmp_path)
+    metadata, subject_digest = real_bundle_reference(root)
+    bundle_path = root / metadata["bundle_ref"]
+    bundle = load(bundle_path)
+    proof = bundle["verificationMaterial"]["tlogEntries"][0]["inclusionProof"]
+    proof["rootHash"] = base64.b64encode(bytes(32)).decode("ascii")
+    dump(bundle_path, bundle)
+
+    with pytest.raises(ContractError, match="root does not verify"):
+        verify_rekor_evidence(root, metadata, subject_digest)
+
+
+def test_merkle_proof_prefers_proof_level_index_over_entry_index() -> None:
+    bundle = load(REAL_BUNDLE)
+    entry = bundle["verificationMaterial"]["tlogEntries"][0]
+    entry["logIndex"] = "0"
+
+    _verify_merkle_proof(entry)
 
 
 def test_same_day_rekor_proof_is_not_validated_or_published(tmp_path: Path) -> None:
