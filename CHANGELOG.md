@@ -14,6 +14,30 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.7.0](https://github.com/r3dz4r/datapulse-my/compare/v3.6.0...v3.7.0) (2026-09-13)
+
+
+### Features
+
+* **health:** read the KV health index at page load with a static fallback ([8bf7400](https://github.com/r3dz4r/datapulse-my/commit/8bf740020c84622c34dfad5b5952e2b8e98a37bb))
+* **historic:** add the historical-observation envelope contract ([15098ea](https://github.com/r3dz4r/datapulse-my/commit/15098eaa96128fe04127b60fff0348bec80f8f97))
+* **kv:** publish a bounded health index to Cloudflare KV ([bffaf61](https://github.com/r3dz4r/datapulse-my/commit/bffaf6154602bc11628b9ffff8021a64d447783d))
+* **telemetry:** accept sub-stages under the closed root vocabulary ([49e83dc](https://github.com/r3dz4r/datapulse-my/commit/49e83dc55373b4da2310b7e1019db4f95a3b4c40))
+
+
+### Bug Fixes
+
+* **deploy:** publish Pages Functions so /health/index.json is served ([07a78b3](https://github.com/r3dz4r/datapulse-my/commit/07a78b312cd4fb8b6bda349271c7522c814296d7))
+* **docs:** drop the unscoped claim phrase from the observation contract ([29c7f90](https://github.com/r3dz4r/datapulse-my/commit/29c7f900579f6bc9d48ff3ed1479059d17a182d2))
+* **tests:** drop the ripgrep dependency so the shell tests can run in CI ([bf56960](https://github.com/r3dz4r/datapulse-my/commit/bf5696084b4cfdcba8deca8cdc1ea8c94c537b42))
+* **url-drift:** audit the canonical manifest, not the dashboard's inline payload ([ae258f5](https://github.com/r3dz4r/datapulse-my/commit/ae258f587e9ed5b60c30e54986a82f81f62da650))
+
+
+### Performance Improvements
+
+* **dashboard:** move the embedded dataset payload to a runtime fetch ([dcafd03](https://github.com/r3dz4r/datapulse-my/commit/dcafd035aaf1448cbd553d0f81a137e11039e56c))
+* **rss:** render the feed in one jq pass instead of eight per dataset ([12e85f1](https://github.com/r3dz4r/datapulse-my/commit/12e85f10017f94a3cc6ac13d776c123d8d3de5c5))
+
 ## [3.6.0](https://github.com/r3dz4r/datapulse-my/compare/v3.5.0...v3.6.0) (2026-09-12)
 
 
