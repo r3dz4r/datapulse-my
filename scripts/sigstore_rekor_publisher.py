@@ -16,6 +16,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import subprocess
 from dataclasses import dataclass
 from enum import Enum
@@ -28,6 +29,7 @@ from urllib.request import urlopen
 LOG = logging.getLogger(__name__)
 COSIGN_VERSION = "v3.1.3"
 COSIGN_V3_BUNDLE_MEDIA_TYPE = "application/vnd.dev.sigstore.bundle.v0.3+json"
+DSSE_SHA256 = re.compile(r"[0-9a-f]{64}", re.IGNORECASE)
 ALLOWED_CREDENTIAL_ENVS = frozenset({"OPENBAO_TOKEN", "VAULT_TOKEN"})
 
 
@@ -37,6 +39,34 @@ class ConfigError(ValueError):
 
 class PublishError(RuntimeError):
     """Publishing did not produce independently verifiable evidence."""
+
+
+def _dsse_subject_digest(bundle: dict[str, Any]) -> str:
+    """Extract the artifact binding from the producer's DSSE statement."""
+    if "messageSignature" in bundle:
+        raise PublishError("Cosign bundle must contain a DSSE attestation, not a message signature")
+    envelope = bundle.get("dsseEnvelope")
+    if not isinstance(envelope, dict):
+        raise PublishError("Cosign bundle DSSE envelope is missing")
+    if envelope.get("payloadType") != "application/vnd.in-toto+json":
+        raise PublishError("Cosign bundle DSSE payloadType is not application/vnd.in-toto+json")
+    payload = envelope.get("payload")
+    if not isinstance(payload, str):
+        raise PublishError("Cosign bundle DSSE payload is missing")
+    try:
+        statement = json.loads(base64.b64decode(payload, validate=True).decode("utf-8"))
+    except (ValueError, UnicodeError, json.JSONDecodeError) as exc:
+        raise PublishError("Cosign bundle DSSE payload is not valid in-toto JSON") from exc
+    if not isinstance(statement, dict) or not isinstance(statement.get("subject"), list):
+        raise PublishError("Cosign bundle DSSE statement subject is malformed")
+    subjects = statement["subject"]
+    if len(subjects) != 1 or not isinstance(subjects[0], dict):
+        raise PublishError("Cosign bundle DSSE statement must contain exactly one subject")
+    digest = subjects[0].get("digest")
+    value = digest.get("sha256") if isinstance(digest, dict) else None
+    if not isinstance(value, str) or DSSE_SHA256.fullmatch(value) is None:
+        raise PublishError("Cosign bundle DSSE subject digest is not a SHA-256 digest")
+    return value.lower()
 
 
 class WitnessState(str, Enum):
@@ -373,7 +403,7 @@ class Publisher:
             bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
             if bundle["mediaType"] != COSIGN_V3_BUNDLE_MEDIA_TYPE:
                 raise ValueError("unexpected media type")
-            signature = bundle["messageSignature"]["messageDigest"]
+            signature = _dsse_subject_digest(bundle)
             entries = bundle["verificationMaterial"]["tlogEntries"]
             if not isinstance(entries, list) or len(entries) != 1:
                 raise ValueError("ambiguous tlog entries")
@@ -388,7 +418,7 @@ class Publisher:
             tree_size = proof["treeSize"]
         except (OSError, json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError, ConfigError) as exc:
             raise PublishError("Cosign bundle is incomplete") from exc
-        if signature.get("algorithm") != "SHA2_256" or _normalise_bundle_digest(signature.get("digest")) != expected_digest:
+        if signature != expected_digest.lower():
             raise PublishError("Cosign bundle digest does not match canonical artifact")
         if (
             log_id not in log_ids

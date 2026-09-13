@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 DEFAULT_MAX_AGE_SECONDS = 36 * 60 * 60
 DIGEST = re.compile(r"[0-9a-f]{64}")
+DSSE_DIGEST = re.compile(r"[0-9a-f]{64}", re.IGNORECASE)
 
 
 class ContractError(ValueError):
@@ -68,6 +69,34 @@ def _normalise_digest(value: object, label: str) -> str:
         if len(decoded) == hashlib.sha256().digest_size:
             return decoded.hex()
     raise ContractError(f"{label} is not a SHA-256 digest")
+
+
+def _dsse_subject_digest(bundle: dict[str, Any]) -> str:
+    """Return the sole in-toto subject digest from a DSSE-only bundle."""
+    if "messageSignature" in bundle:
+        raise ContractError("Sigstore bundle must contain a DSSE attestation, not a message signature")
+    envelope = bundle.get("dsseEnvelope")
+    if not isinstance(envelope, dict):
+        raise ContractError("Sigstore bundle DSSE envelope is missing")
+    if envelope.get("payloadType") != "application/vnd.in-toto+json":
+        raise ContractError("Sigstore bundle DSSE payloadType is not application/vnd.in-toto+json")
+    payload = envelope.get("payload")
+    if not isinstance(payload, str):
+        raise ContractError("Sigstore bundle DSSE payload is missing")
+    try:
+        statement = json.loads(base64.b64decode(payload, validate=True).decode("utf-8"))
+    except (ValueError, UnicodeError, json.JSONDecodeError) as error:
+        raise ContractError("Sigstore bundle DSSE payload is not valid in-toto JSON") from error
+    if not isinstance(statement, dict) or not isinstance(statement.get("subject"), list):
+        raise ContractError("Sigstore bundle DSSE statement subject is malformed")
+    subjects = statement["subject"]
+    if len(subjects) != 1 or not isinstance(subjects[0], dict):
+        raise ContractError("Sigstore bundle DSSE statement must contain exactly one subject")
+    digest = subjects[0].get("digest")
+    value = digest.get("sha256") if isinstance(digest, dict) else None
+    if not isinstance(value, str) or DSSE_DIGEST.fullmatch(value) is None:
+        raise ContractError("Sigstore bundle DSSE subject digest is not a SHA-256 digest")
+    return value.lower()
 
 
 def _safe_ref(value: object, prefix: str, suffix: str = ".json") -> str:
@@ -262,17 +291,15 @@ def _verify_rekor(
     ):
         raise ContractError("Rekor reference does not bind the health digest")
     bundle = _load(root / bundle_ref, "Sigstore bundle")
+    digest = _dsse_subject_digest(bundle)
     try:
-        digest = bundle["messageSignature"]["messageDigest"]
         entries = bundle["verificationMaterial"]["tlogEntries"]
         entry = entries[0]
         log_id = _normalise_digest(entry["logId"]["keyId"], "Rekor LogID")
     except (KeyError, IndexError, TypeError) as error:
         raise ContractError("Sigstore bundle is incomplete") from error
     if (
-        digest.get("algorithm") != "SHA2_256"
-        or _normalise_digest(digest.get("digest"), "Sigstore artifact digest")
-        != expected_digest
+        digest != expected_digest.lower()
         or not isinstance(entries, list)
         or len(entries) != 1
     ):

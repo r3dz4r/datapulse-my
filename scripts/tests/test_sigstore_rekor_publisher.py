@@ -56,7 +56,7 @@ def valid_bundle(artifact: bytes, **overrides: Any) -> dict[str, Any]:
     root_hash = base64.b64encode(hashlib.sha256(b"\x00" + base64.b64decode(body)).digest()).decode("ascii")
     result: dict[str, Any] = {
         "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
-        "messageSignature": {"messageDigest": {"algorithm": "SHA2_256", "digest": digest}},
+        "dsseEnvelope": {"payloadType": "application/vnd.in-toto+json", "payload": base64.b64encode(json.dumps({"_type": "https://in-toto.io/Statement/v1", "subject": [{"name": "health/latest.json", "digest": {"sha256": digest}}], "predicateType": "https://www.data-pulse.my/predicates/health-snapshot/v1"}, sort_keys=True, separators=(",", ":")).encode()).decode("ascii"), "signatures": [{"sig": base64.b64encode(b"fixture signature").decode("ascii")}]} ,
         "verificationMaterial": {"tlogEntries": [{"logId": {"keyId": LOG_ID}, "logIndex": 0, "canonicalizedBody": body, "inclusionProof": {"rootHash": root_hash, "hashes": [], "treeSize": 1}, "inclusionPromise": {"signedEntryTimestamp": "fixture-set"}}]},
     }
     result.update(overrides)
@@ -95,7 +95,8 @@ def test_success_writes_additive_bundle_and_reference_with_shared_digest(tmp_pat
     assert json.loads(reference.read_text())["artifact_sha256"] == hashlib.sha256(b"daily evidence").hexdigest()
     assert json.loads(reference.read_text())["artifact"] == "health/latest.json"
     assert json.loads(reference.read_text())["bundle"] == "bundle.json"
-    assert json.loads(bundle.read_text())["messageSignature"]["messageDigest"]["digest"] == json.loads(reference.read_text())["artifact_sha256"]
+    payload = base64.b64decode(json.loads(bundle.read_text())["dsseEnvelope"]["payload"])
+    assert json.loads(payload)["subject"][0]["digest"]["sha256"] == json.loads(reference.read_text())["artifact_sha256"]
     assert json.loads(reference.read_text())["rekor"] == {
         "log_id": LOG_ID,
         "log_index": 0,
@@ -144,9 +145,11 @@ def test_missing_verification_key_fails_closed_before_network(tmp_path: Path) ->
     assert subject.runtime.gets == []  # type: ignore[attr-defined]
 
 
-def test_cosign_v3_base64_bundle_digest_normalises_to_artifact_hex(tmp_path: Path) -> None:
+def test_cosign_v3_uppercase_dsse_digest_normalises_to_artifact_hex(tmp_path: Path) -> None:
     bundle = valid_bundle(b"daily evidence")
-    bundle["messageSignature"]["messageDigest"]["digest"] = base64.b64encode(hashlib.sha256(b"daily evidence").digest()).decode("ascii")
+    statement = json.loads(base64.b64decode(bundle["dsseEnvelope"]["payload"]))
+    statement["subject"][0]["digest"]["sha256"] = hashlib.sha256(b"daily evidence").hexdigest().upper()
+    bundle["dsseEnvelope"]["payload"] = base64.b64encode(json.dumps(statement, sort_keys=True, separators=(",", ":")).encode()).decode("ascii")
     subject, output, reference = publisher(tmp_path, FakeRuntime(bundle))
     subject.publish()
     assert output.exists() and reference.exists()
@@ -154,17 +157,18 @@ def test_cosign_v3_base64_bundle_digest_normalises_to_artifact_hex(tmp_path: Pat
 
 
 @pytest.mark.parametrize(
-    "digest, algorithm",
+    "digest",
     [
-        (base64.b64encode(b"wrong digest").decode("ascii"), "SHA2_256"),
-        ("not-base64", "SHA2_256"),
-        (base64.b64encode(b"short").decode("ascii"), "SHA2_256"),
-        (base64.b64encode(hashlib.sha256(b"daily evidence").digest()).decode("ascii"), "SHA3_256"),
+        "0" * 64,
+        "not-a-digest",
+        "a" * 63,
     ],
 )
-def test_invalid_cosign_v3_bundle_digest_is_rejected_before_outputs(tmp_path: Path, digest: str, algorithm: str) -> None:
+def test_invalid_cosign_v3_bundle_digest_is_rejected_before_outputs(tmp_path: Path, digest: str) -> None:
     bundle = valid_bundle(b"daily evidence")
-    bundle["messageSignature"]["messageDigest"] = {"algorithm": algorithm, "digest": digest}
+    statement = json.loads(base64.b64decode(bundle["dsseEnvelope"]["payload"]))
+    statement["subject"][0]["digest"]["sha256"] = digest
+    bundle["dsseEnvelope"]["payload"] = base64.b64encode(json.dumps(statement, sort_keys=True, separators=(",", ":")).encode()).decode("ascii")
     subject, output, reference = publisher(tmp_path, FakeRuntime(bundle))
     with pytest.raises(PublishError, match="digest"):
         subject.publish()

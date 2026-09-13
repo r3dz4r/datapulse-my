@@ -247,9 +247,21 @@ def install_rekor_fixture(root: Path, *, missing_proof: bool = False, attach: bo
     }
     if missing_proof:
         entry.pop("inclusionProof")
+    statement = {
+        "_type": "https://in-toto.io/Statement/v1",
+        "subject": [{"name": "health/latest.json", "digest": {"sha256": digest}}],
+        "predicateType": "https://www.data-pulse.my/predicates/health-snapshot/v1",
+        "predicate": {},
+    }
     bundle = {
         "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
-        "messageSignature": {"messageDigest": {"algorithm": "SHA2_256", "digest": digest}},
+        "dsseEnvelope": {
+            "payloadType": "application/vnd.in-toto+json",
+            "payload": base64.b64encode(
+                json.dumps(statement, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            ).decode("ascii"),
+            "signatures": [{"sig": base64.b64encode(b"fixture signature").decode("ascii")}],
+        },
         "verificationMaterial": {"tlogEntries": [entry]},
     }
     dump(bundle_path, bundle)
