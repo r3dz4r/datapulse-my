@@ -1,8 +1,8 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-13T02:07:41Z",
+  "checked_at": "2026-09-13T02:22:05Z",
   "_trust_summary": {
-    "checked_at": "2026-09-13T02:07:41Z",
+    "checked_at": "2026-09-13T02:22:05Z",
     "datasets_total": 418,
     "by_status": {
       "fresh": 100,
@@ -659,7 +659,7 @@
         "days_since_modified": 0.0011342592592592593
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-13T02:15:34Z"
+    "pipeline_heartbeat_at": "2026-09-13T02:30:35Z"
   },
   "datasets": [
     {
@@ -339210,7 +339210,7 @@
     },
     {
       "dataset_id": "sg_datagov_taxi_availability",
-      "last_checked": "2026-09-12T02:19:14Z",
+      "last_checked": "2026-09-13T02:22:05Z",
       "namespace": "transport",
       "url": "https://api.data.gov.sg/v1/transport/taxi-availability",
       "status": "fresh",
@@ -339219,9 +339219,9 @@
       "request_url": "https://api.data.gov.sg/v1/transport/taxi-availability",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 49522,
+      "content_length": 65131,
       "last_modified": null,
-      "content_freshness_date": "2026-09-12T02:18:26Z",
+      "content_freshness_date": "2026-09-13T02:21:56Z",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -339238,7 +339238,8 @@
       "record_count_estimated": false,
       "incomplete": false,
       "column_count": null,
-      "first_row_hash": null,
+      "first_row_hash": "shape-v1:5a6be641497ec1e2a986fdcb59e252b5cb587233b62a9939800540c3aec2ce07",
+      "shape_basis": "json-object",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
@@ -339277,7 +339278,7 @@
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -339325,9 +339326,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -339370,16 +339371,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 3,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 1,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
               "observed_access_signal_present",
-              "shape_metadata_missing",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -339722,13 +339723,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -339807,14 +339808,14 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 3,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 1,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
               "record_count_observed",
               "attestation_ref_declared"
@@ -340017,7 +340018,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "indeterminate",
+        "overall": "ready",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
