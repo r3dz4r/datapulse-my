@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
   id-token: write
 
 jobs:
@@ -159,26 +160,33 @@ jobs:
         if: always()
         run: rm -f -- "$RUNNER_TEMP/datapulse-attestation-key.json"
 
-      - name: Commit dated envelopes when generation changed them
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Commit dated envelopes and open or update their pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -Eeuo pipefail
           day="$(jq -er '.date | select(type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' attestations/latest/index.json)"
           changed_paths="$({
             git diff --name-only -- \
-              "attestations/$day" attestations/latest attestations/chain-index.json \
-              .attestations/chain_head.json datapulse.json
+              "attestations/$day" attestations/latest/index.json \
+              attestations/latest/binding.json attestations/latest/chain_head.json \
+              attestations/chain-index.json .attestations/chain_head.json \
+              datapulse.json attestations/latest/scores.json
             git ls-files --others --exclude-standard -- \
-              "attestations/$day" attestations/latest attestations/chain-index.json \
-              .attestations/chain_head.json datapulse.json
+              "attestations/$day" attestations/latest/index.json \
+              attestations/latest/binding.json attestations/latest/chain_head.json \
+              attestations/chain-index.json .attestations/chain_head.json \
+              datapulse.json attestations/latest/scores.json
           } | LC_ALL=C sort -u)"
-          message="$(printf '%s\n' "$changed_paths" | python3 scripts/attestation_commit_back.py --date "$day")"
-          if [[ -z "$message" ]]; then
-            echo "No dated attestation envelope changes to commit."
-            exit 0
-          fi
           unexpected_paths="$({ git status --porcelain=v1 --untracked-files=all | cut -c4-; } | while IFS= read -r path; do
             case "$path" in
-              "attestations/$day"/*|attestations/latest/*|attestations/chain-index.json|.attestations/chain_head.json|datapulse.json) ;;
+              "attestations/$day"/*|attestations/latest/index.json|attestations/latest/binding.json|attestations/latest/chain_head.json|attestations/chain-index.json|.attestations/chain_head.json|datapulse.json|attestations/latest/scores.json) ;;
               *) printf '%s\n' "$path" ;;
             esac
           done)"
@@ -186,14 +194,69 @@ jobs:
             echo "::error title=Unexpected daily-attestation output::refusing to commit paths outside the attestation allowlist: $unexpected_paths"
             exit 1
           fi
+          committed_paths="$(printf '%s\n' "$changed_paths" | while IFS= read -r path; do
+            case "$path" in
+              "attestations/$day"/*|attestations/latest/index.json|attestations/latest/binding.json|attestations/latest/chain_head.json|attestations/chain-index.json|.attestations/chain_head.json) printf '%s\n' "$path" ;;
+            esac
+          done)"
+          excluded_paths="$(printf '%s\n' "$changed_paths" | while IFS= read -r path; do
+            case "$path" in
+              datapulse.json|attestations/latest/scores.json)
+                printf '%s\n' "$path"
+                ;;
+            esac
+          done)"
+          # Keep the exclusions visible even when no dated envelope was produced.
+          printf '%s\n' "$excluded_paths" | while IFS= read -r path; do
+            [[ -z "$path" ]] || echo "Deliberately not committing $path: the health pipeline owns it."
+          done
+          message="$(printf '%s\n' "$committed_paths" | python3 scripts/attestation_commit_back.py --date "$day")"
+          if [[ -z "$message" ]]; then
+            echo "No dated attestation envelope changes to commit."
+            exit 0
+          fi
+          git fetch origin main
+          branch="attestation/anchor-$day"
+          if git ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null 2>&1; then
+            echo "Updating existing machine-owned branch $branch."
+          else
+            echo "Creating machine-owned branch $branch from origin/main."
+          fi
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -- \
-            "attestations/$day" attestations/latest attestations/chain-index.json \
-            .attestations/chain_head.json datapulse.json
+            "attestations/$day" attestations/latest/index.json \
+            attestations/latest/binding.json attestations/latest/chain_head.json \
+            attestations/chain-index.json .attestations/chain_head.json
           git commit -m "$message"
           if ! git pull --rebase origin main; then
             echo "::error title=Daily attestation rebase conflict::generated envelopes were committed locally but could not be rebased onto origin/main; refusing to force-push."
             exit 1
           fi
-          git push origin HEAD:main
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $(printf '%s%s:%s' 'x-access' '-token' "$GH_TOKEN" | base64 -w 0)" \
+            push --force origin "HEAD:refs/heads/$branch"
+          chain_head="$(jq -er '.chain_head | select(type == "string" and test("^[0-9a-f]{64}$"))' .attestations/chain_head.json)"
+          echo "Committed attestation path set:"
+          printf '%s\n' "$committed_paths"
+          body_file="$RUNNER_TEMP/attestation-pr-body.md"
+          {
+            printf 'Daily signed attestation envelopes for %s.\n\n' "$day"
+            printf 'Committed paths:\n%s\n\n' "$committed_paths"
+            printf 'Deliberately excluded pipeline-owned paths:\n%s\n\n' "${excluded_paths:-(none)}"
+            printf 'Chain head: `%s`\n' "$chain_head"
+          } > "$body_file"
+          pr_number="$(gh pr list --head "$branch" --base main --state open --json number --jq '.[0].number // empty')"
+          if [[ -z "$pr_number" ]]; then
+            echo "Creating pull request for $branch."
+            pr_url="$(gh pr create --base main --head "$branch" --title "chore(attestation): daily signed envelopes $day" --body-file "$body_file")"
+            pr_number="${pr_url##*/}"
+          else
+            echo "Reusing existing open pull request #$pr_number for $branch."
+          fi
+          gh pr merge --auto --merge "$pr_number" || {
+            if gh pr view "$pr_number" --json autoMergeRequest --jq '.autoMergeRequest != null' | grep -qx true; then
+              echo "Auto-merge is already enabled for pull request #$pr_number."
+            else
+              exit 1
+            fi
+          }
