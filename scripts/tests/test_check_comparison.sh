@@ -262,7 +262,7 @@ if python3 "$repo_root/scripts/compare_health.py" \
   printf 'Expected internal classifier failure\n' >&2
   exit 1
 fi
-rg -q 'Health comparison failed.*unsupported refresh_frequency' "$fixture_dir/failure.txt"
+grep -E -q 'Health comparison failed.*unsupported refresh_frequency' "$fixture_dir/failure.txt"
 
 status_after="$(git -C "$repo_root" status --short)"
 [[ "$status_before" == "$status_after" ]]

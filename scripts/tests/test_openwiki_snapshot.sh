@@ -136,7 +136,7 @@ write_npm_stub "$repo"
 if run_case "$repo" env OPENWIKI_TEST_DRIFT=code >"$repo/output" 2>&1; then
   fail 'accepted source/code drift'
 fi
-rg -q 'source drift' "$repo/output" || fail 'did not classify source drift'
+grep -E -q 'source drift' "$repo/output" || fail 'did not classify source drift'
 [[ $(<"$repo/openwiki/quickstart.md") == 'old quickstart.md' ]] || fail 'promoted after source drift'
 
 repo="$TEST_ROOT/dirty-target"
@@ -146,7 +146,7 @@ printf 'operator change\n' >>"$repo/openwiki/quickstart.md"
 if run_case "$repo" env >"$repo/output" 2>&1; then
   fail 'accepted dirty target OpenWiki path'
 fi
-rg -q 'dirty target OpenWiki path' "$repo/output" || fail 'did not report dirty target refusal'
+grep -E -q 'dirty target OpenWiki path' "$repo/output" || fail 'did not report dirty target refusal'
 
 repo="$TEST_ROOT/verifier-failure"
 make_repo "$repo"
@@ -154,7 +154,7 @@ write_npm_stub "$repo"
 if run_case "$repo" env OPENWIKI_TEST_VERIFY_FAIL=1 >"$repo/output" 2>&1; then
   fail 'hid target verifier failure'
 fi
-rg -q 'target promotion failed' "$repo/output" || fail 'did not report target verifier failure'
+grep -E -q 'target promotion failed' "$repo/output" || fail 'did not report target verifier failure'
 [[ $(<"$repo/openwiki/quickstart.md") == 'old quickstart.md' ]] || fail 'did not restore target after verifier failure'
 
 printf 'OpenWiki snapshot runner regression tests passed\n'
