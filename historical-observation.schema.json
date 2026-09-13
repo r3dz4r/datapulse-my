@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://data-pulse.my/historical-observation.schema.json",
+  "title": "DataPulse MY historical-observation/v1 envelope",
+  "description": "Contract for one filed historical observation of an upstream dataset. The envelope records what was requested, what was actually captured, how it was normalised, and what a consumer may conclude. It deliberately cannot express freshness or authority claims; those live on separate axes.",
+  "type": "object",
+  "required": [
+    "schema",
+    "observation_id",
+    "dataset_id",
+    "source_identity",
+    "source_url",
+    "observed_request_url",
+    "observed_at",
+    "retrieved_at",
+    "source_content_date",
+    "source_version",
+    "capture_policy",
+    "capture_status",
+    "source_digest",
+    "observation_digest",
+    "shape_fingerprint",
+    "normalized_projection",
+    "normalization_profile_version",
+    "previous_observation_id",
+    "previous_observation_digest",
+    "change_from_previous",
+    "verification",
+    "attestation_ref",
+    "witness_refs",
+    "claim_boundary",
+    "unknown_reasons",
+    "cycle_root",
+    "contract_digest",
+    "superseded_by",
+    "invalidated_by",
+    "declared",
+    "observed",
+    "publisher_credential",
+    "verifier_credential",
+    "replay_state"
+  ],
+  "properties": {
+    "schema": {
+      "const": "historical-observation/v1"
+    },
+    "observation_id": {
+      "description": "Stable identifier of this observation, unique across all datasets and cycles.",
+      "$ref": "#/$defs/observationId"
+    },
+    "dataset_id": {
+      "description": "Identifier of the observed dataset in the DataPulse manifest.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "source_identity": {
+      "description": "Who the source says it is, or who independent evidence supports. Never a certification of authority.",
+      "type": "object",
+      "required": ["identity_value", "basis", "limitation"],
+      "properties": {
+        "identity_value": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "basis": {
+          "enum": ["declared_by_source", "independently_supported", "unknown"]
+        },
+        "limitation": {
+          "const": "Identity is declared or independently supported; it is not a certification of authority, control, or authenticity."
+        }
+      },
+      "additionalProperties": false
+    },
+    "source_url": {
+      "description": "Canonical catalogue URL of the dataset.",
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "observed_request_url": {
+      "description": "The exact URL DataPulse actually requested. May differ from source_url after redirects or mirror selection.",
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048
+    },
+    "observed_at": {
+      "description": "Instant DataPulse filed this observation (digests computed, envelope sealed). This is the DataPulse observation time; it is neither the retrieval time nor the source content date.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "retrieved_at": {
+      "description": "Instant the source request completed. Null when no completed request exists. Kept separate from observed_at and from source_content_date.",
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "source_content_date": {
+      "description": "Date the content itself claims to be about (its vintage), extracted from the content or its headers. Null when not extractable. Never inferred from retrieval or observation time.",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "source_version": {
+      "description": "Upstream version identifier for the observed content. Either the explicit unknown marker, or a value with an auditable basis. A bare string other than 'unknown' is rejected: when the version is not known, 'unknown' is the only permitted bare value, so fabricated versions cannot be smuggled through this member.",
+      "oneOf": [
+        {"const": "unknown"},
+        {
+          "type": "object",
+          "required": ["value", "basis"],
+          "properties": {
+            "value": {"type": "string", "minLength": 1},
+            "basis": {
+              "enum": ["declared_by_source", "observed_in_content", "independently_supported"]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "capture_policy": {
+      "description": "What the pipeline intended to retain for this dataset.",
+      "enum": ["full_source_bytes", "normalized_projection_only", "shape_fingerprint_only", "metadata_only", "none"]
+    },
+    "capture_status": {
+      "description": "What was actually retained. Only 'captured' means the defined source bytes are held in full; 'partial' (for example a truncated transfer) is not captured.",
+      "enum": ["captured", "partial", "metadata_only", "not_captured", "failed", "unknown"]
+    },
+    "source_digest": {
+      "description": "SHA-256 over exactly the source bytes that were captured. Asserted ONLY when capture_status is 'captured'; must be null for partial, metadata-only, failed, or absent captures.",
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "observation_digest": {
+      "description": "Domain-separated digest over the canonical form of this envelope (excluding observation_digest itself). The cycle_root commitment is computed over these digests.",
+      "$ref": "#/$defs/observationDigest"
+    },
+    "shape_fingerprint": {
+      "description": "Value-insensitive structural fingerprint of the content (keys, types, headers). Null when the format exposes no defensible structural evidence.",
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["algorithm", "value", "basis", "limitation"],
+          "properties": {
+            "algorithm": {"const": "shape-v1"},
+            "value": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "basis": {
+              "enum": ["json-array", "json-object", "csv-headers", "archive-member-headers", "untyped"]
+            },
+            "limitation": {
+              "const": "Structural fingerprint over keys, types, and headers only; it is not a digest of the source content."
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "normalized_projection": {
+      "description": "Whether a normalised projection of the capture is retained, in what format, and with what known record count.",
+      "type": "object",
+      "required": ["state", "format", "record_count"],
+      "properties": {
+        "state": {"enum": ["retained", "not_retained", "unknown"]},
+        "format": {"enum": ["json-array-of-objects", "csv", "parquet", "jsonl", null]},
+        "record_count": {"type": ["integer", "null"], "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "normalization_profile_version": {
+      "description": "Version of the normalisation rules that produced the projection. Two projections are comparable only under the same version.",
+      "const": "datapulse-normalization-profile/v1"
+    },
+    "previous_observation_id": {
+      "description": "Identifier of the immediately preceding observation OF THE SAME dataset. Null for a dataset's first observation.",
+      "type": ["string", "null"],
+      "pattern": "^obs-[a-z0-9][a-z0-9_-]{0,127}$"
+    },
+    "previous_observation_digest": {
+      "description": "Digest of the immediately preceding observation OF THE SAME dataset. This is same-dataset history; it is NEVER the attestation chain head (.attestations/chain_head.json) or any other aggregate commitment. Domain-separated so chain-head values (bare hex in the attestation plane) cannot be pasted here.",
+      "type": ["string", "null"],
+      "pattern": "^observation:sha256:[0-9a-f]{64}$"
+    },
+    "change_from_previous": {
+      "description": "Comparison against the previous same-dataset observation. 'incomparable' means the two normalisations could not be aligned (for example different normalization_profile_version).",
+      "enum": ["changed", "unchanged", "incomparable", "first_observation", "unknown"]
+    },
+    "verification": {
+      "description": "Cryptographic verification state of this observation. A separate axis from health/freshness classification; the two must not be conflated.",
+      "type": "object",
+      "required": ["verification_status", "verified_at", "method", "limitation"],
+      "properties": {
+        "verification_status": {
+          "enum": ["verified", "unverified", "failed", "unknown"]
+        },
+        "verified_at": {"type": ["string", "null"], "format": "date-time"},
+        "method": {
+          "description": "How verification was or would be performed, for example digest recomputation plus attestation-chain signature check.",
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "limitation": {
+          "const": "Verification status is cryptographic and procedural only; it is neither a freshness classification nor a statement of semantic truth."
+        }
+      },
+      "additionalProperties": false
+    },
+    "attestation_ref": {
+      "description": "Reference to the attestation-plane entry covering the cycle this observation belongs to. An aggregate-plane reference; it does not replace same-dataset history.",
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "witness_refs": {
+      "description": "References to independent corroborating records (transparency-log entries, third-party snapshots). Empty when no witness exists.",
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "claim_boundary": {
+      "description": "Per-observation statement of what may and may not be concluded. Both lists must be non-empty: there is always at least one valid conclusion and at least one boundary.",
+      "type": "object",
+      "required": ["may_conclude", "may_not_conclude"],
+      "properties": {
+        "may_conclude": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "may_not_conclude": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "additionalProperties": false
+    },
+    "unknown_reasons": {
+      "description": "Members whose values are explicitly unknown in this observation. Closed vocabulary; a reason may only name a member that can actually be unknown. When source_version is 'unknown', 'source_version' must appear here.",
+      "type": "array",
+      "items": {
+        "enum": [
+          "source_version",
+          "source_content_date",
+          "source_identity",
+          "retrieved_at",
+          "shape_fingerprint",
+          "change_from_previous",
+          "previous_observation_id",
+          "previous_observation_digest"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "cycle_root": {
+      "description": "Merkle-style commitment over all observation digests retained in one cycle. Lets a third party verify a single observation against one root without holding the full set.",
+      "type": "object",
+      "required": ["root", "algorithm", "observation_count"],
+      "properties": {
+        "root": {
+          "type": "string",
+          "pattern": "^cycle-root:sha256:[0-9a-f]{64}$"
+        },
+        "algorithm": {"const": "merkle-sha256"},
+        "observation_count": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "contract_digest": {
+      "description": "Digest over the pinned source of the code that produced this observation. An observation's validity is bound to this digest: a material change to the producing code invalidates prior verifications instead of letting them persist silently.",
+      "$ref": "#/$defs/contractDigest"
+    },
+    "superseded_by": {
+      "description": "Observation that replaces this one in the same dataset's history. Null while this observation is current.",
+      "type": ["string", "null"],
+      "pattern": "^obs-[a-z0-9][a-z0-9_-]{0,127}$"
+    },
+    "invalidated_by": {
+      "description": "What invalidated this observation: a successor observation id, or the contract digest of the material code change that broke it. Null while the observation stands.",
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/observationId"},
+        {"$ref": "#/$defs/contractDigest"}
+      ]
+    },
+    "declared": {
+      "description": "What the source or contract declares, each entry with its basis. Never inferred from observed.",
+      "$ref": "#/$defs/entryList"
+    },
+    "observed": {
+      "description": "What DataPulse actually observed, each entry with its basis. Never inferred from declared.",
+      "$ref": "#/$defs/entryList"
+    },
+    "publisher_credential": {
+      "description": "Reserved for a standards-shaped publisher credential. MUST be null in this phase; populating it requires a schema contract change, not a producer decision.",
+      "type": "null"
+    },
+    "verifier_credential": {
+      "description": "Reserved for a standards-shaped verifier credential. MUST be null in this phase; populating it requires a schema contract change, not a producer decision.",
+      "type": "null"
+    },
+    "replay_state": {
+      "description": "Whether, and how far, the source content can be reconstructed from what this observation retains. A separate axis from the ten health statuses: a fresh health status does not imply replayable, and a replayable capture does not imply semantic truth.",
+      "enum": ["replayable", "metadata_only", "partial", "incomparable", "not_replayable", "unknown"]
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {"source_version": {"const": "unknown"}}
+      },
+      "then": {
+        "properties": {
+          "unknown_reasons": {"contains": {"const": "source_version"}}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"capture_status": {"not": {"const": "captured"}}}
+      },
+      "then": {
+        "properties": {
+          "source_digest": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"replay_state": {"const": "replayable"}}
+      },
+      "then": {
+        "properties": {
+          "capture_status": {"const": "captured"},
+          "source_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"previous_observation_digest": {"type": "string"}}
+      },
+      "then": {
+        "properties": {
+          "previous_observation_id": {"type": "string"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "observationId": {
+      "type": "string",
+      "pattern": "^obs-[a-z0-9][a-z0-9_-]{0,127}$"
+    },
+    "observationDigest": {
+      "type": "string",
+      "pattern": "^observation:sha256:[0-9a-f]{64}$"
+    },
+    "contractDigest": {
+      "type": "string",
+      "pattern": "^contract:sha256:[0-9a-f]{64}$"
+    },
+    "entryList": {
+      "type": "object",
+      "required": ["entries"],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["subject", "value", "basis"],
+            "properties": {
+              "subject": {"type": "string", "minLength": 1},
+              "value": {"type": ["string", "number", "boolean", "null"]},
+              "basis": {"type": "string", "minLength": 1}
+            },
+            "additionalProperties": false
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
