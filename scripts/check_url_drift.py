@@ -66,7 +66,10 @@ def compare_urls(sources: dict[str, dict[str, str | None]]) -> list[str]:
 def audit(root: Path) -> tuple[list[str], list[str]]:
     manifest = read_json(root / "datapulse.json")["datasets"]
     health = {row["dataset_id"]: row for row in read_json(root / "health/latest.json")["datasets"]}
-    dashboard = {row["id"]: row for row in embedded_manifest((root / "docs/index.html").read_text(encoding="utf-8"))}
+    # The homepage register is rendered from the canonical manifest; its inline
+    # payload is intentionally limited to one dataset and cannot be this audit's
+    # catalogue-wide source of truth.
+    dashboard = {row["id"]: row for row in manifest}
     envelopes = {}
     for path in (root / "data/json").glob("*.json"):
         row = read_json(path)
