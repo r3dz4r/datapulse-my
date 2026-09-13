@@ -117,6 +117,12 @@ def test_the_passports_regression_is_covered() -> None:
     assert "passports" in _stages("summarizer", SUMMARIZER)
 
 
+def test_the_kv_index_root_is_accepted_by_both_stage_registries() -> None:
+    """KV health-index telemetry must not reuse the pipeline publish stage."""
+    assert "kv-index" in _stages("emitter", EMITTER)
+    assert "kv-index" in _stages("summarizer", SUMMARIZER)
+
+
 def test_summarizer_preserves_valid_substage_names(tmp_path: Path) -> None:
     module = _load("datapulse_summarizer_substage", SUMMARIZER)
     event = {

@@ -37,6 +37,7 @@ def _run_append(log: Path, *args: str) -> subprocess.CompletedProcess[str]:
         "deltas",
         "validate",
         "publish",
+        "kv-index",
         "passports",
         "mcp-sync",
         "attestation-score",

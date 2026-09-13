@@ -21,6 +21,7 @@ STAGES = frozenset(
         "deltas",
         "validate",
         "publish",
+        "kv-index",
         "mcp-sync",
         "attestation-score",
         "passports",
@@ -102,7 +103,8 @@ def parse_event(value: object, line_number: int) -> dict[str, Any]:
     cycle = value.get("cycle")
     duration_ms = value.get("duration_ms")
     if not isinstance(stage, str) or not is_valid_stage(stage):
-        raise TelemetryError(f"line {line_number}: unknown stage")
+        roots = ", ".join(sorted(STAGES))
+        raise TelemetryError(f"line {line_number}: unknown stage; accepted roots: {roots}")
     if not isinstance(status, str) or status not in STATUSES:
         raise TelemetryError(f"line {line_number}: unknown status")
     if not isinstance(cycle, str) or not cycle:

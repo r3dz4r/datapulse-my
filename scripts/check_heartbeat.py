@@ -20,6 +20,7 @@ STAGES = {
     "deltas",
     "validate",
     "publish",
+    "kv-index",
     "passports",
     "mcp-sync",
     "attestation-score",

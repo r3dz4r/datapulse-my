@@ -166,6 +166,37 @@ def test_rejects_unknown_values_unsafe_metadata_and_contradictory_duplicates(tmp
         assert not receipt.exists()
 
 
+def test_rejects_unknown_stage_with_accepted_root_guidance(tmp_path: Path) -> None:
+    telemetry = tmp_path / "stages.jsonl"
+    receipt = tmp_path / "receipt.json"
+    _write_events(telemetry, [_event("2026-09-09T00:00:00Z", "nonsense", 1)])
+
+    result = _run(telemetry, receipt, "--cycle", "cycle-a")
+
+    assert result.returncode != 0
+    assert "accepted roots:" in result.stderr
+    assert "kv-index" in result.stderr
+    assert not receipt.exists()
+
+
+def test_rejects_contradictory_duplicate_existing_root(tmp_path: Path) -> None:
+    telemetry = tmp_path / "stages.jsonl"
+    receipt = tmp_path / "receipt.json"
+    _write_events(
+        telemetry,
+        [
+            _event("2026-09-09T00:00:00Z", "publish", 1),
+            _event("2026-09-09T00:00:01Z", "publish", 2),
+        ],
+    )
+
+    result = _run(telemetry, receipt, "--cycle", "cycle-a")
+
+    assert result.returncode != 0
+    assert "contradictory duplicate record for stage publish" in result.stderr
+    assert not receipt.exists()
+
+
 def test_output_is_byte_deterministic_and_identical_duplicates_are_accepted(tmp_path: Path) -> None:
     telemetry = tmp_path / "stages.jsonl"
     first = tmp_path / "first.json"
