@@ -77,6 +77,23 @@
       const empty = document.querySelector('[data-register-empty]');
       const reset = document.querySelector('[data-register-clear]');
       if (!search || !count || !empty) return;
+      const fetchHealth = async () => {
+        for (const url of ['/health/index.json', '/health/latest.json']) {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 4000);
+          try {
+            const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+            if (!response.ok) continue;
+            const payload = await response.json();
+            if (Array.isArray(payload?.datasets)) return payload;
+          } catch (_) {
+            // The server-rendered register remains usable when live health is unavailable.
+          } finally {
+            clearTimeout(timeout);
+          }
+        }
+        return null;
+      };
       const normalise = value => String(value || '').trim().toLocaleLowerCase();
       filters.forEach(filter => {
         const attribute = filter.dataset.registerFilter;
@@ -105,6 +122,9 @@
       const dataset = window.__DATAPULSE_DATA__?.manifest?.datasets?.[0] || {};
       search.title = dataset.refresh_frequency ? `On its ${dataset.refresh_frequency} cadence` : 'Cadence not observed';
       apply();
+      fetchHealth().then(payload => {
+        if (payload) window.__DATAPULSE_DATA__.health = payload;
+      });
     })();
   </script>
 </body>

@@ -175,7 +175,8 @@ def test_production_homepage_is_the_source_owned_register_with_compatible_payloa
     assert "DataPulse MY" not in html
     assert "DataPulse" in visible
     assert html.count('<script id="embedded-data">') == 1
-    assert len(embedded_manifest(html)) == len(manifest["datasets"])
+    assert len(embedded_manifest(html)) == 1
+    assert embedded_manifest(html)[0]["id"] == manifest["datasets"][0]["id"]
     assert html.index('data-action="official-source"') < html.index('data-action="evidence"') < html.index('data-action="machine-access"')
     for posture in ("use", "warn", "reference-use", "stop"):
         assert f"Decision: {posture}" in html

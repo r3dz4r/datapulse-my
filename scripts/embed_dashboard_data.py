@@ -186,6 +186,36 @@ def dashboard_health_payload(health: object) -> object:
     return compact
 
 
+def _homepage_embedded_payload(
+    manifest: object,
+    health: object,
+    filters: object,
+    sections: object,
+    attestations: object,
+    verification: object,
+) -> dict[str, object]:
+    """Keep only the homepage's client-side contract inline.
+
+    The full health and manifest documents remain machine-readable at their
+    published JSON endpoints.  The register itself is server-rendered, so its
+    visible fallback is independent of JavaScript and the runtime health fetch.
+    """
+    first_dataset: list[object] = []
+    if isinstance(manifest, dict) and isinstance(manifest.get("datasets"), list):
+        first_dataset = manifest["datasets"][:1]
+    attestation_map: object = {}
+    if isinstance(attestations, dict):
+        attestation_map = {"attestations": attestations.get("attestations", {})}
+    return {
+        "health": {"checked_at": health.get("checked_at")} if isinstance(health, dict) else {},
+        "manifest": {"datasets": first_dataset},
+        "dashboardFilters": filters,
+        "dashboardSections": sections,
+        "attestations": attestation_map,
+        "attestationVerification": verification,
+    }
+
+
 def _atomic_write_text(path: Path, content: str) -> None:
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{path.name}.", dir=path.parent
@@ -453,19 +483,41 @@ def _render_page(
         html = _npra_freshness(html, health)
         html = _npra_runtime_script(html)
         html = _npra_links(html, surfaces["origins"])
-    data = (
-        '<script id="embedded-data">\n'
-        "    window.__DATAPULSE_DATA__ = {"
-        f"health: {_dump(dashboard_health_payload(health))}, "
-        f"manifest: {_dump(manifest)}, "
-        f"dashboardFilters: {_dump(_load(filters_path))}, "
-        f"dashboardSections: {_dump(_load(sections_path))}, "
-        f"attestations: {_dump(_load_optional(attestations_path))}, "
-        f"attestationBinding: {_dump(_load_optional(binding_path))}, "
-        f"attestationVerification: {_dump(_attestation_verification(manifest_path.parent))}"
-        "};\n"
-        "  </script>"
-    )
+    if html_path.name == "index.html":
+        payload = _homepage_embedded_payload(
+            manifest,
+            health,
+            _load(filters_path),
+            _load(sections_path),
+            _load_optional(attestations_path),
+            _attestation_verification(manifest_path.parent),
+        )
+        data = (
+            '<script id="embedded-data">\n'
+            "    window.__DATAPULSE_DATA__ = {"
+            f"health: {_dump(payload['health'])}, "
+            f"manifest: {_dump(payload['manifest'])}, "
+            f"dashboardFilters: {_dump(payload['dashboardFilters'])}, "
+            f"dashboardSections: {_dump(payload['dashboardSections'])}, "
+            f"attestations: {_dump(payload['attestations'])}, "
+            f"attestationVerification: {_dump(payload['attestationVerification'])}"
+            "};\n"
+            "  </script>"
+        )
+    else:
+        data = (
+            '<script id="embedded-data">\n'
+            "    window.__DATAPULSE_DATA__ = {"
+            f"health: {_dump(dashboard_health_payload(health))}, "
+            f"manifest: {_dump(manifest)}, "
+            f"dashboardFilters: {_dump(_load(filters_path))}, "
+            f"dashboardSections: {_dump(_load(sections_path))}, "
+            f"attestations: {_dump(_load_optional(attestations_path))}, "
+            f"attestationBinding: {_dump(_load_optional(binding_path))}, "
+            f"attestationVerification: {_dump(_attestation_verification(manifest_path.parent))}"
+            "};\n"
+            "  </script>"
+        )
     marker = '<script id="embedded-data">'
     start = html.find(marker)
     if start >= 0:

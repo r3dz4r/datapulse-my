@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.embed_dashboard_data import EmbedError, _dashboard_facts, embed_all
+from scripts.embed_dashboard_data import EmbedError, _dashboard_facts, _render_page, embed_all
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,12 +26,11 @@ CANONICAL_KEYS = [
     "weather",
 ]
 
-# The source-owned register adds 389 accessible, server-rendered rows while
-# retaining the legacy embedded payload for machine consumers.
-# The 412-row real health snapshot needs a 2.1MB ceiling while still retaining
-# a fixed, reviewable upper bound for the complete machine-readable payload.
-MAX_HOMEPAGE_BYTES = 2_100_000
-MAX_EMBEDDED_DATA_BYTES = 1_150_000
+# The server-rendered register preserves the no-JavaScript public surface.
+# Only the client-side contract stays inline; complete machine-readable health
+# data is published separately at /health/index.json and /health/latest.json.
+MAX_HOMEPAGE_BYTES = 1_050_000
+MAX_EMBEDDED_DATA_BYTES = 60_000
 EMBEDDED_DATA_BLOCK = re.compile(rb'<script id="embedded-data">.*?</script>', re.DOTALL)
 
 
@@ -114,7 +113,16 @@ def test_namespace_order_is_all_then_alphabetical(tmp_path: Path) -> None:
 
 
 def test_generated_dashboard_payload_stays_within_budget() -> None:
-    document = (ROOT / "docs/index.html").read_bytes()
+    document = _render_page(
+        ROOT / "docs/index.html",
+        ROOT / "datapulse.json",
+        ROOT / "health/latest.json",
+        ROOT / "docs/.dashboard_filters.json",
+        ROOT / "docs/.dashboard_sections.json",
+        ROOT / "attestations/latest/index.json",
+        ROOT / "attestations/latest/binding.json",
+        ROOT,
+    ).encode("utf-8")
 
     assert_dashboard_payload_within_budget(document)
 
@@ -138,7 +146,7 @@ def test_dashboard_payload_budget_rejects_synthetic_overage(
         assert_dashboard_payload_within_budget(fixture_path.read_bytes())
 
 
-def test_register_search_and_filter_controls_are_present_without_network_fetch() -> None:
+def test_register_search_and_filter_controls_preserve_the_server_rendered_fallback() -> None:
     html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
     assert 'for="register-search"' in html
     assert 'data-register-search' in html
@@ -150,7 +158,10 @@ def test_register_search_and_filter_controls_are_present_without_network_fetch()
     assert "filters.every" in html
     assert "filter.addEventListener('change', apply)" in html
     assert "reset?.addEventListener('click'" in html
-    assert 'fetch(' not in html
+    assert "'/health/index.json'" in html
+    assert "'/health/latest.json'" in html
+    assert "AbortController" in html
+    assert "4000" in html
 
 
 def test_register_embedded_payload_precedes_its_reader_and_keeps_shared_shell_contracts() -> None:
@@ -174,7 +185,7 @@ def test_homepage_renders_the_compact_register_instead_of_dashboard_sections() -
     assert 'class="dashboard-sections"' not in html
 
 
-def test_embedded_data_contract_includes_dashboard_sections() -> None:
+def test_embedded_data_contract_retains_compact_dashboard_sections() -> None:
     html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
 
     assert "dashboardSections:" in html
