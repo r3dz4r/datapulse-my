@@ -19,6 +19,8 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          # Deliberately avoid persisting checkout credentials so the push's App-token header is not duplicated.
+          persist-credentials: false
 
       - name: Provision today's Ed25519 attestation key
         env:
