@@ -110,6 +110,16 @@ def _npra_runtime_script(html: str) -> str:
         "          return payload;",
         1,
     ).replace(
+        "          const response = await fetch('/health/latest.json', { cache: 'no-store' });",
+        "          let response;\n"
+        "          try {\n"
+        "            response = await fetch('/health/index.json', { cache: 'no-store' });\n"
+        "            if (!response.ok) throw new Error();\n"
+        "          } catch (_) {\n"
+        "            response = await fetch('/health/latest.json', { cache: 'no-store' });\n"
+        "          }",
+        1,
+    ).replace(
         "      const render = records => {\n"
         "        const counts = records.reduce",
         "      const render = payload => {\n"
