@@ -229,6 +229,10 @@ jobs:
             attestations/latest/binding.json attestations/latest/chain_head.json \
             attestations/chain-index.json .attestations/chain_head.json
           git commit -m "$message"
+          if [[ -n "$excluded_paths" ]]; then
+            git restore --source=HEAD -- datapulse.json attestations/latest/scores.json
+            echo "Discarded local changes to pipeline-owned paths before rebase (not committed): datapulse.json attestations/latest/scores.json"
+          fi
           if ! git pull --rebase origin main; then
             echo "::error title=Daily attestation rebase conflict::generated envelopes were committed locally but could not be rebased onto origin/main; refusing to force-push."
             exit 1
