@@ -30,6 +30,7 @@ LOG = logging.getLogger(__name__)
 COSIGN_VERSION = "v3.1.3"
 COSIGN_V3_BUNDLE_MEDIA_TYPE = "application/vnd.dev.sigstore.bundle.v0.3+json"
 DSSE_SHA256 = re.compile(r"[0-9a-f]{64}", re.IGNORECASE)
+REKOR_INTEGER = re.compile(r"[0-9]+$")
 ALLOWED_CREDENTIAL_ENVS = frozenset({"OPENBAO_TOKEN", "VAULT_TOKEN"})
 
 
@@ -211,6 +212,17 @@ def _normalise_bundle_digest(value: object) -> str | None:
     if len(decoded) != hashlib.sha256().digest_size:
         return None
     return decoded.hex()
+
+
+def _normalise_rekor_integer(value: object) -> int:
+    """Normalise protobuf JSON int64s while rejecting numeric lookalikes."""
+    if isinstance(value, bool):
+        raise ValueError("Rekor integer is invalid")
+    if isinstance(value, int) and value >= 0:
+        return value
+    if isinstance(value, str) and REKOR_INTEGER.fullmatch(value):
+        return int(value)
+    raise ValueError("Rekor integer is invalid")
 
 
 def _is_sha256_base64(value: object) -> bool:
@@ -412,10 +424,13 @@ class Publisher:
             proof = entry["inclusionProof"]
             promise = entry["inclusionPromise"]["signedEntryTimestamp"]
             canonicalized_body = base64.b64decode(entry["canonicalizedBody"], validate=True)
-            log_index = entry["logIndex"]
+            log_index = _normalise_rekor_integer(entry["logIndex"])
             root_hash = proof["rootHash"]
             hashes = proof["hashes"]
-            tree_size = proof["treeSize"]
+            tree_size = _normalise_rekor_integer(proof["treeSize"])
+            proof_index = _normalise_rekor_integer(
+                proof["logIndex"] if "logIndex" in proof else entry["logIndex"]
+            )
         except (OSError, json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError, ConfigError) as exc:
             raise PublishError("Cosign bundle is incomplete") from exc
         if signature != expected_digest.lower():
@@ -431,16 +446,11 @@ class Publisher:
                 or not _is_sha256_base64(item)
                 for item in hashes
             )
-            or isinstance(tree_size, bool)
-            or not isinstance(tree_size, int)
             or tree_size <= 0
             or not isinstance(promise, str)
             or not promise
             or not canonicalized_body
-            or isinstance(log_index, bool)
-            or not isinstance(log_index, int)
-            or log_index < 0
-            or log_index >= tree_size
+            or proof_index >= tree_size
         ):
             raise PublishError("Cosign bundle lacks trusted Rekor inclusion proof")
         return {

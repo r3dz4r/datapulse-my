@@ -156,6 +156,20 @@ def test_cosign_v3_uppercase_dsse_digest_normalises_to_artifact_hex(tmp_path: Pa
     assert json.loads(reference.read_text())["artifact_sha256"] == hashlib.sha256(b"daily evidence").hexdigest()
 
 
+def test_protobuf_style_rekor_integer_strings_are_normalised(tmp_path: Path) -> None:
+    bundle = valid_bundle(b"daily evidence")
+    entry = bundle["verificationMaterial"]["tlogEntries"][0]
+    entry["logIndex"] = "0"
+    entry["inclusionProof"]["logIndex"] = "0"
+    entry["inclusionProof"]["treeSize"] = "1"
+    subject, output, reference = publisher(tmp_path, FakeRuntime(bundle))
+
+    subject.publish()
+
+    assert output.exists()
+    assert json.loads(reference.read_text())["rekor"]["log_index"] == 0
+
+
 @pytest.mark.parametrize(
     "digest",
     [

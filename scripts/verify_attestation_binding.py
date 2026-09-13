@@ -19,6 +19,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 DEFAULT_MAX_AGE_SECONDS = 36 * 60 * 60
 DIGEST = re.compile(r"[0-9a-f]{64}")
 DSSE_DIGEST = re.compile(r"[0-9a-f]{64}", re.IGNORECASE)
+REKOR_INTEGER = re.compile(r"[0-9]+$")
 
 
 class ContractError(ValueError):
@@ -69,6 +70,17 @@ def _normalise_digest(value: object, label: str) -> str:
         if len(decoded) == hashlib.sha256().digest_size:
             return decoded.hex()
     raise ContractError(f"{label} is not a SHA-256 digest")
+
+
+def _normalise_rekor_integer(value: object) -> int:
+    """Accept protobuf JSON int64 values without accepting numeric lookalikes."""
+    if isinstance(value, bool):
+        raise ContractError("Rekor inclusion proof is invalid")
+    if isinstance(value, int) and value >= 0:
+        return value
+    if isinstance(value, str) and REKOR_INTEGER.fullmatch(value):
+        return int(value)
+    raise ContractError("Rekor inclusion proof is invalid")
 
 
 def _dsse_subject_digest(bundle: dict[str, Any]) -> str:
@@ -233,19 +245,20 @@ def _verify_merkle_proof(entry: dict[str, Any]) -> None:
         leaf_body = base64.b64decode(body, validate=True)
         root_hash = base64.b64decode(proof["rootHash"], validate=True)
         hashes = [base64.b64decode(item, validate=True) for item in proof["hashes"]]
-        index = entry["logIndex"]
-        tree_size = proof["treeSize"]
+        # Rekor protobuf JSON emits int64s as strings.  Newer bundles put the
+        # RFC6962 leaf position in the proof; older v1-shaped bundles only have
+        # the entry-level value.  The checkpoint is not validated here; that is
+        # unchanged behaviour, so this function proves inclusion only.
+        index = _normalise_rekor_integer(
+            proof["logIndex"] if "logIndex" in proof else entry["logIndex"]
+        )
+        tree_size = _normalise_rekor_integer(proof["treeSize"])
     except (KeyError, TypeError, ValueError) as error:
         raise ContractError("Rekor inclusion proof is invalid") from error
     if (
         not leaf_body
         or len(root_hash) != 32
         or any(len(item) != 32 for item in hashes)
-        or isinstance(index, bool)
-        or not isinstance(index, int)
-        or isinstance(tree_size, bool)
-        or not isinstance(tree_size, int)
-        or index < 0
         or tree_size <= index
     ):
         raise ContractError("Rekor inclusion proof is invalid")
@@ -308,9 +321,19 @@ def _verify_rekor(
     canonicalized_body = base64.b64decode(entry["canonicalizedBody"], validate=True)
     uuid = hashlib.sha256(canonicalized_body).hexdigest()
     summary = reference.get("rekor")
-    if not isinstance(summary, dict) or summary != {
+    try:
+        summary_log_index = _normalise_rekor_integer(
+            summary.get("log_index") if isinstance(summary, dict) else None
+        )
+        entry_log_index = _normalise_rekor_integer(entry["logIndex"])
+    except (KeyError, ContractError) as error:
+        raise ContractError("Rekor proof summary does not match the bundle") from error
+    if not isinstance(summary, dict) or {
+        **summary,
+        "log_index": summary_log_index,
+    } != {
         "log_id": log_id,
-        "log_index": entry["logIndex"],
+        "log_index": entry_log_index,
         "uuid": uuid,
         "inclusion_proof": True,
         "signed_entry_timestamp": True,
