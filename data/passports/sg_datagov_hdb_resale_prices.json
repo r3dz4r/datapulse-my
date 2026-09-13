@@ -5,31 +5,31 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": null,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "not_evaluated",
+        "mode": "cadence_fallback",
         "sample_days": 0,
         "stdev_days": null,
-        "threshold_days": null,
+        "threshold_days": 90,
         "window_days": 14
       }
     },
     "expected_record_count": null,
-    "freshness_signal": "no-header",
-    "freshness_signal_source": "none",
+    "freshness_signal": "content-date-parse",
+    "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-09-06T20:36:28Z",
+    "last_checked": "2026-09-13T20:40:15Z",
     "record_count": 3,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
       "column_count": null,
       "content_shape_changed": false,
-      "first_row_hash": null
+      "first_row_hash": "shape-v1:72c0c72b54099477d5780569400aa571dbbc335c19010222856c530b12c17404"
     },
-    "status": "unknown-freshness"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api-production.data.gov.sg/v2/public/api/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/list-rows",
@@ -39,7 +39,7 @@
     "geography": "Singapore",
     "name": "HDB Resale Flat Prices Jan-2017 onwards (SG)",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-09-06T20:36:28Z",
+    "observed_verified_at": "2026-09-13T20:40:15Z",
     "source": "data.gov.sg",
     "steward": "Singapore Government"
   },
@@ -352,9 +352,9 @@
               "Shape metadata is not a semantic interoperability assessment."
             ],
             "reason_codes": [
-              "shape_metadata_missing"
+              "shape_metadata_observed"
             ],
-            "state": "unknown"
+            "state": "pass"
           },
           {
             "check_id": "fair.reuse_metadata",
@@ -379,11 +379,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 3,
+          "evaluated": 4,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 3,
-          "unknown": 1
+          "passed": 4,
+          "unknown": 0
         },
         "evidence_refs": [
           {
@@ -434,10 +434,10 @@
         "reason_codes": [
           "catalogue_metadata_declared",
           "observed_access_signal_present",
-          "shape_metadata_missing",
+          "shape_metadata_observed",
           "reuse_metadata_declared"
         ],
-        "state": "unknown"
+        "state": "pass"
       },
       "governance": {
         "checks": [
@@ -753,9 +753,9 @@
               "Shape signals are bounded structural observations, not a complete reproducibility proof."
             ],
             "reason_codes": [
-              "shape_fingerprint_missing"
+              "shape_fingerprint_observed"
             ],
-            "state": "unknown"
+            "state": "pass"
           },
           {
             "check_id": "reproducibility.retrieval_timestamp",
@@ -816,11 +816,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 3,
+          "evaluated": 4,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 3,
-          "unknown": 1
+          "passed": 4,
+          "unknown": 0
         },
         "evidence_refs": [
           {
@@ -861,18 +861,18 @@
         ],
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
-          "shape_fingerprint_missing",
+          "shape_fingerprint_observed",
           "last_checked_declared",
           "record_count_observed",
           "attestation_ref_declared"
         ],
-        "state": "unknown"
+        "state": "pass"
       }
     },
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "indeterminate",
+    "overall": "ready",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },

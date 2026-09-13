@@ -1,11 +1,11 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-13T20:31:03Z",
+  "checked_at": "2026-09-13T20:40:15Z",
   "_trust_summary": {
-    "checked_at": "2026-09-13T20:31:03Z",
+    "checked_at": "2026-09-13T20:40:15Z",
     "datasets_total": 418,
     "by_status": {
-      "fresh": 94,
+      "fresh": 96,
       "aging": 137,
       "stale": 161,
       "discontinued": 1,
@@ -13,18 +13,18 @@
       "browser_dependent": 5,
       "unreachable": 0,
       "unknown": 0,
-      "unknown_freshness": 6,
+      "unknown_freshness": 4,
       "reference": 14
     },
     "datasets_health_signal_source": {
       "last_modified_header": 161,
-      "content_date_parse": 238,
-      "neither": 19
+      "content_date_parse": 240,
+      "neither": 17
     },
     "datasets_with_no_last_modified_header": 254,
     "datasets_with_no_record_count_extracted": 10,
     "oldest_last_modified": "2023-09-15T07:20:46Z",
-    "newest_last_modified": "2026-09-13T00:38:48Z",
+    "newest_last_modified": "2026-09-13T20:40:14Z",
     "stale_datasets": [
       {
         "dataset_id": "st_elesca",
@@ -671,7 +671,7 @@
         "days_since_modified": 0.0009027777777777777
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-13T20:37:41Z"
+    "pipeline_heartbeat_at": "2026-09-13T20:42:57Z"
   },
   "datasets": [
     {
@@ -336823,7 +336823,7 @@
     },
     {
       "dataset_id": "sg_datagov_coe_bidding",
-      "last_checked": "2026-09-06T20:36:28Z",
+      "last_checked": "2026-09-13T20:40:15Z",
       "namespace": "transport",
       "url": "https://data.gov.sg/api/action/datastore_search?resource_id=d_69b3380ad7e51aff3a7dcc84eba52b8a",
       "status": "fresh",
@@ -336833,7 +336833,7 @@
       "access_method": "direct curl GET",
       "http_status": 200,
       "content_length": 15571,
-      "last_modified": "2026-09-06T20:32:08Z",
+      "last_modified": "2026-09-13T20:40:14Z",
       "content_freshness_date": null,
       "first_record_timestamp": null,
       "registration_format_compatible": null,
@@ -336851,7 +336851,8 @@
       "record_count_estimated": false,
       "incomplete": false,
       "column_count": null,
-      "first_row_hash": null,
+      "first_row_hash": "shape-v1:a460c0cd7fa15c0be5a677b3227373fba849c9daed12320299ac9becf3d9a57f",
+      "shape_basis": "json-object",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
@@ -336868,7 +336869,7 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
-      "record_count_within_tolerance": false,
+      "record_count_within_tolerance": null,
       "staleness_days": 0,
       "staleness_status": "fresh",
       "access_dependency": "direct",
@@ -336890,7 +336891,7 @@
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -336938,9 +336939,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -336983,16 +336984,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 3,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 1,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
               "observed_access_signal_present",
-              "shape_metadata_missing",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -337335,13 +337336,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -337420,14 +337421,14 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 3,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 1,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
               "record_count_observed",
               "attestation_ref_declared"
@@ -337630,7 +337631,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "indeterminate",
+        "overall": "ready",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -337638,10 +337639,10 @@
     },
     {
       "dataset_id": "sg_datagov_hdb_resale_prices",
-      "last_checked": "2026-09-06T20:36:28Z",
+      "last_checked": "2026-09-13T20:40:15Z",
       "namespace": "government_open_data",
       "url": "https://api-production.data.gov.sg/v2/public/api/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/list-rows",
-      "status": "unknown-freshness",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api-production.data.gov.sg/v2/public/api/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/list-rows",
@@ -337649,7 +337650,7 @@
       "http_status": 200,
       "content_length": 3146,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-09-13T18:10:30Z",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -337666,7 +337667,8 @@
       "record_count_estimated": false,
       "incomplete": false,
       "column_count": null,
-      "first_row_hash": null,
+      "first_row_hash": "shape-v1:72c0c72b54099477d5780569400aa571dbbc335c19010222856c530b12c17404",
+      "shape_basis": "json-object",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
@@ -337683,12 +337685,12 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
-      "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "record_count_within_tolerance": null,
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
       "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
@@ -337696,16 +337698,16 @@
         "sample_days": 0,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 90,
+        "latest_days": 0.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -337753,9 +337755,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -337798,16 +337800,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 3,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 1,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
               "observed_access_signal_present",
-              "shape_metadata_missing",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -338150,13 +338152,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -338235,14 +338237,14 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 3,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 1,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
               "record_count_observed",
               "attestation_ref_declared"
@@ -338445,7 +338447,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "indeterminate",
+        "overall": "ready",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -338453,10 +338455,10 @@
     },
     {
       "dataset_id": "sg_datagov_hdb_metadata",
-      "last_checked": "2026-09-06T20:36:28Z",
+      "last_checked": "2026-09-13T20:40:15Z",
       "namespace": "government_open_data",
       "url": "https://api-production.data.gov.sg/v2/public/api/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/metadata",
-      "status": "unknown-freshness",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api-production.data.gov.sg/v2/public/api/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/metadata",
@@ -338464,7 +338466,7 @@
       "http_status": 200,
       "content_length": 3249,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-09-13T18:10:30Z",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -338481,7 +338483,8 @@
       "record_count_estimated": false,
       "incomplete": false,
       "column_count": null,
-      "first_row_hash": null,
+      "first_row_hash": "shape-v1:d9cce02b9a0da71779a2107c8b573297d84e5ee200728574636f47c85cc82c53",
+      "shape_basis": "json-object",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
@@ -338498,12 +338501,12 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
-      "record_count_within_tolerance": false,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "record_count_within_tolerance": null,
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
       "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
@@ -338511,16 +338514,16 @@
         "sample_days": 0,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 90,
+        "latest_days": 0.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -338568,9 +338571,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -338613,16 +338616,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 3,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 1,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
               "observed_access_signal_present",
-              "shape_metadata_missing",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -338965,13 +338968,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -339050,14 +339053,14 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 3,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 1,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
               "record_count_observed",
               "attestation_ref_declared"
@@ -339260,7 +339263,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "indeterminate",
+        "overall": "ready",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
