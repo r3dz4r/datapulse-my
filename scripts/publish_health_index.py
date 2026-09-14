@@ -12,7 +12,6 @@ import argparse
 import http.client
 import json
 import os
-import shlex
 import signal
 import sys
 import time
@@ -23,7 +22,6 @@ from urllib.parse import quote, urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_HEALTH = ROOT / "health/latest.json"
 TOKEN_ENV = "DATAPULSE_KV_WRITE"
-TOKEN_FALLBACK = Path("/home/redza/.hermes/.env")
 ACCOUNT_ID_PREFIX = "525ef763"
 NAMESPACE_ID = "043b3f20337f4744a21de947f35c67f0"
 DEFAULT_API_BASE = "https://api.cloudflare.com/client/v4"
@@ -100,28 +98,11 @@ def build_projection(health_path: Path) -> bytes:
 
 
 def read_token() -> str:
-    """Read the KV credential without ever returning it to output."""
-    if TOKEN_ENV in os.environ:
-        return os.environ[TOKEN_ENV]
+    """Return the explicitly injected KV credential without logging it."""
     try:
-        lines = TOKEN_FALLBACK.read_text(encoding="utf-8").splitlines()
-    except OSError as exc:
-        raise PublishError(f"KV credential unavailable: cannot read fallback env file ({exc.__class__.__name__})") from exc
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("export "):
-            stripped = stripped[7:].lstrip()
-        name, separator, value = stripped.partition("=")
-        if name.strip() != TOKEN_ENV or not separator:
-            continue
-        try:
-            values = shlex.split(value, comments=True)
-        except ValueError as exc:
-            raise PublishError("KV credential unavailable: fallback env file has invalid quoting") from exc
-        if len(values) == 1 and values[0]:
-            return values[0]
-        raise PublishError("KV credential unavailable: fallback env file has an empty token")
-    raise PublishError("KV credential unavailable: token is unset")
+        return os.environ[TOKEN_ENV]
+    except KeyError:
+        raise PublishError("KV credential unavailable: token is unset") from None
 
 
 def _deadline_handler(_signum: int, _frame: object) -> None:

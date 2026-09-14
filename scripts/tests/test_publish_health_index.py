@@ -57,6 +57,29 @@ def test_projection_is_exactly_allowlisted_and_stable(tmp_path: Path) -> None:
     assert not {"publisher", "category", "name", "url"} & set(projection["datasets"][0])
 
 
+def test_read_token_requires_explicit_environment_without_fallback_read(monkeypatch: object) -> None:
+    module = _module()
+    monkeypatch.delenv(module.TOKEN_ENV, raising=False)  # type: ignore[attr-defined]
+
+    def fail_read(*_args: object, **_kwargs: object) -> str:
+        raise AssertionError("credential lookup must not read a fallback file")
+
+    monkeypatch.setattr(module.Path, "read_text", fail_read)  # type: ignore[attr-defined]
+    try:
+        module.read_token()
+    except module.PublishError as exc:
+        assert str(exc) == "KV credential unavailable: token is unset"
+    else:
+        raise AssertionError("missing explicit credential should fail safely")
+
+
+def test_read_token_accepts_explicit_environment_credential(monkeypatch: object) -> None:
+    module = _module()
+    monkeypatch.setenv(module.TOKEN_ENV, "injected-test-token")  # type: ignore[attr-defined]
+
+    assert module.read_token() == "injected-test-token"
+
+
 def test_failure_is_explicit_and_has_a_machine_readable_verdict(tmp_path: Path) -> None:
     health = tmp_path / "latest.json"
     _health(health)
