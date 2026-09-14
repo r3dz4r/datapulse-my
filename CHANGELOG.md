@@ -14,6 +14,37 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.8.0](https://github.com/r3dz4r/datapulse-my/compare/v3.7.0...v3.8.0) (2026-09-14)
+
+
+### Features
+
+* **health:** serve the health artifact family from KV at its existing URLs ([b26db41](https://github.com/r3dz4r/datapulse-my/commit/b26db418831a0f5493915a45c3e6ceb497846002))
+* **observation:** require field-level provenance in the envelope contract ([4c92edf](https://github.com/r3dz4r/datapulse-my/commit/4c92edfcf52f4af53ae86ee103ecf47412765fef))
+
+
+### Bug Fixes
+
+* **attestation:** land the daily anchor through a gated pull request ([b2f2444](https://github.com/r3dz4r/datapulse-my/commit/b2f24443fed4d838a4b251e49059fab522def875))
+* **attestation:** land the daily anchor through a gated pull request ([689cd77](https://github.com/r3dz4r/datapulse-my/commit/689cd77bc764e2546922003430a6fe7a9c8438ed))
+* **attestation:** let the anchor rebase after the narrowed commit ([c03213c](https://github.com/r3dz4r/datapulse-my/commit/c03213c2c99274dfe7c711269b8c0399365acfe6))
+* **attestation:** let the anchor rebase after the narrowed commit ([3b10179](https://github.com/r3dz4r/datapulse-my/commit/3b10179bb5da88606b7a791af3b785587ea5053c))
+* **attestation:** read the DSSE envelope the signing planes actually emit ([6d7aa42](https://github.com/r3dz4r/datapulse-my/commit/6d7aa422166f7551c7c60b5bc340d30fd2cba61b))
+* **attestation:** read the DSSE envelope the signing planes actually emit ([0c4b575](https://github.com/r3dz4r/datapulse-my/commit/0c4b575ce7f11bdb26539bf09729710977539731))
+* **attestation:** stop duplicating the Authorization header on the anchor push ([2927005](https://github.com/r3dz4r/datapulse-my/commit/29270050dfb4cc5baeb3b2cc4cb5aaebf920d6c4))
+* **attestation:** stop duplicating the Authorization header on the anchor push ([485e940](https://github.com/r3dz4r/datapulse-my/commit/485e940b48f395294b9f3b80b995c46b0cb927a8))
+* **attestation:** verify the inclusion proof the log actually publishes ([b00e953](https://github.com/r3dz4r/datapulse-my/commit/b00e953f9fb9a9f9c9c068129e98c7497fa7b4ae))
+* **attestation:** verify the inclusion proof the log actually publishes ([8a9899f](https://github.com/r3dz4r/datapulse-my/commit/8a9899fcb6c75f83d167da0603febfb6f60fb922))
+* **deploy:** give the served verifier its import, and align its freshness rule ([e45463f](https://github.com/r3dz4r/datapulse-my/commit/e45463fb9ba383da5e3206c1de5a7d7ace93186d))
+* **deploy:** the served proof check compares freshness, not equality ([3205da9](https://github.com/r3dz4r/datapulse-my/commit/3205da9799f872b4329612d7e84a1c9169db8a6f))
+* **deploy:** verify the served register projection through its endpoint ([33eabac](https://github.com/r3dz4r/datapulse-my/commit/33eabac1cfaae3b901c13652e7852f69d73d0425))
+* **kv:** give the health-index publish real timeout headroom and a verdict ([1691bed](https://github.com/r3dz4r/datapulse-my/commit/1691bed49168f15ac7b9ec26c8ceb7d2bb858ca0))
+
+
+### Performance Improvements
+
+* **deploy:** trigger on the code plane, not on health-cycle data ([b1f0aa1](https://github.com/r3dz4r/datapulse-my/commit/b1f0aa1a25e53cbc3960e691bd768b4a0d6229ba))
+
 ## [3.7.0](https://github.com/r3dz4r/datapulse-my/compare/v3.6.0...v3.7.0) (2026-09-13)
 
 
