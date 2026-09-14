@@ -1,13 +1,13 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-14T00:11:05Z",
+  "checked_at": "2026-09-14T00:25:17Z",
   "_trust_summary": {
-    "checked_at": "2026-09-14T00:11:05Z",
+    "checked_at": "2026-09-14T00:25:17Z",
     "datasets_total": 418,
     "by_status": {
       "fresh": 96,
-      "aging": 131,
-      "stale": 167,
+      "aging": 130,
+      "stale": 168,
       "discontinued": 1,
       "degraded": 0,
       "browser_dependent": 5,
@@ -651,6 +651,10 @@
         "days_since_modified": 12
       },
       {
+        "dataset_id": "exchangerates_daily_1130",
+        "days_since_modified": 4
+      },
+      {
         "dataset_id": "gtfs_realtime_mybas_seremban_a",
         "days_since_modified": 0.0013773148148148147
       },
@@ -695,7 +699,7 @@
         "days_since_modified": 0.0009027777777777777
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-14T00:22:45Z"
+    "pipeline_heartbeat_at": "2026-09-14T00:27:58Z"
   },
   "datasets": [
     {
@@ -3146,7 +3150,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_0900",
-      "last_checked": "2026-09-13T23:20:22Z",
+      "last_checked": "2026-09-14T00:25:17Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900",
       "status": "aging",
@@ -3193,7 +3197,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 2,
+      "staleness_days": 3,
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -3206,7 +3210,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 3.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -3962,10 +3966,10 @@
     },
     {
       "dataset_id": "exchangerates_daily_1130",
-      "last_checked": "2026-09-13T23:20:22Z",
+      "last_checked": "2026-09-14T00:25:17Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130",
-      "status": "aging",
+      "status": "stale",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130",
@@ -4009,12 +4013,12 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 3,
-      "staleness_status": "aging",
+      "staleness_days": 4,
+      "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -4022,7 +4026,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 3.0,
+        "latest_days": 4.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -4778,7 +4782,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_1200",
-      "last_checked": "2026-09-13T23:20:22Z",
+      "last_checked": "2026-09-14T00:25:17Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
       "status": "aging",
@@ -4825,7 +4829,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 2,
+      "staleness_days": 3,
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -4838,7 +4842,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 3.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -5594,7 +5598,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_1700",
-      "last_checked": "2026-09-13T23:20:22Z",
+      "last_checked": "2026-09-14T00:25:17Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
       "status": "aging",
@@ -5641,7 +5645,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 2,
+      "staleness_days": 3,
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -5654,7 +5658,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 3.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -288000,7 +288004,7 @@
     },
     {
       "dataset_id": "bnm_kl_usd_myr",
-      "last_checked": "2026-09-13T23:20:22Z",
+      "last_checked": "2026-09-14T00:25:17Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/kl-usd-reference-rate",
       "status": "aging",
@@ -288047,7 +288051,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 2,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
+      "staleness_days": 3,
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -288060,7 +288064,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 3.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -290446,7 +290450,7 @@
     },
     {
       "dataset_id": "bnm_interbank_swap",
-      "last_checked": "2026-09-13T23:20:22Z",
+      "last_checked": "2026-09-14T00:25:17Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/interbank-swap",
       "status": "aging",
@@ -290493,7 +290497,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 2,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
+      "staleness_days": 3,
       "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -290506,7 +290510,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 3.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
