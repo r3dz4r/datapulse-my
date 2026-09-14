@@ -58,6 +58,29 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      - name: Enable auto-merge on the release pull request
+        if: steps.release.outputs.prs != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PRS_JSON: ${{ steps.release.outputs.prs }}
+        run: |
+          set -uo pipefail
+          prs="$(python3 -c 'import json, os; value = os.environ.get("PRS_JSON", ""); data = json.loads(value) if value else []; print("\\n".join(str(item["number"]) for item in data if isinstance(item, dict) and isinstance(item.get("number"), int)))' 2>/dev/null)"
+          if [ "$?" -ne 0 ] || [ -z "$prs" ]; then
+            exit 0
+          fi
+
+          while IFS= read -r number; do
+            [ -n "$number" ] || continue
+            author="$(gh pr view "$number" --repo "$GITHUB_REPOSITORY" --json author --jq .author.login 2>/dev/null)"
+            if [ "$?" -ne 0 ] || [[ "$author" != app/* && "$author" != *"[bot]" ]]; then
+              echo "Warning: skipping release PR #$number because its author is not a bot."
+              continue
+            fi
+            if ! gh pr merge "$number" --auto --squash --repo "$GITHUB_REPOSITORY"; then
+              echo "Warning: could not enable auto-merge for release PR #$number; continuing."
+            fi
+          done <<< "$prs"
       - uses: actions/checkout@v4
         if: steps.release.outputs.release_created == 'true'
         with:
