@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Publish the dashboard health projection to Cloudflare KV."""
+"""Publish the dashboard health projection to Cloudflare KV.
+
+Exit codes: 0 means published (and is also used for dry runs and successful
+verification); 2 means a normal publication was attempted but failed; 1 is
+reserved for usage, setup, or internal errors.
+"""
 
 from __future__ import annotations
 
@@ -10,6 +15,7 @@ import os
 import shlex
 import signal
 import sys
+import time
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urlsplit
@@ -31,8 +37,19 @@ HEALTH_ARTIFACTS = (
     "reconciliation.json",
     "evidence-coverage.json",
 )
-CONNECT_TIMEOUT_SECONDS = 5.0
-TOTAL_TIMEOUT_SECONDS = 15.0
+
+def _timeout_from_env(name: str, default: float) -> float:
+    """Return a positive environment override, falling back safely on bad input."""
+    try:
+        value = float(os.environ.get(name, ""))
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
+
+CONNECT_TIMEOUT_SECONDS = _timeout_from_env("DATAPULSE_KV_CONNECT_TIMEOUT", 10.0)
+SOCKET_TIMEOUT_SECONDS = _timeout_from_env("DATAPULSE_KV_SOCKET_TIMEOUT", 45.0)
+TOTAL_TIMEOUT_SECONDS = _timeout_from_env("DATAPULSE_KV_TOTAL_TIMEOUT", 90.0)
 DATASET_KEYS = (
     "dataset_id",
     "status",
@@ -46,6 +63,10 @@ DATASET_KEYS = (
 
 class PublishError(RuntimeError):
     """An expected publication error whose text is safe to log."""
+
+    def __init__(self, message: str, *, retryable: bool = False) -> None:
+        super().__init__(message)
+        self.retryable = retryable
 
 
 class RequestDeadlineExceeded(TimeoutError):
@@ -119,7 +140,9 @@ def request_bytes(
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
         raise PublishError("invalid KV API endpoint")
     connection_type = http.client.HTTPSConnection if parsed.scheme == "https" else http.client.HTTPConnection
-    connection = connection_type(parsed.hostname, parsed.port, timeout=CONNECT_TIMEOUT_SECONDS)
+    # Construct with the operation timeout: http.client applies this setting to
+    # every socket operation.  Connect explicitly under the shorter budget.
+    connection = connection_type(parsed.hostname, parsed.port, timeout=SOCKET_TIMEOUT_SECONDS)
     old_handler = signal.signal(signal.SIGALRM, _deadline_handler)
     signal.setitimer(signal.ITIMER_REAL, TOTAL_TIMEOUT_SECONDS)
     try:
@@ -130,6 +153,10 @@ def request_bytes(
         if body is not None:
             headers["Content-Type"] = "application/json"
             headers["Content-Length"] = str(len(body))
+        connection.timeout = CONNECT_TIMEOUT_SECONDS
+        connection.connect()
+        if connection.sock is not None:
+            connection.sock.settimeout(SOCKET_TIMEOUT_SECONDS)
         connection.request(method, path, body=body, headers=headers)
         response = connection.getresponse()
         payload = response.read()
@@ -137,9 +164,9 @@ def request_bytes(
             raise PublishError(f"HTTP {response.status}")
         return response.status, payload
     except RequestDeadlineExceeded:
-        raise PublishError("total timeout") from None
+        raise PublishError("total timeout", retryable=True) from None
     except (OSError, http.client.HTTPException) as exc:
-        raise PublishError(f"{exc.__class__.__name__}: {exc}") from exc
+        raise PublishError(f"{exc.__class__.__name__}: {exc}", retryable=True) from exc
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
         signal.signal(signal.SIGALRM, old_handler)
@@ -222,6 +249,36 @@ def publish_unchanged_aware(api_base: str, token: str, payloads: dict[str, bytes
     return written, unchanged
 
 
+def _is_retryable_error(exc: BaseException) -> bool:
+    """Return whether a failed HTTP attempt may safely be retried once."""
+    return (
+        isinstance(exc, (TimeoutError, OSError, http.client.HTTPException))
+        or isinstance(exc, PublishError) and exc.retryable
+    )
+
+
+def publish_unchanged_aware_with_retry(
+    api_base: str, token: str, payloads: dict[str, bytes]
+) -> tuple[int, int]:
+    """Publish once, retrying a transport failure only inside the total budget."""
+    started = time.monotonic()
+    try:
+        return publish_unchanged_aware(api_base, token, payloads)
+    except Exception as exc:
+        elapsed = time.monotonic() - started
+        if not _is_retryable_error(exc) or elapsed >= TOTAL_TIMEOUT_SECONDS / 2:
+            raise
+    return publish_unchanged_aware(api_base, token, payloads)
+
+
+def _failure_line(prefix: str, exc: BaseException, token: str | None = None) -> str:
+    """Format one bounded, token-safe failure line for pipeline capture."""
+    message = " ".join(str(exc).split())
+    if token:
+        message = message.replace(token, "[REDACTED]")
+    return f"{prefix}: {exc.__class__.__name__}: {message[:200]}"
+
+
 def verify(
     api_base: str,
     token: str,
@@ -263,16 +320,17 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Run the publisher; normal publication intentionally remains non-fatal."""
+    """Run the publisher and return its machine-readable outcome."""
     args = parser().parse_args(argv)
     try:
         payloads = health_payloads(args.health)
     except (OSError, json.JSONDecodeError, PublishError) as exc:
-        print(f"health index publish failed: {exc}", file=sys.stderr)
-        return 1 if args.verify else 0
+        print(_failure_line("health index publish failed", exc), file=sys.stderr)
+        return 1
     if args.dry_run:
         print(f"health index dry-run: {len(payloads)} keys, {sum(map(len, payloads.values()))} bytes", file=sys.stderr)
         return 0
+    token: str | None = None
     try:
         token = read_token()
         if not token:
@@ -284,13 +342,15 @@ def main(argv: list[str] | None = None) -> int:
                 verify(args.api_base, token, payload, expected if key == KEY else None, verify_key)
             print(f"health index verify succeeded: {len(payloads)} keys", file=sys.stderr)
         else:
-            written, unchanged = publish_unchanged_aware(args.api_base, token, payloads)
+            written, unchanged = publish_unchanged_aware_with_retry(args.api_base, token, payloads)
             print(f"health index publish succeeded: {written} written, {unchanged} unchanged", file=sys.stderr)
         return 0
-    except PublishError as exc:
+    except (PublishError, TimeoutError, OSError, http.client.HTTPException) as exc:
         prefix = "health index verify failed" if args.verify else "health index publish failed"
-        print(f"{prefix}: {exc}", file=sys.stderr)
-        return 1 if args.verify else 0
+        print(_failure_line(prefix, exc, token), file=sys.stderr)
+        if args.verify or token is None:
+            return 1
+        return 2
 
 
 if __name__ == "__main__":
