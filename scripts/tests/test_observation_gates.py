@@ -363,3 +363,187 @@ def test_report_to_json_is_deterministic_and_round_trips(tmp_path: Path, monkeyp
     report = gates.retention_report(root=root, now=NOW)
     assert json.loads(first) == report
     assert gates.report_to_json(report) == first
+
+
+def test_verify_store_clean_store_reports_zero_failures(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A well-formed store verifies clean: every classification count is an
+    explicit zero, no dangling references, and the counts cover every object
+    actually on disk rather than an emptiness that reads like 'no data'."""
+    root = _install_policies(tmp_path, monkeypatch, _policy_document())
+    raw_digest = put_blob(b"clean raw payload", root=root)
+    projection_digest = put_normalized({"clean": True}, root=root)
+    put_envelope(
+        "gated-dataset", "obs-gated-clean-20260101",
+        _referencing_envelope(
+            "gated-dataset", "obs-gated-clean-20260101", "2026-01-01T00:00:00Z",
+            raw_digest, projection_digest,
+        ),
+        root=root,
+    )
+    files_on_disk = sum(
+        1
+        for category in ("blobs", "normalized")
+        for path in (root / category).rglob("*")
+        if path.is_file()
+    )
+
+    report = gates.verify_store(root=root)
+
+    assert files_on_disk == 2  # guards the count assertions against vacuity
+    assert set(report) == {"counts", "dangling_references", "failures", "ok"}
+    assert report["ok"] is True
+    assert report["counts"] == {
+        "total_objects": files_on_disk,
+        "ok": files_on_disk,
+        "corrupt": 0,
+        "unreadable": 0,
+        "misnamed": 0,
+        "envelopes": 1,
+        "envelopes_unreadable": 0,
+        "dangling_references": 0,
+    }
+    assert report["failures"] == {"corrupt": [], "unreadable": [], "misnamed": []}
+    assert report["dangling_references"] == []
+
+
+def test_verify_store_flags_tampered_blob_as_corrupt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A blob whose bytes are rewritten after writing is reported corrupt,
+    with its path, and the recomputed digest differs from the digest in its
+    name."""
+    root = _install_policies(tmp_path, monkeypatch, _policy_document())
+    raw_digest = put_blob(b"original bytes", root=root)
+    tampered = blob_path(raw_digest, root=root)
+    tampered.write_bytes(b"tampered bytes")  # same path, different bytes
+
+    report = gates.verify_store(root=root)
+
+    assert report["ok"] is False
+    assert report["counts"]["corrupt"] == 1
+    failure = report["failures"]["corrupt"][0]
+    assert failure["path"] == tampered.relative_to(root).as_posix()
+    assert failure["digest"] == raw_digest  # what the filename still claims
+    recomputed = "sha256:" + hashlib.sha256(b"tampered bytes").hexdigest()
+    assert failure["actual_digest"] == recomputed
+    assert failure["actual_digest"] != failure["digest"]
+
+
+def test_verify_store_reports_misnamed_file_without_crashing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A file under blobs/ whose name is not a valid digest is classified
+    misnamed rather than crashing the sweep."""
+    root = _install_policies(tmp_path, monkeypatch, _policy_document())
+    put_blob(b"properly addressed", root=root)
+    stray = root / "blobs" / "sha256" / "ab" / "not-a-digest.raw"
+    stray.parent.mkdir(parents=True)
+    stray.write_bytes(b"stray bytes")
+
+    report = gates.verify_store(root=root)
+
+    assert report["ok"] is False
+    assert report["counts"]["misnamed"] == 1
+    assert report["counts"]["ok"] == 1  # the legit blob is still classified
+    assert report["failures"]["misnamed"] == [
+        {
+            "classification": "misnamed",
+            "kind": "blob",
+            "path": stray.relative_to(root).as_posix(),
+            "reason": "path is not digest-derived (expected <first-two-hex>/<64 hex>.raw)",
+        }
+    ]
+
+
+def test_verify_store_reports_dangling_source_digest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """An envelope whose source_digest has no blob behind it is reported as a
+    dangling reference carrying the dataset id and observation id of the
+    envelope that cites it."""
+    root = _install_policies(tmp_path, monkeypatch, _policy_document())
+    projection_digest = put_normalized({"dangling": "source"}, root=root)
+    phantom = "sha256:" + "0" * 64  # well-formed digest, no blob behind it
+    put_envelope(
+        "gated-dataset", "obs-gated-dangling-20260101",
+        _referencing_envelope(
+            "gated-dataset", "obs-gated-dangling-20260101", "2026-01-01T00:00:00Z",
+            phantom, projection_digest,
+        ),
+        root=root,
+    )
+
+    report = gates.verify_store(root=root)
+
+    assert report["ok"] is False
+    assert report["counts"]["dangling_references"] == 1
+    assert report["dangling_references"] == [
+        {
+            "dataset_id": "gated-dataset",
+            "observation_id": "obs-gated-dangling-20260101",
+            "field": "source_digest",
+            "digest": phantom,
+            "expected_path": blob_path(phantom, root=root).relative_to(root).as_posix(),
+        }
+    ]
+
+
+def test_read_verified_returns_intact_bytes_and_raises_on_corruption(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """read_blob_verified returns the bytes for an intact blob and raises the
+    integrity exception — naming the digest — for a tampered one;
+    read_normalized_verified behaves the same for projections."""
+    root = _install_policies(tmp_path, monkeypatch, _policy_document())
+    # Derived from ObservationStoreError so existing handlers still catch it.
+    assert issubclass(gates.IntegrityError, gates.ObservationStoreError)
+
+    raw_digest = put_blob(b"intact raw payload", root=root)
+    assert gates.read_blob_verified(raw_digest, root=root) == b"intact raw payload"
+    projection_digest = put_normalized({"intact": True}, root=root)
+    assert gates.read_normalized_verified(projection_digest, root=root) == b'{"intact":true}'
+
+    blob_path(raw_digest, root=root).write_bytes(b"rewritten bytes")
+    with pytest.raises(gates.IntegrityError, match=raw_digest) as corrupt_blob:
+        gates.read_blob_verified(raw_digest, root=root)
+    message = str(corrupt_blob.value)
+    assert "sha256:" + hashlib.sha256(b"rewritten bytes").hexdigest() in message
+    assert raw_digest in message  # expected and actual are both named
+
+    normalized_path(projection_digest, root=root).write_bytes(b"{}")
+    with pytest.raises(gates.IntegrityError, match=projection_digest):
+        gates.read_normalized_verified(projection_digest, root=root)
+
+
+def test_verify_store_changes_nothing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A full inventory hash of the store tree is identical before and after
+    the sweep."""
+    root = _install_policies(tmp_path, monkeypatch, _policy_document())
+    raw_digest = put_blob(b"bytes the sweep must not touch", root=root)
+    projection_digest = put_normalized({"untouched": True}, root=root)
+    put_envelope(
+        "gated-dataset", "obs-gated-untouched-20260101",
+        _referencing_envelope(
+            "gated-dataset", "obs-gated-untouched-20260101", "2026-01-01T00:00:00Z",
+            raw_digest, projection_digest,
+        ),
+        root=root,
+    )
+    # Damage BEFORE the sweep: the strongest form of the contract — the
+    # verifier reports corruption it finds without "helpfully" healing it.
+    blob_path(raw_digest, root=root).write_bytes(b"already corrupt before the sweep")
+
+    inventory_before = _inventory_hash(root)
+    report = gates.verify_store(root=root)
+    assert _inventory_hash(root) == inventory_before
+    assert report["counts"]["corrupt"] == 1  # found, reported, left as-is
+
+
+def test_verify_store_ignores_objects_outside_store_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The sweep does not follow or report objects outside the store root."""
+    root = _install_policies(tmp_path, monkeypatch, _policy_document())
+    put_blob(b"the only governed object", root=root)
+    # Decoy: correctly digest-named layout with mismatched bytes, but outside
+    # the store root — sweeping it would both over-count and falsely fail.
+    outside_hex = "ab" * 32
+    outside = tmp_path / "outside-store" / "blobs" / "sha256" / "ab" / f"{outside_hex}.raw"
+    outside.parent.mkdir(parents=True)
+    outside.write_bytes(b"bytes that would fail verification if swept")
+
+    report = gates.verify_store(root=root)
+
+    assert report["counts"]["total_objects"] == 1
+    assert report["ok"] is True  # the decoy cannot fail a store it is not in
+    assert "outside-store" not in json.dumps(report)

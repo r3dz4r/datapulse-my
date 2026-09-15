@@ -32,6 +32,8 @@ try:
         index_path,
         normalized_path,
         policies_config_path,
+        read_blob,
+        read_normalized,
         resolve_root,
         sha256_digest,
     )
@@ -48,6 +50,8 @@ except ModuleNotFoundError:  # bare form when scripts/ itself is on sys.path
         index_path,
         normalized_path,
         policies_config_path,
+        read_blob,
+        read_normalized,
         resolve_root,
         sha256_digest,
     )
@@ -61,6 +65,10 @@ __all__ = [
     "compression_anomalies",
     "cleanup_dry_run",
     "report_to_json",
+    "IntegrityError",
+    "verify_store",
+    "read_blob_verified",
+    "read_normalized_verified",
 ]
 
 # Keep reasons — the cleanup taxonomy. would_remove entries carry their own
@@ -755,3 +763,186 @@ def report_to_json(report: dict[str, Any]) -> str:
         separators=(",", ":"),
         allow_nan=False,
     )
+
+
+# ---------------------------------------------------------------------------
+# Integrity verification — content addressing is only a guarantee if it is checked
+# ---------------------------------------------------------------------------
+
+
+class IntegrityError(ObservationStoreError):
+    """A stored object's bytes no longer match the digest that names them.
+
+    Derived from ObservationStoreError so existing handlers that catch store
+    failures keep catching this one. Raised when the digest a path claims and
+    the digest the bytes hash to diverge; a missing object is absence, not
+    corruption, and keeps raising the store's ObjectNotFoundError.
+    """
+
+
+def _classify_objects(
+    directory: Path, suffix: str, kind: str, store_root: Path
+) -> list[dict[str, Any]]:
+    """One integrity record per file under a content-addressed tree.
+
+    Files honouring the addressing scheme are read and their bytes re-hashed:
+    the digest encoded in the filename is the claim, the recomputed SHA-256 is
+    the evidence, and a divergence is "corrupt". Files that break the scheme
+    are "misnamed"; files that cannot be read at all are "unreadable". Nothing
+    here writes, repairs, or removes — classification only.
+    """
+    records: list[dict[str, Any]] = []
+    valid, violations = _scan_content_addressed(directory, suffix, store_root)
+    for violation in violations:
+        records.append({"classification": "misnamed", "kind": kind, **violation})
+    for path in valid:
+        digest = f"sha256:{path.name.removesuffix(suffix)}"
+        relative = path.relative_to(store_root).as_posix()
+        try:
+            data = path.read_bytes()
+        except OSError as error:
+            records.append(
+                {
+                    "classification": "unreadable",
+                    "kind": kind,
+                    "path": relative,
+                    "digest": digest,
+                    "error": str(error),
+                }
+            )
+            continue
+        actual = sha256_digest(data)
+        if actual == digest:
+            records.append({"classification": "ok", "kind": kind, "path": relative, "digest": digest})
+        else:
+            records.append(
+                {
+                    "classification": "corrupt",
+                    "kind": kind,
+                    "path": relative,
+                    "digest": digest,
+                    "actual_digest": actual,
+                }
+            )
+    return records
+
+
+def verify_store(*, root: Path | str | None = None) -> dict[str, Any]:
+    """Sweep every content-addressed object and envelope reference, modifying nothing.
+
+    Each file under blobs/ and normalized/ is re-hashed and classified
+    "ok", "corrupt" (bytes no longer match the digest in the filename),
+    "unreadable", or "misnamed". Each readable envelope's source_digest and
+    observation_digest is then resolved against the stored blobs and
+    projections; a reference with no file behind it is reported as dangling,
+    with the dataset id and observation id that carries it. Unreadable
+    envelopes can prove their references neither present nor absent, so they
+    are counted, not guessed at.
+
+    The return value always carries a count for every classification: a store
+    with nothing wrong reports explicit zeros, never an emptiness that could
+    be mistaken for "no data". The verifier reports and raises; it never
+    repairs, rewrites, or removes stored bytes.
+    """
+    store_root = resolve_root(root)
+    object_records = sorted(
+        _classify_objects(store_root / "blobs", ".raw", "blob", store_root)
+        + _classify_objects(store_root / "normalized", ".json", "normalized", store_root),
+        key=lambda record: record["path"],
+    )
+    dangling: list[dict[str, Any]] = []
+    envelopes_total = 0
+    envelopes_unreadable = 0
+    for record in _scan_envelopes(store_root):
+        envelopes_total += 1
+        if not record["readable"]:
+            envelopes_unreadable += 1
+            continue
+        for field, digest in (
+            ("source_digest", record["source_digest"]),
+            ("observation_digest", record["observation_digest"]),
+        ):
+            if not digest:
+                continue
+            expected = (
+                blob_path(digest, root=store_root)
+                if field == "source_digest"
+                else normalized_path(digest, root=store_root)
+            )
+            if not expected.is_file():
+                dangling.append(
+                    {
+                        "dataset_id": record["dataset_id"],
+                        "observation_id": record["observation_id"],
+                        "field": field,
+                        "digest": digest,
+                        "expected_path": expected.relative_to(store_root).as_posix(),
+                    }
+                )
+    dangling.sort(key=lambda entry: (entry["dataset_id"], entry["observation_id"], entry["field"]))
+    failures = {
+        classification: [record for record in object_records if record["classification"] == classification]
+        for classification in ("corrupt", "unreadable", "misnamed")
+    }
+    counts = {
+        "total_objects": len(object_records),
+        "ok": sum(1 for record in object_records if record["classification"] == "ok"),
+        "corrupt": len(failures["corrupt"]),
+        "unreadable": len(failures["unreadable"]),
+        "misnamed": len(failures["misnamed"]),
+        "envelopes": envelopes_total,
+        "envelopes_unreadable": envelopes_unreadable,
+        "dangling_references": len(dangling),
+    }
+    intact = (
+        counts["corrupt"] == 0
+        and counts["unreadable"] == 0
+        and counts["misnamed"] == 0
+        and not dangling
+    )
+    return {
+        "counts": counts,
+        "failures": failures,
+        "dangling_references": dangling,
+        "ok": intact,
+    }
+
+
+def read_blob_verified(digest: str, *, root: Path | str | None = None) -> bytes:
+    """Read a blob through the store and verify its bytes against its digest.
+
+    The bytes are returned only when their recomputed SHA-256 equals the
+    digest naming them. On divergence, IntegrityError names the digest and
+    both values — expected (what the path claims) and actual (what the bytes
+    hash to). This is an additional verified route: the store's existing read
+    path is unchanged, and a missing object still raises the store's
+    ObjectNotFoundError rather than being reported as corruption.
+    """
+    data = read_blob(digest, root=root)
+    actual = sha256_digest(data)
+    if actual != digest:
+        raise IntegrityError(
+            f"blob {digest} is corrupt: expected digest {digest}, actual digest {actual} "
+            f"({len(data)} bytes on disk do not match the digest that names them); "
+            "the bytes are refused as evidence and nothing was modified"
+        )
+    return data
+
+
+def read_normalized_verified(digest: str, *, root: Path | str | None = None) -> bytes:
+    """Read a normalized projection through the store and verify it against its digest.
+
+    Same contract as read_blob_verified, for canonical JSON projections: the
+    stored bytes must hash to the digest in their filename, or IntegrityError
+    is raised naming the digest and both the expected and actual values.
+    """
+    data = read_normalized(digest, root=root)
+    actual = sha256_digest(data)
+    if actual != digest:
+        raise IntegrityError(
+            f"normalized projection {digest} is corrupt: expected digest {digest}, "
+            f"actual digest {actual} ({len(data)} bytes on disk do not match the "
+            "digest that names them); the bytes are refused as evidence and "
+            "nothing was modified"
+        )
+    return data
