@@ -14,6 +14,19 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.18.0](https://github.com/r3dz4r/datapulse-my/compare/v3.17.0...v3.18.0) (2026-09-15)
+
+
+### Features
+
+* **observation:** link captured observations into evidence, additively (Task 3.3) ([a3ba6fa](https://github.com/r3dz4r/datapulse-my/commit/a3ba6fac649c0edfbd3c27b78d8ef5a3f54fb8b7))
+
+
+### Bug Fixes
+
+* **verifier:** scope the pre-history exemption per dataset, not per record ([9e19eda](https://github.com/r3dz4r/datapulse-my/commit/9e19eda42f10cfdfb7a160df3c6b082ce6788b8a))
+* **verifier:** scope the pre-history exemption per dataset, not per record ([85ac655](https://github.com/r3dz4r/datapulse-my/commit/85ac65509a98c823445c614ef38d8f4ba6068d60))
+
 ## [3.17.0](https://github.com/r3dz4r/datapulse-my/compare/v3.16.0...v3.17.0) (2026-09-15)
 
 
