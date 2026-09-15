@@ -85,7 +85,13 @@ def test_failure_is_explicit_and_has_a_machine_readable_verdict(tmp_path: Path) 
     _health(health)
     result = subprocess.run(
         [sys.executable, str(SCRIPT), "--health", str(health), "--api-base", "http://127.0.0.1:1"],
-        capture_output=True, text=True, check=False, env={"DATAPULSE_KV_WRITE": "test-token"},
+        capture_output=True,
+        text=True,
+        check=False,
+        env={
+            "DATAPULSE_KV_WRITE": "test-token",
+            "DATAPULSE_KV_PUBLICATION_STATE": str(tmp_path / "publication-state.json"),
+        },
     )
 
     assert result.returncode == 2
@@ -173,6 +179,7 @@ def test_main_returns_zero_after_success_and_failure_line_is_bounded(monkeypatch
     health = tmp_path / "latest.json"
     _health(health)
     monkeypatch.setattr(module, "read_token", lambda: "secret-token")
+    monkeypatch.setenv(module.PUBLISH_STATE_ENV, str(tmp_path / "publication-state.json"))
     monkeypatch.setattr(module, "publish_unchanged_aware_with_retry", lambda *_args: (2, 5))
     assert module.main(["--health", str(health)]) == 0
     assert "health index publish succeeded: 2 written, 5 unchanged" in capsys.readouterr().err  # type: ignore[attr-defined]
@@ -182,6 +189,27 @@ def test_main_returns_zero_after_success_and_failure_line_is_bounded(monkeypatch
     assert "\n" not in line
     assert "secret-token" not in line
     assert len(line.rsplit(": ", 1)[1]) <= 200
+
+
+def test_main_cadence_skip_is_successful_and_issues_no_publication(monkeypatch: object, capsys: object, tmp_path: Path) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+    calls = 0
+    monkeypatch.setattr(module, "read_token", lambda: "secret-token")
+    monkeypatch.setenv(module.PUBLISH_STATE_ENV, str(tmp_path / "publication-state.json"))
+    monkeypatch.setattr(module.time, "time", lambda: 1_000.0)
+
+    def publish_once(*_args: object) -> tuple[int, int]:
+        nonlocal calls
+        calls += 1
+        return 1, 6
+
+    monkeypatch.setattr(module, "publish_unchanged_aware_with_retry", publish_once)
+    assert module.main(["--health", str(health)]) == 0
+    assert module.main(["--health", str(health)]) == 0
+    assert calls == 1
+    assert "health index publish skipped: cadence window active" in capsys.readouterr().err
 
 
 def test_dry_run_makes_no_network_call(tmp_path: Path, monkeypatch: object) -> None:
@@ -209,3 +237,72 @@ def test_publish_skips_byte_identical_values(tmp_path: Path, monkeypatch: object
 
     assert module.publish_unchanged_aware("https://api.example.test", "token", payloads) == (0, len(payloads))
     assert writes == []
+
+
+def test_cadence_publishes_first_run_skips_then_recovers(tmp_path: Path) -> None:
+    module = _module()
+    state_path = tmp_path / "state" / "kv-publication.json"
+    calls: list[float] = []
+
+    def publish_once() -> tuple[int, int]:
+        calls.append(1.0)
+        return 3, 4
+
+    assert module.publish_with_cadence(state_path, 1_000.0, 1_800.0, publish_once) == (False, 3, 4)
+    assert module.publish_with_cadence(state_path, 1_100.0, 1_800.0, publish_once) == (True, 0, 0)
+    assert module.publish_with_cadence(state_path, 2_800.0, 1_800.0, publish_once) == (False, 3, 4)
+    assert len(calls) == 2
+
+
+def test_cadence_missing_or_corrupt_state_allows_one_publication(tmp_path: Path) -> None:
+    module = _module()
+    state_path = tmp_path / "kv-publication.json"
+    calls: list[float] = []
+
+    def publish_once() -> tuple[int, int]:
+        calls.append(1.0)
+        return 0, 7
+
+    assert module.publish_with_cadence(state_path, 1_000.0, 1_800.0, publish_once) == (False, 0, 7)
+    state_path.write_text("not-json", encoding="utf-8")
+    assert module.publish_with_cadence(state_path, 1_100.0, 1_800.0, publish_once) == (False, 0, 7)
+    assert len(calls) == 2
+
+
+def test_cadence_reservation_survives_http_failure(tmp_path: Path) -> None:
+    module = _module()
+    state_path = tmp_path / "kv-publication.json"
+    calls = 0
+
+    def fail_publish() -> tuple[int, int]:
+        nonlocal calls
+        calls += 1
+        raise module.PublishError("HTTP 429")
+
+    try:
+        module.publish_with_cadence(state_path, 1_000.0, 1_800.0, fail_publish)
+    except module.PublishError:
+        pass
+    else:
+        raise AssertionError("HTTP failure must be returned")
+    assert module.publish_with_cadence(state_path, 1_100.0, 1_800.0, fail_publish) == (True, 0, 0)
+    assert calls == 1
+
+
+def test_default_daily_kv_write_budget_is_below_free_quota() -> None:
+    module = _module()
+    assert module.MAX_PUBLISH_ATTEMPTS == 2
+    assert module.max_daily_kv_writes() == len(module.HEALTH_ARTIFACTS + (module.KEY,)) * 48 * 2
+    assert module.max_daily_kv_writes() == 672
+    assert module.max_daily_kv_writes() < 1_000
+
+
+def test_invalid_cadence_interval_is_rejected(monkeypatch: object) -> None:
+    module = _module()
+    monkeypatch.setenv(module.PUBLISH_INTERVAL_ENV, "0")
+    try:
+        module.publication_interval_seconds()
+    except module.PublishError as exc:
+        assert "positive number" in str(exc)
+    else:
+        raise AssertionError("non-positive cadence must be rejected")
