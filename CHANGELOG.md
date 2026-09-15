@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.11.0](https://github.com/r3dz4r/datapulse-my/compare/v3.10.1...v3.11.0) (2026-09-15)
+
+
+### Features
+
+* **passport:** declare privacy classification instead of hardcoding it ([6810d48](https://github.com/r3dz4r/datapulse-my/commit/6810d482a99ae2c8ba0bcc4f5e7131b39f8633ad))
+* **passport:** declare privacy classification instead of hardcoding it ([d477870](https://github.com/r3dz4r/datapulse-my/commit/d47787022ffe05c79d10415b2eed2db0cafabd1e))
+
 ## [3.10.1](https://github.com/r3dz4r/datapulse-my/compare/v3.10.0...v3.10.1) (2026-09-15)
 
 
