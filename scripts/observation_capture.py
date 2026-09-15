@@ -606,6 +606,8 @@ def _build_envelope(
     previous_id: str | None,
     previous_digest: str | None,
     change_from_previous: str | None,
+    normalized_projection: Mapping[str, Any] | None = None,
+    normalization_transform: str | None = None,
 ) -> dict[str, Any]:
     unknowns: set[str] = {"source_version"}
 
@@ -658,7 +660,11 @@ def _build_envelope(
         "source_digest": retained_digest,
         "observation_digest": "",
         "shape_fingerprint": None,
-        "normalized_projection": {"state": "not_retained", "format": None, "record_count": None},
+        "normalized_projection": (
+            dict(normalized_projection)
+            if normalized_projection is not None
+            else {"state": "not_retained", "format": None, "record_count": None}
+        ),
         "normalization_profile_version": NORMALIZATION_PROFILE_VERSION,
         "previous_observation_id": previous_id,
         "previous_observation_digest": previous_digest,
@@ -743,7 +749,11 @@ def _build_envelope(
         "shape_fingerprint": _provenance(
             "not_measured", state="unmeasured", reason="no_instrument"
         ),
-        "normalized_projection": _provenance("configured_by_policy"),
+        "normalized_projection": (
+            _provenance("platform_computed", transform=normalization_transform)
+            if normalization_transform is not None
+            else _provenance("configured_by_policy")
+        ),
         "normalization_profile_version": _provenance("configured_by_policy"),
         "previous_observation_id": (
             _provenance("platform_computed")
@@ -863,12 +873,65 @@ def capture_observation(
             dataset_id,
         )
 
+    normalized_projection: dict[str, Any] | None = None
+    normalization_transform: str | None = None
     if profile is not None:
-        logger.debug(
-            "normalization profile %r supplied; projections arrive with a later task — "
-            "nothing projected, nothing projected is claimed",
-            profile,
-        )
+        # Imported lazily and defensively: capture must behave exactly as
+        # before when observation_normalize is absent.  The module-path form
+        # (not `from scripts import ...`) matches the header imports: a
+        # foreign `scripts` namespace package on sys.path must fall through
+        # to the bare form, and only ModuleNotFoundError signals absence.
+        try:
+            import scripts.observation_normalize as observation_normalize
+        except ModuleNotFoundError:
+            try:
+                import observation_normalize
+            except ModuleNotFoundError:
+                observation_normalize = None
+        if observation_normalize is None:
+            logger.debug(
+                "normalization profile %r supplied; projections arrive with a later task — "
+                "nothing projected, nothing projected is claimed",
+                profile,
+            )
+        elif not (store and file_status == "captured" and body is not None):
+            # A projection is of retained bytes: a preview or denied capture
+            # retains nothing, so nothing projected may be claimed.
+            logger.debug(
+                "normalization profile %r supplied but nothing was retained; no projection claimed",
+                profile,
+            )
+        else:
+            try:
+                normalized_result = observation_normalize.normalize(bytes(body), profile)
+                observation_normalize.file_normalized(normalized_result, root=store_root)
+            except (
+                observation_normalize.NormalizationProfileError,
+                observation_normalize.NormalizationParseError,
+            ) as error:
+                # unknown_reasons cannot name normalized_projection (its schema
+                # vocabulary is closed), so the failure lands truthfully in the
+                # member's own state and its provenance transform, never a crash.
+                normalized_projection = {"state": "unknown", "format": None, "record_count": None}
+                normalization_transform = f"normalization under profile {profile!r} failed: {error}"
+                logger.debug("normalization under profile %r failed: %s", profile, error)
+            else:
+                normalized_projection = {
+                    "state": "retained",
+                    "format": normalized_result.format,
+                    "record_count": int(normalized_result.record_count),
+                }
+                normalization_transform = (
+                    f"observation_normalize profile {normalized_result.profile_name}/"
+                    f"{normalized_result.profile_version}; projection_digest "
+                    f"{normalized_result.projection_digest}"
+                )
+                logger.debug(
+                    "normalized %d records under profile %r (%s)",
+                    normalized_result.record_count,
+                    profile,
+                    normalized_result.projection_digest,
+                )
 
     previous_id, previous_digest, change_from_previous = _previous_history(
         dataset_id, previous, retained_digest, store=store, root=store_root
@@ -885,6 +948,8 @@ def capture_observation(
         previous_id=previous_id,
         previous_digest=previous_digest,
         change_from_previous=change_from_previous,
+        normalized_projection=normalized_projection,
+        normalization_transform=normalization_transform,
     )
     _seal(envelope)
 
@@ -933,6 +998,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                                   text under ``body``).
         ``--store <root>``        Store root; supplying it files the
                                   capture (``store=True``).
+        ``--profile <name>``      Normalization profile designation; when
+                                  given (and bytes were retained), a
+                                  normalized projection is filed and the
+                                  envelope claims it as ``retained``.
 
     Returns:
         Process exit code.
@@ -959,10 +1028,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         metavar="ROOT",
         help="absolute store root; supplying it files the capture (store=True)",
     )
+    parser.add_argument(
+        "--profile",
+        metavar="DESIGNATION",
+        help="normalization profile designation (e.g. fuelprice_csv_v1) to project retained bytes",
+    )
     arguments = parser.parse_args(argv)
 
     if arguments.selftest:
-        return _selftest()
+        return _selftest(profile=arguments.profile)
     if not arguments.dataset or arguments.fixture is None:
         parser.error("--dataset and --fixture are required unless --selftest is given")
 
@@ -972,6 +1046,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             arguments.dataset,
             retrieval,
             root=arguments.store,
+            profile=arguments.profile,
             store=arguments.store is not None,
         )
     except CaptureError as error:
@@ -1032,11 +1107,13 @@ def _load_fixture(path: Path) -> RetrievalResult:
     )
 
 
-def _selftest() -> int:
+def _selftest(profile: str | None = None) -> int:
     """Acceptance selftest: one granted full capture, one policy denial.
 
     Both captures file into a scratch store rooted inside the worktree; the
-    production store root is never touched.  Exits 0 only when both
+    production store root is never touched.  When ``profile`` is supplied the
+    granted capture also normalizes its retained bytes under that profile and
+    the retained-projection truth rules are checked.  Exits 0 only when both
     envelopes validate with zero errors and the truth rules hold.
     """
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
@@ -1075,6 +1152,7 @@ def _selftest() -> int:
             granted,
             root=scratch,
             now=datetime(2026, 9, 16, 2, 5, 0, tzinfo=timezone.utc),
+            profile=profile,
             store=True,
         )
         refused = capture_observation(
@@ -1111,6 +1189,27 @@ def _selftest() -> int:
             ("captured envelope is filed unverified", captured.get("verification", {}).get("verification_status") == "unverified"),
             ("denied envelope is filed unverified", refused.get("verification", {}).get("verification_status") == "unverified"),
         ]
+        if profile is not None:
+            filed_projection = captured.get("normalized_projection") or {}
+            print(f"normalized_projection: {canonical_json(filed_projection).decode('utf-8')}")
+            checks.extend(
+                (
+                    (
+                        "captured envelope retains a normalized projection under the supplied profile",
+                        filed_projection.get("state") == "retained",
+                    ),
+                    (
+                        "retained projection declares the csv format",
+                        filed_projection.get("format") == "csv",
+                    ),
+                    (
+                        "retained projection reports a positive integer record_count",
+                        isinstance(filed_projection.get("record_count"), int)
+                        and not isinstance(filed_projection.get("record_count"), bool)
+                        and filed_projection.get("record_count") > 0,
+                    ),
+                )
+            )
         for description, holds in checks:
             if not holds:
                 failures.append(f"truth rule failed: {description}")
