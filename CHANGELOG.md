@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.15.0](https://github.com/r3dz4r/datapulse-my/compare/v3.14.0...v3.15.0) (2026-09-15)
+
+
+### Features
+
+* **observation:** capture source responses at observation time (Task 3.1) ([a6f6104](https://github.com/r3dz4r/datapulse-my/commit/a6f6104e48b873cab3c3fb80ae5df11526389e67))
+* **observation:** capture source responses at observation time (Task 3.1) ([e3abd68](https://github.com/r3dz4r/datapulse-my/commit/e3abd6865a9d882f2bb20c625b110e884fa28c42))
+
 ## [3.14.0](https://github.com/r3dz4r/datapulse-my/compare/v3.13.0...v3.14.0) (2026-09-15)
 
 
