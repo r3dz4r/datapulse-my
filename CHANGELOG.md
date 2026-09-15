@@ -14,6 +14,19 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.9.0](https://github.com/r3dz4r/datapulse-my/compare/v3.8.1...v3.9.0) (2026-09-15)
+
+
+### Features
+
+* **kv:** add a publication cadence gate to the health-index publisher ([ca7954d](https://github.com/r3dz4r/datapulse-my/commit/ca7954d517879606396fd0e7a2309e8ef431c886))
+
+
+### Bug Fixes
+
+* distinguish throttled health index publishes ([500604a](https://github.com/r3dz4r/datapulse-my/commit/500604a68484cd590cdbab02a1590be84ad57f66))
+* **kv:** throttle health-index publication to stay under the KV write ceiling ([d9d1ae6](https://github.com/r3dz4r/datapulse-my/commit/d9d1ae6a7b8df4481e36c74345246d5963bfee96))
+
 ## [3.8.1](https://github.com/r3dz4r/datapulse-my/compare/v3.8.0...v3.8.1) (2026-09-14)
 
 
