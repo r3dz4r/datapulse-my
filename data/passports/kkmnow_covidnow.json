@@ -3,33 +3,33 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1466.0,
+        "latest_days": null,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "cadence_fallback",
+        "mode": "not_evaluated",
         "sample_days": 7,
         "stdev_days": null,
-        "threshold_days": 3,
+        "threshold_days": null,
         "window_days": 14
       }
     },
     "expected_record_count": null,
-    "freshness_signal": "content-date-parse",
-    "freshness_signal_source": "content_date_parse",
-    "http_status": 200,
-    "incomplete": true,
+    "freshness_signal": "no-header",
+    "freshness_signal_source": "none",
+    "http_status": null,
+    "incomplete": false,
     "last_checked": "2026-09-14T09:14:43Z",
-    "record_count": 55,
-    "record_count_estimated": true,
+    "record_count": null,
+    "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
       "column_count": null,
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "unreachable"
   },
   "identity": {
     "canonical_url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidnow_01_timeseries.parquet",
@@ -559,9 +559,9 @@
               "Records one observed access signal; it does not promise continuing access."
             ],
             "reason_codes": [
-              "observed_access_signal_present"
+              "observed_access_unreachable"
             ],
-            "state": "pass"
+            "state": "fail"
           },
           {
             "check_id": "fair.shape_metadata",
@@ -611,9 +611,9 @@
         "coverage": {
           "applicable": 4,
           "evaluated": 3,
-          "failed": 0,
+          "failed": 1,
           "not_applicable": 0,
-          "passed": 3,
+          "passed": 2,
           "unknown": 1
         },
         "evidence_refs": [
@@ -664,11 +664,11 @@
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
           "catalogue_metadata_declared",
-          "observed_access_signal_present",
+          "observed_access_unreachable",
           "shape_metadata_missing",
           "reuse_metadata_declared"
         ],
-        "state": "unknown"
+        "state": "fail"
       },
       "governance": {
         "checks": [
@@ -1024,9 +1024,9 @@
               "A count is an observed or estimated measurement, not a completeness guarantee."
             ],
             "reason_codes": [
-              "record_count_estimated"
+              "record_count_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           },
           {
             "check_id": "reproducibility.attestation_reference",
@@ -1047,11 +1047,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 3,
+          "evaluated": 2,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 3,
-          "unknown": 1
+          "passed": 2,
+          "unknown": 2
         },
         "evidence_refs": [
           {
@@ -1094,7 +1094,7 @@
         "reason_codes": [
           "shape_fingerprint_missing",
           "last_checked_declared",
-          "record_count_estimated",
+          "record_count_missing",
           "attestation_ref_declared"
         ],
         "state": "unknown"
@@ -1103,7 +1103,7 @@
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "indeterminate",
+    "overall": "not_ready",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },
