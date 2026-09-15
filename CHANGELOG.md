@@ -14,6 +14,19 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.12.0](https://github.com/r3dz4r/datapulse-my/compare/v3.11.0...v3.12.0) (2026-09-15)
+
+
+### Features
+
+* **observation:** add the content-addressed observation store (Task 2.1) ([f27c095](https://github.com/r3dz4r/datapulse-my/commit/f27c0956be6a860659fffd69b759d44121c6dd19))
+* **observation:** add the content-addressed observation store (Task 2.1) ([211c092](https://github.com/r3dz4r/datapulse-my/commit/211c092e5a199e5d27c0d0c8fe422ce4a6c57bf5))
+
+
+### Bug Fixes
+
+* **docs:** drop an unscoped authority claim from the store layout doc ([a3f7799](https://github.com/r3dz4r/datapulse-my/commit/a3f77996932d569a2d485140f468203799333048))
+
 ## [3.11.0](https://github.com/r3dz4r/datapulse-my/compare/v3.10.1...v3.11.0) (2026-09-15)
 
 
