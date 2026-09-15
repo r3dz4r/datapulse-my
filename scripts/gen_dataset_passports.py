@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import os
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,8 @@ LIMITATIONS = [
     "This passport is evidence about observed metadata and state, not semantic truth, completeness, certification, legal permission, safety, or AI admission.",
     "Unavailable evidence is explicit and must not be read as a neutral or favourable result.",
 ]
+PRIVACY_CLASSIFICATION_VALUES = ("no_personal_data",)
+REVIEWED_AT_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
 class PassportError(ValueError):
@@ -54,6 +57,33 @@ def _unavailable(reason: str, *, state: str = "not_evaluated") -> dict[str, str]
 
 def _nullable_string(value: object) -> str | None:
     return value if isinstance(value, str) and value else None
+
+
+def _privacy_classifications(root: Path) -> dict[str, dict[str, Any]]:
+    """Read declared privacy classifications; a missing or unreadable config fails closed to an empty mapping."""
+    try:
+        value = json.loads((root / "config" / "privacy-classifications.json").read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return {}
+    classifications = value.get("classifications") if isinstance(value, dict) else None
+    if not isinstance(classifications, dict):
+        return {}
+    return {dataset_id: row for dataset_id, row in classifications.items() if isinstance(row, dict)}
+
+
+def _sensitivity_and_pii(root: Path, dataset_id: str) -> dict[str, str]:
+    """Project the declared classification; anything short of a full valid declaration stays not_evaluated."""
+    entry = _privacy_classifications(root).get(dataset_id)
+    if isinstance(entry, dict):
+        basis, reviewed_at, reviewer = entry.get("basis"), entry.get("reviewed_at"), entry.get("reviewer")
+        if (
+            entry.get("classification") in PRIVACY_CLASSIFICATION_VALUES
+            and isinstance(basis, str) and basis
+            and isinstance(reviewed_at, str) and REVIEWED_AT_PATTERN.fullmatch(reviewed_at)
+            and isinstance(reviewer, str) and reviewer
+        ):
+            return {"state": "classified", "classification": entry["classification"], "basis": basis, "reviewed_at": reviewed_at, "reviewer": reviewer}
+    return _unavailable("sensitivity_or_pii_classification_not_evaluated")
 
 
 def _index(rows: object, field: str, label: str) -> dict[str, dict[str, Any]]:
@@ -133,7 +163,7 @@ def build_passport(root: Path, entry: dict[str, Any], health: dict[str, Any], gr
             "transformation_lineage": _unavailable("full_transformation_lineage_not_published"),
         },
         "record_evidence": _record_evidence(root, dataset_id),
-        "sensitivity_and_pii": _unavailable("sensitivity_or_pii_classification_not_evaluated"),
+        "sensitivity_and_pii": _sensitivity_and_pii(root, dataset_id),
         "limitations": LIMITATIONS,
     }
 
