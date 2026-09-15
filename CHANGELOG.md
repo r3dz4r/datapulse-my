@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.19.1](https://github.com/r3dz4r/datapulse-my/compare/v3.19.0...v3.19.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **observation:** bound predecessor ordering by the capture's own instant (+ make the guard real) ([32ca368](https://github.com/r3dz4r/datapulse-my/commit/32ca368d4ea672111171e29139f7e24b155825b4))
+
 ## [3.19.0](https://github.com/r3dz4r/datapulse-my/compare/v3.18.0...v3.19.0) (2026-09-15)
 
 
