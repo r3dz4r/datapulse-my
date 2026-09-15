@@ -397,7 +397,7 @@ jobs:
           done < <(jq -r '.attestations | to_entries[] | .value' "$preserved_root/attestations/latest/index.json")
           while IFS= read -r reference; do
             [[ -z "$reference" ]] && continue
-            [[ "$reference" =~ ^attestations/${binding_date}/[A-Za-z0-9_.-]+\.json$ ]] || fail "served Rekor reference is unsafe: $reference"
+            [[ "$reference" =~ ^attestations/rekor/${binding_date}/[A-Za-z0-9_.-]+\.json$ ]] || fail "served Rekor reference is unsafe: $reference"
             fetch_public "$reference" "$preserved_root/$reference"
           done < <(jq -r '.rekor // {} | [.reference_ref, .bundle_ref] | .[] // empty' "$preserved_root/attestations/latest/binding.json")
           if attestation_plane_state="$(python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root")"; then

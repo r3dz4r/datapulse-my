@@ -178,17 +178,17 @@ jobs:
             git diff --name-only -- \
               "attestations/$day" attestations/latest/index.json \
               attestations/latest/binding.json attestations/latest/chain_head.json \
-              attestations/chain-index.json .attestations/chain_head.json \
+              attestations/chain-index.json .attestations/chain_head.json "attestations/rekor/$day" \
               datapulse.json attestations/latest/scores.json
             git ls-files --others --exclude-standard -- \
               "attestations/$day" attestations/latest/index.json \
               attestations/latest/binding.json attestations/latest/chain_head.json \
-              attestations/chain-index.json .attestations/chain_head.json \
+              attestations/chain-index.json .attestations/chain_head.json "attestations/rekor/$day" \
               datapulse.json attestations/latest/scores.json
           } | LC_ALL=C sort -u)"
           unexpected_paths="$({ git status --porcelain=v1 --untracked-files=all | cut -c4-; } | while IFS= read -r path; do
             case "$path" in
-              "attestations/$day"/*|attestations/latest/index.json|attestations/latest/binding.json|attestations/latest/chain_head.json|attestations/chain-index.json|.attestations/chain_head.json|datapulse.json|attestations/latest/scores.json) ;;
+              "attestations/$day"/*|"attestations/rekor/$day"/*|attestations/latest/index.json|attestations/latest/binding.json|attestations/latest/chain_head.json|attestations/chain-index.json|.attestations/chain_head.json|datapulse.json|attestations/latest/scores.json) ;;
               *) printf '%s\n' "$path" ;;
             esac
           done)"
@@ -198,7 +198,7 @@ jobs:
           fi
           committed_paths="$(printf '%s\n' "$changed_paths" | while IFS= read -r path; do
             case "$path" in
-              "attestations/$day"/*|attestations/latest/index.json|attestations/latest/binding.json|attestations/latest/chain_head.json|attestations/chain-index.json|.attestations/chain_head.json) printf '%s\n' "$path" ;;
+              "attestations/$day"/*|"attestations/rekor/$day"/*|attestations/latest/index.json|attestations/latest/binding.json|attestations/latest/chain_head.json|attestations/chain-index.json|.attestations/chain_head.json) printf '%s\n' "$path" ;;
             esac
           done)"
           excluded_paths="$(printf '%s\n' "$changed_paths" | while IFS= read -r path; do
@@ -226,7 +226,7 @@ jobs:
           fi
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -- \
+          git add -- "attestations/rekor/$day" \
             "attestations/$day" attestations/latest/index.json \
             attestations/latest/binding.json attestations/latest/chain_head.json \
             attestations/chain-index.json .attestations/chain_head.json
