@@ -449,6 +449,7 @@ def _previous_history(
     previous: Mapping[str, Any] | None,
     current_digest: str | None,
     *,
+    observed_at: str,
     store: bool,
     root: Path | None,
 ) -> tuple[str | None, str | None, str | None]:
@@ -466,13 +467,11 @@ def _previous_history(
     except ModuleNotFoundError:  # bare form when scripts/ itself is on sys.path
         from observation_predecessors import PredecessorError, resolve_predecessor
 
-    # This signature predates predecessor proof and cannot carry the filing
-    # instant, so the delegation bounds ordering by the observation clock —
-    # the same clock that produced this capture's observed_at, and the only
-    # ordering evidence reachable from here.
+    # The ordering bound is this capture's own filing instant: a backdated
+    # capture must never link to an observation observed after it.
     try:
         link = resolve_predecessor(
-            dataset_id, _observation_instant(None), root=root, explicit=previous
+            dataset_id, observed_at, root=root, explicit=previous
         )
     except PredecessorError as error:
         raise CaptureError(
@@ -941,7 +940,7 @@ def capture_observation(
                 )
 
     previous_id, previous_digest, change_from_previous = _previous_history(
-        dataset_id, previous, retained_digest, store=store, root=store_root
+        dataset_id, previous, retained_digest, observed_at=observed_at, store=store, root=store_root
     )
 
     envelope = _build_envelope(
@@ -1118,10 +1117,15 @@ def _selftest(profile: str | None = None) -> int:
     """Acceptance selftest: one granted full capture, one policy denial.
 
     Both captures file into a scratch store rooted inside the worktree; the
-    production store root is never touched.  When ``profile`` is supplied the
-    granted capture also normalizes its retained bytes under that profile and
-    the retained-projection truth rules are checked.  Exits 0 only when both
-    envelopes validate with zero errors and the truth rules hold.
+    production store root is never touched.  A third capture is filed
+    backdated — its observed_at precedes the granted capture already in the
+    store — and must come back with no predecessor and
+    ``change_from_previous=first_observation``: a predecessor observed after
+    the filing instant is not a predecessor.  When ``profile`` is supplied
+    the granted capture also normalizes its retained bytes under that
+    profile and the retained-projection truth rules are checked.  Exits 0
+    only when all envelopes validate with zero errors and the truth rules
+    hold.
     """
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
     scratch = Path(tempfile.mkdtemp(prefix=".observation-capture-selftest-", dir=REPO_ROOT))
@@ -1169,8 +1173,23 @@ def _selftest(profile: str | None = None) -> int:
             now=datetime(2026, 9, 16, 2, 6, 0, tzinfo=timezone.utc),
             store=True,
         )
+        # Backdated-ordering case: the store already holds a fuelprice
+        # observation at 2026-09-16T02:05:00Z; this capture is filed five
+        # hours' worth of history earlier, so nothing in the store precedes
+        # its own instant and the only truthful link is no link.
+        backdated = capture_observation(
+            "fuelprice",
+            granted,
+            root=scratch,
+            now=datetime(2026, 9, 15, 21, 0, 0, tzinfo=timezone.utc),
+            store=True,
+        )
 
-        for label, envelope in (("granted full capture (fuelprice)", captured), ("policy denial (dataset absent from config)", refused)):
+        for label, envelope in (
+            ("granted full capture (fuelprice)", captured),
+            ("policy denial (dataset absent from config)", refused),
+            ("backdated capture (ordering bound is the filing instant)", backdated),
+        ):
             print(f"--- {label} ---")
             print(canonical_json(envelope).decode("utf-8"))
             errors = validate_envelope(envelope)
@@ -1182,6 +1201,11 @@ def _selftest(profile: str | None = None) -> int:
         print(f"captured source_digest: {digest}")
         print(f"recomputed from retained bytes: {recomputed}")
         print(f"denied source_digest: {refused.get('source_digest')} (nothing retained; recomputed: n/a)")
+        print(
+            "backdated-ordering case: capture filed at "
+            f"{backdated.get('observed_at')} against a store whose only fuelprice "
+            f"observation is {captured.get('observed_at')} (later) — no link may form"
+        )
 
         checks: list[tuple[str, bool]] = [
             ("captured envelope claims capture_status=captured", captured.get("capture_status") == "captured"),
@@ -1195,6 +1219,9 @@ def _selftest(profile: str | None = None) -> int:
             ("denied envelope declares metadata_only replay state", refused.get("replay_state") == "metadata_only"),
             ("captured envelope is filed unverified", captured.get("verification", {}).get("verification_status") == "unverified"),
             ("denied envelope is filed unverified", refused.get("verification", {}).get("verification_status") == "unverified"),
+            ("backdated capture links to no predecessor observed after its own instant", backdated.get("previous_observation_id") is None),
+            ("backdated envelope carries previous_observation_digest=null", backdated.get("previous_observation_digest") is None),
+            ("backdated envelope declares change_from_previous=first_observation", backdated.get("change_from_previous") == "first_observation"),
         ]
         if profile is not None:
             filed_projection = captured.get("normalized_projection") or {}
@@ -1229,7 +1256,7 @@ def _selftest(profile: str | None = None) -> int:
         for failure in failures:
             print(f"FAIL {failure}", file=sys.stderr)
         return 1
-    print("selftest passed: both envelopes validate with 0 errors and the truth rules hold")
+    print("selftest passed: all three envelopes validate with 0 errors and the truth rules hold")
     return 0
 
 
