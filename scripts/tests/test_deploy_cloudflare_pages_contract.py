@@ -343,6 +343,30 @@ def test_health_only_signer_down_path_preserves_only_a_verified_served_plane() -
     assert "rm -f _site/attestations/latest/binding.json" in assemble["run"]
 
 
+def test_served_rekor_references_are_limited_to_the_binding_day_directory() -> None:
+    """Preservation accepts the documented Rekor layout without widening fetches."""
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    preserve = next(
+        step for step in steps if step.get("name") == "Preserve served attestation plane (health-only path)"
+    )
+    expected = r'^attestations/rekor/${binding_date}/[A-Za-z0-9_.-]+\.json$'
+
+    assert expected in preserve["run"]
+    pattern = re.compile(r"^attestations/rekor/2026-09-15/[A-Za-z0-9_.-]+\.json$")
+    for reference in (
+        "attestations/rekor/2026-09-15/reference.json",
+        "attestations/rekor/2026-09-15/health.sigstore.bundle.json",
+    ):
+        assert pattern.fullmatch(reference)
+    for reference in (
+        "attestations/rekor/2026-09-15/../reference.json",
+        "attestations/rekor/not-a-date/reference.json",
+        "/attestations/rekor/2026-09-15/reference.json",
+        "attestations/rekor/2026-09-15/nested/reference.json",
+    ):
+        assert pattern.fullmatch(reference) is None
+
+
 def test_native_pages_installs_release_dependencies_before_generation() -> None:
     parsed = yaml.safe_load(_workflow())
     steps = parsed["jobs"]["deploy"]["steps"]

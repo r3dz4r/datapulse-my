@@ -15,6 +15,19 @@ from scripts.verify_attestation_binding import ContractError
 from scripts.verify_sigstore_bundle import verify_bundle
 
 
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_daily_rekor_evidence_is_committable_and_staged_with_its_binding() -> None:
+    """A witnessed binding must commit the evidence paths it references."""
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    daily = (ROOT / ".github/workflows/datapulse-attest-daily.yml").read_text(encoding="utf-8")
+
+    assert "attestations/rekor/" not in gitignore
+    commit_step = daily.split("      - name: Commit dated envelopes and open or update their pull request\n", 1)[1]
+    assert 'git add -- "attestations/rekor/$day"' in commit_step
+
+
 def test_matching_rekor_reference_marks_new_binding_as_witnessed(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     reference = fixture_rekor_reference(root, "rekor-fixture")
