@@ -459,36 +459,43 @@ def _previous_history(
     history unknown rather than guessing ``first_observation`` — the index
     of a store never consulted is not evidence.
     """
+    if previous is None and not store:
+        return (None, None, "unknown")
+    try:
+        from scripts.observation_predecessors import PredecessorError, resolve_predecessor
+    except ModuleNotFoundError:  # bare form when scripts/ itself is on sys.path
+        from observation_predecessors import PredecessorError, resolve_predecessor
+
+    # This signature predates predecessor proof and cannot carry the filing
+    # instant, so the delegation bounds ordering by the observation clock —
+    # the same clock that produced this capture's observed_at, and the only
+    # ordering evidence reachable from here.
+    try:
+        link = resolve_predecessor(
+            dataset_id, _observation_instant(None), root=root, explicit=previous
+        )
+    except PredecessorError as error:
+        raise CaptureError(
+            f"predecessor link refused ({error.constraint}): {error.message}"
+        ) from error
+
+    if link.relation_basis == "none":
+        return (None, None, "first_observation")
+
     previous_source_digest: str | None = None
     if previous is not None:
-        previous_id = previous.get("observation_id")
-        if not isinstance(previous_id, str) or not previous_id:
-            raise CaptureError("previous envelope must carry a string observation_id")
-        previous_digest = previous.get("observation_digest")
-        if not isinstance(previous_digest, str) or not OBSERVATION_DIGEST_PATTERN.fullmatch(
-            previous_digest
-        ):
-            previous_digest = None
         source = previous.get("source_digest")
-        if isinstance(source, str) and SOURCE_DIGEST_PATTERN.fullmatch(source):
-            previous_source_digest = source
-    elif store:
-        rows = list_observations(dataset_id, root=root)
-        row = rows[0] if rows else None
-        previous_id = row["observation_id"] if row else None
-        previous_digest = row.get("observation_digest") if row else None
-        if not isinstance(previous_digest, str) or not OBSERVATION_DIGEST_PATTERN.fullmatch(
-            previous_digest
-        ):
-            previous_digest = None
-        source = row.get("source_digest") if row else None
-        if isinstance(source, str) and SOURCE_DIGEST_PATTERN.fullmatch(source):
-            previous_source_digest = source
     else:
-        return (None, None, "unknown")
+        source = None
+        for row in list_observations(dataset_id, root=root):
+            if row["observation_id"] == link.observation_id:
+                source = row.get("source_digest")
+                break
+    if isinstance(source, str) and SOURCE_DIGEST_PATTERN.fullmatch(source):
+        previous_source_digest = source
 
-    if previous_id is None:
-        return (None, None, "first_observation")
+    previous_id = link.previous_observation_id
+    previous_digest = link.previous_observation_digest
     if current_digest is not None and previous_source_digest is not None:
         change = "unchanged" if current_digest == previous_source_digest else "changed"
         return (previous_id, previous_digest, change)
