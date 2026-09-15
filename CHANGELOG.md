@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.16.0](https://github.com/r3dz4r/datapulse-my/compare/v3.15.0...v3.16.0) (2026-09-15)
+
+
+### Features
+
+* **observation:** versioned normalization profiles, part 1 (Task 3.2) ([d06ab08](https://github.com/r3dz4r/datapulse-my/commit/d06ab0856f8a7843678169497e2e7140522e631f))
+* **observation:** versioned normalization profiles, part 1 (Task 3.2) ([02244b8](https://github.com/r3dz4r/datapulse-my/commit/02244b82ee45d4958577934de94919f465ddeacb))
+
 ## [3.15.0](https://github.com/r3dz4r/datapulse-my/compare/v3.14.0...v3.15.0) (2026-09-15)
 
 
