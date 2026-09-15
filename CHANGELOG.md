@@ -14,6 +14,19 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.10.0](https://github.com/r3dz4r/datapulse-my/compare/v3.9.0...v3.10.0) (2026-09-15)
+
+
+### Features
+
+* **register:** surface each dataset's verdict age beside its status ([bf3d794](https://github.com/r3dz4r/datapulse-my/commit/bf3d7941e3b5b018fb1b81a3133c5ca27534d4de))
+* show dataset verdict probe ages ([55e2773](https://github.com/r3dz4r/datapulse-my/commit/55e2773d4fcacb52aeec7e3b698b97aa8d9d29cd))
+
+
+### Bug Fixes
+
+* wire register probe age selector ([ca40423](https://github.com/r3dz4r/datapulse-my/commit/ca4042354807b27a1b326c0f45cc5b4805669f11))
+
 ## [3.9.0](https://github.com/r3dz4r/datapulse-my/compare/v3.8.1...v3.9.0) (2026-09-15)
 
 
