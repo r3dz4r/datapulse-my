@@ -5,12 +5,14 @@ from __future__ import annotations
 import copy
 import json
 import shutil
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
-from scripts.gen_dataset_passports import PassportError, build_passport, generate
+from scripts.gen_dataset_passports import PassportError, _privacy_classifications, build_passport, generate
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -29,6 +31,10 @@ def _passport(dataset_id: str) -> dict:
     entry = next(row for row in manifest["datasets"] if row["id"] == dataset_id)
     health = next(row for row in snapshot["datasets"] if row["dataset_id"] == dataset_id)
     return build_passport(ROOT, entry, health, graph, attestations)
+
+
+def _privacy_config() -> dict[str, Any]:
+    return json.loads((ROOT / "config" / "privacy-classifications.json").read_text(encoding="utf-8"))
 
 
 def test_passport_projects_complete_metadata_and_existing_quality_profile_exactly() -> None:
@@ -74,6 +80,66 @@ def test_record_evidence_is_pilot_bounded_and_lineage_is_not_transformation_clai
     assert other["record_evidence"]["reason"] == "record_evidence_not_enabled_for_dataset"
     assert other["lineage"]["transformation_lineage"]["state"] == "not_evaluated"
     assert "not full transformation lineage" in other["lineage"]["catalogue_relationships"]["limitation"]
+
+
+def test_declared_dataset_carries_classified_sensitivity_from_config() -> None:
+    declared = _privacy_config()["classifications"]["fuelprice"]
+    assert _passport("fuelprice")["sensitivity_and_pii"] == {
+        "state": "classified",
+        "classification": declared["classification"],
+        "basis": declared["basis"],
+        "reviewed_at": declared["reviewed_at"],
+        "reviewer": declared["reviewer"],
+    }
+
+
+def test_undeclared_dataset_keeps_exact_not_evaluated_sensitivity() -> None:
+    assert _passport("exchangerates_daily_0900")["sensitivity_and_pii"] == {
+        "state": "not_evaluated",
+        "reason": "sensitivity_or_pii_classification_not_evaluated",
+    }
+
+
+def test_missing_privacy_config_fails_closed_to_not_evaluated(tmp_path: Path) -> None:
+    assert _privacy_classifications(tmp_path) == {}
+    manifest, snapshot, graph, attestations = _inputs()
+    entry = next(row for row in manifest["datasets"] if row["id"] == "fuelprice")
+    health = next(row for row in snapshot["datasets"] if row["dataset_id"] == "fuelprice")
+    passport = build_passport(tmp_path, entry, health, graph, attestations)
+    assert passport["sensitivity_and_pii"] == {
+        "state": "not_evaluated",
+        "reason": "sensitivity_or_pii_classification_not_evaluated",
+    }
+
+
+def test_classified_passport_validates_against_passport_schema() -> None:
+    passport = _passport("fuelprice")
+    schema = json.loads((ROOT / "passport.schema.json").read_text(encoding="utf-8"))
+    assert not list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(passport))
+
+
+def test_privacy_config_declares_exactly_the_approved_pilots_and_validates() -> None:
+    config = _privacy_config()
+    assert set(config["classifications"]) == {"fuelprice", "pharmaceutical_products", "mbpp_weather_stations", "exchangerates_daily_1700"}
+    schema = json.loads((ROOT / "config" / "privacy-classifications.schema.json").read_text(encoding="utf-8"))
+    assert not list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(config))
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda entry: entry.update(classification="contains_personal_data"),
+        lambda entry: entry.pop("basis"),
+        lambda entry: entry.update(basis=""),
+        lambda entry: entry.update(reviewed_at="2026/09/15"),
+    ],
+    ids=["unknown_classification_value", "missing_basis_member", "empty_basis", "malformed_reviewed_at"],
+)
+def test_privacy_config_schema_rejects_invalid_declarations(mutate: Callable[[dict[str, Any]], None]) -> None:
+    config = copy.deepcopy(_privacy_config())
+    mutate(config["classifications"]["fuelprice"])
+    schema = json.loads((ROOT / "config" / "privacy-classifications.schema.json").read_text(encoding="utf-8"))
+    assert list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(config))
 
 
 def test_passport_schema_rejects_unknown_fields() -> None:
