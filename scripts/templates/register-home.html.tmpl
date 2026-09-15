@@ -153,7 +153,7 @@
           .filter(row => row && typeof row.dataset_id === 'string' && typeof row.last_checked === 'string')
           .map(row => [row.dataset_id, row.last_checked]));
         rows.forEach(row => {
-          const probeAge = row.querySelector('[data-probe-age]');
+          const probeAge = row.querySelector('.register-probe-age');
           const checkedAt = healthByDatasetId.get(row.dataset.datasetId) || probeAge?.dataset.probeChecked;
           if (probeAge && checkedAt) renderProbeAge(probeAge, checkedAt);
         });

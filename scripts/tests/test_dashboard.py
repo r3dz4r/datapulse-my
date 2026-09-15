@@ -52,6 +52,44 @@ class CategoryFilterParser(HTMLParser):
             self.in_filter_nav = False
 
 
+class RegisterProbeParser(HTMLParser):
+    def __init__(self, selector: str) -> None:
+        super().__init__()
+        self.selector = selector
+        self.row_probe_matches: list[int] = []
+        self._active_rows: list[int] = []
+        self._open_tags: list[int | None] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        classes = attributes.get("class", "").split()
+        row_index: int | None = None
+        if "register-row" in classes:
+            row_index = len(self.row_probe_matches)
+            self.row_probe_matches.append(0)
+            self._active_rows.append(row_index)
+        self._open_tags.append(row_index)
+        if self._active_rows and self._matches_probe_selector(attributes):
+            self.row_probe_matches[self._active_rows[-1]] += 1
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+        self.handle_endtag(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        if not self._open_tags:
+            return
+        row_index = self._open_tags.pop()
+        if row_index is not None:
+            assert self._active_rows.pop() == row_index
+
+    def _matches_probe_selector(self, attributes: dict[str, str | None]) -> bool:
+        if self.selector.startswith("."):
+            return self.selector[1:] in attributes.get("class", "").split()
+        attribute = re.fullmatch(r"\[([\w-]+)\]", self.selector)
+        return attribute is not None and attribute.group(1) in attributes
+
+
 def generate_filters(manifest: Path, output: Path) -> dict:
     subprocess.run(
         [
@@ -200,6 +238,23 @@ def test_register_probe_age_runtime_contract_preserves_utc_fallback_and_maps_doc
         "29 days ago",
         None,
     ]
+
+
+def test_register_probe_age_client_selector_reaches_generated_probe_elements() -> None:
+    template = (ROOT / "scripts/templates/register-home.html.tmpl").read_text(encoding="utf-8")
+    selector_match = re.search(
+        r"const probeAge = row\.querySelector\((['\"])(?P<selector>.*?)\1\);",
+        template,
+    )
+    assert selector_match is not None, "client probe element selector is missing from the template"
+
+    parser = RegisterProbeParser(selector_match.group("selector"))
+    parser.feed((ROOT / "docs/index.html").read_text(encoding="utf-8"))
+
+    assert parser.row_probe_matches, "generated register has no rows to wire"
+    assert all(parser.row_probe_matches), (
+        "client probe selector does not reach the generator-emitted probe element in every register row"
+    )
 
 
 def test_register_embedded_payload_precedes_its_reader_and_keeps_shared_shell_contracts() -> None:
