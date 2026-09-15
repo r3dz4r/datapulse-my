@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.17.0](https://github.com/r3dz4r/datapulse-my/compare/v3.16.0...v3.17.0) (2026-09-15)
+
+
+### Features
+
+* **observation:** JSON normalization profile + tests pinning both profiles (Task 3.2 parts 2-3) ([de1d3bc](https://github.com/r3dz4r/datapulse-my/commit/de1d3bc7c811006de93bf13afefeae3291012a3a))
+* **observation:** register the JSON normalization profile (Task 3.2 part 2) ([3d301d2](https://github.com/r3dz4r/datapulse-my/commit/3d301d2c7c56ba93f1ef6b547e852571285c5527))
+
 ## [3.16.0](https://github.com/r3dz4r/datapulse-my/compare/v3.15.0...v3.16.0) (2026-09-15)
 
 
