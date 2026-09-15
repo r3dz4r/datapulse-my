@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataPulse MY observation archive policies",
+  "description": "Global limits and the per-dataset allow list for the historical-observation archive. A dataset with no entry is not permitted to archive; the config fails closed and never defaults to allow.",
+  "type": "object",
+  "required": [
+    "schema",
+    "limits",
+    "datasets"
+  ],
+  "properties": {
+    "schema": {"const": "datapulse/v1/observation-policies"},
+    "limits": {
+      "type": "object",
+      "required": [
+        "max_raw_bytes",
+        "max_normalized_bytes",
+        "retention_months",
+        "total_budget_bytes"
+      ],
+      "properties": {
+        "max_raw_bytes": {"type": "integer", "minimum": 1},
+        "max_normalized_bytes": {"type": "integer", "minimum": 1},
+        "retention_months": {"type": "integer", "minimum": 1},
+        "total_budget_bytes": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "datasets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "mode",
+          "max_raw_bytes",
+          "retention_months",
+          "capture_raw_bytes",
+          "raw_bytes_expire_days",
+          "basis",
+          "reviewed_at",
+          "reviewer"
+        ],
+        "properties": {
+          "mode": {"enum": ["full_vintage", "evidence_capture"]},
+          "max_raw_bytes": {"type": "integer", "minimum": 1},
+          "retention_months": {"type": "integer", "minimum": 1},
+          "capture_raw_bytes": {"type": "boolean"},
+          "raw_bytes_expire_days": {"type": ["integer", "null"], "minimum": 1},
+          "basis": {"type": "string", "minLength": 1},
+          "reviewed_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+          "reviewer": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "datapulse/v1/observation-policies",
+  "limits": {
+    "max_raw_bytes": 26214400,
+    "max_normalized_bytes": 26214400,
+    "retention_months": 24,
+    "total_budget_bytes": 10737418240
+  },
+  "datasets": {
+    "fuelprice": {
+      "mode": "full_vintage",
+      "max_raw_bytes": 2097152,
+      "retention_months": 24,
+      "capture_raw_bytes": true,
+      "raw_bytes_expire_days": null,
+      "basis": "Task 0.3 (approved 2026-09-15): weekly tabular CSV under the Open Government Licence (Malaysia); full vintage retention with 10x size headroom over the measured 207,030-byte response.",
+      "reviewed_at": "2026-09-15",
+      "reviewer": "operator"
+    },
+    "pharmaceutical_products": {
+      "mode": "full_vintage",
+      "max_raw_bytes": 26214400,
+      "retention_months": 24,
+      "capture_raw_bytes": true,
+      "raw_bytes_expire_days": null,
+      "basis": "Task 0.3 (approved 2026-09-15): monthly-scale CC BY 4.0 CSV; full vintage retention; classified no personal data 2026-09-15.",
+      "reviewed_at": "2026-09-15",
+      "reviewer": "operator"
+    },
+    "mbpp_weather_stations": {
+      "mode": "evidence_capture",
+      "max_raw_bytes": 1048576,
+      "retention_months": 24,
+      "capture_raw_bytes": true,
+      "raw_bytes_expire_days": 90,
+      "basis": "Task 0.3 (approved 2026-09-15): realtime ArcGIS JSON whose redistribution terms carry no licence URL; digest and shape evidence kept for 24 months, raw bytes expire at 90 days.",
+      "reviewed_at": "2026-09-15",
+      "reviewer": "operator"
+    },
+    "exchangerates_daily_1700": {
+      "mode": "evidence_capture",
+      "max_raw_bytes": 20971520,
+      "retention_months": 24,
+      "capture_raw_bytes": false,
+      "raw_bytes_expire_days": null,
+      "basis": "Task 0.3 (approved 2026-09-15): four intraday BNM publication slots; raw bytes are not captured (2.95 GB/year if they were), so only digests and shape evidence are retained.",
+      "reviewed_at": "2026-09-15",
+      "reviewer": "operator"
+    }
+  }
+}
