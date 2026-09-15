@@ -1,15 +1,15 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-15T11:31:29Z",
+  "checked_at": "2026-09-15T11:45:18Z",
   "_trust_summary": {
-    "checked_at": "2026-09-15T11:31:29Z",
+    "checked_at": "2026-09-15T11:45:18Z",
     "datasets_total": 418,
     "by_status": {
-      "fresh": 104,
+      "fresh": 103,
       "aging": 122,
       "stale": 167,
       "discontinued": 1,
-      "degraded": 1,
+      "degraded": 2,
       "browser_dependent": 5,
       "unreachable": 0,
       "unknown": 0,
@@ -695,7 +695,7 @@
         "days_since_modified": 0.0010069444444444444
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-15T11:43:01Z"
+    "pipeline_heartbeat_at": "2026-09-15T11:48:13Z"
   },
   "datasets": [
     {
@@ -3146,7 +3146,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_0900",
-      "last_checked": "2026-09-15T10:40:28Z",
+      "last_checked": "2026-09-15T11:45:18Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900",
       "status": "fresh",
@@ -290446,18 +290446,18 @@
     },
     {
       "dataset_id": "bnm_interbank_swap",
-      "last_checked": "2026-09-15T10:40:28Z",
+      "last_checked": "2026-09-15T11:45:18Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/interbank-swap",
-      "status": "fresh",
+      "status": "degraded",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.bnm.gov.my/public/interbank-swap",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 326,
+      "content_length": 283,
       "last_modified": null,
-      "content_freshness_date": "2026-09-14",
+      "content_freshness_date": "2026-09-15",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -290474,12 +290474,12 @@
       "record_count_estimated": false,
       "incomplete": false,
       "column_count": null,
-      "first_row_hash": "shape-v1:a7a431d3af5ba51096ebf8aa228d935688ad6b31bccc73439ea8388cd273de10",
+      "first_row_hash": "shape-v1:ea35b1db1cb571e55485d09225b024f2347202578c3b919d8fb3074a2c4c608f",
       "shape_basis": "json-object",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
-      "content_shape_changed": false,
+      "content_shape_changed": true,
       "locations": null,
       "date_range": null,
       "agency": null,
@@ -290493,7 +290493,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 2,
       "record_count_within_tolerance": true,
-      "staleness_days": 1,
+      "staleness_days": 0,
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -290506,7 +290506,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
