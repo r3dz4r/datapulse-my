@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.14.0](https://github.com/r3dz4r/datapulse-my/compare/v3.13.0...v3.14.0) (2026-09-15)
+
+
+### Features
+
+* **observation:** prove a retained observation survives archive and restore (Task 2.3) ([4556084](https://github.com/r3dz4r/datapulse-my/commit/45560841b6d0375ede6ea8ae7f46ea0825351efd))
+* **observation:** prove a retained observation survives archive and restore (Task 2.3) ([2b246f0](https://github.com/r3dz4r/datapulse-my/commit/2b246f094ad11d8920d7b166dd327c8454c08648))
+
 ## [3.13.0](https://github.com/r3dz4r/datapulse-my/compare/v3.12.0...v3.13.0) (2026-09-15)
 
 
