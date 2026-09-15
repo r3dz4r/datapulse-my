@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.19.0](https://github.com/r3dz4r/datapulse-my/compare/v3.18.0...v3.19.0) (2026-09-15)
+
+
+### Features
+
+* **observation:** prove predecessor links and enforce the four constraints (Task 4.1) ([f7915fa](https://github.com/r3dz4r/datapulse-my/commit/f7915fa28ba9b0c0bb6e8934b1afc0eef5297236))
+* **observation:** prove predecessor links, and enforce the four constraints (Task 4.1) ([f1b9dd3](https://github.com/r3dz4r/datapulse-my/commit/f1b9dd34ba709c2913db5e67ca50e3d6eb285f2d))
+
 ## [3.18.0](https://github.com/r3dz4r/datapulse-my/compare/v3.17.0...v3.18.0) (2026-09-15)
 
 
