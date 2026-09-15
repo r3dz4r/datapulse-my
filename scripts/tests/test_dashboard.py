@@ -52,6 +52,44 @@ class CategoryFilterParser(HTMLParser):
             self.in_filter_nav = False
 
 
+class RegisterProbeParser(HTMLParser):
+    def __init__(self, selector: str) -> None:
+        super().__init__()
+        self.selector = selector
+        self.row_probe_matches: list[int] = []
+        self._active_rows: list[int] = []
+        self._open_tags: list[int | None] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        classes = attributes.get("class", "").split()
+        row_index: int | None = None
+        if "register-row" in classes:
+            row_index = len(self.row_probe_matches)
+            self.row_probe_matches.append(0)
+            self._active_rows.append(row_index)
+        self._open_tags.append(row_index)
+        if self._active_rows and self._matches_probe_selector(attributes):
+            self.row_probe_matches[self._active_rows[-1]] += 1
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+        self.handle_endtag(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        if not self._open_tags:
+            return
+        row_index = self._open_tags.pop()
+        if row_index is not None:
+            assert self._active_rows.pop() == row_index
+
+    def _matches_probe_selector(self, attributes: dict[str, str | None]) -> bool:
+        if self.selector.startswith("."):
+            return self.selector[1:] in attributes.get("class", "").split()
+        attribute = re.fullmatch(r"\[([\w-]+)\]", self.selector)
+        return attribute is not None and attribute.group(1) in attributes
+
+
 def generate_filters(manifest: Path, output: Path) -> dict:
     subprocess.run(
         [
@@ -162,6 +200,61 @@ def test_register_search_and_filter_controls_preserve_the_server_rendered_fallba
     assert "'/health/latest.json'" in html
     assert "AbortController" in html
     assert "4000" in html
+
+
+def test_register_probe_age_runtime_contract_preserves_utc_fallback_and_maps_documented_buckets() -> None:
+    html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
+
+    assert 'data-probe-checked=' in html
+    assert "Verdict checked:" in html
+    match = re.search(r"const relativeProbeAge = .*?\n      };", html, re.DOTALL)
+    assert match is not None
+    helper = match.group(0).replace("const relativeProbeAge", "globalThis.relativeProbeAge", 1)
+    now = "Date.parse('2026-09-15T12:00:00Z')"
+    result = subprocess.run(
+        [
+            "node",
+            "-e",
+            f"{helper}\nconsole.log(JSON.stringify(["
+            f"relativeProbeAge('2026-09-15T11:58:01Z', {now}), "
+            f"relativeProbeAge('2026-09-15T11:58:00Z', {now}), "
+            f"relativeProbeAge('2026-09-15T11:00:01Z', {now}), "
+            f"relativeProbeAge('2026-09-13T12:00:01Z', {now}), "
+            f"relativeProbeAge('2026-09-13T12:00:00Z', {now}), "
+            f"relativeProbeAge('2026-08-16T12:00:01Z', {now}), "
+            f"relativeProbeAge('2026-08-16T12:00:00Z', {now})]));",
+        ],
+        check=True,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(result.stdout) == [
+        "just now",
+        "2 minutes ago",
+        "59 minutes ago",
+        "47 hours ago",
+        "2 days ago",
+        "29 days ago",
+        None,
+    ]
+
+
+def test_register_probe_age_client_selector_reaches_generated_probe_elements() -> None:
+    template = (ROOT / "scripts/templates/register-home.html.tmpl").read_text(encoding="utf-8")
+    selector_match = re.search(
+        r"const probeAge = row\.querySelector\((['\"])(?P<selector>.*?)\1\);",
+        template,
+    )
+    assert selector_match is not None, "client probe element selector is missing from the template"
+
+    parser = RegisterProbeParser(selector_match.group("selector"))
+    parser.feed((ROOT / "docs/index.html").read_text(encoding="utf-8"))
+
+    assert parser.row_probe_matches, "generated register has no rows to wire"
+    assert all(parser.row_probe_matches), (
+        "client probe selector does not reach the generator-emitted probe element in every register row"
+    )
 
 
 def test_register_embedded_payload_precedes_its_reader_and_keeps_shared_shell_contracts() -> None:

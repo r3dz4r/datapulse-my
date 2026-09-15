@@ -77,6 +77,30 @@
       const empty = document.querySelector('[data-register-empty]');
       const reset = document.querySelector('[data-register-clear]');
       if (!search || !count || !empty) return;
+      const utcProbeTimestamp = checkedAt => {
+        const date = new Date(checkedAt);
+        if (Number.isNaN(date.getTime())) return null;
+        const pad = value => String(value).padStart(2, '0');
+        return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;
+      };
+      const relativeProbeAge = (checkedAt, now = Date.now()) => {
+        const checked = Date.parse(checkedAt);
+        if (Number.isNaN(checked)) return null;
+        const ageMs = Math.max(0, now - checked);
+        if (ageMs < 2 * 60 * 1000) return 'just now';
+        if (ageMs < 60 * 60 * 1000) return `${Math.floor(ageMs / (60 * 1000))} minutes ago`;
+        if (ageMs < 48 * 60 * 60 * 1000) return `${Math.floor(ageMs / (60 * 60 * 1000))} hours ago`;
+        if (ageMs < 30 * 24 * 60 * 60 * 1000) return `${Math.floor(ageMs / (24 * 60 * 60 * 1000))} days ago`;
+        return null;
+      };
+      const renderProbeAge = (element, checkedAt) => {
+        const utcTimestamp = utcProbeTimestamp(checkedAt);
+        if (!utcTimestamp) return;
+        element.dataset.probeChecked = checkedAt;
+        element.textContent = `Verdict checked: ${utcTimestamp}`;
+        const relative = relativeProbeAge(checkedAt);
+        if (relative) element.textContent += ` (${relative})`;
+      };
       const fetchHealth = async () => {
         for (const url of ['/health/index.json', '/health/latest.json']) {
           const controller = new AbortController();
@@ -123,7 +147,16 @@
       search.title = dataset.refresh_frequency ? `On its ${dataset.refresh_frequency} cadence` : 'Cadence not observed';
       apply();
       fetchHealth().then(payload => {
-        if (payload) window.__DATAPULSE_DATA__.health = payload;
+        if (!payload) return;
+        window.__DATAPULSE_DATA__.health = payload;
+        const healthByDatasetId = new Map(payload.datasets
+          .filter(row => row && typeof row.dataset_id === 'string' && typeof row.last_checked === 'string')
+          .map(row => [row.dataset_id, row.last_checked]));
+        rows.forEach(row => {
+          const probeAge = row.querySelector('.register-probe-age');
+          const checkedAt = healthByDatasetId.get(row.dataset.datasetId) || probeAge?.dataset.probeChecked;
+          if (probeAge && checkedAt) renderProbeAge(probeAge, checkedAt);
+        });
       });
     })();
   </script>

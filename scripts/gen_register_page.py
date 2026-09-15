@@ -55,6 +55,15 @@ def _parse_timestamp(value: object) -> datetime | None:
     return parsed
 
 
+def _probe_verdict_timestamp(health_row: dict[str, Any] | None) -> tuple[str | None, str]:
+    """Return the health-row probe timestamp and its static UTC verdict label."""
+    raw = (health_row or {}).get("last_checked")
+    parsed = _parse_timestamp(raw)
+    if parsed is None:
+        return None, "Verdict checked: unknown"
+    return str(raw).strip(), f"Verdict checked: {parsed.astimezone(timezone.utc):%Y-%m-%d %H:%M UTC}"
+
+
 def _recency_timestamp(health_row: dict[str, Any] | None) -> float | None:
     """Return the preferred observed recency signal, or None when it is unavailable."""
     value = (health_row or {}).get("content_freshness_date") or (health_row or {}).get("last_checked")
@@ -191,6 +200,8 @@ def _row_html(entry: dict[str, Any], health_row: dict[str, Any] | None, config: 
     recency = _display((health_row or {}).get("content_freshness_date") or (health_row or {}).get("last_checked"))
     recency_bucket = _recency_bucket(health_row, now)
     observed_time = _display((health_row or {}).get("last_checked"))
+    probe_checked, probe_label = _probe_verdict_timestamp(health_row)
+    probe_attribute = f' data-probe-checked="{html.escape(probe_checked, quote=True)}"' if probe_checked else ""
     record_count = (health_row or {}).get("record_count")
     record_signal = "not observed" if record_count is None else f"{record_count} records"
     evidence_href = f"{config['routes']['evidence_prefix']}{dataset_id}.md"
@@ -198,7 +209,7 @@ def _row_html(entry: dict[str, Any], health_row: dict[str, Any] | None, config: 
     official_action = f'<a data-action="official-source" href="{html.escape(official_url, quote=True)}">{html.escape(config["actions"]["primary"]["label"])}</a>' if official_url else '<span data-action="official-source">Official source: not observed</span>'
     secondary = config["actions"]["secondary"]
     return f'''      <article class="register-row" data-dataset-id="{html.escape(dataset_id, quote=True)}" data-status="{html.escape(status or "not-observed", quote=True)}" data-posture="{html.escape(posture, quote=True)}" data-publisher="{html.escape(publisher, quote=True)}" data-category="{html.escape(category, quote=True)}" data-access-method="{html.escape(access_method, quote=True)}" data-recency="{html.escape(recency_bucket, quote=True)}">
-        <header class="register-row-header"><h3>{html.escape(_display(entry.get("name")))}</h3><p class="register-id"><code>{html.escape(dataset_id)}</code></p><p class="register-decision"><span class="register-status">Status: {html.escape(status_label)}</span><span class="register-posture">Decision: {html.escape(posture)}</span></p></header>
+        <header class="register-row-header"><h3>{html.escape(_display(entry.get("name")))}</h3><p class="register-id"><code>{html.escape(dataset_id)}</code></p><p class="register-decision"><span class="register-status">Status: {html.escape(status_label)}</span><span class="register-probe-age"{probe_attribute}>{html.escape(probe_label)}</span><span class="register-posture">Decision: {html.escape(posture)}</span></p></header>
         <dl class="compact-facts"><div><dt>Publisher</dt><dd>{html.escape(publisher)}</dd></div><div><dt>Category</dt><dd>{html.escape(category)}</dd></div><div><dt>Access method</dt><dd>{html.escape(access_method)}</dd></div><div><dt>Recency</dt><dd>{html.escape(recency)}</dd></div></dl>
         <footer class="register-row-footer"><p class="register-actions">{official_action} <a data-action="evidence" href="{html.escape(evidence_href, quote=True)}">{html.escape(secondary[0]["label"])}</a> <a data-action="machine-access" href="{html.escape(mcp_endpoint, quote=True)}">{html.escape(secondary[1]["label"])}</a></p>
         <details class="register-evidence"><summary>Observed evidence</summary><dl class="evidence-facts"><div><dt>Observed time</dt><dd>{html.escape(observed_time)}</dd></div><div><dt>Content date</dt><dd>{html.escape(_display((health_row or {}).get("content_freshness_date")))}</dd></div><div><dt>Record signal</dt><dd>{html.escape(record_signal)}</dd></div><div><dt>Evidence reference</dt><dd><a href="{html.escape(evidence_href, quote=True)}">{html.escape(evidence_href)}</a></dd></div><div><dt>Limitations</dt><dd>Observation is read-only; the official publisher remains the source of record.</dd></div></dl></details></footer>
