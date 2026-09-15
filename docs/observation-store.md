@@ -28,7 +28,7 @@ Directories are mode **750**, files mode **640**, owned by the pipeline user. Th
 └── manifests/<YYYY-MM-DD>.json                 per-cycle manifest
 ```
 
-One line each: **blobs** keeps the exact raw bytes a source returned; **normalized** keeps canonical-JSON projections derived from them; **envelopes** is the authoritative record of every observation, filed by dataset and the UTC year/month of `observed_at`; **indexes** answers "which observations exist for a dataset, newest first" without walking the envelope tree; **policies** mirrors the archive policy each dataset runs under; **manifests** records what one capture cycle filed, one file per day.
+One line each: **blobs** keeps the exact raw bytes a source returned; **normalized** keeps canonical-JSON projections derived from them; **envelopes** is this store's own record of every observation, filed by dataset and the UTC year/month of `observed_at` — it makes no claim about the upstream source's standing; **indexes** answers "which observations exist for a dataset, newest first" without walking the envelope tree; **policies** mirrors the archive policy each dataset runs under; **manifests** records what one capture cycle filed, one file per day.
 
 ## The digest convention
 
