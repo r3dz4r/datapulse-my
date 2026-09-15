@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.13.0](https://github.com/r3dz4r/datapulse-my/compare/v3.12.0...v3.13.0) (2026-09-15)
+
+
+### Features
+
+* **observation:** add the store gates and the dry-run cleanup report (Task 2.2a) ([df10718](https://github.com/r3dz4r/datapulse-my/commit/df10718778f468e6ef582c1aa18ead5553d93cf7))
+* **observation:** store gates, dry-run cleanup report, and integrity verification (Task 2.2) ([c32b243](https://github.com/r3dz4r/datapulse-my/commit/c32b2434900c029bd0ce2b6cdcff0ee70f65142c))
+* **observation:** verify stored bytes against the digest that names them (Task 2.2b) ([d0ffc09](https://github.com/r3dz4r/datapulse-my/commit/d0ffc0952a180dffc5be2d6a696d59e4a583e5b9))
+
 ## [3.12.0](https://github.com/r3dz4r/datapulse-my/compare/v3.11.0...v3.12.0) (2026-09-15)
 
 
