@@ -164,6 +164,44 @@ def test_register_search_and_filter_controls_preserve_the_server_rendered_fallba
     assert "4000" in html
 
 
+def test_register_probe_age_runtime_contract_preserves_utc_fallback_and_maps_documented_buckets() -> None:
+    html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
+
+    assert 'data-probe-checked=' in html
+    assert "Verdict checked:" in html
+    match = re.search(r"const relativeProbeAge = .*?\n      };", html, re.DOTALL)
+    assert match is not None
+    helper = match.group(0).replace("const relativeProbeAge", "globalThis.relativeProbeAge", 1)
+    now = "Date.parse('2026-09-15T12:00:00Z')"
+    result = subprocess.run(
+        [
+            "node",
+            "-e",
+            f"{helper}\nconsole.log(JSON.stringify(["
+            f"relativeProbeAge('2026-09-15T11:58:01Z', {now}), "
+            f"relativeProbeAge('2026-09-15T11:58:00Z', {now}), "
+            f"relativeProbeAge('2026-09-15T11:00:01Z', {now}), "
+            f"relativeProbeAge('2026-09-13T12:00:01Z', {now}), "
+            f"relativeProbeAge('2026-09-13T12:00:00Z', {now}), "
+            f"relativeProbeAge('2026-08-16T12:00:01Z', {now}), "
+            f"relativeProbeAge('2026-08-16T12:00:00Z', {now})]));",
+        ],
+        check=True,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(result.stdout) == [
+        "just now",
+        "2 minutes ago",
+        "59 minutes ago",
+        "47 hours ago",
+        "2 days ago",
+        "29 days ago",
+        None,
+    ]
+
+
 def test_register_embedded_payload_precedes_its_reader_and_keeps_shared_shell_contracts() -> None:
     html = (ROOT / "docs/index.html").read_text(encoding="utf-8")
     embedded = html.index('<script id="embedded-data">')

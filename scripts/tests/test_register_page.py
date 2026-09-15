@@ -104,6 +104,28 @@ def test_renders_all_fixture_records_and_not_observed_missing_health(tmp_path: P
     assert rendered.count("not observed") >= 3
 
 
+def test_register_row_labels_its_verdict_with_the_dataset_probe_timestamp(tmp_path: Path) -> None:
+    root = _fixture_root(
+        tmp_path,
+        [_dataset()],
+        [_health(last_checked="2026-08-31T04:05:06Z")],
+    )
+
+    rendered = gen_register_page.render(root)
+
+    assert 'class="register-probe-age" data-probe-checked="2026-08-31T04:05:06Z"' in rendered
+    assert "Verdict checked: 2026-08-31 04:05 UTC" in rendered
+
+
+def test_register_row_explicitly_marks_an_unknown_probe_timestamp(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path, [_dataset()], [_health(last_checked=None)])
+
+    rendered = gen_register_page.render(root)
+
+    assert 'class="register-probe-age"' in rendered
+    assert "Verdict checked: unknown" in rendered
+
+
 def test_posture_first_ordering_uses_recency_then_dataset_id(tmp_path: Path) -> None:
     root = _fixture_root(
         tmp_path,
