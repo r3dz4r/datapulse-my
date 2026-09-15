@@ -2,8 +2,9 @@
 """Publish the dashboard health projection to Cloudflare KV.
 
 Exit codes: 0 means published (and is also used for dry runs and successful
-verification); 2 means a normal publication was attempted but failed; 1 is
-reserved for usage, setup, or internal errors.
+verification); 1 is reserved for usage, setup, or internal errors; 2 means a
+normal publication was attempted but failed; 3 means publication was skipped
+because the cadence window was active.
 """
 
 from __future__ import annotations
@@ -58,6 +59,7 @@ PUBLISH_STATE_ENV = "DATAPULSE_KV_PUBLICATION_STATE"
 DEFAULT_PUBLISH_INTERVAL_SECONDS = 30 * 60.0
 SECONDS_PER_DAY = 24 * 60 * 60
 MAX_PUBLISH_ATTEMPTS = 2
+EXIT_SKIPPED = 3
 DATASET_KEYS = (
     "dataset_id",
     "status",
@@ -444,6 +446,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             if skipped:
                 print("health index publish skipped: cadence window active", file=sys.stderr)
+                return EXIT_SKIPPED
             else:
                 print(f"health index publish succeeded: {written} written, {unchanged} unchanged", file=sys.stderr)
         return 0

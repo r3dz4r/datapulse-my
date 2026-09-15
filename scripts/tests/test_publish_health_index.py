@@ -195,21 +195,40 @@ def test_main_cadence_skip_is_successful_and_issues_no_publication(monkeypatch: 
     module = _module()
     health = tmp_path / "latest.json"
     _health(health)
-    calls = 0
+    publish_calls = 0
+    transport_calls = 0
     monkeypatch.setattr(module, "read_token", lambda: "secret-token")
     monkeypatch.setenv(module.PUBLISH_STATE_ENV, str(tmp_path / "publication-state.json"))
     monkeypatch.setattr(module.time, "time", lambda: 1_000.0)
 
     def publish_once(*_args: object) -> tuple[int, int]:
-        nonlocal calls
-        calls += 1
+        nonlocal publish_calls
+        publish_calls += 1
         return 1, 6
 
     monkeypatch.setattr(module, "publish_unchanged_aware_with_retry", publish_once)
+    def fail_transport(*_args: object, **_kwargs: object) -> None:
+        nonlocal transport_calls
+        transport_calls += 1
+        raise AssertionError("cadence skip must not issue an HTTP request")
+
+    monkeypatch.setattr(module, "request_bytes", fail_transport)
     assert module.main(["--health", str(health)]) == 0
-    assert module.main(["--health", str(health)]) == 0
-    assert calls == 1
+    assert module.main(["--health", str(health)]) == module.EXIT_SKIPPED
+    assert publish_calls == 1
+    assert transport_calls == 0
     assert "health index publish skipped: cadence window active" in capsys.readouterr().err
+
+
+def test_main_returns_one_when_credential_is_unavailable(monkeypatch: object, tmp_path: Path) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+    monkeypatch.setattr(module, "read_token", lambda: (_ for _ in ()).throw(
+        module.PublishError("KV credential unavailable: token is unset")
+    ))
+
+    assert module.main(["--health", str(health)]) == 1
 
 
 def test_dry_run_makes_no_network_call(tmp_path: Path, monkeypatch: object) -> None:
