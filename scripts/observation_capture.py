@@ -82,7 +82,7 @@ import shutil
 import sys
 import tempfile
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Final, Mapping, Sequence
 
@@ -1158,11 +1158,24 @@ def _selftest(profile: str | None = None) -> int:
             truncated=False,
         )
 
+        # The backdated-ordering case is deliberately date-relative because
+        # the bug it guards against is date-relative: the correct predecessor
+        # bound is the capture's own observed_at while the historic bug
+        # bounded resolution by the wall clock.  The case discriminates only
+        # when the existing observation sits strictly between the two bounds
+        # (backdated capture instant < existing observation < wall clock), an
+        # ordering fixed constants cannot keep as the wall clock moves.  Do
+        # not tidy these instants back into fixed dates — that silently
+        # disarms the case.
+        wall = datetime.now(timezone.utc)
+        existing_observed_at = wall - timedelta(hours=1)
+        backdated_observed_at = wall - timedelta(hours=2)
+
         captured = capture_observation(
             "fuelprice",
             granted,
             root=scratch,
-            now=datetime(2026, 9, 16, 2, 5, 0, tzinfo=timezone.utc),
+            now=existing_observed_at,
             profile=profile,
             store=True,
         )
@@ -1173,15 +1186,15 @@ def _selftest(profile: str | None = None) -> int:
             now=datetime(2026, 9, 16, 2, 6, 0, tzinfo=timezone.utc),
             store=True,
         )
-        # Backdated-ordering case: the store already holds a fuelprice
-        # observation at 2026-09-16T02:05:00Z; this capture is filed five
-        # hours' worth of history earlier, so nothing in the store precedes
-        # its own instant and the only truthful link is no link.
+        # Backdated-ordering case: the store already holds the fuelprice
+        # observation filed just above (one hour before the wall clock); this
+        # capture is filed one further hour back, so nothing in the store
+        # precedes its own instant and the only truthful link is no link.
         backdated = capture_observation(
             "fuelprice",
             granted,
             root=scratch,
-            now=datetime(2026, 9, 15, 21, 0, 0, tzinfo=timezone.utc),
+            now=backdated_observed_at,
             store=True,
         )
 
