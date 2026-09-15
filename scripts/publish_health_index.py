@@ -2,19 +2,25 @@
 """Publish the dashboard health projection to Cloudflare KV.
 
 Exit codes: 0 means published (and is also used for dry runs and successful
-verification); 2 means a normal publication was attempted but failed; 1 is
-reserved for usage, setup, or internal errors.
+verification); 1 is reserved for usage, setup, or internal errors; 2 means a
+normal publication was attempted but failed; 3 means publication was skipped
+because the cadence window was active.
 """
 
 from __future__ import annotations
 
 import argparse
+import fcntl
 import http.client
 import json
+import math
 import os
 import signal
 import sys
+import tempfile
 import time
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urlsplit
@@ -48,6 +54,12 @@ def _timeout_from_env(name: str, default: float) -> float:
 CONNECT_TIMEOUT_SECONDS = _timeout_from_env("DATAPULSE_KV_CONNECT_TIMEOUT", 10.0)
 SOCKET_TIMEOUT_SECONDS = _timeout_from_env("DATAPULSE_KV_SOCKET_TIMEOUT", 45.0)
 TOTAL_TIMEOUT_SECONDS = _timeout_from_env("DATAPULSE_KV_TOTAL_TIMEOUT", 90.0)
+PUBLISH_INTERVAL_ENV = "DATAPULSE_KV_PUBLISH_INTERVAL_SECONDS"
+PUBLISH_STATE_ENV = "DATAPULSE_KV_PUBLICATION_STATE"
+DEFAULT_PUBLISH_INTERVAL_SECONDS = 30 * 60.0
+SECONDS_PER_DAY = 24 * 60 * 60
+MAX_PUBLISH_ATTEMPTS = 2
+EXIT_SKIPPED = 3
 DATASET_KEYS = (
     "dataset_id",
     "status",
@@ -69,6 +81,104 @@ class PublishError(RuntimeError):
 
 class RequestDeadlineExceeded(TimeoutError):
     """Raised when an HTTP request exceeds its end-to-end deadline."""
+
+
+def publication_interval_seconds() -> float:
+    """Return the configured positive publication cadence in seconds."""
+    raw = os.environ.get(PUBLISH_INTERVAL_ENV)
+    if raw is None:
+        return DEFAULT_PUBLISH_INTERVAL_SECONDS
+    try:
+        interval = float(raw)
+    except ValueError as exc:
+        raise PublishError(f"{PUBLISH_INTERVAL_ENV} must be a positive number") from exc
+    if not math.isfinite(interval) or interval <= 0:
+        raise PublishError(f"{PUBLISH_INTERVAL_ENV} must be a positive number")
+    return interval
+
+
+def publication_state_path() -> Path:
+    """Return the local, user-writable cadence state path."""
+    configured = os.environ.get(PUBLISH_STATE_ENV)
+    if configured:
+        return Path(configured)
+    state_home = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
+    return state_home / "datapulse-my" / "publish_health_index.json"
+
+
+def _read_last_attempted_at(state_path: Path) -> float | None:
+    """Read a valid prior reservation; a missing or corrupt state is unreserved."""
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    value = state.get("last_attempted_at") if isinstance(state, dict) else None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    value = float(value)
+    return value if math.isfinite(value) and value >= 0 else None
+
+
+def _write_last_attempted_at(state_path: Path, now: float) -> None:
+    """Durably replace the cadence state before a KV publication is attempted."""
+    temporary: Path | None = None
+    try:
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = json.dumps({"last_attempted_at": now}, separators=(",", ":")).encode("utf-8")
+        with tempfile.NamedTemporaryFile(dir=state_path.parent, prefix=f".{state_path.name}.", delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, state_path)
+        directory_fd = os.open(state_path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+    except OSError as exc:
+        if temporary is not None:
+            with suppress(OSError):
+                temporary.unlink(missing_ok=True)
+        raise PublishError(f"unable to persist KV publication state: {exc}") from exc
+
+
+@contextmanager
+def _publication_lock(state_path: Path) -> Iterator[None]:
+    """Serialize local publishers so a cadence reservation cannot race."""
+    try:
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        with (state_path.parent / f".{state_path.name}.lock").open("a+") as lock_file:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            yield
+    except OSError as exc:
+        raise PublishError(f"unable to lock KV publication state: {exc}") from exc
+
+
+def publish_with_cadence(
+    state_path: Path,
+    now: float,
+    interval: float,
+    publish_operation: Callable[[], tuple[int, int]],
+) -> tuple[bool, int, int]:
+    """Reserve an eligible window then publish, returning ``(skipped, written, unchanged)``."""
+    if not math.isfinite(now) or now < 0 or not math.isfinite(interval) or interval <= 0:
+        raise PublishError("publication cadence requires positive finite timestamps and interval")
+    with _publication_lock(state_path):
+        last_attempted_at = _read_last_attempted_at(state_path)
+        if last_attempted_at is not None and now - last_attempted_at < interval:
+            return True, 0, 0
+        # Reserve before I/O so a crash after a PUT cannot create an unbounded retry loop.
+        _write_last_attempted_at(state_path, now)
+        written, unchanged = publish_operation()
+    return False, written, unchanged
+
+
+def max_daily_kv_writes(interval: float = DEFAULT_PUBLISH_INTERVAL_SECONDS) -> int:
+    """Return the conservative maximum PUT count for one day at this cadence."""
+    if not math.isfinite(interval) or interval <= 0:
+        raise PublishError("publication interval must be a positive number")
+    return math.ceil(SECONDS_PER_DAY / interval) * (len(HEALTH_ARTIFACTS) + 1) * MAX_PUBLISH_ATTEMPTS
 
 
 def build_projection(health_path: Path) -> bytes:
@@ -243,13 +353,18 @@ def publish_unchanged_aware_with_retry(
 ) -> tuple[int, int]:
     """Publish once, retrying a transport failure only inside the total budget."""
     started = time.monotonic()
-    try:
-        return publish_unchanged_aware(api_base, token, payloads)
-    except Exception as exc:
-        elapsed = time.monotonic() - started
-        if not _is_retryable_error(exc) or elapsed >= TOTAL_TIMEOUT_SECONDS / 2:
-            raise
-    return publish_unchanged_aware(api_base, token, payloads)
+    for attempt in range(MAX_PUBLISH_ATTEMPTS):
+        try:
+            return publish_unchanged_aware(api_base, token, payloads)
+        except Exception as exc:
+            elapsed = time.monotonic() - started
+            if (
+                attempt + 1 >= MAX_PUBLISH_ATTEMPTS
+                or not _is_retryable_error(exc)
+                or elapsed >= TOTAL_TIMEOUT_SECONDS / 2
+            ):
+                raise
+    raise AssertionError("unreachable retry loop")
 
 
 def _failure_line(prefix: str, exc: BaseException, token: str | None = None) -> str:
@@ -323,8 +438,17 @@ def main(argv: list[str] | None = None) -> int:
                 verify(args.api_base, token, payload, expected if key == KEY else None, verify_key)
             print(f"health index verify succeeded: {len(payloads)} keys", file=sys.stderr)
         else:
-            written, unchanged = publish_unchanged_aware_with_retry(args.api_base, token, payloads)
-            print(f"health index publish succeeded: {written} written, {unchanged} unchanged", file=sys.stderr)
+            skipped, written, unchanged = publish_with_cadence(
+                publication_state_path(),
+                time.time(),
+                publication_interval_seconds(),
+                lambda: publish_unchanged_aware_with_retry(args.api_base, token, payloads),
+            )
+            if skipped:
+                print("health index publish skipped: cadence window active", file=sys.stderr)
+                return EXIT_SKIPPED
+            else:
+                print(f"health index publish succeeded: {written} written, {unchanged} unchanged", file=sys.stderr)
         return 0
     except (PublishError, TimeoutError, OSError, http.client.HTTPException) as exc:
         prefix = "health index verify failed" if args.verify else "health index publish failed"
