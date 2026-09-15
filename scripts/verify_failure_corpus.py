@@ -70,6 +70,11 @@ def load_history(history_path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def _known_dataset(dataset_id: str, history: list[dict[str, Any]]) -> bool:
+    """Return whether the estate's probed history knows this dataset at all."""
+    return any(row.get("dataset_id") == dataset_id for row in history)
+
+
 def _signal_matches(failure_type: str, dataset_id: str, history: list[dict[str, Any]]) -> bool:
     rows = [row for row in history if row.get("dataset_id") == dataset_id]
     if failure_type == "http_200_stale_content":
@@ -169,9 +174,15 @@ def verify_records(records: list[dict[str, Any]], history: list[dict[str, Any]])
                 )
             )
         )
-        if isinstance(record["affected_datasets"], list) and not historical_signal:
+        if isinstance(record["affected_datasets"], list):
             for dataset_id in record["affected_datasets"]:
-                if not isinstance(dataset_id, str) or not _signal_matches(record["failure_type"], dataset_id, history):
+                # Age explains why a signal is missing from the history window; it cannot
+                # explain why a dataset id appears nowhere in the estate at all.
+                matched = isinstance(dataset_id, str) and (
+                    _signal_matches(record["failure_type"], dataset_id, history)
+                    or (historical_signal and _known_dataset(dataset_id, history))
+                )
+                if not matched:
                     errors.append(f"{path}: {dataset_id!r} has no matching live-history signal for {record['failure_type']}")
         if record["family"] == "cross-family" and record["failure_type"] == "http_200_stale_content":
             signals = evidence.get("live_signals", {}) if isinstance(evidence, dict) else {}
