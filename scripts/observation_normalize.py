@@ -46,6 +46,32 @@ always produces a byte-identical ``NormalizationResult``.
 * Output projection (exactly these members):
   ``{"format", "record_count", "columns", "dropped_fields", "deduped_rows",
   "record_ids"}``.
+
+``mbpp_json_v1`` rules (pinned; changing any of them is a new version)
+---------------------------------------------------------------------
+* Input: ArcGIS-style JSON ``{"features": [{"attributes": {...}}, ...]}`` as
+  served by MBPP's FeatureServer endpoints.  Only each feature's
+  ``attributes`` object is projected; other feature members (e.g.
+  ``geometry``) are outside this profile's scope.  A payload that is not
+  valid UTF-8, is not such a document (not an object, no ``features`` list,
+  or a feature without an ``attributes`` object) fails closed with
+  ``NormalizationParseError`` naming what was wrong — never coerced into a
+  shape the source did not have.
+* Columns: every key appearing under any record's ``attributes`` is a
+  candidate column, ordered by first appearance across the records.  A
+  *sparse* key — present in some records and absent from others — is dropped
+  and reported in ``dropped_fields`` as ``not_extractable``: JSON has no
+  header row, so a silently omitted or null-filled sparse key would make the
+  projection look complete when it is not.  Sparse keys are never filled
+  with a fabricated value.
+* Nulls: an explicit JSON ``null`` stays ``null``.  JSON-native types are
+  preserved exactly as parsed; nothing is inferred, coerced, or fabricated.
+* Rows: stable-sorted by the first column that has at least one non-null
+  value and whose non-null values are all strings (ties keep arrival order);
+  if no column qualifies, records keep arrival order.  Deterministic either
+  way.
+* Dedup, identity, and the output projection shape are identical to
+  ``fuelprice_csv_v1`` (with ``format`` = ``"json-array-of-objects"``).
 """
 
 from __future__ import annotations
@@ -54,6 +80,7 @@ import argparse
 import csv
 import hashlib
 import io
+import json
 import logging
 import math
 import re
@@ -151,6 +178,8 @@ class NormalizationProfile:
         """Apply this profile to ``payload`` and return the pinned result."""
         if self.format == "csv":
             return _normalize_csv(self, payload)
+        if self.format == "json-array-of-objects":
+            return _normalize_json_features(self, payload)
         raise NormalizationProfileError(
             f"profile {self.name}/{self.version} declares unsupported format "
             f"{self.format!r}; no normalization was attempted"
@@ -447,7 +476,157 @@ def _normalize_csv(profile: NormalizationProfile, payload: bytes) -> Normalizati
 
 
 # ---------------------------------------------------------------------------
-# Built-in profiles (registered as data; part 2 adds the JSON profile)
+# ArcGIS-JSON normalization (shared engine for json-array-of-objects profiles)
+# ---------------------------------------------------------------------------
+
+
+def _normalize_json_features(profile: NormalizationProfile, payload: bytes) -> NormalizationResult:
+    """Apply the pinned ArcGIS-JSON rules documented at module scope."""
+    try:
+        text = bytes(payload).decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise NormalizationParseError(
+            f"byte offset {error.start}: payload is not valid UTF-8 JSON"
+        ) from error
+
+    try:
+        document = json.loads(text)
+    except json.JSONDecodeError as error:
+        raise NormalizationParseError(
+            f"offset {error.pos}: JSON parse failed: {error.msg}"
+        ) from error
+
+    if not isinstance(document, dict):
+        raise NormalizationParseError(
+            "payload is not a JSON object; expected an ArcGIS-style document "
+            'like {"features": [{"attributes": {...}}]}'
+        )
+    if "features" not in document:
+        raise NormalizationParseError(
+            "payload has no 'features' member; an ArcGIS-style document carries "
+            'its records as {"features": [...]}'
+        )
+    features = document["features"]
+    if not isinstance(features, list):
+        raise NormalizationParseError(
+            f"'features' must be a list, got {type(features).__name__}"
+        )
+    if not features:
+        raise NormalizationParseError(
+            "'features' is empty; there are no records to project"
+        )
+
+    attribute_maps: list[dict[str, Any]] = []
+    for index, feature in enumerate(features):
+        if not isinstance(feature, dict):
+            raise NormalizationParseError(
+                f"feature {index}: expected an object with an 'attributes' "
+                f"member, got {type(feature).__name__}"
+            )
+        if "attributes" not in feature:
+            raise NormalizationParseError(
+                f"feature {index}: no 'attributes' object; a feature without "
+                "attributes cannot be projected without inventing its shape"
+            )
+        attributes = feature["attributes"]
+        if not isinstance(attributes, dict):
+            raise NormalizationParseError(
+                f"feature {index}: 'attributes' must be an object, got "
+                f"{type(attributes).__name__}"
+            )
+        attribute_maps.append(attributes)
+
+    candidate_columns: list[str] = []
+    seen_keys: set[str] = set()
+    for attributes in attribute_maps:
+        for key in attributes:
+            if key not in seen_keys:
+                seen_keys.add(key)
+                candidate_columns.append(key)
+
+    dropped = _DroppedFields()
+    columns: list[str] = []
+    for column in candidate_columns:
+        if all(column in attributes for attributes in attribute_maps):
+            columns.append(column)
+        else:
+            dropped.add(column, "not_extractable")
+    if not columns:
+        raise NormalizationParseError(
+            "every attribute key is sparse (absent from at least one record); "
+            "no column is present in all records, so nothing can be projected "
+            "without fabricating values"
+        )
+
+    typed_rows: list[dict[str, Any]] = [
+        {column: attributes[column] for column in columns}
+        for attributes in attribute_maps
+    ]
+
+    sort_column: str | None = None
+    for column in columns:
+        values = [row[column] for row in typed_rows if row[column] is not None]
+        if values and all(isinstance(value, str) for value in values):
+            sort_column = column
+            break
+
+    if sort_column is not None:
+        pinned_column = sort_column
+
+        def _sort_key(item: tuple[dict[str, Any], int]) -> tuple[tuple[int, Any], int]:
+            value = item[0].get(pinned_column)
+            if value is None:
+                rank: tuple[int, Any] = (0, 0)
+            elif isinstance(value, str):
+                rank = (2, value)
+            else:
+                rank = (1, value)
+            return (rank, item[1])
+
+        typed_rows = [
+            row
+            for row, _order in sorted(
+                zip(typed_rows, range(len(typed_rows))), key=_sort_key
+            )
+        ]
+
+    final_rows: list[dict[str, Any]] = []
+    seen_rows: set[bytes] = set()
+    deduped_rows = 0
+    for row in typed_rows:
+        row_bytes = canonical_json(row)
+        if profile.dedup and row_bytes in seen_rows:
+            deduped_rows += 1
+            continue
+        seen_rows.add(row_bytes)
+        final_rows.append(row)
+
+    record_ids = [
+        "sha256:" + hashlib.sha256(canonical_json(row)).hexdigest() for row in final_rows
+    ]
+    projection: dict[str, Any] = {
+        "format": "json-array-of-objects",
+        "record_count": len(final_rows),
+        "columns": columns,
+        "dropped_fields": dropped.entries,
+        "deduped_rows": deduped_rows,
+        "record_ids": record_ids,
+    }
+    projection_digest = "sha256:" + hashlib.sha256(canonical_json(projection)).hexdigest()
+    return NormalizationResult(
+        profile_name=profile.name,
+        profile_version=profile.version,
+        format="json-array-of-objects",
+        projection=projection,
+        projection_digest=projection_digest,
+        record_count=len(final_rows),
+        record_ids=record_ids,
+        dropped_fields=dropped.entries,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Built-in profiles (registered as data)
 # ---------------------------------------------------------------------------
 
 _NUMERIC_HANDLING_CSV: Final[str] = (
@@ -475,6 +654,39 @@ _FUELPRICE_CSV_V1: Final[NormalizationProfile] = NormalizationProfile(
 )
 
 register_profile(_FUELPRICE_CSV_V1)
+
+_NULL_HANDLING_JSON: Final[str] = (
+    "explicit json null stays null; a key absent from any record drops the "
+    "column as not_extractable rather than fabricating nulls"
+)
+
+_NUMERIC_HANDLING_JSON: Final[str] = (
+    "json-native types are preserved exactly as parsed; no numeric inference "
+    "and no coercion"
+)
+
+_MBPP_JSON_V1: Final[NormalizationProfile] = NormalizationProfile(
+    name="mbpp_json",
+    version="v1",
+    format="json-array-of-objects",
+    input_content_type="application/json",
+    row_ordering="stable_sort_by_first_string_typed_column_else_arrival_order",
+    null_handling=_NULL_HANDLING_JSON,
+    numeric_handling=_NUMERIC_HANDLING_JSON,
+    dedup=True,
+    description=(
+        "ArcGIS-style feature JSON ({\"features\": [{\"attributes\": {...}}]}) as "
+        "served by MBPP's FeatureServer endpoints (dataset family "
+        "mbpp_arcgis_observation): every attribute key becomes a candidate "
+        "column in first-appearance order; sparse keys (absent from some "
+        "records) are dropped as not_extractable instead of being fabricated as "
+        "nulls; explicit nulls and JSON-native types survive untouched; rows are "
+        "stable-sorted by the first string-typed column and exact duplicates are "
+        "removed after the sort."
+    ),
+)
+
+register_profile(_MBPP_JSON_V1)
 
 
 # ---------------------------------------------------------------------------
@@ -514,9 +726,15 @@ _SELFTEST_CSV: Final[bytes] = (
     "2025-03-15,2.07,3.47,3.04,kk,\n"
 ).encode("utf-8")
 
+#: ArcGIS payload with a deliberate sparse key: "b" is absent from the second
+#: record and "c" from the first, so neither is projectable without fabrication.
+_SELFTEST_JSON: Final[bytes] = (
+    '{"features":[{"attributes":{"a":1,"b":2}},{"attributes":{"a":1,"c":3}}]}'
+).encode("utf-8")
+
 
 def _run_selftest() -> int:
-    """Acceptance selftest for the CSV profile against a scratch store.
+    """Acceptance selftest for the CSV and JSON profiles against a scratch store.
 
     Runs inside a scratch root under the worktree; the production store root
     is never touched.  Output is deterministic (no paths, no timestamps) so
@@ -605,6 +823,64 @@ def _run_selftest() -> int:
                 for entry in first.dropped_fields
             ),
         )
+
+        json_first = normalize(_SELFTEST_JSON, "mbpp_json_v1")
+        print(f"profile={json_first.profile_name}/{json_first.profile_version}")
+        print(f"record_count={json_first.record_count}")
+        print(
+            "dropped_fields="
+            f"{canonical_json(json_first.dropped_fields).decode('utf-8')}"
+        )
+        json_store_digest = file_normalized(json_first, root=scratch)
+        print(f"projection_digest={json_first.projection_digest}")
+        print(f"store_digest={json_store_digest}")
+        check(
+            "json projection_digest matches the digest returned by file_normalized",
+            json_first.projection_digest == json_store_digest,
+        )
+        check("json record_count>0", json_first.record_count > 0)
+        check(
+            "json projection keeps exactly the members shared with the csv shape",
+            set(json_first.projection)
+            == {"format", "record_count", "columns", "dropped_fields", "deduped_rows", "record_ids"},
+        )
+        sparse_entries = [
+            entry
+            for entry in json_first.dropped_fields
+            if entry.get("basis") == "not_extractable" and entry.get("name") in ("b", "c")
+        ]
+        if len(sparse_entries) != 2:
+            print(
+                "sparse-key check: dropped_fields as reported = "
+                f"{canonical_json(json_first.dropped_fields).decode('utf-8')}"
+            )
+        check(
+            "the sparse keys b and c are each dropped as not_extractable",
+            len(sparse_entries) == 2,
+        )
+        check(
+            "json columns keep only the dense key, in first-appearance order",
+            json_first.projection["columns"] == ["a"],
+        )
+        check(
+            "the two records collapse to one dense row (deduped_rows == 1)",
+            json_first.projection["deduped_rows"] == 1,
+        )
+
+        json_second = normalize(_SELFTEST_JSON, "mbpp_json_v1")
+        check(
+            "two runs of the json profile against the same payload are byte-identical",
+            _result_bytes(json_first) == _result_bytes(json_second),
+        )
+
+        check(
+            "get_profile('mbpp_json_v1') returns the pinned json profile",
+            get_profile("mbpp_json_v1") == _MBPP_JSON_V1,
+        )
+        check(
+            "get_profile('fuelprice_csv_v1') still returns the pinned csv profile",
+            get_profile("fuelprice_csv_v1") == _FUELPRICE_CSV_V1,
+        )
     except Exception as error:  # noqa: BLE001 — the selftest reports, never traces
         failures.append(f"selftest raised {type(error).__name__}: {error}")
     finally:
@@ -614,7 +890,7 @@ def _run_selftest() -> int:
         for failure in failures:
             print(f"FAIL {failure}", file=sys.stderr)
         return 1
-    print("selftest passed: profile pinned, digests matched, results byte-identical")
+    print("selftest passed: both profiles pinned, digests matched, results byte-identical")
     return 0
 
 
