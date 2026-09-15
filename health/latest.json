@@ -1,28 +1,28 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-15T09:17:35Z",
+  "checked_at": "2026-09-15T09:22:16Z",
   "_trust_summary": {
-    "checked_at": "2026-09-15T09:17:35Z",
+    "checked_at": "2026-09-15T09:22:16Z",
     "datasets_total": 418,
     "by_status": {
-      "fresh": 103,
+      "fresh": 104,
       "aging": 120,
-      "stale": 169,
+      "stale": 170,
       "discontinued": 1,
       "degraded": 0,
       "browser_dependent": 5,
-      "unreachable": 2,
+      "unreachable": 0,
       "unknown": 0,
       "unknown_freshness": 4,
       "reference": 14
     },
     "datasets_health_signal_source": {
       "last_modified_header": 161,
-      "content_date_parse": 238,
-      "neither": 19
+      "content_date_parse": 240,
+      "neither": 17
     },
     "datasets_with_no_last_modified_header": 254,
-    "datasets_with_no_record_count_extracted": 12,
+    "datasets_with_no_record_count_extracted": 10,
     "oldest_last_modified": "2023-09-15T07:20:46Z",
     "newest_last_modified": "2026-09-14T23:57:03Z",
     "stale_datasets": [
@@ -237,6 +237,10 @@
       {
         "dataset_id": "vaxreg_covid_demog",
         "days_since_modified": 1656
+      },
+      {
+        "dataset_id": "kkmnow_covidnow",
+        "days_since_modified": 1467
       },
       {
         "dataset_id": "kkmnow_blood",
@@ -703,7 +707,7 @@
         "days_since_modified": 0.002025462962962963
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-15T09:21:11Z"
+    "pipeline_heartbeat_at": "2026-09-15T09:25:28Z"
   },
   "datasets": [
     {
@@ -10504,7 +10508,7 @@
     },
     {
       "dataset_id": "kkm_idengue",
-      "last_checked": "2026-09-14T09:20:48Z",
+      "last_checked": "2026-09-15T09:22:16Z",
       "namespace": "healthcare",
       "url": "https://idengue.mysa.gov.my/",
       "status": "browser-dependent",
@@ -10526,7 +10530,7 @@
       "wait_seconds": 30,
       "stations": 0,
       "timestamp": null,
-      "snapshot_chars": 6231,
+      "snapshot_chars": 6233,
       "record_count": null,
       "estimated_record_count": null,
       "record_count_estimated": false,
@@ -318953,18 +318957,18 @@
     },
     {
       "dataset_id": "kkmnow_organ",
-      "last_checked": "2026-09-14T09:14:43Z",
+      "last_checked": "2026-09-15T09:22:16Z",
       "namespace": "healthcare",
       "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/organ_01_timeseries.parquet",
-      "status": "unreachable",
+      "status": "fresh",
       "status_reason": null,
-      "message": "curl request failed",
+      "message": "HTTP 200",
       "request_url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/organ_01_timeseries.parquet",
       "access_method": "direct curl GET",
-      "http_status": null,
-      "content_length": null,
+      "http_status": 200,
+      "content_length": 202286,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-09-14",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -318976,13 +318980,13 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
-      "estimated_record_count": null,
-      "record_count_estimated": false,
-      "incomplete": false,
+      "record_count": 1686,
+      "estimated_record_count": 1686,
+      "record_count_estimated": true,
+      "incomplete": true,
       "column_count": null,
       "first_row_hash": null,
-      "shape_basis": null,
+      "shape_basis": "untyped",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
@@ -319000,11 +319004,11 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
       "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
@@ -319012,16 +319016,16 @@
         "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 3,
+        "latest_days": 1.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "unknown",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -319049,9 +319053,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -319115,14 +319119,14 @@
             "coverage": {
               "applicable": 4,
               "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
+              "passed": 3,
+              "failed": 0,
               "unknown": 1,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
+              "observed_access_signal_present",
               "shape_metadata_missing",
               "reuse_metadata_declared"
             ],
@@ -319510,9 +319514,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_estimated"
                 ],
                 "evidence_refs": [
                   {
@@ -319551,16 +319555,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 3,
+              "passed": 3,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 1,
               "not_applicable": 0
             },
             "reason_codes": [
               "shape_fingerprint_missing",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_estimated",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -319761,7 +319765,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "indeterminate",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -319769,18 +319773,18 @@
     },
     {
       "dataset_id": "kkmnow_covidnow",
-      "last_checked": "2026-09-14T09:14:43Z",
+      "last_checked": "2026-09-15T09:22:16Z",
       "namespace": "healthcare",
       "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidnow_01_timeseries.parquet",
-      "status": "unreachable",
+      "status": "stale",
       "status_reason": null,
-      "message": "curl request failed",
+      "message": "HTTP 200",
       "request_url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidnow_01_timeseries.parquet",
       "access_method": "direct curl GET",
-      "http_status": null,
-      "content_length": null,
+      "http_status": 200,
+      "content_length": 6529,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2022-09-09",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -319792,13 +319796,13 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
-      "estimated_record_count": null,
-      "record_count_estimated": false,
-      "incomplete": false,
+      "record_count": 55,
+      "estimated_record_count": 55,
+      "record_count_estimated": true,
+      "incomplete": true,
       "column_count": null,
       "first_row_hash": null,
-      "shape_basis": null,
+      "shape_basis": "untyped",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
@@ -319816,28 +319820,28 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 1467,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
-      "anomaly_detected": false,
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
         "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 3,
+        "latest_days": 1467.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "unknown",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -319865,9 +319869,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -319931,14 +319935,14 @@
             "coverage": {
               "applicable": 4,
               "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
+              "passed": 3,
+              "failed": 0,
               "unknown": 1,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
+              "observed_access_signal_present",
               "shape_metadata_missing",
               "reuse_metadata_declared"
             ],
@@ -320326,9 +320330,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_estimated"
                 ],
                 "evidence_refs": [
                   {
@@ -320367,16 +320371,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 3,
+              "passed": 3,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 1,
               "not_applicable": 0
             },
             "reason_codes": [
               "shape_fingerprint_missing",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_estimated",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -320577,7 +320581,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "indeterminate",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
