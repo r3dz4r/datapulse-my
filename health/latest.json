@@ -1,15 +1,15 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-15T10:40:28Z",
+  "checked_at": "2026-09-15T10:45:30Z",
   "_trust_summary": {
-    "checked_at": "2026-09-15T10:40:28Z",
+    "checked_at": "2026-09-15T10:45:30Z",
     "datasets_total": 418,
     "by_status": {
-      "fresh": 105,
+      "fresh": 104,
       "aging": 121,
       "stale": 168,
       "discontinued": 1,
-      "degraded": 0,
+      "degraded": 1,
       "browser_dependent": 5,
       "unreachable": 0,
       "unknown": 0,
@@ -699,7 +699,7 @@
         "days_since_modified": 0.0010648148148148149
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-15T10:43:46Z"
+    "pipeline_heartbeat_at": "2026-09-15T10:48:42Z"
   },
   "datasets": [
     {
@@ -4782,7 +4782,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_1200",
-      "last_checked": "2026-09-15T09:40:28Z",
+      "last_checked": "2026-09-15T10:45:30Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
       "status": "fresh",
@@ -340115,19 +340115,19 @@
     },
     {
       "dataset_id": "sg_datagov_weather_readings",
-      "last_checked": "2026-09-14T10:45:17Z",
+      "last_checked": "2026-09-15T10:45:30Z",
       "namespace": "weather",
       "url": "https://api.data.gov.sg/v1/environment/air-temperature",
-      "status": "fresh",
+      "status": "degraded",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.sg/v1/environment/air-temperature",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 473,
+      "content_length": 1834,
       "last_modified": null,
-      "content_freshness_date": "2026-09-14T10:40:00Z",
-      "first_record_timestamp": "2026-09-14T18:40:00+08:00",
+      "content_freshness_date": "2026-09-15T10:39:00Z",
+      "first_record_timestamp": "2026-09-15T18:39:00+08:00",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
       "transition_registration_count": null,
@@ -340143,12 +340143,12 @@
       "record_count_estimated": false,
       "incomplete": false,
       "column_count": 2,
-      "first_row_hash": "shape-v1:f0a5d8e8806c818fa057d025c7f656d4e159e9607a8128856c444455f5dba781",
+      "first_row_hash": "shape-v1:ff460652b5269c9d7dc04f0703c8babd6d9021aa520bc059edd2f2a356923c9c",
       "shape_basis": "json-array",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
-      "content_shape_changed": false,
+      "content_shape_changed": true,
       "locations": null,
       "date_range": null,
       "agency": null,
