@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.21.0](https://github.com/r3dz4r/datapulse-my/compare/v3.20.1...v3.21.0) (2026-09-16)
+
+
+### Features
+
+* **observation:** change report with a claim boundary (Task 4.3) ([4751e8a](https://github.com/r3dz4r/datapulse-my/commit/4751e8a31c6584b9f2a07bb3551a839cdacae50b))
+* **observation:** change report with a claim boundary (Task 4.3) ([db5d9e1](https://github.com/r3dz4r/datapulse-my/commit/db5d9e1e166d6eb68ebba5901ee665f4e063ada7))
+
 ## [3.20.1](https://github.com/r3dz4r/datapulse-my/compare/v3.20.0...v3.20.1) (2026-09-16)
 
 
