@@ -9,6 +9,8 @@ readonly DEFAULT_PYTHONPATH=/home/redza/datapulse-my
 readonly ACCEPT='application/json, text/event-stream'
 
 source_path=""
+source_sha=""
+source_date=""
 deployed_path="${DATAPULSE_MCP_DEPLOYED_PATH:-$DEFAULT_DEPLOYED_PATH}"
 endpoint="${DATAPULSE_MCP_ENDPOINT:-$DEFAULT_ENDPOINT}"
 service="${DATAPULSE_MCP_SERVICE:-$DEFAULT_SERVICE}"
@@ -132,6 +134,9 @@ Options:
   --service NAME        systemd user service to restart
   --drop-in PATH        systemd drop-in that removes legacy source-marker overrides
   --result-file PATH    Write no-change, deployed, or failed for pipeline telemetry
+  --source-sha SHA      Explicit advertised commit for callers outside a git
+                        checkout (requires --source-date)
+  --source-date DATE    Commit date (YYYY-MM-DD) paired with --source-sha
   --dry-run             Report planned actions without copying, restarting, or writing
 EOF
 }
@@ -168,6 +173,16 @@ while (( $# > 0 )); do
       result_file="$2"
       shift 2
       ;;
+    --source-sha)
+      [[ $# -ge 2 ]] || fail '--source-sha requires a sha'
+      source_sha="$2"
+      shift 2
+      ;;
+    --source-date)
+      [[ $# -ge 2 ]] || fail '--source-date requires a date'
+      source_date="$2"
+      shift 2
+      ;;
     --dry-run)
       dry_run=true
       shift
@@ -191,7 +206,6 @@ done
 command -v curl >/dev/null || fail 'curl is required'
 command -v jq >/dev/null || fail 'jq is required'
 command -v systemctl >/dev/null || fail 'systemctl is required'
-command -v git >/dev/null || fail 'git is required'
 
 uid="$(id -u)"
 runtime_dir="/run/user/$uid"
@@ -201,13 +215,35 @@ export XDG_RUNTIME_DIR="$runtime_dir"
 # The advertised commit is the repository HEAD of the source tree, never the
 # release-build literal: the literal can go stale between releases, HEAD cannot.
 # This is what makes the endpoint assertion a drift detector instead of a
-# tautology over the copied file.
-repo_root="$(git -C "$(dirname -- "$source_path")" rev-parse --show-toplevel)" \
-  || fail "source is not inside a git work tree: $source_path"
-head_sha="$(git -C "$repo_root" rev-parse HEAD)" \
-  || fail "could not resolve repository HEAD in $repo_root"
-head_date="$(git -C "$repo_root" show -s --format=%cd --date=format:%Y-%m-%d HEAD)" \
-  || fail "could not resolve repository HEAD date in $repo_root"
+# tautology over the copied file. Callers outside a checkout (CI driving a
+# synthetic source tree) must supply the commit explicitly instead. Precedence
+# is flag > HEAD > environment pair: a stray exported pair must never mask HEAD
+# in a real checkout — the same authority rule the drop-in's UnsetEnvironment
+# enforces for the service. When no input exists at all, fail naming the
+# missing input; an empty sha is never an option.
+head_sha=""
+head_date=""
+if [[ -n "$source_sha" ]]; then
+  [[ -n "$source_date" ]] \
+    || fail '--source-sha requires --source-date: the stamp writes both marker defaults'
+  head_sha="$source_sha"
+  head_date="$source_date"
+  log "using explicit source sha=$head_sha date=$head_date from --source-sha/--source-date"
+elif command -v git >/dev/null \
+  && repo_root="$(git -C "$(dirname -- "$source_path")" rev-parse --show-toplevel 2>/dev/null)"; then
+  head_sha="$(git -C "$repo_root" rev-parse HEAD)" \
+    || fail "could not resolve repository HEAD in $repo_root"
+  head_date="$(git -C "$repo_root" show -s --format=%cd --date=format:%Y-%m-%d HEAD)" \
+    || fail "could not resolve repository HEAD date in $repo_root"
+elif [[ -n "${DATAPULSE_MCP_SOURCE_SHA:-}" ]]; then
+  [[ -n "${DATAPULSE_MCP_SOURCE_DATE:-}" ]] \
+    || fail 'DATAPULSE_MCP_SOURCE_SHA is set without DATAPULSE_MCP_SOURCE_DATE: the stamp writes both marker defaults'
+  head_sha="$DATAPULSE_MCP_SOURCE_SHA"
+  head_date="$DATAPULSE_MCP_SOURCE_DATE"
+  log "using source sha=$head_sha date=$head_date from DATAPULSE_MCP_SOURCE_SHA/DATAPULSE_MCP_SOURCE_DATE"
+else
+  fail "no source sha available: $source_path is not inside a git work tree and no override was given — pass --source-sha with --source-date, or set DATAPULSE_MCP_SOURCE_SHA and DATAPULSE_MCP_SOURCE_DATE"
+fi
 head_short_sha="${head_sha:0:7}"
 
 source_sha256="$(sha256sum "$source_path" | awk '{print $1}')"
