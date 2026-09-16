@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.20.1](https://github.com/r3dz4r/datapulse-my/compare/v3.20.0...v3.20.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **attestation:** produce the daily Rekor witness even when the dated set already exists ([ac2cc1e](https://github.com/r3dz4r/datapulse-my/commit/ac2cc1e966f122ff897c021257d17da4e7497db5))
+
 ## [3.20.0](https://github.com/r3dz4r/datapulse-my/compare/v3.19.1...v3.20.0) (2026-09-16)
 
 
