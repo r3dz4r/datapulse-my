@@ -1,11 +1,25 @@
-"""Store-root guard tests for the pilot capture driver.
+"""Store-root guard and run-log line tests for the pilot capture driver.
 
-The contract under test lives in ``scripts/observation_pilot.py``: the
-production observation store root is refused by default, and only the
-explicit ``--allow-production-store`` opt-in — a flag a reader can see in
-the process arguments — lifts that refusal.  These tests fail if the
-refusal disappears, if the opt-in stops working, or if the opt-in changes
-scratch-store behaviour in either direction.
+Two contracts live in ``scripts/observation_pilot.py``.
+
+Store-root guard: the production observation store root is refused by
+default, and only the explicit ``--allow-production-store`` opt-in — a
+flag a reader can see in the process arguments — lifts that refusal.
+These tests fail if the refusal disappears, if the opt-in stops working,
+or if the opt-in changes scratch-store behaviour in either direction.
+
+Run-log line vocabulary: a live capture once printed
+``captured=no status=filed capture_status=metadata_only`` for an
+unprofiled dataset, and the leading yes/no read as a failure verdict
+over a filing that succeeded — three vocabularies for one event, with
+the derived one masquerading as the verdict.  The line tests pin the
+repair: ``status`` stays the only success/failure verdict,
+``capture_status`` stays the envelope's authoritative record, and the
+derived field states what the payload actually is, in words that cannot
+read as a verdict.  They fail if a metadata-only observation stops being
+distinguishable from a byte-level one, if a filed envelope can print as
+a failure, or if the payload vocabulary claims bytes that were not
+retained.
 
 The production root is never written here: CLI cases monkeypatch
 ``run_pilot`` so the driver stops exactly at the guard (or immediately
@@ -15,6 +29,7 @@ which performs no I/O against the store.
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from typing import Any, Final
@@ -163,3 +178,142 @@ def test_cli_scratch_run_is_unchanged_by_the_opt_in(
     )
     assert code == 0
     assert seen["root"] == scratch.resolve()
+
+
+# ---------------------------------------------------------------------------
+# Run-log line vocabulary
+# ---------------------------------------------------------------------------
+
+
+def _outcome(
+    status: str, capture_status: str | None, *, due: bool = True, reason: str = "gate reason"
+) -> pilot.DatasetOutcome:
+    """One outcome built directly: the line contract needs no store."""
+    return pilot.DatasetOutcome(
+        dataset_id="fuelprice",
+        due=due,
+        status=status,
+        observation_id="obs-fuelprice-20260916" if status == "filed" else None,
+        capture_status=capture_status,
+        projection_state="retained(profile=fuelprice_csv_v1,records=7)"
+        if status == "filed"
+        else "-",
+        reason=reason,
+        record_count=7 if status == "filed" and capture_status == "captured" else None,
+    )
+
+
+BYTE_LEVEL: Final[pilot.DatasetOutcome] = _outcome("filed", "captured")
+
+METADATA_ONLY: Final[pilot.DatasetOutcome] = _outcome("filed", "metadata_only")
+
+SKIPPED_BY_CADENCE: Final[pilot.DatasetOutcome] = _outcome(
+    "skipped",
+    None,
+    due=False,
+    reason=(
+        "cadence-not-due: 10 minutes since obs-fuelprice-20260916 is inside "
+        "the 7 days (weekly) refresh interval"
+    ),
+)
+
+FAILED: Final[pilot.DatasetOutcome] = _outcome(
+    "failed", None, reason="transport failed: TransportError: injected transport failure"
+)
+
+
+def _payload_token(line: str) -> str:
+    """The ``payload=`` token from a run-log line."""
+    match = re.search(r"(?:^| )payload=([^ ]+)", line)
+    assert match is not None, f"no payload token in {line!r}"
+    return match.group(1)
+
+
+def test_filed_byte_level_line_claims_source_bytes() -> None:
+    """A byte-level filing says so: status filed, envelope status captured,
+    payload described as the retained source bytes."""
+    line = BYTE_LEVEL.line
+    assert "status=filed" in line
+    assert "capture_status=captured" in line
+    assert _payload_token(line) == "source-bytes"
+    assert BYTE_LEVEL.payload_bytes_retained is True
+
+
+def test_filed_metadata_only_line_keeps_no_bytes_visible_without_a_verdict() -> None:
+    """A filed metadata-only envelope must say both truths at once — an
+    envelope was filed, and no payload bytes were retained — with the
+    payload stated as what it is, never as a yes/no that reads as
+    failure."""
+    line = METADATA_ONLY.line
+    assert "status=filed" in line
+    assert "capture_status=metadata_only" in line
+    assert _payload_token(line) == "metadata-only(no-payload-bytes)"
+    assert METADATA_ONLY.payload_bytes_retained is False
+    assert _payload_token(line) != _payload_token(BYTE_LEVEL.line)
+
+
+def test_line_carries_no_yes_no_capture_verdict() -> None:
+    """The derived capture field must not render as yes/no: ``captured=no``
+    next to ``status=filed`` is the shape that read as failure over a
+    successful filing, in every outcome including the genuinely failed
+    one."""
+    for outcome in (BYTE_LEVEL, METADATA_ONLY, SKIPPED_BY_CADENCE, FAILED):
+        assert "captured=" not in outcome.line
+
+
+@pytest.mark.parametrize(
+    "capture_status", ["partial", "failed", "metadata_only", "not_captured"]
+)
+def test_every_filed_status_without_bytes_claims_no_bytes(capture_status: str) -> None:
+    """Capture retains bytes only for ``captured``; every other filed
+    status is an envelope without payload bytes and the line must never
+    claim them."""
+    outcome = _outcome("filed", capture_status)
+    assert outcome.payload_bytes_retained is False
+    token = _payload_token(outcome.line)
+    assert token != "source-bytes"
+    assert "no-payload-bytes" in token
+
+
+def test_skipped_by_cadence_line_files_nothing() -> None:
+    """A gate skip files no envelope: no observation id, no capture
+    status, and a payload token that says nothing was filed."""
+    line = SKIPPED_BY_CADENCE.line
+    assert "due=no" in line
+    assert "status=skipped" in line
+    assert "observation_id=-" in line
+    assert "capture_status=-" in line
+    assert _payload_token(line) == "none(nothing-filed)"
+    assert SKIPPED_BY_CADENCE.payload_bytes_retained is False
+
+
+def test_failed_line_reserves_failure_for_status() -> None:
+    """Failure is ``status=failed``'s to announce; the payload token just
+    says nothing was filed."""
+    line = FAILED.line
+    assert "status=failed" in line
+    assert "capture_status=-" in line
+    assert _payload_token(line) == "none(nothing-filed)"
+    assert FAILED.payload_bytes_retained is False
+
+
+def test_cli_summary_reports_payload_retention_not_a_captured_count(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The run summary counts payload retention per filing instead of a
+    ``captured`` count that reads as success: one byte-level filing, one
+    metadata-only filing, one gate skip, one failure."""
+    outcomes = [METADATA_ONLY, BYTE_LEVEL, SKIPPED_BY_CADENCE, FAILED]
+
+    def fake_run_pilot(
+        dataset_ids: Any, *, root: Any, transport: Any, now: Any = None
+    ) -> list[pilot.DatasetOutcome]:
+        return outcomes
+
+    monkeypatch.setattr(pilot, "run_pilot", fake_run_pilot)
+    code = pilot.main(["--store", str(tmp_path / "scratch"), "--datasets", "fuelprice"])
+    assert code == 0
+    summary = capsys.readouterr().out
+    assert "4 dataset(s): 2 filed (1 with payload bytes, 1 metadata-only)" in summary
+    assert "1 skipped by gate, 1 failed" in summary
+    assert "captured," not in summary
