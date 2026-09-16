@@ -206,18 +206,54 @@ class DatasetOutcome:
     record_count: int | None = None
 
     @property
-    def captured(self) -> bool:
-        """True only when the envelope claims ``capture_status: captured``."""
+    def payload_bytes_retained(self) -> bool:
+        """True only when the filing retained payload bytes.
+
+        ``capture_status`` is the envelope's authoritative record and is
+        never reinterpreted here; this property is its byte-level
+        reading.  Capture's truth rules retain bytes only for
+        ``captured`` — every other filed status (``partial``, ``failed``,
+        ``metadata_only``, ``not_captured``) files an envelope without
+        payload bytes — so the derivation is exactly that invariant.
+        """
         return self.capture_status == "captured"
 
     @property
+    def payload(self) -> str:
+        """What this outcome's filing actually holds, as a payload token.
+
+        Log-line vocabulary derived from ``capture_status`` alone:
+        ``source-bytes`` when payload bytes were retained;
+        ``metadata-only(no-payload-bytes)`` when an envelope was filed
+        without them; ``none(nothing-filed)`` when nothing was filed at
+        all.  Deliberately not a yes/no: a ``captured=no`` next to
+        ``status=filed`` reads as a failure verdict over a filing that
+        succeeded, which is how an unprofiled dataset's metadata-only
+        envelope came to be investigated as a contradiction.  The token
+        states what the payload *is*, so the byte-level distinction
+        stays visible without implying failure.
+        """
+        if self.capture_status is None:
+            return "none(nothing-filed)"
+        if self.capture_status == "captured":
+            return "source-bytes"
+        return "metadata-only(no-payload-bytes)"
+
+    @property
     def line(self) -> str:
-        """One greppable run-log line for this outcome."""
+        """One greppable run-log line for this outcome.
+
+        ``status`` is the only success/failure verdict; ``capture_status``
+        is the envelope's authoritative record; ``payload`` restates that
+        record as what was actually retained, so a filed metadata-only
+        observation cannot read as a failed one.
+        """
         return (
             f"dataset={self.dataset_id} due={'yes' if self.due else 'no'} "
-            f"captured={'yes' if self.captured else 'no'} status={self.status} "
+            f"status={self.status} "
             f"observation_id={self.observation_id or '-'} "
             f"capture_status={self.capture_status or '-'} "
+            f"payload={self.payload} "
             f"projection={self.projection_state} reason={self.reason}"
         )
 
@@ -697,12 +733,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     for outcome in outcomes:
         print(outcome.line)
         logger.debug("outcome %s", outcome)
-    captured = sum(1 for outcome in outcomes if outcome.captured)
+    filed = sum(1 for outcome in outcomes if outcome.status == "filed")
+    with_payload_bytes = sum(1 for outcome in outcomes if outcome.payload_bytes_retained)
+    filed_metadata_only = filed - with_payload_bytes
     skipped = sum(1 for outcome in outcomes if outcome.status == "skipped")
     failed = sum(1 for outcome in outcomes if outcome.status == "failed")
+    # Counted by payload retention, not "captured": a metadata-only filing is
+    # a completed filing, and a summary that says "0 captured" over N filed
+    # envelopes has the same reads-as-failure disease as the per-dataset line.
     print(
-        f"pilot run complete: {len(outcomes)} dataset(s): {captured} captured, "
-        f"{skipped} skipped by gate, {failed} failed; store={root}"
+        f"pilot run complete: {len(outcomes)} dataset(s): {filed} filed "
+        f"({with_payload_bytes} with payload bytes, {filed_metadata_only} "
+        f"metadata-only), {skipped} skipped by gate, {failed} failed; store={root}"
     )
     return 0
 
