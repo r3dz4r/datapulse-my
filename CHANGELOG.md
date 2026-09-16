@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.21.1](https://github.com/r3dz4r/datapulse-my/compare/v3.21.0...v3.21.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **observation:** read the envelopes the store contains, and fail the verdict on ones it cannot ([c84fe25](https://github.com/r3dz4r/datapulse-my/commit/c84fe2549724ceaca69d9901fe1f3a3ccb1f7f47))
+* **observation:** read the envelopes the store contains, and fail the verdict on ones it cannot ([92edf58](https://github.com/r3dz4r/datapulse-my/commit/92edf582bd0e9cda180cbc10244567130ae98dc6))
+
 ## [3.21.0](https://github.com/r3dz4r/datapulse-my/compare/v3.20.1...v3.21.0) (2026-09-16)
 
 
