@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.22.0](https://github.com/r3dz4r/datapulse-my/compare/v3.21.1...v3.22.0) (2026-09-16)
+
+
+### Features
+
+* **observation:** pilot capture driver with per-dataset cadence gate (Task 6.1 part B) ([#85](https://github.com/r3dz4r/datapulse-my/issues/85)) ([8c43771](https://github.com/r3dz4r/datapulse-my/commit/8c437717b3f0733611e930aed05564d06326bfd2))
+
 ## [3.21.1](https://github.com/r3dz4r/datapulse-my/compare/v3.21.0...v3.21.1) (2026-09-16)
 
 
