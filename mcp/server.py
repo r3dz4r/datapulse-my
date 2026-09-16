@@ -178,6 +178,37 @@ def _usage_arguments(arguments: dict[str, Any]) -> dict[str, Any]:
     return safe
 
 
+# get_provenance declares the plural `dataset_ids` while every sibling tool uses
+# the singular `dataset_id`; natural caller spelling must resolve to the same
+# argument. Map tool name -> declared plural so the alias stays opt-in per tool.
+PLURAL_DATASET_ARGUMENT_TOOLS: dict[str, str] = {"get_provenance": "dataset_ids"}
+SINGULAR_DATASET_ARGUMENT_ALIAS = "dataset_id"
+
+
+def _apply_dataset_argument_aliases(
+    tool_name: str, arguments: dict[str, Any] | None
+) -> None:
+    """Rewrite the singular `dataset_id` alias onto a declared plural in place.
+
+    A string becomes a one-element list; a list of strings is accepted as-is.
+    When the declared plural is already supplied, or the alias value is not a
+    string or list of strings, arguments are left untouched so schema
+    validation rejects them exactly as it would today.
+    """
+    plural_name = PLURAL_DATASET_ARGUMENT_TOOLS.get(tool_name)
+    if plural_name is None or arguments is None or plural_name in arguments:
+        return
+    alias_value = arguments.get(SINGULAR_DATASET_ARGUMENT_ALIAS)
+    if isinstance(alias_value, str):
+        arguments[plural_name] = [alias_value]
+        del arguments[SINGULAR_DATASET_ARGUMENT_ALIAS]
+    elif isinstance(alias_value, list) and all(
+        isinstance(item, str) for item in alias_value
+    ):
+        arguments[plural_name] = list(alias_value)
+        del arguments[SINGULAR_DATASET_ARGUMENT_ALIAS]
+
+
 # Closed vocabulary: actionable runtime faults (upstream/network reads) must be
 # distinguishable from consumer input and from unexpected internal failures,
 # without ever storing exception text.
@@ -333,6 +364,10 @@ class ToolUsageLoggingMiddleware(Middleware):
 
     async def on_call_tool(self, context: Any, call_next: Any) -> Any:
         message = context.message
+        # Normalise the singular alias onto the declared plural before telemetry
+        # and call_next so validation, dispatch, and the usage ledger all see
+        # the canonical spelling.
+        _apply_dataset_argument_aliases(message.name, message.arguments)
         args = _usage_arguments(message.arguments or {})
         started = monotonic()
         record: dict[str, Any] = {
