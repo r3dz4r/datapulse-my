@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.23.1](https://github.com/r3dz4r/datapulse-my/compare/v3.23.0...v3.23.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **observation:** print what the payload is, not a captured yes/no ([#93](https://github.com/r3dz4r/datapulse-my/issues/93)) ([5dde114](https://github.com/r3dz4r/datapulse-my/commit/5dde114a228bea1aae5fa08e0617eef8074b4df0))
+
 ## [3.23.0](https://github.com/r3dz4r/datapulse-my/compare/v3.22.2...v3.23.0) (2026-09-16)
 
 
