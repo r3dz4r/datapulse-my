@@ -14,6 +14,16 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.20.0](https://github.com/r3dz4r/datapulse-my/compare/v3.19.1...v3.20.0) (2026-09-16)
+
+
+### Features
+
+* **observation:** bounded diff module, part A — shape and the cheap dimensions (Task 4.2) ([b4fac23](https://github.com/r3dz4r/datapulse-my/commit/b4fac234b1ae86cb5940be8c85e09cf5927dbe8b))
+* **observation:** bounded diff module, part A (Task 4.2) ([432f250](https://github.com/r3dz4r/datapulse-my/commit/432f250edba89190aacc29c35d53291a2d3823e6))
+* **observation:** record-level counts and incomparability (Task 4.2 part B) ([4315b5a](https://github.com/r3dz4r/datapulse-my/commit/4315b5a2bec73645a8c92f19034f2e0f0e895ac6))
+* **observation:** record-level counts and incomparability (Task 4.2 part B) ([044a826](https://github.com/r3dz4r/datapulse-my/commit/044a826597947d0c78a54d1cb9b146f22e2b7875))
+
 ## [3.19.1](https://github.com/r3dz4r/datapulse-my/compare/v3.19.0...v3.19.1) (2026-09-15)
 
 
