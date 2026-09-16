@@ -2,11 +2,22 @@
 """Bounded diff between two historical observations.
 
 Compares the captured representation of a predecessor observation against
-its successor along a fixed set of cheap dimensions: source digest,
-normalized digest, shape fingerprint, and record counts.  The diff is
-bounded by construction — ``DiffResult.evidence`` carries digest
+its successor along a fixed set of bounded dimensions: source digest,
+normalized digest, shape fingerprint, record counts, and — when both
+sides retained a projection under the same normalization profile, profile
+version, and format — record-level added/removed/modified counts by set
+arithmetic over the projections' content-addressed record ids.  The diff
+is bounded by construction — ``DiffResult.evidence`` carries digest
 references and counts only, never embedded payloads, row dumps, or
 changed lines.
+
+Inputs that cannot be compared at all are reported as such rather than
+diffed anyway: when the two observations used different normalization
+profiles (different name, or the same name at different versions) or
+different projection formats, the record-level numbers would describe a
+change in the profile rather than in the source, so they are withheld
+(``None`` plus ``unknown_dimensions``) and ``incomparable`` carries the
+specific difference in ``incomparable_reason``.
 
 Every dimension is independently unknown-able: a dimension that cannot
 be computed is ``None`` AND named in ``unknown_dimensions``.  A zero
@@ -41,20 +52,24 @@ try:
     from scripts.observation_store import (
         OBSERVATION_ID_PATTERN,
         DigestFormatError,
+        ObjectNotFoundError,
         blob_path,
         put_blob,
         put_envelope,
         put_normalized,
+        read_normalized,
         resolve_root,
     )
 except ModuleNotFoundError:  # bare form when scripts/ itself is on sys.path
     from observation_store import (
         OBSERVATION_ID_PATTERN,
         DigestFormatError,
+        ObjectNotFoundError,
         blob_path,
         put_blob,
         put_envelope,
         put_normalized,
+        read_normalized,
         resolve_root,
     )
 
@@ -63,9 +78,9 @@ __all__ = ["DiffResult", "diff_observations", "main"]
 logger = logging.getLogger(__name__)
 
 #: Canonical print order for ``unknown_dimensions`` (the dataclass field
-#: order of the measurable dimensions); ``incomparable`` is never unknown
-#: in this part — it is determinately False until part B implements
-#: detection.
+#: order of the measurable dimensions); ``incomparable`` is a plain bool,
+#: never unknown — it is True only when a specific difference is
+#: positively established, False otherwise.
 DIMENSION_ORDER: Final[tuple[str, ...]] = (
     "source_digest_changed",
     "normalized_digest_changed",
@@ -76,12 +91,28 @@ DIMENSION_ORDER: Final[tuple[str, ...]] = (
     "records_modified",
 )
 
-#: Record-level counts are part B's deliverable; their names are carried
-#: in ``unknown_dimensions`` on every result this module produces.
-_PART_B_DIMENSIONS: Final[tuple[str, ...]] = (
+#: Dimensions computed by set arithmetic over both sides' ``record_ids``.
+#: Unknown (never zero) whenever either side does not expose comparable
+#: ids or the inputs are incomparable.
+_RECORD_LEVEL_DIMENSIONS: Final[tuple[str, ...]] = (
     "records_added",
     "records_removed",
     "records_modified",
+)
+
+#: Record-id contract form (mirrors observation_normalize's pattern; not
+#: imported so the diff stays coupled only to the store).  Ids outside
+#: this form are not the content-addressed identity normalization derives,
+#: so they cannot be assumed stable across observations.
+_RECORD_ID_PATTERN: Final[re.Pattern[str]] = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+#: The designation capture pins in the provenance transform
+#: ("observation_normalize profile <name>/<version>; projection_digest
+#: ...").  The closed ``normalized_projection`` member carries no profile,
+#: so this string is the only place the envelope pins the identity of the
+#: normalization that produced the projection.
+_PROFILE_IN_TRANSFORM: Final[re.Pattern[str]] = re.compile(
+    r"observation_normalize profile ([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)"
 )
 
 # Capture files the normalized projection's digest reference inside the
@@ -127,10 +158,16 @@ class DiffResult:
 
     ``record_count`` carries ``{"before", "after", "delta"}``, any of
     which may be ``None``.  ``records_added`` / ``records_removed`` /
-    ``records_modified`` are part B's record-level counts and are always
-    ``None`` here with their names in ``unknown_dimensions``.
-    ``incomparable`` is determinately False until part B implements
-    detection.
+    ``records_modified`` are set arithmetic over both sides'
+    content-addressed ``record_ids``; they are ``None`` (and named in
+    ``unknown_dimensions``) whenever either side does not expose
+    comparable ids or the inputs are incomparable.  ``incomparable`` is
+    True only when a specific difference is positively established
+    (profile name, profile version, or projection format), with the
+    difference named in ``incomparable_reason``; when it is True, every
+    record-level dimension and the ``record_count`` delta are withheld —
+    a number computed across incomparable inputs answers a different
+    question than the one asked.
 
     ``evidence`` holds digest references and counts only — never embedded
     payloads, row dumps, or changed lines.
@@ -293,6 +330,122 @@ def _record_count(envelope: Mapping[str, Any]) -> int | None:
     return None
 
 
+def _projection_format(envelope: Mapping[str, Any]) -> str | None:
+    """The side's ``normalized_projection.format``, or None when unmeasured."""
+    projection = envelope.get("normalized_projection")
+    if isinstance(projection, Mapping):
+        projection_format = projection.get("format")
+        if isinstance(projection_format, str) and projection_format:
+            return projection_format
+    return None
+
+
+def _profile_reference(envelope: Mapping[str, Any]) -> tuple[str, str] | None:
+    """The side's ``(profile name, profile version)``, or None when unmeasured.
+
+    Read from the provenance transform capture writes (the closed
+    ``normalized_projection`` member pins no profile of its own); never
+    guessed from the projection's content.
+    """
+    provenance = envelope.get("field_provenance")
+    if not isinstance(provenance, Mapping):
+        return None
+    entry = provenance.get("normalized_projection")
+    if not isinstance(entry, Mapping):
+        return None
+    transform = entry.get("transform")
+    if not isinstance(transform, str):
+        return None
+    match = _PROFILE_IN_TRANSFORM.search(transform)
+    if match is None:
+        return None
+    return match.group(1), match.group(2)
+
+
+def _profile_designation(profile: tuple[str, str] | None) -> str | None:
+    """``("fuelprice_csv", "v1")`` -> ``"fuelprice_csv/v1"``; None stays None."""
+    if profile is None:
+        return None
+    return f"{profile[0]}/{profile[1]}"
+
+
+def _incomparability(
+    previous_profile: tuple[str, str] | None,
+    current_profile: tuple[str, str] | None,
+    previous_format: str | None,
+    current_format: str | None,
+) -> tuple[bool, str | None]:
+    """Whether the two sides cannot be compared at all, and why.
+
+    Only positively established differences make the pair incomparable:
+    both sides must expose the value being compared.  A side that pins no
+    profile or format leaves the question undecidable, which the
+    record-level dimensions answer as unknown — not as a difference.
+    """
+    if previous_profile is not None and current_profile is not None:
+        previous_name, previous_version = previous_profile
+        current_name, current_version = current_profile
+        if previous_name != current_name:
+            return True, (
+                f"normalization profile names differ: previous {previous_name!r} "
+                f"vs current {current_name!r}"
+            )
+        if previous_version != current_version:
+            return True, (
+                f"normalization profile versions differ: previous "
+                f"{previous_name}/{previous_version} vs current "
+                f"{current_name}/{current_version}"
+            )
+    if (
+        previous_format is not None
+        and current_format is not None
+        and previous_format != current_format
+    ):
+        return True, (
+            f"normalized projection formats differ: previous {previous_format!r} "
+            f"vs current {current_format!r}"
+        )
+    return False, None
+
+
+def _comparable_record_ids(
+    envelope: Mapping[str, Any], *, root: Path | str | None
+) -> frozenset[str] | None:
+    """The side's ``record_ids`` as a set, or None when not comparable.
+
+    Reads the retained projection through the store and accepts it only
+    when its ``record_ids`` is a list of record-id contract forms
+    (``sha256:<64 hex>``): ids outside that form are not the
+    content-addressed identity normalization derives, so they cannot be
+    assumed stable, and set arithmetic over unstable identifiers reports
+    churn that did not happen.  An unretained, missing, or malformed
+    projection is None — a missing measurement, never a zero.
+    """
+    digest = _normalized_digest_reference(envelope)
+    if digest is None:
+        return None
+    try:
+        projection_bytes = read_normalized(digest, root=root)
+    except (DigestFormatError, ObjectNotFoundError, OSError) as error:
+        logger.debug("record_ids unavailable for projection %s: %s", digest, error)
+        return None
+    try:
+        projection = json.loads(projection_bytes)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    if not isinstance(projection, dict):
+        return None
+    record_ids = projection.get("record_ids")
+    if not isinstance(record_ids, list):
+        return None
+    if any(
+        not isinstance(record_id, str) or _RECORD_ID_PATTERN.fullmatch(record_id) is None
+        for record_id in record_ids
+    ):
+        return None
+    return frozenset(record_ids)
+
+
 def diff_observations(
     previous: Mapping[str, Any] | str,
     current: Mapping[str, Any] | str,
@@ -312,7 +465,7 @@ def diff_observations(
     previous_envelope, previous_id = _resolve_side(previous, "previous", root=root)
     current_envelope, current_id = _resolve_side(current, "current", root=root)
 
-    unknown: set[str] = set(_PART_B_DIMENSIONS)
+    unknown: set[str] = set()
 
     previous_source = _source_digest(previous_envelope, "previous", previous_id)
     current_source = _source_digest(current_envelope, "current", current_id)
@@ -353,14 +506,62 @@ def diff_observations(
 
     count_before = _record_count(previous_envelope)
     count_after = _record_count(current_envelope)
-    count_delta = (
-        count_after - count_before
-        if count_before is not None and count_after is not None
-        else None
+
+    previous_profile = _profile_reference(previous_envelope)
+    current_profile = _profile_reference(current_envelope)
+    previous_format = _projection_format(previous_envelope)
+    current_format = _projection_format(current_envelope)
+    incomparable, incomparable_reason = _incomparability(
+        previous_profile, current_profile, previous_format, current_format
     )
-    if count_before is None or count_after is None or count_delta is None:
+
+    if incomparable:
+        # before/after remain reported (each side measured its own count);
+        # the delta across incomparable inputs is withheld because it
+        # would describe the profile change, not the source.
+        count_delta = None
         unknown.add("record_count")
+    else:
+        count_delta = (
+            count_after - count_before
+            if count_before is not None and count_after is not None
+            else None
+        )
+        if count_delta is None:
+            unknown.add("record_count")
     record_count = {"before": count_before, "after": count_after, "delta": count_delta}
+
+    if incomparable:
+        # Do NOT compute record-level counts across incomparable inputs:
+        # a profile or version change is the reason the numbers would
+        # differ, so they would answer a different question than the one
+        # asked.
+        records_added: int | None = None
+        records_removed: int | None = None
+        records_modified: int | None = None
+        unknown.update(_RECORD_LEVEL_DIMENSIONS)
+    else:
+        previous_ids = _comparable_record_ids(previous_envelope, root=root)
+        current_ids = _comparable_record_ids(current_envelope, root=root)
+        if previous_ids is None or current_ids is None:
+            # Set arithmetic over absent or unstable identifiers is not a
+            # diff; reporting counts from it is worse than reporting
+            # nothing.
+            records_added = records_removed = records_modified = None
+            unknown.update(_RECORD_LEVEL_DIMENSIONS)
+        else:
+            records_added = len(current_ids - previous_ids)
+            records_removed = len(previous_ids - current_ids)
+            # The record id is itself the content digest of the normalized
+            # row ("sha256:" + sha256(canonical_json(row))), so an id
+            # present in both sides carries identical content by
+            # derivation — "present in both, but the record's content
+            # digest differs" selects nothing under this identity scheme,
+            # and the zero follows from the same set arithmetic rather
+            # than being assumed.  A future profile that separates
+            # identity from content must compare per-record content
+            # digests here instead of relying on this invariant.
+            records_modified = 0
 
     evidence: dict[str, Any] = {
         "previous_observation_id": previous_id,
@@ -371,7 +572,14 @@ def diff_observations(
         "current_normalized_digest": current_normalized,
         "previous_shape_fingerprint": previous_fingerprint,
         "current_shape_fingerprint": current_fingerprint,
+        "previous_profile": _profile_designation(previous_profile),
+        "current_profile": _profile_designation(current_profile),
+        "previous_format": previous_format,
+        "current_format": current_format,
         "record_count": dict(record_count),
+        "records_added": records_added,
+        "records_removed": records_removed,
+        "records_modified": records_modified,
         "unavailable_sides": list(unavailable_sides),
     }
 
@@ -380,20 +588,21 @@ def diff_observations(
         normalized_digest_changed=normalized_digest_changed,
         schema_or_header_changed=schema_or_header_changed,
         record_count=record_count,
-        records_added=None,
-        records_removed=None,
-        records_modified=None,
+        records_added=records_added,
+        records_removed=records_removed,
+        records_modified=records_modified,
         source_unavailable=source_unavailable,
-        incomparable=False,
-        incomparable_reason=None,
+        incomparable=incomparable,
+        incomparable_reason=incomparable_reason,
         unknown_dimensions=tuple(name for name in DIMENSION_ORDER if name in unknown),
         evidence=evidence,
     )
     logger.debug(
-        "diff %s -> %s: source_digest_changed=%s unknown_dimensions=%s",
+        "diff %s -> %s: source_digest_changed=%s incomparable=%s unknown_dimensions=%s",
         previous_id,
         current_id,
         result.source_digest_changed,
+        result.incomparable,
         result.unknown_dimensions,
     )
     return result
@@ -413,12 +622,20 @@ def _selftest_envelope(
     shape_value: str,
     projection_digest: str | None,
     record_count: int | None,
+    profile_name: str = "fuelprice_csv",
+    profile_version: str = "v1",
+    projection_format: str | None = None,
 ) -> dict[str, Any]:
     """A minimal envelope carrying exactly the members this diff reads."""
     transform = (
-        f"observation_normalize profile fuelprice_csv/v1; projection_digest {projection_digest}"
+        f"observation_normalize profile {profile_name}/{profile_version}; projection_digest {projection_digest}"
         if projection_digest is not None
         else None
+    )
+    effective_format = (
+        projection_format
+        if projection_format is not None
+        else ("csv" if projection_digest is not None else None)
     )
     return {
         "schema": "historical-observation/v2",
@@ -435,7 +652,7 @@ def _selftest_envelope(
         },
         "normalized_projection": {
             "state": "retained" if projection_digest is not None else "not_retained",
-            "format": "csv" if projection_digest is not None else None,
+            "format": effective_format,
             "record_count": record_count,
         },
         "field_provenance": {
@@ -466,13 +683,32 @@ def _file_projection(record_count: int, *, root: Path) -> str:
     )
 
 
-def _selftest() -> int:
-    """Three cases — unchanged, digest-changed, unavailable — one verdict each.
+def _file_projection_with_ids(
+    record_ids: list[str], *, root: Path, projection_format: str = "csv"
+) -> str:
+    """File a projection exposing exactly ``record_ids`` and return its digest."""
+    return put_normalized(
+        {
+            "format": projection_format,
+            "record_count": len(record_ids),
+            "columns": ["date", "ron95"],
+            "dropped_fields": [],
+            "deduped_rows": 0,
+            "record_ids": list(record_ids),
+        },
+        root=root,
+    )
 
+
+def _selftest() -> int:
+    """Eight cases, one verdict each.
+
+    Part A's three (unchanged, digest-changed, unavailable) plus part B's
+    five (added, removed, schema-changed, profile-changed, incomparable).
     Builds a scratch store inside the worktree (the production store root
     is never touched), asserts each case's specific expectations, prints
     the dimension values produced, removes the scratch root, and exits 0
-    only if all three held.
+    only if all eight held.
     """
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
     worktree = Path(__file__).resolve().parents[1]
@@ -485,6 +721,11 @@ def _selftest() -> int:
             f"normalized_digest_changed={result.normalized_digest_changed} "
             f"schema_or_header_changed={result.schema_or_header_changed} "
             f"record_count={result.record_count} "
+            f"records_added={result.records_added} "
+            f"records_removed={result.records_removed} "
+            f"records_modified={result.records_modified} "
+            f"incomparable={result.incomparable} "
+            f"incomparable_reason={result.incomparable_reason!r} "
             f"source_unavailable={result.source_unavailable} "
             f"unknown_dimensions={result.unknown_dimensions}"
         )
@@ -599,6 +840,174 @@ def _selftest() -> int:
             and "normalized_digest_changed" in orphan_result.unknown_dimensions
         )
         verdict("unavailable", orphan_ok, orphan_result)
+
+        # -- case 4: added (one record id on the current side only) ------
+        stable_id = "sha256:" + hashlib.sha256(b"record-stable").hexdigest()
+        extra_id = "sha256:" + hashlib.sha256(b"record-extra").hexdigest()
+        added_previous = _selftest_envelope(
+            observation_id="obs-fuelprice-20260915t020000z-11a71a71",
+            dataset_id="fuelprice_added",
+            observed_at="2026-09-15T02:00:00Z",
+            source_digest=same_digest,
+            shape_value=shape_value,
+            projection_digest=_file_projection_with_ids([stable_id], root=scratch),
+            record_count=1,
+        )
+        added_current = _selftest_envelope(
+            observation_id="obs-fuelprice-20260916t020000z-22b62b62",
+            dataset_id="fuelprice_added",
+            observed_at="2026-09-16T02:00:00Z",
+            source_digest=same_digest,
+            shape_value=shape_value,
+            projection_digest=_file_projection_with_ids([stable_id, extra_id], root=scratch),
+            record_count=2,
+        )
+        added_result = diff_observations(added_previous, added_current, root=scratch)
+        added_ok = (
+            added_result.records_added == 1
+            and added_result.records_removed == 0
+            and added_result.incomparable is False
+            and "records_added" not in added_result.unknown_dimensions
+            and "records_removed" not in added_result.unknown_dimensions
+            and "records_modified" not in added_result.unknown_dimensions
+        )
+        verdict("added", added_ok, added_result)
+
+        # -- case 5: removed (one record id on the previous side only) ---
+        removed_previous = _selftest_envelope(
+            observation_id="obs-fuelprice-20260915t020000z-33c73c73",
+            dataset_id="fuelprice_removed",
+            observed_at="2026-09-15T02:00:00Z",
+            source_digest=same_digest,
+            shape_value=shape_value,
+            projection_digest=_file_projection_with_ids([stable_id, extra_id], root=scratch),
+            record_count=2,
+        )
+        removed_current = _selftest_envelope(
+            observation_id="obs-fuelprice-20260916t020000z-44d84d84",
+            dataset_id="fuelprice_removed",
+            observed_at="2026-09-16T02:00:00Z",
+            source_digest=same_digest,
+            shape_value=shape_value,
+            projection_digest=_file_projection_with_ids([stable_id], root=scratch),
+            record_count=1,
+        )
+        removed_result = diff_observations(removed_previous, removed_current, root=scratch)
+        removed_ok = (
+            removed_result.records_removed == 1
+            and removed_result.records_added == 0
+            and removed_result.incomparable is False
+            and "records_removed" not in removed_result.unknown_dimensions
+        )
+        verdict("removed", removed_ok, removed_result)
+
+        # -- case 6: schema-changed (fingerprint differs, profile identical) --
+        wider_shape = hashlib.sha256(b"date,ron95,ron97").hexdigest()
+        schema_previous = _selftest_envelope(
+            observation_id="obs-fuelprice-20260915t020000z-55e95e95",
+            dataset_id="fuelprice_schema",
+            observed_at="2026-09-15T02:00:00Z",
+            source_digest=same_digest,
+            shape_value=shape_value,
+            projection_digest=_file_projection_with_ids([stable_id], root=scratch),
+            record_count=1,
+        )
+        schema_current = _selftest_envelope(
+            observation_id="obs-fuelprice-20260916t020000z-66f066f0",
+            dataset_id="fuelprice_schema",
+            observed_at="2026-09-16T02:00:00Z",
+            source_digest=same_digest,
+            shape_value=wider_shape,
+            projection_digest=_file_projection_with_ids([stable_id], root=scratch),
+            record_count=1,
+        )
+        schema_result = diff_observations(schema_previous, schema_current, root=scratch)
+        # A schema change does NOT make the inputs incomparable: the
+        # record-level dimensions are still computed.
+        schema_ok = (
+            schema_result.schema_or_header_changed is True
+            and schema_result.incomparable is False
+            and schema_result.records_added == 0
+            and schema_result.records_modified == 0
+            and "records_added" not in schema_result.unknown_dimensions
+            and "records_modified" not in schema_result.unknown_dimensions
+        )
+        verdict("schema-changed", schema_ok, schema_result)
+
+        # -- case 7: profile-changed (same name, different version) ------
+        profile_previous = _selftest_envelope(
+            observation_id="obs-fuelprice-20260915t020000z-77a177a1",
+            dataset_id="fuelprice_profile",
+            observed_at="2026-09-15T02:00:00Z",
+            source_digest=same_digest,
+            shape_value=shape_value,
+            projection_digest=_file_projection_with_ids([stable_id], root=scratch),
+            record_count=1,
+            profile_version="v1",
+        )
+        profile_current = _selftest_envelope(
+            observation_id="obs-fuelprice-20260916t020000z-88b288b2",
+            dataset_id="fuelprice_profile",
+            observed_at="2026-09-16T02:00:00Z",
+            source_digest=same_digest,
+            shape_value=shape_value,
+            projection_digest=_file_projection_with_ids([stable_id, extra_id], root=scratch),
+            record_count=2,
+            profile_version="v2",
+        )
+        profile_result = diff_observations(profile_previous, profile_current, root=scratch)
+        profile_reason = profile_result.incomparable_reason or ""
+        profile_ok = (
+            profile_result.incomparable is True
+            and "v1" in profile_reason
+            and "v2" in profile_reason
+            and profile_result.records_added is None
+            and profile_result.records_removed is None
+            and profile_result.records_modified is None
+            and set(_RECORD_LEVEL_DIMENSIONS) <= set(profile_result.unknown_dimensions)
+            # before/after remain reported; the delta is withheld.
+            and profile_result.record_count["before"] == 1
+            and profile_result.record_count["after"] == 2
+            and profile_result.record_count["delta"] is None
+            and "record_count" in profile_result.unknown_dimensions
+        )
+        verdict("profile-changed", profile_ok, profile_result)
+
+        # -- case 8: incomparable (different projection formats) ---------
+        format_previous = _selftest_envelope(
+            observation_id="obs-fuelprice-20260915t020000z-99c399c3",
+            dataset_id="fuelprice_format",
+            observed_at="2026-09-15T02:00:00Z",
+            source_digest=same_digest,
+            shape_value=shape_value,
+            projection_digest=_file_projection_with_ids([stable_id], root=scratch),
+            record_count=1,
+            projection_format="csv",
+        )
+        format_current = _selftest_envelope(
+            observation_id="obs-fuelprice-20260916t020000z-aad4aad4",
+            dataset_id="fuelprice_format",
+            observed_at="2026-09-16T02:00:00Z",
+            source_digest=same_digest,
+            shape_value=shape_value,
+            projection_digest=_file_projection_with_ids(
+                [stable_id], root=scratch, projection_format="json-array-of-objects"
+            ),
+            record_count=1,
+            projection_format="json-array-of-objects",
+        )
+        format_result = diff_observations(format_previous, format_current, root=scratch)
+        format_reason = format_result.incomparable_reason or ""
+        format_ok = (
+            format_result.incomparable is True
+            and "csv" in format_reason
+            and "json-array-of-objects" in format_reason
+            and format_result.records_added is None
+            and format_result.records_removed is None
+            and format_result.records_modified is None
+            and set(_RECORD_LEVEL_DIMENSIONS) <= set(format_result.unknown_dimensions)
+        )
+        verdict("incomparable", format_ok, format_result)
     except Exception as error:  # noqa: BLE001 — the selftest reports, never traces
         outcomes.append(
             ("selftest_harness", False, f"raised {type(error).__name__}: {error}")
@@ -612,7 +1021,10 @@ def _selftest() -> int:
     if failed:
         print(f"selftest failed: {', '.join(failed)}", file=sys.stderr)
         return 1
-    print("selftest passed: unchanged, digest-changed and unavailable behaved as stated")
+    print(
+        "selftest passed: unchanged, digest-changed, unavailable, added, removed, "
+        "schema-changed, profile-changed and incomparable behaved as stated"
+    )
     return 0
 
 
@@ -625,7 +1037,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--selftest",
         action="store_true",
-        help="run the three acceptance cases against a scratch store inside the worktree",
+        help="run the eight acceptance cases against a scratch store inside the worktree",
     )
     parser.add_argument(
         "--previous",
