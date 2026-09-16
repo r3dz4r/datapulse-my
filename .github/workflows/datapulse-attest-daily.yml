@@ -42,10 +42,13 @@ jobs:
           set -Eeuo pipefail
           day="$(date -u +%F)"
           rekor_dir="attestations/rekor/$day"
-          if [[ -d "attestations/$day" && -f "attestations/$day/binding.json" && -f "attestations/$day/chain_head.json" ]]; then
-            echo "Today's dated attestation set already exists; skipping Rekor upload."
+          if [[ -s "$rekor_dir/reference.json" && -s "$rekor_dir/health.sigstore.bundle.json" ]]; then
+            echo "Today's Rekor evidence already exists; skipping Rekor upload."
             printf 'needed=false\n' >> "$GITHUB_OUTPUT"
             exit 0
+          fi
+          if [[ -d "attestations/$day" ]]; then
+            echo "Today's dated attestation set already exists without its Rekor witness; producing the missing evidence for it."
           fi
           rm -rf -- "$rekor_dir"
           mkdir -p "$rekor_dir"
