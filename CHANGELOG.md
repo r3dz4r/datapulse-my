@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.23.3](https://github.com/r3dz4r/datapulse-my/compare/v3.23.2...v3.23.3) (2026-09-16)
+
+
+### Bug Fixes
+
+* **telemetry:** accept the observation-capture stage in the summarizer too ([50ea072](https://github.com/r3dz4r/datapulse-my/commit/50ea07276e6a30874f387540c0c6a7a975258911))
+* **telemetry:** accept the observation-capture stage root ([7616a67](https://github.com/r3dz4r/datapulse-my/commit/7616a67f36a3197e71b323925dcc33abb5c466fb))
+
 ## [3.23.2](https://github.com/r3dz4r/datapulse-my/compare/v3.23.1...v3.23.2) (2026-09-16)
 
 
