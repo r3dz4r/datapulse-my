@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.22.2](https://github.com/r3dz4r/datapulse-my/compare/v3.22.1...v3.22.2) (2026-09-16)
+
+
+### Bug Fixes
+
+* **mcp:** size the post-restart readiness wait in seconds, and report what it waited ([#89](https://github.com/r3dz4r/datapulse-my/issues/89)) ([8812bad](https://github.com/r3dz4r/datapulse-my/commit/8812bad7dee809579850f336aa918d57ef92226b))
+
 ## [3.22.1](https://github.com/r3dz4r/datapulse-my/compare/v3.22.0...v3.22.1) (2026-09-16)
 
 
