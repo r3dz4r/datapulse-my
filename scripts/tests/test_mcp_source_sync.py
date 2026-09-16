@@ -269,12 +269,19 @@ def test_sync_verifies_fastmcp_identity_and_rolls_back_on_failure(
 ) -> None:
     source = tmp_path / "source.py"
     deployed = tmp_path / "deployed.py"
+    # The marker literals are a deliberately stale release-build stamp; the
+    # deployed copy must be stamped from the caller-supplied commit, so the
+    # installed markers provably do not come from these literals.
     source_text = (
         'import os\n'
         f'FASTMCP_VERSION = "{source_fastmcp_version}"\n'
         'SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "'
-        + "a" * 40
+        + "c" * 40
         + '")\n'
+        'SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "1999-12-31")\n'
+    )
+    expected_deployed_text = source_text.replace("c" * 40, "a" * 40).replace(
+        "1999-12-31", "2024-01-15"
     )
     source.write_text(source_text, encoding="utf-8")
     deployed.write_text("old deployed source\n", encoding="utf-8")
@@ -350,7 +357,13 @@ def test_sync_verifies_fastmcp_identity_and_rolls_back_on_failure(
                 str(tmp_path / "drop-in.conf"),
             ],
             cwd=ROOT,
-            env={"PATH": f"{fake_bin}:{os.environ['PATH']}"},
+            env={
+                "PATH": f"{fake_bin}:{os.environ['PATH']}",
+                # Outside a git checkout the commit is supplied explicitly via
+                # the environment pair the server already honours.
+                "DATAPULSE_MCP_SOURCE_SHA": "a" * 40,
+                "DATAPULSE_MCP_SOURCE_DATE": "2024-01-15",
+            },
             capture_output=True,
             text=True,
             check=False,
@@ -363,7 +376,7 @@ def test_sync_verifies_fastmcp_identity_and_rolls_back_on_failure(
 
     if expected_surface is not None:
         assert result.returncode == 0, result.stderr
-        assert deployed.read_text(encoding="utf-8") == source_text
+        assert deployed.read_text(encoding="utf-8") == expected_deployed_text
         assert (tmp_path / "drop-in.conf").read_text(encoding="utf-8") == (
             "[Service]\n"
             "# The deployed file is authoritative; stale manual environment overrides must not\n"
@@ -376,4 +389,59 @@ def test_sync_verifies_fastmcp_identity_and_rolls_back_on_failure(
         assert result.returncode != 0
         assert deployed.read_text(encoding="utf-8") == "old deployed source\n"
         assert "live identity mismatch:" in result.stderr
-        assert "checked=legacy serverInfo.source_commit_sha or FastMCP serverInfo.version" in result.stderr
+        assert f"head_sha={'a' * 40}" in result.stderr
+        assert "head_short_sha=aaaaaaa" in result.stderr
+        assert "served_short_sha=" in result.stderr
+
+
+def test_sync_requires_explicit_sha_outside_a_work_tree(tmp_path: Path) -> None:
+    """Without a checkout the script must demand a sha, never fall back to empty."""
+    source = tmp_path / "source.py"
+    deployed = tmp_path / "deployed.py"
+    source.write_text(
+        'import os\n'
+        'FASTMCP_VERSION = "4.0.0b3"\n'
+        'SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "'
+        + "c" * 40
+        + '")\n'
+        'SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "1999-12-31")\n',
+        encoding="utf-8",
+    )
+    deployed.write_text("old deployed source\n", encoding="utf-8")
+
+    def run_sync(extra_args: list[str]) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                str(SYNC_SCRIPT),
+                "--source",
+                str(source),
+                "--deployed-path",
+                str(deployed),
+                "--endpoint",
+                "http://127.0.0.1:1/mcp",
+                "--service",
+                "sync-test.service",
+                "--drop-in",
+                str(tmp_path / "drop-in.conf"),
+                *extra_args,
+            ],
+            cwd=ROOT,
+            env={"PATH": os.environ["PATH"]},
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=20,
+        )
+
+    missing = run_sync([])
+    assert missing.returncode != 0
+    assert "no source sha available" in missing.stderr
+    assert str(source) in missing.stderr
+    assert "--source-sha" in missing.stderr
+    assert "DATAPULSE_MCP_SOURCE_SHA" in missing.stderr
+    assert "fatal:" not in missing.stderr
+    assert deployed.read_text(encoding="utf-8") == "old deployed source\n"
+
+    half_override = run_sync(["--source-sha", "a" * 40])
+    assert half_override.returncode != 0
+    assert "--source-sha requires --source-date" in half_override.stderr
