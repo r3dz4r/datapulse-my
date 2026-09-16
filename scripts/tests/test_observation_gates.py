@@ -75,16 +75,52 @@ def _envelope(dataset_id: str, observation_id: str, observed_at: str) -> dict[st
     }
 
 
+def _observation_identity(observation_id: str) -> str:
+    """A well-formed observation-namespace identity for fixtures.
+
+    Capture seals observation_digest over the canonical envelope excluding
+    the member itself; the gates never recompute that seal, so a fixture only
+    needs a well-formed member of the identity namespace — the same approach
+    observation_diff's test fixtures take.
+    """
+    return "observation:sha256:" + hashlib.sha256(observation_id.encode("utf-8")).hexdigest()
+
+
 def _referencing_envelope(
     dataset_id: str,
     observation_id: str,
     observed_at: str,
     source_digest: str,
-    observation_digest: str,
+    projection_digest: str | None = None,
 ) -> dict[str, Any]:
+    """A capture-shaped referencing envelope.
+
+    source_digest is a blob-namespace digest; observation_digest is an
+    identity in the observation namespace and addresses nothing. The
+    normalized_projection declaration is retained, pinning the projection's
+    addressing digest exactly where capture pins it (the provenance
+    transform), only when a projection exists; without one it carries the
+    unknown state capture records when normalization failed or never ran.
+    """
     envelope = _envelope(dataset_id, observation_id, observed_at)
     envelope["source_digest"] = source_digest
-    envelope["observation_digest"] = observation_digest
+    envelope["observation_digest"] = _observation_identity(observation_id)
+    if projection_digest is None:
+        envelope["normalized_projection"] = {"state": "unknown", "format": None, "record_count": None}
+        return envelope
+    envelope["normalized_projection"] = {
+        "state": "retained",
+        "format": "json-array-of-objects",
+        "record_count": 1,
+    }
+    envelope["field_provenance"] = {
+        "normalized_projection": {
+            "transform": (
+                "observation_normalize profile fixture_csv/v1; "
+                f"projection_digest {projection_digest}"
+            )
+        }
+    }
     return envelope
 
 
@@ -478,6 +514,99 @@ def test_verify_store_reports_dangling_source_digest(tmp_path: Path, monkeypatch
             "field": "source_digest",
             "digest": phantom,
             "expected_path": blob_path(phantom, root=root).relative_to(root).as_posix(),
+        }
+    ]
+
+
+def test_envelope_identity_digest_with_unretained_projection_is_readable_and_verifies_ok(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The envelope shape the store actually contains today — observation_digest
+    in the identity namespace, a projection the envelope declares unknown — is
+    readable, with a non-null moment and both digests surfaced, and the store
+    verifies ok: the identity digest names no path, and an unretained
+    projection has no artifact to look for, so neither is a dangling check."""
+    root = _install_policies(tmp_path, monkeypatch, _policy_document())
+    raw_digest = put_blob(b"raw bytes behind an unretained projection", root=root)
+    observation_id = "obs-gated-identity-20260101"
+    identity = _observation_identity(observation_id)
+    put_envelope(
+        "gated-dataset",
+        observation_id,
+        _referencing_envelope(
+            "gated-dataset", observation_id, "2026-01-01T00:00:00Z", raw_digest
+        ),
+        root=root,
+    )
+
+    record = gates._scan_envelopes(root)[0]
+    assert record["readable"] is True
+    assert record["moment"] == datetime(2026, 1, 1, tzinfo=timezone.utc)
+    assert record["source_digest"] == raw_digest
+    assert record["observation_digest"] == identity
+
+    report = gates.verify_store(root=root)
+    assert report["ok"] is True
+    assert report["counts"]["envelopes_unreadable"] == 0
+    assert report["counts"]["dangling_references"] == 0
+
+
+def test_envelope_with_malformed_observation_digest_is_unreadable_and_fails_the_verdict(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An observation_digest outside the identity namespace pattern is not
+    readable, and a store holding it must not report ok: an envelope whose
+    digests the verifier cannot accept is one whose references it cannot
+    check."""
+    root = _install_policies(tmp_path, monkeypatch, _policy_document())
+    raw_digest = put_blob(b"raw bytes behind a malformed identity", root=root)
+    observation_id = "obs-gated-malformed-20260101"
+    envelope = _referencing_envelope(
+        "gated-dataset", observation_id, "2026-01-01T00:00:00Z", raw_digest
+    )
+    envelope["observation_digest"] = "observation:sha256:xyz"
+    put_envelope("gated-dataset", observation_id, envelope, root=root)
+
+    record = gates._scan_envelopes(root)[0]
+    assert record["readable"] is False
+
+    report = gates.verify_store(root=root)
+    assert report["ok"] is False
+    assert report["counts"]["envelopes_unreadable"] == 1
+
+
+def test_envelope_declaring_retained_projection_with_absent_artifact_is_a_dangling_reference(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A retained projection whose normalized artifact is absent from the store
+    is reported as a dangling reference carrying the pinned projection digest
+    and the path it should occupy — the declaration is checked, not silently
+    skipped, and the verdict fails on it."""
+    root = _install_policies(tmp_path, monkeypatch, _policy_document())
+    raw_digest = put_blob(b"raw bytes behind a retained-but-absent projection", root=root)
+    observation_id = "obs-gated-retained-20260101"
+    phantom_projection = "sha256:" + "1" * 64  # well-formed reference, no artifact behind it
+    put_envelope(
+        "gated-dataset",
+        observation_id,
+        _referencing_envelope(
+            "gated-dataset", observation_id, "2026-01-01T00:00:00Z", raw_digest, phantom_projection
+        ),
+        root=root,
+    )
+
+    report = gates.verify_store(root=root)
+
+    assert report["ok"] is False
+    assert report["counts"]["envelopes_unreadable"] == 0
+    assert report["counts"]["dangling_references"] == 1
+    assert report["dangling_references"] == [
+        {
+            "dataset_id": "gated-dataset",
+            "observation_id": observation_id,
+            "field": "normalized_projection",
+            "digest": phantom_projection,
+            "expected_path": normalized_path(phantom_projection, root=root).relative_to(root).as_posix(),
         }
     ]
 
