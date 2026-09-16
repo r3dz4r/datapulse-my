@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
+import socket
 import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -445,3 +447,255 @@ def test_sync_requires_explicit_sha_outside_a_work_tree(tmp_path: Path) -> None:
     half_override = run_sync(["--source-sha", "a" * 40])
     assert half_override.returncode != 0
     assert "--source-sha requires --source-date" in half_override.stderr
+
+
+class _ReadinessStubHandler(BaseHTTPRequestHandler):
+    """MCP stub honouring the sync script's identity and annotation contract."""
+
+    runtime_version = "v1.2.3+aaaaaaa"
+
+    def do_POST(self) -> None:  # noqa: N802
+        content_length = int(self.headers.get("Content-Length", "0"))
+        request = json.loads(self.rfile.read(content_length))
+        method = request["method"]
+        if method == "initialize":
+            payload = json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": request["id"],
+                    "result": {
+                        "protocolVersion": "2025-03-26",
+                        "capabilities": {},
+                        "serverInfo": {
+                            "name": "DataPulse MY",
+                            "version": self.runtime_version,
+                        },
+                    },
+                }
+            )
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Mcp-Session-Id", "sync-readiness-session")
+            encoded = f"data: {payload}\n\n".encode("utf-8")
+        elif method == "notifications/initialized":
+            self.send_response(202)
+            encoded = b""
+        else:
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            encoded = (
+                b'data: {"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"probe",'
+                b'"annotations":{"readOnlyHint":true,"destructiveHint":false,'
+                b'"idempotentHint":true,"openWorldHint":true}}]}}\n\n'
+            )
+        self.send_header("Content-Length", str(len(encoded)))
+        self.end_headers()
+        self.wfile.write(encoded)
+
+    def log_message(self, format: str, *args: object) -> None:
+        return
+
+
+def _free_scratch_port() -> int:
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        return int(probe.getsockname()[1])
+
+
+class _DelayedMCPStub:
+    """Keeps the port refused (nothing listening) for `delay` seconds, then
+    serves — the shape of a draining service whose replacement has not bound
+    the socket yet."""
+
+    def __init__(self, port: int, delay: float) -> None:
+        self._server = HTTPServer(
+            ("127.0.0.1", port), _ReadinessStubHandler, bind_and_activate=False
+        )
+        self._activated = threading.Event()
+        self._timer = threading.Timer(delay, self._activate)
+
+    def _activate(self) -> None:
+        self._server.server_bind()
+        self._server.server_activate()
+        self._activated.set()
+        self._server.serve_forever()
+
+    def start(self) -> None:
+        self._timer.start()
+
+    def close(self) -> None:
+        self._timer.cancel()
+        if self._activated.is_set():
+            self._server.shutdown()
+            self._server.server_close()
+
+
+class _SilentListener(threading.Thread):
+    """Accepts connections and never answers — a genuinely dead endpoint."""
+
+    def __init__(self, port: int) -> None:
+        super().__init__(daemon=True)
+        self._socket = socket.socket()
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self._socket.bind(("127.0.0.1", port))
+        self._socket.listen(8)
+        self._socket.settimeout(0.5)
+        self._held: list[socket.socket] = []
+        self._stopped = threading.Event()
+
+    def run(self) -> None:
+        while not self._stopped.is_set():
+            try:
+                conn, _ = self._socket.accept()
+            except socket.timeout:
+                continue
+            self._held.append(conn)
+
+    def close(self) -> None:
+        self._stopped.set()
+        self.join(timeout=5)
+        for conn in self._held:
+            conn.close()
+        self._socket.close()
+
+
+def _readiness_fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, str]]:
+    source = tmp_path / "source.py"
+    deployed = tmp_path / "deployed.py"
+    source.write_text(
+        'import os\n'
+        'FASTMCP_VERSION = "1.2.3"\n'
+        'SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "'
+        + "c" * 40
+        + '")\n'
+        'SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "1999-12-31")\n',
+        encoding="utf-8",
+    )
+    deployed.write_text("old deployed source\n", encoding="utf-8")
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    (fake_bin / "systemctl").write_text(
+        "#!/usr/bin/env bash\nexit 0\n", encoding="utf-8"
+    )
+    (fake_bin / "systemctl").chmod(0o755)
+    env = {
+        "PATH": f"{fake_bin}:{os.environ['PATH']}",
+        "DATAPULSE_MCP_SOURCE_SHA": "a" * 40,
+        "DATAPULSE_MCP_SOURCE_DATE": "2024-01-15",
+    }
+    return source, deployed, env
+
+
+def _run_readiness_sync(
+    source: Path,
+    deployed: Path,
+    endpoint: str,
+    env: dict[str, str],
+    budget: str,
+    timeout: float,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            str(SYNC_SCRIPT),
+            "--source",
+            str(source),
+            "--deployed-path",
+            str(deployed),
+            "--endpoint",
+            endpoint,
+            "--service",
+            "sync-test.service",
+            "--drop-in",
+            str(deployed.parent / "drop-in.conf"),
+        ],
+        cwd=ROOT,
+        env={**env, "DATAPULSE_MCP_READINESS_BUDGET_SECONDS": budget},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=timeout,
+    )
+
+
+def test_sync_readiness_budget_outlasts_refused_port(tmp_path: Path) -> None:
+    """A draining service keeps the port refused for longer than the retired
+    poll's effective ~10s window; the budgeted deadline must wait it out,
+    deploy, and report the measured wait so future resizes start from data."""
+    source, deployed, env = _readiness_fixture(tmp_path)
+    port = _free_scratch_port()
+    stub = _DelayedMCPStub(port, delay=15.0)
+    stub.start()
+    try:
+        result = _run_readiness_sync(
+            source,
+            deployed,
+            f"http://127.0.0.1:{port}/mcp",
+            env,
+            budget="30",
+            timeout=90,
+        )
+    finally:
+        stub.close()
+
+    assert result.returncode == 0, result.stderr
+    waited = re.search(r"readiness wait=(\d+)s budget=(\d+)s", result.stdout)
+    assert waited is not None, result.stdout
+    assert waited.group(2) == "30"
+    # The stub refused connections for 15s; the sync subprocess reaches the
+    # poll ~1s in, so the deadline must have absorbed >= 12s of refusal —
+    # beyond the old 10-attempt/1s window, which would have rolled back.
+    assert int(waited.group(1)) >= 12
+    assert deployed.read_text(encoding="utf-8") == (
+        'import os\n'
+        'FASTMCP_VERSION = "1.2.3"\n'
+        'SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "'
+        + "a" * 40
+        + '")\n'
+        'SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "2024-01-15")\n'
+    )
+
+
+def test_sync_dead_endpoint_rolls_back_within_budget(tmp_path: Path) -> None:
+    """A bigger budget must not turn a genuinely dead endpoint into a success:
+    the poll gives up at the deadline, rolls back, and reports the wait."""
+    source, deployed, env = _readiness_fixture(tmp_path)
+    port = _free_scratch_port()
+    listener = _SilentListener(port)
+    listener.start()
+    try:
+        result = _run_readiness_sync(
+            source,
+            deployed,
+            f"http://127.0.0.1:{port}/mcp",
+            env,
+            budget="3",
+            timeout=60,
+        )
+    finally:
+        listener.close()
+
+    assert result.returncode != 0
+    assert "rolling back failed deployment" in result.stdout
+    assert "local endpoint did not initialize after restart" in result.stderr
+    waited = re.search(r"waited (\d+)s of 3s readiness budget", result.stderr)
+    assert waited is not None, result.stderr
+    assert int(waited.group(1)) >= 3
+    assert "DATAPULSE_MCP_READINESS_BUDGET_SECONDS" in result.stderr
+    assert deployed.read_text(encoding="utf-8") == "old deployed source\n"
+
+
+def test_sync_rejects_malformed_readiness_budget(tmp_path: Path) -> None:
+    source, deployed, env = _readiness_fixture(tmp_path)
+    result = _run_readiness_sync(
+        source,
+        deployed,
+        "http://127.0.0.1:1/mcp",
+        env,
+        budget="soon",
+        timeout=30,
+    )
+
+    assert result.returncode != 0
+    assert "DATAPULSE_MCP_READINESS_BUDGET_SECONDS" in result.stderr
+    assert "positive integer" in result.stderr
+    assert deployed.read_text(encoding="utf-8") == "old deployed source\n"

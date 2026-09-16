@@ -6,6 +6,10 @@ readonly DEFAULT_ENDPOINT=http://127.0.0.1:8788/mcp
 readonly DEFAULT_SERVICE=datapulse-mcp.service
 readonly DEFAULT_DROP_IN=/home/redza/.config/systemd/user/datapulse-mcp.service.d/99-source-marker.conf
 readonly DEFAULT_PYTHONPATH=/home/redza/datapulse-my
+# Sized against a measured production restart: the long-lived instance held
+# the port closed for ~34s while draining, which the retired attempt-counted
+# poll could never cover (see the readiness loop below).
+readonly DEFAULT_READINESS_BUDGET_SECONDS=90
 readonly ACCEPT='application/json, text/event-stream'
 
 source_path=""
@@ -16,6 +20,7 @@ endpoint="${DATAPULSE_MCP_ENDPOINT:-$DEFAULT_ENDPOINT}"
 service="${DATAPULSE_MCP_SERVICE:-$DEFAULT_SERVICE}"
 drop_in="${DATAPULSE_MCP_SOURCE_DROP_IN:-$DEFAULT_DROP_IN}"
 pythonpath="${DATAPULSE_MCP_PYTHONPATH:-$DEFAULT_PYTHONPATH}"
+readiness_budget_seconds="${DATAPULSE_MCP_READINESS_BUDGET_SECONDS:-$DEFAULT_READINESS_BUDGET_SECONDS}"
 result_file=""
 work_dir=""
 source_tmp=""
@@ -203,6 +208,8 @@ done
 [[ -f "$deployed_path" ]] || fail "deployed copy is not a regular file: $deployed_path"
 [[ "$pythonpath" != *$'\n'* && "$pythonpath" != *$'\r'* && "$pythonpath" != *'"'* && "$pythonpath" != *"'"* ]] \
   || fail 'DATAPULSE_MCP_PYTHONPATH contains unsupported systemd Environment characters'
+[[ "$readiness_budget_seconds" =~ ^[0-9]+$ ]] && (( readiness_budget_seconds >= 1 )) \
+  || fail "DATAPULSE_MCP_READINESS_BUDGET_SECONDS must be a positive integer number of seconds, got: $readiness_budget_seconds"
 command -v curl >/dev/null || fail 'curl is required'
 command -v jq >/dev/null || fail 'jq is required'
 command -v systemctl >/dev/null || fail 'systemctl is required'
@@ -413,8 +420,17 @@ log "restarted $service via XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
 
 work_dir="$(mktemp -d /tmp/datapulse-mcp-sync.XXXXXX)"
 initialize_payload='{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"datapulse-mcp-sync","version":"1"}},"id":1}'
+# Readiness is a wall-clock deadline, not an attempt count: while the old
+# process drains, nothing listens, so curl fails instantly with
+# connection-refused instead of spending its 5s max-time. The previous
+# 10-attempt loop therefore covered ~10s of drain, not the 60s its constants
+# implied, and gave up on a restart measured to need ~34s — rolling back a
+# deployment that was about to come up. The deadline makes the window what
+# the number says it is, and the elapsed wait is logged on every exit path
+# so the next resize starts from evidence instead of inference.
 initialize_ok=false
-for (( attempt=1; attempt<=10; attempt++ )); do
+readiness_started=$SECONDS
+while (( SECONDS - readiness_started < readiness_budget_seconds )); do
   if curl -fsS --connect-timeout 2 --max-time 5 \
       -D "$work_dir/headers" -o "$work_dir/initialize" "$endpoint" \
       -H "Accept: $ACCEPT" -H 'Content-Type: application/json' \
@@ -424,9 +440,11 @@ for (( attempt=1; attempt<=10; attempt++ )); do
   fi
   sleep 1
 done
+readiness_wait=$(( SECONDS - readiness_started ))
+log "initialize readiness wait=${readiness_wait}s budget=${readiness_budget_seconds}s endpoint=$endpoint"
 if [[ "$initialize_ok" != true ]]; then
   rollback
-  fail "local endpoint did not initialize after restart: $endpoint"
+  fail "local endpoint did not initialize after restart: $endpoint — waited ${readiness_wait}s of ${readiness_budget_seconds}s readiness budget (override: DATAPULSE_MCP_READINESS_BUDGET_SECONDS)"
 fi
 
 session_id="$(awk 'tolower($1)=="mcp-session-id:" {gsub("\r", "", $2); print $2}' "$work_dir/headers")"
