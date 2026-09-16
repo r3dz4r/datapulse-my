@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.23.2](https://github.com/r3dz4r/datapulse-my/compare/v3.23.1...v3.23.2) (2026-09-16)
+
+
+### Bug Fixes
+
+* **mcp:** accept the natural singular argument for get_provenance ([#95](https://github.com/r3dz4r/datapulse-my/issues/95)) ([93f155c](https://github.com/r3dz4r/datapulse-my/commit/93f155cb636a99b447276bda2877bcf70db37893))
+
 ## [3.23.1](https://github.com/r3dz4r/datapulse-my/compare/v3.23.0...v3.23.1) (2026-09-16)
 
 
