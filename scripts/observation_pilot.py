@@ -33,7 +33,8 @@ One dataset failing never stops the others: each outcome is recorded
 separately with its own reason, and the process exits 0 as long as it ran —
 a capture failure is data, not a crash.  A non-zero exit is reserved for a
 failure of the driver itself (unreadable manifest, unknown dataset id, a
-store root that is or points at the production observation store).
+store root that is or points at the production observation store when
+``--allow-production-store`` was not passed).
 
 Only two cohort datasets have a registered normalization profile
 (``NORMALIZATION_PROFILES`` below — an explicit constant, no fallback, no
@@ -465,7 +466,11 @@ def run_pilot(
 
     Args:
         dataset_ids: Cohort dataset ids, in run order.
-        root: Absolute store root (a scratch root in every accepted use).
+        root: Absolute store root — scratch by default; the production
+            root only when the caller's explicit ``--allow-production-store``
+            opt-in lifted the CLI refusal (``run_pilot`` itself never
+            re-checks: the guard belongs to the invocation boundary where a
+            reader can see it in the process arguments).
         transport: Callable ``(dataset_id, source_url) -> RetrievalResult``;
             the selftest injects transports so no network is touched.
         now: Filing/gate instant; defaults to the current UTC time.
@@ -560,9 +565,18 @@ def run_pilot(
 # ---------------------------------------------------------------------------
 
 
-def _resolve_store_root(argument: Path) -> Path:
-    """Absolute scratch root; the production store root is always refused."""
+def _resolve_store_root(argument: Path, *, allow_production_store: bool = False) -> Path:
+    """Absolute store root; the production root is refused unless opted in.
+
+    ``allow_production_store`` is the CLI's ``--allow-production-store``: an
+    explicit, process-visible permission lift, never a default, so a reader
+    of the process arguments can tell an intended production capture from a
+    mistyped or defaulted ``--store``.  It only lifts the refusal — every
+    non-production root behaves exactly as it would without it.
+    """
     root = Path(argument).expanduser().resolve()
+    if allow_production_store:
+        return root
     production_roots = {DEFAULT_ROOT, resolve_root(None)}
     if root in production_roots:
         raise PilotError(
@@ -598,7 +612,15 @@ def main(argv: Sequence[str] | None = None) -> int:
                                        the worktree.
         ``--store ROOT``               Live run into a scratch store;
                                        required, and the production store
-                                       root is always refused.
+                                       root is refused unless
+                                       ``--allow-production-store`` is
+                                       passed.
+        ``--allow-production-store``   Explicit opt-in permitting the
+                                       production observation store root
+                                       for this run — visible in the
+                                       process arguments precisely so an
+                                       intended production capture is
+                                       distinguishable from an accident.
         ``--datasets a,b,...``         Cohort subset (default: all four).
         ``--timeout SECONDS``          Per-fetch HTTP timeout (default 60).
         ``--verbose``                  Debug logging.
@@ -620,7 +642,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--store",
         type=Path,
         metavar="ROOT",
-        help="scratch store root (created if absent); the production observation store root is refused",
+        help="scratch store root (created if absent); the production observation "
+        "store root is refused unless --allow-production-store is passed",
+    )
+    parser.add_argument(
+        "--allow-production-store",
+        action="store_true",
+        help="explicitly permit the production observation store root for this run; "
+        "the default refusal exists so a mistyped --store cannot write the live store",
     )
     parser.add_argument(
         "--datasets",
@@ -645,13 +674,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _selftest()
     if arguments.store is None:
         print(
-            "ERROR --store is required for a live run: this pilot never writes "
-            "the production observation store root",
+            "ERROR --store is required for a live run: this pilot writes scratch "
+            "stores by default; the production observation store root additionally "
+            "requires --allow-production-store",
             file=sys.stderr,
         )
         return 2
     try:
-        root = _resolve_store_root(arguments.store)
+        root = _resolve_store_root(
+            arguments.store, allow_production_store=arguments.allow_production_store
+        )
         dataset_ids = _parse_dataset_selection(arguments.datasets)
         outcomes = run_pilot(
             dataset_ids,
