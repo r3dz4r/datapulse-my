@@ -72,6 +72,38 @@ always produces a byte-identical ``NormalizationResult``.
   way.
 * Dedup, identity, and the output projection shape are identical to
   ``fuelprice_csv_v1`` (with ``format`` = ``"json-array-of-objects"``).
+
+``fuelprice_json_v1`` rules (pinned; changing any of them is a new version)
+-----------------------------------------------------------------------
+* Input: the top-level JSON array of weekly row objects served by
+  ``https://api.data.gov.my/data-catalogue?id=fuelprice`` — the URL the
+  manifest actually names.  The dataset's pinned CSV profile parses this
+  JSON as CSV, reads the single line as a header row, and fails on the
+  duplicate header; this profile reads the source as the JSON array it is.
+  It does not replace ``fuelprice_csv_v1``, which stays pinned for payloads
+  that really are CSV.
+* Fail-closed shape: a payload that is not valid UTF-8, is not JSON, is not
+  a top-level array, is an empty array, has a non-object element, or has a
+  record without ``date`` or without ``series_type`` fails closed with
+  ``NormalizationParseError`` naming the record index and the reason —
+  never a partial parse.  ``series_type`` is mandatory because the array
+  mixes row kinds: the same ``date`` appears both as a price ``level`` and
+  as a ``change_weekly`` delta, and a projection that could lose the kind
+  marker would conflate the two rows.
+* Columns: every key appearing under any record is a candidate column in
+  first-appearance order; a key absent from any record (sparse) is dropped
+  and reported in ``dropped_fields`` as ``not_extractable`` — the same
+  no-fabrication rule as ``mbpp_json_v1``.
+* Nulls and numbers: an explicit JSON ``null`` stays ``null`` — a null price
+  is unmeasured, not free — and JSON-native types are preserved exactly as
+  parsed, so integers stay integers.  No inference, no coercion.
+* Rows: sorted into the total order of their canonical JSON bytes, so two
+  runs over the same bytes — or the same rows arriving in a different
+  order — produce a byte-identical projection.  Two rows sharing a
+  ``date`` but differing in ``series_type`` are two records with two
+  ``record_ids``; only rows identical after normalization are duplicates.
+* Dedup, identity, and the output projection shape are identical to
+  ``fuelprice_csv_v1`` (with ``format`` = ``"json-top-level-array"``).
 """
 
 from __future__ import annotations
@@ -180,6 +212,8 @@ class NormalizationProfile:
             return _normalize_csv(self, payload)
         if self.format == "json-array-of-objects":
             return _normalize_json_features(self, payload)
+        if self.format == "json-top-level-array":
+            return _normalize_json_array(self, payload)
         raise NormalizationProfileError(
             f"profile {self.name}/{self.version} declares unsupported format "
             f"{self.format!r}; no normalization was attempted"
@@ -626,6 +660,117 @@ def _normalize_json_features(profile: NormalizationProfile, payload: bytes) -> N
 
 
 # ---------------------------------------------------------------------------
+# Top-level-JSON-array normalization (engine for json-top-level-array profiles)
+# ---------------------------------------------------------------------------
+
+
+def _normalize_json_array(
+    profile: NormalizationProfile, payload: bytes
+) -> NormalizationResult:
+    """Apply the pinned top-level-array rules documented at module scope."""
+    try:
+        text = bytes(payload).decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise NormalizationParseError(
+            f"byte offset {error.start}: payload is not valid UTF-8 JSON"
+        ) from error
+
+    try:
+        document = json.loads(text)
+    except json.JSONDecodeError as error:
+        raise NormalizationParseError(
+            f"offset {error.pos}: JSON parse failed: {error.msg}"
+        ) from error
+
+    if not isinstance(document, list):
+        raise NormalizationParseError(
+            "payload is not a JSON array; expected the top-level array of "
+            "weekly row objects served by api.data.gov.my for the fuelprice "
+            "dataset"
+        )
+    if not document:
+        raise NormalizationParseError(
+            "payload is an empty JSON array; there are no records to project"
+        )
+
+    for index, record in enumerate(document):
+        if not isinstance(record, dict):
+            raise NormalizationParseError(
+                f"record {index}: expected a JSON object, got {type(record).__name__}"
+            )
+        if "date" not in record:
+            raise NormalizationParseError(
+                f"record {index}: no 'date' key; a fuel-price row without its "
+                "observation date cannot be projected without inventing an anchor"
+            )
+        if "series_type" not in record:
+            raise NormalizationParseError(
+                f"record {index}: no 'series_type' key; without the series kind "
+                "the 'level' and 'change_weekly' rows sharing a date would be "
+                "conflated into one record"
+            )
+
+    candidate_columns: list[str] = []
+    seen_keys: set[str] = set()
+    for record in document:
+        for key in record:
+            if key not in seen_keys:
+                seen_keys.add(key)
+                candidate_columns.append(key)
+
+    dropped = _DroppedFields()
+    columns: list[str] = []
+    for column in candidate_columns:
+        if all(column in record for record in document):
+            columns.append(column)
+        else:
+            dropped.add(column, "not_extractable")
+
+    typed_rows: list[dict[str, Any]] = [
+        {column: record[column] for column in columns} for record in document
+    ]
+    # Total content order: sorting on the canonical bytes of each full row
+    # makes the projection invariant under any permutation of the input
+    # array, so the same rows in a different order still produce the same
+    # record_ids sequence and the same projection_digest.
+    typed_rows.sort(key=canonical_json)
+
+    final_rows: list[dict[str, Any]] = []
+    seen_rows: set[bytes] = set()
+    deduped_rows = 0
+    for row in typed_rows:
+        row_bytes = canonical_json(row)
+        if profile.dedup and row_bytes in seen_rows:
+            deduped_rows += 1
+            continue
+        seen_rows.add(row_bytes)
+        final_rows.append(row)
+
+    record_ids = [
+        "sha256:" + hashlib.sha256(canonical_json(row)).hexdigest() for row in final_rows
+    ]
+    projection: dict[str, Any] = {
+        "format": "json-top-level-array",
+        "record_count": len(final_rows),
+        "columns": columns,
+        "dropped_fields": dropped.entries,
+        "deduped_rows": deduped_rows,
+        "record_ids": record_ids,
+    }
+    projection_digest = "sha256:" + hashlib.sha256(canonical_json(projection)).hexdigest()
+    return NormalizationResult(
+        profile_name=profile.name,
+        profile_version=profile.version,
+        format="json-top-level-array",
+        projection=projection,
+        projection_digest=projection_digest,
+        record_count=len(final_rows),
+        record_ids=record_ids,
+        dropped_fields=dropped.entries,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Built-in profiles (registered as data)
 # ---------------------------------------------------------------------------
 
@@ -688,6 +833,37 @@ _MBPP_JSON_V1: Final[NormalizationProfile] = NormalizationProfile(
 
 register_profile(_MBPP_JSON_V1)
 
+_ROW_ORDERING_JSON_ARRAY: Final[str] = (
+    "sort_by_canonical_row_bytes_full_content_order"
+)
+
+_FUELPRICE_JSON_V1: Final[NormalizationProfile] = NormalizationProfile(
+    name="fuelprice_json",
+    version="v1",
+    format="json-top-level-array",
+    input_content_type="application/json",
+    row_ordering=_ROW_ORDERING_JSON_ARRAY,
+    null_handling=_NULL_HANDLING_JSON,
+    numeric_handling=_NUMERIC_HANDLING_JSON,
+    dedup=True,
+    description=(
+        "Weekly fuel-price rows as the top-level JSON array served by "
+        "api.data.gov.my/data-catalogue?id=fuelprice (the URL the manifest "
+        "actually names; the pinned csv profile parses this json as csv, reads "
+        "the single line as a header row, and fails on the duplicate header): "
+        "every key is a candidate column in first-appearance order; 'date' and "
+        "'series_type' must exist in every record — a row without either fails "
+        "closed, because dropping the kind marker would conflate the 'level' "
+        "and 'change_weekly' rows that share a date; sparse keys are dropped "
+        "as not_extractable rather than fabricated; explicit nulls and "
+        "json-native types survive untouched; rows are sorted into the total "
+        "order of their canonical json bytes so out-of-order input cannot "
+        "change the projection; exact duplicates are removed after the sort."
+    ),
+)
+
+register_profile(_FUELPRICE_JSON_V1)
+
 
 # ---------------------------------------------------------------------------
 # CLI
@@ -732,9 +908,65 @@ _SELFTEST_JSON: Final[bytes] = (
     '{"features":[{"attributes":{"a":1,"b":2}},{"attributes":{"a":1,"c":3}}]}'
 ).encode("utf-8")
 
+#: api.data.gov.my fuelprice shape: one date, two series kinds. The level row
+#: prices are floats with null specials; the change_weekly deltas are integers
+#: that must stay integral.
+_SELFTEST_FUELPRICE_LEVEL_OBJECT: Final[bytes] = (
+    '{"date":"2025-09-04","ron95":2.05,"ron97":3.36,"diesel":2.98,"ron95_skps":null,'
+    '"diesel_budi":null,"diesel_skds":null,"ron95_budi95":null,"diesel_eastmsia":null,'
+    '"series_type":"level"}'
+).encode("utf-8")
+
+_SELFTEST_FUELPRICE_CHANGE_OBJECT: Final[bytes] = (
+    '{"date":"2025-09-04","ron95":0,"ron97":0.01,"diesel":0,"ron95_skps":null,'
+    '"diesel_budi":null,"diesel_skds":null,"ron95_budi95":null,"diesel_eastmsia":null,'
+    '"series_type":"change_weekly"}'
+).encode("utf-8")
+
+_SELFTEST_FUELPRICE_JSON: Final[bytes] = (
+    b"[" + _SELFTEST_FUELPRICE_LEVEL_OBJECT + b"," + _SELFTEST_FUELPRICE_CHANGE_OBJECT + b"]"
+)
+
+#: The same two rows arriving in the opposite order.
+_SELFTEST_FUELPRICE_JSON_REVERSED: Final[bytes] = (
+    b"[" + _SELFTEST_FUELPRICE_CHANGE_OBJECT + b"," + _SELFTEST_FUELPRICE_LEVEL_OBJECT + b"]"
+)
+
+_SELFTEST_FUELPRICE_LEVEL_ROW: Final[dict[str, Any]] = {
+    "date": "2025-09-04",
+    "ron95": 2.05,
+    "ron97": 3.36,
+    "diesel": 2.98,
+    "ron95_skps": None,
+    "diesel_budi": None,
+    "diesel_skds": None,
+    "ron95_budi95": None,
+    "diesel_eastmsia": None,
+    "series_type": "level",
+}
+
+_SELFTEST_FUELPRICE_CHANGE_ROW: Final[dict[str, Any]] = {
+    "date": "2025-09-04",
+    "ron95": 0,
+    "ron97": 0.01,
+    "diesel": 0,
+    "ron95_skps": None,
+    "diesel_budi": None,
+    "diesel_skds": None,
+    "ron95_budi95": None,
+    "diesel_eastmsia": None,
+    "series_type": "change_weekly",
+}
+
+
+def _expected_record_id(row: dict[str, Any]) -> str:
+    """The pinned record-id formula, recomputed for selftest expectations."""
+    return "sha256:" + hashlib.sha256(canonical_json(row)).hexdigest()
+
 
 def _run_selftest() -> int:
-    """Acceptance selftest for the CSV and JSON profiles against a scratch store.
+    """Acceptance selftest for the CSV, ArcGIS-JSON, and fuelprice-JSON
+    profiles against a scratch store.
 
     Runs inside a scratch root under the worktree; the production store root
     is never touched.  Output is deterministic (no paths, no timestamps) so
@@ -881,6 +1113,79 @@ def _run_selftest() -> int:
             "get_profile('fuelprice_csv_v1') still returns the pinned csv profile",
             get_profile("fuelprice_csv_v1") == _FUELPRICE_CSV_V1,
         )
+
+        fuel = normalize(_SELFTEST_FUELPRICE_JSON, "fuelprice_json_v1")
+        print(f"profile={fuel.profile_name}/{fuel.profile_version}")
+        print(f"record_count={fuel.record_count}")
+        fuel_store_digest = file_normalized(fuel, root=scratch)
+        print(f"projection_digest={fuel.projection_digest}")
+        print(f"store_digest={fuel_store_digest}")
+        check(
+            "fuelprice-json: projection_digest matches the digest returned by file_normalized",
+            fuel.projection_digest == fuel_store_digest,
+        )
+        check("fuelprice-json: record_count>0", fuel.record_count > 0)
+        check(
+            "fuelprice-json: one date with two series kinds yields two records",
+            fuel.record_count == 2 and fuel.projection["record_count"] == 2,
+        )
+        check(
+            "fuelprice-json: series_type survives as a first-class column",
+            "series_type" in fuel.projection["columns"],
+        )
+        check(
+            "fuelprice-json: the level row and the change_weekly row are both retained by id",
+            _expected_record_id(_SELFTEST_FUELPRICE_LEVEL_ROW) in fuel.record_ids
+            and _expected_record_id(_SELFTEST_FUELPRICE_CHANGE_ROW) in fuel.record_ids,
+        )
+        check(
+            "fuelprice-json: a null price stays null (the zero-coerced row id is absent)",
+            _expected_record_id(_SELFTEST_FUELPRICE_LEVEL_ROW) in fuel.record_ids
+            and _expected_record_id(
+                {**_SELFTEST_FUELPRICE_LEVEL_ROW, "ron95_skps": 0}
+            )
+            not in fuel.record_ids,
+        )
+        check(
+            "fuelprice-json: an integer price stays integral (the float-coerced row id is absent)",
+            _expected_record_id(_SELFTEST_FUELPRICE_CHANGE_ROW) in fuel.record_ids
+            and _expected_record_id(
+                {**_SELFTEST_FUELPRICE_CHANGE_ROW, "ron95": 0.0}
+            )
+            not in fuel.record_ids,
+        )
+        try:
+            normalize(b'{"features": []}', "fuelprice_json_v1")
+            check("fuelprice-json: a non-array body fails closed", False)
+        except NormalizationParseError as error:
+            check(
+                "fuelprice-json: a non-array body fails closed naming the shape",
+                "not a JSON array" in str(error),
+            )
+        try:
+            normalize(b'[{"ron95": 2.05, "series_type": "level"}]', "fuelprice_json_v1")
+            check("fuelprice-json: a record without date fails closed", False)
+        except NormalizationParseError as error:
+            check(
+                "fuelprice-json: a record without date fails closed naming date",
+                "record 0" in str(error) and "date" in str(error),
+            )
+        fuel_again = normalize(_SELFTEST_FUELPRICE_JSON, "fuelprice_json_v1")
+        check(
+            "fuelprice-json: two runs against the same payload are byte-identical",
+            _result_bytes(fuel) == _result_bytes(fuel_again),
+        )
+        fuel_reversed = normalize(_SELFTEST_FUELPRICE_JSON_REVERSED, "fuelprice_json_v1")
+        print(f"reversed_projection_digest={fuel_reversed.projection_digest}")
+        check(
+            "fuelprice-json: out-of-order input rows leave the projection unchanged",
+            fuel_reversed.projection_digest == fuel.projection_digest
+            and fuel_reversed.record_ids == fuel.record_ids,
+        )
+        check(
+            "get_profile('fuelprice_json_v1') returns the pinned fuelprice json profile",
+            get_profile("fuelprice_json_v1") == _FUELPRICE_JSON_V1,
+        )
     except Exception as error:  # noqa: BLE001 — the selftest reports, never traces
         failures.append(f"selftest raised {type(error).__name__}: {error}")
     finally:
@@ -890,7 +1195,7 @@ def _run_selftest() -> int:
         for failure in failures:
             print(f"FAIL {failure}", file=sys.stderr)
         return 1
-    print("selftest passed: both profiles pinned, digests matched, results byte-identical")
+    print("selftest passed: all three profiles pinned, digests matched, results byte-identical")
     return 0
 
 

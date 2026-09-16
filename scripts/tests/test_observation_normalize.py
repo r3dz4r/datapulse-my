@@ -1,4 +1,4 @@
-"""Tests pinning observation_normalize's truth rules for both built-in profiles.
+"""Tests pinning observation_normalize's truth rules for all three built-in profiles.
 
 These tests exist because the module's own ``--selftest`` prints and exits but
 is not wired to CI: without pinned tests, a later change can silently drop a
@@ -76,6 +76,69 @@ CSV_MAIN_ROW_NONNUMERIC: dict[str, Any] = {
     "ron95": 2.05,
     "diesel": None,
     "region": "kl",
+}
+
+
+#: One fuelprice object per series kind for the same date: the price `level`
+#: row and the week-on-week `change_weekly` row. Null prices are unmeasured;
+#: the change row's 0 deltas are integers that must stay integral.
+_FUELPRICE_LEVEL_OBJECT: bytes = (
+    '{"date":"2025-09-04","ron95":2.05,"ron97":3.36,"diesel":2.98,"ron95_skps":null,'
+    '"diesel_budi":null,"diesel_skds":null,"ron95_budi95":null,"diesel_eastmsia":null,'
+    '"series_type":"level"}'
+).encode("utf-8")
+
+_FUELPRICE_CHANGE_OBJECT: bytes = (
+    '{"date":"2025-09-04","ron95":0,"ron97":0.01,"diesel":0,"ron95_skps":null,'
+    '"diesel_budi":null,"diesel_skds":null,"ron95_budi95":null,"diesel_eastmsia":null,'
+    '"series_type":"change_weekly"}'
+).encode("utf-8")
+
+FUELPRICE_JSON_MAIN: bytes = (
+    b"[" + _FUELPRICE_LEVEL_OBJECT + b"," + _FUELPRICE_CHANGE_OBJECT + b"]"
+)
+
+#: The same two rows arriving in the opposite order.
+FUELPRICE_JSON_REVERSED: bytes = (
+    b"[" + _FUELPRICE_CHANGE_OBJECT + b"," + _FUELPRICE_LEVEL_OBJECT + b"]"
+)
+
+#: MAIN plus an exact repeat of the level row: dropped and counted, not kept.
+FUELPRICE_JSON_DUPLICATE: bytes = (
+    b"["
+    + _FUELPRICE_LEVEL_OBJECT
+    + b","
+    + _FUELPRICE_CHANGE_OBJECT
+    + b","
+    + _FUELPRICE_LEVEL_OBJECT
+    + b"]"
+)
+
+#: The rows the json engine should retain, in the payload's key order.
+FUELPRICE_JSON_LEVEL_ROW: dict[str, Any] = {
+    "date": "2025-09-04",
+    "ron95": 2.05,
+    "ron97": 3.36,
+    "diesel": 2.98,
+    "ron95_skps": None,
+    "diesel_budi": None,
+    "diesel_skds": None,
+    "ron95_budi95": None,
+    "diesel_eastmsia": None,
+    "series_type": "level",
+}
+
+FUELPRICE_JSON_CHANGE_ROW: dict[str, Any] = {
+    "date": "2025-09-04",
+    "ron95": 0,
+    "ron97": 0.01,
+    "diesel": 0,
+    "ron95_skps": None,
+    "diesel_budi": None,
+    "diesel_skds": None,
+    "ron95_budi95": None,
+    "diesel_eastmsia": None,
+    "series_type": "change_weekly",
 }
 
 
@@ -200,6 +263,7 @@ def test_projection_digest_is_bound_to_what_the_store_holds() -> None:
         for payload, designation in (
             (CSV_MAIN, "fuelprice_csv_v1"),
             (JSON_SPARSE, "mbpp_json_v1"),
+            (FUELPRICE_JSON_MAIN, "fuelprice_json_v1"),
         ):
             result = normalize(payload, designation)
             recomputed = "sha256:" + hashlib.sha256(
@@ -270,3 +334,110 @@ def test_malformed_json_payloads_fail_closed_naming_the_problem() -> None:
         normalize(b'{"results": []}', "mbpp_json_v1")
     with pytest.raises(NormalizationParseError, match="attributes"):
         normalize(b'{"features": [{"geometry": {}}]}', "mbpp_json_v1")
+
+
+def test_fuelprice_json_keeps_both_series_kinds_for_one_date() -> None:
+    """Protects the pilot's lead invariant: the same date as a `level` row and
+    as a `change_weekly` row is two records with two record_ids — not a
+    duplicate to drop — and `series_type` survives as a first-class column."""
+    result = normalize(FUELPRICE_JSON_MAIN, "fuelprice_json_v1")
+    assert result.record_count == 2
+    assert result.projection["record_count"] == 2
+    assert result.projection["deduped_rows"] == 0
+    assert "series_type" in result.projection["columns"]
+    assert _row_record_id(FUELPRICE_JSON_LEVEL_ROW) in result.record_ids
+    assert _row_record_id(FUELPRICE_JSON_CHANGE_ROW) in result.record_ids
+
+
+def test_fuelprice_json_exact_duplicates_are_dropped_and_counted() -> None:
+    """Protects the dedup boundary: the profile carries the module-wide
+    exact-duplicate policy and no more — a row identical after normalization
+    is dropped and counted, while the two series kinds sharing a date are not
+    duplicates and both survive."""
+    result = normalize(FUELPRICE_JSON_DUPLICATE, "fuelprice_json_v1")
+    assert result.projection["deduped_rows"] == 1
+    assert result.record_count == 2
+
+
+def test_fuelprice_json_null_price_stays_null_not_zero() -> None:
+    """Protects null semantics: a null price is unmeasured, not free. The
+    retained level row's record_id pins ron95_skps as null, and the id the
+    row would carry under 0-coercion is absent."""
+    result = normalize(FUELPRICE_JSON_MAIN, "fuelprice_json_v1")
+    assert _row_record_id(FUELPRICE_JSON_LEVEL_ROW) in result.record_ids
+    zero_coerced = {**FUELPRICE_JSON_LEVEL_ROW, "ron95_skps": 0}
+    assert _row_record_id(zero_coerced) not in result.record_ids
+
+
+def test_fuelprice_json_integer_price_stays_integral() -> None:
+    """Protects numeric typing: the change row's ron95 delta parses as the
+    integer 0 and the record_id pins that; the id under float coercion (0.0)
+    is absent."""
+    result = normalize(FUELPRICE_JSON_MAIN, "fuelprice_json_v1")
+    assert _row_record_id(FUELPRICE_JSON_CHANGE_ROW) in result.record_ids
+    float_coerced = {**FUELPRICE_JSON_CHANGE_ROW, "ron95": 0.0}
+    assert _row_record_id(float_coerced) not in result.record_ids
+
+
+def test_fuelprice_json_non_array_body_fails_closed_without_projection() -> None:
+    """Protects the parse contract: a JSON object where the top-level array
+    belongs raises NormalizationParseError naming the shape, and an empty
+    array is equally a non-projection. The raise is the no-projection proof:
+    no result can be produced from a body of the wrong shape."""
+    with pytest.raises(NormalizationParseError, match="not a JSON array"):
+        normalize(b'{"features": []}', "fuelprice_json_v1")
+    with pytest.raises(NormalizationParseError, match="empty JSON array"):
+        normalize(b"[]", "fuelprice_json_v1")
+
+
+def test_fuelprice_json_record_without_date_or_series_type_fails_closed() -> None:
+    """Protects the two mandatory anchors: a record lacking `date` (no
+    observation anchor) or lacking `series_type` (kind marker lost, level and
+    change_weekly would conflate) is named by index and fails closed rather
+    than being partially projected."""
+    with pytest.raises(NormalizationParseError, match=r"record 0.*'date'"):
+        normalize(b'[{"ron95": 2.05, "series_type": "level"}]', "fuelprice_json_v1")
+    with pytest.raises(NormalizationParseError, match=r"record 1.*'series_type'"):
+        normalize(
+            b'[{"date": "2025-09-04", "ron95": 2.05, "series_type": "level"},'
+            b'{"date": "2025-09-11", "ron95": 2.05}]',
+            "fuelprice_json_v1",
+        )
+
+
+def test_fuelprice_json_sparse_keys_are_declared_not_extractable() -> None:
+    """Protects the no-fabrication rule for the new engine: a key absent from
+    any record drops the column as not_extractable instead of being padded
+    with invented nulls."""
+    body = (
+        b'[{"date":"2025-09-04","ron95":2.05,"series_type":"level"},'
+        b'{"date":"2025-09-11","ron97":3.36,"series_type":"level"}]'
+    )
+    result = normalize(body, "fuelprice_json_v1")
+    assert result.dropped_fields == [
+        {"name": "ron95", "basis": "not_extractable"},
+        {"name": "ron97", "basis": "not_extractable"},
+    ]
+    assert result.projection["columns"] == ["date", "series_type"]
+
+
+def test_fuelprice_json_same_bytes_twice_produce_identical_projections() -> None:
+    """Protects determinism: two runs over the same payload agree on every
+    field, and the canonical projection bytes are identical."""
+    first = normalize(FUELPRICE_JSON_MAIN, "fuelprice_json_v1")
+    second = normalize(FUELPRICE_JSON_MAIN, "fuelprice_json_v1")
+    assert first == second
+    assert first.projection_digest == second.projection_digest
+    assert first.record_ids == second.record_ids
+    assert canonical_json(first.projection) == canonical_json(second.projection)
+
+
+def test_fuelprice_json_out_of_order_rows_leave_the_projection_unchanged() -> None:
+    """Protects the pinned ordering: rows are placed in the total order of
+    their canonical bytes, so the same rows arriving in reverse still produce
+    the same record_ids sequence and the same projection digest."""
+    forward = normalize(FUELPRICE_JSON_MAIN, "fuelprice_json_v1")
+    backward = normalize(FUELPRICE_JSON_REVERSED, "fuelprice_json_v1")
+    assert backward.projection_digest == forward.projection_digest
+    assert backward.record_ids == forward.record_ids
+    assert canonical_json(backward.projection) == canonical_json(forward.projection)
