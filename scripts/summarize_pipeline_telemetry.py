@@ -27,6 +27,7 @@ STAGES = frozenset(
         "passports",
         "evidence",
         "sigstore-request",
+        "observation-capture",
     }
 )
 STATUSES = frozenset({"success", "fail", "skipped"})
