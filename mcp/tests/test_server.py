@@ -19,6 +19,7 @@ from types import SimpleNamespace
 
 import pytest
 from fastmcp import Client
+from fastmcp.exceptions import ToolError
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
@@ -1698,6 +1699,23 @@ async def test_get_provenance_returns_citation_fields(live_data: tuple[dict, dic
     assert all(item["last_verified"] == next(row["last_checked"] for row in health["datasets"] if row["dataset_id"] == item["id"]) for item in result.data)
     assert all(item["licence_url"].startswith("https://") for item in result.data)
     assert all(re.fullmatch(r"sha256:[0-9a-f]{64}", item["receipt_digest"]) for item in result.data)
+
+
+async def test_get_provenance_accepts_singular_dataset_id_alias(live_data: tuple[dict, dict]) -> None:
+    manifest, _ = live_data
+    dataset_id = manifest["datasets"][0]["id"]
+
+    async with Client(server.mcp) as client:
+        singular = await client.call_tool("get_provenance", {"dataset_id": dataset_id})
+        plural = await client.call_tool("get_provenance", {"dataset_ids": [dataset_id]})
+
+        with pytest.raises(ToolError, match="dataset_ids"):
+            await client.call_tool("get_provenance", {"dataset_id": 123})
+        with pytest.raises(ToolError, match="Unknown dataset id"):
+            await client.call_tool("get_provenance", {"dataset_id": "no-such-dataset"})
+
+    assert [item["id"] for item in singular.data] == [dataset_id]
+    assert singular.data == plural.data
 
 
 async def test_get_evidence_projects_complete_published_receipt(monkeypatch: pytest.MonkeyPatch) -> None:
