@@ -26,6 +26,7 @@ STAGES = {
     "attestation-score",
     "evidence",
     "sigstore-request",
+    "observation-capture",
 }
 STATUSES = {"success", "fail", "skipped"}
 SUBSTAGE_TOKEN = re.compile(r"[a-z0-9][a-z0-9_-]*")
