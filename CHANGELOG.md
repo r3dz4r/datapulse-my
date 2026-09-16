@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.22.1](https://github.com/r3dz4r/datapulse-my/compare/v3.22.0...v3.22.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **mcp:** stamp the MCP source marker from HEAD and fail when the served version disagrees ([#87](https://github.com/r3dz4r/datapulse-my/issues/87)) ([2360a06](https://github.com/r3dz4r/datapulse-my/commit/2360a060add131a26a238ffe7fa3dbf727eedf03))
+
 ## [3.22.0](https://github.com/r3dz4r/datapulse-my/compare/v3.21.1...v3.22.0) (2026-09-16)
 
 
