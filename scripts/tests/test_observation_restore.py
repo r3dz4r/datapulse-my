@@ -36,25 +36,44 @@ NORMALIZED_PAYLOAD = {"observations": 2, "sum": 8}
 
 
 def _build_store(root: Path) -> dict[str, Any]:
-    """A real store: one raw blob, one normalized projection, one envelope."""
+    """A real store: one raw blob, one retained normalized projection, one
+    envelope in the contract's digest namespaces whose provenance transform
+    pins the projection's addressing digest exactly where capture pins it —
+    so the envelope is readable and every reference it carries resolves."""
     raw = json.dumps(
         {"dataset_id": DATASET_ID, "rows": [{"kiosk_id": 1, "value": 3}, {"kiosk_id": 2, "value": 5}]},
         sort_keys=True,
     ).encode("utf-8")
     source_digest = put_blob(raw, root=root)
-    observation_digest = put_normalized(NORMALIZED_PAYLOAD, root=root)
+    projection_digest = put_normalized(NORMALIZED_PAYLOAD, root=root)
     envelope = {
         "schema": "datapulse/v1/historical-observation",
         "dataset_id": DATASET_ID,
         "observation_id": OBSERVATION_ID,
         "observed_at": "2026-09-15T08:00:00Z",
         "source_digest": source_digest,
-        "observation_digest": observation_digest,
+        # Identity-namespace digest over the envelope's canonical form; it
+        # addresses no path in the store, so it is never resolved to one.
+        "observation_digest": "observation:sha256:"
+        + hashlib.sha256(OBSERVATION_ID.encode("utf-8")).hexdigest(),
+        "normalized_projection": {
+            "state": "retained",
+            "format": "json-array-of-objects",
+            "record_count": 2,
+        },
+        "field_provenance": {
+            "normalized_projection": {
+                "transform": (
+                    "observation_normalize profile fixture/v1; "
+                    f"projection_digest {projection_digest}"
+                )
+            }
+        },
     }
     envelope_path = put_envelope(DATASET_ID, OBSERVATION_ID, envelope, root=root)
     return {
         "source_digest": source_digest,
-        "observation_digest": observation_digest,
+        "projection_digest": projection_digest,
         "raw": raw,
         "envelope_path": envelope_path,
     }
@@ -95,7 +114,7 @@ def test_round_trip_verifies_clean_and_inventory_matches_source(tmp_path: Path) 
     restored = Path(report["restored_root"])
     assert restored.is_dir()
     assert read_blob(built["source_digest"], root=restored) == built["raw"]
-    assert read_normalized(built["observation_digest"], root=restored) == canonical_json(NORMALIZED_PAYLOAD)
+    assert read_normalized(built["projection_digest"], root=restored) == canonical_json(NORMALIZED_PAYLOAD)
     assert built["envelope_path"].name in {
         path.name for path in restore_proof.store_inventory(restored)
     }

@@ -210,8 +210,12 @@ def verify_restored(
 
     Returns its counts plus:
 
-      - "verified": True only when corrupt, unreadable and misnamed are all zero
-        and there are no dangling references;
+      - "verified": True only when corrupt, unreadable and misnamed are all
+        zero, no envelope is unreadable, and there are no dangling references.
+        An envelope the verifier cannot parse is one whose references it
+        cannot check, so a restored store that cannot be checked must not
+        verify — an unreadable envelope is kept by cleanup AND fails the
+        verdict;
       - "matches_source": the comparison against expected_inventory when one is
         supplied, naming any path present in one and absent from the other.
 
@@ -227,6 +231,7 @@ def verify_restored(
         counts["corrupt"] == 0
         and counts["unreadable"] == 0
         and counts["misnamed"] == 0
+        and counts["envelopes_unreadable"] == 0
         and counts["dangling_references"] == 0
     )
     result: dict[str, Any] = {

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import calendar
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Final
@@ -78,6 +79,29 @@ KEEP_WITHIN_RETENTION: Final[str] = "within_retention"
 KEEP_REFERENCED_BY_ENVELOPE: Final[str] = "referenced_by_envelope"
 KEEP_POLICY_ABSENT: Final[str] = "policy_absent"
 KEEP_UNREADABLE: Final[str] = "unreadable"
+
+# The envelope contract keeps two digest namespaces apart, and so does this
+# module. DIGEST_PATTERN (sha256:<64 hex>) is the blob namespace: it addresses
+# stored content. OBSERVATION_DIGEST_PATTERN (observation:sha256:<64 hex>) is
+# the observation identity namespace: a domain-separated digest over the
+# envelope's own canonical form. Nothing in the store is addressed by an
+# observation digest, so it is never resolved to a path — resolving it was the
+# original dangling-check defect. Neither pattern is loosened here; a digest in
+# the wrong namespace stays unreadable, exactly as a malformed one does.
+OBSERVATION_DIGEST_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"^observation:sha256:[0-9a-f]{64}$"
+)
+
+# Capture files the retained projection's addressing digest inside the
+# field_provenance.normalized_projection.transform string ("observation_normalize
+# profile <name>/<version>; projection_digest sha256:..."), because the closed
+# normalized_projection member carries {state, format, record_count} and no
+# digest of its own. This mirrors observation_diff._PROJECTION_DIGEST_IN_
+# TRANSFORM verbatim rather than importing it, so the gates stay coupled only
+# to the store — the same decoupling rationale observation_diff documents.
+_PROJECTION_DIGEST_IN_TRANSFORM: Final[re.Pattern[str]] = re.compile(
+    r"projection_digest (sha256:[0-9a-f]{64})"
+)
 
 # A normalized projection is a faithful reshape of exactly one raw payload, so
 # its size should stay in a fixed relationship to the raw bytes. Far below the
@@ -269,7 +293,18 @@ def _read_envelope(dataset_id: str, envelope_file: Path, store_root: Path) -> di
     An envelope that cannot be parsed, carries a naive or missing observed_at,
     misdeclares its own observation_id or dataset_id, or names a malformed
     digest is unreadable: the gates must not guess its retention window or its
-    blob references, and cleanup must keep it.
+    blob references, and cleanup must keep it. Digests are validated against
+    their own namespace — source_digest against the blob namespace
+    (DIGEST_PATTERN), observation_digest against the observation identity
+    namespace (OBSERVATION_DIGEST_PATTERN) — so a digest in the wrong
+    namespace is unreadable, never silently accepted.
+
+    The record also surfaces the normalized_projection declaration: its state,
+    and the projection's addressing digest when the envelope pins one (the
+    closed member carries no digest, so the reference is read from a
+    digest/projection_digest key should a future contract add one, else from
+    the provenance transform string capture writes today). The reference is
+    never recomputed from content.
     """
     record: dict[str, Any] = {
         "dataset_id": dataset_id,
@@ -279,6 +314,8 @@ def _read_envelope(dataset_id: str, envelope_file: Path, store_root: Path) -> di
         "moment": None,
         "source_digest": None,
         "observation_digest": None,
+        "normalized_projection_state": None,
+        "projection_digest": None,
     }
     if OBSERVATION_ID_PATTERN.fullmatch(record["observation_id"]) is None:
         return record
@@ -300,13 +337,37 @@ def _read_envelope(dataset_id: str, envelope_file: Path, store_root: Path) -> di
     observation_digest = envelope.get("observation_digest")
     if source_digest is not None and DIGEST_PATTERN.fullmatch(source_digest) is None:
         return record
-    if observation_digest is not None and DIGEST_PATTERN.fullmatch(observation_digest) is None:
+    if observation_digest is not None and OBSERVATION_DIGEST_PATTERN.fullmatch(observation_digest) is None:
         return record
+    projection_state = None
+    projection_reference: str | None = None
+    projection = envelope.get("normalized_projection")
+    if isinstance(projection, dict):
+        state_value = projection.get("state")
+        if isinstance(state_value, str):
+            projection_state = state_value
+        for key in ("digest", "projection_digest"):
+            candidate = projection.get(key)
+            if isinstance(candidate, str) and DIGEST_PATTERN.fullmatch(candidate):
+                projection_reference = candidate
+                break
+    if projection_reference is None:
+        provenance = envelope.get("field_provenance")
+        if isinstance(provenance, dict):
+            entry = provenance.get("normalized_projection")
+            if isinstance(entry, dict):
+                transform = entry.get("transform")
+                if isinstance(transform, str):
+                    match = _PROJECTION_DIGEST_IN_TRANSFORM.search(transform)
+                    if match is not None:
+                        projection_reference = match.group(1)
     record.update(
         readable=True,
         moment=moment,
         source_digest=source_digest,
         observation_digest=observation_digest,
+        normalized_projection_state=projection_state,
+        projection_digest=projection_reference,
     )
     return record
 
@@ -538,9 +599,12 @@ def duplicate_report(*, root: Path | str | None = None) -> dict[str, Any]:
 def compression_anomalies(*, root: Path | str | None = None) -> dict[str, Any]:
     """Flag normalized-to-raw size ratios that fall outside the documented band.
 
-    Pairs come from envelope digests: source_digest sizes the raw blob,
-    observation_digest sizes the normalized projection. Pairs where either
-    side is missing from disk are not comparable and are skipped.
+    Pairs come from the envelope's addressing references: source_digest sizes
+    the raw blob, and the retained projection's digest reference (pinned by
+    capture in the provenance transform — the observation_digest is an
+    identity and addresses nothing) sizes the normalized projection. Pairs
+    where either side is missing from disk, or where the envelope pins no
+    projection reference, are not comparable and are skipped.
     """
     store_root = resolve_root(root)
     anomalies: list[dict[str, Any]] = []
@@ -549,11 +613,11 @@ def compression_anomalies(*, root: Path | str | None = None) -> dict[str, Any]:
         if not record["readable"]:
             continue
         source_digest = record["source_digest"]
-        observation_digest = record["observation_digest"]
-        if not source_digest or not observation_digest:
+        projection_digest = record["projection_digest"]
+        if not source_digest or not projection_digest:
             continue
         raw_file = blob_path(source_digest, root=store_root)
-        normalized_file = normalized_path(observation_digest, root=store_root)
+        normalized_file = normalized_path(projection_digest, root=store_root)
         if not (raw_file.is_file() and normalized_file.is_file()):
             continue
         compared += 1
@@ -575,7 +639,7 @@ def compression_anomalies(*, root: Path | str | None = None) -> dict[str, Any]:
                 "dataset_id": record["dataset_id"],
                 "observation_id": record["observation_id"],
                 "source_digest": source_digest,
-                "observation_digest": observation_digest,
+                "projection_digest": projection_digest,
                 "raw_bytes": raw_size,
                 "normalized_bytes": normalized_size,
                 "ratio": round(ratio, 6) if ratio is not None else None,
@@ -657,10 +721,13 @@ def cleanup_dry_run(*, root: Path | str | None = None, now: datetime | None = No
             )
         # Expired envelopes still register their references: the ALWAYS-keep
         # rule for referenced blobs is evaluated against envelopes on disk.
+        # Both maps are keyed by the digest that addresses the artifact — for
+        # the projection that is the pinned projection reference, not the
+        # observation identity, which names no path in the store.
         if record["source_digest"]:
             blob_referrers.setdefault(record["source_digest"], []).append(state)
-        if record["observation_digest"]:
-            normalized_referrers.setdefault(record["observation_digest"], []).append(state)
+        if record["projection_digest"]:
+            normalized_referrers.setdefault(record["projection_digest"], []).append(state)
 
     def decide_content_addressed(
         directory: Path, suffix: str, kind: str, referrers: dict[str, list[str]]
@@ -832,12 +899,19 @@ def verify_store(*, root: Path | str | None = None) -> dict[str, Any]:
 
     Each file under blobs/ and normalized/ is re-hashed and classified
     "ok", "corrupt" (bytes no longer match the digest in the filename),
-    "unreadable", or "misnamed". Each readable envelope's source_digest and
-    observation_digest is then resolved against the stored blobs and
-    projections; a reference with no file behind it is reported as dangling,
-    with the dataset id and observation id that carries it. Unreadable
-    envelopes can prove their references neither present nor absent, so they
-    are counted, not guessed at.
+    "unreadable", or "misnamed". Each readable envelope's source_digest is
+    then resolved against the stored blobs; a reference with no file behind
+    it is reported as dangling, with the dataset id and observation id that
+    carries it. The observation_digest is an identity over the envelope's
+    canonical form — nothing in the store is addressed by it, so it is never
+    resolved to a path. A normalized artifact is checked only when the
+    envelope declares the projection retained, and through the digest
+    reference the envelope actually pins (the provenance transform); a
+    retained projection whose artifact is absent is still a dangling
+    reference. Unreadable envelopes can prove their references neither
+    present nor absent, so they are counted, not guessed at — and they fail
+    the verdict: a store the verifier cannot check must not report ok. An
+    unreadable envelope is kept by cleanup AND fails the verdict.
 
     The return value always carries a count for every classification: a store
     with nothing wrong reports explicit zeros, never an emptiness that could
@@ -858,17 +932,26 @@ def verify_store(*, root: Path | str | None = None) -> dict[str, Any]:
         if not record["readable"]:
             envelopes_unreadable += 1
             continue
-        for field, digest in (
-            ("source_digest", record["source_digest"]),
-            ("observation_digest", record["observation_digest"]),
-        ):
-            if not digest:
-                continue
-            expected = (
-                blob_path(digest, root=store_root)
-                if field == "source_digest"
-                else normalized_path(digest, root=store_root)
+        references: list[tuple[str, str, Path]] = []
+        if record["source_digest"]:
+            references.append(
+                ("source_digest", record["source_digest"], blob_path(record["source_digest"], root=store_root))
             )
+        # An observation digest is an identity, not a stored path: no path is
+        # invented for it. A normalized artifact is looked for only when the
+        # envelope declares the projection retained, and only through the
+        # reference the envelope pins. A retained declaration that pins no
+        # reference names no artifact, so there is no dangling reference to
+        # record — that is a provenance defect, not a store-integrity one.
+        if record["normalized_projection_state"] == "retained" and record["projection_digest"]:
+            references.append(
+                (
+                    "normalized_projection",
+                    record["projection_digest"],
+                    normalized_path(record["projection_digest"], root=store_root),
+                )
+            )
+        for field, digest, expected in references:
             if not expected.is_file():
                 dangling.append(
                     {
@@ -898,6 +981,7 @@ def verify_store(*, root: Path | str | None = None) -> dict[str, Any]:
         counts["corrupt"] == 0
         and counts["unreadable"] == 0
         and counts["misnamed"] == 0
+        and counts["envelopes_unreadable"] == 0
         and not dangling
     )
     return {
