@@ -1807,16 +1807,8 @@ build_health_snapshot() {
          end) as $discontinued_status
       | (if $discontinued_status != null then
            $discontinued_status
-          elif ($probe.access_method // "" | ascii_downcase) == "camofox" then
-            # AUDIT 2026-09-17, mechanism 3: the content date is evaluated
-            # before the access-method fallback, so a computable freshness
-            # signal is used when it exists; rows with no content date at all
-            # still fall back to browser-dependent.
-            (if $staleness_status == "stale" then "stale"
-             elif $staleness_status == "aging" then "aging"
-             elif $staleness_status == "fresh" then "fresh"
-             else "browser-dependent"
-             end)
+         elif ($probe.access_method // "" | ascii_downcase) == "camofox" then
+           "browser-dependent"
          elif (($probe.http_status | type) != "number" or $probe.http_status < 200 or $probe.http_status >= 300) then
            "unreachable"
           # reference/policy-reference are versioned rather than time-series, so no freshness clock applies.
@@ -1962,17 +1954,18 @@ build_health_snapshot() {
              end
            else "unknown-freshness"
            end) as $carry_staleness_status
-        | (if (($carried.access_method // "" | ascii_downcase) == "camofox")
-             and ($carry_staleness_status != "unknown-freshness") then
-             $carry_staleness_status
+        | (if (($carried.access_method // "" | ascii_downcase) == "camofox") then
+             $carried.status
            elif ($carried.status == "fresh" or $carried.status == "aging"
                  or $carried.status == "stale" or $carried.status == "unknown-freshness") then
              $carry_staleness_status
            else $carried.status
            end) as $carry_status
         | $carried + {
-            staleness_days: $carry_staleness_days,
-            staleness_status: $carry_staleness_status,
+            staleness_days: (if (($carried.access_method // "" | ascii_downcase) == "camofox")
+                             then $carried.staleness_days else $carry_staleness_days end),
+            staleness_status: (if (($carried.access_method // "" | ascii_downcase) == "camofox")
+                               then $carried.staleness_status else $carry_staleness_status end),
             status: $carry_status
           }
         ] + $updated_datasets) as $merged
