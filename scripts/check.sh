@@ -1664,6 +1664,48 @@ build_health_snapshot() {
     else (try ($value | fromdateiso8601)
           catch (try (($value + "T00:00:00Z") | fromdateiso8601) catch null))
     end;
+  # Optional per-dataset observation-lag allowance (AUDIT 2026-09-17, mechanism 2):
+  # observation-period publishers whose newest in-file observation trails the
+  # publication date by a fixed series lag are judged on lateness against their
+  # own expected lag, not against zero. The manifest field
+  # freshness_policy.expected_observation_lag_days is authoritative when present
+  # and behaviour is unchanged when it is absent. The staged table below carries
+  # the audit evidence-implied lags (last publication minus newest observation,
+  # per the audit row ledger) for the 41 datasets the audit names as this
+  # class, until the manifest generator populates the field; it offsets only the
+  # observation-age component, never the publication-age component, so a
+  # publisher that stops republishing still crosses the 1.5x/3x boundaries.
+  def staged_observation_lag_days($id):
+    {
+      # monthly BNM/DOSM-LFS family (newest observation 2026-06-01)
+      "dgm_interest_rates": 94, "interestrates": 94,
+      "dgm_money_aggregates": 80, "monetary_aggregates": 80,
+      "dgm_payments_channels": 80, "payment_channels": 80,
+      "dgm_payments_instruments": 80, "payment_instruments": 80,
+      "dgm_payments_systems": 80, "payment_systems": 80,
+      "dosm_lfs_month": 100, "lfs_month": 100,
+      # quarterly national-accounts family (newest observation 2026-04-01)
+      "dosm_gdp_qtr_real": 135, "dosm_gdp_qtr_nominal": 135,
+      "dosm_gdp_qtr_real_sa": 135, "gdp_qtr_nominal": 135,
+      "gdp_qtr_real": 135, "bop_balance": 135,
+      # monthly DOSM price/index/trade family (newest observation 2026-07-01)
+      "dosm_cpi_state": 71, "dosm_cpi_inflation": 71,
+      "dosm_cpi_core_inflation": 71, "dosm_cpi_state_inflation": 71,
+      "cpi_core": 71, "cpi_core_inflation": 71,
+      "cpi_3d": 71, "cpi_4d": 71, "cpi_5d": 71,
+      "dosm_ppi": 62, "ppi_2d": 62, "ppi_3d": 62,
+      "dosm_trade_headline": 72, "dosm_trade_enduse_bec": 72,
+      "dosm_trade_sitc_1d": 72, "trade_headline": 72,
+      "dosm_ipi_export": 72, "dosm_ipi_domestic": 72,
+      "ipi_2d": 72, "ipi_3d": 72, "ipi_5d": 72,
+      "ipi_domestic": 72, "ipi_export": 72
+    }[$id] // null;
+  def observation_lag_days($entry; $id):
+    (if (($entry.freshness_policy // {}).expected_observation_lag_days | type) == "number"
+       and (($entry.freshness_policy // {}).expected_observation_lag_days >= 0)
+     then ($entry.freshness_policy // {}).expected_observation_lag_days
+     else null end)
+    // staged_observation_lag_days($id);
 
   ($manifest[0].datasets // []) as $manifest_rows
   | ((($previous[0] // {}).datasets) // []) as $previous_rows
@@ -1672,6 +1714,7 @@ build_health_snapshot() {
       | ($manifest_rows[] | select(.id == $probe.dataset_id)) as $entry
       | (first($previous_rows[] | select(.dataset_id == $probe.dataset_id)) // {}) as $old
       | cadence_days($entry.refresh_frequency) as $cadence
+      | observation_lag_days($entry; $probe.dataset_id) as $obs_lag
       | (($entry.freshness_policy // {}) | .reference_table // false) as $policy_reference_table
       | (($entry.freshness_policy // {}) | .family // null) as $policy_family
       | (($entry.data_type // "") == "reference" or ($entry.data_type // "") == "policy-reference") as $no_clock_reference
@@ -1702,7 +1745,7 @@ build_health_snapshot() {
          end) as $last_modified_age
       | (content_epoch($content_freshness_date) as $content_date
          | if $content_date == null then null
-           else [0, (($checked_epoch - $content_date) / 86400 | floor)] | max
+           else [0, (((($checked_epoch - $content_date) / 86400) - ($obs_lag // 0)) | floor)] | max
            end) as $content_freshness_age
       | (($entry.refresh_frequency // "" | ascii_downcase) as $freq
          | if ($freq == "30 seconds" or $freq == "hourly") then
@@ -1764,8 +1807,16 @@ build_health_snapshot() {
          end) as $discontinued_status
       | (if $discontinued_status != null then
            $discontinued_status
-         elif ($probe.access_method // "" | ascii_downcase) == "camofox" then
-           "browser-dependent"
+          elif ($probe.access_method // "" | ascii_downcase) == "camofox" then
+            # AUDIT 2026-09-17, mechanism 3: the content date is evaluated
+            # before the access-method fallback, so a computable freshness
+            # signal is used when it exists; rows with no content date at all
+            # still fall back to browser-dependent.
+            (if $staleness_status == "stale" then "stale"
+             elif $staleness_status == "aging" then "aging"
+             elif $staleness_status == "fresh" then "fresh"
+             else "browser-dependent"
+             end)
          elif (($probe.http_status | type) != "number" or $probe.http_status < 200 or $probe.http_status >= 300) then
            "unreachable"
           # reference/policy-reference are versioned rather than time-series, so no freshness clock applies.
@@ -1863,10 +1914,71 @@ build_health_snapshot() {
         end
     ) as $updated_datasets
   | (if $due_mode then
-       ([ $previous_rows[] | select(.dataset_id as $id | all($updated_datasets[]; .dataset_id != $id)) ] + $updated_datasets) as $merged
+      # AUDIT 2026-09-17, mechanism 1: carried-over rows are re-aged from their
+      # recorded evidence at the publication clock instead of republishing the
+      # frozen figure, so a published staleness value is always derived at
+      # checked_at (never at a probe clock older than its own
+      # last_checked evidence). Only the freshness-derived component of the
+      # status is re-derived; fail-closed verdicts (unreachable, degraded,
+      # discontinued, reference) keep their recorded status.
+      ([ $previous_rows[]
+        | select(.dataset_id as $id | all($updated_datasets[]; .dataset_id != $id))
+        | . as $carried
+        | (first($manifest_rows[] | select(.id == $carried.dataset_id)) // {}) as $entry
+        | cadence_days($entry.refresh_frequency) as $cadence
+        | observation_lag_days($entry; $carried.dataset_id) as $obs_lag
+        | (($carried.last_modified // null) as $carry_lm
+           | if $carry_lm == null then null
+             else (($carry_lm | fromdateiso8601) as $modified
+               | [0, (($checked_epoch - $modified) / 86400 | floor)] | max)
+             end) as $carry_lm_age
+        | (content_epoch($carried.content_freshness_date) as $content_date
+           | if $content_date == null then null
+             else [0, (((($checked_epoch - $content_date) / 86400) - ($obs_lag // 0)) | floor)] | max
+             end) as $carry_content_age
+        | ((($entry.refresh_frequency // "" | ascii_downcase) as $freq
+           | if ($freq == "30 seconds" or $freq == "hourly") then
+               ($carried.newest_vehicle_timestamp // null) as $newest_vehicle
+               | ($carried.header_timestamp // null) as $header_ts
+               | (if (($newest_vehicle | type) == "number") and ($newest_vehicle > 0) then $newest_vehicle
+                  elif (($header_ts | type) == "number") and ($header_ts > 0) then $header_ts
+                  else null end)
+             else null
+             end)) as $carry_realtime_epoch
+        | (if $carry_realtime_epoch != null then
+             ([0, (($checked_epoch - $carry_realtime_epoch) / 86400)] | max)
+           else
+             ([$carry_lm_age, $carry_content_age] | map(select(. != null)) | max // null)
+           end) as $carry_staleness_days
+        | (if $carry_staleness_days != null and $cadence != null then
+             if $carry_staleness_days <= ($cadence * 1.5) then "fresh"
+             elif $carry_staleness_days <= ($cadence * 3) then "aging"
+             else "stale"
+             end
+           elif $carry_staleness_days != null then
+             if $carry_staleness_days <= 135 then "fresh"
+             elif $carry_staleness_days <= 270 then "aging"
+             else "stale"
+             end
+           else "unknown-freshness"
+           end) as $carry_staleness_status
+        | (if (($carried.access_method // "" | ascii_downcase) == "camofox")
+             and ($carry_staleness_status != "unknown-freshness") then
+             $carry_staleness_status
+           elif ($carried.status == "fresh" or $carried.status == "aging"
+                 or $carried.status == "stale" or $carried.status == "unknown-freshness") then
+             $carry_staleness_status
+           else $carried.status
+           end) as $carry_status
+        | $carried + {
+            staleness_days: $carry_staleness_days,
+            staleness_status: $carry_staleness_status,
+            status: $carry_status
+          }
+        ] + $updated_datasets) as $merged
        | [ $manifest_rows[].id as $id | $merged[] | select(.dataset_id == $id) ]
-     else $updated_datasets
-     end) as $datasets
+      else $updated_datasets
+      end) as $datasets
   | (reduce ["fresh", "aging", "stale", "discontinued", "degraded", "browser-dependent", "unreachable", "unknown", "unknown-freshness", "reference"][] as $status
       ({}; .[status_key($status)] = ([$datasets[] | select(.status == $status)] | length))) as $by_status
   | {
