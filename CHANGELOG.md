@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.23.5](https://github.com/r3dz4r/datapulse-my/compare/v3.23.4...v3.23.5) (2026-09-17)
+
+
+### Bug Fixes
+
+* **ci:** stop the MCP registry publish failing on a benign duplicate race ([973c7d8](https://github.com/r3dz4r/datapulse-my/commit/973c7d8d4749b4f8a6dfa3b3e135f4bf2725ba1a))
+* **ci:** stop the MCP registry publish failing on a benign duplicate race ([0430f54](https://github.com/r3dz4r/datapulse-my/commit/0430f54db050aece2365976ab18425b6efe2215d))
+
 ## [3.23.4](https://github.com/r3dz4r/datapulse-my/compare/v3.23.3...v3.23.4) (2026-09-17)
 
 
