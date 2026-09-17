@@ -7,6 +7,16 @@ on:
     types: [published]
   workflow_dispatch:
 
+# Release Please emits BOTH a tag push and a published release for one version, so this
+# workflow runs twice on the same commit and both runs race to publish the same version.
+# Observed: the verifier saw 3.23.4 absent at 11:48:18.16, the other run published it, and
+# this run's publish was rejected at 11:48:18.44 with "cannot publish duplicate version".
+# Serialising the runs means the second reaches the verifier after the first has published
+# and exits through the existing "already matches; skipping" path.
+concurrency:
+  group: publish-mcp-registry
+  cancel-in-progress: false
+
 permissions:
   contents: read
   id-token: write
@@ -55,7 +65,23 @@ jobs:
             exit "$STATUS"
           fi
           echo "Publishing version ${VERSION} to MCP Registry..."
-          ./mcp-publisher publish
+          # The verifier's check and the publish are not atomic, so a concurrent run can
+          # publish the same version in between and the registry then rejects this one as a
+          # duplicate. Same commit, same content: that is success, not failure. The concurrency
+          # group above prevents the common case; this covers a manual re-run of the same tag
+          # and any future double-trigger. Every other publish error still fails the step.
+          set +e
+          ./mcp-publisher publish 2>&1 | tee /tmp/mcp-publish.log
+          PUBLISH_STATUS="${PIPESTATUS[0]}"
+          set -e
+          if [ "$PUBLISH_STATUS" -ne 0 ]; then
+            if grep -q 'cannot publish duplicate version' /tmp/mcp-publish.log; then
+              echo "version ${VERSION} already published by a concurrent run; treating duplicate as a no-op"
+            else
+              echo "publish failed with status ${PUBLISH_STATUS}"
+              exit "$PUBLISH_STATUS"
+            fi
+          fi
 
       - name: Reconcile registry lifecycle status
         run: |
