@@ -1,12 +1,12 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-16T23:51:03Z",
+  "checked_at": "2026-09-17T00:05:23Z",
   "_trust_summary": {
-    "checked_at": "2026-09-16T23:51:03Z",
+    "checked_at": "2026-09-17T00:05:23Z",
     "datasets_total": 418,
     "by_status": {
-      "fresh": 105,
-      "aging": 123,
+      "fresh": 99,
+      "aging": 129,
       "stale": 166,
       "discontinued": 1,
       "degraded": 0,
@@ -691,7 +691,7 @@
         "days_since_modified": 0.0010648148148148149
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-17T00:03:17Z"
+    "pipeline_heartbeat_at": "2026-09-17T00:08:19Z"
   },
   "datasets": [
     {
@@ -751,7 +751,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 21,
@@ -2382,7 +2382,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -3142,10 +3142,10 @@
     },
     {
       "dataset_id": "exchangerates_daily_0900",
-      "last_checked": "2026-09-16T23:00:30Z",
+      "last_checked": "2026-09-17T00:05:23Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900",
-      "status": "fresh",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900",
@@ -3189,8 +3189,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 1,
-      "staleness_status": "fresh",
+      "staleness_days": 2,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -3198,11 +3198,11 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -3958,10 +3958,10 @@
     },
     {
       "dataset_id": "exchangerates_daily_1130",
-      "last_checked": "2026-09-16T23:00:30Z",
+      "last_checked": "2026-09-17T00:05:23Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130",
-      "status": "fresh",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130",
@@ -4005,8 +4005,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 1,
-      "staleness_status": "fresh",
+      "staleness_days": 2,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -4014,11 +4014,11 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -4774,10 +4774,10 @@
     },
     {
       "dataset_id": "exchangerates_daily_1200",
-      "last_checked": "2026-09-16T23:00:30Z",
+      "last_checked": "2026-09-17T00:05:23Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
-      "status": "fresh",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
@@ -4821,8 +4821,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 1,
-      "staleness_status": "fresh",
+      "staleness_days": 2,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -4830,11 +4830,11 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -5590,10 +5590,10 @@
     },
     {
       "dataset_id": "exchangerates_daily_1700",
-      "last_checked": "2026-09-16T23:00:30Z",
+      "last_checked": "2026-09-17T00:05:23Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
-      "status": "fresh",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
@@ -5637,8 +5637,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 1,
-      "staleness_status": "fresh",
+      "staleness_days": 2,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -5646,11 +5646,11 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -6465,7 +6465,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -7285,7 +7285,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.125,
@@ -11360,7 +11360,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -12175,7 +12175,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -12987,7 +12987,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -13802,7 +13802,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -14614,7 +14614,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -15429,7 +15429,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -16244,7 +16244,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -17059,7 +17059,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -17874,7 +17874,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -18689,7 +18689,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -19501,7 +19501,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -20313,7 +20313,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -21125,7 +21125,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -21940,7 +21940,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -22755,7 +22755,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -23567,7 +23567,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -24382,7 +24382,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -25197,7 +25197,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -26012,7 +26012,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -26824,7 +26824,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -27639,7 +27639,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -28454,7 +28454,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -29269,7 +29269,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -30084,7 +30084,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -30899,7 +30899,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -31714,7 +31714,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -32529,7 +32529,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -33344,7 +33344,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -34159,7 +34159,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -34974,7 +34974,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -35789,7 +35789,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -36601,7 +36601,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -37413,7 +37413,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -38228,7 +38228,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -39044,7 +39044,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -39856,7 +39856,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -40668,7 +40668,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -41480,7 +41480,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -42292,7 +42292,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -43104,7 +43104,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -43920,7 +43920,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -44732,7 +44732,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -45544,7 +45544,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -46360,7 +46360,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -47172,7 +47172,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -47987,7 +47987,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -48799,7 +48799,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -49611,7 +49611,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -50426,7 +50426,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -51238,7 +51238,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -52050,7 +52050,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -52862,7 +52862,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -53674,7 +53674,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -54486,7 +54486,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -55301,7 +55301,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -56113,7 +56113,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -56925,7 +56925,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -57737,7 +57737,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -58549,7 +58549,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -59361,7 +59361,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -60173,7 +60173,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -60985,7 +60985,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -61797,7 +61797,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -62609,7 +62609,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -63421,7 +63421,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -64233,7 +64233,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -65045,7 +65045,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -65857,7 +65857,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 2190,
@@ -66669,7 +66669,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -67481,7 +67481,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -68293,7 +68293,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -69105,7 +69105,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -69917,7 +69917,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -70729,7 +70729,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -71548,7 +71548,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -72363,7 +72363,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -73178,7 +73178,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -73993,7 +73993,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -75620,7 +75620,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -76435,7 +76435,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -77250,7 +77250,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -78065,7 +78065,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -78880,7 +78880,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -79695,7 +79695,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -80510,7 +80510,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -81325,7 +81325,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -82140,7 +82140,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -82955,7 +82955,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -83770,7 +83770,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -84586,7 +84586,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -85402,7 +85402,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -86218,7 +86218,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -87034,7 +87034,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -87850,7 +87850,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -88666,7 +88666,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -89482,7 +89482,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -90298,7 +90298,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -91114,7 +91114,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -91930,7 +91930,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -92746,7 +92746,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -93562,7 +93562,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -94378,7 +94378,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -95194,7 +95194,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
@@ -96009,7 +96009,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -96824,7 +96824,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -97639,7 +97639,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -98454,7 +98454,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -99269,7 +99269,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -100084,7 +100084,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -100896,7 +100896,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -101708,7 +101708,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -102523,7 +102523,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -103338,7 +103338,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -104150,7 +104150,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -104965,7 +104965,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -105780,7 +105780,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -106595,7 +106595,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -107410,7 +107410,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -108226,7 +108226,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -109041,7 +109041,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -109856,7 +109856,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -110671,7 +110671,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -111486,7 +111486,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -112301,7 +112301,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -113116,7 +113116,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -113931,7 +113931,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -114746,7 +114746,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -115561,7 +115561,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -116376,7 +116376,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -117191,7 +117191,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -118006,7 +118006,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -118821,7 +118821,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -119636,7 +119636,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -120451,7 +120451,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -121266,7 +121266,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -122081,7 +122081,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -122896,7 +122896,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -123711,7 +123711,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -124527,7 +124527,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -125343,7 +125343,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -126159,7 +126159,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -126975,7 +126975,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -127791,7 +127791,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -128603,7 +128603,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -129415,7 +129415,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -130227,7 +130227,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -131039,7 +131039,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -131854,7 +131854,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -132670,7 +132670,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -133485,7 +133485,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -134300,7 +134300,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -135115,7 +135115,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -135927,7 +135927,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -136739,7 +136739,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -137551,7 +137551,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -138363,7 +138363,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -139175,7 +139175,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -139991,7 +139991,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -140803,7 +140803,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -141619,7 +141619,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -142435,7 +142435,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -143251,7 +143251,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -144063,7 +144063,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -144875,7 +144875,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -145690,7 +145690,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -146505,7 +146505,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -147320,7 +147320,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -148132,7 +148132,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -148944,7 +148944,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -149756,7 +149756,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -150568,7 +150568,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -151380,7 +151380,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -152192,7 +152192,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -153004,7 +153004,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -153816,7 +153816,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -154628,7 +154628,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -155440,7 +155440,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -156252,7 +156252,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -157064,7 +157064,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -157876,7 +157876,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -158688,7 +158688,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -159500,7 +159500,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -160312,7 +160312,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -161124,7 +161124,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -161936,7 +161936,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -162748,7 +162748,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -163563,7 +163563,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -164375,7 +164375,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -165187,7 +165187,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -165999,7 +165999,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -166811,7 +166811,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -167623,7 +167623,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -168435,7 +168435,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -169247,7 +169247,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -170059,7 +170059,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -170871,7 +170871,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -171683,7 +171683,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -172495,7 +172495,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -173307,7 +173307,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -174122,7 +174122,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -174937,7 +174937,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -175752,7 +175752,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -176567,7 +176567,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -177382,7 +177382,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -178197,7 +178197,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -179012,7 +179012,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -179824,7 +179824,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -180636,7 +180636,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -181448,7 +181448,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -182260,7 +182260,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -183072,7 +183072,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -183884,7 +183884,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -184696,7 +184696,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -185508,7 +185508,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -186320,7 +186320,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -187132,7 +187132,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -187944,7 +187944,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -188756,7 +188756,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -189568,7 +189568,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -190380,7 +190380,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -191195,7 +191195,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -192010,7 +192010,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -192825,7 +192825,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -193640,7 +193640,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -194452,7 +194452,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -195267,7 +195267,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -196082,7 +196082,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -196897,7 +196897,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -197712,7 +197712,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -198524,7 +198524,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -199336,7 +199336,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -200151,7 +200151,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -200966,7 +200966,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -201781,7 +201781,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -202596,7 +202596,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -203408,7 +203408,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -204223,7 +204223,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -205038,7 +205038,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -205853,7 +205853,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -206668,7 +206668,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -207480,7 +207480,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -208292,7 +208292,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -209104,7 +209104,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -209916,7 +209916,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -210731,7 +210731,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -211543,7 +211543,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -212355,7 +212355,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -213167,7 +213167,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -213983,7 +213983,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -214799,7 +214799,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -215614,7 +215614,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -216430,7 +216430,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -217245,7 +217245,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -218060,7 +218060,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -218872,7 +218872,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -219684,7 +219684,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -220496,7 +220496,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -221311,7 +221311,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -222123,7 +222123,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -222938,7 +222938,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -223753,7 +223753,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -224568,7 +224568,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -225380,7 +225380,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -226192,7 +226192,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -227004,7 +227004,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -227816,7 +227816,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -228628,7 +228628,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -229444,7 +229444,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -230260,7 +230260,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -231076,7 +231076,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -231892,7 +231892,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -232708,7 +232708,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -233520,7 +233520,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -234336,7 +234336,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -235152,7 +235152,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -236780,7 +236780,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -238407,7 +238407,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -239222,7 +239222,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -240037,7 +240037,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -240852,7 +240852,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -241667,7 +241667,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -242479,7 +242479,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -244106,7 +244106,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -244921,7 +244921,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -245736,7 +245736,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -246551,7 +246551,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -247366,7 +247366,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 4,
+        "sample_days": 5,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -248181,7 +248181,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -248993,7 +248993,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -249805,7 +249805,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -251432,7 +251432,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -252248,7 +252248,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -255500,7 +255500,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -256316,7 +256316,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -257132,7 +257132,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -257948,7 +257948,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -260388,7 +260388,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -261204,7 +261204,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -262020,7 +262020,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -262832,7 +262832,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -263644,7 +263644,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -264456,7 +264456,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -265271,7 +265271,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -266086,7 +266086,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -266901,7 +266901,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -267716,7 +267716,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -268531,7 +268531,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -269346,7 +269346,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -270162,7 +270162,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -270977,7 +270977,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -271793,7 +271793,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -272605,7 +272605,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -273417,7 +273417,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -274229,7 +274229,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -275041,7 +275041,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -275856,7 +275856,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -276668,7 +276668,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -277480,7 +277480,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -278292,7 +278292,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -279107,7 +279107,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -279919,7 +279919,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -280734,7 +280734,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -281546,7 +281546,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -282358,7 +282358,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -284794,7 +284794,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -285606,7 +285606,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -286421,7 +286421,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -287236,7 +287236,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -287996,10 +287996,10 @@
     },
     {
       "dataset_id": "bnm_kl_usd_myr",
-      "last_checked": "2026-09-16T23:00:30Z",
+      "last_checked": "2026-09-17T00:05:23Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/kl-usd-reference-rate",
-      "status": "fresh",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.bnm.gov.my/public/kl-usd-reference-rate",
@@ -288043,8 +288043,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 2,
       "record_count_within_tolerance": true,
-      "staleness_days": 1,
-      "staleness_status": "fresh",
+      "staleness_days": 2,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -288052,11 +288052,11 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -288867,7 +288867,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -289682,7 +289682,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -290442,10 +290442,10 @@
     },
     {
       "dataset_id": "bnm_interbank_swap",
-      "last_checked": "2026-09-16T23:00:30Z",
+      "last_checked": "2026-09-17T00:05:23Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/interbank-swap",
-      "status": "fresh",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.bnm.gov.my/public/interbank-swap",
@@ -290489,8 +290489,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 2,
       "record_count_within_tolerance": true,
-      "staleness_days": 1,
-      "staleness_status": "fresh",
+      "staleness_days": 2,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -290498,11 +290498,11 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -291314,7 +291314,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -292130,7 +292130,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -292942,7 +292942,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -293754,7 +293754,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -294566,7 +294566,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -295381,7 +295381,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -296196,7 +296196,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -297011,7 +297011,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -297826,7 +297826,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -298638,7 +298638,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -299450,7 +299450,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -300262,7 +300262,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -301077,7 +301077,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -301889,7 +301889,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -302704,7 +302704,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -303519,7 +303519,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -304334,7 +304334,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -305149,7 +305149,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -305964,7 +305964,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -306779,7 +306779,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -307594,7 +307594,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -308409,7 +308409,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -309224,7 +309224,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -310039,7 +310039,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -310854,7 +310854,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -311669,7 +311669,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -312484,7 +312484,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 270,
@@ -313296,7 +313296,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -314108,7 +314108,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -314920,7 +314920,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -315735,7 +315735,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -316550,7 +316550,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -317365,7 +317365,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -318181,7 +318181,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -318997,7 +318997,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -319813,7 +319813,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -322260,7 +322260,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -324700,7 +324700,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -325515,7 +325515,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -326330,7 +326330,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -327142,7 +327142,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -327957,7 +327957,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -328772,7 +328772,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -329587,7 +329587,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -330399,7 +330399,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -331211,7 +331211,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -332023,7 +332023,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -332835,7 +332835,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 1095,
@@ -333647,7 +333647,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -334459,7 +334459,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -335271,7 +335271,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -336083,7 +336083,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": null,
@@ -336899,7 +336899,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -337715,7 +337715,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 3,
+        "sample_days": 4,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -338531,7 +338531,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 3,
+        "sample_days": 4,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
@@ -339347,7 +339347,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
@@ -340163,7 +340163,7 @@
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 6,
+        "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,

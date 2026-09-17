@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 6,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-09-16T23:00:30Z",
+    "last_checked": "2026-09-17T00:05:23Z",
     "record_count": 17226,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:ae037e077b4a2042bcd6c23f51572ffc68f4d4269db02aff5c1e51e649a8e5bc"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
@@ -39,7 +39,7 @@
     "geography": "national (BNM reference rates)",
     "name": "BNM Daily Exchange Rates (1700)",
     "namespace": "other",
-    "observed_verified_at": "2026-09-16T23:00:30Z",
+    "observed_verified_at": "2026-09-17T00:05:23Z",
     "source": "data.gov.my (BNM)",
     "steward": "BNM"
   },
