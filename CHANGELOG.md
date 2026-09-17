@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.23.4](https://github.com/r3dz4r/datapulse-my/compare/v3.23.3...v3.23.4) (2026-09-17)
+
+
+### Bug Fixes
+
+* **freshness:** drop the camofox branch reorder, keep re-age and lag allowance ([c61af37](https://github.com/r3dz4r/datapulse-my/commit/c61af379c8d8fd1b8d9298a7aa5d99e086f14dcc))
+* **freshness:** re-age carried-over rows and stop reading series lag as publisher silence ([517824c](https://github.com/r3dz4r/datapulse-my/commit/517824c77519e456e5efebe9173c9b30698d9b58))
+* **freshness:** re-age carried-over rows and stop reading series lag as publisher silence ([d656e09](https://github.com/r3dz4r/datapulse-my/commit/d656e099897748f8eedc127555308833dc819ff3))
+
 ## [3.23.3](https://github.com/r3dz4r/datapulse-my/compare/v3.23.2...v3.23.3) (2026-09-16)
 
 
