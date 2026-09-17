@@ -176,9 +176,14 @@ Two rules constrain what this system will claim, and both are deliberate:
 
 1. Evidence that is stale, discontinued, unreachable or degraded must not be used to
    support a currentness claim.
-2. A row whose shape basis is untyped, and which therefore has no `first_row_hash`, has no
-   verifiable row set. A date alone does not entitle such a row to a currentness verdict, so
-   it is reported as browser-dependent rather than assigned a freshness status.
+2. A row whose contents are obtained by rendering a page in a browser cannot have its row
+   set verified from the response: the render may succeed while the parsed shape remains
+   untyped. Where that is the case the row is reported browser-dependent rather than assigned
+   a freshness status, because a date alone does not establish that the contents were read.
+   This refusal is scoped to the access method, not to the presence of `first_row_hash`:
+   that field is populated for the shape families the probe currently types
+   (`json-object`, `json-array`), so its absence for another format reflects probe coverage
+   rather than unverifiability and is not by itself grounds for withholding a verdict.
 
 The second rule is a refusal to claim rather than a failure to measure, and it is load
 bearing: relaxing it would publish currentness verdicts for rows whose contents cannot be
