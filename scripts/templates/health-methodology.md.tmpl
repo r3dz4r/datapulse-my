@@ -62,6 +62,10 @@ The version history and migration rationale remain maintained prose; the current
 
 <!-- BEGIN EXTRACTED: freshness-baselines -->
 
+## Conventions, refusals and limits
+
+<!-- BEGIN EXTRACTED: freshness-conventions -->
+
 Future content dates are rejected. A 200 response without either signal becomes `unknown-freshness`, not `fresh`, unless the manifest identifies the dataset as versioned `reference` data.
 
 BNM content dates are date-only. The dashboard adds the MYT time declared in each manifest `refresh_frequency` for display; that time is presentation metadata, not a timestamp parsed from the response.

@@ -207,6 +207,67 @@ def freshness_baselines(policy: dict[str, object]) -> str:
     )
 
 
+def freshness_conventions(check_source: str) -> str:
+    # The fields this section names must exist in the classifier. If one is renamed,
+    # generation fails rather than publishing a claim the artifact no longer supports.
+    fields = (
+        "staleness_days",
+        "last_checked",
+        "content_freshness_date",
+        "expected_observation_lag_days",
+        "shape_basis",
+        "first_row_hash",
+    )
+    missing = [field for field in fields if field not in check_source]
+    if missing:
+        raise ValueError(f"health methodology names fields absent from check.sh: {', '.join(missing)}")
+    return section(
+        "freshness-conventions",
+        "### Which of this is measurement, and which is convention\n\n"
+        "The observation layer is measurement. A freshness verdict is produced by comparing\n"
+        "a measured age against a boundary that was chosen. This section states which is which,\n"
+        "so that no reader has to infer it.\n\n"
+        "**Measured.** `last_checked` records when the row was last actually observed, and\n"
+        "`content_freshness_date` records the newest date parsed out of the content itself.\n"
+        "`staleness_days` is an operational definition, not a natural quantity: the greater of\n"
+        "the age of the publication and the age of the newest observation in the file.\n\n"
+        "**Chosen.** The 1.5x and 3x cadence multiples that separate fresh, aging and stale are\n"
+        "conventions, applied uniformly and revised deliberately rather than discovered. They are\n"
+        "not properties of the datasets. A different choice of boundary would move rows between\n"
+        "bands without any dataset having changed, and that is the honest description of them.\n\n"
+        "### Publication lag is not publisher silence\n\n"
+        "A series that is genuinely lagged can never reach fresh if its age is judged against zero\n"
+        "from the moment of publication. A dataset may therefore declare\n"
+        "`freshness_policy.expected_observation_lag_days`. When present and numeric it takes\n"
+        "precedence over the cadence-derived observation age, and it offsets the observation-age\n"
+        "component only. It never offsets the\n"
+        "publication-age component, so a publisher that stops publishing still crosses the 1.5x and\n"
+        "3x boundaries and is still reported as stale. The allowance accommodates a known cadence;\n"
+        "it does not excuse an absent publisher.\n\n"
+        "### Refusals\n\n"
+        "Two rules constrain what this system will claim, and both are deliberate:\n\n"
+        "1. Evidence that is stale, discontinued, unreachable or degraded must not be used to\n"
+        "   support a currentness claim.\n"
+        "2. A row whose shape basis is untyped, and which therefore has no `first_row_hash`, has no\n"
+        "   verifiable row set. A date alone does not entitle such a row to a currentness verdict, so\n"
+        "   it is reported as browser-dependent rather than assigned a freshness status.\n\n"
+        "The second rule is a refusal to claim rather than a failure to measure, and it is load\n"
+        "bearing: relaxing it would publish currentness verdicts for rows whose contents cannot be\n"
+        "verified. Where a row cannot be measured the outcome is `unknown-freshness`, which is a\n"
+        "first-class result and never a silent default.\n\n"
+        "### Known limits\n\n"
+        "- A row carried over from an earlier cycle retains the measurement time in `last_checked`,\n"
+        "  which may be older than the artifact's own publication time. Consumers needing the\n"
+        "  measurement instant must read `last_checked`, not the publication timestamp.\n"
+        "- Cadence-extreme datasets are judged against their declared cadence, so a boundary that is\n"
+        "  correct for a daily series can misclassify a series that changes by the minute or by the\n"
+        "  second, and a boundary that suits a realtime feed is meaningless for a monthly series.\n"
+        "- Frequency declarations are publisher statements and are trusted as such; a wrong declared\n"
+        "  cadence produces a wrong verdict, and the declared value is published alongside the verdict\n"
+        "  so that it can be challenged.",
+    )
+
+
 def generate(timer: Path) -> str:
     history_path = ROOT / "scripts/gen_health_history.py"
     history_source = history_path.read_text(encoding="utf-8")
@@ -214,7 +275,7 @@ def generate(timer: Path) -> str:
     anomaly = assignment_values(ROOT / "scripts/gen_anomaly.py")
     policy = assignment_values(ROOT / "scripts/health_policy.py")
     check_source = (ROOT / "scripts/check.sh").read_text(encoding="utf-8")
-    return "\n\n".join((schema_version(check_source), history_schema(history), retention_and_archives(history, history_source), probe_outcomes(history), due_policy(check_source, timer), status_taxonomy(history), anomaly_mode(anomaly), freshness_baselines(policy))) + "\n"
+    return "\n\n".join((schema_version(check_source), history_schema(history), retention_and_archives(history, history_source), probe_outcomes(history), due_policy(check_source, timer), status_taxonomy(history), anomaly_mode(anomaly), freshness_baselines(policy), freshness_conventions(check_source))) + "\n"
 
 
 def main() -> int:

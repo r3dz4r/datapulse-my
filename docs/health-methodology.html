@@ -344,6 +344,73 @@ verification uses 45-day and 90-day boundaries; as-required datasets do
 not infer a freshness window.</p>
 <!-- END EXTRACTED: freshness-baselines -->
 
+<h2 id="conventions-refusals-and-limits">Conventions, refusals and
+limits</h2>
+<!-- BEGIN EXTRACTED: freshness-conventions -->
+
+<h3 id="which-of-this-is-measurement-and-which-is-convention">Which of
+this is measurement, and which is convention</h3>
+<p>The observation layer is measurement. A freshness verdict is produced
+by comparing a measured age against a boundary that was chosen. This
+section states which is which, so that no reader has to infer it.</p>
+<p><strong>Measured.</strong> <code>last_checked</code> records when the
+row was last actually observed, and <code>content_freshness_date</code>
+records the newest date parsed out of the content itself.
+<code>staleness_days</code> is an operational definition, not a natural
+quantity: the greater of the age of the publication and the age of the
+newest observation in the file.</p>
+<p><strong>Chosen.</strong> The 1.5x and 3x cadence multiples that
+separate fresh, aging and stale are conventions, applied uniformly and
+revised deliberately rather than discovered. They are not properties of
+the datasets. A different choice of boundary would move rows between
+bands without any dataset having changed, and that is the honest
+description of them.</p>
+<h3 id="publication-lag-is-not-publisher-silence">Publication lag is not
+publisher silence</h3>
+<p>A series that is genuinely lagged can never reach fresh if its age is
+judged against zero from the moment of publication. A dataset may
+therefore declare
+<code>freshness_policy.expected_observation_lag_days</code>. When
+present and numeric it takes precedence over the cadence-derived
+observation age, and it offsets the observation-age component only. It
+never offsets the publication-age component, so a publisher that stops
+publishing still crosses the 1.5x and 3x boundaries and is still
+reported as stale. The allowance accommodates a known cadence; it does
+not excuse an absent publisher.</p>
+<h3 id="refusals">Refusals</h3>
+<p>Two rules constrain what this system will claim, and both are
+deliberate:</p>
+<ol type="1">
+<li>Evidence that is stale, discontinued, unreachable or degraded must
+not be used to support a currentness claim.</li>
+<li>A row whose shape basis is untyped, and which therefore has no
+<code>first_row_hash</code>, has no verifiable row set. A date alone
+does not entitle such a row to a currentness verdict, so it is reported
+as browser-dependent rather than assigned a freshness status.</li>
+</ol>
+<p>The second rule is a refusal to claim rather than a failure to
+measure, and it is load bearing: relaxing it would publish currentness
+verdicts for rows whose contents cannot be verified. Where a row cannot
+be measured the outcome is <code>unknown-freshness</code>, which is a
+first-class result and never a silent default.</p>
+<h3 id="known-limits">Known limits</h3>
+<ul>
+<li>A row carried over from an earlier cycle retains the measurement
+time in <code>last_checked</code>, which may be older than the
+artifact's own publication time. Consumers needing the measurement
+instant must read <code>last_checked</code>, not the publication
+timestamp.</li>
+<li>Cadence-extreme datasets are judged against their declared cadence,
+so a boundary that is correct for a daily series can misclassify a
+series that changes by the minute or by the second, and a boundary that
+suits a realtime feed is meaningless for a monthly series.</li>
+<li>Frequency declarations are publisher statements and are trusted as
+such; a wrong declared cadence produces a wrong verdict, and the
+declared value is published alongside the verdict so that it can be
+challenged.</li>
+</ul>
+<!-- END EXTRACTED: freshness-conventions -->
+
 <p>Future content dates are rejected. A 200 response without either
 signal becomes <code>unknown-freshness</code>, not <code>fresh</code>,
 unless the manifest identifies the dataset as versioned
