@@ -994,8 +994,21 @@ async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_ide
     result = await server.ToolUsageLoggingMiddleware().on_call_tool(context, lambda _: _result({"score": {"score": 92.0, "methodology_version": 2}}))
     assert result["score"]["score"] == 92.0
     record = json.loads(next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8"))
-    forbidden = {"buyer_id", "client_ip", "request_id", "session_id", "client", "ip", "api_key", "query"}
-    assert not forbidden & set(record)
+    # Default-deny allowlist: the success shape without HTTP correlation is
+    # exactly the keys ToolUsageLoggingMiddleware.on_call_tool writes — any
+    # unanticipated field (e.g. a caller-identity key like `client_name`)
+    # fails here until it is added to the record and to this set deliberately.
+    assert set(record) == {
+        "ts",
+        "schema_era",
+        "tool",
+        "args",
+        "call_id",
+        "process_instance_id",
+        "result_summary",
+        "outcome",
+        "latency_ms",
+    }
     assert record["args"] == {"dataset_id": "fuelprice", "query_present": True}
     assert record["schema_era"] == server.USAGE_LEDGER_SCHEMA_ERA
     assert record["outcome"] == "success"
