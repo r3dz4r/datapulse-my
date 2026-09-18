@@ -5,31 +5,31 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": null,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "not_evaluated",
+        "mode": "cadence_fallback",
         "sample_days": 7,
         "stdev_days": null,
-        "threshold_days": null,
+        "threshold_days": 3,
         "window_days": 14
       }
     },
     "expected_record_count": null,
-    "freshness_signal": "no-header",
-    "freshness_signal_source": "none",
-    "http_status": null,
-    "incomplete": false,
-    "last_checked": "2026-09-17T09:30:46Z",
-    "record_count": null,
-    "record_count_estimated": false,
+    "freshness_signal": "content-date-parse",
+    "freshness_signal_source": "content_date_parse",
+    "http_status": 200,
+    "incomplete": true,
+    "last_checked": "2026-09-18T09:41:21Z",
+    "record_count": 1687,
+    "record_count_estimated": true,
     "record_count_within_tolerance": null,
     "schema_shape": {
       "column_count": null,
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "unreachable"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/organ_01_timeseries.parquet",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "KKMNOW Organ Donation Pledges and Deaths",
     "namespace": "healthcare",
-    "observed_verified_at": "2026-09-17T09:30:46Z",
+    "observed_verified_at": "2026-09-18T09:41:21Z",
     "source": "github.com/MoH-Malaysia/kkmnow-data",
     "steward": "Ministry of Health Malaysia"
   },
@@ -559,9 +559,9 @@
               "Records one observed access signal; it does not promise continuing access."
             ],
             "reason_codes": [
-              "observed_access_unreachable"
+              "observed_access_signal_present"
             ],
-            "state": "fail"
+            "state": "pass"
           },
           {
             "check_id": "fair.shape_metadata",
@@ -611,9 +611,9 @@
         "coverage": {
           "applicable": 4,
           "evaluated": 3,
-          "failed": 1,
+          "failed": 0,
           "not_applicable": 0,
-          "passed": 2,
+          "passed": 3,
           "unknown": 1
         },
         "evidence_refs": [
@@ -664,11 +664,11 @@
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
           "catalogue_metadata_declared",
-          "observed_access_unreachable",
+          "observed_access_signal_present",
           "shape_metadata_missing",
           "reuse_metadata_declared"
         ],
-        "state": "fail"
+        "state": "unknown"
       },
       "governance": {
         "checks": [
@@ -1024,9 +1024,9 @@
               "A count is an observed or estimated measurement, not a completeness guarantee."
             ],
             "reason_codes": [
-              "record_count_missing"
+              "record_count_estimated"
             ],
-            "state": "unknown"
+            "state": "pass"
           },
           {
             "check_id": "reproducibility.attestation_reference",
@@ -1047,11 +1047,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 2,
+          "evaluated": 3,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 2,
-          "unknown": 2
+          "passed": 3,
+          "unknown": 1
         },
         "evidence_refs": [
           {
@@ -1094,7 +1094,7 @@
         "reason_codes": [
           "shape_fingerprint_missing",
           "last_checked_declared",
-          "record_count_missing",
+          "record_count_estimated",
           "attestation_ref_declared"
         ],
         "state": "unknown"
@@ -1103,7 +1103,7 @@
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "not_ready",
+    "overall": "indeterminate",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },
