@@ -14,9 +14,11 @@ next to the input) anchors the walk: when the head belongs to the same day the
 day's last receipt must equal its ``last_receipt_id``; when the head is an
 earlier day's, the file's first entry must link to that head's last receipt.
 Linkage is reported ``checked`` only when a walk actually happened, otherwise
-``unchecked`` and primary checks still gate a 0 exit. Every failure names its
-exact reason; the CLI exits 0 on success and 1 on failure with each reason on
-stderr.
+``unchecked`` and primary checks still gate a 0 exit. The artifact binding is
+reproduced only when ``--health`` supplies the served file; without it the
+report says ``health_binding: unchecked`` rather than implying it was verified.
+Every failure names its exact reason; the CLI exits 0 on success and 1 on
+failure with each reason on stderr.
 """
 
 from __future__ import annotations
@@ -38,6 +40,7 @@ if __package__:
         RECEIPT_SCHEMA,
         ObservationReceiptError,
         canonical_bytes,
+        normalized_health_digest,
         parse_time,
         sha256_hex,
     )
@@ -47,6 +50,7 @@ else:
         RECEIPT_SCHEMA,
         ObservationReceiptError,
         canonical_bytes,
+        normalized_health_digest,
         parse_time,
         sha256_hex,
     )
@@ -173,6 +177,28 @@ def _signature_failures(receipt: dict[str, Any], payload: dict[str, Any], row: d
     except InvalidSignature:
         failures.append("signature_invalid: Ed25519 signature does not verify over the canonical payload")
     return failures
+
+
+def _health_binding_failures(
+    payload: dict[str, Any],
+    health: dict[str, Any],
+    health_path: Path | None,
+) -> list[str]:
+    """Recompute the normalized artifact digest and require it to match the payload.
+
+    The digest is reproduced exactly as the signer computed it: the volatile
+    ``_trust_summary.pipeline_heartbeat_at`` field is excluded first. A mismatch
+    names both digests so a reader can see which artifact was supplied.
+    """
+    declared = payload.get("health_artifact_sha256")
+    reproduced = normalized_health_digest(health)
+    if declared != reproduced:
+        source = health_path if health_path is not None else "<supplied artifact>"
+        return [
+            f"health_artifact_mismatch: artifact {source} yields {reproduced} "
+            f"but payload declares health_artifact_sha256={declared}"
+        ]
+    return []
 
 
 def _standalone_chain_failures(
@@ -316,6 +342,8 @@ def verify_day_receipt(
     receipt_id: str | None = None,
     chain_head: dict[str, Any] | None = None,
     day_file_path: Path | None = None,
+    health: dict[str, Any] | None = None,
+    health_path: Path | None = None,
 ) -> tuple[list[str], dict[str, Any], bool]:
     """Verify one entry of a day file plus its within-day and head linkage.
 
@@ -323,7 +351,7 @@ def verify_day_receipt(
     """
     receipts, index = select_day_receipt(document, receipt_id, label=str(day_file_path or "day_file"))
     receipt = receipts[index]
-    failures = verify_receipt(receipt, registry=registry)
+    failures = verify_receipt(receipt, registry=registry, health=health, health_path=health_path)
     failures.extend(day_linkage_failures(receipts, index))
     linkage_checked = chain_head is not None or index > 0
     if chain_head is not None:
@@ -350,12 +378,14 @@ def checked_facts(
     receipt: dict[str, Any],
     registry: dict[str, Any],
     linkage_checked: bool,
+    binding_checked: bool = False,
 ) -> dict[str, Any]:
     """Return the public facts the verifier actually used, for its evidence report.
 
     Only public material appears here: the declared receipt id, the payload's
-    key_id, the registry's public validity window, and whether linkage was
-    walked. No key bytes are read or reported.
+    key_id, the registry's public validity window, whether linkage was walked,
+    and whether the artifact digest was reproduced against a supplied health
+    file. No key bytes are read or reported.
     """
     payload = receipt.get("payload")
     if not isinstance(payload, dict):
@@ -375,6 +405,7 @@ def checked_facts(
         "key_not_after": row.get("not_after") if row is not None else None,
         "observed_at": payload.get("observed_at"),
         "linkage": "checked" if linkage_checked else "unchecked",
+        "health_binding": "checked" if binding_checked else "unchecked",
     }
 
 
@@ -388,6 +419,7 @@ def print_checked_facts(facts: dict[str, Any]) -> None:
     )
     print(f"  observed_at: {facts['observed_at']}")
     print(f"  linkage: {facts['linkage']}")
+    print(f"  health_binding: {facts.get('health_binding', 'unchecked')}")
 
 
 def verify_receipt(
@@ -395,12 +427,16 @@ def verify_receipt(
     *,
     registry: dict[str, Any],
     chain_head: dict[str, Any] | None = None,
+    health: dict[str, Any] | None = None,
+    health_path: Path | None = None,
 ) -> list[str]:
     """Return every verification failure; an empty list means the receipt is valid.
 
     The primary checks always run. Chain linkage runs only when a chain head is
     available; when ``chain_head`` is ``None`` linkage is deliberately left
-    unchecked rather than reported as passing.
+    unchecked rather than reported as passing. The artifact digest is likewise
+    reproduced only when a ``health`` artifact is supplied; otherwise the caller
+    must report the binding as unchecked.
     """
     failures, payload = _structure_failures(receipt)
     if payload is None:
@@ -413,6 +449,8 @@ def verify_receipt(
     if row is None:
         return failures
     failures.extend(_signature_failures(receipt, payload, row))
+    if health is not None:
+        failures.extend(_health_binding_failures(payload, health, health_path))
     if chain_head is not None:
         failures.extend(_standalone_chain_failures(receipt, payload, chain_head))
     return failures
@@ -439,6 +477,12 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=None,
         help="Chain head that anchors linkage. Defaults to a chain_head.json next to the input.",
+    )
+    parser.add_argument(
+        "--health",
+        type=Path,
+        default=None,
+        help="Health artifact whose normalized digest must reproduce the payload's health_artifact_sha256.",
     )
     args = parser.parse_args(argv)
 
@@ -471,6 +515,14 @@ def main(argv: list[str] | None = None) -> int:
             print(f"observation receipt verification failed: {error}", file=sys.stderr)
             return 1
 
+    health_artifact: dict[str, Any] | None = None
+    if args.health is not None:
+        try:
+            health_artifact = load_json(args.health, "health_artifact")
+        except ObservationVerificationError as error:
+            print(f"observation receipt verification failed: {error}", file=sys.stderr)
+            return 1
+
     try:
         if args.day_file is not None:
             failures, selected, linkage_checked = verify_day_receipt(
@@ -479,6 +531,8 @@ def main(argv: list[str] | None = None) -> int:
                 receipt_id=args.receipt_id,
                 chain_head=chain_head,
                 day_file_path=args.day_file,
+                health=health_artifact,
+                health_path=args.health,
             )
         else:
             if args.receipt_id is not None and receipt.get("receipt_id") != args.receipt_id:
@@ -488,14 +542,20 @@ def main(argv: list[str] | None = None) -> int:
                     file=sys.stderr,
                 )
                 return 1
-            failures = verify_receipt(receipt, registry=registry, chain_head=chain_head)
+            failures = verify_receipt(
+                receipt,
+                registry=registry,
+                chain_head=chain_head,
+                health=health_artifact,
+                health_path=args.health,
+            )
             selected = receipt
             linkage_checked = chain_head is not None
     except ObservationVerificationError as error:
         print(f"observation receipt verification failed: {error}", file=sys.stderr)
         return 1
 
-    facts = checked_facts(selected, registry, linkage_checked)
+    facts = checked_facts(selected, registry, linkage_checked, binding_checked=health_artifact is not None)
     if failures:
         print_checked_facts(facts)
         for failure in failures:
