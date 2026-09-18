@@ -1,0 +1,39 @@
+{
+  "schema": "datapulse/v1/observation-day",
+  "cycle_date": "2026-09-18",
+  "receipts": [
+    {
+      "payload": {
+        "schema": "datapulse/v1/observation-receipt",
+        "observed_at": "2026-09-18T16:09:33Z",
+        "cycle_date": "2026-09-18",
+        "health_artifact_sha256": "319b1b0270d4febc6dfa781da349c82fa3b18e5d1c6afbd0b08aaa2f00a888cd",
+        "normalization": "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing",
+        "dataset_count": 418,
+        "freshness_status_counts": {
+          "fresh": 144,
+          "browser-dependent": 5,
+          "stale": 151,
+          "aging": 99,
+          "discontinued": 1,
+          "reference": 14,
+          "unknown-freshness": 4
+        },
+        "verification_profile_version": "5fd91ecbdce316cf379adc4ba91197aa22d576c52d20df9b0a821298fb5a7d45",
+        "policy_version": null,
+        "key_id": "ed25519-e075218fa8086893",
+        "sequence_number": 1,
+        "previous_receipt_id": null,
+        "valid_until": "2026-09-19T18:09:33Z",
+        "limitations": [
+          "operator-produced evidence: the observing host signs its own observation at execution time",
+          "timestamps rely on the host clock and are not independently witnessed",
+          "upstream truth is not asserted; freshness statuses reflect this observation only"
+        ]
+      },
+      "receipt_id": "353038acab78766bd0151104ba4d015cc34f335dcd06e140c2213d1aacbbeb6b",
+      "signature_base64": "7IQO9O91q0iDxk9kY3U8bCLSPW0QnUYCqQLgqPfUjC60b8KQeLHS+cuBRO2nLijVo7NWdI9v97rKwH/Ps4sZCA=="
+    }
+  ],
+  "updated_at": "2026-09-18T16:09:33Z"
+}
