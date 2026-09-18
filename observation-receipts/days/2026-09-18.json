@@ -1267,7 +1267,42 @@
       },
       "receipt_id": "0e154da59f1e29c3510d09c1137d696effe720750f8ba6946859c6fa79fc9620",
       "signature_base64": "6UvMYpkwPYah2o9wC4qQPRWl85yPUYCvWZZTkIwVKUsoVVswwjbwqmQtqm3ynFb5pvjryL9E1/W0S9qFf9NiAA=="
+    },
+    {
+      "payload": {
+        "schema": "datapulse/v1/observation-receipt",
+        "observed_at": "2026-09-18T23:40:06Z",
+        "cycle_date": "2026-09-18",
+        "health_artifact_sha256": "fda9f19aa370c5dafca3899ce87a136228456e75f96b5a97621524d3ae7f7b5c",
+        "artifact_path": "health/latest.json",
+        "artifact_commit": "22b809ef421d640c7b7bfcf9e8a054a41df958ea",
+        "normalization": "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing",
+        "dataset_count": 418,
+        "freshness_status_counts": {
+          "fresh": 143,
+          "browser-dependent": 5,
+          "stale": 151,
+          "aging": 99,
+          "discontinued": 1,
+          "reference": 14,
+          "unknown-freshness": 4,
+          "degraded": 1
+        },
+        "verification_profile_version": "fff8b243da5904ef48ad057fbb53dd98af3e051dd0ab1d02b42e02a78e695aa6",
+        "policy_version": null,
+        "key_id": "ed25519-e075218fa8086893",
+        "sequence_number": 38,
+        "previous_receipt_id": "0e154da59f1e29c3510d09c1137d696effe720750f8ba6946859c6fa79fc9620",
+        "valid_until": "2026-09-20T01:40:06Z",
+        "limitations": [
+          "operator-produced evidence: the observing host signs its own observation at execution time",
+          "timestamps rely on the host clock and are not independently witnessed",
+          "upstream truth is not asserted; freshness statuses reflect this observation only"
+        ]
+      },
+      "receipt_id": "1c8146fcf55ba72a761ba58783be1c2ba47b48c3757e53f4b343ed05ebf4a504",
+      "signature_base64": "bHYaAiBkH8uWhSiVmnQ2kdO5kLt20MgbW9ArChUPxh/baHfJsA+YEKqgS8J/g2PLJdXdg9PvFcWu11WYREY+Ag=="
     }
   ],
-  "updated_at": "2026-09-18T23:24:22Z"
+  "updated_at": "2026-09-18T23:40:06Z"
 }
