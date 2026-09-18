@@ -14,6 +14,20 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.25.0](https://github.com/r3dz4r/datapulse-my/compare/v3.24.2...v3.25.0) (2026-09-18)
+
+
+### Features
+
+* **observation:** bind the receipt to the commit that carries the artifact ([ba333c2](https://github.com/r3dz4r/datapulse-my/commit/ba333c2a32bdd44ac904e6ef55de7663800b89fa))
+* **observation:** bind the receipt to the commit that carries the artifact ([9f9df79](https://github.com/r3dz4r/datapulse-my/commit/9f9df7995cb73f7a204c7b04591f9cf7dcaea5af))
+
+
+### Bug Fixes
+
+* **deploy:** deploy when the observation receipts change ([1179d73](https://github.com/r3dz4r/datapulse-my/commit/1179d7354db77f227ee68f9fb14f0895378bde75))
+* **deploy:** deploy when the observation receipts change ([94fb821](https://github.com/r3dz4r/datapulse-my/commit/94fb82121ef6ee353d7b08b59f063cde301782d1))
+
 ## [3.24.2](https://github.com/r3dz4r/datapulse-my/compare/v3.24.1...v3.24.2) (2026-09-18)
 
 
