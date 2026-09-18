@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.26.0](https://github.com/r3dz4r/datapulse-my/compare/v3.25.0...v3.26.0) (2026-09-18)
+
+
+### Features
+
+* **surfaces:** declare the served observation receipts, and prove their content ([b3edd23](https://github.com/r3dz4r/datapulse-my/commit/b3edd23a085ca7940696f3ce7ec0c4a223d515f3))
+* **surfaces:** declare the served observation receipts, and prove their content ([195d27b](https://github.com/r3dz4r/datapulse-my/commit/195d27bb107e080aa3727a69af7c2cfdf293351a))
+
 ## [3.25.0](https://github.com/r3dz4r/datapulse-my/compare/v3.24.2...v3.25.0) (2026-09-18)
 
 
