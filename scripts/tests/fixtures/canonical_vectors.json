@@ -1,0 +1,249 @@
+{
+  "schema": "datapulse/v1/canonical-form-vectors",
+  "description": "Literal positive, negative, and canonical-form vectors for the DataPulse canonical JSON form.",
+  "reference_implementation": "scripts/gen_attestations.py:canonical",
+  "canonical_expression": "json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(\",\", \":\")).encode()",
+  "bom_policy": "No UTF-8 BOM; no trailing newline.",
+  "positive": [
+    {
+      "name": "scalars_and_nesting",
+      "payload": {
+        "z_last": null,
+        "a_first": "alpha",
+        "nested": {
+          "b": 2,
+          "a": true
+        },
+        "list": [
+          3,
+          "two",
+          false,
+          null
+        ],
+        "count": 0
+      },
+      "canonical_bytes": "{\"a_first\":\"alpha\",\"count\":0,\"list\":[3,\"two\",false,null],\"nested\":{\"a\":true,\"b\":2},\"z_last\":null}",
+      "sha256": "d98980580a626a138f8f71cedd857fa325f2ec50b4acbee29216459ff5bcbda7",
+      "note": "Keys are sorted, booleans/null are lowercase, arrays keep their order, and no whitespace is emitted."
+    },
+    {
+      "name": "unicode_preserved_as_utf8",
+      "payload": {
+        "schema": "datapulse/v1/canonical-vector",
+        "city": "George Town",
+        "label": "caf\u00e9 M\u00fcnchen \u2013 na\u00efve",
+        "emoji": "\ud83d\udea6"
+      },
+      "canonical_bytes": "{\"city\":\"George Town\",\"emoji\":\"\ud83d\udea6\",\"label\":\"caf\u00e9 M\u00fcnchen \u2013 na\u00efve\",\"schema\":\"datapulse/v1/canonical-vector\"}",
+      "sha256": "44207e721d3eb437e6d4f07fc90116cf311fc3744366229abc3559ef9ade735b",
+      "note": "ensure_ascii=False keeps non-ASCII as UTF-8 octets; the emoji is an astral-plane character (surrogate pair in UTF-16)."
+    },
+    {
+      "name": "large_integers_exact",
+      "payload": {
+        "beyond_float64": 9007199254740993,
+        "negative_beyond_int64": -9223372036854775809,
+        "int64_max": 9223372036854775807
+      },
+      "canonical_bytes": "{\"beyond_float64\":9007199254740993,\"int64_max\":9223372036854775807,\"negative_beyond_int64\":-9223372036854775809}",
+      "sha256": "52b217fa619b7534e45820e1f4352034806012491befd1b2db1a91f03c49d3ec",
+      "note": "Integers round-trip exactly even when they exceed binary64 or signed-64-bit range; no float coercion is allowed."
+    },
+    {
+      "name": "empty_and_falsey_values",
+      "payload": {
+        "empty_object": {},
+        "empty_array": [],
+        "empty_string": "",
+        "flag_false": false,
+        "value_null": null
+      },
+      "canonical_bytes": "{\"empty_array\":[],\"empty_object\":{},\"empty_string\":\"\",\"flag_false\":false,\"value_null\":null}",
+      "sha256": "2ebad78f1e80ed591e914b72e65a9dbd810aa0df842d856eddfe985e4f460271",
+      "note": "Empty containers and falsey values are preserved; none may be dropped or coerced."
+    }
+  ],
+  "negative": [
+    {
+      "name": "bom_prefixed",
+      "payload_json": "{\"dataset_id\":\"sample\",\"observed_at\":\"2026-08-15T00:00:00Z\",\"probe_count_24h\":1,\"schema\":\"datapulse/v1/canonical-vector\"}",
+      "wrong_bytes": "\ufeff{\"dataset_id\":\"sample\",\"observed_at\":\"2026-08-15T00:00:00Z\",\"probe_count_24h\":1,\"schema\":\"datapulse/v1/canonical-vector\"}",
+      "reason": "A UTF-8 BOM changes the first signed byte (EF BB BF) and therefore the digest.",
+      "wrong_bytes_semantically_equal": false,
+      "payload_rejected_by_strict_parser": false,
+      "wrong_rejected_by_strict_parser": true,
+      "canonical_rejected_by_strict_parser": false,
+      "note": "The wrong bytes are the canonical text with a BOM prepended."
+    },
+    {
+      "name": "trailing_newline_appended",
+      "payload_json": "{\"dataset_id\":\"sample\",\"observed_at\":\"2026-08-15T00:00:00Z\",\"probe_count_24h\":1,\"schema\":\"datapulse/v1/canonical-vector\"}",
+      "wrong_bytes": "{\"dataset_id\":\"sample\",\"observed_at\":\"2026-08-15T00:00:00Z\",\"probe_count_24h\":1,\"schema\":\"datapulse/v1/canonical-vector\"}\n",
+      "reason": "A trailing newline is not part of the signed bytes; the newline written to an envelope file is formatting only.",
+      "wrong_bytes_semantically_equal": true,
+      "payload_rejected_by_strict_parser": false,
+      "wrong_rejected_by_strict_parser": false,
+      "canonical_rejected_by_strict_parser": false
+    },
+    {
+      "name": "keys_reordered",
+      "payload_json": "{ \"schema\": \"datapulse/v1/canonical-vector\", \"probe_count_24h\": 1, \"observed_at\": \"2026-08-15T00:00:00Z\", \"dataset_id\": \"sample\" }",
+      "wrong_bytes": "{\"schema\":\"datapulse/v1/canonical-vector\",\"probe_count_24h\":1,\"observed_at\":\"2026-08-15T00:00:00Z\",\"dataset_id\":\"sample\"}",
+      "reason": "A permutation of the canonical key order is a different byte string even though it is the same object.",
+      "wrong_bytes_semantically_equal": true,
+      "payload_rejected_by_strict_parser": false,
+      "wrong_rejected_by_strict_parser": false,
+      "canonical_rejected_by_strict_parser": false,
+      "note": "The wrong bytes are a dumps(sort_keys=False) rendering of the same four members in reverse sorted order."
+    },
+    {
+      "name": "key_order_in_equivalent_object",
+      "payload_json": "{ \"nested\": { \"b\": 2, \"a\": 1 }, \"top\": \"x\" }",
+      "wrong_bytes": "{\"nested\":{\"b\":2,\"a\":1},\"top\":\"x\"}",
+      "reason": "An equivalent object keeps its insertion order and nested order, so a serialiser that does not sort (or sorts only the top level) emits different bytes.",
+      "wrong_bytes_semantically_equal": true,
+      "payload_rejected_by_strict_parser": false,
+      "wrong_rejected_by_strict_parser": false,
+      "canonical_rejected_by_strict_parser": false
+    },
+    {
+      "name": "default_separator_whitespace",
+      "payload_json": "{\"dataset_id\":\"sample\",\"observed_at\":\"2026-08-15T00:00:00Z\",\"probe_count_24h\":1,\"schema\":\"datapulse/v1/canonical-vector\"}",
+      "wrong_bytes": "{\"dataset_id\": \"sample\", \"observed_at\": \"2026-08-15T00:00:00Z\", \"probe_count_24h\": 1, \"schema\": \"datapulse/v1/canonical-vector\"}",
+      "reason": "json.dumps defaults to separators (', ', ': '); the spaces are insignificant JSON but significant to a digest.",
+      "wrong_bytes_semantically_equal": true,
+      "payload_rejected_by_strict_parser": false,
+      "wrong_rejected_by_strict_parser": false,
+      "canonical_rejected_by_strict_parser": false,
+      "note": "Canonical separators are (',', ':') with no spaces."
+    },
+    {
+      "name": "indent_rendering",
+      "payload_json": "{\"dataset_id\":\"sample\",\"observed_at\":\"2026-08-15T00:00:00Z\",\"probe_count_24h\":1,\"schema\":\"datapulse/v1/canonical-vector\"}",
+      "wrong_bytes": "{\n  \"dataset_id\": \"sample\",\n  \"observed_at\": \"2026-08-15T00:00:00Z\",\n  \"probe_count_24h\": 1,\n  \"schema\": \"datapulse/v1/canonical-vector\"\n}",
+      "reason": "Pretty-printed JSON with indentation is a different byte string; signed material must never be indented.",
+      "wrong_bytes_semantically_equal": true,
+      "payload_rejected_by_strict_parser": false,
+      "wrong_rejected_by_strict_parser": false,
+      "canonical_rejected_by_strict_parser": false
+    },
+    {
+      "name": "float_value",
+      "payload_json": "{\"confidence\":100.0,\"schema\":\"datapulse/v1/canonical-vector\"}",
+      "wrong_bytes": "{\"confidence\":1e2,\"schema\":\"datapulse/v1/canonical-vector\"}",
+      "reason": "A non-integer number has more than one JSON spelling; 100.0 and 1e2 parse to the same double but are different bytes. Floats are prohibited in signed payloads.",
+      "wrong_bytes_semantically_equal": true,
+      "payload_rejected_by_strict_parser": false,
+      "wrong_rejected_by_strict_parser": false,
+      "canonical_rejected_by_strict_parser": false
+    },
+    {
+      "name": "float_valued_integer_vs_integer",
+      "payload_json": "{\"confidence\":1.0}",
+      "wrong_bytes": "{\"confidence\":1}",
+      "reason": "1.0 and 1 compare equal in Python but are different JSON types and different bytes; a language that preserves the integer loses the decimal marker.",
+      "wrong_bytes_semantically_equal": true,
+      "payload_rejected_by_strict_parser": false,
+      "wrong_rejected_by_strict_parser": false,
+      "canonical_rejected_by_strict_parser": false
+    },
+    {
+      "name": "nan_value",
+      "payload_json": "{\"value\": NaN}",
+      "wrong_bytes": "{\"value\":null}",
+      "reason": "NaN is not valid RFC 8259 JSON. Python json.dumps emits it anyway, and a non-conformant parser may silently coerce it to null; both must fail closed.",
+      "wrong_bytes_semantically_equal": false,
+      "payload_rejected_by_strict_parser": true,
+      "wrong_rejected_by_strict_parser": false,
+      "canonical_rejected_by_strict_parser": true,
+      "note": "payload_json is parsed leniently to materialise float('nan'); strict parsing of it and of the canonical bytes must both raise."
+    },
+    {
+      "name": "duplicate_keys",
+      "payload_json": "{\"a\":1,\"a\":2}",
+      "wrong_bytes": "{\"a\":1,\"a\":2}",
+      "reason": "A lenient parser keeps the last value and hides the duplicate; the canonical form has no way to express it, so parsing must reject it.",
+      "wrong_bytes_semantically_equal": true,
+      "payload_rejected_by_strict_parser": true,
+      "wrong_rejected_by_strict_parser": false,
+      "canonical_rejected_by_strict_parser": false
+    },
+    {
+      "name": "ensure_ascii_rendering",
+      "payload_json": "{\"city\":\"George Town\",\"label\":\"caf\u00e9 M\u00fcnchen \u2013 na\u00efve\"}",
+      "wrong_bytes": "{\"city\":\"George Town\",\"label\":\"caf\\u00e9 M\\u00fcnchen \\u2013 na\\u00efve\"}",
+      "reason": "ensure_ascii=True rewrites non-ASCII as \\uXXXX escapes; the signature must cover the UTF-8 octets instead.",
+      "wrong_bytes_semantically_equal": true,
+      "payload_rejected_by_strict_parser": false,
+      "wrong_rejected_by_strict_parser": false,
+      "canonical_rejected_by_strict_parser": false
+    }
+  ],
+  "canonical_form": [
+    {
+      "name": "key_insertion_order_irrelevant",
+      "payload_a": {
+        "b": 2,
+        "a": 1
+      },
+      "payload_b": {
+        "a": 1,
+        "b": 2
+      },
+      "canonical_bytes": "{\"a\":1,\"b\":2}",
+      "sha256": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777",
+      "note": "Two dict literals with opposite insertion orders."
+    },
+    {
+      "name": "nested_construction_paths",
+      "payload_a": {
+        "outer": {
+          "y": 2,
+          "x": 1
+        },
+        "n": [
+          1,
+          2
+        ]
+      },
+      "payload_b": {
+        "n": [
+          1,
+          2
+        ],
+        "outer": {
+          "x": 1,
+          "y": 2
+        }
+      },
+      "canonical_bytes": "{\"n\":[1,2],\"outer\":{\"x\":1,\"y\":2}}",
+      "sha256": "cc6fa9fa40687788956b4d902974ecacb62238f18fe2137bc8084da41b4b0555",
+      "note": "Nested objects are sorted at every level; arrays keep their order."
+    },
+    {
+      "name": "parsed_json_path_agrees",
+      "payload_a": {
+        "schema": "datapulse/v1/canonical-vector",
+        "count": 2,
+        "names": [
+          "a",
+          "b"
+        ]
+      },
+      "payload_b_json": "{ \"names\": [\"a\", \"b\"], \"count\": 2, \"schema\": \"datapulse/v1/canonical-vector\" }",
+      "canonical_bytes": "{\"count\":2,\"names\":[\"a\",\"b\"],\"schema\":\"datapulse/v1/canonical-vector\"}",
+      "sha256": "f91b547ec60aaf9ce08fe5d7d35982ca507abc5ab9f0fa1bb467379a25462332",
+      "note": "One path is a Python literal; the other is parsed JSON text with whitespace and a different key order."
+    },
+    {
+      "name": "unicode_construction_paths",
+      "payload_a": {
+        "label": "caf\u00e9"
+      },
+      "payload_b_json": "{\"label\":\"caf\\u00e9\"}",
+      "canonical_bytes": "{\"label\":\"caf\u00e9\"}",
+      "sha256": "2d7fba14f0a7cffed454bc268d791c0f32d11f62946998a323087ccf5df29075",
+      "note": "A literal UTF-8 string and an escaped \\u00e9 both decode to the same value, so canonical bytes are identical."
+    }
+  ]
+}
