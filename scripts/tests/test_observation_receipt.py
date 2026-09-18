@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -886,3 +887,196 @@ def test_verify_without_health_reports_binding_unchecked(
     assert captured.err == ""
     assert "verification passed" in captured.out
     assert "health_binding: unchecked" in captured.out
+
+
+# ---------------------------------------------------------------------------
+# Artifact binding by commit reference: the pointer is signed, not decorative
+# ---------------------------------------------------------------------------
+
+
+def _pointer_args(
+    environment: dict[str, Any],
+    *,
+    artifact_commit: str | None,
+    artifact_path: str | None = None,
+) -> list[str]:
+    """CLI args for a sign run, optionally carrying a commit pointer."""
+    args = [
+        "--output-root",
+        str(environment["output_root"]),
+        "--health",
+        str(environment["health_path"]),
+        "--methodology",
+        str(environment["methodology_path"]),
+        "--key",
+        str(environment["key_path"]),
+        "--registry",
+        str(environment["registry_path"]),
+        "--now",
+        signer.format_time(NOW),
+    ]
+    if artifact_commit is not None:
+        args += ["--artifact-commit", artifact_commit]
+    if artifact_path is not None:
+        args += ["--artifact-path", artifact_path]
+    return args
+
+
+def test_artifact_pointer_is_inside_signed_payload(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Tampering artifact_commit alone breaks both the receipt id and signature."""
+    commit = "a" * 40
+    assert signer.main(_pointer_args(environment, artifact_commit=commit)) == 0
+    capsys.readouterr()
+    receipt = _receipt(environment)
+    assert receipt["payload"]["artifact_commit"] == commit
+    assert receipt["payload"]["artifact_path"] == signer.DEFAULT_ARTIFACT_PATH
+    # Both fields are covered by the canonical payload hash.
+    assert receipt["receipt_id"] == hashlib.sha256(signer.canonical_bytes(receipt["payload"])).hexdigest()
+
+    receipt["payload"]["artifact_commit"] = "b" * 40
+    failures = _verify(environment, receipt, _head(environment))
+    assert any(failure.startswith("receipt_id_mismatch") for failure in failures), failures
+    assert any(failure.startswith("signature_invalid") for failure in failures), failures
+
+
+@pytest.mark.parametrize("bad_commit", ["abc", "A" * 40, "g" * 40, "1" * 39])
+def test_sign_refuses_malformed_artifact_commit(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str], bad_commit: str
+) -> None:
+    """A short, uppercase, or non-hex pointer is refused, not silently stored."""
+    exit_code = signer.main(_pointer_args(environment, artifact_commit=bad_commit))
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "artifact_commit_malformed" in captured.err
+    # Fail closed before touching the output tree.
+    assert not (environment["output_root"] / "days").exists()
+
+
+def test_verifier_prints_artifact_binding_pointer(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The verifier echoes '<commit>@<path>' for a receipt that carries a pointer."""
+    commit = "c" * 40
+    assert signer.main(_pointer_args(environment, artifact_commit=commit, artifact_path="health/latest.json")) == 0
+    summary = json.loads(capsys.readouterr().out)
+
+    verify_exit = verifier.main(
+        [
+            "--day-file",
+            summary["receipt_path"],
+            "--receipt-id",
+            summary["receipt_id"],
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            summary["chain_head_path"],
+        ]
+    )
+    captured = capsys.readouterr()
+    assert verify_exit == 0
+    assert f"artifact_binding: {commit}@health/latest.json" in captured.out
+
+
+def test_receipt_without_commit_reports_binding_absent(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Omitting --artifact-commit records null and never implies a pointer exists."""
+    assert signer.main(_pointer_args(environment, artifact_commit=None)) == 0
+    summary = json.loads(capsys.readouterr().out)
+    receipt = _receipt(environment)
+    assert receipt["payload"]["artifact_commit"] is None
+    assert receipt["payload"]["artifact_path"] is None
+
+    verify_exit = verifier.main(
+        [
+            "--day-file",
+            summary["receipt_path"],
+            "--receipt-id",
+            summary["receipt_id"],
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            summary["chain_head_path"],
+        ]
+    )
+    captured = capsys.readouterr()
+    assert verify_exit == 0
+    assert "artifact_binding: absent" in captured.out
+
+
+def test_real_commit_round_trip_signs_offline_verifies(
+    environment: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Sign the on-disk artifact bound to HEAD; verify against that commit's bytes.
+
+    The verifier stays offline: the caller extracts the bound bytes
+    (``git show <sha>:health/latest.json``) and the existing ``--health`` digest
+    check remains the binding proof.
+    """
+    head_sha = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert signer.ARTIFACT_COMMIT_PATTERN.fullmatch(head_sha) is not None
+
+    extracted = tmp_path / "committed-health.json"
+    extracted.write_bytes(
+        subprocess.run(
+            ["git", "-C", str(ROOT), "show", f"{head_sha}:health/latest.json"],
+            check=True,
+            capture_output=True,
+        ).stdout
+    )
+
+    output_root = tmp_path / "roundtrip-observation"
+    sign_exit = signer.main(
+        [
+            "--output-root",
+            str(output_root),
+            "--health",
+            str(ROOT / "health/latest.json"),
+            "--methodology",
+            str(environment["methodology_path"]),
+            "--key",
+            str(environment["key_path"]),
+            "--registry",
+            str(environment["registry_path"]),
+            "--now",
+            signer.format_time(NOW),
+            "--artifact-commit",
+            head_sha,
+            "--artifact-path",
+            "health/latest.json",
+        ]
+    )
+    assert sign_exit == 0
+    summary = json.loads(capsys.readouterr().out)
+
+    verify_exit = verifier.main(
+        [
+            "--day-file",
+            summary["receipt_path"],
+            "--receipt-id",
+            summary["receipt_id"],
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            summary["chain_head_path"],
+            "--health",
+            str(extracted),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert verify_exit == 0
+    assert captured.err == ""
+    assert "health_binding: checked" in captured.out
+    assert f"artifact_binding: {head_sha}@health/latest.json" in captured.out
+
+    digest = signer.normalized_health_digest(signer.load_json(extracted, "health_artifact"))
+    selected = json.loads(Path(summary["receipt_path"]).read_text(encoding="utf-8"))["receipts"][-1]
+    assert selected["payload"]["health_artifact_sha256"] == digest
+    print(f"round_trip_commit={head_sha} round_trip_digest={digest}")

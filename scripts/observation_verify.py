@@ -17,6 +17,10 @@ Linkage is reported ``checked`` only when a walk actually happened, otherwise
 ``unchecked`` and primary checks still gate a 0 exit. The artifact binding is
 reproduced only when ``--health`` supplies the served file; without it the
 report says ``health_binding: unchecked`` rather than implying it was verified.
+The signed artifact pointer, when the payload carries one, is echoed as
+``artifact_binding: <commit>@<path>``; it is a locator only (the verifier never
+fetches it), and the caller-supplied ``--health`` digest remains the binding
+proof. A null pointer is reported ``artifact_binding: absent``.
 Every failure names its exact reason; the CLI exits 0 on success and 1 on
 failure with each reason on stderr.
 """
@@ -124,6 +128,10 @@ def _structure_failures(receipt: dict[str, Any]) -> tuple[list[str], dict[str, A
         failures.append("payload_field_type_invalid: key_id must be a string")
     if payload.get("previous_receipt_id") is not None and not isinstance(payload.get("previous_receipt_id"), str):
         failures.append("payload_field_type_invalid: previous_receipt_id must be a string or null")
+    if payload.get("artifact_commit") is not None and not isinstance(payload.get("artifact_commit"), str):
+        failures.append("payload_field_type_invalid: artifact_commit must be a string or null")
+    if payload.get("artifact_path") is not None and not isinstance(payload.get("artifact_path"), str):
+        failures.append("payload_field_type_invalid: artifact_path must be a string or null")
     return failures, payload
 
 
@@ -384,8 +392,9 @@ def checked_facts(
 
     Only public material appears here: the declared receipt id, the payload's
     key_id, the registry's public validity window, whether linkage was walked,
-    and whether the artifact digest was reproduced against a supplied health
-    file. No key bytes are read or reported.
+    whether the artifact digest was reproduced against a supplied health
+    file, and the signed artifact pointer (if the payload carries one). No key
+    bytes are read or reported.
     """
     payload = receipt.get("payload")
     if not isinstance(payload, dict):
@@ -397,6 +406,14 @@ def checked_facts(
         matches = [candidate for candidate in rows if isinstance(candidate, dict) and candidate.get("key_id") == key_id]
         if len(matches) == 1:
             row = matches[0]
+    artifact_commit = payload.get("artifact_commit")
+    artifact_path = payload.get("artifact_path")
+    if isinstance(artifact_commit, str) and isinstance(artifact_path, str):
+        artifact_binding = f"{artifact_commit}@{artifact_path}"
+    else:
+        # A null pointer (or a receipt predating the fields) must never read as
+        # though a location were bound; the digest check remains the proof.
+        artifact_binding = "absent"
     return {
         "receipt_id": receipt.get("receipt_id"),
         "key_id": key_id,
@@ -406,6 +423,7 @@ def checked_facts(
         "observed_at": payload.get("observed_at"),
         "linkage": "checked" if linkage_checked else "unchecked",
         "health_binding": "checked" if binding_checked else "unchecked",
+        "artifact_binding": artifact_binding,
     }
 
 
@@ -420,6 +438,7 @@ def print_checked_facts(facts: dict[str, Any]) -> None:
     print(f"  observed_at: {facts['observed_at']}")
     print(f"  linkage: {facts['linkage']}")
     print(f"  health_binding: {facts.get('health_binding', 'unchecked')}")
+    print(f"  artifact_binding: {facts.get('artifact_binding', 'absent')}")
 
 
 def verify_receipt(
