@@ -212,6 +212,14 @@ def test_health_cycle_classifier_fails_closed_for_mixed_source_and_health_input(
     assert not _classifies_as_health_only(("datapulse.json", "health/latest.json"))
 
 
+def test_observation_receipt_changes_select_the_full_release_profile() -> None:
+    """Observation receipts are site inputs: a receipts change is never health-only."""
+    assert not _classifies_as_health_only(("observation-receipts/chain_head.json",))
+    assert not _classifies_as_health_only(
+        ("observation-receipts/days/2026-09-18.json", "health/latest.json")
+    )
+
+
 @pytest.mark.parametrize(
     "disallowed_path",
     (
