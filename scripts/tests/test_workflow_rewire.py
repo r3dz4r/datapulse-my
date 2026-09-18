@@ -76,6 +76,7 @@ def test_cloudflare_push_trigger_is_code_plane_allowlist() -> None:
         "scripts/**",
         "mcp/**",
         "functions/**",
+        "observation-receipts/**",
         "config/public-surfaces.json",
         ".github/workflows/deploy-cloudflare-pages.yml",
         "datapulse.json",
@@ -90,6 +91,15 @@ def test_cloudflare_push_trigger_excludes_health_cycles_and_keeps_code_plane() -
     assert _deploy_trigger_matches(["scripts/publish_health_index.py"])
     assert _deploy_trigger_matches(["functions/health/[[path]].js"])
     assert _deploy_trigger_matches(["health/latest.json", "docs/index.html"])
+
+
+def test_cloudflare_push_trigger_deploys_observation_receipt_changes() -> None:
+    """Signed observation receipts are assembled into the site, so they must trigger a deploy."""
+    patterns = yaml.safe_load(_read(DEPLOY_WORKFLOW))[True]["push"]["paths"]
+
+    assert "observation-receipts/**" in patterns
+    assert _deploy_trigger_matches(["observation-receipts/chain_head.json"])
+    assert _deploy_trigger_matches(["observation-receipts/days/2026-09-18.json"])
 
 
 def test_llms_owned_blocks_do_not_publish_legacy_or_docs_urls() -> None:
