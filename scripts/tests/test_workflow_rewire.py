@@ -102,6 +102,18 @@ def test_cloudflare_push_trigger_deploys_observation_receipt_changes() -> None:
     assert _deploy_trigger_matches(["observation-receipts/days/2026-09-18.json"])
 
 
+def test_public_surfaces_declares_only_the_servable_observation_receipt_entry_point() -> None:
+    """Declare the fetchable receipt head, never a directory-style receipt index."""
+    artifacts = json.loads(_read(ROOT / "config/public-surfaces.json"))["artifacts"]
+
+    assert "/observation-receipts/chain_head.json" in artifacts
+    assert "/observation-receipts/days/" not in artifacts
+    assert not any(
+        path.startswith("/observation-receipts/") and path.endswith("/")
+        for path in artifacts
+    )
+
+
 def test_llms_owned_blocks_do_not_publish_legacy_or_docs_urls() -> None:
     contents = _read(ROOT / "llms.txt")
     owned_blocks = re.findall(r"(?ms)<!-- BEGIN [^>]+ -->(.*?)<!-- END [^>]+ -->", contents)

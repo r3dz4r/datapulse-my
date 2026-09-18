@@ -46,6 +46,7 @@ PUBLIC_SURFACE_LINKS = {
     "/agent.json": ("Agent manifest", "Machine-readable agent capability manifest."),
     "/mcp.json": ("MCP advertisement", "Machine-readable MCP server advertisement."),
     "/data/jsonld/catalog.json": ("JSON-LD catalog", "Schema.org JSON-LD dataset catalog."),
+    "/observation-receipts/chain_head.json": ("Observation receipt chain head", "Signed head pointer for the host-signed observation receipt chain."),
     "/badges/": ("Status badges", "Per-dataset SVG health badges."),
 }
 
