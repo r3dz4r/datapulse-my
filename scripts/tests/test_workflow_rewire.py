@@ -436,6 +436,7 @@ def test_cloudflare_fast_path_overwrites_checkout_attestations_after_broad_copie
     workflow = _read(DEPLOY_WORKFLOW)
 
     assert "cp -R health deltas record-evidence badges samples data _site/" in workflow
+    assert "if [ -d observation ]; then cp -R observation _site/; fi" in workflow
     assert "cp -R attestations _site/" in workflow
     assert "rm -rf _site/attestations" in workflow
     assert 'cp -R "$RUNNER_TEMP/preserved-attestations/attestations" _site/' in workflow
