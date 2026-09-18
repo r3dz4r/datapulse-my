@@ -7,6 +7,11 @@ reconstruction. The signed payload binds the health artifact, the probe's
 freshness summary, the signer's own bytes (``verification_profile_version``),
 and a monotonic sequence number that links each receipt to the previous one.
 
+The artifact digest excludes the volatile ``_trust_summary.pipeline_heartbeat_at``
+liveness stamp before canonical hashing, and the signed ``normalization`` field
+states that exclusion, so the digest is reproducible from the served artifact by
+anyone holding only the file and the receipt.
+
 Receipts accumulate one per observed state. Each cycle date gets an append-only
 container, ``observation/days/<cycle_date>.json``, whose ``receipts`` array
 grows by one entry every time the health artifact's content digest changes. A
@@ -59,6 +64,15 @@ LIMITATIONS: tuple[str, ...] = (
     "timestamps rely on the host clock and are not independently witnessed",
     "upstream truth is not asserted; freshness statuses reflect this observation only",
 )
+
+# The served health artifact carries a liveness stamp the pipeline rewrites every
+# cycle, and the signer runs before that cycle's fresh stamp. Hashing the raw
+# bytes would make the digest unreproducible a moment later, so the volatile
+# field is excluded before canonical hashing. The exact exclusion is stated in
+# the signed payload (``normalization``) so a third party can reproduce it.
+VOLATILE_HEALTH_FIELD_PARENT: str = "_trust_summary"
+VOLATILE_HEALTH_FIELD_KEY: str = "pipeline_heartbeat_at"
+NORMALIZATION_NOTE: str = "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing"
 
 
 class ObservationReceiptError(Exception):
@@ -162,6 +176,34 @@ def _relative_posix(path: Path, root: Path) -> str:
 # ---------------------------------------------------------------------------
 
 
+def normalize_health_artifact(health: dict[str, Any]) -> dict[str, Any]:
+    """Return the artifact with the volatile liveness field removed.
+
+    The signed observation must bind the observation, not the liveness clock:
+    when the artifact carries an object-valued ``_trust_summary`` the
+    ``pipeline_heartbeat_at`` key is dropped from a copy of it. If that leaves
+    ``_trust_summary`` empty the empty object is kept (the parent is never
+    pruned), and every other byte is returned unchanged so the existing
+    canonical form hashes it exactly as before.
+    """
+    normalized = dict(health)
+    trust_summary = normalized.get(VOLATILE_HEALTH_FIELD_PARENT)
+    if isinstance(trust_summary, dict):
+        trimmed = dict(trust_summary)
+        trimmed.pop(VOLATILE_HEALTH_FIELD_KEY, None)
+        normalized[VOLATILE_HEALTH_FIELD_PARENT] = trimmed
+    return normalized
+
+
+def normalized_health_digest(health: dict[str, Any]) -> str:
+    """Canonical sha256 of the artifact under the documented normalization.
+
+    This is the importable helper a third party runs over the served file to
+    reproduce the receipt's ``health_artifact_sha256``.
+    """
+    return sha256_hex(canonical_bytes(normalize_health_artifact(health)))
+
+
 def health_binding(health: dict[str, Any]) -> dict[str, Any]:
     """Derive the signed health fields: cycle date, count, statuses, and digest."""
     datasets = health.get("datasets")
@@ -190,7 +232,7 @@ def health_binding(health: dict[str, Any]) -> dict[str, Any]:
         "cycle_date": cycle_date,
         "dataset_count": len(datasets),
         "freshness_status_counts": dict(statuses),
-        "health_artifact_sha256": sha256_hex(canonical_bytes(health)),
+        "health_artifact_sha256": normalized_health_digest(health),
     }
 
 
@@ -239,6 +281,7 @@ def build_payload(
         "observed_at": observed_at,
         "cycle_date": binding["cycle_date"],
         "health_artifact_sha256": binding["health_artifact_sha256"],
+        "normalization": NORMALIZATION_NOTE,
         "dataset_count": binding["dataset_count"],
         "freshness_status_counts": binding["freshness_status_counts"],
         "verification_profile_version": profile_version,
@@ -542,9 +585,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY_PATH, help="Key registry with public keys and validity windows.")
     parser.add_argument("--expected-key-id", help="Fail unless the key document declares this key_id.")
     parser.add_argument("--now", help="ISO-8601 UTC override for observed_at (testing/reproducibility only).")
+    parser.add_argument(
+        "--normalize-digest",
+        action="store_true",
+        help="Print the canonical digest of --health under the signed normalization and exit.",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    if args.normalize_digest:
+        # Reproducibility mode: no key, no output tree, just the digest a third
+        # party recomputes over the served artifact so it can compare.
+        try:
+            health = load_json(args.health, "health_artifact")
+            digest = normalized_health_digest(health)
+        except ObservationReceiptError as error:
+            print(f"observation receipt normalize-digest failed: {error}", file=sys.stderr)
+            return 1
+        print(digest)
+        return 0
     try:
         now = parse_time(args.now, label="now") if args.now else datetime.now(timezone.utc)
         summary = sign_observation(

@@ -55,6 +55,29 @@ def _write_health(path: Path, *, checked_at: str = "2026-09-18T14:40:32Z", statu
     _write(path, {"schema": "datapulse/v0.4/dataset-health", "checked_at": checked_at, "_trust_summary": {}, "datasets": datasets})
 
 
+def _health_document(
+    *,
+    checked_at: str = "2026-09-18T14:40:32Z",
+    statuses: tuple[str, ...] = ("fresh", "fresh", "stale"),
+    heartbeat: str | None = None,
+    trust_summary_extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a health artifact with an optionally stamped volatile heartbeat."""
+    datasets = [
+        {"dataset_id": f"dataset-{index}", "status": status, "last_checked": checked_at}
+        for index, status in enumerate(statuses)
+    ]
+    trust_summary: dict[str, Any] = dict(trust_summary_extra or {})
+    if heartbeat is not None:
+        trust_summary["pipeline_heartbeat_at"] = heartbeat
+    return {
+        "schema": "datapulse/v0.4/dataset-health",
+        "checked_at": checked_at,
+        "_trust_summary": trust_summary,
+        "datasets": datasets,
+    }
+
+
 @pytest.fixture
 def environment(tmp_path: Path) -> dict[str, Any]:
     private, private_b64, public_b64 = _keypair()
@@ -625,11 +648,36 @@ def test_no_key_material_in_any_output(environment: dict[str, Any], capsys: pyte
     captured = capsys.readouterr()
     assert exit_code == 0
 
+    normalize_exit = signer.main(["--normalize-digest", "--health", str(environment["health_path"])])
+    normalize_captured = capsys.readouterr()
+    assert normalize_exit == 0
+
+    health_exit = verifier.main(
+        [
+            "--day-file",
+            str(day_path),
+            "--receipt-id",
+            summary["receipt_id"],
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            str(head_path),
+            "--health",
+            str(environment["health_path"]),
+        ]
+    )
+    health_captured = capsys.readouterr()
+    assert health_exit == 0
+
     outputs = {
         "day_file": day_path.read_text(encoding="utf-8"),
         "chain_head": head_path.read_text(encoding="utf-8"),
         "verifier_stdout": captured.out,
         "verifier_stderr": captured.err,
+        "normalize_digest_stdout": normalize_captured.out,
+        "normalize_digest_stderr": normalize_captured.err,
+        "health_verifier_stdout": health_captured.out,
+        "health_verifier_stderr": health_captured.err,
     }
     for label, text in outputs.items():
         assert private_b64 not in text, f"private key bytes leaked into {label}"
@@ -658,3 +706,183 @@ def test_cli_verify_names_failure_reason(environment: dict[str, Any], capsys: py
     captured = capsys.readouterr()
     assert exit_code == 1
     assert "receipt_id_mismatch" in captured.err
+
+
+# ---------------------------------------------------------------------------
+# Volatile-field normalization: bind the observation, not the liveness clock
+# ---------------------------------------------------------------------------
+
+
+def test_heartbeat_only_change_is_already_signed(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Two artifacts differing only in pipeline_heartbeat_at share one digest."""
+    first_document = _health_document(heartbeat="2026-09-18T14:40:00Z")
+    _write(environment["health_path"], first_document)
+    first = _sign(environment)
+    first_digest = _receipt(environment)["payload"]["health_artifact_sha256"]
+
+    second_document = _health_document(heartbeat="2026-09-18T14:45:00Z")
+    # The two artifacts are byte-distinct but normalize to the same digest.
+    assert signer.canonical_bytes(first_document) != signer.canonical_bytes(second_document)
+    assert signer.normalized_health_digest(first_document) == signer.normalized_health_digest(second_document)
+    _write(environment["health_path"], second_document)
+
+    second = _sign(environment, now=NOW + timedelta(minutes=5))
+    assert second["status"] == "already_signed"
+    assert second["receipt_id"] == first["receipt_id"]
+    day_document = _day_document(environment)
+    assert len(day_document["receipts"]) == 1
+    assert day_document["receipts"][0]["payload"]["health_artifact_sha256"] == first_digest
+
+    # CLI: exit 0, reports already_signed, and writes nothing new.
+    day_path = environment["output_root"] / "days/2026-09-18.json"
+    before = day_path.read_bytes()
+    exit_code = signer.main(
+        [
+            "--output-root",
+            str(environment["output_root"]),
+            "--health",
+            str(environment["health_path"]),
+            "--methodology",
+            str(environment["methodology_path"]),
+            "--key",
+            str(environment["key_path"]),
+            "--registry",
+            str(environment["registry_path"]),
+            "--now",
+            signer.format_time(NOW + timedelta(minutes=10)),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "already_signed" in captured.out
+    assert day_path.read_bytes() == before
+    assert len(_day_document(environment)["receipts"]) == 1
+
+
+def test_other_field_change_changes_digest(environment: dict[str, Any]) -> None:
+    """Every field except the volatile heartbeat still moves the digest."""
+    heartbeat = "2026-09-18T14:40:00Z"
+    baseline = _health_document(heartbeat=heartbeat)
+    baseline_digest = signer.normalized_health_digest(baseline)
+
+    # A different heartbeat alone does not move it.
+    assert signer.normalized_health_digest(_health_document(heartbeat="2099-01-01T00:00:00Z")) == baseline_digest
+    # A changed dataset status does.
+    assert (
+        signer.normalized_health_digest(_health_document(heartbeat=heartbeat, statuses=("fresh", "aging")))
+        != baseline_digest
+    )
+    # A changed checked_at does.
+    assert (
+        signer.normalized_health_digest(_health_document(heartbeat=heartbeat, checked_at="2026-09-18T15:00:00Z"))
+        != baseline_digest
+    )
+    # A sibling field inside _trust_summary does.
+    assert (
+        signer.normalized_health_digest(
+            _health_document(heartbeat=heartbeat, trust_summary_extra={"pipeline_heartbeat_interval_seconds": 300})
+        )
+        != baseline_digest
+    )
+    # Removing only the heartbeat keeps (and hashes) the empty parent object.
+    assert signer.normalize_health_artifact(_health_document())["_trust_summary"] == {}
+
+    # A real change appends a second entry rather than reporting already_signed.
+    _write(environment["health_path"], baseline)
+    _sign(environment)
+    _write(environment["health_path"], _health_document(heartbeat=heartbeat, statuses=("fresh", "aging")))
+    second = _sign(environment, now=NOW + timedelta(minutes=5))
+    assert second["status"] == "signed"
+    assert len(_day_document(environment)["receipts"]) == 2
+
+
+def test_normalize_digest_helper_reproduces_receipt(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Only the served file and the receipt are needed to reproduce the digest."""
+    _write(environment["health_path"], _health_document(heartbeat="2026-09-18T14:40:00Z"))
+    _sign(environment)
+    receipt = _receipt(environment)
+    recorded = receipt["payload"]["health_artifact_sha256"]
+
+    # The normalization statement is part of the signed payload.
+    assert receipt["payload"]["normalization"] == signer.NORMALIZATION_NOTE
+    assert receipt["receipt_id"] == hashlib.sha256(signer.canonical_bytes(receipt["payload"])).hexdigest()
+
+    # Importable helper over the served artifact.
+    artifact = signer.load_json(environment["health_path"], "health_artifact")
+    assert signer.normalized_health_digest(artifact) == recorded
+
+    # CLI helper prints exactly the recorded digest.
+    exit_code = signer.main(["--normalize-digest", "--health", str(environment["health_path"])])
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.err == ""
+    assert captured.out.strip() == recorded
+
+
+def test_verify_health_binding_pass_and_mismatch(
+    environment: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--health reproduces the digest; a different artifact names the mismatch."""
+    _write(environment["health_path"], _health_document(heartbeat="2026-09-18T14:40:00Z"))
+    summary = _sign(environment)
+    base_args = [
+        "--day-file",
+        summary["receipt_path"],
+        "--receipt-id",
+        summary["receipt_id"],
+        "--registry",
+        str(environment["registry_path"]),
+        "--chain-head",
+        summary["chain_head_path"],
+    ]
+
+    matching = verifier.main([*base_args, "--health", str(environment["health_path"])])
+    captured = capsys.readouterr()
+    assert matching == 0
+    assert captured.err == ""
+    assert "health_binding: checked" in captured.out
+
+    mismatched_path = tmp_path / "mismatched-health.json"
+    _write(
+        mismatched_path,
+        _health_document(heartbeat="2026-09-18T14:40:00Z", statuses=("fresh", "stale", "stale")),
+    )
+    mismatched = verifier.main([*base_args, "--health", str(mismatched_path)])
+    captured = capsys.readouterr()
+    assert mismatched == 1
+    assert "health_artifact_mismatch" in captured.err
+    # Both digests are named so the divergence is visible.
+    declared = _receipt(environment)["payload"]["health_artifact_sha256"]
+    reproduced = signer.normalized_health_digest(_load(mismatched_path))
+    assert declared in captured.err
+    assert reproduced in captured.err
+    assert "health_binding: checked" in captured.out
+
+
+def test_verify_without_health_reports_binding_unchecked(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Without --health the report admits the binding was not reproduced."""
+    _write(environment["health_path"], _health_document(heartbeat="2026-09-18T14:40:00Z"))
+    summary = _sign(environment)
+    exit_code = verifier.main(
+        [
+            "--day-file",
+            summary["receipt_path"],
+            "--receipt-id",
+            summary["receipt_id"],
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            summary["chain_head_path"],
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.err == ""
+    assert "verification passed" in captured.out
+    assert "health_binding: unchecked" in captured.out
