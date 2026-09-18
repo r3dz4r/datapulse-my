@@ -14,6 +14,22 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.24.0](https://github.com/r3dz4r/datapulse-my/compare/v3.23.5...v3.24.0) (2026-09-18)
+
+
+### Features
+
+* **observation:** publish the observation key and the served path for receipts ([f4b4223](https://github.com/r3dz4r/datapulse-my/commit/f4b42234bae0b7bc38c6fb8b7eb2b1aada335c8e))
+* **observation:** publish the observation key and the served path for receipts ([58d7a0f](https://github.com/r3dz4r/datapulse-my/commit/58d7a0fa47ca1c72f561fede71a780e767b295a2))
+* **observation:** sign an observation receipt inside the observing process ([9eb51b0](https://github.com/r3dz4r/datapulse-my/commit/9eb51b0e5c7bef6911e3270864eaa69518e19f7f))
+* **observation:** sign and verify a host-side observation receipt ([507c5cb](https://github.com/r3dz4r/datapulse-my/commit/507c5cba29d94b2125082eaa6bdece3ed3e4f1dd))
+* **observation:** sign one receipt per observed state, accumulated per day ([b6c681f](https://github.com/r3dz4r/datapulse-my/commit/b6c681fa8f0df35712416b9de9cd7586b465b068))
+
+
+### Bug Fixes
+
+* **observation:** make the verifier usable by a third party ([efdb8b8](https://github.com/r3dz4r/datapulse-my/commit/efdb8b8b060e1c0521d161d8112c5deab921c87a))
+
 ## [3.23.5](https://github.com/r3dz4r/datapulse-my/compare/v3.23.4...v3.23.5) (2026-09-17)
 
 
