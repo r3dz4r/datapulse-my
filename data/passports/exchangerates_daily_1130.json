@@ -5,31 +5,31 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": null,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "cadence_fallback",
+        "mode": "not_evaluated",
         "sample_days": 7,
         "stdev_days": null,
-        "threshold_days": 3,
+        "threshold_days": null,
         "window_days": 14
       }
     },
     "expected_record_count": null,
-    "freshness_signal": "content-date-parse",
-    "freshness_signal_source": "content_date_parse",
-    "http_status": 200,
+    "freshness_signal": "no-header",
+    "freshness_signal_source": "none",
+    "http_status": 521,
     "incomplete": false,
-    "last_checked": "2026-09-18T03:05:23Z",
-    "record_count": 11440,
+    "last_checked": "2026-09-18T04:10:31Z",
+    "record_count": null,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
-      "column_count": 9,
+      "column_count": null,
       "content_shape_changed": false,
-      "first_row_hash": "shape-v1:8c790169bb5a7705e5c117a3dcd11032133a892a7b04df5a273507a454489bc4"
+      "first_row_hash": null
     },
-    "status": "fresh"
+    "status": "unreachable"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130",
@@ -39,7 +39,7 @@
     "geography": "national (BNM reference rates)",
     "name": "BNM Daily Exchange Rates (1130)",
     "namespace": "other",
-    "observed_verified_at": "2026-09-18T03:05:23Z",
+    "observed_verified_at": "2026-09-18T04:10:31Z",
     "source": "data.gov.my (BNM)",
     "steward": "BNM"
   },
@@ -315,9 +315,9 @@
               "Records one observed access signal; it does not promise continuing access."
             ],
             "reason_codes": [
-              "observed_access_signal_present"
+              "observed_access_unreachable"
             ],
-            "state": "pass"
+            "state": "fail"
           },
           {
             "check_id": "fair.shape_metadata",
@@ -339,9 +339,9 @@
               "Shape metadata is not a semantic interoperability assessment."
             ],
             "reason_codes": [
-              "shape_metadata_observed"
+              "shape_metadata_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           },
           {
             "check_id": "fair.reuse_metadata",
@@ -366,11 +366,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 4,
-          "failed": 0,
+          "evaluated": 3,
+          "failed": 1,
           "not_applicable": 0,
-          "passed": 4,
-          "unknown": 0
+          "passed": 2,
+          "unknown": 1
         },
         "evidence_refs": [
           {
@@ -420,11 +420,11 @@
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
           "catalogue_metadata_declared",
-          "observed_access_signal_present",
-          "shape_metadata_observed",
+          "observed_access_unreachable",
+          "shape_metadata_missing",
           "reuse_metadata_declared"
         ],
-        "state": "pass"
+        "state": "fail"
       },
       "governance": {
         "checks": [
@@ -740,9 +740,9 @@
               "Shape signals are bounded structural observations, not a complete reproducibility proof."
             ],
             "reason_codes": [
-              "shape_fingerprint_observed"
+              "shape_fingerprint_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           },
           {
             "check_id": "reproducibility.retrieval_timestamp",
@@ -780,9 +780,9 @@
               "A count is an observed or estimated measurement, not a completeness guarantee."
             ],
             "reason_codes": [
-              "record_count_observed"
+              "record_count_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           },
           {
             "check_id": "reproducibility.attestation_reference",
@@ -803,11 +803,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 4,
+          "evaluated": 2,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 4,
-          "unknown": 0
+          "passed": 2,
+          "unknown": 2
         },
         "evidence_refs": [
           {
@@ -848,18 +848,18 @@
         ],
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
-          "shape_fingerprint_observed",
+          "shape_fingerprint_missing",
           "last_checked_declared",
-          "record_count_observed",
+          "record_count_missing",
           "attestation_ref_declared"
         ],
-        "state": "pass"
+        "state": "unknown"
       }
     },
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "ready",
+    "overall": "not_ready",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },
