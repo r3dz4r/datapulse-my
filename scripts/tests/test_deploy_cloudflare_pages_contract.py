@@ -253,7 +253,7 @@ def test_native_pages_preserves_full_release_build_and_surface_contract() -> Non
         "cp -R docs/. _site/",
         "cp llms.txt robots.txt sitemap.xml feed.xml",
         "cp -R health deltas record-evidence badges samples data _site/",
-        "if [ -d observation ]; then cp -R observation _site/; fi",
+        "if [ -d observation-receipts ]; then cp -R observation-receipts _site/; fi",
         "cp -R attestations _site/",
         "cp -R .attestations _site/",
     ):
