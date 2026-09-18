@@ -7,10 +7,16 @@ reconstruction. The signed payload binds the health artifact, the probe's
 freshness summary, the signer's own bytes (``verification_profile_version``),
 and a monotonic sequence number that links each receipt to the previous one.
 
-Receipts are append-only. An existing ``observation/receipts/<cycle_date>.json``
-is never overwritten; the signer fails closed with a named reason instead and
-writes nothing. Private key material is loaded only to produce a signature and
-is never logged, echoed, or serialized into any output.
+Receipts accumulate one per observed state. Each cycle date gets an append-only
+container, ``observation/days/<cycle_date>.json``, whose ``receipts`` array
+grows by one entry every time the health artifact's content digest changes. A
+re-run that observes the same digest is idempotent: the last entry already
+carries that digest, so the signer writes nothing, reports ``already_signed``,
+and exits 0. That makes the steady five-minute pipeline case cheap instead of an
+error. ``observation/chain_head.json`` is a monotonic pointer across all days
+and lets the next day link back to the previous day's last receipt. Private key
+material is loaded only to produce a signature and is never logged, echoed, or
+serialized into any output.
 """
 
 from __future__ import annotations
@@ -37,6 +43,7 @@ ROOT: Path = Path(__file__).resolve().parents[1]
 SIGNER_PATH: Path = Path(__file__).resolve()
 
 RECEIPT_SCHEMA: str = "datapulse/v1/observation-receipt"
+DAY_SCHEMA: str = "datapulse/v1/observation-day"
 CHAIN_HEAD_SCHEMA: str = "datapulse/v1/observation-chain-head"
 VALIDITY_HOURS: int = 26
 
@@ -142,17 +149,12 @@ def _atomic_write(path: Path, data: bytes) -> None:
         raise
 
 
-def _write_exclusive(path: Path, data: bytes) -> None:
-    """Create ``path`` with O_EXCL so an existing receipt cannot be overwritten."""
-    path.parent.mkdir(parents=True, exist_ok=True)
+def _relative_posix(path: Path, root: Path) -> str:
+    """Render ``path`` relative to ``root`` when possible, else absolute."""
     try:
-        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
-    except FileExistsError as error:
-        raise ObservationReceiptError(f"receipt_already_exists: refusing to overwrite {path}") from error
-    with os.fdopen(descriptor, "wb") as receipt_file:
-        receipt_file.write(data)
-        receipt_file.flush()
-        os.fsync(receipt_file.fileno())
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
 
 
 # ---------------------------------------------------------------------------
@@ -316,7 +318,7 @@ def require_active_window(row: dict[str, Any], observed_at: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Chain head
+# Day files and chain head
 # ---------------------------------------------------------------------------
 
 
@@ -324,12 +326,41 @@ def chain_head_path(output_root: Path) -> Path:
     return output_root / "chain_head.json"
 
 
-def receipt_path_for(output_root: Path, cycle_date: str) -> Path:
-    return output_root / "receipts" / f"{cycle_date}.json"
+def day_file_path(output_root: Path, cycle_date: str) -> Path:
+    """Path to the dated container that accumulates this cycle date's receipts."""
+    return output_root / "days" / f"{cycle_date}.json"
+
+
+def load_day_file(output_root: Path, cycle_date: str) -> dict[str, Any] | None:
+    """Read the day container, or ``None`` when today has no receipts yet."""
+    path = day_file_path(output_root, cycle_date)
+    if not path.is_file():
+        return None
+    document = load_json(path, "day_file")
+    receipts = document.get("receipts")
+    if not isinstance(receipts, list):
+        raise ObservationReceiptError(f"day_file_malformed: {path} receipts must be an array")
+    declared_date = document.get("cycle_date")
+    if declared_date is not None and declared_date != cycle_date:
+        raise ObservationReceiptError(
+            f"day_file_malformed: {path} declares cycle_date {declared_date!r}, expected {cycle_date!r}"
+        )
+    return {
+        "schema": document.get("schema"),
+        "cycle_date": cycle_date,
+        "receipts": receipts,
+        "updated_at": document.get("updated_at"),
+    }
 
 
 def load_chain_head(output_root: Path) -> dict[str, Any] | None:
-    """Read the current chain head, or ``None`` for the first receipt."""
+    """Read the current chain head, or ``None`` for the first receipt.
+
+    The canonical head carries ``last_receipt_id``/``last_observed_at``/
+    ``day_file``/``day_receipt_count``. The legacy names are accepted when
+    reading so an already-published head can be rolled forward without a
+    migration step.
+    """
     path = chain_head_path(output_root)
     if not path.is_file():
         return None
@@ -337,12 +368,22 @@ def load_chain_head(output_root: Path) -> dict[str, Any] | None:
     sequence_number = head.get("sequence_number")
     if isinstance(sequence_number, bool) or not isinstance(sequence_number, int) or sequence_number < 1:
         raise ObservationReceiptError("chain_head_malformed: sequence_number must be a positive integer")
-    if not isinstance(head.get("receipt_id"), str) or not head["receipt_id"]:
-        raise ObservationReceiptError("chain_head_malformed: receipt_id must be a non-empty string")
-    previous = head.get("previous_receipt_id")
-    if previous is not None and (not isinstance(previous, str) or not previous):
-        raise ObservationReceiptError("chain_head_malformed: previous_receipt_id must be a string or null")
-    return head
+    last_receipt_id = head.get("last_receipt_id")
+    if not isinstance(last_receipt_id, str) or not last_receipt_id:
+        legacy_receipt_id = head.get("receipt_id")
+        if isinstance(legacy_receipt_id, str) and legacy_receipt_id:
+            last_receipt_id = legacy_receipt_id
+        else:
+            raise ObservationReceiptError("chain_head_malformed: last_receipt_id must be a non-empty string")
+    return {
+        "schema": head.get("schema", CHAIN_HEAD_SCHEMA),
+        "sequence_number": sequence_number,
+        "last_receipt_id": last_receipt_id,
+        "last_observed_at": head.get("last_observed_at") or head.get("observed_at"),
+        "day_file": head.get("day_file") or head.get("receipt_ref"),
+        "day_receipt_count": head.get("day_receipt_count"),
+        "updated_at": head.get("updated_at"),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -362,17 +403,44 @@ def sign_observation(
 ) -> dict[str, Any]:
     """Sign the health artifact into ``output_root`` and advance the chain head.
 
-    Refuses (before writing anything) to overwrite an existing receipt for the
-    same cycle date. Returns a summary containing only public facts.
+    The signature is keyed by observed state, not by cycle date: a changed
+    artifact appends an entry to today's day file and bumps the chain head,
+    while re-observing the digest already carried by the last entry is an
+    idempotent no-op that reports ``already_signed``. Returns a summary
+    containing only public facts.
     """
     observed_at = format_time(now if now is not None else datetime.now(timezone.utc))
     health = load_json(health_path, "health_artifact")
     binding = health_binding(health)
     cycle_date = binding["cycle_date"]
 
-    receipt_path = receipt_path_for(output_root, cycle_date)
-    if receipt_path.exists():
-        raise ObservationReceiptError(f"receipt_already_exists: refusing to overwrite {receipt_path}")
+    day_path = day_file_path(output_root, cycle_date)
+    day_document = load_day_file(output_root, cycle_date)
+    receipts: list[dict[str, Any]] = list(day_document["receipts"]) if day_document is not None else []
+
+    if receipts:
+        last_entry = receipts[-1]
+        last_payload = last_entry.get("payload")
+        if not isinstance(last_payload, dict):
+            raise ObservationReceiptError(f"day_file_malformed: {day_path} last receipt has no payload object")
+        if last_payload.get("health_artifact_sha256") == binding["health_artifact_sha256"]:
+            # The normal five-minute case: the observed state has not changed.
+            # Write nothing (not even updated_at) and never treat it as an error.
+            return {
+                "status": "already_signed",
+                "receipt_id": last_entry.get("receipt_id"),
+                "cycle_date": cycle_date,
+                "sequence_number": last_payload.get("sequence_number"),
+                "previous_receipt_id": last_payload.get("previous_receipt_id"),
+                "observed_at": last_payload.get("observed_at"),
+                "valid_until": last_payload.get("valid_until"),
+                "policy_version": last_payload.get("policy_version"),
+                "verification_profile_version": last_payload.get("verification_profile_version"),
+                "day_file": _relative_posix(day_path, output_root),
+                "day_receipt_count": len(receipts),
+                "receipt_path": day_path.as_posix(),
+                "chain_head_path": chain_head_path(output_root).as_posix(),
+            }
 
     key_id, private_key, public_raw = load_signing_key(key_path)
     if expected_key_id is not None and key_id != expected_key_id:
@@ -387,13 +455,22 @@ def sign_observation(
     if registry_public != public_raw:
         raise ObservationReceiptError("key_registry_mismatch: registry public key does not match the signing key")
 
-    head = load_chain_head(output_root)
-    if head is None:
-        sequence_number = 1
-        previous_receipt_id: str | None = None
+    # Sequence continues across days: today's last entry when it exists,
+    # otherwise the chain head's last receipt (the previous day's tail).
+    if receipts:
+        previous_payload = receipts[-1].get("payload")
+        if not isinstance(previous_payload, dict) or not isinstance(previous_payload.get("sequence_number"), int):
+            raise ObservationReceiptError(f"day_file_malformed: {day_path} last receipt has no integer sequence_number")
+        sequence_number = int(previous_payload["sequence_number"]) + 1
+        previous_receipt_id: str | None = receipts[-1].get("receipt_id")
     else:
-        sequence_number = int(head["sequence_number"]) + 1
-        previous_receipt_id = head["receipt_id"]
+        head = load_chain_head(output_root)
+        if head is None:
+            sequence_number = 1
+            previous_receipt_id = None
+        else:
+            sequence_number = int(head["sequence_number"]) + 1
+            previous_receipt_id = head["last_receipt_id"]
 
     payload = build_payload(
         binding=binding,
@@ -412,19 +489,30 @@ def sign_observation(
         base64.b64decode(document["signature_base64"]), canonical_bytes(payload)
     )
 
+    # Append-only: every loaded entry is carried forward untouched.
+    updated_receipts = receipts + [document]
+    day_file = {
+        "schema": DAY_SCHEMA,
+        "cycle_date": cycle_date,
+        "receipts": updated_receipts,
+        "updated_at": observed_at,
+    }
     chain_head = {
         "schema": CHAIN_HEAD_SCHEMA,
         "sequence_number": sequence_number,
-        "receipt_id": document["receipt_id"],
-        "previous_receipt_id": previous_receipt_id,
-        "cycle_date": cycle_date,
-        "observed_at": observed_at,
-        "receipt_ref": receipt_path.relative_to(output_root).as_posix(),
+        "last_receipt_id": document["receipt_id"],
+        "last_observed_at": observed_at,
+        "day_file": _relative_posix(day_path, output_root),
+        "day_receipt_count": len(updated_receipts),
         "updated_at": observed_at,
     }
-    _write_exclusive(receipt_path, _json_bytes(document))
+    # Day file first, then the pointer: an interruption between the two leaves
+    # a head that trails the day file, which the next run repairs. The reverse
+    # order could advertise a receipt that was never durably written.
+    _atomic_write(day_path, _json_bytes(day_file))
     _atomic_write(chain_head_path(output_root), _json_bytes(chain_head))
     return {
+        "status": "signed",
         "receipt_id": document["receipt_id"],
         "cycle_date": cycle_date,
         "sequence_number": sequence_number,
@@ -433,7 +521,9 @@ def sign_observation(
         "valid_until": payload["valid_until"],
         "policy_version": payload["policy_version"],
         "verification_profile_version": payload["verification_profile_version"],
-        "receipt_path": receipt_path.as_posix(),
+        "day_file": _relative_posix(day_path, output_root),
+        "day_receipt_count": len(updated_receipts),
+        "receipt_path": day_path.as_posix(),
         "chain_head_path": chain_head_path(output_root).as_posix(),
     }
 
@@ -445,7 +535,7 @@ def sign_observation(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Sign a host-side observation receipt for a health artifact.")
-    parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT, help="Directory holding receipts/ and chain_head.json.")
+    parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT, help="Directory holding days/ and chain_head.json.")
     parser.add_argument("--health", type=Path, default=DEFAULT_HEALTH_PATH, help="Health artifact to bind.")
     parser.add_argument("--methodology", type=Path, default=DEFAULT_METHODOLOGY_PATH, help="Methodology artifact for policy_version.")
     parser.add_argument("--key", type=Path, default=DEFAULT_KEY_PATH, help="Ed25519 private key document (never printed).")

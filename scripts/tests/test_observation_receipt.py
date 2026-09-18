@@ -1,8 +1,8 @@
-"""Tests pinning host-side observation receipts: signing, chaining, refusal, and offline verification.
+"""Tests pinning host-side observation receipts: per-day accumulation, chaining, idempotence, and offline verification.
 
 Negative cases assert a specific named failure (tampered payload, wrong key,
-expired/not-yet-valid key window, broken previous-receipt link, duplicate cycle
-date) rather than skipping. Every fixture key is ephemeral; the real operator
+expired/not-yet-valid key window, broken previous-receipt link, tampered day
+entry) rather than skipping. Every fixture key is ephemeral; the real operator
 key under ~/.hermes is never read here.
 """
 
@@ -137,16 +137,24 @@ def _direct_receipt(
     return signer.create_receipt(payload, environment["private"])
 
 
-def _verify(environment: dict[str, Any], receipt: dict[str, Any], chain_head: dict[str, Any]) -> list[str]:
+def _registry(environment: dict[str, Any]) -> dict[str, Any]:
+    return _load(environment["registry_path"])
+
+
+def _verify(environment: dict[str, Any], receipt: dict[str, Any], chain_head: dict[str, Any] | None = None) -> list[str]:
     return verifier.verify_receipt(
         receipt,
-        registry=_load(environment["registry_path"]),
+        registry=_registry(environment),
         chain_head=chain_head,
     )
 
 
-def _receipt(environment: dict[str, Any], cycle_date: str = "2026-09-18") -> dict[str, Any]:
-    return _load(environment["output_root"] / "receipts" / f"{cycle_date}.json")
+def _day_document(environment: dict[str, Any], cycle_date: str = "2026-09-18") -> dict[str, Any]:
+    return _load(environment["output_root"] / "days" / f"{cycle_date}.json")
+
+
+def _receipt(environment: dict[str, Any], cycle_date: str = "2026-09-18", index: int = 0) -> dict[str, Any]:
+    return _day_document(environment, cycle_date)["receipts"][index]
 
 
 def _head(environment: dict[str, Any]) -> dict[str, Any]:
@@ -156,10 +164,14 @@ def _head(environment: dict[str, Any]) -> dict[str, Any]:
 def test_sign_then_verify_roundtrip(environment: dict[str, Any]) -> None:
     summary = _sign(environment)
     receipt = _receipt(environment)
+    day_document = _day_document(environment)
     head = _head(environment)
 
+    assert summary["status"] == "signed"
     assert summary["sequence_number"] == 1
     assert summary["previous_receipt_id"] is None
+    assert day_document["schema"] == signer.DAY_SCHEMA
+    assert day_document["cycle_date"] == "2026-09-18"
     assert receipt["payload"]["schema"] == signer.RECEIPT_SCHEMA
     assert receipt["payload"]["cycle_date"] == "2026-09-18"
     assert receipt["payload"]["dataset_count"] == 3
@@ -174,8 +186,11 @@ def test_sign_then_verify_roundtrip(environment: dict[str, Any]) -> None:
     assert signer.parse_time(receipt["payload"]["valid_until"]) == observed + timedelta(hours=26)
     # receipt_id is the canonical payload hash.
     assert receipt["receipt_id"] == hashlib.sha256(signer.canonical_bytes(receipt["payload"])).hexdigest()
-    assert head["receipt_id"] == receipt["receipt_id"]
-    assert head["previous_receipt_id"] is None
+    assert head["schema"] == signer.CHAIN_HEAD_SCHEMA
+    assert head["sequence_number"] == 1
+    assert head["last_receipt_id"] == receipt["receipt_id"]
+    assert head["day_file"] == "days/2026-09-18.json"
+    assert head["day_receipt_count"] == 1
     assert _verify(environment, receipt, head) == []
 
 
@@ -190,8 +205,9 @@ def test_second_receipt_links_to_first(environment: dict[str, Any]) -> None:
     assert second["previous_receipt_id"] == first["receipt_id"]
     assert second_receipt["payload"]["previous_receipt_id"] == first["receipt_id"]
     assert head["sequence_number"] == 2
-    assert head["receipt_id"] == second_receipt["receipt_id"]
-    assert head["previous_receipt_id"] == first["receipt_id"]
+    assert head["last_receipt_id"] == second_receipt["receipt_id"]
+    assert head["day_file"] == "days/2026-09-19.json"
+    assert head["day_receipt_count"] == 1
     assert _verify(environment, second_receipt, head) == []
 
 
@@ -245,19 +261,61 @@ def test_verifier_rejects_broken_previous_receipt_link(environment: dict[str, An
     assert any(failure.startswith("previous_receipt_mismatch") for failure in failures)
 
 
-def test_signer_refuses_duplicate_cycle_date(environment: dict[str, Any], capsys: pytest.CaptureFixture[str]) -> None:
-    _sign(environment)
-    receipt_path = environment["output_root"] / "receipts/2026-09-18.json"
+def test_two_receipts_in_one_day_increment_and_link(environment: dict[str, Any]) -> None:
+    first = _sign(environment)
+    _write_health(environment["health_path"], checked_at="2026-09-18T15:40:32Z", statuses=("fresh", "aging"))
+    second = _sign(environment, now=NOW + timedelta(hours=1))
+    day_document = _day_document(environment)
+    head = _head(environment)
+    day_path = environment["output_root"] / "days/2026-09-18.json"
+
+    assert len(day_document["receipts"]) == 2
+    assert day_document["receipts"][0]["payload"]["sequence_number"] == 1
+    assert day_document["receipts"][1]["payload"]["sequence_number"] == 2
+    assert day_document["receipts"][1]["payload"]["previous_receipt_id"] == day_document["receipts"][0]["receipt_id"]
+    assert (
+        day_document["receipts"][0]["payload"]["health_artifact_sha256"]
+        != day_document["receipts"][1]["payload"]["health_artifact_sha256"]
+    )
+    assert second["sequence_number"] == 2
+    assert second["previous_receipt_id"] == first["receipt_id"]
+    assert head["sequence_number"] == 2
+    assert head["last_receipt_id"] == day_document["receipts"][1]["receipt_id"]
+    assert head["day_file"] == "days/2026-09-18.json"
+    assert head["day_receipt_count"] == 2
+
+    for entry in day_document["receipts"]:
+        failures, selected, linkage_checked = verifier.verify_day_receipt(
+            day_document,
+            registry=_registry(environment),
+            receipt_id=entry["receipt_id"],
+            chain_head=head,
+            day_file_path=day_path,
+        )
+        assert failures == [], failures
+        assert selected["receipt_id"] == entry["receipt_id"]
+        assert linkage_checked is True
+
+
+def test_resigning_same_artifact_reports_already_signed(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
+) -> None:
+    first = _sign(environment)
+    day_path = environment["output_root"] / "days/2026-09-18.json"
     head_path = environment["output_root"] / "chain_head.json"
-    receipt_before = receipt_path.read_bytes()
+    day_before = day_path.read_bytes()
     head_before = head_path.read_bytes()
 
-    # Python API: the refusal is a typed error naming the reason.
-    with pytest.raises(signer.ObservationReceiptError) as error:
-        _sign(environment, now=NOW + timedelta(hours=1))
-    assert "receipt_already_exists" in str(error.value)
+    # Python API: the steady five-minute case is a no-op, never an error.
+    second = _sign(environment, now=NOW + timedelta(hours=1))
+    assert second["status"] == "already_signed"
+    assert second["receipt_id"] == first["receipt_id"]
+    assert day_path.read_bytes() == day_before
+    assert head_path.read_bytes() == head_before
+    assert len(_day_document(environment)["receipts"]) == 1
+    assert _head(environment)["sequence_number"] == 1
 
-    # CLI: the same refusal is a non-zero exit with the reason on stderr.
+    # CLI: exit 0 and a line carrying 'already_signed' plus the receipt id.
     exit_code = signer.main(
         [
             "--output-root",
@@ -275,13 +333,132 @@ def test_signer_refuses_duplicate_cycle_date(environment: dict[str, Any], capsys
         ]
     )
     captured = capsys.readouterr()
-    assert exit_code == 1
-    assert "receipt_already_exists" in captured.err
-
-    # Nothing was overwritten or advanced.
-    assert receipt_path.read_bytes() == receipt_before
+    assert exit_code == 0
+    assert "already_signed" in captured.out
+    assert first["receipt_id"] in captured.out
+    # Still nothing was rewritten or advanced.
+    assert day_path.read_bytes() == day_before
     assert head_path.read_bytes() == head_before
-    assert _head(environment)["sequence_number"] == 1
+
+
+def test_second_day_rolls_sequence_and_links_via_chain_head(
+    environment: dict[str, Any], tmp_path: Path
+) -> None:
+    first = _sign(environment)
+    day1_head = _head(environment)
+    prior_head_path = tmp_path / "prior-chain-head.json"
+    _write(prior_head_path, day1_head)
+
+    _write_health(environment["health_path"], checked_at="2026-09-19T14:40:32Z", statuses=("fresh", "aging"))
+    second = _sign(environment, now=NOW + timedelta(days=1))
+    day2_path = environment["output_root"] / "days/2026-09-19.json"
+    day2 = _day_document(environment, "2026-09-19")
+    head = _head(environment)
+
+    assert second["sequence_number"] == 2
+    assert day2["receipts"][0]["payload"]["previous_receipt_id"] == first["receipt_id"]
+    # The rollover link came from the previous day's chain head.
+    assert day2["receipts"][0]["payload"]["previous_receipt_id"] == day1_head["last_receipt_id"]
+    assert head["sequence_number"] == 2
+    assert head["last_receipt_id"] == day2["receipts"][0]["receipt_id"]
+    assert head["day_file"] == "days/2026-09-19.json"
+    assert head["day_receipt_count"] == 1
+
+    # Against the prior day's head: the first entry must link back to it.
+    failures, _, linkage_checked = verifier.verify_day_receipt(
+        day2,
+        registry=_registry(environment),
+        receipt_id=second["receipt_id"],
+        chain_head=day1_head,
+        day_file_path=day2_path,
+    )
+    assert failures == [], failures
+    assert linkage_checked is True
+    # Against the current same-day head: the last entry must be its last receipt.
+    failures, _, _ = verifier.verify_day_receipt(
+        day2,
+        registry=_registry(environment),
+        receipt_id=second["receipt_id"],
+        chain_head=head,
+        day_file_path=day2_path,
+    )
+    assert failures == [], failures
+
+    exit_code = verifier.main(
+        [
+            "--day-file",
+            str(day2_path),
+            "--receipt-id",
+            second["receipt_id"],
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            str(prior_head_path),
+        ]
+    )
+    assert exit_code == 0
+
+
+def test_tampered_middle_entry_fails_and_breaks_linkage(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
+) -> None:
+    states = (
+        ("2026-09-18T14:00:00Z", ("fresh", "fresh", "stale")),
+        ("2026-09-18T15:00:00Z", ("fresh", "aging", "stale")),
+        ("2026-09-18T16:00:00Z", ("stale", "aging", "stale")),
+    )
+    for offset, (checked_at, statuses) in enumerate(states):
+        _write_health(environment["health_path"], checked_at=checked_at, statuses=statuses)
+        _sign(environment, now=NOW + timedelta(hours=offset))
+
+    day_path = environment["output_root"] / "days/2026-09-18.json"
+    day_document = _day_document(environment)
+    assert len(day_document["receipts"]) == 3
+
+    # Tamper the middle entry: its payload and, critically, its identity.
+    day_document["receipts"][1]["payload"]["dataset_count"] = 999
+    day_document["receipts"][1]["receipt_id"] = "0" * 64
+    _write(day_path, day_document)
+    head = _head(environment)
+
+    # The tampered entry itself fails primary checks.
+    failures, _, _ = verifier.verify_day_receipt(
+        day_document,
+        registry=_registry(environment),
+        receipt_id="0" * 64,
+        chain_head=head,
+        day_file_path=day_path,
+    )
+    assert any(failure.startswith("receipt_id_mismatch") for failure in failures)
+    assert any(failure.startswith("signature_invalid") for failure in failures)
+
+    # The entry after it is intact on its own but reports broken linkage.
+    entry_after = day_document["receipts"][2]["receipt_id"]
+    failures_after, _, _ = verifier.verify_day_receipt(
+        day_document,
+        registry=_registry(environment),
+        receipt_id=entry_after,
+        chain_head=head,
+        day_file_path=day_path,
+    )
+    assert any(failure.startswith("linkage_broken") for failure in failures_after), failures_after
+
+    # The CLI names the linkage break and exits non-zero.
+    exit_code = verifier.main(
+        [
+            "--day-file",
+            str(day_path),
+            "--receipt-id",
+            entry_after,
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            str(environment["output_root"] / "chain_head.json"),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "linkage_broken" in captured.err
 
 
 def test_cli_sign_and_verify_exit_codes(environment: dict[str, Any], capsys: pytest.CaptureFixture[str]) -> None:
@@ -308,8 +485,10 @@ def test_cli_sign_and_verify_exit_codes(environment: dict[str, Any], capsys: pyt
 
     verify_exit = verifier.main(
         [
-            "--receipt",
+            "--day-file",
             summary["receipt_path"],
+            "--receipt-id",
+            summary["receipt_id"],
             "--registry",
             str(environment["registry_path"]),
             "--chain-head",
@@ -327,42 +506,42 @@ def test_cli_sign_and_verify_exit_codes(environment: dict[str, Any], capsys: pyt
 def test_verifier_enforces_adjacent_chain_head(
     environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """A chain head found next to the receipt is enforced, not silently ignored."""
+    """A chain head found next to the day file is enforced, not silently ignored."""
     _sign(environment)
     head_path = environment["output_root"] / "chain_head.json"
     head = _load(head_path)
-    head["previous_receipt_id"] = "a" * 64
+    head["last_receipt_id"] = "a" * 64
     _write(head_path, head)
 
     # No --chain-head: the verifier discovers the sibling head for itself.
     exit_code = verifier.main(
         [
-            "--receipt",
-            str(environment["output_root"] / "receipts/2026-09-18.json"),
+            "--day-file",
+            str(environment["output_root"] / "days/2026-09-18.json"),
             "--registry",
             str(environment["registry_path"]),
         ]
     )
     captured = capsys.readouterr()
     assert exit_code == 1
-    assert "previous_receipt_mismatch" in captured.err
+    assert "chain_head_mismatch" in captured.err
     assert "linkage: checked" in captured.out
 
 
 def test_receipt_alone_passes_primary_checks_and_reports_linkage_unchecked(
     environment: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """A receipt in a third party's hands verifies without any chain head.
+    """A standalone receipt in a third party's hands verifies without any chain head.
 
-    Only the receipt is copied; no chain_head.json is reachable from its
+    Only one entry is copied out; no chain_head.json is reachable from its
     directory or its parent. The primary checks must still gate success, and
     the output must admit that linkage was not checked.
     """
-    summary = _sign(environment)
+    _sign(environment)
     isolated = tmp_path / "isolated" / "nested"
     isolated.mkdir(parents=True)
     receipt_copy = isolated / "2026-09-18.json"
-    receipt_copy.write_bytes(Path(summary["receipt_path"]).read_bytes())
+    _write(receipt_copy, _receipt(environment))
 
     exit_code = verifier.main(
         [
@@ -385,20 +564,58 @@ def test_receipt_alone_passes_primary_checks_and_reports_linkage_unchecked(
     assert "key_window:" in captured.out
 
 
+def test_standalone_receipt_id_is_validated(
+    environment: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--receipt-id is accepted with a standalone receipt and must match it."""
+    first = _sign(environment)
+    receipt_path = tmp_path / "standalone.json"
+    _write(receipt_path, _receipt(environment))
+
+    ok = verifier.main(
+        [
+            "--receipt",
+            str(receipt_path),
+            "--receipt-id",
+            first["receipt_id"],
+            "--registry",
+            str(environment["registry_path"]),
+        ]
+    )
+    assert ok == 0
+    capsys.readouterr()
+
+    bad = verifier.main(
+        [
+            "--receipt",
+            str(receipt_path),
+            "--receipt-id",
+            "0" * 64,
+            "--registry",
+            str(environment["registry_path"]),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert bad == 1
+    assert "receipt_id_mismatch" in captured.err
+
+
 def test_no_key_material_in_any_output(environment: dict[str, Any], capsys: pytest.CaptureFixture[str]) -> None:
     """Neither the private bytes nor the field name 'private_key' may leak out.
 
-    Covers the receipt JSON, the chain head, and the verifier's stdout/stderr.
+    Covers the day file, the chain head, and the verifier's stdout/stderr.
     """
     summary = _sign(environment)
-    receipt_path = Path(summary["receipt_path"])
+    day_path = Path(summary["receipt_path"])
     head_path = Path(summary["chain_head_path"])
     private_b64 = _load(environment["key_path"])["private_key_base64"]
 
     exit_code = verifier.main(
         [
-            "--receipt",
-            str(receipt_path),
+            "--day-file",
+            str(day_path),
+            "--receipt-id",
+            summary["receipt_id"],
             "--registry",
             str(environment["registry_path"]),
             "--chain-head",
@@ -409,7 +626,7 @@ def test_no_key_material_in_any_output(environment: dict[str, Any], capsys: pyte
     assert exit_code == 0
 
     outputs = {
-        "receipt": receipt_path.read_text(encoding="utf-8"),
+        "day_file": day_path.read_text(encoding="utf-8"),
         "chain_head": head_path.read_text(encoding="utf-8"),
         "verifier_stdout": captured.out,
         "verifier_stderr": captured.err,
@@ -421,15 +638,17 @@ def test_no_key_material_in_any_output(environment: dict[str, Any], capsys: pyte
 
 def test_cli_verify_names_failure_reason(environment: dict[str, Any], capsys: pytest.CaptureFixture[str]) -> None:
     summary = _sign(environment)
-    receipt_path = Path(summary["receipt_path"])
-    tampered = _load(receipt_path)
-    tampered["payload"]["dataset_count"] = 42
-    _write(receipt_path, tampered)
+    day_path = Path(summary["receipt_path"])
+    day_document = _load(day_path)
+    day_document["receipts"][0]["payload"]["dataset_count"] = 42
+    _write(day_path, day_document)
 
     exit_code = verifier.main(
         [
-            "--receipt",
-            str(receipt_path),
+            "--day-file",
+            str(day_path),
+            "--receipt-id",
+            summary["receipt_id"],
             "--registry",
             str(environment["registry_path"]),
             "--chain-head",
