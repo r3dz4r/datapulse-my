@@ -317,7 +317,106 @@ def test_cli_sign_and_verify_exit_codes(environment: dict[str, Any], capsys: pyt
         ]
     )
     assert verify_exit == 0
-    assert "verification passed" in capsys.readouterr().out
+    captured = capsys.readouterr()
+    assert "verification passed" in captured.out
+    # A supplied chain head is actually enforced, and the report says so.
+    assert "linkage: checked" in captured.out
+    assert f"key_id: {KEY_ID}" in captured.out
+
+
+def test_verifier_enforces_adjacent_chain_head(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A chain head found next to the receipt is enforced, not silently ignored."""
+    _sign(environment)
+    head_path = environment["output_root"] / "chain_head.json"
+    head = _load(head_path)
+    head["previous_receipt_id"] = "a" * 64
+    _write(head_path, head)
+
+    # No --chain-head: the verifier discovers the sibling head for itself.
+    exit_code = verifier.main(
+        [
+            "--receipt",
+            str(environment["output_root"] / "receipts/2026-09-18.json"),
+            "--registry",
+            str(environment["registry_path"]),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "previous_receipt_mismatch" in captured.err
+    assert "linkage: checked" in captured.out
+
+
+def test_receipt_alone_passes_primary_checks_and_reports_linkage_unchecked(
+    environment: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A receipt in a third party's hands verifies without any chain head.
+
+    Only the receipt is copied; no chain_head.json is reachable from its
+    directory or its parent. The primary checks must still gate success, and
+    the output must admit that linkage was not checked.
+    """
+    summary = _sign(environment)
+    isolated = tmp_path / "isolated" / "nested"
+    isolated.mkdir(parents=True)
+    receipt_copy = isolated / "2026-09-18.json"
+    receipt_copy.write_bytes(Path(summary["receipt_path"]).read_bytes())
+
+    exit_code = verifier.main(
+        [
+            "--receipt",
+            str(receipt_copy),
+            "--registry",
+            str(environment["registry_path"]),
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert captured.err == ""
+    assert "verification passed" in captured.out
+    assert "linkage: unchecked" in captured.out
+    # The stdout is itself evidence: identity, key id, and key window.
+    receipt = _load(receipt_copy)
+    assert f"receipt_id: {receipt['receipt_id']}" in captured.out
+    assert f"key_id: {KEY_ID}" in captured.out
+    assert "key_window:" in captured.out
+
+
+def test_no_key_material_in_any_output(environment: dict[str, Any], capsys: pytest.CaptureFixture[str]) -> None:
+    """Neither the private bytes nor the field name 'private_key' may leak out.
+
+    Covers the receipt JSON, the chain head, and the verifier's stdout/stderr.
+    """
+    summary = _sign(environment)
+    receipt_path = Path(summary["receipt_path"])
+    head_path = Path(summary["chain_head_path"])
+    private_b64 = _load(environment["key_path"])["private_key_base64"]
+
+    exit_code = verifier.main(
+        [
+            "--receipt",
+            str(receipt_path),
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            str(head_path),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 0
+
+    outputs = {
+        "receipt": receipt_path.read_text(encoding="utf-8"),
+        "chain_head": head_path.read_text(encoding="utf-8"),
+        "verifier_stdout": captured.out,
+        "verifier_stderr": captured.err,
+    }
+    for label, text in outputs.items():
+        assert private_b64 not in text, f"private key bytes leaked into {label}"
+        assert "private_key" not in text, f"'private_key' appeared in {label}"
 
 
 def test_cli_verify_names_failure_reason(environment: dict[str, Any], capsys: pytest.CaptureFixture[str]) -> None:

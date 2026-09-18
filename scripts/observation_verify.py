@@ -2,12 +2,16 @@
 """Offline verifier for host-side observation receipts.
 
 Verification is deliberately local: the payload hash, the Ed25519 signature,
-the registry validity window, the receipt identity, and the previous-receipt
-link are all recomputed from files on disk. No network call is made and no
-private key is needed or read.
+the registry validity window, and the receipt identity are all recomputed from
+files on disk. No network call is made and no private key is needed or read.
 
-Every failure names its exact reason; the CLI exits 0 on success and 1 on
-failure with each reason on stderr.
+A third party holds only the receipt and the trust anchor (the public key
+registry), so the registry is mandatory and no path inside this repository is
+assumed. Chain linkage is opportunistic: a chain head supplied with
+``--chain-head`` or found next to the receipt (its directory or its parent) is
+enforced, otherwise the run reports linkage as ``unchecked`` and still exits 0
+when the primary checks pass. Every failure names its exact reason; the CLI
+exits 0 on success and 1 on failure with each reason on stderr.
 """
 
 from __future__ import annotations
@@ -25,8 +29,6 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 if __package__:
     from scripts.observation_receipt import (
-        DEFAULT_REGISTRY_PATH,
-        ROOT,
         RECEIPT_SCHEMA,
         ObservationReceiptError,
         canonical_bytes,
@@ -35,8 +37,6 @@ if __package__:
     )
 else:
     from observation_receipt import (  # type: ignore[no-redef]
-        DEFAULT_REGISTRY_PATH,
-        ROOT,
         RECEIPT_SCHEMA,
         ObservationReceiptError,
         canonical_bytes,
@@ -46,7 +46,7 @@ else:
 
 LOGGER = logging.getLogger(__name__)
 
-DEFAULT_CHAIN_HEAD_PATH: Path = ROOT / "observation" / "chain_head.json"
+CHAIN_HEAD_FILENAME: str = "chain_head.json"
 
 REQUIRED_PAYLOAD_FIELDS: tuple[str, ...] = (
     "schema",
@@ -181,13 +181,78 @@ def _chain_failures(payload: dict[str, Any], chain_head: dict[str, Any]) -> list
     return []
 
 
+def find_adjacent_chain_head(receipt_path: Path) -> Path | None:
+    """Return a chain head sitting next to the receipt, or ``None`` when absent.
+
+    Resolution is relative to the receipt, never to this repository: the
+    receipt's own directory first, then its parent. That finds a
+    signer-produced tree (``<root>/receipts/<date>.json`` plus
+    ``<root>/chain_head.json``) and still finds nothing when a third party
+    holds only the receipt.
+    """
+    candidates = (receipt_path.parent / CHAIN_HEAD_FILENAME, receipt_path.parent.parent / CHAIN_HEAD_FILENAME)
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def checked_facts(
+    receipt: dict[str, Any],
+    registry: dict[str, Any],
+    chain_head: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Return the public facts the verifier actually used, for its evidence report.
+
+    Only public material appears here: the declared receipt id, the payload's
+    key_id, the registry's public validity window, and whether linkage was
+    checked. No key bytes are read or reported.
+    """
+    payload = receipt.get("payload")
+    if not isinstance(payload, dict):
+        payload = {}
+    key_id = payload.get("key_id")
+    row: dict[str, Any] | None = None
+    rows = registry.get("keys")
+    if isinstance(rows, list) and isinstance(key_id, str):
+        matches = [candidate for candidate in rows if isinstance(candidate, dict) and candidate.get("key_id") == key_id]
+        if len(matches) == 1:
+            row = matches[0]
+    return {
+        "receipt_id": receipt.get("receipt_id"),
+        "key_id": key_id,
+        "key_status": row.get("status") if row is not None else None,
+        "key_not_before": row.get("not_before") if row is not None else None,
+        "key_not_after": row.get("not_after") if row is not None else None,
+        "observed_at": payload.get("observed_at"),
+        "linkage": "checked" if chain_head is not None else "unchecked",
+    }
+
+
+def print_checked_facts(facts: dict[str, Any]) -> None:
+    """Print the verification evidence lines to stdout."""
+    print(f"  receipt_id: {facts['receipt_id']}")
+    print(f"  key_id: {facts['key_id']}")
+    print(
+        f"  key_window: status={facts['key_status']} "
+        f"not_before={facts['key_not_before']} not_after={facts['key_not_after']}"
+    )
+    print(f"  observed_at: {facts['observed_at']}")
+    print(f"  linkage: {facts['linkage']}")
+
+
 def verify_receipt(
     receipt: dict[str, Any],
     *,
     registry: dict[str, Any],
-    chain_head: dict[str, Any],
+    chain_head: dict[str, Any] | None = None,
 ) -> list[str]:
-    """Return every verification failure; an empty list means the receipt is valid."""
+    """Return every verification failure; an empty list means the receipt is valid.
+
+    The primary checks always run. Chain linkage runs only when a chain head is
+    available; when ``chain_head`` is ``None`` linkage is deliberately left
+    unchecked rather than reported as passing.
+    """
     failures, payload = _structure_failures(receipt)
     if payload is None:
         return failures
@@ -199,32 +264,54 @@ def verify_receipt(
     if row is None:
         return failures
     failures.extend(_signature_failures(receipt, payload, row))
-    failures.extend(_chain_failures(payload, chain_head))
+    if chain_head is not None:
+        failures.extend(_chain_failures(payload, chain_head))
     return failures
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Verify a host-side observation receipt entirely offline.")
     parser.add_argument("--receipt", type=Path, required=True, help="Receipt JSON to verify.")
-    parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY_PATH, help="Key registry with public keys and windows.")
-    parser.add_argument("--chain-head", type=Path, default=DEFAULT_CHAIN_HEAD_PATH, help="Chain head that records the prior receipt.")
+    parser.add_argument(
+        "--registry",
+        type=Path,
+        required=True,
+        help="Key registry with public keys and validity windows (the trust anchor; no default).",
+    )
+    parser.add_argument(
+        "--chain-head",
+        type=Path,
+        default=None,
+        help="Chain head that records the prior receipt. Defaults to a chain_head.json next to the receipt.",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     try:
         receipt = load_json(args.receipt, "receipt")
         registry = load_json(args.registry, "registry")
-        chain_head = load_json(args.chain_head, "chain_head")
     except ObservationVerificationError as error:
         print(f"observation receipt verification failed: {error}", file=sys.stderr)
         return 1
 
+    chain_head_path = args.chain_head if args.chain_head is not None else find_adjacent_chain_head(args.receipt)
+    chain_head: dict[str, Any] | None = None
+    if chain_head_path is not None:
+        try:
+            chain_head = load_json(chain_head_path, "chain_head")
+        except ObservationVerificationError as error:
+            print(f"observation receipt verification failed: {error}", file=sys.stderr)
+            return 1
+
     failures = verify_receipt(receipt, registry=registry, chain_head=chain_head)
+    facts = checked_facts(receipt, registry, chain_head)
     if failures:
+        print_checked_facts(facts)
         for failure in failures:
             print(f"observation receipt verification failed: {failure}", file=sys.stderr)
         return 1
     print(f"observation receipt verification passed: {args.receipt}")
+    print_checked_facts(facts)
     return 0
 
 
