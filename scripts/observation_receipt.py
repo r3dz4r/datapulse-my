@@ -32,6 +32,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import sys
 import tempfile
 from collections import Counter
@@ -55,6 +56,8 @@ VALIDITY_HOURS: int = 26
 DEFAULT_OUTPUT_ROOT: Path = ROOT / "observation"
 DEFAULT_HEALTH_PATH: Path = ROOT / "health" / "latest.json"
 DEFAULT_METHODOLOGY_PATH: Path = ROOT / "health" / "methodology.json"
+DEFAULT_ARTIFACT_PATH: str = "health/latest.json"
+ARTIFACT_COMMIT_PATTERN: re.Pattern[str] = re.compile(r"\A[0-9a-f]{40}\Z")
 DEFAULT_KEY_PATH: Path = Path("/home/redza/.hermes/keys/datapulse-observation.ed25519.json")
 DEFAULT_REGISTRY_PATH: Path = Path("/home/redza/.hermes/keys/datapulse-observation-registry.json")
 
@@ -236,6 +239,39 @@ def health_binding(health: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def validate_artifact_commit(value: str) -> str:
+    """Require a full 40-character lowercase hex commit sha, or fail closed.
+
+    A short, uppercase, or non-hex token is never stored as a pointer: a
+    malformed pointer would let a receipt claim an artifact location that no
+    reader could ever resolve.
+    """
+    if not isinstance(value, str) or ARTIFACT_COMMIT_PATTERN.fullmatch(value) is None:
+        raise ObservationReceiptError(
+            f"artifact_commit_malformed: expected a full 40-character lowercase hex commit sha, got {value!r}"
+        )
+    return value
+
+
+def artifact_binding_fields(artifact_commit: str | None, artifact_path: str | None) -> dict[str, str | None]:
+    """Resolve the signed artifact pointer fields.
+
+    When ``artifact_commit`` is ``None`` the signer is running outside the
+    pipeline, so both pointer fields are recorded as null: the receipt must
+    never imply a location it cannot substantiate. A supplied commit is
+    validated and the path defaults to ``DEFAULT_ARTIFACT_PATH``.
+    """
+    if artifact_commit is None:
+        return {"artifact_path": None, "artifact_commit": None}
+    commit = validate_artifact_commit(artifact_commit)
+    path = DEFAULT_ARTIFACT_PATH if artifact_path is None else artifact_path
+    if not isinstance(path, str) or not path.strip():
+        raise ObservationReceiptError(
+            f"artifact_path_malformed: expected a non-empty repository-relative path, got {path!r}"
+        )
+    return {"artifact_path": path, "artifact_commit": commit}
+
+
 def policy_version(methodology_path: Path) -> str | int | None:
     """Return methodology_version from the methodology artifact, or ``None``."""
     if not methodology_path.is_file():
@@ -273,14 +309,19 @@ def build_payload(
     previous_receipt_id: str | None,
     policy: str | int | None,
     profile_version: str,
+    artifact_commit: str | None = None,
+    artifact_path: str | None = None,
 ) -> dict[str, Any]:
     """Assemble the signed payload: exactly the fields in the receipt contract."""
     valid_until = format_time(parse_time(observed_at, label="observed_at") + timedelta(hours=VALIDITY_HOURS))
+    pointer = artifact_binding_fields(artifact_commit, artifact_path)
     return {
         "schema": RECEIPT_SCHEMA,
         "observed_at": observed_at,
         "cycle_date": binding["cycle_date"],
         "health_artifact_sha256": binding["health_artifact_sha256"],
+        "artifact_path": pointer["artifact_path"],
+        "artifact_commit": pointer["artifact_commit"],
         "normalization": NORMALIZATION_NOTE,
         "dataset_count": binding["dataset_count"],
         "freshness_status_counts": binding["freshness_status_counts"],
@@ -443,6 +484,8 @@ def sign_observation(
     registry_path: Path = DEFAULT_REGISTRY_PATH,
     now: datetime | None = None,
     expected_key_id: str | None = None,
+    artifact_commit: str | None = None,
+    artifact_path: str | None = None,
 ) -> dict[str, Any]:
     """Sign the health artifact into ``output_root`` and advance the chain head.
 
@@ -451,7 +494,13 @@ def sign_observation(
     while re-observing the digest already carried by the last entry is an
     idempotent no-op that reports ``already_signed``. Returns a summary
     containing only public facts.
+
+    ``artifact_commit`` names the commit whose tree carries the exact bytes
+    bound by ``health_artifact_sha256``; it is validated before any work so a
+    malformed pointer fails closed even when the artifact is already signed.
     """
+    if artifact_commit is not None:
+        validate_artifact_commit(artifact_commit)
     observed_at = format_time(now if now is not None else datetime.now(timezone.utc))
     health = load_json(health_path, "health_artifact")
     binding = health_binding(health)
@@ -523,6 +572,8 @@ def sign_observation(
         previous_receipt_id=previous_receipt_id,
         policy=policy_version(methodology_path),
         profile_version=verification_profile_version(),
+        artifact_commit=artifact_commit,
+        artifact_path=artifact_path,
     )
     document = create_receipt(payload, private_key)
 
@@ -584,6 +635,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--key", type=Path, default=DEFAULT_KEY_PATH, help="Ed25519 private key document (never printed).")
     parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY_PATH, help="Key registry with public keys and validity windows.")
     parser.add_argument("--expected-key-id", help="Fail unless the key document declares this key_id.")
+    parser.add_argument(
+        "--artifact-commit",
+        default=None,
+        help="Full 40-character lowercase hex commit sha carrying the bound artifact; omit outside the pipeline.",
+    )
+    parser.add_argument(
+        "--artifact-path",
+        default=DEFAULT_ARTIFACT_PATH,
+        help="Repository-relative path of the bound artifact (recorded only with --artifact-commit).",
+    )
     parser.add_argument("--now", help="ISO-8601 UTC override for observed_at (testing/reproducibility only).")
     parser.add_argument(
         "--normalize-digest",
@@ -614,6 +675,8 @@ def main(argv: list[str] | None = None) -> int:
             registry_path=args.registry,
             now=now,
             expected_key_id=args.expected_key_id,
+            artifact_commit=args.artifact_commit,
+            artifact_path=args.artifact_path,
         )
     except ObservationReceiptError as error:
         print(f"observation receipt signing failed: {error}", file=sys.stderr)
