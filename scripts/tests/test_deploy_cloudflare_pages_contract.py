@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import os
 from pathlib import Path
@@ -86,6 +87,26 @@ _ALIAS_BODY = (
 )
 
 
+def _declared_surface_helper() -> str:
+    """Extract the declared-surface content gate for direct state-machine testing."""
+    match = re.search(r"(?ms)^verify_declared_surface_content\(\) \{.*?^\}\n", _served_verifier())
+    assert match is not None, "the declared-surface content gate must remain executable and contract-tested"
+    return textwrap.dedent(match.group(0))
+
+
+def _run_declared_surface_check(surface: str, body: str, tmp_path: Path) -> subprocess.CompletedProcess[str]:
+    """Run the workflow content gate against one deterministic served body."""
+    body_path = tmp_path / "surface.body"
+    body_path.write_text(body, encoding="utf-8")
+    script = f"""
+set -Eeuo pipefail
+fail() {{ echo "::error title=Cloudflare Pages contract failed::$1" >&2; return 1; }}
+{_declared_surface_helper()}
+verify_declared_surface_content '{surface}' '{body_path}'
+"""
+    return subprocess.run(["bash", "-c", script], check=False, capture_output=True, text=True)
+
+
 def test_alias_verifier_accepts_documented_html_normalization_chain() -> None:
     result = _run_alias_helper(
         "/landing.html",
@@ -118,6 +139,53 @@ def test_alias_verifier_rejects_cycles_wrong_locations_and_spa_fallback(
 ) -> None:
     result = _run_alias_helper(path, {path: response})
     assert result.returncode != 0
+
+
+def test_declared_surface_content_gate_rejects_spa_fallback_for_the_receipt_entry_point(tmp_path: Path) -> None:
+    """HTTP 200 with the dashboard SPA fallback must fail the observation surface."""
+    result = _run_declared_surface_check(
+        "/observation-receipts/chain_head.json",
+        "<!doctype html><html><head><title>DataPulse</title></head><body>SPA fallback</body></html>",
+        tmp_path,
+    )
+
+    assert result.returncode != 0
+    assert "datapulse/v1/observation-chain-head" in result.stderr
+
+
+def test_declared_surface_content_gate_accepts_the_receipt_chain_head_json(tmp_path: Path) -> None:
+    result = _run_declared_surface_check(
+        "/observation-receipts/chain_head.json",
+        json.dumps({"schema": "datapulse/v1/observation-chain-head", "head": "abc"}),
+        tmp_path,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_declared_surface_content_gate_rejects_json_without_the_declared_marker(tmp_path: Path) -> None:
+    result = _run_declared_surface_check(
+        "/observation-receipts/chain_head.json",
+        json.dumps({"schema": "datapulse/v1/health-snapshot"}),
+        tmp_path,
+    )
+
+    assert result.returncode != 0
+    assert "datapulse/v1/observation-chain-head" in result.stderr
+
+
+def test_declared_surface_content_gate_leaves_other_declared_surfaces_untouched(tmp_path: Path) -> None:
+    result = _run_declared_surface_check("/health/latest.json", "<html>not json</html>", tmp_path)
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_served_verifier_wires_the_receipt_entry_point_into_the_content_gate() -> None:
+    verify = _served_verifier()
+
+    assert "/observation-receipts/chain_head.json" in verify
+    assert '.schema == "datapulse/v1/observation-chain-head"' in verify
+    assert 'verify_declared_surface_content "$path" "$smoke_dir/surfaces${path%/}/index"' in verify
 
 
 def test_health_only_path_is_selected_only_by_the_generated_output_classifier() -> None:

@@ -59,6 +59,14 @@ fetch_alias() {
   grep -Fq 'http-equiv="refresh" content="0; url=/"' "$body" || fail "$surface lacks root browser fallback"
   grep -Fq 'href="/">DataPulse dataset register</a>' "$body" || fail "$surface lacks accessible root fallback"
 }
+# A declared surface is a promise, but HTTP 200 is not proof: this site answers
+# unknown paths with its SPA fallback HTML.  Machine-evidence surfaces must
+# parse as JSON and carry their declared schema marker, or the deploy fails.
+verify_declared_surface_content() {
+  local surface="$1" body="$2"
+  [[ "$surface" == /observation-receipts/chain_head.json ]] || return 0
+  jq -e '.schema == "datapulse/v1/observation-chain-head"' "$body" >/dev/null || fail "declared observation receipt surface $surface does not serve the datapulse/v1/observation-chain-head schema (SPA fallback?)"
+}
 # Permit Pages propagation at either origin before comparing exact served bytes.
 sleep 30
 expected_dataset_count="$(jq -er '.datasets | select(type == "array" and length > 0) | length' "$site_dir/datapulse.json")" || fail "assembled manifest has no dataset array"
@@ -113,7 +121,7 @@ elif len(health.get('datasets', [])) < int(m.group(1)): missing.append(f'- Datas
 if missing: raise SystemExit('release proof drift: '+'; '.join(missing))
 PY
 mapfile -t pages < <(jq -er '.pages[]' config/public-surfaces.json); mapfile -t artifacts < <(jq -er '.artifacts[]' config/public-surfaces.json)
-for path in "${pages[@]}" "${artifacts[@]}"; do [[ "$path" == / || "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "unsafe declared public path: $path"; if [[ "$path" == */ ]]; then declared_file="$(find "$site_dir${path}" -type f -print -quit)" || fail "declared collection is missing: $path"; [[ -n "$declared_file" ]] || fail "declared collection is empty: $path"; path="/${declared_file#"$site_dir/"}"; fi; fetch "declared public surface $path" "$base_url$path" "$smoke_dir/surfaces${path%/}/index"; done
+for path in "${pages[@]}" "${artifacts[@]}"; do [[ "$path" == / || "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "unsafe declared public path: $path"; if [[ "$path" == */ ]]; then declared_file="$(find "$site_dir${path}" -type f -print -quit)" || fail "declared collection is missing: $path"; [[ -n "$declared_file" ]] || fail "declared collection is empty: $path"; path="/${declared_file#"$site_dir/"}"; fi; fetch "declared public surface $path" "$base_url$path" "$smoke_dir/surfaces${path%/}/index"; verify_declared_surface_content "$path" "$smoke_dir/surfaces${path%/}/index"; done
 python3 - "$smoke_dir/index.html" "$smoke_dir/health/index.json" "$smoke_dir/health/latest.json" <<'PY'
 import json,sys
 from pathlib import Path
