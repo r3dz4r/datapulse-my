@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.28.4](https://github.com/r3dz4r/datapulse-my/compare/v3.28.3...v3.28.4) (2026-09-19)
+
+
+### Bug Fixes
+
+* **artifacts:** set artefact modes explicitly and make store roots overridable ([c469740](https://github.com/r3dz4r/datapulse-my/commit/c4697400f989e429160fb499d7dd443726d639b0))
+
 ## [3.28.3](https://github.com/r3dz4r/datapulse-my/compare/v3.28.2...v3.28.3) (2026-09-19)
 
 
