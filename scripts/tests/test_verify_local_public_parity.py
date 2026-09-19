@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from urllib.error import HTTPError, URLError
 
 from scripts import verify_local_public_parity as parity
 
@@ -87,3 +88,78 @@ def test_taxonomy_violation_fails() -> None:
         assert any("status_taxonomy violation" in error and '"verified"' in error for error in errors)
     finally:
         path.write_text(original, encoding="utf-8")
+
+
+def _root_flaky_fetch(exc: Exception, *, failures: int | None) -> tuple[Any, dict[str, int]]:
+    """Fail the public-root fetch, leaving every other route healthy.
+
+    ``failures`` counts how many initial root calls raise; ``None`` means every
+    root call raises. The counter records root attempts so a test can prove the
+    retry boundary, not just the final verdict.
+    """
+    base = _public_fetch(SOURCE_INDEX, SOURCE_HEALTH, SOURCE_TOOLS)
+    counter = {"calls": 0}
+
+    def fetch(url: str, *, method: str = "GET", body: bytes | None = None,
+              headers: dict[str, str] | None = None) -> parity.Response:
+        # Only the dataset-count GET is made flaky; the later HEAD route probe
+        # for the same URL must keep succeeding.
+        if method == "GET" and url == parity.PUBLIC_ROOT + "/":
+            counter["calls"] += 1
+            if failures is None or counter["calls"] <= failures:
+                raise exc
+        return base(url, method=method, body=body, headers=headers)
+
+    return fetch, counter
+
+
+def test_transient_transport_failure_is_retried(monkeypatch: Any) -> None:
+    sleeps: list[float] = []
+    monkeypatch.setattr("time.sleep", sleeps.append)
+    fetch, counter = _root_flaky_fetch(URLError("connection reset by peer"), failures=2)
+
+    errors, _, passed = parity.verify(ROOT, fetch=fetch)
+
+    assert errors == []
+    assert "dataset_count" in passed
+    assert counter["calls"] == 3
+    assert sleeps == [0.5, 1.5]
+
+
+def test_exhausted_transport_retries_report_documented_failure(monkeypatch: Any) -> None:
+    monkeypatch.setattr("time.sleep", lambda _seconds: None)
+    fetch, counter = _root_flaky_fetch(URLError("connection reset by peer"), failures=None)
+
+    errors, _, _ = parity.verify(ROOT, fetch=fetch)
+
+    assert counter["calls"] == 3
+    failure = next(error for error in errors if "dataset_count parity failure" in error)
+    assert failure.startswith("ERROR: dataset_count parity failure: public root unavailable: ")
+
+
+def test_http_error_is_not_retried(monkeypatch: Any) -> None:
+    monkeypatch.setattr("time.sleep", lambda _seconds: None)
+    fetch, counter = _root_flaky_fetch(
+        HTTPError(parity.PUBLIC_ROOT + "/", 404, "Not Found", {}, None),
+        failures=None,
+    )
+
+    errors, _, _ = parity.verify(ROOT, fetch=fetch)
+
+    # A real server answer must surface after one call, never three.
+    assert counter["calls"] == 1
+    assert any("dataset_count parity failure" in error and "public root unavailable" in error for error in errors)
+
+
+def test_retry_warning_names_attempt_and_error(monkeypatch: Any, capsys: Any) -> None:
+    monkeypatch.setattr("time.sleep", lambda _seconds: None)
+    fetch, counter = _root_flaky_fetch(URLError("connection reset by peer"), failures=1)
+
+    errors, _, _ = parity.verify(ROOT, fetch=fetch)
+
+    assert errors == []
+    assert counter["calls"] == 2
+    warnings = [line for line in capsys.readouterr().out.splitlines() if line.startswith("WARNING:")]
+    assert len(warnings) == 1
+    assert "2/3" in warnings[0]
+    assert "URLError" in warnings[0]

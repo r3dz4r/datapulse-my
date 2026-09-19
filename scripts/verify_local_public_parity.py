@@ -9,6 +9,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
@@ -22,6 +23,8 @@ PUBLIC_ROOT = "https://www.data-pulse.my"
 MCP_ENDPOINT = "https://mcp.data-pulse.my/mcp"
 USER_AGENT = "DataPulse-Local-Public-Parity/1.0"
 MAX_RESPONSE_BYTES = 8 * 1024 * 1024
+MAX_FETCH_ATTEMPTS = 3
+FETCH_RETRY_BACKOFF_SECONDS = (0.5, 1.5)
 CANONICAL_ROUTES = (
     "/",
     "/health/latest.json",
@@ -57,6 +60,37 @@ def _fetch(url: str, *, method: str = "GET", body: bytes | None = None,
         return Response(raw.status, raw.url, raw.headers.get_content_type(), payload, dict(raw.headers.items()))
 
 
+def _retry_transport(fetch: Callable[..., Response]) -> Callable[..., Response]:
+    """Return a fetch that retries connection-level failures a bounded number of times.
+
+    Only transport failures (``URLError`` and ``TimeoutError``) are retried.
+    An ``HTTPError`` is a real answer from the server, so it is re-raised at
+    once: retrying it would hide a genuine contract break behind a transient
+    label. Parse and validation failures are not retried either; they are not
+    raised by the transport wrapper at all.
+    """
+    def retrying(url: str, *, method: str = "GET", body: bytes | None = None,
+                 headers: dict[str, str] | None = None) -> Response:
+        for attempt in range(1, MAX_FETCH_ATTEMPTS + 1):
+            try:
+                return fetch(url, method=method, body=body, headers=headers)
+            except HTTPError:
+                # A 404/500 is the server's answer, not a hiccup. Do not mask it.
+                raise
+            except (URLError, TimeoutError) as exc:
+                if attempt == MAX_FETCH_ATTEMPTS:
+                    # Re-raise so callers keep the existing "unavailable: <exc>" text.
+                    raise
+                delay = FETCH_RETRY_BACKOFF_SECONDS[attempt - 1]
+                print(
+                    f"WARNING: transport retry attempt {attempt + 1}/{MAX_FETCH_ATTEMPTS} "
+                    f"for {url} after {type(exc).__name__}: {exc}"
+                )
+                time.sleep(delay)
+        raise AssertionError("transport retry loop exited without returning")  # pragma: no cover
+    return retrying
+
+
 def _mcp_tools(fetch: Callable[..., Response]) -> set[str]:
     """Return deployed tool names or raise a descriptive probe error."""
     def post(message: dict[str, Any], session: str | None = None) -> Response:
@@ -89,6 +123,9 @@ def _mcp_tools(fetch: Callable[..., Response]) -> set[str]:
 
 def verify(root: Path, *, fetch: Callable[..., Response] = _fetch) -> tuple[list[str], list[str], list[str]]:
     """Return (errors, warnings, passed dimensions) for a repository root."""
+    # Wrap whatever transport was injected, so a custom fetch is retried too and
+    # the default `_fetch` keeps its single-attempt signature.
+    fetch = _retry_transport(fetch)
     errors: list[str] = []
     warnings: list[str] = []
     passed: list[str] = []
