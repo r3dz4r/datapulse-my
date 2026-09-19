@@ -893,6 +893,193 @@ def test_verify_without_health_reports_binding_unchecked(
 
 
 # ---------------------------------------------------------------------------
+# Health claim binding: the consumed counts must match the supplied artifact
+# ---------------------------------------------------------------------------
+
+
+def _claim_receipt(
+    environment: dict[str, Any],
+    *,
+    binding: dict[str, Any] | None = None,
+    dataset_count: Any = None,
+    freshness_status_counts: Any = None,
+) -> dict[str, Any]:
+    """Sign a payload with a genuine digest but caller-supplied (possibly forged) claims.
+
+    This deliberately bypasses the signer's own claim gate: the point is to model
+    a receipt signed before that gate existed, or by a regressed signer, so the
+    offline verifier is the only line of defence.
+    """
+    if binding is None:
+        health = signer.load_json(environment["health_path"], "health_artifact")
+        binding = signer.health_binding(health)
+    else:
+        binding = dict(binding)
+    if dataset_count is not None:
+        binding["dataset_count"] = dataset_count
+    if freshness_status_counts is not None:
+        binding["freshness_status_counts"] = freshness_status_counts
+    payload = signer.build_payload(
+        binding=binding,
+        observed_at=signer.format_time(NOW),
+        key_id=environment["key_id"],
+        sequence_number=1,
+        previous_receipt_id=None,
+        policy=None,
+        profile_version=signer.verification_profile_version(),
+    )
+    return signer.create_receipt(payload, environment["private"])
+
+
+def _verify_with_health(environment: dict[str, Any], receipt: dict[str, Any]) -> list[str]:
+    return verifier.verify_receipt(
+        receipt,
+        registry=_registry(environment),
+        health=signer.load_json(environment["health_path"], "health_artifact"),
+    )
+
+
+def test_health_claim_binding_accepts_genuine_claims(environment: dict[str, Any]) -> None:
+    """A genuine digest with the artifact's own counts still verifies cleanly."""
+    _write(environment["health_path"], _health_document(heartbeat="2026-09-18T14:40:00Z"))
+    _sign(environment)
+    failures = _verify_with_health(environment, _receipt(environment))
+    assert failures == []
+
+
+def test_health_claim_binding_rejects_forged_dataset_count(environment: dict[str, Any]) -> None:
+    """A correct digest does not excuse an invented dataset_count."""
+    receipt = _claim_receipt(environment, dataset_count=999)
+    failures = _verify_with_health(environment, receipt)
+    assert failures == ["claim_mismatch: field=dataset_count claimed=999 derived=3"]
+
+
+def test_health_claim_binding_rejects_forged_status_count(environment: dict[str, Any]) -> None:
+    """One altered status bucket is a claim mismatch naming both maps."""
+    receipt = _claim_receipt(environment, freshness_status_counts={"fresh": 1, "stale": 2})
+    failures = _verify_with_health(environment, receipt)
+    assert failures == [
+        "claim_mismatch: field=freshness_status_counts claimed={'fresh': 1, 'stale': 2} "
+        "derived={'fresh': 2, 'stale': 1}"
+    ]
+
+
+def test_health_claim_binding_rejects_extra_status_key(environment: dict[str, Any]) -> None:
+    """An extra status key fails even when the other counts agree."""
+    receipt = _claim_receipt(
+        environment, freshness_status_counts={"fresh": 2, "stale": 1, "aging": 0}
+    )
+    failures = _verify_with_health(environment, receipt)
+    assert failures == [
+        "claim_mismatch: field=freshness_status_counts claimed={'fresh': 2, 'stale': 1, 'aging': 0} "
+        "derived={'fresh': 2, 'stale': 1}"
+    ]
+
+
+def test_health_claim_binding_rejects_removed_status_key(environment: dict[str, Any]) -> None:
+    """A removed status key fails even when the remaining counts agree."""
+    receipt = _claim_receipt(environment, freshness_status_counts={"fresh": 3})
+    failures = _verify_with_health(environment, receipt)
+    assert failures == [
+        "claim_mismatch: field=freshness_status_counts claimed={'fresh': 3} "
+        "derived={'fresh': 2, 'stale': 1}"
+    ]
+
+
+def test_health_claim_binding_repr_exposes_wrong_type(environment: dict[str, Any]) -> None:
+    """A string count must read as claimed='418', never claimed=418.
+
+    The full verify path stops a string dataset_count earlier as a
+    payload_field_type_invalid, so the helper is exercised directly to pin the
+    repr-based formatting the claim message depends on.
+    """
+    _write_health(environment["health_path"], statuses=("fresh",) * 418)
+    health = signer.load_json(environment["health_path"], "health_artifact")
+    payload = {
+        "health_artifact_sha256": signer.normalized_health_digest(health),
+        "dataset_count": "418",
+        "freshness_status_counts": {"fresh": 418},
+    }
+    failures = verifier._health_binding_failures(payload, health, environment["health_path"])
+    assert failures == ["claim_mismatch: field=dataset_count claimed='418' derived=418"]
+    assert "'418'" in failures[0]
+
+    # The full path still fails, earlier, on the payload type; the claim binding
+    # never silently accepts a wrong-typed claim.
+    structured = _verify_with_health(environment, _claim_receipt(environment, dataset_count="418"))
+    assert any(failure.startswith("payload_field_type_invalid") for failure in structured), structured
+
+
+@pytest.mark.parametrize(
+    "datasets",
+    [
+        pytest.param([], id="empty-array"),
+        pytest.param([{"dataset_id": "a", "status": "fresh"}, "not-an-object"], id="non-object-row"),
+        pytest.param([{"dataset_id": "", "status": "fresh"}], id="empty-dataset-id"),
+        pytest.param([{"dataset_id": "a", "status": ""}], id="empty-status"),
+        pytest.param([{"dataset_id": "a"}], id="missing-status"),
+        pytest.param(
+            [{"dataset_id": "a", "status": "fresh"}, {"dataset_id": "a", "status": "fresh"}],
+            id="duplicate-dataset-id",
+        ),
+    ],
+)
+def test_claim_unverifiable_for_uncountable_rows(
+    environment: dict[str, Any], tmp_path: Path, datasets: list[Any]
+) -> None:
+    """Rows that cannot be counted honestly are unverifiable, never a mismatch."""
+    artifact = {
+        "schema": "datapulse/v0.4/dataset-health",
+        "checked_at": "2026-09-18T14:40:32Z",
+        "_trust_summary": {},
+        "datasets": datasets,
+    }
+    artifact_path = tmp_path / "uncountable-health.json"
+    _write(artifact_path, artifact)
+    binding = {
+        "cycle_date": "2026-09-18",
+        "dataset_count": 1,
+        "freshness_status_counts": {"fresh": 1},
+        "health_artifact_sha256": signer.normalized_health_digest(artifact),
+    }
+    receipt = _claim_receipt(environment, binding=binding)
+    failures = verifier.verify_receipt(
+        receipt,
+        registry=_registry(environment),
+        health=artifact,
+        health_path=artifact_path,
+    )
+    assert failures == [
+        "claim_unverifiable: health datasets cannot be counted "
+        "(every row must be an object with a unique non-empty dataset_id and a non-empty string status)"
+    ]
+    assert not any(failure.startswith("claim_mismatch") for failure in failures), failures
+
+
+def test_cli_forged_claim_exits_nonzero_with_binding_checked(
+    environment: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Through the CLI a forged count fails, names itself, and admits the binding ran."""
+    receipt_path = tmp_path / "forged-count.json"
+    _write(receipt_path, _claim_receipt(environment, dataset_count=999))
+
+    exit_code = verifier.main(
+        [
+            "--receipt",
+            str(receipt_path),
+            "--registry",
+            str(environment["registry_path"]),
+            "--health",
+            str(environment["health_path"]),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "health_binding: checked" in captured.out
+    assert "claim_mismatch: field=dataset_count claimed=999 derived=3" in captured.err
+
+
+# ---------------------------------------------------------------------------
 # Artifact binding by commit reference: the pointer is signed, not decorative
 # ---------------------------------------------------------------------------
 
