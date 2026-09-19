@@ -470,7 +470,9 @@ jobs:
             cp "$RUNNER_TEMP/sigstore-publication/datapulse.json" _site/signatures/
           fi
           test -s _site/index.html
-          test ! -e _site/_redirects
+          test -s _site/404.html
+          test -s _site/catalogue.html
+          test "$(cat _site/_redirects)" = $'/methodology /health-methodology 301\n/trust-contract /trust-contract.md 301'
           test -s _site/health/latest.json
 
       - name: Record deterministic release artifact manifest

@@ -461,10 +461,17 @@ def _render_page(
     binding_path: Path | None = None,
     public_surfaces_path: Path | None = None,
 ) -> str:
-    try:
-        html = html_path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as error:
-        raise EmbedError(f"cannot read {html_path}: {error}") from error
+    template_path = html_path.parent.parent / HOMEPAGE_TEMPLATE
+    if html_path.name in {"index.html", "catalogue.html"} and template_path.is_file():
+        try:
+            html = template_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as error:
+            raise EmbedError(f"cannot read {HOMEPAGE_TEMPLATE}: {error}") from error
+    else:
+        try:
+            html = html_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as error:
+            raise EmbedError(f"cannot read {html_path}: {error}") from error
 
     manifest = _load(manifest_path)
     health = _load(health_path)
@@ -473,7 +480,7 @@ def _render_page(
         surfaces = load_public_surfaces(root)
     except GenerationError as error:
         raise EmbedError(str(error)) from error
-    if html_path.name == "index.html":
+    if html_path.name in {"index.html", "catalogue.html"}:
         template_path = root / HOMEPAGE_TEMPLATE
         if template_path.is_file():
             html = _render_homepage(root, html)
@@ -581,6 +588,7 @@ def parse_args() -> argparse.Namespace:
     root = Path(__file__).resolve().parent.parent
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--html", type=Path, default=root / "docs/index.html")
+    parser.add_argument("--catalogue", type=Path, default=root / "docs/catalogue.html")
     parser.add_argument("--npra", type=Path, default=root / "docs/npra.html")
     parser.add_argument("--manifest", type=Path, default=root / "datapulse.json")
     parser.add_argument("--health", type=Path, default=root / "health/latest.json")
@@ -606,7 +614,7 @@ def main() -> int:
     args = parse_args()
     try:
         embed_all(
-            (args.html, args.npra), args.manifest, args.health, args.filters,
+            (args.html, args.catalogue, args.npra), args.manifest, args.health, args.filters,
             args.sections, args.attestations, args.attestation_binding,
             args.public_surfaces.parent,
         )
