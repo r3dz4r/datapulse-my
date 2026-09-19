@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import importlib.util
 import json
 import os
 import socket
@@ -186,6 +187,74 @@ def _receipt(environment: dict[str, Any], cycle_date: str = "2026-09-18", index:
 
 def _head(environment: dict[str, Any]) -> dict[str, Any]:
     return _load(environment["output_root"] / "chain_head.json")
+
+
+def _payload_inputs(environment: dict[str, Any]) -> dict[str, Any]:
+    """Return fixed build inputs suitable for byte-level payload comparisons."""
+    return {
+        "binding": signer.health_binding(signer.load_json(environment["health_path"], "health_artifact")),
+        "observed_at": signer.format_time(NOW),
+        "key_id": environment["key_id"],
+        "sequence_number": 1,
+        "previous_receipt_id": None,
+        "policy": None,
+        "profile_version": "fixed-profile-version",
+        "artifact_commit": "a" * 40,
+    }
+
+
+def test_payload_without_observer_cycle_key_is_byte_identical_to_head(
+    environment: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The opt-in setting must leave legacy payload bytes and shape untouched."""
+    monkeypatch.delenv(signer.OBSERVER_CYCLE_KEY_FILE_ENV, raising=False)
+    source = subprocess.run(
+        ["git", "show", "HEAD:scripts/observation_receipt.py"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    spec = importlib.util.spec_from_loader("head_observation_receipt", loader=None)
+    assert spec is not None
+    head_signer = importlib.util.module_from_spec(spec)
+    head_signer.__file__ = str(ROOT / "scripts" / "observation_receipt.py")
+    exec(compile(source, "HEAD:scripts/observation_receipt.py", "exec"), head_signer.__dict__)
+
+    inputs = _payload_inputs(environment)
+    current = signer.canonical_bytes(signer.build_payload(**inputs))
+    before = head_signer.canonical_bytes(head_signer.build_payload(**inputs))
+
+    assert current == before
+    assert "observer_attestation" not in signer.build_payload(**inputs)
+
+
+def test_payload_includes_deterministic_verifiable_observer_attestation(
+    environment: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The observer signs the canonical artifact-binding statement inside the builder."""
+    monkeypatch.setenv(signer.OBSERVER_CYCLE_KEY_FILE_ENV, str(environment["key_path"]))
+    inputs = _payload_inputs(environment)
+
+    first = signer.build_payload(**inputs)
+    second = signer.build_payload(**inputs)
+    attestation = first["observer_attestation"]
+    statement = {
+        "artifact_commit": "a" * 40,
+        "health_artifact_sha256": inputs["binding"]["health_artifact_sha256"],
+        "dataset_count": inputs["binding"]["dataset_count"],
+        "key_id": environment["key_id"],
+    }
+    registry_public = base64.b64decode(_registry(environment)["keys"][0]["public_key_base64"], validate=True)
+
+    assert list(attestation) == ["key_id", "signature_base64", "signed_at", "statement_sha256"]
+    assert attestation["key_id"] == environment["key_id"]
+    assert attestation["signed_at"] == inputs["observed_at"]
+    assert attestation["statement_sha256"] == hashlib.sha256(signer.canonical_bytes(statement)).hexdigest()
+    Ed25519PublicKey.from_public_bytes(registry_public).verify(
+        base64.b64decode(attestation["signature_base64"], validate=True), signer.canonical_bytes(statement)
+    )
+    assert signer.canonical_bytes(first) == signer.canonical_bytes(second)
 
 
 def test_sign_then_verify_roundtrip(environment: dict[str, Any]) -> None:

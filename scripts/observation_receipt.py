@@ -79,6 +79,10 @@ DEFAULT_KEY_PATH: Path = Path("/home/redza/.hermes/keys/datapulse-observation.ed
 # is supplied. The observing process never opens a key file in this mode.
 DEFAULT_SIGNER_SOCKET: Path = Path("/run/datapulse-signer/sign.sock")
 DEFAULT_REGISTRY_PATH: Path = Path("/home/redza/.hermes/keys/datapulse-observation-registry.json")
+# This key belongs to the observing cycle, independently of the receipt signer.
+# The path is opt-in so receipts retain their established payload exactly until
+# the observer identity is provisioned.
+OBSERVER_CYCLE_KEY_FILE_ENV: str = "DATAPULSE_OBSERVER_CYCLE_KEY_FILE"
 
 # The socket-activated signer protocol. One request per connection: a single
 # newline-terminated JSON object carrying the exact canonical payload bytes,
@@ -332,7 +336,7 @@ def build_payload(
     """Assemble the signed payload: exactly the fields in the receipt contract."""
     valid_until = format_time(parse_time(observed_at, label="observed_at") + timedelta(hours=VALIDITY_HOURS))
     pointer = artifact_binding_fields(artifact_commit, artifact_path)
-    return {
+    payload: dict[str, Any] = {
         "schema": RECEIPT_SCHEMA,
         "observed_at": observed_at,
         "cycle_date": binding["cycle_date"],
@@ -350,6 +354,23 @@ def build_payload(
         "valid_until": valid_until,
         "limitations": list(LIMITATIONS),
     }
+    observer_key_path = os.environ.get(OBSERVER_CYCLE_KEY_FILE_ENV)
+    if observer_key_path:
+        observer_key_id, observer_private_key, _ = load_signing_key(Path(observer_key_path))
+        statement = {
+            "artifact_commit": pointer["artifact_commit"],
+            "health_artifact_sha256": binding["health_artifact_sha256"],
+            "dataset_count": binding["dataset_count"],
+            "key_id": observer_key_id,
+        }
+        statement_bytes = canonical_bytes(statement)
+        payload["observer_attestation"] = {
+            "key_id": observer_key_id,
+            "signature_base64": base64.b64encode(observer_private_key.sign(statement_bytes)).decode("ascii"),
+            "signed_at": observed_at,
+            "statement_sha256": sha256_hex(statement_bytes),
+        }
+    return payload
 
 
 def create_receipt(payload: dict[str, Any], private_key: Ed25519PrivateKey) -> dict[str, Any]:
