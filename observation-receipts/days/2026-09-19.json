@@ -1745,7 +1745,43 @@
       },
       "receipt_id": "edf6051cb4ca9ec1d17ba065948d985909ce3de52ee2398bcb2d909d0cb99525",
       "signature_base64": "1Og+I1qzAYi712gTh/XILVzKGVguj00PHdhIfCPD5ihakVxwcYCqdqTjOJHpkLpywgbiMd3rwmVCowEiOIDKBw=="
+    },
+    {
+      "payload": {
+        "schema": "datapulse/v1/observation-receipt",
+        "observed_at": "2026-09-19T10:15:25Z",
+        "cycle_date": "2026-09-19",
+        "health_artifact_sha256": "6a073c5cb734e39c53b9750f0f27d285560e1f87330e22350719294eb45ada59",
+        "artifact_path": "health/latest.json",
+        "artifact_commit": "b2b8c1450a050d80ca9173738e186fe757b5e430",
+        "normalization": "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing",
+        "dataset_count": 418,
+        "freshness_status_counts": {
+          "fresh": 138,
+          "browser-dependent": 5,
+          "unreachable": 1,
+          "stale": 156,
+          "aging": 97,
+          "discontinued": 1,
+          "reference": 14,
+          "degraded": 2,
+          "unknown-freshness": 4
+        },
+        "verification_profile_version": "8865ad9d48210614a7600139bea3179b7c158d03f2fb46cd8c5b799490213345",
+        "policy_version": null,
+        "key_id": "ed25519-e075218fa8086893",
+        "sequence_number": 91,
+        "previous_receipt_id": "edf6051cb4ca9ec1d17ba065948d985909ce3de52ee2398bcb2d909d0cb99525",
+        "valid_until": "2026-09-20T12:15:25Z",
+        "limitations": [
+          "operator-produced evidence: the observing host signs its own observation at execution time",
+          "timestamps rely on the host clock and are not independently witnessed",
+          "upstream truth is not asserted; freshness statuses reflect this observation only"
+        ]
+      },
+      "receipt_id": "62453193be8d6a2a39f96f3a7a347adf07b1310ed9d73d83548037f8dcb2727f",
+      "signature_base64": "/ZJQCF3nUGCQXayyWu84Ri5u/jkubXTFH2iOs0GMSxcyjb4OUI1N90psH5hJzeG+ISmJvKtcfAVjrPk89p4xBg=="
     }
   ],
-  "updated_at": "2026-09-19T10:00:00Z"
+  "updated_at": "2026-09-19T10:15:25Z"
 }
