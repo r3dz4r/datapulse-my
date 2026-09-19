@@ -19,9 +19,15 @@ re-run that observes the same digest is idempotent: the last entry already
 carries that digest, so the signer writes nothing, reports ``already_signed``,
 and exits 0. That makes the steady five-minute pipeline case cheap instead of an
 error. ``observation/chain_head.json`` is a monotonic pointer across all days
-and lets the next day link back to the previous day's last receipt. Private key
-material is loaded only to produce a signature and is never logged, echoed, or
-serialized into any output.
+and lets the next day link back to the previous day's last receipt.
+
+Signing has two mutually exclusive sources. The default ``--key`` path loads an
+Ed25519 private key document and is kept for tests and manual use. With
+``--signer-socket`` the canonical payload bytes are sent to a socket-activated
+signer that holds the key under a separate identity; the observing process never
+opens, reads, or validates a key file in that mode. Either way private key
+material is never logged, echoed, or serialized into any output, and the signed
+payload, receipt id, and day-file format are byte-identical.
 """
 
 from __future__ import annotations
@@ -33,12 +39,13 @@ import json
 import logging
 import os
 import re
+import socket
 import sys
 import tempfile
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
@@ -60,6 +67,13 @@ DEFAULT_ARTIFACT_PATH: str = "health/latest.json"
 ARTIFACT_COMMIT_PATTERN: re.Pattern[str] = re.compile(r"\A[0-9a-f]{40}\Z")
 DEFAULT_KEY_PATH: Path = Path("/home/redza/.hermes/keys/datapulse-observation.ed25519.json")
 DEFAULT_REGISTRY_PATH: Path = Path("/home/redza/.hermes/keys/datapulse-observation-registry.json")
+
+# The socket-activated signer protocol. One request per connection: a single
+# newline-terminated JSON object carrying the exact canonical payload bytes,
+# answered by one newline-terminated JSON object before the connection closes.
+SIGNER_PURPOSE: str = "datapulse-observation-receipt"
+SIGNER_PROTOCOL: str = "sign"
+SIGNER_RESPONSE_LIMIT: int = 1 << 20
 
 # The three limits are fixed text so every receipt carries the same caveat.
 LIMITATIONS: tuple[str, ...] = (
@@ -345,6 +359,148 @@ def create_receipt(payload: dict[str, Any], private_key: Ed25519PrivateKey) -> d
     }
 
 
+def _receipt_document(payload: dict[str, Any], signature_base64: str) -> dict[str, Any]:
+    """Assemble the receipt around an already-computed signature.
+
+    ``receipt_id`` stays the canonical payload hash, so the inline and socket
+    paths agree byte-for-byte for the same key and payload: Ed25519 signatures
+    are deterministic, and the hash never depends on the signing source.
+    """
+    return {
+        "payload": payload,
+        "receipt_id": sha256_hex(canonical_bytes(payload)),
+        "signature_base64": signature_base64,
+    }
+
+
+def sign_payload_via_socket(signer_socket: Path, payload: dict[str, Any], *, expected_key_id: str) -> str:
+    """Send the canonical payload bytes to the signer socket; return the signature base64.
+
+    The bytes are sent verbatim: the service performs no canonicalisation, so
+    the client is responsible for handing over exactly the bytes it hashes for
+    ``receipt_id``. The signer's ``key_id`` is confirmed against the registry
+    row the payload was built from. Every socket-level failure raises
+    ``ObservationReceiptError`` with the token ``signer_unavailable`` so the
+    caller's fail-soft path can name it; a signer that answers with an error
+    raises ``signer_refused:<reason>``.
+    """
+    request = {
+        "request": SIGNER_PROTOCOL,
+        "purpose": SIGNER_PURPOSE,
+        "payload_base64": base64.b64encode(canonical_bytes(payload)).decode("ascii"),
+    }
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
+            connection.connect(os.fspath(signer_socket))
+            connection.sendall(canonical_bytes(request) + b"\n")
+            chunks: list[bytes] = []
+            received = 0
+            while True:
+                chunk = connection.recv(65536)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                received += len(chunk)
+                if received > SIGNER_RESPONSE_LIMIT:
+                    raise ObservationReceiptError("signer_unavailable: signer response exceeded the size limit")
+                if b"\n" in chunk:
+                    break
+    except ObservationReceiptError:
+        raise
+    except (OSError, ValueError) as error:
+        raise ObservationReceiptError(f"signer_unavailable: {signer_socket}: {error}") from error
+
+    line = b"".join(chunks).split(b"\n", 1)[0]
+    try:
+        response = json.loads(line.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ObservationReceiptError(f"signer_unavailable: signer response is not valid JSON: {error}") from error
+    if not isinstance(response, dict):
+        raise ObservationReceiptError("signer_unavailable: signer response must be a JSON object")
+    if response.get("status") == "error":
+        reason = response.get("reason")
+        raise ObservationReceiptError(f"signer_refused:{reason if isinstance(reason, str) and reason else 'unspecified'}")
+    if response.get("status") != "signed":
+        raise ObservationReceiptError(f"signer_unavailable: unexpected signer status {response.get('status')!r}")
+    if response.get("key_id") != expected_key_id:
+        raise ObservationReceiptError(
+            f"signer_refused:key_id_mismatch: signer declared {response.get('key_id')!r}, registry row is {expected_key_id!r}"
+        )
+    signature_b64 = response.get("signature_base64")
+    if not isinstance(signature_b64, str) or not signature_b64:
+        raise ObservationReceiptError("signer_unavailable: signer response is missing signature_base64")
+    return signature_b64
+
+
+def resolve_signature_source(
+    *,
+    registry_path: Path,
+    key_path: Path,
+    signer_socket: Path | None,
+    expected_key_id: str | None,
+    observed_at: str,
+    payload_factory: Callable[[str], dict[str, Any]],
+) -> tuple[dict[str, Any], str, bytes]:
+    """Resolve ``(payload, signature_base64, public_raw)`` from exactly one source.
+
+    The payload's ``key_id`` must be fixed before the bytes are signed, but with
+    a socket the signer is the only party that holds the key. The public
+    registry is the shared source of the key id: the inline path reads it from
+    the key document and checks the registry, while the socket path selects the
+    registry's one active key and has the signer confirm it. Either way the
+    self-check that follows uses the registry's public key, so a receipt that
+    cannot be verified is never written.
+
+    With ``signer_socket`` set, ``key_path`` is never opened, read, or
+    validated, even when the caller passes one.
+    """
+    if signer_socket is not None:
+        registry = load_json(registry_path, "registry")
+        rows = registry.get("keys")
+        if not isinstance(rows, list):
+            raise ObservationReceiptError("registry_malformed: registry keys must be an array")
+        active = [
+            row
+            for row in rows
+            if isinstance(row, dict)
+            and row.get("status") == "active"
+            and (expected_key_id is None or row.get("key_id") == expected_key_id)
+        ]
+        if len(active) != 1:
+            raise ObservationReceiptError(
+                f"key_id_not_in_registry: expected exactly one active registry row, found {len(active)}"
+            )
+        row = active[0]
+        key_id = row.get("key_id")
+        if not isinstance(key_id, str) or not key_id:
+            raise ObservationReceiptError("registry_malformed: active registry row is missing key_id")
+        require_active_window(row, observed_at)
+        try:
+            public_raw = base64.b64decode(row.get("public_key_base64", ""), validate=True)
+        except (ValueError, TypeError) as error:
+            raise ObservationReceiptError("registry_malformed: public_key_base64 is not valid base64") from error
+        if len(public_raw) != 32:
+            raise ObservationReceiptError("registry_malformed: public_key_base64 is not a raw Ed25519 public key")
+        payload = payload_factory(key_id)
+        signature_b64 = sign_payload_via_socket(signer_socket, payload, expected_key_id=key_id)
+        return payload, signature_b64, public_raw
+    key_id, private_key, public_raw = load_signing_key(key_path)
+    if expected_key_id is not None and key_id != expected_key_id:
+        raise ObservationReceiptError(f"unexpected_key_id: key document declares {key_id}, expected {expected_key_id}")
+    registry = load_json(registry_path, "registry")
+    row = registry_row(registry, key_id)
+    require_active_window(row, observed_at)
+    try:
+        registry_public = base64.b64decode(row.get("public_key_base64", ""), validate=True)
+    except (ValueError, TypeError) as error:
+        raise ObservationReceiptError("registry_malformed: public_key_base64 is not valid base64") from error
+    if registry_public != public_raw:
+        raise ObservationReceiptError("key_registry_mismatch: registry public key does not match the signing key")
+    payload = payload_factory(key_id)
+    signature_b64 = base64.b64encode(private_key.sign(canonical_bytes(payload))).decode("ascii")
+    return payload, signature_b64, public_raw
+
+
 # ---------------------------------------------------------------------------
 # Key and registry checks
 # ---------------------------------------------------------------------------
@@ -482,6 +638,7 @@ def sign_observation(
     methodology_path: Path = DEFAULT_METHODOLOGY_PATH,
     key_path: Path = DEFAULT_KEY_PATH,
     registry_path: Path = DEFAULT_REGISTRY_PATH,
+    signer_socket: Path | None = None,
     now: datetime | None = None,
     expected_key_id: str | None = None,
     artifact_commit: str | None = None,
@@ -498,6 +655,9 @@ def sign_observation(
     ``artifact_commit`` names the commit whose tree carries the exact bytes
     bound by ``health_artifact_sha256``; it is validated before any work so a
     malformed pointer fails closed even when the artifact is already signed.
+
+    ``signer_socket`` selects the socket-activated signer and is mutually
+    exclusive with the key file: when it is set, ``key_path`` is never opened.
     """
     if artifact_commit is not None:
         validate_artifact_commit(artifact_commit)
@@ -534,19 +694,6 @@ def sign_observation(
                 "chain_head_path": chain_head_path(output_root).as_posix(),
             }
 
-    key_id, private_key, public_raw = load_signing_key(key_path)
-    if expected_key_id is not None and key_id != expected_key_id:
-        raise ObservationReceiptError(f"unexpected_key_id: key document declares {key_id}, expected {expected_key_id}")
-    registry = load_json(registry_path, "registry")
-    row = registry_row(registry, key_id)
-    require_active_window(row, observed_at)
-    try:
-        registry_public = base64.b64decode(row.get("public_key_base64", ""), validate=True)
-    except (ValueError, TypeError) as error:
-        raise ObservationReceiptError("registry_malformed: public_key_base64 is not valid base64") from error
-    if registry_public != public_raw:
-        raise ObservationReceiptError("key_registry_mismatch: registry public key does not match the signing key")
-
     # Sequence continues across days: today's last entry when it exists,
     # otherwise the chain head's last receipt (the previous day's tail).
     if receipts:
@@ -564,21 +711,36 @@ def sign_observation(
             sequence_number = int(head["sequence_number"]) + 1
             previous_receipt_id = head["last_receipt_id"]
 
-    payload = build_payload(
-        binding=binding,
+    policy = policy_version(methodology_path)
+    profile_version = verification_profile_version()
+
+    def build_for_key_id(key_id: str) -> dict[str, Any]:
+        """Build the signed payload once the signing source has fixed its key id."""
+        return build_payload(
+            binding=binding,
+            observed_at=observed_at,
+            key_id=key_id,
+            sequence_number=sequence_number,
+            previous_receipt_id=previous_receipt_id,
+            policy=policy,
+            profile_version=profile_version,
+            artifact_commit=artifact_commit,
+            artifact_path=artifact_path,
+        )
+
+    payload, signature_base64, public_raw = resolve_signature_source(
+        registry_path=registry_path,
+        key_path=key_path,
+        signer_socket=signer_socket,
+        expected_key_id=expected_key_id,
         observed_at=observed_at,
-        key_id=key_id,
-        sequence_number=sequence_number,
-        previous_receipt_id=previous_receipt_id,
-        policy=policy_version(methodology_path),
-        profile_version=verification_profile_version(),
-        artifact_commit=artifact_commit,
-        artifact_path=artifact_path,
+        payload_factory=build_for_key_id,
     )
-    document = create_receipt(payload, private_key)
+    document = _receipt_document(payload, signature_base64)
 
     # Self-verify before placing evidence: a receipt that cannot be verified
-    # must never be written.
+    # must never be written. The public key always comes from the registry, so
+    # the socket path proves the service's signature against published bytes.
     Ed25519PublicKey.from_public_bytes(public_raw).verify(
         base64.b64decode(document["signature_base64"]), canonical_bytes(payload)
     )
@@ -632,9 +794,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT, help="Directory holding days/ and chain_head.json.")
     parser.add_argument("--health", type=Path, default=DEFAULT_HEALTH_PATH, help="Health artifact to bind.")
     parser.add_argument("--methodology", type=Path, default=DEFAULT_METHODOLOGY_PATH, help="Methodology artifact for policy_version.")
-    parser.add_argument("--key", type=Path, default=DEFAULT_KEY_PATH, help="Ed25519 private key document (never printed).")
+    parser.add_argument("--key", type=Path, default=DEFAULT_KEY_PATH, help="Ed25519 private key document (never printed); ignored when --signer-socket is set.")
     parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY_PATH, help="Key registry with public keys and validity windows.")
-    parser.add_argument("--expected-key-id", help="Fail unless the key document declares this key_id.")
+    parser.add_argument(
+        "--signer-socket",
+        type=Path,
+        default=None,
+        help="Unix socket of the socket-activated signer; when set, the key file is never read.",
+    )
+    parser.add_argument("--expected-key-id", help="Fail unless the signing source declares this key_id.")
     parser.add_argument(
         "--artifact-commit",
         default=None,
@@ -673,6 +841,7 @@ def main(argv: list[str] | None = None) -> int:
             methodology_path=args.methodology,
             key_path=args.key,
             registry_path=args.registry,
+            signer_socket=args.signer_socket,
             now=now,
             expected_key_id=args.expected_key_id,
             artifact_commit=args.artifact_commit,
