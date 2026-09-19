@@ -6,6 +6,16 @@ DataPulse is a read-only evidence and verification layer for Malaysian public-da
 
 DataPulse does not replace the publisher. The upstream publisher remains the source of record for the underlying values.
 
+## What DataPulse verifies, and what it leaves to others
+
+**DataPulse verifies evidence about data — not the infrastructure that carries it.**
+
+Whether an endpoint, tool, or MCP server is the artifact it claims to be, and whether it behaves normally, is a separate question with separate evidence. It is answered by dedicated trust layers for that layer, not by this contract.
+
+The two verdicts are not interchangeable in either direction. A server can be correctly identified and healthy while the data it returns is stale, discontinuous, or unverifiable; and an observation that DataPulse can verify says nothing about whether connecting to that server is safe.
+
+The layers compose rather than compete. A consumer can resolve an endpoint's identity and behaviour independently, rely on DataPulse for evidence about the data that endpoint returns, and verify each boundary on its own terms.
+
 ## What DataPulse can establish
 
 Depending on the source and available signals, DataPulse can establish bounded facts such as:
