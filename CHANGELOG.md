@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.28.2](https://github.com/r3dz4r/datapulse-my/compare/v3.28.1...v3.28.2) (2026-09-19)
+
+
+### Bug Fixes
+
+* **verify:** check a receipt's claims against the artifact, not only its digest ([b2d63e8](https://github.com/r3dz4r/datapulse-my/commit/b2d63e8f89d1ba9422e5015161b5bc342d9f6cae))
+
 ## [3.28.1](https://github.com/r3dz4r/datapulse-my/compare/v3.28.0...v3.28.1) (2026-09-19)
 
 
