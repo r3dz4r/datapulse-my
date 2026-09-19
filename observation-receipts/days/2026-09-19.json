@@ -2098,7 +2098,42 @@
       },
       "receipt_id": "e2b7eeb9549d7363df0c3885710a2f25ec47120aadc9a36864711da58e5e9f9c",
       "signature_base64": "iP5j7bsWACW8AEWCySRLfImhyPEjK4y6EXWmUuXEnAr8iQd7LJ6BysUd6vGyQFImYHSzt8nvBSZg2KHfghByDQ=="
+    },
+    {
+      "payload": {
+        "schema": "datapulse/v1/observation-receipt",
+        "observed_at": "2026-09-19T12:00:00Z",
+        "cycle_date": "2026-09-19",
+        "health_artifact_sha256": "9b02a2b60980788b3f63ca38470db91f4df62162008d9fb9d47a18df4abd655f",
+        "artifact_path": "health/latest.json",
+        "artifact_commit": "6e237e5937f5bdd5b51d9e8d2088aa4534828547",
+        "normalization": "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing",
+        "dataset_count": 418,
+        "freshness_status_counts": {
+          "fresh": 139,
+          "browser-dependent": 5,
+          "unreachable": 1,
+          "stale": 156,
+          "aging": 98,
+          "discontinued": 1,
+          "reference": 14,
+          "unknown-freshness": 4
+        },
+        "verification_profile_version": "8865ad9d48210614a7600139bea3179b7c158d03f2fb46cd8c5b799490213345",
+        "policy_version": null,
+        "key_id": "ed25519-e075218fa8086893",
+        "sequence_number": 101,
+        "previous_receipt_id": "e2b7eeb9549d7363df0c3885710a2f25ec47120aadc9a36864711da58e5e9f9c",
+        "valid_until": "2026-09-20T14:00:00Z",
+        "limitations": [
+          "operator-produced evidence: the observing host signs its own observation at execution time",
+          "timestamps rely on the host clock and are not independently witnessed",
+          "upstream truth is not asserted; freshness statuses reflect this observation only"
+        ]
+      },
+      "receipt_id": "19f88b1b1ab705db14bfccd35c6e7bf88ebb181df9b2b969ae23e7e9243b0bf6",
+      "signature_base64": "uMIfqGFnqAa84hz/ReQwvBDjVFSnym9VmtbTBOz1yPrMgKChg+hWaZjVrhDOD8qUClHT1syiIYiBk3QO+KflAw=="
     }
   ],
-  "updated_at": "2026-09-19T11:54:16Z"
+  "updated_at": "2026-09-19T12:00:00Z"
 }
