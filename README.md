@@ -93,6 +93,23 @@ python3 verify_external.py
 See [Verify DataPulse externally](docs/verify-datapulse-externally.md) for the
 full guide, and [our methodology](#dataset-health) below for how health is judged.
 
+### Verify an observation receipt
+
+`scripts/observation_verify.py` verifies receipt identity, signature, key
+registry validity, and any available chain linkage from local files. It makes
+no network calls in any mode. Supplying `--health <artifact>` additionally
+reproduces the normalized artifact digest and re-derives its dataset and
+freshness-status claims: only `health_binding: checked` and
+`artifact_claims: verified` attest those claims. Without `--health`, the report
+explicitly says `artifact_claims: NOT verified`; use
+`--require-health-binding` when that incomplete result must fail.
+
+For receipts with a signed `<commit>@<path>` artifact locator, pass
+`--repo owner/name` to print the corresponding immutable raw-GitHub URL. The
+repository is supplied, never guessed or hardcoded. Fetch that URL separately,
+then give the saved file to `--health`; the URL is a discovery aid, not proof
+until the local digest and claims check succeeds.
+
 A verification layer is only as honest as its method, so DataPulse deliberately
 tells you **when it cannot be sure** — a source that cannot be proven current is
 labelled accordingly, never silently marked healthy. That is the boundary we

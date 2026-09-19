@@ -3,7 +3,8 @@
 
 Verification is deliberately local: the payload hash, the Ed25519 signature,
 the registry validity window, and the receipt identity are all recomputed from
-files on disk. No network call is made and no private key is needed or read.
+files on disk. No network call is made in any mode and no private key is needed
+or read.
 
 A receipt lives either standalone or inside a dated day file. With
 ``--day-file`` (and ``--receipt-id`` when the file holds more than one entry)
@@ -19,11 +20,12 @@ reproduced only when ``--health`` supplies the served file, and the same
 artifact is then counted to bind ``dataset_count`` and
 ``freshness_status_counts``; a claim that disagrees is a ``claim_mismatch``, an
 uncountable row list a ``claim_unverifiable``. Without ``--health`` the report
-says ``health_binding: unchecked`` rather than implying it was verified.
-The signed artifact pointer, when the payload carries one, is echoed as
-``artifact_binding: <commit>@<path>``; it is a locator only (the verifier never
-fetches it), and the caller-supplied ``--health`` digest remains the binding
-proof. A null pointer is reported ``artifact_binding: absent``.
+states that artifact claims are NOT verified; ``--require-health-binding``
+makes that condition a verification failure. The signed artifact pointer, when
+complete, is echoed as ``artifact_binding: <commit>@<path>`` and resolved to a
+raw GitHub URL with explicit ``--repo owner/name`` input. It remains a locator,
+not a trust assertion: the caller-supplied ``--health`` digest is the binding
+proof. A null or incomplete pointer is reported ``artifact_binding: absent``.
 Every failure names its exact reason; the CLI exits 0 on success and 1 on
 failure with each reason on stderr.
 """
@@ -34,9 +36,11 @@ import argparse
 import base64
 import json
 import logging
+import re
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -65,6 +69,7 @@ else:
 LOGGER = logging.getLogger(__name__)
 
 CHAIN_HEAD_FILENAME: str = "chain_head.json"
+REPOSITORY_PATTERN: re.Pattern[str] = re.compile(r"\A[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 
 REQUIRED_PAYLOAD_FIELDS: tuple[str, ...] = (
     "schema",
@@ -452,6 +457,8 @@ def checked_facts(
     registry: dict[str, Any],
     linkage_checked: bool,
     binding_checked: bool = False,
+    claims_verified: bool = False,
+    repository: str | None = None,
 ) -> dict[str, Any]:
     """Return the public facts the verifier actually used, for its evidence report.
 
@@ -473,12 +480,13 @@ def checked_facts(
             row = matches[0]
     artifact_commit = payload.get("artifact_commit")
     artifact_path = payload.get("artifact_path")
-    if isinstance(artifact_commit, str) and isinstance(artifact_path, str):
+    if isinstance(artifact_commit, str) and artifact_commit and isinstance(artifact_path, str) and artifact_path:
         artifact_binding = f"{artifact_commit}@{artifact_path}"
     else:
         # A null pointer (or a receipt predating the fields) must never read as
         # though a location were bound; the digest check remains the proof.
         artifact_binding = "absent"
+    artifact_url = resolve_artifact_url(payload, repository)
     return {
         "receipt_id": receipt.get("receipt_id"),
         "key_id": key_id,
@@ -488,8 +496,37 @@ def checked_facts(
         "observed_at": payload.get("observed_at"),
         "linkage": "checked" if linkage_checked else "unchecked",
         "health_binding": "checked" if binding_checked else "unchecked",
+        "artifact_claims": "verified" if claims_verified else "NOT verified",
         "artifact_binding": artifact_binding,
+        "artifact_url": artifact_url,
+        "artifact_url_source": "supplied --repo" if artifact_url is not None else None,
     }
+
+
+def resolve_artifact_url(payload: dict[str, Any], repository: str | None) -> str | None:
+    """Return the raw GitHub URL for a complete signed locator and a supplied repo.
+
+    The locator tells a verifier where to obtain historical bytes, but it is not
+    evidence by itself: only a later local ``--health`` digest reproduction
+    binds the claims. Empty fields are treated as absent so an incomplete
+    pointer cannot turn into a plausible-looking malformed URL.
+    """
+    artifact_commit = payload.get("artifact_commit")
+    artifact_path = payload.get("artifact_path")
+    if (
+        not isinstance(repository, str)
+        or REPOSITORY_PATTERN.fullmatch(repository) is None
+        or not isinstance(artifact_commit, str)
+        or not artifact_commit
+        or not isinstance(artifact_path, str)
+        or not artifact_path
+    ):
+        return None
+    return "https://raw.githubusercontent.com/{}/{}/{}".format(
+        repository,
+        quote(artifact_commit, safe=""),
+        quote(artifact_path, safe="/"),
+    )
 
 
 def print_checked_facts(facts: dict[str, Any]) -> None:
@@ -504,6 +541,33 @@ def print_checked_facts(facts: dict[str, Any]) -> None:
     print(f"  linkage: {facts['linkage']}")
     print(f"  health_binding: {facts.get('health_binding', 'unchecked')}")
     print(f"  artifact_binding: {facts.get('artifact_binding', 'absent')}")
+    print("  signature: verified")
+    print("  receipt_identity: verified")
+    print("  registry_validity_window: verified")
+    if facts["linkage"] == "checked":
+        print("  chain_linkage: verified")
+    else:
+        print("  chain_linkage: NOT verified (reason: no chain linkage walk was performed)")
+    if facts["artifact_claims"] == "verified":
+        print("  artifact_claims: verified")
+    elif facts["health_binding"] == "checked":
+        print("  artifact_claims: NOT verified (reason: artifact claim binding failed)")
+    else:
+        # An unchecked claim binding must be loud: a valid signature authenticates
+        # what was signed, not whether the signed counts describe an artifact.
+        print("  artifact_claims: NOT verified (reason: no --health artifact was supplied)")
+    artifact_url = facts.get("artifact_url")
+    if artifact_url is not None:
+        print(f"  artifact_url: {artifact_url} (repository: {facts['artifact_url_source']})")
+    elif facts.get("artifact_binding") != "absent":
+        print("  artifact_url: unavailable (repository not supplied; pass --repo owner/name)")
+
+
+def _repository_argument(value: str) -> str:
+    """Accept a GitHub owner/repository pair without guessing a checkout remote."""
+    if REPOSITORY_PATTERN.fullmatch(value) is None:
+        raise argparse.ArgumentTypeError("repository must be an owner/name pair")
+    return value
 
 
 def verify_receipt(
@@ -541,7 +605,7 @@ def verify_receipt(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Verify a host-side observation receipt entirely offline.")
+    parser = argparse.ArgumentParser(description="Verify a host-side observation receipt entirely offline (no network calls).")
     parser.add_argument("--receipt", type=Path, default=None, help="Standalone receipt JSON to verify.")
     parser.add_argument(
         "--day-file",
@@ -567,6 +631,17 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=None,
         help="Health artifact whose normalized digest must reproduce the payload's health_artifact_sha256.",
+    )
+    parser.add_argument(
+        "--require-health-binding",
+        action="store_true",
+        help="Fail verification unless --health reproduces and checks the artifact claims.",
+    )
+    parser.add_argument(
+        "--repo",
+        type=_repository_argument,
+        default=None,
+        help="GitHub owner/name used only to resolve a signed artifact locator; never inferred or fetched.",
     )
     args = parser.parse_args(argv)
 
@@ -639,13 +714,40 @@ def main(argv: list[str] | None = None) -> int:
         print(f"observation receipt verification failed: {error}", file=sys.stderr)
         return 1
 
-    facts = checked_facts(selected, registry, linkage_checked, binding_checked=health_artifact is not None)
+    claims_verified = health_artifact is not None and not any(
+        failure.startswith(("health_artifact_mismatch:", "claim_mismatch:", "claim_unverifiable:"))
+        for failure in failures
+    )
+    facts = checked_facts(
+        selected,
+        registry,
+        linkage_checked,
+        binding_checked=health_artifact is not None,
+        claims_verified=claims_verified,
+        repository=args.repo,
+    )
+    artifact_url = facts.get("artifact_url")
+    if artifact_url is not None:
+        failures = [
+            f"{failure}; receipt artifact URL: {artifact_url}"
+            if failure.startswith("health_artifact_mismatch:")
+            else failure
+            for failure in failures
+        ]
+    if args.require_health_binding and health_artifact is None:
+        failures.append(
+            "health_binding_required: artifact claim binding was required but not performed "
+            "because no --health artifact was supplied"
+        )
     if failures:
         print_checked_facts(facts)
         for failure in failures:
             print(f"observation receipt verification failed: {failure}", file=sys.stderr)
         return 1
-    print(f"observation receipt verification passed: {input_path}")
+    if health_artifact is None:
+        print(f"observation receipt verification completed: artifact claims NOT verified: {input_path}")
+    else:
+        print(f"observation receipt verification completed: artifact claims verified: {input_path}")
     print_checked_facts(facts)
     return 0
 
