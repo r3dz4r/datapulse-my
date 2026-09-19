@@ -15,8 +15,11 @@ day's last receipt must equal its ``last_receipt_id``; when the head is an
 earlier day's, the file's first entry must link to that head's last receipt.
 Linkage is reported ``checked`` only when a walk actually happened, otherwise
 ``unchecked`` and primary checks still gate a 0 exit. The artifact binding is
-reproduced only when ``--health`` supplies the served file; without it the
-report says ``health_binding: unchecked`` rather than implying it was verified.
+reproduced only when ``--health`` supplies the served file, and the same
+artifact is then counted to bind ``dataset_count`` and
+``freshness_status_counts``; a claim that disagrees is a ``claim_mismatch``, an
+uncountable row list a ``claim_unverifiable``. Without ``--health`` the report
+says ``health_binding: unchecked`` rather than implying it was verified.
 The signed artifact pointer, when the payload carries one, is echoed as
 ``artifact_binding: <commit>@<path>``; it is a locator only (the verifier never
 fetches it), and the caller-supplied ``--health`` digest remains the binding
@@ -187,16 +190,58 @@ def _signature_failures(receipt: dict[str, Any], payload: dict[str, Any], row: d
     return failures
 
 
+def _derived_health_claims(health: dict[str, Any]) -> tuple[int, dict[str, int]] | None:
+    """Re-derive ``(dataset_count, status_counts)`` from an artifact, or ``None``.
+
+    Mirrors the observer's own counting rule (``observation_receipt.py``,
+    ``health_binding``) exactly: ``datasets`` must be a non-empty array, every
+    row must be an object with a unique non-empty string ``dataset_id`` and a
+    non-empty string ``status``, counts accumulate per status string, and
+    ``dataset_count`` is ``len(datasets)``. A ``None`` return means the rows
+    cannot be counted honestly, so the caller must report the claim as
+    unverifiable rather than inventing a count or calling it a mismatch.
+    """
+    datasets = health.get("datasets")
+    if not isinstance(datasets, list) or not datasets:
+        return None
+    status_counts: dict[str, int] = {}
+    identifiers: list[str] = []
+    for row in datasets:
+        if not isinstance(row, dict):
+            return None
+        dataset_id = row.get("dataset_id")
+        if not isinstance(dataset_id, str) or not dataset_id:
+            return None
+        status = row.get("status")
+        if not isinstance(status, str) or not status:
+            return None
+        identifiers.append(dataset_id)
+        status_counts[status] = status_counts.get(status, 0) + 1
+    if len(set(identifiers)) != len(identifiers):
+        return None
+    return len(datasets), status_counts
+
+
 def _health_binding_failures(
     payload: dict[str, Any],
     health: dict[str, Any],
     health_path: Path | None,
 ) -> list[str]:
-    """Recompute the normalized artifact digest and require it to match the payload.
+    """Reproduce the artifact digest, then bind the payload's derived claims.
 
     The digest is reproduced exactly as the signer computed it: the volatile
     ``_trust_summary.pipeline_heartbeat_at`` field is excluded first. A mismatch
-    names both digests so a reader can see which artifact was supplied.
+    names both digests so a reader can see which artifact was supplied; the
+    claim check only runs once the supplied artifact is the one the payload
+    names.
+
+    ``dataset_count`` and ``freshness_status_counts`` are then re-derived from
+    the same artifact and required to equal the payload's values. A countable
+    artifact whose numbers disagree is a ``claim_mismatch`` naming the field and
+    both values (``repr``, so a wrong type stays legible). Rows that cannot be
+    counted honestly are ``claim_unverifiable``: unreadable is reported
+    separately from wrong. The status map is compared as a mapping, so extra,
+    missing, or renamed keys fail while key order and whitespace cannot.
     """
     declared = payload.get("health_artifact_sha256")
     reproduced = normalized_health_digest(health)
@@ -206,7 +251,27 @@ def _health_binding_failures(
             f"health_artifact_mismatch: artifact {source} yields {reproduced} "
             f"but payload declares health_artifact_sha256={declared}"
         ]
-    return []
+
+    derived = _derived_health_claims(health)
+    if derived is None:
+        return [
+            "claim_unverifiable: health datasets cannot be counted "
+            "(every row must be an object with a unique non-empty dataset_id and a non-empty string status)"
+        ]
+
+    failures: list[str] = []
+    derived_count, derived_statuses = derived
+    claimed_count = payload.get("dataset_count")
+    if not _is_int(claimed_count) or claimed_count != derived_count:
+        failures.append(
+            f"claim_mismatch: field=dataset_count claimed={claimed_count!r} derived={derived_count!r}"
+        )
+    claimed_statuses = payload.get("freshness_status_counts")
+    if claimed_statuses != derived_statuses:
+        failures.append(
+            f"claim_mismatch: field=freshness_status_counts claimed={claimed_statuses!r} derived={derived_statuses!r}"
+        )
+    return failures
 
 
 def _standalone_chain_failures(
