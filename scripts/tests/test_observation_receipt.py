@@ -593,7 +593,13 @@ def test_cli_sign_and_verify_exit_codes(environment: dict[str, Any], capsys: pyt
     )
     assert verify_exit == 0
     captured = capsys.readouterr()
-    assert "verification passed" in captured.out
+    assert (
+        f"observation receipt verification completed: artifact claims NOT verified: {summary['receipt_path']}"
+        in captured.out
+    )
+    # Keep the old phrase out of the contract so unchecked artifact claims cannot look like a general pass.
+    assert "verification passed" not in captured.out
+    assert "artifact_claims: NOT verified (reason: no --health artifact was supplied)" in captured.out
     # A supplied chain head is actually enforced, and the report says so.
     assert "linkage: checked" in captured.out
     assert f"key_id: {KEY_ID}" in captured.out
@@ -651,7 +657,16 @@ def test_receipt_alone_passes_primary_checks_and_reports_linkage_unchecked(
 
     assert exit_code == 0
     assert captured.err == ""
-    assert "verification passed" in captured.out
+    assert (
+        f"observation receipt verification completed: artifact claims NOT verified: {receipt_copy}"
+        in captured.out
+    )
+    # Keep the old phrase out of the contract so unchecked artifact claims cannot look like a general pass.
+    assert "verification passed" not in captured.out
+    assert "artifact_claims: NOT verified (reason: no --health artifact was supplied)" in captured.out
+    assert "signature: verified" in captured.out
+    assert "receipt_identity: verified" in captured.out
+    assert "registry_validity_window: verified" in captured.out
     assert "linkage: unchecked" in captured.out
     # The stdout is itself evidence: identity, key id, and key window.
     receipt = _load(receipt_copy)
@@ -934,6 +949,7 @@ def test_verify_health_binding_pass_and_mismatch(
     assert declared in captured.err
     assert reproduced in captured.err
     assert "health_binding: checked" in captured.out
+    assert "artifact_claims: NOT verified (reason: artifact claim binding failed)" in captured.out
 
 
 def test_verify_without_health_reports_binding_unchecked(
@@ -957,8 +973,38 @@ def test_verify_without_health_reports_binding_unchecked(
     captured = capsys.readouterr()
     assert exit_code == 0
     assert captured.err == ""
-    assert "verification passed" in captured.out
     assert "health_binding: unchecked" in captured.out
+    assert "artifact_claims: NOT verified (reason: no --health artifact was supplied)" in captured.out
+    assert "signature: verified" in captured.out
+    assert "receipt_identity: verified" in captured.out
+    assert "registry_validity_window: verified" in captured.out
+    assert "verification passed" not in captured.out
+
+
+def test_require_health_binding_fails_when_health_was_not_supplied(
+    environment: dict[str, Any], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Strict claim verification refuses a run that did not bind an artifact."""
+    summary = _sign(environment)
+
+    exit_code = verifier.main(
+        [
+            "--day-file",
+            summary["receipt_path"],
+            "--receipt-id",
+            summary["receipt_id"],
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            summary["chain_head_path"],
+            "--require-health-binding",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "health_binding: unchecked" in captured.out
+    assert "artifact_claims: NOT verified" in captured.out
+    assert "health_binding_required: artifact claim binding was required but not performed" in captured.err
 
 
 # ---------------------------------------------------------------------------
@@ -1231,11 +1277,97 @@ def test_verifier_prints_artifact_binding_pointer(
             str(environment["registry_path"]),
             "--chain-head",
             summary["chain_head_path"],
+            "--repo",
+            "example-owner/example-repo",
         ]
     )
     captured = capsys.readouterr()
     assert verify_exit == 0
     assert f"artifact_binding: {commit}@health/latest.json" in captured.out
+    assert (
+        f"artifact_url: https://raw.githubusercontent.com/example-owner/example-repo/{commit}/health/latest.json "
+        "(repository: supplied --repo)"
+    ) in captured.out
+
+
+def test_empty_artifact_commit_is_reported_absent_not_as_a_url(environment: dict[str, Any]) -> None:
+    """An incomplete locator cannot produce a malformed retrieval instruction."""
+    receipt = _direct_receipt(environment)
+    payload = dict(receipt["payload"])
+    payload["artifact_commit"] = ""
+    payload["artifact_path"] = "health/latest.json"
+    empty_locator_receipt = signer.create_receipt(payload, environment["private"])
+
+    facts = verifier.checked_facts(
+        empty_locator_receipt,
+        _registry(environment),
+        linkage_checked=False,
+        repository="example-owner/example-repo",
+    )
+    assert facts["artifact_binding"] == "absent"
+    assert facts["artifact_url"] is None
+
+
+def test_mismatched_health_names_the_signed_artifact_url(
+    environment: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A moved served artifact points the verifier at the receipt's historical bytes."""
+    commit = "d" * 40
+    assert signer.main(_pointer_args(environment, artifact_commit=commit)) == 0
+    summary = json.loads(capsys.readouterr().out)
+    mismatched_path = tmp_path / "mismatched-health.json"
+    _write(mismatched_path, _health_document(statuses=("fresh", "stale", "stale")))
+
+    exit_code = verifier.main(
+        [
+            "--day-file",
+            summary["receipt_path"],
+            "--receipt-id",
+            summary["receipt_id"],
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            summary["chain_head_path"],
+            "--health",
+            str(mismatched_path),
+            "--repo",
+            "example-owner/example-repo",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "health_artifact_mismatch" in captured.err
+    assert "artifact_claims: NOT verified (reason: artifact claim binding failed)" in captured.out
+    assert (
+        f"receipt artifact URL: https://raw.githubusercontent.com/example-owner/example-repo/{commit}/health/latest.json"
+    ) in captured.err
+
+
+def test_default_verification_never_opens_a_network_socket(
+    environment: dict[str, Any], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Discoverability prints a locator but the offline verifier never fetches it."""
+    summary = _sign(environment)
+
+    def fail_network(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("the default verifier must not open a network socket")
+
+    monkeypatch.setattr(socket, "create_connection", fail_network)
+    exit_code = verifier.main(
+        [
+            "--day-file",
+            summary["receipt_path"],
+            "--receipt-id",
+            summary["receipt_id"],
+            "--registry",
+            str(environment["registry_path"]),
+            "--chain-head",
+            summary["chain_head_path"],
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "artifact_claims: NOT verified" in captured.out
 
 
 def test_receipt_without_commit_reports_binding_absent(
