@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.28.0](https://github.com/r3dz4r/datapulse-my/compare/v3.27.0...v3.28.0) (2026-09-19)
+
+
+### Features
+
+* **observation:** sign through the signer socket by default ([8356839](https://github.com/r3dz4r/datapulse-my/commit/8356839aa040441c6ebefce1560bbd57b26fd4d8))
+* **observation:** sign through the signer socket by default ([11fb8b3](https://github.com/r3dz4r/datapulse-my/commit/11fb8b34555e64ea5fd6e836b9058d555c5dfc36))
+
 ## [3.27.0](https://github.com/r3dz4r/datapulse-my/compare/v3.26.0...v3.27.0) (2026-09-19)
 
 
