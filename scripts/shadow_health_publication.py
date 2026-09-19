@@ -12,6 +12,11 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+try:  # imported as scripts.shadow_health_publication (tests)
+    from scripts.artifact_modes import FILE_MODE, ensure_directory
+except ImportError:  # executed directly: scripts/ is on sys.path
+    from artifact_modes import FILE_MODE, ensure_directory
+
 
 SCHEMA = "datapulse/v1/shadow-health-publication-envelope"
 VERSION = 1
@@ -118,7 +123,7 @@ def assert_safe_output(path: Path, health_path: Path) -> Path:
         if current.is_symlink():
             raise UnsafeOutputError("unsafe_output")
     try:
-        absolute.parent.mkdir(parents=True, exist_ok=True)
+        ensure_directory(absolute.parent)
     except OSError as exc:
         raise UnsafeOutputError("unsafe_output") from exc
     if absolute.is_symlink():
@@ -131,7 +136,9 @@ def atomic_write(path: Path, content: bytes) -> None:
     descriptor = -1
     temporary_name = ""
     try:
+        ensure_directory(path.parent)
         descriptor, temporary_name = tempfile.mkstemp(prefix=".shadow-health-", dir=path.parent)
+        os.fchmod(descriptor, FILE_MODE)
         with os.fdopen(descriptor, "wb") as stream:
             descriptor = -1
             stream.write(content)

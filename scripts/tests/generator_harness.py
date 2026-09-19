@@ -128,11 +128,12 @@ def run_generator(
         isolated_generator = _generator_destination(
             generator_path, source_root, workdir
         )
-        shared_generation = Path(__file__).resolve().parents[1] / "public_surface_generation.py"
-        if shared_generation.is_file():
-            shared_destination = workdir / "scripts/public_surface_generation.py"
-            if not shared_destination.exists():
-                shutil.copy2(shared_generation, shared_destination)
+        for shared_name in ("public_surface_generation.py", "artifact_modes.py"):
+            shared_generation = Path(__file__).resolve().parents[1] / shared_name
+            if shared_generation.is_file():
+                shared_destination = workdir / "scripts" / shared_name
+                if not shared_destination.exists():
+                    shutil.copy2(shared_generation, shared_destination)
 
         started = time.monotonic()
         validation_error = _validate_canonical_json_inputs(workdir, inputs)
