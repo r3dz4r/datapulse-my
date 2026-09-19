@@ -8,11 +8,15 @@ import gzip
 import json
 import os
 import re
-import tempfile
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
+
+try:  # imported as scripts.gen_health_history (tests)
+    from scripts.artifact_modes import FILE_MODE, ensure_directory, replace_file
+except ImportError:  # executed directly: scripts/ is on sys.path
+    from artifact_modes import FILE_MODE, ensure_directory, replace_file
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SNAPSHOT = ROOT / "health/latest.json"
@@ -20,6 +24,7 @@ DEFAULT_MANIFEST = ROOT / "datapulse.json"
 DEFAULT_HISTORY = ROOT / "health/history.jsonl"
 DEFAULT_DAILY = ROOT / "health/history_daily.json"
 DEFAULT_ARCHIVES_DIR = Path.home() / "runtime/datapulse-history"
+ARCHIVES_ENVIRONMENT_VARIABLE: Final[str] = "DATAPULSE_ARCHIVES_DIR"
 DEFAULT_RETENTION_DAYS = 7
 DAILY_SCHEMA = "datapulse/v1/health-history-daily"
 STATUSES = (
@@ -52,6 +57,23 @@ HISTORY_FIELDS = (
 )
 TIMEOUT_PATTERN = re.compile(r"timed?\s*out|timeout", re.IGNORECASE)
 CYCLE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$")
+
+
+def resolve_archives_dir(explicit: Path | str | None = None) -> Path:
+    """Resolve the archive root: explicit argument, then env var, then today's default.
+
+    The observer runs under a different HOME from the operator, so a
+    ``Path.home()``-only default silently points the monthly archive at an empty
+    directory. ``DATAPULSE_ARCHIVES_DIR`` is the same override ``generate.sh``
+    already handles; when it is unset the result is byte-identical to the
+    previous default.
+    """
+    if explicit is not None:
+        return Path(explicit)
+    from_environment = os.environ.get(ARCHIVES_ENVIRONMENT_VARIABLE)
+    if from_environment:
+        return Path(from_environment)
+    return DEFAULT_ARCHIVES_DIR
 
 
 def is_number(value: Any) -> bool:
@@ -456,7 +478,7 @@ def archive_rows(rows: list[dict[str, Any]], archives_dir: Path) -> int:
         grouped.setdefault(month, []).append(row)
     for month, month_rows in grouped.items():
         archive_path = archives_dir / f"health-{month}.jsonl.gz"
-        archives_dir.mkdir(parents=True, exist_ok=True)
+        ensure_directory(archives_dir)
         with gzip.open(archive_path, "ab") as archive:
             for row in month_rows:
                 archive.write(
@@ -464,26 +486,13 @@ def archive_rows(rows: list[dict[str, Any]], archives_dir: Path) -> int:
                         "utf-8"
                     )
                 )
+        os.chmod(archive_path, FILE_MODE)
     return len(rows)
 
 
 def atomic_write(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    try:
-        mode = path.stat().st_mode & 0o777 if path.exists() else 0o644
-        os.fchmod(descriptor, mode)
-        with os.fdopen(descriptor, "w", encoding="utf-8") as temporary_file:
-            temporary_file.write(content)
-            temporary_file.flush()
-            os.fsync(temporary_file.fileno())
-        os.replace(temporary_name, path)
-    except BaseException:
-        try:
-            os.unlink(temporary_name)
-        except FileNotFoundError:
-            pass
-        raise
+    """Replace ``path`` atomically at mode 0644 so cross-identity readers can read it."""
+    replace_file(path, content.encode("utf-8"))
 
 
 def write_history(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -499,7 +508,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--history", type=Path, default=DEFAULT_HISTORY)
     parser.add_argument("--daily", type=Path, default=DEFAULT_DAILY)
-    parser.add_argument("--archives-dir", type=Path, default=DEFAULT_ARCHIVES_DIR)
+    parser.add_argument(
+        "--archives-dir",
+        type=Path,
+        default=None,
+        help=f"archive root (default: {ARCHIVES_ENVIRONMENT_VARIABLE} or {DEFAULT_ARCHIVES_DIR})",
+    )
     parser.add_argument("--cycle", help="probe-cycle start as YYYY-MM-DDTHH:MM")
     parser.add_argument("--retention-days", type=int, default=DEFAULT_RETENTION_DAYS)
     parser.add_argument("--compact", action="store_true")
@@ -509,6 +523,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    args.archives_dir = resolve_archives_dir(args.archives_dir)
     if args.retention_days < 1:
         raise SystemExit("--retention-days must be at least 1")
     try:

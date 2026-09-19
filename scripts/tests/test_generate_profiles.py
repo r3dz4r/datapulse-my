@@ -307,6 +307,7 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copytree(ROOT / "scripts/templates", scripts / "templates")
     shutil.copy2(ROOT / "scripts/generate.sh", scripts / "generate.sh")
     shutil.copy2(ROOT / "scripts/public_surface_generation.py", scripts / "public_surface_generation.py")
+    shutil.copy2(ROOT / "scripts/artifact_modes.py", scripts / "artifact_modes.py")
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", scripts)

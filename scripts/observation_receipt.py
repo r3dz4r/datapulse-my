@@ -43,7 +43,6 @@ import os
 import re
 import socket
 import sys
-import tempfile
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -51,6 +50,11 @@ from typing import Any, Callable
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+try:  # imported as scripts.observation_receipt (tests)
+    from scripts.artifact_modes import replace_file
+except ImportError:  # executed directly: scripts/ is on sys.path
+    from artifact_modes import replace_file
 
 LOGGER = logging.getLogger(__name__)
 
@@ -171,21 +175,12 @@ def _json_bytes(value: object) -> bytes:
 
 
 def _atomic_write(path: Path, data: bytes) -> None:
-    """Replace ``path`` atomically: sibling temp file, fsync, os.replace."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
-    try:
-        with os.fdopen(descriptor, "wb") as temporary_file:
-            temporary_file.write(data)
-            temporary_file.flush()
-            os.fsync(temporary_file.fileno())
-        os.replace(temporary_name, path)
-    except BaseException:
-        try:
-            os.unlink(temporary_name)
-        except OSError:
-            pass
-        raise
+    """Replace ``path`` atomically at mode 0644.
+
+    Receipts are published evidence, so the operator's local copy must stay
+    readable even though the observer writes it under a different identity.
+    """
+    replace_file(path, data)
 
 
 def _relative_posix(path: Path, root: Path) -> str:

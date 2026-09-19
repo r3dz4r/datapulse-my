@@ -6,15 +6,18 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
-import tempfile
 from collections import Counter, defaultdict
 from datetime import date, datetime
 from itertools import combinations
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+try:  # imported as scripts.gen_reconciliation (tests)
+    from scripts.artifact_modes import replace_file
+except ImportError:  # executed directly: scripts/ is on sys.path
+    from artifact_modes import replace_file
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = ROOT / "datapulse.json"
@@ -286,19 +289,8 @@ def generate(manifest: dict[str, Any], health: dict[str, Any], seeds: dict[str, 
 
 
 def write_atomic(path: Path, document: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
-            json.dump(document, output, ensure_ascii=False, indent=2)
-            output.write("\n")
-        os.replace(temporary_name, path)
-    except BaseException:
-        try:
-            os.unlink(temporary_name)
-        except FileNotFoundError:
-            pass
-        raise
+    content = json.dumps(document, ensure_ascii=False, indent=2) + "\n"
+    replace_file(path, content.encode("utf-8"))
 
 
 def main() -> int:

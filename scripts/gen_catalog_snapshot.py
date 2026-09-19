@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import tempfile
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
+try:  # imported as scripts.gen_catalog_snapshot (tests)
+    from scripts.artifact_modes import replace_file
+except ImportError:  # executed directly: scripts/ is on sys.path
+    from artifact_modes import replace_file
 from public_surface_generation import load_public_surfaces
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,22 +42,7 @@ def sorted_counts(values: list[str]) -> dict[str, int]:
 
 
 def atomic_write(path: Path, content: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=f".{path.name}.", dir=path.parent
-    )
-    try:
-        with os.fdopen(descriptor, "wb") as temporary_file:
-            temporary_file.write(content)
-            temporary_file.flush()
-            os.fsync(temporary_file.fileno())
-        os.replace(temporary_name, path)
-    except BaseException:
-        try:
-            os.unlink(temporary_name)
-        except FileNotFoundError:
-            pass
-        raise
+    replace_file(path, content)
 
 
 def build_snapshot(manifest: dict[str, Any], health: dict[str, Any], *, website: str) -> dict[str, Any]:

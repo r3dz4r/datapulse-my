@@ -5,12 +5,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
-import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+
+try:  # imported as scripts.summarize_pipeline_telemetry (tests)
+    from scripts.artifact_modes import replace_file
+except ImportError:  # executed directly: scripts/ is on sys.path
+    from artifact_modes import replace_file
 
 
 STAGES = frozenset(
@@ -195,21 +198,8 @@ def build_receipt(
 
 def write_receipt(path: Path, receipt: dict[str, Any]) -> None:
     """Atomically replace the receipt only after complete serialization succeeds."""
-    path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary_name, path)
-    except BaseException:
-        try:
-            os.unlink(temporary_name)
-        except FileNotFoundError:
-            pass
-        raise
+    replace_file(path, payload.encode("utf-8"))
 
 
 def main() -> int:

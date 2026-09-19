@@ -5,13 +5,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import tempfile
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+try:  # imported as scripts.gen_evidence_coverage (tests)
+    from scripts.artifact_modes import replace_file
+except ImportError:  # executed directly: scripts/ is on sys.path
+    from artifact_modes import replace_file
 from gen_anomaly import parse_time
 from gen_drift import (
     MIN_RECORD_SAMPLE_DAYS,
@@ -268,20 +270,9 @@ def generate(
 
 
 def write_atomic(path: Path, document: dict[str, Any]) -> None:
-    """Write canonical JSON atomically so partial reports never appear."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
-            json.dump(document, output, ensure_ascii=False, indent=2)
-            output.write("\n")
-        os.replace(temporary_name, path)
-    except BaseException:
-        try:
-            os.unlink(temporary_name)
-        except FileNotFoundError:
-            pass
-        raise
+    """Write canonical JSON atomically at mode 0644 so other readers can read it."""
+    content = json.dumps(document, ensure_ascii=False, indent=2) + "\n"
+    replace_file(path, content.encode("utf-8"))
 
 
 def main() -> int:
