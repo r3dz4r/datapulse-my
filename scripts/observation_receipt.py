@@ -21,13 +21,15 @@ and exits 0. That makes the steady five-minute pipeline case cheap instead of an
 error. ``observation/chain_head.json`` is a monotonic pointer across all days
 and lets the next day link back to the previous day's last receipt.
 
-Signing has two mutually exclusive sources. The default ``--key`` path loads an
-Ed25519 private key document and is kept for tests and manual use. With
-``--signer-socket`` the canonical payload bytes are sent to a socket-activated
-signer that holds the key under a separate identity; the observing process never
-opens, reads, or validates a key file in that mode. Either way private key
-material is never logged, echoed, or serialized into any output, and the signed
-payload, receipt id, and day-file format are byte-identical.
+Signing has two mutually exclusive sources. By default the canonical payload
+bytes are sent to the socket-activated signer at
+``/run/datapulse-signer/sign.sock``, which holds the key under a separate
+identity; the observing process never opens, reads, or validates a key file in
+that mode. Passing ``--key`` instead loads an Ed25519 private key document and is
+kept for tests and inline/manual use. Supplying both is ambiguous and is refused
+with ``ambiguous_signing_source`` rather than silently preferring one. Either way
+private key material is never logged, echoed, or serialized into any output, and
+the signed payload, receipt id, and day-file format are byte-identical.
 """
 
 from __future__ import annotations
@@ -65,7 +67,13 @@ DEFAULT_HEALTH_PATH: Path = ROOT / "health" / "latest.json"
 DEFAULT_METHODOLOGY_PATH: Path = ROOT / "health" / "methodology.json"
 DEFAULT_ARTIFACT_PATH: str = "health/latest.json"
 ARTIFACT_COMMIT_PATTERN: re.Pattern[str] = re.compile(r"\A[0-9a-f]{40}\Z")
+# Inline-only signing key path, used when ``--key`` is given with no value. It is
+# not the default signing source: production signs through DEFAULT_SIGNER_SOCKET,
+# which never needs a key file.
 DEFAULT_KEY_PATH: Path = Path("/home/redza/.hermes/keys/datapulse-observation.ed25519.json")
+# The socket-activated signer used when neither ``--key`` nor ``--signer-socket``
+# is supplied. The observing process never opens a key file in this mode.
+DEFAULT_SIGNER_SOCKET: Path = Path("/run/datapulse-signer/sign.sock")
 DEFAULT_REGISTRY_PATH: Path = Path("/home/redza/.hermes/keys/datapulse-observation-registry.json")
 
 # The socket-activated signer protocol. One request per connection: a single
@@ -435,7 +443,7 @@ def sign_payload_via_socket(signer_socket: Path, payload: dict[str, Any], *, exp
 def resolve_signature_source(
     *,
     registry_path: Path,
-    key_path: Path,
+    key_path: Path | None,
     signer_socket: Path | None,
     expected_key_id: str | None,
     observed_at: str,
@@ -451,8 +459,10 @@ def resolve_signature_source(
     self-check that follows uses the registry's public key, so a receipt that
     cannot be verified is never written.
 
-    With ``signer_socket`` set, ``key_path`` is never opened, read, or
-    validated, even when the caller passes one.
+    ``sign_observation`` guarantees exactly one source: it refuses supplying both
+    ``key_path`` and ``signer_socket`` as ``ambiguous_signing_source`` and
+    defaults to the socket when neither is given. With ``signer_socket`` set,
+    ``key_path`` is never opened, read, or validated.
     """
     if signer_socket is not None:
         registry = load_json(registry_path, "registry")
@@ -484,6 +494,8 @@ def resolve_signature_source(
         payload = payload_factory(key_id)
         signature_b64 = sign_payload_via_socket(signer_socket, payload, expected_key_id=key_id)
         return payload, signature_b64, public_raw
+    if key_path is None:
+        raise ObservationReceiptError("missing_signing_source: no signing source was resolved")
     key_id, private_key, public_raw = load_signing_key(key_path)
     if expected_key_id is not None and key_id != expected_key_id:
         raise ObservationReceiptError(f"unexpected_key_id: key document declares {key_id}, expected {expected_key_id}")
@@ -636,7 +648,7 @@ def sign_observation(
     output_root: Path,
     health_path: Path = DEFAULT_HEALTH_PATH,
     methodology_path: Path = DEFAULT_METHODOLOGY_PATH,
-    key_path: Path = DEFAULT_KEY_PATH,
+    key_path: Path | None = None,
     registry_path: Path = DEFAULT_REGISTRY_PATH,
     signer_socket: Path | None = None,
     now: datetime | None = None,
@@ -656,9 +668,18 @@ def sign_observation(
     bound by ``health_artifact_sha256``; it is validated before any work so a
     malformed pointer fails closed even when the artifact is already signed.
 
-    ``signer_socket`` selects the socket-activated signer and is mutually
-    exclusive with the key file: when it is set, ``key_path`` is never opened.
+    Signing source selection is a strict three-way: with neither ``key_path``
+    nor ``signer_socket`` the socket-activated signer at
+    ``DEFAULT_SIGNER_SOCKET`` is used and no key file is opened; supplying
+    exactly one selects that source; supplying both is ambiguous and raises
+    ``ambiguous_signing_source``.
     """
+    if key_path is not None and signer_socket is not None:
+        raise ObservationReceiptError(
+            "ambiguous_signing_source: --key and --signer-socket are mutually exclusive; supply exactly one"
+        )
+    if signer_socket is None and key_path is None:
+        signer_socket = DEFAULT_SIGNER_SOCKET
     if artifact_commit is not None:
         validate_artifact_commit(artifact_commit)
     observed_at = format_time(now if now is not None else datetime.now(timezone.utc))
@@ -794,13 +815,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT, help="Directory holding days/ and chain_head.json.")
     parser.add_argument("--health", type=Path, default=DEFAULT_HEALTH_PATH, help="Health artifact to bind.")
     parser.add_argument("--methodology", type=Path, default=DEFAULT_METHODOLOGY_PATH, help="Methodology artifact for policy_version.")
-    parser.add_argument("--key", type=Path, default=DEFAULT_KEY_PATH, help="Ed25519 private key document (never printed); ignored when --signer-socket is set.")
+    parser.add_argument(
+        "--key",
+        type=Path,
+        nargs="?",
+        const=DEFAULT_KEY_PATH,
+        default=None,
+        help=(
+            "Ed25519 private key document for tests/inline use only (never printed). "
+            "Omit to sign through the default signer socket; bare --key uses "
+            f"{DEFAULT_KEY_PATH}."
+        ),
+    )
     parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY_PATH, help="Key registry with public keys and validity windows.")
     parser.add_argument(
         "--signer-socket",
         type=Path,
         default=None,
-        help="Unix socket of the socket-activated signer; when set, the key file is never read.",
+        help=(
+            "Unix socket of the socket-activated signer; this is the default signing "
+            f"source when --key is omitted (default: {DEFAULT_SIGNER_SOCKET})."
+        ),
     )
     parser.add_argument("--expected-key-id", help="Fail unless the signing source declares this key_id.")
     parser.add_argument(

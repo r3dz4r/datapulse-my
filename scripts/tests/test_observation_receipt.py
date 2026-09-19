@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, PublicFormat
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -1190,7 +1190,8 @@ class _SignerStub:
         connection.sendall(json.dumps(document, separators=(",", ":")).encode("utf-8") + b"\n")
 
 
-def _socket_sign_args(environment: dict[str, Any], socket_path: Path, *, key_path: Path | None = None) -> list[str]:
+def _socket_sign_args(environment: dict[str, Any], socket_path: Path) -> list[str]:
+    """CLI args selecting the socket source; --key is omitted because the two are ambiguous."""
     return [
         "--output-root",
         str(environment["output_root"]),
@@ -1198,8 +1199,6 @@ def _socket_sign_args(environment: dict[str, Any], socket_path: Path, *, key_pat
         str(environment["health_path"]),
         "--methodology",
         str(environment["methodology_path"]),
-        "--key",
-        str(key_path if key_path is not None else environment["key_path"]),
         "--registry",
         str(environment["registry_path"]),
         "--signer-socket",
@@ -1221,7 +1220,6 @@ def test_socket_signing_matches_inline_signature_and_receipt_id(
             output_root=socket_root,
             health_path=environment["health_path"],
             methodology_path=environment["methodology_path"],
-            key_path=environment["key_path"],
             registry_path=environment["registry_path"],
             signer_socket=socket_path,
             now=NOW,
@@ -1262,7 +1260,6 @@ def test_socket_request_carries_exact_documented_keys(
             output_root=tmp_path / "socket-observation",
             health_path=environment["health_path"],
             methodology_path=environment["methodology_path"],
-            key_path=environment["key_path"],
             registry_path=environment["registry_path"],
             signer_socket=socket_path,
             now=NOW,
@@ -1284,21 +1281,26 @@ def test_socket_request_carries_exact_documented_keys(
 
 
 def test_socket_mode_never_reads_the_key_path(
-    environment: dict[str, Any], tmp_path: Path
+    environment: dict[str, Any], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Case (c): --key points nowhere, yet the socket path still signs."""
+    """Case (c): with no signing flags the socket is the default, so the inline key path is never opened.
+
+    The module's default socket and inline key path are redirected to a throwaway
+    stub and a path that does not exist. If the default source consulted the key
+    file the run would fail; it succeeds and verifies.
+    """
     socket_path = tmp_path / "signer.sock"
     missing_key = tmp_path / "keys/does-not-exist.json"
     assert not missing_key.exists()
+    monkeypatch.setattr(signer, "DEFAULT_SIGNER_SOCKET", socket_path)
+    monkeypatch.setattr(signer, "DEFAULT_KEY_PATH", missing_key)
 
     with _SignerStub(socket_path, environment["private"], environment["key_id"]):
         summary = signer.sign_observation(
             output_root=tmp_path / "socket-observation",
             health_path=environment["health_path"],
             methodology_path=environment["methodology_path"],
-            key_path=missing_key,
             registry_path=environment["registry_path"],
-            signer_socket=socket_path,
             now=NOW,
         )
 
@@ -1320,7 +1322,6 @@ def test_socket_absent_records_signer_unavailable(
             output_root=tmp_path / "socket-observation",
             health_path=environment["health_path"],
             methodology_path=environment["methodology_path"],
-            key_path=environment["key_path"],
             registry_path=environment["registry_path"],
             signer_socket=missing_socket,
             now=NOW,
@@ -1345,7 +1346,6 @@ def test_socket_refusal_records_signer_refused_reason(
                 output_root=tmp_path / "raised-observation",
                 health_path=environment["health_path"],
                 methodology_path=environment["methodology_path"],
-                key_path=environment["key_path"],
                 registry_path=environment["registry_path"],
                 signer_socket=socket_path,
                 now=NOW,
@@ -1354,3 +1354,101 @@ def test_socket_refusal_records_signer_refused_reason(
     captured = capsys.readouterr()
     assert exit_code == 1
     assert "signer_refused:payload_not_receipt" in captured.err
+
+
+def test_default_socket_signs_without_signing_flags(
+    environment: dict[str, Any], tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """With no signing flags the default socket signs, and it matches --signer-socket byte-for-byte.
+
+    The module's public default socket constant is redirected to the throwaway
+    stub (the module's default mechanism, not a private internal). The signature
+    must verify against the stub's own public key, and the default run must be
+    byte-identical to an explicit ``--signer-socket`` run for the same key and
+    payload.
+    """
+    socket_path = tmp_path / "signer.sock"
+    monkeypatch.setattr(signer, "DEFAULT_SIGNER_SOCKET", socket_path)
+    default_root = tmp_path / "default-observation"
+    explicit_root = tmp_path / "explicit-observation"
+    common = [
+        "--health",
+        str(environment["health_path"]),
+        "--methodology",
+        str(environment["methodology_path"]),
+        "--registry",
+        str(environment["registry_path"]),
+        "--now",
+        signer.format_time(NOW),
+    ]
+
+    with _SignerStub(socket_path, environment["private"], environment["key_id"]) as stub:
+        default_exit = signer.main(["--output-root", str(default_root), *common])
+        default_out = capsys.readouterr().out
+        explicit_exit = signer.main(
+            ["--output-root", str(explicit_root), *common, "--signer-socket", str(socket_path)]
+        )
+        explicit_out = capsys.readouterr().out
+
+    assert default_exit == 0
+    assert explicit_exit == 0
+    assert len(stub.requests) == 2
+
+    default_summary = json.loads(default_out)
+    explicit_summary = json.loads(explicit_out)
+    assert default_summary["status"] == "signed"
+
+    default_day = (default_root / "days/2026-09-18.json").read_bytes()
+    explicit_day = (explicit_root / "days/2026-09-18.json").read_bytes()
+    assert default_day == explicit_day
+    assert default_summary["receipt_id"] == explicit_summary["receipt_id"]
+
+    receipt = json.loads(default_day)["receipts"][0]
+    # The signature verifies against the stub's own throwaway public key.
+    stub_public_raw = environment["private"].public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    Ed25519PublicKey.from_public_bytes(stub_public_raw).verify(
+        base64.b64decode(receipt["signature_base64"]), signer.canonical_bytes(receipt["payload"])
+    )
+    assert _verify(environment, receipt, _load(default_root / "chain_head.json")) == []
+
+
+def test_both_signing_flags_are_ambiguous(
+    environment: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Supplying --key and --signer-socket together is refused, never silently preferred."""
+    socket_path = tmp_path / "signer.sock"
+    exit_code = signer.main(
+        [
+            "--output-root",
+            str(tmp_path / "cli-observation"),
+            "--health",
+            str(environment["health_path"]),
+            "--methodology",
+            str(environment["methodology_path"]),
+            "--key",
+            str(environment["key_path"]),
+            "--registry",
+            str(environment["registry_path"]),
+            "--signer-socket",
+            str(socket_path),
+            "--now",
+            signer.format_time(NOW),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "ambiguous_signing_source" in captured.err
+    # Fail closed before touching the output tree or dialling the socket.
+    assert not (tmp_path / "cli-observation" / "days").exists()
+
+    with pytest.raises(signer.ObservationReceiptError, match="ambiguous_signing_source"):
+        signer.sign_observation(
+            output_root=tmp_path / "api-observation",
+            health_path=environment["health_path"],
+            methodology_path=environment["methodology_path"],
+            key_path=environment["key_path"],
+            registry_path=environment["registry_path"],
+            signer_socket=socket_path,
+            now=NOW,
+        )
+    assert not (tmp_path / "api-observation" / "days").exists()
