@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.29.0](https://github.com/r3dz4r/datapulse-my/compare/v3.28.4...v3.29.0) (2026-09-19)
+
+
+### Features
+
+* **keys:** publish the observer cycle-attestation key ([e877554](https://github.com/r3dz4r/datapulse-my/commit/e877554047bfa3e67c7398a74b035bd165aab493))
+* **observation:** counter-sign receipt payloads with the observer cycle key ([a49de4b](https://github.com/r3dz4r/datapulse-my/commit/a49de4b32e56ae1bf42fcb3eeca4fcb1e43a2e1a))
+
 ## [3.28.4](https://github.com/r3dz4r/datapulse-my/compare/v3.28.3...v3.28.4) (2026-09-19)
 
 
