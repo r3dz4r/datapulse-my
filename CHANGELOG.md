@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.29.1](https://github.com/r3dz4r/datapulse-my/compare/v3.29.0...v3.29.1) (2026-09-19)
+
+
+### Bug Fixes
+
+* **mcp:** let the sync deploy without a user systemd bus ([6335e7e](https://github.com/r3dz4r/datapulse-my/commit/6335e7e527039d1be6c07ce1c2795d3290272cbe))
+* **scripts:** surface unchecked artifact claims and resolve the signed artifact locator ([1e84b32](https://github.com/r3dz4r/datapulse-my/commit/1e84b3225724d20b0257972dcb429cb9e8ea6c03))
+* **scripts:** surface unchecked artifact claims and resolve the signed artifact locator ([7f4b593](https://github.com/r3dz4r/datapulse-my/commit/7f4b5937aa77a123b9806172d97c54a79bd5a244))
+
 ## [3.29.0](https://github.com/r3dz4r/datapulse-my/compare/v3.28.4...v3.29.0) (2026-09-19)
 
 
