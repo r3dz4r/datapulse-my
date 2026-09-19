@@ -21,6 +21,7 @@ service="${DATAPULSE_MCP_SERVICE:-$DEFAULT_SERVICE}"
 drop_in="${DATAPULSE_MCP_SOURCE_DROP_IN:-$DEFAULT_DROP_IN}"
 pythonpath="${DATAPULSE_MCP_PYTHONPATH:-$DEFAULT_PYTHONPATH}"
 readiness_budget_seconds="${DATAPULSE_MCP_READINESS_BUDGET_SECONDS:-$DEFAULT_READINESS_BUDGET_SECONDS}"
+restart_mode="${DATAPULSE_MCP_RESTART_MODE:-user-bus}"
 result_file=""
 work_dir=""
 source_tmp=""
@@ -32,7 +33,12 @@ log() {
 }
 
 write_result() {
-  [[ -z "$result_file" ]] || printf '%s\n' "$1" > "$result_file"
+  [[ -z "$result_file" ]] && return
+  if [[ "$restart_mode" == delegated ]]; then
+    printf '%s restart_mode=delegated\n' "$1" > "$result_file"
+  else
+    printf '%s\n' "$1" > "$result_file"
+  fi
 }
 
 fail() {
@@ -210,14 +216,22 @@ done
   || fail 'DATAPULSE_MCP_PYTHONPATH contains unsupported systemd Environment characters'
 [[ "$readiness_budget_seconds" =~ ^[0-9]+$ ]] && (( readiness_budget_seconds >= 1 )) \
   || fail "DATAPULSE_MCP_READINESS_BUDGET_SECONDS must be a positive integer number of seconds, got: $readiness_budget_seconds"
+case "$restart_mode" in
+  user-bus|delegated)
+    ;;
+  *)
+    fail "DATAPULSE_MCP_RESTART_MODE must be one of: user-bus, delegated; got: $restart_mode"
+    ;;
+esac
 command -v curl >/dev/null || fail 'curl is required'
 command -v jq >/dev/null || fail 'jq is required'
-command -v systemctl >/dev/null || fail 'systemctl is required'
-
-uid="$(id -u)"
-runtime_dir="/run/user/$uid"
-[[ -d "$runtime_dir" ]] || fail "user runtime directory is missing: $runtime_dir"
-export XDG_RUNTIME_DIR="$runtime_dir"
+if [[ "$restart_mode" == user-bus ]]; then
+  command -v systemctl >/dev/null || fail 'systemctl is required'
+  uid="$(id -u)"
+  runtime_dir="/run/user/$uid"
+  [[ -d "$runtime_dir" ]] || fail "user runtime directory is missing: $runtime_dir"
+  export XDG_RUNTIME_DIR="$runtime_dir"
+fi
 
 # The advertised commit is the repository HEAD of the source tree, never the
 # release-build literal: the literal can go stale between releases, HEAD cannot.
@@ -355,8 +369,10 @@ rollback() {
   elif [[ "$drop_in_changed" == true ]]; then
     rm -f -- "$drop_in" || rollback_failed=true
   fi
-  systemctl --user daemon-reload || rollback_failed=true
-  systemctl --user restart "$service" || rollback_failed=true
+  if [[ "$restart_mode" == user-bus ]]; then
+    systemctl --user daemon-reload || rollback_failed=true
+    systemctl --user restart "$service" || rollback_failed=true
+  fi
   if [[ "$rollback_failed" == true ]]; then
     log 'ERROR: rollback was incomplete'
   else
@@ -406,17 +422,23 @@ if [[ "$drop_in_changed" == true ]]; then
   mv -f -- "$drop_in_tmp" "$drop_in"
   drop_in_tmp=""
   log "installed source-marker drop-in $drop_in"
-  if ! systemctl --user daemon-reload; then
-    rollback
-    fail 'systemd user daemon-reload failed'
+  if [[ "$restart_mode" == user-bus ]]; then
+    if ! systemctl --user daemon-reload; then
+      rollback
+      fail 'systemd user daemon-reload failed'
+    fi
   fi
 fi
 
-if ! systemctl --user restart "$service"; then
-  rollback
-  fail "restart failed for $service"
+if [[ "$restart_mode" == user-bus ]]; then
+  if ! systemctl --user restart "$service"; then
+    rollback
+    fail "restart failed for $service"
+  fi
+  log "restarted $service via XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
+else
+  log 'restart is delegated to the path unit (restart_mode=delegated)'
 fi
-log "restarted $service via XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
 
 work_dir="$(mktemp -d /tmp/datapulse-mcp-sync.XXXXXX)"
 initialize_payload='{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"datapulse-mcp-sync","version":"1"}},"id":1}'
