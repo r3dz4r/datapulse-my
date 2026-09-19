@@ -2588,7 +2588,42 @@
       },
       "receipt_id": "6d8280935130e6983bf58dad1a98da7c63a91aae5f454060bc21e13b2dff4604",
       "signature_base64": "PmbRPE2GzW4j3DmHCc+oa10sBdlQcbsdzJViJ19XsiLLxldACL68JroyCvDFIizolFx1v4v3MnuiLM2sGVwfAQ=="
+    },
+    {
+      "payload": {
+        "schema": "datapulse/v1/observation-receipt",
+        "observed_at": "2026-09-19T13:30:00Z",
+        "cycle_date": "2026-09-19",
+        "health_artifact_sha256": "f9b9b76933ccf2f98b2b9204d66df71f206110d012d7eb3a6579135b8dda295d",
+        "artifact_path": "health/latest.json",
+        "artifact_commit": "93b4bf6952a87fc4402886bc5ff5bd76dd7aff62",
+        "normalization": "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing",
+        "dataset_count": 418,
+        "freshness_status_counts": {
+          "fresh": 138,
+          "browser-dependent": 5,
+          "unreachable": 1,
+          "stale": 154,
+          "aging": 101,
+          "discontinued": 1,
+          "reference": 14,
+          "unknown-freshness": 4
+        },
+        "verification_profile_version": "2b02cd0141959deb9f45dbf375aa2dc21a200037affccf764e489d16548bdb8c",
+        "policy_version": null,
+        "key_id": "ed25519-e075218fa8086893",
+        "sequence_number": 115,
+        "previous_receipt_id": "6d8280935130e6983bf58dad1a98da7c63a91aae5f454060bc21e13b2dff4604",
+        "valid_until": "2026-09-20T15:30:00Z",
+        "limitations": [
+          "operator-produced evidence: the observing host signs its own observation at execution time",
+          "timestamps rely on the host clock and are not independently witnessed",
+          "upstream truth is not asserted; freshness statuses reflect this observation only"
+        ]
+      },
+      "receipt_id": "b3161d7e9a52e9b4ca743288448765db09292bd3ead68af6e1e6fa8d6f4a42f6",
+      "signature_base64": "8kdS3afp2jzDOzCenYRICEgJRDQhimqDI8JglwVIKFcJeyb2/O2wuvar1qdhqfwq8Dg9P9XRFzt8K4pAde32DQ=="
     }
   ],
-  "updated_at": "2026-09-19T13:14:11Z"
+  "updated_at": "2026-09-19T13:30:00Z"
 }
