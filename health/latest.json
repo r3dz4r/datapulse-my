@@ -1,12 +1,12 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-19T09:31:39Z",
+  "checked_at": "2026-09-19T09:36:48Z",
   "_trust_summary": {
-    "checked_at": "2026-09-19T09:31:39Z",
+    "checked_at": "2026-09-19T09:36:48Z",
     "datasets_total": 418,
     "by_status": {
-      "fresh": 125,
-      "aging": 109,
+      "fresh": 136,
+      "aging": 98,
       "stale": 157,
       "discontinued": 1,
       "degraded": 2,
@@ -24,7 +24,7 @@
     "datasets_with_no_last_modified_header": 254,
     "datasets_with_no_record_count_extracted": 11,
     "oldest_last_modified": "2023-09-15T07:20:46Z",
-    "newest_last_modified": "2026-09-18T12:00:34Z",
+    "newest_last_modified": "2026-09-19T01:43:40Z",
     "stale_datasets": [
       {
         "dataset_id": "st_elesca",
@@ -575,12 +575,12 @@
         "days_since_modified": 76
       },
       {
-        "dataset_id": "ridership_headline",
-        "days_since_modified": 50
-      },
-      {
         "dataset_id": "ridership_od_rapidrail_daily",
         "days_since_modified": 26
+      },
+      {
+        "dataset_id": "ridership_headline",
+        "days_since_modified": 19
       },
       {
         "dataset_id": "registration_transactions_motorcycle",
@@ -599,63 +599,63 @@
         "days_since_modified": 18
       },
       {
-        "dataset_id": "almanak_astronomi",
-        "days_since_modified": 8
-      },
-      {
         "dataset_id": "cosmetics_manufacturers",
         "days_since_modified": 6
       },
       {
         "dataset_id": "gtfs_realtime_mybas_ipoh",
-        "days_since_modified": 0.0016666666666666668
+        "days_since_modified": 0.0052430555555555555
       },
       {
         "dataset_id": "gtfs_realtime_mybas_seremban_b",
-        "days_since_modified": 0.0016087962962962963
+        "days_since_modified": 0.005185185185185185
       },
       {
         "dataset_id": "gtfs_realtime_ktmb",
-        "days_since_modified": 0.0016087962962962963
+        "days_since_modified": 0.005185185185185185
       },
       {
         "dataset_id": "gtfs_realtime_mybas_kuching",
-        "days_since_modified": 0.0015046296296296296
+        "days_since_modified": 0.0050810185185185186
       },
       {
         "dataset_id": "gtfs_realtime_mybas_kota_bharu",
-        "days_since_modified": 0.0014930555555555556
+        "days_since_modified": 0.005069444444444444
       },
       {
         "dataset_id": "gtfs_realtime_mybas_alor_setar",
-        "days_since_modified": 0.0014814814814814814
+        "days_since_modified": 0.0050578703703703706
       },
       {
         "dataset_id": "gtfs_realtime_mybas_kangar",
-        "days_since_modified": 0.0014814814814814814
+        "days_since_modified": 0.0050578703703703706
       },
       {
         "dataset_id": "gtfs_realtime_mybas_kuala_terengganu",
-        "days_since_modified": 0.0014699074074074074
+        "days_since_modified": 0.005046296296296296
       },
       {
         "dataset_id": "gtfs_realtime_mybas_johor",
-        "days_since_modified": 0.0012962962962962963
+        "days_since_modified": 0.004872685185185185
       },
       {
         "dataset_id": "gtfs_realtime_mybas_melaka",
-        "days_since_modified": 0.0012962962962962963
+        "days_since_modified": 0.004872685185185185
       },
       {
         "dataset_id": "gtfs_realtime_prasarana_bus_penang",
-        "days_since_modified": 0.00125
+        "days_since_modified": 0.004826388888888889
       },
       {
         "dataset_id": "gtfs_realtime_prasarana_bus_kl",
-        "days_since_modified": 0.0011574074074074073
+        "days_since_modified": 0.004733796296296297
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_seremban_a",
+        "days_since_modified": 0.003726851851851852
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-19T09:35:45Z"
+    "pipeline_heartbeat_at": "2026-09-19T09:40:33Z"
   },
   "datasets": [
     {
@@ -6372,7 +6372,7 @@
     },
     {
       "dataset_id": "met_weather",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "weather",
       "url": "https://api.data.gov.my/weather/forecast",
       "status": "fresh",
@@ -6381,9 +6381,9 @@
       "request_url": "https://api.data.gov.my/weather/forecast",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 898235,
+      "content_length": 900659,
       "last_modified": null,
-      "content_freshness_date": "2026-09-18",
+      "content_freshness_date": "2026-09-19",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -6408,8 +6408,8 @@
       "content_shape_changed": false,
       "locations": 442,
       "date_range": {
-        "start": "2026-09-18",
-        "end": "2026-09-24"
+        "start": "2026-09-19",
+        "end": "2026-09-25"
       },
       "agency": null,
       "stops": null,
@@ -6422,7 +6422,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 2520,
       "record_count_within_tolerance": true,
-      "staleness_days": 1,
+      "staleness_days": 0,
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -6435,7 +6435,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -38206,7 +38206,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0,
+      "staleness_days": 1,
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
@@ -38219,7 +38219,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 90,
-        "latest_days": 0.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -38975,7 +38975,7 @@
     },
     {
       "dataset_id": "dgm_payments_transactions_fpx",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://storage.data.gov.my/finsector/payments/trnsc_daily_fpx.csv",
       "status": "fresh",
@@ -38984,8 +38984,8 @@
       "request_url": "https://storage.data.gov.my/finsector/payments/trnsc_daily_fpx.csv",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 276411,
-      "last_modified": "2026-09-17T17:30:26Z",
+      "content_length": 276519,
+      "last_modified": "2026-09-18T17:30:29Z",
       "content_freshness_date": null,
       "first_record_timestamp": null,
       "registration_format_compatible": null,
@@ -38998,7 +38998,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 7350,
+      "record_count": 7353,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -39022,7 +39022,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 1,
+      "staleness_days": 0,
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
@@ -39035,7 +39035,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -43851,7 +43851,7 @@
     },
     {
       "dataset_id": "blood_donations_state",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://storage.data.gov.my/healthcare/blood_donations_state.csv",
       "status": "fresh",
@@ -43860,8 +43860,8 @@
       "request_url": "https://storage.data.gov.my/healthcare/blood_donations_state.csv",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 12624285,
-      "last_modified": "2026-09-17T22:52:18Z",
+      "content_length": 12625954,
+      "last_modified": "2026-09-19T01:43:38Z",
       "content_freshness_date": null,
       "first_record_timestamp": null,
       "registration_format_compatible": null,
@@ -43874,7 +43874,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 491725,
+      "record_count": 491790,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -43898,7 +43898,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 1,
+      "staleness_days": 0,
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
@@ -43911,7 +43911,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -46291,17 +46291,17 @@
     },
     {
       "dataset_id": "pekab40_screenings_state",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://storage.data.gov.my/healthcare/pekab40_screenings_state.csv",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://storage.data.gov.my/healthcare/pekab40_screenings_state.csv",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 1023413,
-      "last_modified": "2026-09-17T00:28:48Z",
+      "content_length": 1024180,
+      "last_modified": "2026-09-19T01:43:40Z",
       "content_freshness_date": null,
       "first_record_timestamp": null,
       "registration_format_compatible": null,
@@ -46314,7 +46314,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 43392,
+      "record_count": 43424,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -46338,8 +46338,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
       "freshness_signal_source": "last_modified_header",
@@ -46351,7 +46351,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 0.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -71479,7 +71479,7 @@
     },
     {
       "dataset_id": "gtfs_static_ktmb",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-static/ktmb",
       "status": "fresh",
@@ -71488,8 +71488,8 @@
       "request_url": "https://api.data.gov.my/gtfs-static/ktmb",
       "access_method": "direct curl",
       "http_status": 200,
-      "content_length": 46950,
-      "last_modified": "2026-09-17T16:01:08Z",
+      "content_length": 46957,
+      "last_modified": "2026-09-18T16:01:16Z",
       "content_freshness_date": null,
       "first_record_timestamp": null,
       "registration_format_compatible": null,
@@ -71516,7 +71516,7 @@
       "locations": null,
       "date_range": {
         "start": "2026-08-22",
-        "end": "2026-10-02"
+        "end": "2026-10-03"
       },
       "agency": 1,
       "stops": 156,
@@ -71529,7 +71529,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 1,
+      "staleness_days": 0,
       "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
@@ -71542,7 +71542,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -84567,7 +84567,7 @@
       "newest_vehicle_timestamp": 1789810160,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0016087962962962963,
+      "staleness_days": 0.005185185185185185,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -84580,7 +84580,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0016087962962962963,
+        "latest_days": 0.005185185185185185,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -85383,7 +85383,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0011574074074074073,
+      "staleness_days": 0.004733796296296297,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -85396,7 +85396,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0011574074074074073,
+        "latest_days": 0.004733796296296297,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -86199,7 +86199,7 @@
       "newest_vehicle_timestamp": 1789810191,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.00125,
+      "staleness_days": 0.004826388888888889,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -86212,7 +86212,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.00125,
+        "latest_days": 0.004826388888888889,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -87831,7 +87831,7 @@
       "newest_vehicle_timestamp": 1789810171,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0014814814814814814,
+      "staleness_days": 0.0050578703703703706,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -87844,7 +87844,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0014814814814814814,
+        "latest_days": 0.0050578703703703706,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -88647,7 +88647,7 @@
       "newest_vehicle_timestamp": 1789810171,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0014814814814814814,
+      "staleness_days": 0.0050578703703703706,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -88660,7 +88660,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0014814814814814814,
+        "latest_days": 0.0050578703703703706,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -89463,7 +89463,7 @@
       "newest_vehicle_timestamp": 1789810170,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0014930555555555556,
+      "staleness_days": 0.005069444444444444,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -89476,7 +89476,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0014930555555555556,
+        "latest_days": 0.005069444444444444,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -90279,7 +90279,7 @@
       "newest_vehicle_timestamp": 1789810172,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0014699074074074074,
+      "staleness_days": 0.005046296296296296,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -90292,7 +90292,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0014699074074074074,
+        "latest_days": 0.005046296296296296,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -91095,7 +91095,7 @@
       "newest_vehicle_timestamp": 1789810155,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0016666666666666668,
+      "staleness_days": 0.0052430555555555555,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -91108,7 +91108,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0016666666666666668,
+        "latest_days": 0.0052430555555555555,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -91867,7 +91867,7 @@
       "last_checked": "2026-09-19T09:31:39Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-seremban-a",
-      "status": "fresh",
+      "status": "stale",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (25 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-seremban-a",
@@ -91911,12 +91911,12 @@
       "newest_vehicle_timestamp": 1789810286,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.00015046296296296297,
-      "staleness_status": "fresh",
+      "staleness_days": 0.003726851851851852,
+      "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -91924,7 +91924,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.00015046296296296297,
+        "latest_days": 0.003726851851851852,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -92727,7 +92727,7 @@
       "newest_vehicle_timestamp": 1789810160,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0016087962962962963,
+      "staleness_days": 0.005185185185185185,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -92740,7 +92740,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0016087962962962963,
+        "latest_days": 0.005185185185185185,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -93543,7 +93543,7 @@
       "newest_vehicle_timestamp": 1789810187,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0012962962962962963,
+      "staleness_days": 0.004872685185185185,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -93556,7 +93556,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0012962962962962963,
+        "latest_days": 0.004872685185185185,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -94359,7 +94359,7 @@
       "newest_vehicle_timestamp": 1789810187,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0012962962962962963,
+      "staleness_days": 0.004872685185185185,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -94372,7 +94372,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0012962962962962963,
+        "latest_days": 0.004872685185185185,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -95175,7 +95175,7 @@
       "newest_vehicle_timestamp": 1789810169,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0015046296296296296,
+      "staleness_days": 0.0050810185185185186,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -95188,7 +95188,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0015046296296296296,
+        "latest_days": 0.0050810185185185186,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -108172,7 +108172,7 @@
     },
     {
       "dataset_id": "ridership_ktmb_daily",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_daily.csv",
       "status": "aging",
@@ -124492,7 +124492,7 @@
     },
     {
       "dataset_id": "ridership_od_komuter",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://storage.data.gov.my/transportation/ktmb/komuter_2026.csv",
       "status": "aging",
@@ -125308,7 +125308,7 @@
     },
     {
       "dataset_id": "ridership_od_ets",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://storage.data.gov.my/transportation/ktmb/ets_2026.csv",
       "status": "aging",
@@ -126124,7 +126124,7 @@
     },
     {
       "dataset_id": "ridership_od_intercity",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://storage.data.gov.my/transportation/ktmb/intercity_2026.csv",
       "status": "aging",
@@ -126940,7 +126940,7 @@
     },
     {
       "dataset_id": "ridership_od_komuter_utara",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://storage.data.gov.my/transportation/ktmb/komuter_utara_2026.csv",
       "status": "aging",
@@ -127756,7 +127756,7 @@
     },
     {
       "dataset_id": "ridership_od_shuttle_tebrau",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://storage.data.gov.my/transportation/ktmb/shuttle_tebrau_2026.csv",
       "status": "aging",
@@ -132636,7 +132636,7 @@
     },
     {
       "dataset_id": "ridership_od_rapidrail_daily",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://storage.data.gov.my/transportation/rail/rapidrail_2026_daily.csv",
       "status": "stale",
@@ -139960,19 +139960,19 @@
     },
     {
       "dataset_id": "blood_donations",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://api.data.gov.my/data-catalogue?id=blood_donations",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=blood_donations",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 2329012,
+      "content_length": 2329320,
       "last_modified": null,
-      "content_freshness_date": "2026-09-17",
-      "first_record_timestamp": "2006-01-01",
+      "content_freshness_date": "2026-09-18",
+      "first_record_timestamp": "2007-10-06",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
       "transition_registration_count": null,
@@ -139983,7 +139983,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 37825,
+      "record_count": 37830,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -140007,8 +140007,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 10000,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -140020,7 +140020,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -141588,7 +141588,7 @@
     },
     {
       "dataset_id": "covid_cases",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://api.data.gov.my/data-catalogue?id=covid_cases",
       "status": "stale",
@@ -142404,7 +142404,7 @@
     },
     {
       "dataset_id": "covid_cases_age",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://api.data.gov.my/data-catalogue?id=covid_cases_age",
       "status": "stale",
@@ -143220,7 +143220,7 @@
     },
     {
       "dataset_id": "covid_cases_vaxstatus",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://api.data.gov.my/data-catalogue?id=covid_cases_vaxstatus",
       "status": "stale",
@@ -213980,7 +213980,7 @@
     },
     {
       "dataset_id": "organ_pledges",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://api.data.gov.my/data-catalogue?id=organ_pledges",
       "status": "stale",
@@ -214796,7 +214796,7 @@
     },
     {
       "dataset_id": "organ_pledges_state",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://api.data.gov.my/data-catalogue?id=organ_pledges_state",
       "status": "stale",
@@ -216428,7 +216428,7 @@
     },
     {
       "dataset_id": "pekab40_screenings",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://api.data.gov.my/data-catalogue?id=pekab40_screenings",
       "status": "stale",
@@ -229448,18 +229448,18 @@
     },
     {
       "dataset_id": "trnsc_daily_directdebit",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_directdebit",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_directdebit",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 78943,
+      "content_length": 79007,
       "last_modified": null,
-      "content_freshness_date": "2026-09-17",
+      "content_freshness_date": "2026-09-18",
       "first_record_timestamp": "2021-07-01",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -229471,7 +229471,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 1232,
+      "record_count": 1233,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -229495,8 +229495,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 1203,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -229508,7 +229508,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -230264,18 +230264,18 @@
     },
     {
       "dataset_id": "trnsc_daily_fpx",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_fpx",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_fpx",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 614487,
+      "content_length": 614733,
       "last_modified": null,
-      "content_freshness_date": "2026-09-17",
+      "content_freshness_date": "2026-09-18",
       "first_record_timestamp": "2020-01-01",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -230287,7 +230287,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 7350,
+      "record_count": 7353,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -230311,8 +230311,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 7218,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -230324,7 +230324,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -231080,18 +231080,18 @@
     },
     {
       "dataset_id": "trnsc_daily_jompay",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_jompay",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_jompay",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 180819,
+      "content_length": 180884,
       "last_modified": null,
-      "content_freshness_date": "2026-09-17",
+      "content_freshness_date": "2026-09-18",
       "first_record_timestamp": "2019-01-01",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -231103,7 +231103,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 2813,
+      "record_count": 2814,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -231127,8 +231127,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 2405,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -231140,7 +231140,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -231896,18 +231896,18 @@
     },
     {
       "dataset_id": "trnsc_daily_san",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_san",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_san",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 611292,
+      "content_length": 611542,
       "last_modified": null,
-      "content_freshness_date": "2026-09-17",
+      "content_freshness_date": "2026-09-18",
       "first_record_timestamp": "2020-01-01",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -231919,7 +231919,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 7345,
+      "record_count": 7348,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -231943,8 +231943,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 7213,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -231956,7 +231956,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -232712,7 +232712,7 @@
     },
     {
       "dataset_id": "vaxreg_covid",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://api.data.gov.my/data-catalogue?id=vaxreg_covid",
       "status": "stale",
@@ -234340,10 +234340,10 @@
     },
     {
       "dataset_id": "almanak_astronomi",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://api.data.gov.my/data-catalogue?id=almanak_astronomi",
-      "status": "stale",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=almanak_astronomi",
@@ -234351,7 +234351,7 @@
       "http_status": 200,
       "content_length": 116726,
       "last_modified": null,
-      "content_freshness_date": "2026-09-11",
+      "content_freshness_date": "2026-09-19",
       "first_record_timestamp": "2022-01-03 02:33:00",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -234387,12 +234387,12 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 538,
       "record_count_within_tolerance": true,
-      "staleness_days": 8,
-      "staleness_status": "stale",
+      "staleness_days": 0,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -234400,7 +234400,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 8.0,
+        "latest_days": 0.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -235156,7 +235156,7 @@
     },
     {
       "dataset_id": "dosm_arc_dosm",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://api.data.gov.my/data-catalogue?id=arc_dosm",
       "status": "fresh",
@@ -236784,7 +236784,7 @@
     },
     {
       "dataset_id": "cosmetics_manufacturers",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://storage.data.gov.my/healthcare/cosmetic_manufacturers.csv",
       "status": "stale",
@@ -252264,10 +252264,10 @@
     },
     {
       "dataset_id": "metrics_dataset_cumul",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://api.data.gov.my/data-catalogue?id=metrics_dataset_cumul",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=metrics_dataset_cumul",
@@ -252275,7 +252275,7 @@
       "http_status": 200,
       "content_length": 69068,
       "last_modified": null,
-      "content_freshness_date": "2026-09-17",
+      "content_freshness_date": "2026-09-18",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -252311,8 +252311,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 281,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -252324,7 +252324,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -255516,7 +255516,7 @@
     },
     {
       "dataset_id": "registration_transactions_all",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "other",
       "url": "https://storage.data.gov.my/transportation/vehicles_2026.csv",
       "status": "stale",
@@ -255526,7 +255526,7 @@
       "access_method": "direct curl GET",
       "http_status": 200,
       "content_length": 59762911,
-      "last_modified": "2026-09-11T08:39:23Z",
+      "last_modified": "2026-09-18T09:32:53Z",
       "content_freshness_date": "2026-08-31",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
@@ -256332,7 +256332,7 @@
     },
     {
       "dataset_id": "registration_transactions_car",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "other",
       "url": "https://storage.data.gov.my/transportation/cars_2026.csv",
       "status": "stale",
@@ -256342,7 +256342,7 @@
       "access_method": "direct curl GET",
       "http_status": 200,
       "content_length": 32677245,
-      "last_modified": "2026-09-11T08:39:23Z",
+      "last_modified": "2026-09-18T09:32:53Z",
       "content_freshness_date": "2026-08-31",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
@@ -257148,7 +257148,7 @@
     },
     {
       "dataset_id": "registration_transactions_motorcycle",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "other",
       "url": "https://storage.data.gov.my/transportation/motorcycles_2026.csv",
       "status": "stale",
@@ -257158,7 +257158,7 @@
       "access_method": "direct curl GET",
       "http_status": 200,
       "content_length": 27944793,
-      "last_modified": "2026-09-11T08:39:23Z",
+      "last_modified": "2026-09-18T09:32:53Z",
       "content_freshness_date": "2026-08-31",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
@@ -257964,7 +257964,7 @@
     },
     {
       "dataset_id": "ridership_od_brt_daily",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "transport",
       "url": "https://storage.data.gov.my/transportation/bus/brt_2026_daily.csv",
       "status": "fresh",
@@ -260404,18 +260404,18 @@
     },
     {
       "dataset_id": "usage_metrics",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://api.data.gov.my/data-catalogue?id=usage_metrics",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=usage_metrics",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 85275,
+      "content_length": 85352,
       "last_modified": null,
-      "content_freshness_date": "2026-09-17",
+      "content_freshness_date": "2026-09-18",
       "first_record_timestamp": "2023-09-13",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -260427,7 +260427,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 1097,
+      "record_count": 1098,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -260451,8 +260451,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 1055,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -260464,7 +260464,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -261220,19 +261220,19 @@
     },
     {
       "dataset_id": "usage_metrics_openapi",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 1312682,
+      "content_length": 1314897,
       "last_modified": null,
-      "content_freshness_date": "2026-09-17",
-      "first_record_timestamp": "2023-12-15",
+      "content_freshness_date": "2026-09-18",
+      "first_record_timestamp": "2025-03-25",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
       "transition_registration_count": null,
@@ -261243,7 +261243,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 18849,
+      "record_count": 18880,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -261267,8 +261267,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 10000,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -261280,7 +261280,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -262036,18 +262036,18 @@
     },
     {
       "dataset_id": "usage_metrics_openapi_cumul",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi_cumul",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi_cumul",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 2568,
+      "content_length": 2576,
       "last_modified": null,
-      "content_freshness_date": "2026-09-17",
+      "content_freshness_date": "2026-09-18",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -262083,8 +262083,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": 30,
       "record_count_within_tolerance": true,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -262096,7 +262096,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -270184,7 +270184,7 @@
     },
     {
       "dataset_id": "ridership_headline",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://storage.data.gov.my/transportation/ridership_headline.csv",
       "status": "stale",
@@ -270193,9 +270193,9 @@
       "request_url": "https://storage.data.gov.my/transportation/ridership_headline.csv",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 202418,
-      "last_modified": "2026-08-12T22:24:45Z",
-      "content_freshness_date": "2026-07-31",
+      "content_length": 205330,
+      "last_modified": "2026-09-19T01:31:42Z",
+      "content_freshness_date": "2026-08-31",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -270207,7 +270207,7 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 2769,
+      "record_count": 2800,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
@@ -270231,7 +270231,7 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 50,
+      "staleness_days": 19,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "last-modified-header",
@@ -270244,7 +270244,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 50.0,
+        "latest_days": 19.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -271816,7 +271816,7 @@
     },
     {
       "dataset_id": "births",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=births",
       "status": "stale",
@@ -291344,7 +291344,7 @@
     },
     {
       "dataset_id": "bnm_kijang_emas",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/kijang-emas",
       "status": "fresh",
@@ -292160,7 +292160,7 @@
     },
     {
       "dataset_id": "bnm_myor",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/my-overnight-rate",
       "status": "fresh",
@@ -318232,7 +318232,7 @@
     },
     {
       "dataset_id": "kkmnow_blood",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/blood_01_stock_timeseries.parquet",
       "status": "stale",
@@ -321496,7 +321496,7 @@
     },
     {
       "dataset_id": "kkmnow_covidvax",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidvax_01_waffle.parquet",
       "status": "unknown-freshness",
@@ -322312,18 +322312,18 @@
     },
     {
       "dataset_id": "kkmnow_pekab40",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pekab40_01_timeseries.parquet",
-      "status": "aging",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pekab40_01_timeseries.parquet",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 146763,
+      "content_length": 146233,
       "last_modified": null,
-      "content_freshness_date": "2026-09-17",
+      "content_freshness_date": "2026-09-18",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -322335,8 +322335,8 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 1223,
-      "estimated_record_count": 1223,
+      "record_count": 1219,
+      "estimated_record_count": 1219,
       "record_count_estimated": true,
       "incomplete": true,
       "column_count": null,
@@ -322359,8 +322359,8 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 2,
-      "staleness_status": "aging",
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
@@ -322372,7 +322372,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 3,
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -323128,7 +323128,7 @@
     },
     {
       "dataset_id": "kkmnow_bedutil",
-      "last_checked": "2026-09-18T09:31:02Z",
+      "last_checked": "2026-09-19T09:36:48Z",
       "namespace": "healthcare",
       "url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/bedutil_01_table_facility.parquet",
       "status": "unknown-freshness",
