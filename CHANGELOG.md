@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.30.0](https://github.com/r3dz4r/datapulse-my/compare/v3.29.4...v3.30.0) (2026-09-20)
+
+
+### Features
+
+* **config:** add the series identity registry and its verifier ([#148](https://github.com/r3dz4r/datapulse-my/issues/148)) ([63e485d](https://github.com/r3dz4r/datapulse-my/commit/63e485dd754a7eab3df24b5011126ed2950cb68a))
+
 ## [3.29.4](https://github.com/r3dz4r/datapulse-my/compare/v3.29.3...v3.29.4) (2026-09-20)
 
 
