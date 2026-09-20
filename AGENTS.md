@@ -50,7 +50,7 @@ datapulse-my/
 │   ├── trust-layer-notebook.AGENTS.md
 │   └── ...
 │
-├── scripts/                   # 42 Python files driving the pipeline
+├── scripts/                   # 108 Python files driving the pipeline
 │   ├── gen_*.py               # generators (regenerate artifacts from sources)
 │   ├── verify_*.py            # invariants (release-blocking)
 │   ├── validate_*.py          # schema + content validators
@@ -89,7 +89,7 @@ datapulse-my/
 | `gen_*.py` | `gen_changelog`, `gen_health_history`, `gen_dataset_deltas`, `gen_attestations` | **Regenerable.** Timer-tick runs them. Safe to delete + re-run; safe to edit output paths. |
 | `verify_*.py` | `verify_release_reproducible`, `verify_mcp_deployment`, `verify_repository_contract` | **Release-blocking invariants.** If they fail, the release is blocked. Changes here require a test of the new invariant. |
 | `validate_*.py` | `validate_policy_schema`, `validate_at_runtime` | **Schema/content validators.** Hand-authored. Change the schema → update both validator and consumers. |
-| `embed_*.py` | `embed_dashboard_data` | **Renders `docs/index.html`.** Touches only the dashboard hero. The single script that writes to `docs/`. |
+| `embed_*.py` | `embed_dashboard_data` | **Renders `docs/index.html`.** Touches only the dashboard hero. One of several generators that write under `docs/` — `gen_okf_bundle.py` is the largest by file count (inventory 2026-09-20); other writers own different artifacts under `docs/` (e.g. `gen_health_methodology.py` → `docs/health-methodology.md`, `gen_ai_catalog.py` → `docs/ai-catalog.json`). |
 | `check.py`, `check_*.py` | `check`, `check_heartbeat`, `check_url_drift` | **Operator smoke-test entry points.** Not part of the timer; invoked manually or by `task.sh status`. |
 | `init_keys.py` | `init_keys` | **One-time key registry bootstrap.** Ed25519 keypair generation; idempotent. |
 | `bump_*.py` | `bump_mcp_source_version` | **Bump-and-commit helper.** Operator-only. |
