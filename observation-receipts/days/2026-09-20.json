@@ -1231,7 +1231,48 @@
       },
       "receipt_id": "04cfa54c0e8b766a91268a8f21c58540446392e7fa50dbc88f7bb57a77ce9dab",
       "signature_base64": "5deunbnKiQkPiKYurxWN2sAINlLBf3V1zikLlCHMUyepwDKy0y2qPyl5b4RmhzbIi02eFd8qp2zP367ZuU3CDQ=="
+    },
+    {
+      "payload": {
+        "schema": "datapulse/v1/observation-receipt",
+        "observed_at": "2026-09-20T03:07:17Z",
+        "cycle_date": "2026-09-20",
+        "health_artifact_sha256": "c43a1e9a915d5aef803c2c163d1fee0edab7f7b9af5fa021767686de2161b9a4",
+        "artifact_path": "health/latest.json",
+        "artifact_commit": "af7a671378c22c4d1c87db7f18c23986e9427c98",
+        "normalization": "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing",
+        "dataset_count": 418,
+        "freshness_status_counts": {
+          "fresh": 118,
+          "browser-dependent": 5,
+          "aging": 118,
+          "unreachable": 1,
+          "stale": 157,
+          "discontinued": 1,
+          "reference": 14,
+          "unknown-freshness": 4
+        },
+        "verification_profile_version": "257494e9163a37cf68e0c91dc86c81888d61c43ddd9d603c74d8ae421dd361b0",
+        "policy_version": null,
+        "key_id": "ed25519-e075218fa8086893",
+        "sequence_number": 152,
+        "previous_receipt_id": "04cfa54c0e8b766a91268a8f21c58540446392e7fa50dbc88f7bb57a77ce9dab",
+        "valid_until": "2026-09-21T05:07:17Z",
+        "limitations": [
+          "operator-produced evidence: the observing host signs its own observation at execution time",
+          "timestamps rely on the host clock and are not independently witnessed",
+          "upstream truth is not asserted; freshness statuses reflect this observation only"
+        ],
+        "observer_attestation": {
+          "key_id": "ed25519-a4ac279ec3354508",
+          "signature_base64": "KJpOD75QSazlcUWkgTtE5uaDV+6HiBb9Ohccy6z1+0Z18/xhyaxa/U5oykW5lpLYvV9GZIHFqC2EtXh6c+uSDQ==",
+          "signed_at": "2026-09-20T03:07:17Z",
+          "statement_sha256": "a3f2dbd379206115a6fb48a2aa225fadc98592cba8c22ef9b2fb8c7522f9c09d"
+        }
+      },
+      "receipt_id": "701f243fae22d482c9aa67efee127e88777f2f62686f7dff7477561834f47f7c",
+      "signature_base64": "D2u1ft5WFDvunmUSUBpoRwQxWsFy5zqc2eZGHQRw6S0O3A4OETOfRk7ZASLMt+1FP+WTtWgxX+fU9EaxSR9FCw=="
     }
   ],
-  "updated_at": "2026-09-20T02:59:22Z"
+  "updated_at": "2026-09-20T03:07:17Z"
 }
