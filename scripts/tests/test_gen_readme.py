@@ -71,7 +71,7 @@ def test_fake_onboarding_updates_derived_blocks_without_mutating_template(tmp_pa
 
     text = (root / "README.md").read_text(encoding="utf-8")
     assert "2 official Malaysian datasets" in text
-    assert "2 datasets across 2 publishers" in text
+    assert "2 official datasets across 2 publishers" in text
     assert "[published reports](data/)" in text
     assert "daily (1); monthly (1)" in text
     assert "ODC-BY (1)" in text
@@ -86,7 +86,7 @@ def test_check_reports_stale_output_and_balanced_markers(tmp_path: Path) -> None
     readme = root / "README.md"
     readme.write_text(
         readme.read_text(encoding="utf-8").replace(
-            "1 dataset across 1 publisher", "Stale dataset summary", 1
+            "1 official dataset across 1 publisher", "Stale dataset summary", 1
         ),
         encoding="utf-8",
     )
