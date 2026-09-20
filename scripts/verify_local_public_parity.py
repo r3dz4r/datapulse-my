@@ -20,6 +20,7 @@ from jsonschema import Draft202012Validator
 
 
 PUBLIC_ROOT = "https://www.data-pulse.my"
+PUBLIC_HEALTH_INDEX_URL = PUBLIC_ROOT + "/health/index.json"
 MCP_ENDPOINT = "https://mcp.data-pulse.my/mcp"
 USER_AGENT = "DataPulse-Local-Public-Parity/1.0"
 MAX_RESPONSE_BYTES = 8 * 1024 * 1024
@@ -206,14 +207,28 @@ def verify(root: Path, *, fetch: Callable[..., Response] = _fetch) -> tuple[list
     # 6. Served health remains non-gating during independently scheduled health publication.
     local_digest = hashlib.sha256((root / "health/latest.json").read_bytes()).hexdigest()
     try:
-        served = fetch(PUBLIC_ROOT + "/health/latest.json")
-        served_digest = hashlib.sha256(served.body).hexdigest()
-        if local_digest != served_digest:
-            warnings.append(f"WARNING: health_snapshot informational drift: local_sha={local_digest} served_sha={served_digest}")
+        index_response = fetch(PUBLIC_HEALTH_INDEX_URL)
+        if index_response.status != 200:
+            raise ValueError(f"health index returned HTTP {index_response.status}")
+        index = json.loads(index_response.body)
+        index_digest = index["artifacts"]["health/latest.json"]["sha256"]
+        if not isinstance(index_digest, str):
+            raise ValueError("health index digest is not a string")
+        if local_digest != index_digest:
+            warnings.append(f"WARNING: health_snapshot informational drift: local_sha={local_digest} index_sha={index_digest}")
         else:
             passed.append("health_snapshot")
-    except (HTTPError, URLError, TimeoutError, ValueError) as exc:
-        warnings.append(f"WARNING: health_snapshot probe skipped: {exc}")
+    except (HTTPError, URLError, TimeoutError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        warnings.append(f"WARNING: health_snapshot index digest unavailable; falling back to served document: {exc}")
+        try:
+            served = fetch(PUBLIC_ROOT + "/health/latest.json")
+            served_digest = hashlib.sha256(served.body).hexdigest()
+            if local_digest != served_digest:
+                warnings.append(f"WARNING: health_snapshot informational drift: local_sha={local_digest} served_sha={served_digest}")
+            else:
+                passed.append("health_snapshot")
+        except (HTTPError, URLError, TimeoutError, ValueError) as fallback_exc:
+            warnings.append(f"WARNING: health_snapshot probe skipped: {fallback_exc}")
 
     # 7. Attestation chain (current layouts use attestations/, older layouts used .attestations/).
     attestation_root = root / "attestations" if (root / "attestations").is_dir() else root / ".attestations"

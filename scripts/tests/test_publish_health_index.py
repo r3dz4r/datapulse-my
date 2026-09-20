@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import subprocess
 import sys
@@ -52,9 +53,25 @@ def test_projection_is_exactly_allowlisted_and_stable(tmp_path: Path) -> None:
     projection = json.loads(first)
 
     assert first == second
-    assert set(projection) == {"schema", "checked_at", "_trust_summary", "datasets"}
+    assert set(projection) == {"schema", "checked_at", "_trust_summary", "datasets", module.ARTIFACTS_FIELD}
     assert set(projection["datasets"][0]) == set(module.DATASET_KEYS)
     assert not {"publisher", "category", "name", "url"} & set(projection["datasets"][0])
+
+
+def test_projection_artifact_digests_cover_every_published_health_file(tmp_path: Path) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+
+    projection = json.loads(module.health_payloads(health)[module.KEY])
+
+    assert set(projection[module.ARTIFACTS_FIELD]) == {f"health/{name}" for name in module.HEALTH_ARTIFACTS}
+    for name in module.HEALTH_ARTIFACTS:
+        payload = (tmp_path / name).read_bytes()
+        assert projection[module.ARTIFACTS_FIELD][f"health/{name}"] == {
+            "sha256": hashlib.sha256(payload).hexdigest(),
+            "bytes": len(payload),
+        }
 
 
 def test_read_token_requires_explicit_environment_without_fallback_read(monkeypatch: object) -> None:

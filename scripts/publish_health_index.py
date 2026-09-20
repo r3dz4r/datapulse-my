@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import http.client
 import json
 import math
@@ -41,6 +42,7 @@ HEALTH_ARTIFACTS = (
     "reconciliation.json",
     "evidence-coverage.json",
 )
+ARTIFACTS_FIELD = "artifacts"
 
 def _timeout_from_env(name: str, default: float) -> float:
     """Return a positive environment override, falling back safely on bad input."""
@@ -181,7 +183,7 @@ def max_daily_kv_writes(interval: float = DEFAULT_PUBLISH_INTERVAL_SECONDS) -> i
     return math.ceil(SECONDS_PER_DAY / interval) * (len(HEALTH_ARTIFACTS) + 1) * MAX_PUBLISH_ATTEMPTS
 
 
-def build_projection(health_path: Path) -> bytes:
+def build_projection(health_path: Path, artifacts: dict[str, bytes] | None = None) -> bytes:
     """Return the stable, allowlisted dashboard projection for one health document."""
     document = json.loads(health_path.read_text(encoding="utf-8"))
     if not isinstance(document, dict):
@@ -189,12 +191,22 @@ def build_projection(health_path: Path) -> bytes:
     datasets = document.get("datasets")
     if not isinstance(datasets, list):
         raise PublishError("health document datasets is not a list")
+    if artifacts is None:
+        artifacts = {
+            f"health/{name}": (health_path.parent / name).read_bytes()
+            for name in HEALTH_ARTIFACTS
+        }
+    artifact_digests = {
+        key: {"sha256": hashlib.sha256(payload).hexdigest(), "bytes": len(payload)}
+        for key, payload in sorted(artifacts.items())
+    }
     try:
         projection: dict[str, Any] = {
             "schema": document["schema"],
             "checked_at": document["checked_at"],
             "_trust_summary": document["_trust_summary"],
             "datasets": [],
+            ARTIFACTS_FIELD: artifact_digests,
         }
     except KeyError as exc:
         raise PublishError(f"health document is missing top-level {exc.args[0]!r}") from exc
@@ -320,10 +332,12 @@ def publish(api_base: str, token: str, key: str, payload: bytes) -> int:
 
 def health_payloads(health_path: Path) -> dict[str, bytes]:
     """Return the dashboard projection and every health artifact keyed by URL path."""
-    payloads = {KEY: build_projection(health_path)}
     health_dir = health_path.parent
-    for name in HEALTH_ARTIFACTS:
-        payloads[f"health/{name}"] = (health_dir / name).read_bytes()
+    artifacts = {
+        f"health/{name}": (health_dir / name).read_bytes()
+        for name in HEALTH_ARTIFACTS
+    }
+    payloads = {KEY: build_projection(health_path, artifacts), **artifacts}
     return payloads
 
 

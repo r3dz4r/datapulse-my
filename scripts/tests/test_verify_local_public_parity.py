@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -18,7 +19,7 @@ SOURCE_TOOLS = {
 }
 
 
-def _public_fetch(served_html: bytes, served_health: bytes, served_tools: set[str]):
+def _public_fetch(served_html: bytes, served_health: bytes, served_tools: set[str], *, index: bytes | None = None):
     """Return a deterministic public-only substitute for the verifier's transport."""
     def fetch(url: str, *, method: str = "GET", body: bytes | None = None,
               headers: dict[str, str] | None = None) -> parity.Response:
@@ -29,6 +30,11 @@ def _public_fetch(served_html: bytes, served_health: bytes, served_tools: set[st
             return parity.Response(200, url, "text/html", served_html)
         if url == parity.PUBLIC_ROOT + "/health/latest.json":
             return parity.Response(200, url, "application/json", served_health)
+        if url == parity.PUBLIC_HEALTH_INDEX_URL:
+            payload = index if index is not None else json.dumps({
+                "artifacts": {"health/latest.json": {"sha256": hashlib.sha256(served_health).hexdigest()}},
+            }).encode()
+            return parity.Response(200, url, "application/json", payload)
         if url == parity.MCP_ENDPOINT:
             # The verifier performs initialize, notification, then tools/list.
             if body and b'"tools/list"' in body:
@@ -88,6 +94,77 @@ def test_taxonomy_violation_fails() -> None:
         assert any("status_taxonomy violation" in error and '"verified"' in error for error in errors)
     finally:
         path.write_text(original, encoding="utf-8")
+
+
+def test_health_snapshot_digest_match_avoids_served_document_fetch() -> None:
+    calls: list[tuple[str, str]] = []
+    base = _public_fetch(SOURCE_INDEX, SOURCE_HEALTH, SOURCE_TOOLS)
+
+    def fetch(url: str, **kwargs: Any) -> parity.Response:
+        calls.append((url, kwargs.get("method", "GET")))
+        return base(url, **kwargs)
+
+    errors, _, passed = parity.verify(ROOT, fetch=fetch)
+
+    assert errors == []
+    assert "health_snapshot" in passed
+    # Section 9 retains its canonical-route HEAD check; section 6 must not GET
+    # the document merely to compute a digest.
+    assert not any("/health/latest.json" in url and method == "GET" for url, method in calls)
+
+
+def test_health_snapshot_digest_mismatch_warns_without_error() -> None:
+    local_digest = hashlib.sha256(SOURCE_HEALTH).hexdigest()
+    index_digest = "0" * 64
+    index = json.dumps({"artifacts": {"health/latest.json": {"sha256": index_digest}}}).encode()
+
+    errors, warnings, _ = parity.verify(
+        ROOT, fetch=_public_fetch(SOURCE_INDEX, SOURCE_HEALTH, SOURCE_TOOLS, index=index)
+    )
+
+    assert errors == []
+    warning = next(
+        message
+        for message in warnings
+        if "health_snapshot" in message and "informational drift" in message
+    )
+    assert local_digest in warning
+    assert index_digest in warning
+
+
+def test_health_snapshot_unavailable_index_falls_back_to_served_document() -> None:
+    calls: list[str] = []
+    base = _public_fetch(SOURCE_INDEX, SOURCE_HEALTH, SOURCE_TOOLS)
+
+    def fetch(url: str, **kwargs: Any) -> parity.Response:
+        calls.append(url)
+        if url == parity.PUBLIC_HEALTH_INDEX_URL:
+            raise URLError("index unavailable")
+        return base(url, **kwargs)
+
+    errors, warnings, passed = parity.verify(ROOT, fetch=fetch)
+
+    assert errors == []
+    assert "health_snapshot" in passed
+    assert parity.PUBLIC_ROOT + "/health/latest.json" in calls
+    assert any("index digest unavailable" in warning and "index unavailable" in warning for warning in warnings)
+
+
+def test_health_snapshot_missing_index_digest_falls_back_to_served_document() -> None:
+    index = json.dumps({"artifacts": {}}).encode()
+    calls: list[str] = []
+    base = _public_fetch(SOURCE_INDEX, SOURCE_HEALTH, SOURCE_TOOLS, index=index)
+
+    def fetch(url: str, **kwargs: Any) -> parity.Response:
+        calls.append(url)
+        return base(url, **kwargs)
+
+    errors, warnings, passed = parity.verify(ROOT, fetch=fetch)
+
+    assert errors == []
+    assert "health_snapshot" in passed
+    assert parity.PUBLIC_ROOT + "/health/latest.json" in calls
+    assert any("index digest unavailable" in warning and "health/latest.json" in warning for warning in warnings)
 
 
 def _root_flaky_fetch(exc: Exception, *, failures: int | None) -> tuple[Any, dict[str, int]]:
