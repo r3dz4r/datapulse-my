@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.29.3](https://github.com/r3dz4r/datapulse-my/compare/v3.29.2...v3.29.3) (2026-09-20)
+
+
+### Bug Fixes
+
+* **mcp:** make delegated mode complete without the operator's home or user bus ([afd9025](https://github.com/r3dz4r/datapulse-my/commit/afd90255d3023a3cf8776b937d5471e756e9d084))
+
 ## [3.29.2](https://github.com/r3dz4r/datapulse-my/compare/v3.29.1...v3.29.2) (2026-09-20)
 
 
