@@ -243,7 +243,7 @@ read-only tools listed above. Cursor / Cline use the same JSON in their MCP conf
 ## Included datasets
 
 <!-- BEGIN readme-inventory -->
-**418 datasets across 44 publishers**, including **30 GTFS transit feeds**. Browse the [published reports](data/) for plain-language health assessments, or use [`datapulse.json`](datapulse.json) as the machine-readable index of every source, licence, health-report path, and declared refresh cadence.
+**418 official datasets across 44 publishers**, including **30 GTFS transit feeds**. Browse the [published reports](data/) for plain-language health assessments, or use [`datapulse.json`](datapulse.json) as the machine-readable index of every source, licence, health-report path, and declared refresh cadence.
 <!-- END readme-inventory -->
 
 ## Current coverage

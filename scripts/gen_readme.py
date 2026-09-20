@@ -166,7 +166,7 @@ def _render_inventory(datasets: list[dict[str, Any]]) -> str:
     dataset_label = "dataset" if len(datasets) == 1 else "datasets"
     publisher_label = "publisher" if len(custodians) == 1 else "publishers"
     return (
-        f"**{len(datasets)} {dataset_label} across {len(custodians)} {publisher_label}**, including **{gtfs} GTFS transit feeds**. "
+        f"**{len(datasets)} official {dataset_label} across {len(custodians)} {publisher_label}**, including **{gtfs} GTFS transit feeds**. "
         "Browse the [published reports](data/) for plain-language health assessments, or use "
         "[`datapulse.json`](datapulse.json) as the machine-readable index of every source, licence, "
         "health-report path, and declared refresh cadence."
