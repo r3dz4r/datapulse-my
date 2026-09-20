@@ -123,7 +123,11 @@ def test_health_snapshot_digest_mismatch_warns_without_error() -> None:
     )
 
     assert errors == []
-    warning = next(message for message in warnings if "informational drift" in message)
+    warning = next(
+        message
+        for message in warnings
+        if "health_snapshot" in message and "informational drift" in message
+    )
     assert local_digest in warning
     assert index_digest in warning
 
