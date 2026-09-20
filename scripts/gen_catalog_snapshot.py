@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Generate the current catalog snapshot and its one-release legacy alias."""
+"""Generate the canonical current snapshot and its one-release legacy alias.
+
+``catalog-snapshot.json`` is the canonical current-state artifact.  The public
+surface configuration still publishes ``changelog.json`` for compatibility, so
+the alias remains byte-identical until that published URL can be retired.
+"""
 
 from __future__ import annotations
 

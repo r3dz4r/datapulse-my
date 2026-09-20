@@ -138,16 +138,14 @@ frozen at the last known content date. This is not a freshness failure — it's 
 publisher decision.
 
 <!-- BEGIN readme-health -->
-Current distribution (`_trust_summary`): [90 fresh](badges/status-fresh.svg) · [113 aging](badges/status-aging.svg) · [187 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [1 degraded](badges/status-degraded.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [7 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [118 fresh](badges/status-fresh.svg) · [118 aging](badges/status-aging.svg) · [157 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [4 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
 <!-- END readme-health -->
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
 
 ### Browser-dependent datasets
 
-Five sources (currently 1.4% of the catalogue) require a real browser to probe because their
-source pages render client-side JavaScript: `eperolehan-diklankan`,
-`doe_apims`, `doe_rqims`, `doe_mqims`, and `kkm_idengue`.
+The current health summary identifies **5 browser-dependent sources (1.2% of the catalogue)** that require a real browser to probe because their source pages render client-side JavaScript.
 
 DataPulse uses **[Camofox](https://github.com/jo-inc/camofox-browser)**, a
 self-hosted patched headless-Chromium sidecar, to probe these. The probe path
@@ -163,7 +161,7 @@ content-date extraction.
 2. Set `CAMOFOX_BASE_URL` to that address.
 3. Restart the timer with `systemctl restart datapulse-health.timer`.
 
-Without Camofox, those five datasets will sit at `browser-dependent` — the
+Without Camofox, these datasets will sit at `browser-dependent` — the
 **honest** status: DataPulse cannot probe them without a browser, so it says
 so rather than failing silently. See
 [`scripts/smoke_browser_probes.sh`](scripts/smoke_browser_probes.sh) for
@@ -188,7 +186,7 @@ catalogue natively. It provides the same freshness, licence, schema-drift, and
 provenance evidence available to a human reviewer.
 
 - Endpoint: `https://mcp.data-pulse.my/mcp` (Streamable HTTP, no auth)
-Graded by [mcpgrade](https://www.npmjs.com/package/mcpgrade) — replay with `bash scripts/audit_mcpgrade.sh` (pinned version, writes `artifacts/mcpgrade/`). The canonical tool count lives in `mcp.json` / `agent.json`.
+Graded by [mcpgrade](https://www.npmjs.com/package/mcpgrade) — replay with `bash scripts/audit_mcpgrade.sh` (pinned version, writes `artifacts/mcpgrade/`). The canonical tool count lives in `mcp.json`.
 
 <!-- BEGIN mcp-tools -->
 - 19 tools: `search_datasets`, `get_dataset`, `get_data_passport`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
@@ -1231,8 +1229,9 @@ DataPulse currently tracks the portfolio declared in `datapulse.json`.
 
 Start with [`datapulse.json`](datapulse.json) to discover datasets and their
 official sources. Follow each `health_report` link for a plain-language
-assessment, or consume the matching file under `data/json/` in an automated
-workflow.
+assessment. Non-GTFS datasets also have matching machine-readable report
+envelopes under `data/json/`; the 30 GTFS transit feeds intentionally do not,
+and instead publish their health reports and GTFS samples.
 
 For example, a data pipeline can inspect `status`, `content_freshness_date`, and
 `freshness_signal_source` before processing a source, while a researcher can
