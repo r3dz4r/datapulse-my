@@ -16,6 +16,8 @@ source_path=""
 source_sha=""
 source_date=""
 deployed_path="${DATAPULSE_MCP_DEPLOYED_PATH:-$DEFAULT_DEPLOYED_PATH}"
+deployed_path_supplied=false
+[[ -z "${DATAPULSE_MCP_DEPLOYED_PATH:-}" ]] || deployed_path_supplied=true
 endpoint="${DATAPULSE_MCP_ENDPOINT:-$DEFAULT_ENDPOINT}"
 service="${DATAPULSE_MCP_SERVICE:-$DEFAULT_SERVICE}"
 drop_in="${DATAPULSE_MCP_SOURCE_DROP_IN:-$DEFAULT_DROP_IN}"
@@ -35,7 +37,7 @@ log() {
 write_result() {
   [[ -z "$result_file" ]] && return
   if [[ "$restart_mode" == delegated ]]; then
-    printf '%s restart_mode=delegated\n' "$1" > "$result_file"
+    printf '%s restart_mode=delegated source_marker_drop_in=skipped\n' "$1" > "$result_file"
   else
     printf '%s\n' "$1" > "$result_file"
   fi
@@ -162,6 +164,7 @@ while (( $# > 0 )); do
     --deployed-path)
       [[ $# -ge 2 ]] || fail '--deployed-path requires a path'
       deployed_path="$2"
+      deployed_path_supplied=true
       shift 2
       ;;
     --endpoint)
@@ -211,11 +214,6 @@ done
 
 [[ -n "$source_path" ]] || fail '--source is required'
 [[ -f "$source_path" ]] || fail "source is not a regular file: $source_path"
-[[ -f "$deployed_path" ]] || fail "deployed copy is not a regular file: $deployed_path"
-[[ "$pythonpath" != *$'\n'* && "$pythonpath" != *$'\r'* && "$pythonpath" != *'"'* && "$pythonpath" != *"'"* ]] \
-  || fail 'DATAPULSE_MCP_PYTHONPATH contains unsupported systemd Environment characters'
-[[ "$readiness_budget_seconds" =~ ^[0-9]+$ ]] && (( readiness_budget_seconds >= 1 )) \
-  || fail "DATAPULSE_MCP_READINESS_BUDGET_SECONDS must be a positive integer number of seconds, got: $readiness_budget_seconds"
 case "$restart_mode" in
   user-bus|delegated)
     ;;
@@ -223,6 +221,14 @@ case "$restart_mode" in
     fail "DATAPULSE_MCP_RESTART_MODE must be one of: user-bus, delegated; got: $restart_mode"
     ;;
 esac
+if [[ "$restart_mode" == delegated && "$deployed_path_supplied" != true ]]; then
+  fail 'delegated mode requires --deployed-path or DATAPULSE_MCP_DEPLOYED_PATH; the user-bus default is not accessible to the delegated deployer'
+fi
+[[ -f "$deployed_path" ]] || fail "deployed copy is not a regular file: $deployed_path"
+[[ "$pythonpath" != *$'\n'* && "$pythonpath" != *$'\r'* && "$pythonpath" != *'"'* && "$pythonpath" != *"'"* ]] \
+  || fail 'DATAPULSE_MCP_PYTHONPATH contains unsupported systemd Environment characters'
+[[ "$readiness_budget_seconds" =~ ^[0-9]+$ ]] && (( readiness_budget_seconds >= 1 )) \
+  || fail "DATAPULSE_MCP_READINESS_BUDGET_SECONDS must be a positive integer number of seconds, got: $readiness_budget_seconds"
 command -v curl >/dev/null || fail 'curl is required'
 command -v jq >/dev/null || fail 'jq is required'
 if [[ "$restart_mode" == user-bus ]]; then
@@ -308,8 +314,15 @@ UnsetEnvironment=DATAPULSE_MCP_SOURCE_SHA DATAPULSE_MCP_SOURCE_DATE
 Environment=PYTHONPATH=$pythonpath"
 
 drop_in_changed=false
-if [[ ! -f "$drop_in" ]] || [[ "$(<"$drop_in")" != "$drop_in_content" ]]; then
-  drop_in_changed=true
+if [[ "$restart_mode" == delegated ]]; then
+  # The path unit owns restart coordination and the redza-owned user-unit
+  # drop-in is intentionally outside the delegated deployer's authority. Do
+  # not even inspect it: the deployer may be unable to traverse its home.
+  log 'source-marker drop-in skipped (restart_mode=delegated; operator-managed and unverified)'
+else
+  if [[ ! -f "$drop_in" ]] || [[ "$(<"$drop_in")" != "$drop_in_content" ]]; then
+    drop_in_changed=true
+  fi
 fi
 
 # Copy is needed when the files differ anywhere outside the two stamped marker
@@ -338,7 +351,9 @@ if [[ "$dry_run" == true ]]; then
   else
     log "dry-run: deployed markers already at HEAD"
   fi
-  if [[ "$drop_in_changed" == true ]]; then
+  if [[ "$restart_mode" == delegated ]]; then
+    log 'dry-run: source-marker drop-in skipped (restart_mode=delegated; operator-managed and unverified)'
+  elif [[ "$drop_in_changed" == true ]]; then
     log "dry-run: would install source-marker drop-in $drop_in"
   else
     log "dry-run: drop-in already current"

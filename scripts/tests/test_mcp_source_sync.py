@@ -699,3 +699,177 @@ def test_sync_rejects_malformed_readiness_budget(tmp_path: Path) -> None:
     assert "DATAPULSE_MCP_READINESS_BUDGET_SECONDS" in result.stderr
     assert "positive integer" in result.stderr
     assert deployed.read_text(encoding="utf-8") == "old deployed source\n"
+
+
+def test_sync_delegated_skips_an_unreachable_source_marker_drop_in(
+    tmp_path: Path,
+) -> None:
+    """Delegated deployers must not inspect or write the service owner's drop-in."""
+    source, deployed, env = _readiness_fixture(tmp_path)
+    blocked_home = tmp_path / "home" / "redza"
+    blocked_home.mkdir(parents=True)
+    blocked_drop_in = blocked_home / ".config/systemd/user/datapulse-mcp.service.d/99-source-marker.conf"
+    result_file = tmp_path / "result"
+    fake_systemctl = tmp_path / "systemctl-called"
+    (tmp_path / "bin" / "systemctl").write_text(
+        "#!/usr/bin/env bash\ntouch \"$SYSTEMCTL_CALLED\"\nexit 99\n", encoding="utf-8"
+    )
+    (tmp_path / "bin" / "systemctl").chmod(0o755)
+    blocked_home.chmod(0o000)
+
+    server = HTTPServer(("127.0.0.1", 0), _ReadinessStubHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        result = subprocess.run(
+            [
+                str(SYNC_SCRIPT),
+                "--source",
+                str(source),
+                "--deployed-path",
+                str(deployed),
+                "--endpoint",
+                f"http://127.0.0.1:{server.server_port}/mcp",
+                "--service",
+                "redza-owned.service",
+                "--result-file",
+                str(result_file),
+            ],
+            cwd=ROOT,
+            env={
+                **env,
+                "DATAPULSE_MCP_RESTART_MODE": "delegated",
+                "DATAPULSE_MCP_SOURCE_DROP_IN": str(blocked_drop_in),
+                "SYSTEMCTL_CALLED": str(fake_systemctl),
+            },
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=20,
+        )
+    finally:
+        blocked_home.chmod(0o755)
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert result.returncode == 0, result.stderr
+    assert "source-marker drop-in skipped (restart_mode=delegated; operator-managed and unverified)" in result.stdout
+    assert "installed source-marker drop-in" not in result.stdout
+    assert not fake_systemctl.exists()
+    assert result_file.read_text(encoding="utf-8") == (
+        "deployed restart_mode=delegated source_marker_drop_in=skipped\n"
+    )
+
+
+def test_sync_default_mode_matches_head_for_a_no_change_run(tmp_path: Path) -> None:
+    """Mode unset retains the checked-in user-bus path's observable result."""
+    source = tmp_path / "source.py"
+    deployed = tmp_path / "deployed.py"
+    source_text = (
+        'import os\n'
+        'FASTMCP_VERSION = "1.2.3"\n'
+        'SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "' + "a" * 40 + '")\n'
+        'SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "2024-01-15")\n'
+    )
+    source.write_text(source_text, encoding="utf-8")
+    deployed.write_text(source_text, encoding="utf-8")
+    drop_in = tmp_path / "drop-in.conf"
+    drop_in.write_text(
+        "[Service]\n"
+        "# The deployed file is authoritative; stale manual environment overrides must not\n"
+        "# mask the SOURCE_COMMIT_SHA/SOURCE_COMMIT_DATE embedded by release-build.\n"
+        "UnsetEnvironment=DATAPULSE_MCP_SOURCE_SHA DATAPULSE_MCP_SOURCE_DATE\n"
+        "Environment=PYTHONPATH=/home/redza/datapulse-my\n",
+        encoding="utf-8",
+    )
+    head_script = tmp_path / "sync_mcp_deployment.head.sh"
+    head_script.write_text(
+        subprocess.check_output(
+            ["git", "show", "HEAD:scripts/sync_mcp_deployment.sh"], cwd=ROOT, text=True
+        ),
+        encoding="utf-8",
+    )
+    head_script.chmod(0o755)
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    (fake_bin / "systemctl").write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    (fake_bin / "systemctl").chmod(0o755)
+    shared_env = {
+        "PATH": f"{fake_bin}:{os.environ['PATH']}",
+        "DATAPULSE_MCP_SOURCE_SHA": "a" * 40,
+        "DATAPULSE_MCP_SOURCE_DATE": "2024-01-15",
+    }
+
+    def run(script: Path, result_file: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                str(script),
+                "--source",
+                str(source),
+                "--deployed-path",
+                str(deployed),
+                "--endpoint",
+                "http://127.0.0.1:1/mcp",
+                "--service",
+                "sync-test.service",
+                "--drop-in",
+                str(drop_in),
+                "--result-file",
+                str(result_file),
+            ],
+            cwd=ROOT,
+            env=shared_env,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=20,
+        )
+
+    head_result = run(head_script, tmp_path / "head-result")
+    current_result = run(SYNC_SCRIPT, tmp_path / "current-result")
+
+    assert head_result.returncode == current_result.returncode == 0
+    assert current_result.stdout == head_result.stdout
+    assert current_result.stderr == head_result.stderr
+    assert (tmp_path / "current-result").read_text(encoding="utf-8") == (
+        tmp_path / "head-result"
+    ).read_text(encoding="utf-8")
+
+
+def test_sync_rejects_unrecognised_restart_mode(tmp_path: Path) -> None:
+    source, deployed, env = _readiness_fixture(tmp_path)
+    result = subprocess.run(
+        [
+            str(SYNC_SCRIPT),
+            "--source",
+            str(source),
+            "--deployed-path",
+            str(deployed),
+        ],
+        cwd=ROOT,
+        env={**env, "DATAPULSE_MCP_RESTART_MODE": "ownerless"},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=20,
+    )
+
+    assert result.returncode != 0
+    assert "DATAPULSE_MCP_RESTART_MODE must be one of: user-bus, delegated; got: ownerless" in result.stderr
+
+
+def test_sync_delegated_requires_an_explicit_deployment_target(tmp_path: Path) -> None:
+    source, _, env = _readiness_fixture(tmp_path)
+    result = subprocess.run(
+        [str(SYNC_SCRIPT), "--source", str(source)],
+        cwd=ROOT,
+        env={**env, "DATAPULSE_MCP_RESTART_MODE": "delegated"},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=20,
+    )
+
+    assert result.returncode != 0
+    assert "delegated mode requires --deployed-path or DATAPULSE_MCP_DEPLOYED_PATH" in result.stderr
