@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.30.1](https://github.com/r3dz4r/datapulse-my/compare/v3.30.0...v3.30.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **health:** publish parity digests ([02d256d](https://github.com/r3dz4r/datapulse-my/commit/02d256dd35c27f7456c6e0d2627f2f79d575cc72))
+* **health:** verify served health by published digest instead of a 12 MB fetch ([a05f8b0](https://github.com/r3dz4r/datapulse-my/commit/a05f8b0df631721e7a94225dfe248d4e83713509))
+
 ## [3.30.0](https://github.com/r3dz4r/datapulse-my/compare/v3.29.4...v3.30.0) (2026-09-20)
 
 
