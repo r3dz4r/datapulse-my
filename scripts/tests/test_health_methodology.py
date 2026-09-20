@@ -51,6 +51,9 @@ def test_methodology_extracts_all_sections_and_is_idempotent(tmp_path: Path) -> 
     assert "every **5 minutes**" in generated.read_text(encoding="utf-8")
     assert "datapulse/v0.4/dataset-health" in generated.read_text(encoding="utf-8")
     assert "datapulse-history/health-YYYY-MM.jsonl.gz" in generated.read_text(encoding="utf-8")
+    assert "Its absence is not a validation error and does not mean the dataset is unbound" in generated.read_text(
+        encoding="utf-8"
+    )
 
     second = run_methodology(source, timer)
     assert second.returncode == 0, second.stderr
