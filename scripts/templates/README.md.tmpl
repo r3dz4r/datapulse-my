@@ -93,6 +93,23 @@ python3 verify_external.py
 See [Verify DataPulse externally](docs/verify-datapulse-externally.md) for the
 full guide, and [our methodology](#dataset-health) below for how health is judged.
 
+### Verify an observation receipt
+
+`scripts/observation_verify.py` verifies receipt identity, signature, key
+registry validity, and any available chain linkage from local files. It makes
+no network calls in any mode. Supplying `--health <artifact>` additionally
+reproduces the normalized artifact digest and re-derives its dataset and
+freshness-status claims: only `health_binding: checked` and
+`artifact_claims: verified` attest those claims. Without `--health`, the report
+explicitly says `artifact_claims: NOT verified`; use
+`--require-health-binding` when that incomplete result must fail.
+
+For receipts with a signed `<commit>@<path>` artifact locator, pass
+`--repo owner/name` to print the corresponding immutable raw-GitHub URL. The
+repository is supplied, never guessed or hardcoded. Fetch that URL separately,
+then give the saved file to `--health`; the URL is a discovery aid, not proof
+until the local digest and claims check succeeds.
+
 A verification layer is only as honest as its method, so DataPulse deliberately
 tells you **when it cannot be sure** — a source that cannot be proven current is
 labelled accordingly, never silently marked healthy. That is the boundary we
@@ -128,9 +145,7 @@ Current distribution (`_trust_summary`): [fresh](badges/status-fresh.svg) · [ag
 
 ### Browser-dependent datasets
 
-Five sources (currently 1.4% of the catalogue) require a real browser to probe because their
-source pages render client-side JavaScript: `eperolehan-diklankan`,
-`doe_apims`, `doe_rqims`, `doe_mqims`, and `kkm_idengue`.
+{{BROWSER_DEPENDENT_SUMMARY}}
 
 DataPulse uses **[Camofox](https://github.com/jo-inc/camofox-browser)**, a
 self-hosted patched headless-Chromium sidecar, to probe these. The probe path
@@ -146,7 +161,7 @@ content-date extraction.
 2. Set `CAMOFOX_BASE_URL` to that address.
 3. Restart the timer with `systemctl restart datapulse-health.timer`.
 
-Without Camofox, those five datasets will sit at `browser-dependent` — the
+Without Camofox, these datasets will sit at `browser-dependent` — the
 **honest** status: DataPulse cannot probe them without a browser, so it says
 so rather than failing silently. See
 [`scripts/smoke_browser_probes.sh`](scripts/smoke_browser_probes.sh) for
@@ -171,7 +186,7 @@ catalogue natively. It provides the same freshness, licence, schema-drift, and
 provenance evidence available to a human reviewer.
 
 - Endpoint: `https://mcp.data-pulse.my/mcp` (Streamable HTTP, no auth)
-Graded by [mcpgrade](https://www.npmjs.com/package/mcpgrade) — replay with `bash scripts/audit_mcpgrade.sh` (pinned version, writes `artifacts/mcpgrade/`). The canonical tool count lives in `mcp.json` / `agent.json`.
+Graded by [mcpgrade](https://www.npmjs.com/package/mcpgrade) — replay with `bash scripts/audit_mcpgrade.sh` (pinned version, writes `artifacts/mcpgrade/`). The canonical tool count lives in `mcp.json`.
 
 <!-- BEGIN mcp-tools -->
 - tools listed here
@@ -244,8 +259,9 @@ DataPulse currently tracks the portfolio declared in `datapulse.json`.
 
 Start with [`datapulse.json`](datapulse.json) to discover datasets and their
 official sources. Follow each `health_report` link for a plain-language
-assessment, or consume the matching file under `data/json/` in an automated
-workflow.
+assessment. Non-GTFS datasets also have matching machine-readable report
+envelopes under `data/json/`; the 30 GTFS transit feeds intentionally do not,
+and instead publish their health reports and GTFS samples.
 
 For example, a data pipeline can inspect `status`, `content_freshness_date`, and
 `freshness_signal_source` before processing a source, while a researcher can

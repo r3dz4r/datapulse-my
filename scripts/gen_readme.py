@@ -121,7 +121,7 @@ def _render_hero(datasets: list[dict[str, Any]]) -> str:
     )
 
 
-def _render_health(root: Path, dataset_count: int) -> str:
+def _health_summary(root: Path, dataset_count: int) -> dict[str, Any]:
     summary = load_json(root / "health/latest.json").get("_trust_summary")
     if not isinstance(summary, dict):
         raise GenerationError("health/latest.json: _trust_summary must be an object")
@@ -131,6 +131,13 @@ def _render_health(root: Path, dataset_count: int) -> str:
         raise GenerationError("health/latest.json: invalid _trust_summary")
     if total != dataset_count:
         raise GenerationError(f"health/latest.json datasets_total {total} does not match manifest {dataset_count}")
+    return summary
+
+
+def _render_health(root: Path, dataset_count: int) -> str:
+    summary = _health_summary(root, dataset_count)
+    total = summary["datasets_total"]
+    statuses = summary["by_status"]
     badges: list[str] = []
     for key, label in STATUS_LABELS:
         count = statuses.get(key, 0)
@@ -141,6 +148,20 @@ def _render_health(root: Path, dataset_count: int) -> str:
     if sum(statuses.get(key, 0) for key, _ in STATUS_LABELS) != total:
         raise GenerationError("health/latest.json: status counts do not equal datasets_total")
     return "Current distribution (`_trust_summary`): " + " · ".join(badges)
+
+
+def _render_browser_dependent(root: Path, dataset_count: int) -> str:
+    summary = _health_summary(root, dataset_count)
+    statuses = summary["by_status"]
+    count = statuses.get("browser_dependent", 0)
+    if not isinstance(count, int) or count < 0:
+        raise GenerationError("health/latest.json: by_status.browser_dependent must be a non-negative integer")
+    percentage = count / dataset_count * 100 if dataset_count else 0
+    return (
+        f"The current health summary identifies **{count} browser-dependent sources "
+        f"({percentage:.1f}% of the catalogue)** that require a real browser to probe "
+        "because their source pages render client-side JavaScript."
+    )
 
 
 def _render_licences(datasets: list[dict[str, Any]]) -> str:
@@ -187,7 +208,9 @@ def generate(root: Path, *, check: bool = False, validate_only: bool = False) ->
         current = readme_path.read_text(encoding="utf-8") if readme_path.exists() else template
     except (OSError, UnicodeError) as error:
         raise GenerationError(f"cannot read README input: {error}") from error
-    rendered = template
+    rendered = template.replace(
+        "{{BROWSER_DEPENDENT_SUMMARY}}", _render_browser_dependent(root, len(datasets))
+    )
     for marker in EXTERNAL_MARKERS:
         rendered = _replace(rendered, marker, _external_body(current, marker))
     blocks = {
