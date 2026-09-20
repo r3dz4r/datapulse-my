@@ -106,6 +106,7 @@ def environment(tmp_path: Path) -> dict[str, Any]:
             "keys": [
                 {
                     "key_id": KEY_ID,
+                    "scope": "observation-receipts (test fixture)",
                     "algorithm": "Ed25519",
                     "public_key_base64": public_b64,
                     "created_at": "2026-01-01T00:00:00Z",
@@ -1636,6 +1637,74 @@ def test_socket_signing_matches_inline_signature_and_receipt_id(
     print(f"inline_receipt_id={inline_receipt['receipt_id']}")
     print(f"socket_signature_base64={socket_receipt['signature_base64']}")
     print(f"inline_signature_base64={inline_receipt['signature_base64']}")
+
+
+def test_socket_signing_selects_receipt_key_when_cycle_key_is_also_active(
+    environment: dict[str, Any], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A second active key for cycle attestations must not freeze receipt signing."""
+    monkeypatch.delenv(signer.OBSERVER_CYCLE_KEY_FILE_ENV, raising=False)
+    expected_inputs = _payload_inputs(environment)
+    expected_inputs["profile_version"] = signer.verification_profile_version()
+    expected_payload = signer.build_payload(**expected_inputs)
+    _, _, cycle_public_b64 = _keypair()
+    registry = _registry(environment)
+    registry["keys"].append(
+        {
+            "key_id": "ed25519-cycle-test",
+            "scope": "cycle-attestation (test fixture)",
+            "algorithm": "Ed25519",
+            "public_key_base64": cycle_public_b64,
+            "created_at": "2026-01-01T00:00:00Z",
+            "not_before": "2026-01-01T00:00:00Z",
+            "not_after": "2027-01-01T00:00:00Z",
+            "status": "active",
+            "supersedes": None,
+            "compromised_at": None,
+        }
+    )
+    _write(environment["registry_path"], registry)
+
+    socket_path = tmp_path / "signer.sock"
+    with _SignerStub(socket_path, environment["private"], environment["key_id"]):
+        summary = signer.sign_observation(
+            output_root=tmp_path / "socket-observation",
+            health_path=environment["health_path"],
+            methodology_path=environment["methodology_path"],
+            registry_path=environment["registry_path"],
+            signer_socket=socket_path,
+            now=NOW,
+            artifact_commit="a" * 40,
+        )
+
+    receipt = _load(Path(summary["receipt_path"]))["receipts"][0]
+    assert summary["status"] == "signed"
+    assert receipt["payload"] == expected_payload
+    assert signer.canonical_bytes(receipt["payload"]) == signer.canonical_bytes(expected_payload)
+
+
+def test_socket_signing_refuses_registry_without_active_receipt_key(
+    environment: dict[str, Any], tmp_path: Path
+) -> None:
+    """Scope filtering must fail closed instead of selecting an unrelated active key."""
+    registry = _registry(environment)
+    registry["keys"][0]["scope"] = "cycle-attestation (test fixture)"
+    _write(environment["registry_path"], registry)
+
+    socket_path = tmp_path / "signer.sock"
+    with _SignerStub(socket_path, environment["private"], environment["key_id"]) as stub:
+        with pytest.raises(signer.ObservationReceiptError, match="key_id_not_in_registry"):
+            signer.sign_observation(
+                output_root=tmp_path / "socket-observation",
+                health_path=environment["health_path"],
+                methodology_path=environment["methodology_path"],
+                registry_path=environment["registry_path"],
+                signer_socket=socket_path,
+                now=NOW,
+            )
+
+    assert stub.requests == []
+    assert not (tmp_path / "socket-observation" / "days").exists()
 
 
 def test_socket_request_carries_exact_documented_keys(

@@ -79,6 +79,7 @@ DEFAULT_KEY_PATH: Path = Path("/home/redza/.hermes/keys/datapulse-observation.ed
 # is supplied. The observing process never opens a key file in this mode.
 DEFAULT_SIGNER_SOCKET: Path = Path("/run/datapulse-signer/sign.sock")
 DEFAULT_REGISTRY_PATH: Path = Path("/home/redza/.hermes/keys/datapulse-observation-registry.json")
+RECEIPT_KEY_SCOPE_PREFIX: str = "observation-receipts"
 # This key belongs to the observing cycle, independently of the receipt signer.
 # The path is opt-in so receipts retain their established payload exactly until
 # the observer identity is provisioned.
@@ -471,9 +472,10 @@ def resolve_signature_source(
     a socket the signer is the only party that holds the key. The public
     registry is the shared source of the key id: the inline path reads it from
     the key document and checks the registry, while the socket path selects the
-    registry's one active key and has the signer confirm it. Either way the
-    self-check that follows uses the registry's public key, so a receipt that
-    cannot be verified is never written.
+    registry's one active observation-receipts key and has the signer confirm
+    it. Other active key scopes are unrelated trust purposes and are ignored.
+    Either way the self-check that follows uses the registry's public key, so a
+    receipt that cannot be verified is never written.
 
     ``sign_observation`` guarantees exactly one source: it refuses supplying both
     ``key_path`` and ``signer_socket`` as ``ambiguous_signing_source`` and
@@ -490,11 +492,14 @@ def resolve_signature_source(
             for row in rows
             if isinstance(row, dict)
             and row.get("status") == "active"
+            and isinstance(row.get("scope"), str)
+            and row["scope"].startswith(RECEIPT_KEY_SCOPE_PREFIX)
             and (expected_key_id is None or row.get("key_id") == expected_key_id)
         ]
         if len(active) != 1:
             raise ObservationReceiptError(
-                f"key_id_not_in_registry: expected exactly one active registry row, found {len(active)}"
+                "key_id_not_in_registry: expected exactly one active "
+                f"{RECEIPT_KEY_SCOPE_PREFIX} registry row, found {len(active)}"
             )
         row = active[0]
         key_id = row.get("key_id")
