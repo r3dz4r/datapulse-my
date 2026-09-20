@@ -6,7 +6,8 @@
 **Test vectors:** `scripts/tests/fixtures/canonical_vectors.json`
 **Enforcement:** `scripts/tests/test_canonical_vectors.py`
 
-This document pins the bytes that a signature covers. It is descriptive of the
+This document pins the bytes that a signature covers and supplies signed test
+vectors for independent verifier implementations. It is descriptive of the
 implementation that already exists: it does not change `scripts/gen_attestations.py`
 and does not change the live chain.
 
@@ -240,14 +241,31 @@ arrays, strings, integers, booleans, and null.
 literal vector:
 
 - **positive** — a logical payload, its exact canonical byte string, and the
-  sha256 of those bytes;
+  sha256 of those bytes, plus an Ed25519 signature;
 - **negative** — a payload and a near-miss rendering that MUST NOT match the
   canonical bytes, with the reason it is wrong;
 - **canonical-form** — two independently constructed representations of the
-  same logical value that MUST produce identical bytes and digest.
+  same logical value that MUST produce identical bytes and digest, plus an
+  Ed25519 signature over those bytes.
+
+Every signed vector names `signature.algorithm` (`Ed25519`),
+`signature.key_id`, and `signature.signature_base64`. Its public key record is
+in the fixture's top-level `keys` array and names the same key ID, algorithm,
+and raw 32-byte `public_key_base64`. The key is explicitly test-only; no private
+key is in the repository or needed to verify a vector.
+
+An independent implementation MUST, for each signed vector, UTF-8 encode
+`canonical_bytes` exactly as recorded (or reproduce it by canonicalising the
+payload), decode the Base64 public key and signature, and perform Ed25519
+verification over those exact bytes. It MUST accept the recorded bytes and MUST
+reject the same signature if any one payload byte is changed. The test suite
+performs both controls for every positive and canonical-form vector; the latter
+is intentional evidence that the check is a signature verification rather than
+a hash-only comparison.
 
 `scripts/tests/test_canonical_vectors.py` imports `canonical` from
-`scripts.gen_attestations` and asserts every vector. It does not reimplement
+`scripts.gen_attestations` and verifies every signed vector with
+`cryptography`'s Ed25519 implementation. It does not reimplement
 canonicalisation; the fixture is the contract.
 
 ## Non-goals

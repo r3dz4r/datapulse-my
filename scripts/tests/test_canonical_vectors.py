@@ -15,12 +15,15 @@ byte comparison is the only thing standing between the two implementations.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 from pathlib import Path
 from typing import Any
 
 import pytest
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from scripts.gen_attestations import canonical, sha
 
@@ -30,6 +33,8 @@ VECTORS: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
 POSITIVE: list[dict[str, Any]] = VECTORS["positive"]
 NEGATIVE: list[dict[str, Any]] = VECTORS["negative"]
 CANONICAL_FORM: list[dict[str, Any]] = VECTORS["canonical_form"]
+KEYS: dict[str, dict[str, Any]] = {key["key_id"]: key for key in VECTORS["keys"]}
+SIGNED_VECTORS: list[dict[str, Any]] = [*POSITIVE, *CANONICAL_FORM]
 
 # Negative classes the specification requires. This guards the fixture against a
 # class being deleted instead of fixed.
@@ -84,6 +89,15 @@ def _assert_no_floats(value: Any, where: str = "$") -> None:
             _assert_no_floats(item, f"{where}[{index}]")
 
 
+def _signature_verifies(public_key: Ed25519PublicKey, signature: bytes, payload: bytes) -> bool:
+    """Return whether an Ed25519 signature authenticates the exact payload bytes."""
+    try:
+        public_key.verify(signature, payload)
+    except InvalidSignature:
+        return False
+    return True
+
+
 @pytest.mark.parametrize("vector", POSITIVE, ids=[v["name"] for v in POSITIVE])
 def test_positive_vector_matches_bytes_and_digest(vector: dict[str, Any]) -> None:
     payload = vector["payload"]
@@ -96,6 +110,27 @@ def test_positive_vector_matches_bytes_and_digest(vector: dict[str, Any]) -> Non
     # The stored expectation is internally consistent: hashing the exact
     # canonical byte string gives the recorded digest.
     assert hashlib.sha256(expected).hexdigest() == vector["sha256"]
+
+
+@pytest.mark.parametrize("vector", SIGNED_VECTORS, ids=[v["name"] for v in SIGNED_VECTORS])
+def test_signed_vector_verifies_exact_canonical_bytes_and_rejects_mutation(vector: dict[str, Any]) -> None:
+    expected = vector["canonical_bytes"].encode("utf-8")
+    payload = vector["payload"] if "payload" in vector else vector["payload_a"]
+    signing = vector["signature"]
+    key = KEYS[signing["key_id"]]
+    signature = base64.b64decode(signing["signature_base64"], validate=True)
+    public_key = Ed25519PublicKey.from_public_bytes(
+        base64.b64decode(key["public_key_base64"], validate=True)
+    )
+
+    assert signing["algorithm"] == "Ed25519"
+    assert key["algorithm"] == signing["algorithm"]
+    assert canonical(payload) == expected
+    assert _signature_verifies(public_key, signature, expected)
+
+    mutated = bytearray(expected)
+    mutated[-1] ^= 1
+    assert not _signature_verifies(public_key, signature, bytes(mutated))
 
 
 @pytest.mark.parametrize("vector", NEGATIVE, ids=[v["name"] for v in NEGATIVE])
