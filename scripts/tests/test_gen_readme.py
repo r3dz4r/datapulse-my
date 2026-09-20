@@ -71,8 +71,9 @@ def test_fake_onboarding_updates_derived_blocks_without_mutating_template(tmp_pa
 
     text = (root / "README.md").read_text(encoding="utf-8")
     assert "2 official Malaysian datasets" in text
-    assert "[Zeta](data/zeta.md)" in text
-    assert "new-publisher" in text
+    assert "2 datasets across 2 publishers" in text
+    assert "[published reports](data/)" in text
+    assert "daily (1); monthly (1)" in text
     assert "ODC-BY (1)" in text
     assert (root / "scripts/templates/README.md.tmpl").read_bytes() == template_before
 
@@ -83,7 +84,12 @@ def test_check_reports_stale_output_and_balanced_markers(tmp_path: Path) -> None
     command = [sys.executable, str(ROOT / "scripts/gen_readme.py"), "--root", str(root), "--check"]
     assert subprocess.run(command, check=False).returncode == 0
     readme = root / "README.md"
-    readme.write_text(readme.read_text(encoding="utf-8").replace("Alpha", "Stale Alpha", 1), encoding="utf-8")
+    readme.write_text(
+        readme.read_text(encoding="utf-8").replace(
+            "1 dataset across 1 publisher", "Stale dataset summary", 1
+        ),
+        encoding="utf-8",
+    )
     assert subprocess.run(command, check=False).returncode != 0
     text = readme.read_text(encoding="utf-8")
     assert text.count("<!-- BEGIN readme-") == text.count("<!-- END readme-")

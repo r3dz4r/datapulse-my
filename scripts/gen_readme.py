@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
+from collections import Counter
 import sys
 from pathlib import Path
 from typing import Any
@@ -100,18 +100,6 @@ def _replace(text: str, marker: str, rendered: str) -> str:
     return updated
 
 
-def _custodian_names(root: Path) -> dict[str, str]:
-    document = load_json(root / "custodians.json")
-    custodians = document.get("custodians")
-    if not isinstance(custodians, dict):
-        raise GenerationError("custodians.json: custodians must be an object")
-    names: dict[str, str] = {}
-    for identifier, record in custodians.items():
-        if isinstance(identifier, str) and isinstance(record, dict) and isinstance(record.get("name"), str):
-            names[identifier] = record["name"]
-    return names
-
-
 def _render_hero(datasets: list[dict[str, Any]]) -> str:
     gtfs = sum(1 for row in datasets if _string(row.get("id"), field="dataset id").startswith("gtfs_"))
     return (
@@ -169,33 +157,36 @@ def _render_licences(datasets: list[dict[str, Any]]) -> str:
     return "; ".join(f"{name} ({counts[name]})" for name in sorted(counts, key=str.casefold)) + "."
 
 
-def _render_inventory(root: Path, datasets: list[dict[str, Any]]) -> str:
-    names = _custodian_names(root)
-    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for row in datasets:
-        grouped[_string(row.get("custodian"), field=f"dataset {row.get('id')!r} custodian")].append(row)
-    lines = ["Dataset inventory is grouped by stable `custodian` publisher ID; unknown IDs fall back to the ID itself."]
-    for custodian in sorted(grouped):
-        display = names.get(custodian, custodian)
-        lines.extend(("", f"### {display} (`{custodian}`)", ""))
-        for row in sorted(grouped[custodian], key=lambda item: _string(item.get("id"), field="dataset id")):
-            dataset_id = _string(row.get("id"), field="dataset id")
-            name = _string(row.get("name"), field=f"dataset {dataset_id!r} name")
-            report = _string(row.get("health_report"), field=f"dataset {dataset_id!r} health_report")
-            sample_paths = sorted((root / "samples").glob(f"{dataset_id}.*"))
-            sample = f" · [sample](samples/{sample_paths[0].name})" if sample_paths else ""
-            lines.append(f"- [{name}]({report}) (`{dataset_id}`){sample}")
-    return "\n".join(lines)
+def _render_inventory(datasets: list[dict[str, Any]]) -> str:
+    custodians = {
+        _string(row.get("custodian"), field=f"dataset {row.get('id')!r} custodian")
+        for row in datasets
+    }
+    gtfs = sum(1 for row in datasets if _string(row.get("id"), field="dataset id").startswith("gtfs_"))
+    dataset_label = "dataset" if len(datasets) == 1 else "datasets"
+    publisher_label = "publisher" if len(custodians) == 1 else "publishers"
+    return (
+        f"**{len(datasets)} {dataset_label} across {len(custodians)} {publisher_label}**, including **{gtfs} GTFS transit feeds**. "
+        "Browse the [published reports](data/) for plain-language health assessments, or use "
+        "[`datapulse.json`](datapulse.json) as the machine-readable index of every source, licence, "
+        "health-report path, and declared refresh cadence."
+    )
 
 
 def _render_cadence(datasets: list[dict[str, Any]]) -> str:
-    lines = ("| Dataset | Refresh cadence |", "| --- | --- |")
-    rows = []
-    for row in sorted(datasets, key=lambda item: _string(item.get("id"), field="dataset id")):
-        dataset_id = _string(row.get("id"), field="dataset id")
-        cadence = _string(row.get("refresh_frequency"), field=f"dataset {dataset_id!r} refresh_frequency")
-        rows.append(f"| `{dataset_id}` | {cadence} |")
-    return "\n".join((*lines, *rows))
+    counts = Counter(
+        _string(row.get("refresh_frequency"), field=f"dataset {row.get('id')!r} refresh_frequency")
+        for row in datasets
+    )
+    summary = "; ".join(
+        f"{cadence} ({count})"
+        for cadence, count in sorted(counts.items(), key=lambda item: (-item[1], item[0].casefold()))
+    )
+    return (
+        "Declared refresh cadences: "
+        f"{summary}. Per-dataset cadence remains available in [`datapulse.json`](datapulse.json) "
+        "and each published health report."
+    )
 
 
 def generate(root: Path, *, check: bool = False, validate_only: bool = False) -> bool:
@@ -218,7 +209,7 @@ def generate(root: Path, *, check: bool = False, validate_only: bool = False) ->
         "readme-cover": f"**{len(datasets)} official datasets**",
         "readme-health": _render_health(root, len(datasets)),
         "readme-licences": _render_licences(datasets),
-        "readme-inventory": _render_inventory(root, datasets),
+        "readme-inventory": _render_inventory(datasets),
         "readme-cadence": _render_cadence(datasets),
     }
     for marker in OWNED_MARKERS:
