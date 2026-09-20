@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.29.2](https://github.com/r3dz4r/datapulse-my/compare/v3.29.1...v3.29.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **observation:** select the receipt-signing key by scope, not by count ([124b8f9](https://github.com/r3dz4r/datapulse-my/commit/124b8f97aea2ddd99bfab23c5dd2c031f9d5552e))
+
 ## [3.29.1](https://github.com/r3dz4r/datapulse-my/compare/v3.29.0...v3.29.1) (2026-09-19)
 
 
