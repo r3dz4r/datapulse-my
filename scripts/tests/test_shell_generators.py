@@ -181,7 +181,7 @@ def test_gen_readme_summary_replaces_marker(tmp_path: Path) -> None:
     assert "[1 fresh]" in text
     assert "[1 stale]" in text
     assert "2 official datasets" in text
-    assert "alpha fixture dataset" in text
+    assert "**2 official datasets across 1 publisher**, including **0 GTFS transit feeds**." in text
     assert "daily" in text
     assert "**42 official datasets**" not in text
 
