@@ -64,7 +64,7 @@
           "minLength": 1
         },
         "canonical_id": {
-          "description": "Canonical data.gov.my dataset identifier for this entry.",
+          "description": "Optional data.gov.my static-API dataset identifier. Populated where this dataset has a corresponding data.gov.my static-API identifier; absence is not a validation error and does not mean the dataset is unbound, because required url, steward, custodian, licence, and attribution fields provide source identity.",
           "type": "string",
           "minLength": 1,
           "pattern": "^[a-z0-9][a-z0-9_-]*$"

@@ -22,6 +22,12 @@ HTML_OUTPUT = ROOT / "docs/health-methodology.html"
 EXTRACTED = ROOT / "docs/.health-methodology/extracted.md"
 BLOCK = re.compile(r"(<!-- BEGIN EXTRACTED: ([a-z0-9-]+) -->.*?<!-- END EXTRACTED: \2 -->)", re.DOTALL)
 PLACEHOLDER = re.compile(r"<!-- BEGIN EXTRACTED: ([a-z0-9-]+) -->")
+CANONICAL_ID_RULE = (
+    "Optional `canonical_id` is populated where a dataset has a corresponding "
+    "data.gov.my static-API identifier. Its absence is not a validation error and "
+    "does not mean the dataset is unbound: required `url`, `steward`, `custodian`, "
+    "`licence`, and `attribution` fields provide source identity for every dataset."
+)
 
 
 def render(template: str, extracted: str) -> str:
@@ -33,6 +39,11 @@ def render(template: str, extracted: str) -> str:
     if missing:
         raise ValueError(f"extracted content is missing sections: {', '.join(missing)}")
     result = PLACEHOLDER.sub(lambda match: blocks[match.group(1)], template)
+    result = result.replace(
+        "# Health methodology\n",
+        f"# Health methodology\n\n## Canonical data.gov.my identifiers\n\n{CANONICAL_ID_RULE}\n",
+        1,
+    )
     return result.rstrip() + "\n"
 
 

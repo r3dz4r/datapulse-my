@@ -1,5 +1,9 @@
 # Health methodology
 
+## Canonical data.gov.my identifiers
+
+Optional `canonical_id` is populated where a dataset has a corresponding data.gov.my static-API identifier. Its absence is not a validation error and does not mean the dataset is unbound: required `url`, `steward`, `custodian`, `licence`, and `attribution` fields provide source identity for every dataset.
+
 DataPulse MY reports evidence, not a promise that upstream data is correct.
 
 ## Schema version
