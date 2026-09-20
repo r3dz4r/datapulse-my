@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.29.4](https://github.com/r3dz4r/datapulse-my/compare/v3.29.3...v3.29.4) (2026-09-20)
+
+
+### Bug Fixes
+
+* **readme:** derive the health block from the committed artifact; correct four claims ([#145](https://github.com/r3dz4r/datapulse-my/issues/145)) ([8e057da](https://github.com/r3dz4r/datapulse-my/commit/8e057da02f75018297dd65f1a62c8344823454c2))
+
 ## [3.29.3](https://github.com/r3dz4r/datapulse-my/compare/v3.29.2...v3.29.3) (2026-09-20)
 
 
