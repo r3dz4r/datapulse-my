@@ -153,7 +153,7 @@ def nonnegative_integer(value: object, label: str) -> int:
 def active_key(registry: dict[str, Any]) -> dict[str, Any]:
     key_id = registry.get("current_key_id")
     keys = registry.get("keys")
-    if registry.get("schema") != "datapulse/v1/probe-key-registry" or not isinstance(keys, list):
+    if registry.get("schema") != "datapulse/v2/probe-key-registry" or not isinstance(keys, list):
         raise VerificationError("key registry: unexpected schema")
     matches = [row for row in keys if isinstance(row, dict) and row.get("key_id") == key_id]
     if len(matches) != 1 or matches[0].get("status") != "active" or matches[0].get("algorithm") != "Ed25519":

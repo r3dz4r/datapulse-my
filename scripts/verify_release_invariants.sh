@@ -233,7 +233,7 @@ assert len(manifest_ids) == len(set(manifest_ids)) == expected_count
 assert len(health_ids) == len(set(health_ids)) == expected_count
 assert len(catalog_ids) == len(set(catalog_ids)) == expected_count
 assert set(manifest_ids) == set(health_ids) == set(catalog_ids)
-assert attestation_keys["schema"] == "datapulse/v1/probe-key-registry"
+assert attestation_keys["schema"] == "datapulse/v2/probe-key-registry"
 assert attestation_index["schema"] == "datapulse/v1/attestation-index"
 assert isinstance(attestation_index["attestations"], dict)
 assert attestation_index["attestations"]

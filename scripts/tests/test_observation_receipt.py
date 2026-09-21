@@ -101,8 +101,8 @@ def environment(tmp_path: Path) -> dict[str, Any]:
     _write(
         registry_path,
         {
-            "schema": "datapulse/v1/probe-key-registry",
-            "version": 1,
+            "schema": "datapulse/v2/probe-key-registry",
+            "version": 2,
             "keys": [
                 {
                     "key_id": KEY_ID,
