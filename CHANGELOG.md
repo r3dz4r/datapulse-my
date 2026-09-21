@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.33.1](https://github.com/r3dz4r/datapulse-my/compare/v3.33.0...v3.33.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **mcp:** require served identity before readiness ([1fd2057](https://github.com/r3dz4r/datapulse-my/commit/1fd205798ef56fa2f4b9f966b060e1caf1740ca7))
+
 ## [3.33.0](https://github.com/r3dz4r/datapulse-my/compare/v3.32.0...v3.33.0) (2026-09-21)
 
 
