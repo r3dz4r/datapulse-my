@@ -2250,7 +2250,7 @@ async def find_by_licence(
 
 @mcp.tool(
     title="Summarize Aggregate Tool Usage",
-    description="Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, and `trust_distribution` (counts of returned trust verdicts by published score band: 90-100, 75-89, 50-74, 25-49, 0-24) for the inclusive range. Use it for aggregate tool activity; do not use it to find data-quality risks—use find_stale, find_anomalies, find_deteriorating, find_recovering, find_unreliable, or find_schema_drift instead. It reads persisted usage records, so zero totals mean no retained records in that range; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
+    description="Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, `trust_verdict_calls` (the count of trust_verdict records regardless of outcome or result shape), and `trust_distribution` (counts of returned trust verdicts by published score band: 90-100, 75-89, 50-74, 25-49, 0-24) for the inclusive range. Use it for aggregate tool activity; do not use it to find data-quality risks—use find_stale, find_anomalies, find_deteriorating, find_recovering, find_unreliable, or find_schema_drift instead. It reads persisted usage records, so zero totals mean no retained records in that range; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
     icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
     meta=TOOL_META,
@@ -2272,7 +2272,7 @@ async def usage_summary(
         for entry in manifest.get("datasets", [])
         if isinstance(entry, dict) and isinstance(entry.get("id"), str)
     }
-    summary: dict[str, Any] = {"total_calls": 0, "by_outcome": {}, "by_tool": {}, "by_dataset": {}, "trust_distribution": {}}
+    summary: dict[str, Any] = {"total_calls": 0, "by_outcome": {}, "by_tool": {}, "by_dataset": {}, "trust_verdict_calls": 0, "trust_distribution": {}}
     current = start
     while current <= end:
         path = _usage_dir() / f"{current.isoformat()}.jsonl"
@@ -2291,6 +2291,8 @@ async def usage_summary(
                 summary["by_outcome"][outcome] = summary["by_outcome"].get(outcome, 0) + 1
                 tool = record.get("tool", "unknown")
                 summary["by_tool"][tool] = summary["by_tool"].get(tool, 0) + 1
+                if tool == "trust_verdict":
+                    summary["trust_verdict_calls"] += 1
                 args = record.get("args")
                 dataset_id = args.get("dataset_id") if isinstance(args, dict) else None
                 dataset_bucket = dataset_id if isinstance(dataset_id, str) and dataset_id in catalogue_ids else "(unrecognised)"

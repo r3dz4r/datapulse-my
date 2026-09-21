@@ -1033,7 +1033,7 @@ async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_ide
     ]) + "\n", encoding="utf-8")
     (tmp_path / "2026-08-03.jsonl").write_text(json.dumps({"buyer_id": "other", "tool": "get_dataset", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
     summary = await server.usage_summary("2026-08-01", "2026-08-03")
-    assert summary == {"total_calls": 5, "by_outcome": {"unknown": 5}, "by_tool": {"search_datasets": 1, "get_dataset": 2, "trust_verdict": 2}, "by_dataset": {"fuelprice": 1, "eperolehan-diklankan": 1, "(unrecognised)": 3}, "trust_distribution": {"75-89": 1, "90-100": 1}}
+    assert summary == {"total_calls": 5, "by_outcome": {"unknown": 5}, "by_tool": {"search_datasets": 1, "get_dataset": 2, "trust_verdict": 2}, "by_dataset": {"fuelprice": 1, "eperolehan-diklankan": 1, "(unrecognised)": 3}, "trust_verdict_calls": 2, "trust_distribution": {"75-89": 1, "90-100": 1}}
     with pytest.raises(ValueError): await server.usage_summary("2026-08-03", "2026-08-02")
     with pytest.raises(ValueError): await server.usage_summary("invalid", day)
 
@@ -1066,8 +1066,45 @@ async def test_usage_summary_call_tool_aggregates_all_ledger_records(monkeypatch
         "by_outcome": {"unknown": 3},
         "by_tool": {"get_dataset": 1, "trust_verdict": 2},
         "by_dataset": {"fuelprice": 1, "eperolehan-diklankan": 1, "(unrecognised)": 1},
+        "trust_verdict_calls": 2,
         "trust_distribution": {"90-100": 2},
     }
+
+
+async def test_usage_summary_reports_zero_trust_verdict_calls_when_none_are_present(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    (tmp_path / "2026-08-01.jsonl").write_text(
+        json.dumps({"tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}}) + "\n",
+        encoding="utf-8",
+    )
+
+    summary = await server.usage_summary("2026-08-01", "2026-08-01")
+
+    assert summary["trust_verdict_calls"] == 0
+    assert summary["trust_distribution"] == {}
+
+
+async def test_usage_summary_counts_unscored_trust_verdict_records(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    (tmp_path / "2026-08-01.jsonl").write_text(
+        "\n".join(
+            json.dumps(row)
+            for row in [
+                {"tool": "trust_verdict", "args": {"dataset_id": "fuelprice"}, "result_summary": {}},
+                {"tool": "trust_verdict", "args": {"dataset_id": "fuelprice"}, "result_summary": {"score": "unscored"}},
+            ]
+        ) + "\n",
+        encoding="utf-8",
+    )
+
+    summary = await server.usage_summary("2026-08-01", "2026-08-01")
+
+    assert summary["trust_verdict_calls"] == 2
+    assert summary["trust_distribution"] == {}
 
 
 async def test_unknown_dataset_id_is_not_republished(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
