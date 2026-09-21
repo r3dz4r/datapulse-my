@@ -51,7 +51,7 @@ from scripts.verify_per_dataset_receipt import BundleError, _decode_payload
 # replacing) the legacy stable FastMCP version. The verify script
 # reads this field and compares to the current repo HEAD to detect drift.
 FASTMCP_VERSION = "4.0.0b3"
-SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "dc42c0216f7b13558ba00c3f85289f56f50d02c4")
+SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "25a02c02062fae8be06835ed99054de320f19f5f")
 SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "2026-09-21")
 SOURCE_VERSION_STRING = (
     f"v{FASTMCP_VERSION}+{SOURCE_COMMIT_SHA[:7]}"
