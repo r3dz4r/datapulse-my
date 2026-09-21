@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.34.2](https://github.com/r3dz4r/datapulse-my/compare/v3.34.1...v3.34.2) (2026-09-21)
+
+
+### Bug Fixes
+
+* **discovery:** align agent.json provenance with the declared source commit ([#170](https://github.com/r3dz4r/datapulse-my/issues/170)) ([27042c8](https://github.com/r3dz4r/datapulse-my/commit/27042c839cbb48a61ae07e5e070e81bc123b5777))
+
 ## [3.34.1](https://github.com/r3dz4r/datapulse-my/compare/v3.34.0...v3.34.1) (2026-09-21)
 
 
