@@ -30,6 +30,7 @@ Canonical pages (other routes are compatibility aliases to these):
 | [Live dashboard](https://www.data-pulse.my/) (`/`) | Human-readable dataset status cards with embedded health and manifest data. |
 | [NPRA page](https://www.data-pulse.my/npra.html) | Focused public NPRA dataset surface. |
 | [Health methodology](https://www.data-pulse.my/health-methodology.html) | Status and freshness methodology, including the ten-status taxonomy. |
+| [Data collection and privacy](https://www.data-pulse.my/privacy.html) | Public-lane data-collection disclosure and privacy boundary. |
 | [Learn](https://www.data-pulse.my/learn.html) | Verification-first guidance for building with Malaysian public data. |
 
 Root machine artifacts (served at the website origin):

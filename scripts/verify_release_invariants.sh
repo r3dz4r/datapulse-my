@@ -33,7 +33,7 @@ fetch() {
   mkdir -p "$(dirname "$work_dir/$name")"
   if $local_mode; then
     case "$path" in
-      index.html|landing.html|dashboard.html|register.html|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)
+      index.html|landing.html|dashboard.html|register.html|npra.html|buyer-api-reference.md|health-methodology.html|privacy.html|.well-known/*)
         path="docs/$path"
         ;;
     esac
@@ -220,7 +220,7 @@ catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 catalog_graph = json.loads((work / "catalog-graph.json").read_text())
 surfaces = load_public_surfaces(Path.cwd())
 
-assert surfaces["pages"] == ["/", "/npra.html", "/health-methodology.html", "/learn.html", "/okf/"]
+assert surfaces["pages"] == ["/", "/npra.html", "/health-methodology.html", "/privacy.html", "/learn.html", "/okf/"]
 assert "/buyer-api-reference.md" in surfaces["artifacts"]
 website, mcp_origin, api_origin = (surfaces["origins"][key] for key in ("website", "mcp", "api"))
 
@@ -692,3 +692,28 @@ if ! grep -Fq "<title>Health methodology | DataPulse MY</title>" "$methodology_f
   exit 1
 fi
 printf 'Health methodology HTML: PASS\n'
+
+expected_privacy_title="$(sed -n 's/^# //p' docs/privacy.md | head -n 1)"
+[[ -n "$expected_privacy_title" ]] || {
+  printf 'Data collection and privacy: source title is missing\n' >&2
+  exit 1
+}
+if $local_mode; then
+  privacy_file="docs/privacy.html"
+else
+  privacy_file="$work_dir/privacy.html"
+  fetch "privacy.html" "privacy.html"
+fi
+[[ -s "$privacy_file" ]] || {
+  printf 'Data collection and privacy: rendered HTML is missing or empty\n' >&2
+  exit 1
+}
+if ! grep -Fq "What we cannot avoid observing" "$privacy_file"; then
+  printf 'Data collection and privacy: rendered HTML does not contain disclosure boundary\n' >&2
+  exit 1
+fi
+if ! grep -Fq "<title>${expected_privacy_title} | DataPulse MY</title>" "$privacy_file"; then
+  printf 'Data collection and privacy: rendered HTML does not retain the page title\n' >&2
+  exit 1
+fi
+printf 'Data collection and privacy HTML: PASS\n'

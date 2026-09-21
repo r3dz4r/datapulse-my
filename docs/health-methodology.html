@@ -40,18 +40,14 @@
       </div>
     </section>
     <section id="health-methodology-content" aria-labelledby="health-methodology-title">
-      <div class="wrap"><p>DataPulse MY reports evidence, not a promise that upstream data is
-correct.</p>
+      <div class="wrap"><p>DataPulse MY reports evidence, not a promise that upstream data is correct.</p>
 <h2 id="schema-version">Schema version</h2>
 <!-- BEGIN EXTRACTED: schema-version -->
 
-<p>The current health snapshot schema is
-<code>datapulse/v0.4/dataset-health</code>.</p>
+<p>The current health snapshot schema is <code>datapulse/v0.4/dataset-health</code>.</p>
 <!-- END EXTRACTED: schema-version -->
 
-<p>The schema identifier is a top-level field.
-<code>_trust_summary</code> does not duplicate the schema
-identifier.</p>
+<p>The schema identifier is a top-level field. <code>_trust_summary</code> does not duplicate the schema identifier.</p>
 <h2 id="longitudinal-telemetry">Longitudinal telemetry</h2>
 <!-- BEGIN EXTRACTED: history-schema -->
 
@@ -71,86 +67,33 @@ identifier.</p>
 <li><code>probe_outcome</code></li>
 <li><code>message</code></li>
 </ul>
-<p><code>probe_outcome</code> is one of <code>success</code>,
-<code>error</code>, <code>timeout</code>. The optional fields
-<code>name</code>, <code>url</code>, <code>shape_hash</code>,
-<code>column_count</code>, and <code>anomaly_detected</code> are written
-only when the corresponding source data is available.</p>
-<p>The compact daily aggregate schema is
-<code>datapulse/v1/health-history-daily</code>.</p>
+<p><code>probe_outcome</code> is one of <code>success</code>, <code>error</code>, <code>timeout</code>. The optional fields <code>name</code>, <code>url</code>, <code>shape_hash</code>, <code>column_count</code>, and <code>anomaly_detected</code> are written only when the corresponding source data is available.</p>
+<p>The compact daily aggregate schema is <code>datapulse/v1/health-history-daily</code>.</p>
 <!-- END EXTRACTED: history-schema -->
 
 <!-- BEGIN EXTRACTED: probe-outcomes -->
 
-<p>The probe classifies every observation as one of
-<code>success</code>, <code>error</code>, <code>timeout</code>.</p>
+<p>The probe classifies every observation as one of <code>success</code>, <code>error</code>, <code>timeout</code>.</p>
 <!-- END EXTRACTED: probe-outcomes -->
 
-<p>Re-running a cycle replaces the matching
-<code>(dataset_id, cycle)</code> object instead of creating a duplicate.
-Status changes are represented by successive observations and can
-therefore be queried without changing the ten-status snapshot
-taxonomy.</p>
-<p>The existing probe snapshot does not currently expose request
-duration, so <code>latency_ms</code> is explicitly <code>null</code>
-rather than estimated. The writer will carry through a numeric
-<code>latency_ms</code> when the validated probe output provides
-one.</p>
+<p>Re-running a cycle replaces the matching <code>(dataset_id, cycle)</code> object instead of creating a duplicate. Status changes are represented by successive observations and can therefore be queried without changing the ten-status snapshot taxonomy.</p>
+<p>The existing probe snapshot does not currently expose request duration, so <code>latency_ms</code> is explicitly <code>null</code> rather than estimated. The writer will carry through a numeric <code>latency_ms</code> when the validated probe output provides one.</p>
 <!-- BEGIN EXTRACTED: retention-and-archives -->
 
-<p>Raw observations are kept in <code>health/history.jsonl</code> for
-<strong>7 days</strong>. On expiry, observations are compacted into
-<code>health/history_daily.json</code> (per-dataset, per-day aggregates:
-counts, status distribution, availability percentage, min/mean/max
-record counts, mean latency). Observations that fall outside the
-retention window are also archived to
-<code>~/runtime/datapulse-history/health-YYYY-MM.jsonl.gz</code>
-(monthly gzip files, append-only).</p>
+<p>Raw observations are kept in <code>health/history.jsonl</code> for <strong>7 days</strong>. On expiry, observations are compacted into <code>health/history_daily.json</code> (per-dataset, per-day aggregates: counts, status distribution, availability percentage, min/mean/max record counts, mean latency). Observations that fall outside the retention window are also archived to <code>~/runtime/datapulse-history/health-YYYY-MM.jsonl.gz</code> (monthly gzip files, append-only).</p>
 <!-- END EXTRACTED: retention-and-archives -->
 
 <h2 id="dataset-delta-ledger">Dataset delta ledger</h2>
-<p><code>scripts/gen_dataset_deltas.py</code> runs after the history
-writer and creates one immutable <code>deltas/&lt;cycle&gt;.json</code>
-file. Catalog additions and removals compare membership with the
-immediately preceding recorded cycle. For every value-bearing dataset,
-status, manifest URL, shape hash, and direct (not estimated) record
-count compare with that dataset's latest earlier history row whose
-<code>probe_outcome</code> is <code>success</code>. This per-dataset
-baseline may be older than the preceding cycle when a probe was skipped
-or failed; every change records its <code>from_cycle</code>. A first
-cycle has <code>no_history_baseline_yet</code> and emits no changes.
-Re-running identical inputs verifies the existing bytes, while an
-attempt to change an existing cycle file fails instead of overwriting
-it.</p>
-<p>Each ledger records SHA-256 digests of the manifest, current health
-snapshot, and current-cycle history segment.
-<code>catalog-snapshot.json</code> is the canonical current-state
-summary. <code>changelog.json</code> is a byte-identical deprecated
-alias for one release and is not a delta ledger.</p>
+<p><code>scripts/gen_dataset_deltas.py</code> runs after the history writer and creates one immutable <code>deltas/&lt;cycle&gt;.json</code> file. Catalog additions and removals compare membership with the immediately preceding recorded cycle. For every value-bearing dataset, status, manifest URL, shape hash, and direct (not estimated) record count compare with that dataset's latest earlier history row whose <code>probe_outcome</code> is <code>success</code>. This per-dataset baseline may be older than the preceding cycle when a probe was skipped or failed; every change records its <code>from_cycle</code>. A first cycle has <code>no_history_baseline_yet</code> and emits no changes. Re-running identical inputs verifies the existing bytes, while an attempt to change an existing cycle file fails instead of overwriting it.</p>
+<p>Each ledger records SHA-256 digests of the manifest, current health snapshot, and current-cycle history segment. <code>catalog-snapshot.json</code> is the canonical current-state summary. <code>changelog.json</code> is a byte-identical deprecated alias for one release and is not a delta ledger.</p>
 <h2 id="per-record-evidence">Per-record evidence</h2>
-<p>Dataset health answers whether an upstream file is reachable, timely,
-and structurally plausible as one opaque unit.
-<code>record-evidence/v1</code> is a fourth, deeper layer for explicitly
-opted-in verticals: it hashes the observed raw CSV, validates each row,
-classifies each row with the same ten-status vocabulary, and attaches a
-stable digest to that row's freshness, structural, linkage, and
-alternative evidence.</p>
-<p>The envelope does not replace <code>health/latest.json</code>, and a
-fresh dataset-level probe does not imply every row is valid. Conversely,
-one degraded row does not rewrite the dataset-health result. Aggregate
-record counts and the full daily record list live under
-<code>record-evidence/&lt;dataset-id&gt;/</code>;
-<code>latest.json</code> contains a bounded representative excerpt. See
-<a href="record-evidence-v1.md"><code>record-evidence-v1.md</code></a>
-for the binding contract and pilot caveats.</p>
-<h2 id="production-classification-t33-2026-08-09">Production
-classification (T33, 2026-08-09)</h2>
+<p>Dataset health answers whether an upstream file is reachable, timely, and structurally plausible as one opaque unit. <code>record-evidence/v1</code> is a fourth, deeper layer for explicitly opted-in verticals: it hashes the observed raw CSV, validates each row, classifies each row with the same ten-status vocabulary, and attaches a stable digest to that row's freshness, structural, linkage, and alternative evidence.</p>
+<p>The envelope does not replace <code>health/latest.json</code>, and a fresh dataset-level probe does not imply every row is valid. Conversely, one degraded row does not rewrite the dataset-health result. Aggregate record counts and the full daily record list live under <code>record-evidence/&lt;dataset-id&gt;/</code>; <code>latest.json</code> contains a bounded representative excerpt. See <a href="record-evidence-v1.md"><code>record-evidence-v1.md</code></a> for the binding contract and pilot caveats.</p>
+<h2 id="production-classification-t33-2026-08-09">Production classification (T33, 2026-08-09)</h2>
 <!-- BEGIN EXTRACTED: probe-cadence -->
 
-<p>The probe timer fires every <strong>5 minutes</strong> (systemd
-<code>OnCalendar=*:0/5</code>).</p>
-<p>The due policy in <code>scripts/check.sh</code> uses these cadence
-thresholds:</p>
+<p>The probe timer fires every <strong>5 minutes</strong> (systemd <code>OnCalendar=*:0/5</code>).</p>
+<p>The due policy in <code>scripts/check.sh</code> uses these cadence thresholds:</p>
 <div class="table-wrap"><table>
 <thead>
 <tr class="header">
@@ -189,28 +132,11 @@ thresholds:</p>
 </table></div>
 <!-- END EXTRACTED: probe-cadence -->
 
-<p>The full-probe canary
-(<code>docs/health-policy-compatibility.md</code>) reviewed on
-2026-08-09 confirms the <code>--due</code> policy is consistent with the
-approved freshness policy. Status flips in the canary preserve the
-reviewed G2/G3/G4 outcomes: generated health remains the single
-production snapshot, a valid configured content signal takes precedence
-with the approved fallback, and classification uses the cadence-specific
-freshness windows below.</p>
+<p>The full-probe canary (<code>docs/health-policy-compatibility.md</code>) reviewed on 2026-08-09 confirms the <code>--due</code> policy is consistent with the approved freshness policy. Status flips in the canary preserve the reviewed G2/G3/G4 outcomes: generated health remains the single production snapshot, a valid configured content signal takes precedence with the approved fallback, and classification uses the cadence-specific freshness windows below.</p>
 <h2 id="rollback-path">Rollback path</h2>
-<p><code>scripts/check.sh --compare-health</code> runs a full probe to a
-temp file and diffs the result without modifying the live
-<code>health/latest.json</code>. It exits 0 when the comparison report
-is produced successfully, including when that report lists differences,
-and exits 1 if comparison fails. The 2026-08-09 canary is the reference
-diff. To revert a classification change, edit
-<code>datapulse.json</code> directly (for example, flip
-<code>real_status</code> back to <code>"live"</code>) and wait for the
-next <code>--due</code> probe.</p>
+<p><code>scripts/check.sh --compare-health</code> runs a full probe to a temp file and diffs the result without modifying the live <code>health/latest.json</code>. It exits 0 when the comparison report is produced successfully, including when that report lists differences, and exits 1 if comparison fails. The 2026-08-09 canary is the reference diff. To revert a classification change, edit <code>datapulse.json</code> directly (for example, flip <code>real_status</code> back to <code>"live"</code>) and wait for the next <code>--due</code> probe.</p>
 <h2 id="schemaversion-changes">Schema/version changes</h2>
-<p>The version history and migration rationale remain maintained prose;
-the current schema identifier above is generated from the snapshot
-builder.</p>
+<p>The version history and migration rationale remain maintained prose; the current schema identifier above is generated from the snapshot builder.</p>
 <h2 id="status-taxonomy">Status taxonomy</h2>
 <!-- BEGIN EXTRACTED: status-taxonomy -->
 
@@ -224,8 +150,7 @@ builder.</p>
 <tbody>
 <tr class="odd">
 <td><code>fresh</code></td>
-<td>Reachable, structurally usable, and within the freshness
-window.</td>
+<td>Reachable, structurally usable, and within the freshness window.</td>
 </tr>
 <tr class="even">
 <td><code>aging</code></td>
@@ -237,13 +162,11 @@ window.</td>
 </tr>
 <tr class="even">
 <td><code>discontinued</code></td>
-<td>The publisher has stopped updating the dataset; the last known
-content is retained.</td>
+<td>The publisher has stopped updating the dataset; the last known content is retained.</td>
 </tr>
 <tr class="odd">
 <td><code>degraded</code></td>
-<td>Reachable, but probe, schema, shape, or record-count checks
-failed.</td>
+<td>Reachable, but probe, schema, shape, or record-count checks failed.</td>
 </tr>
 <tr class="even">
 <td><code>browser-dependent</code></td>
@@ -259,40 +182,28 @@ failed.</td>
 </tr>
 <tr class="odd">
 <td><code>unknown-freshness</code></td>
-<td>Reachable and structurally usable, but no freshness evidence
-exists.</td>
+<td>Reachable and structurally usable, but no freshness evidence exists.</td>
 </tr>
 <tr class="even">
 <td><code>reference</code></td>
-<td>Versioned reference data is reachable; date-based freshness does not
-apply.</td>
+<td>Versioned reference data is reachable; date-based freshness does not apply.</td>
 </tr>
 </tbody>
 </table></div>
 <!-- END EXTRACTED: status-taxonomy -->
 
 <h2 id="freshness-anomaly-signal">Freshness anomaly signal</h2>
-<p><code>anomaly_detected</code> is orthogonal to the ten-status
-taxonomy and never changes a dataset's status.</p>
+<p><code>anomaly_detected</code> is orthogonal to the ten-status taxonomy and never changes a dataset's status.</p>
 <!-- BEGIN EXTRACTED: anomaly-mode -->
 
-<p>During warm-up, a freshness delta is anomalous if strictly greater
-than three times the declared cadence. With at least 12 distinct
-successful prior UTC-day observations in the 14-day window, a delta is
-strictly greater than the population mean plus two population standard
-deviations. The current observation is excluded from the baseline.</p>
+<p>During warm-up, a freshness delta is anomalous if strictly greater than three times the declared cadence. With at least 12 distinct successful prior UTC-day observations in the 14-day window, a delta is strictly greater than the population mean plus two population standard deviations. The current observation is excluded from the baseline.</p>
 <!-- END EXTRACTED: anomaly-mode -->
 
-<p><code>anomaly_detection</code> records the mode, sample count,
-threshold, and current value; missing evidence,
-<code>as-required</code>, reference, and discontinued rows are
-<code>not_evaluated</code> and false.</p>
+<p><code>anomaly_detection</code> records the mode, sample count, threshold, and current value; missing evidence, <code>as-required</code>, reference, and discontinued rows are <code>not_evaluated</code> and false.</p>
 <h2 id="freshness-and-reachability">Freshness and reachability</h2>
 <!-- BEGIN EXTRACTED: freshness-baselines -->
 
-<p>Reachability is not freshness. The probe chooses the newest
-defensible signal from an HTTP <code>Last-Modified</code> header or
-parsed content date.</p>
+<p>Reachability is not freshness. The probe chooses the newest defensible signal from an HTTP <code>Last-Modified</code> header or parsed content date.</p>
 <div class="table-wrap"><table>
 <thead>
 <tr class="header">
@@ -339,116 +250,45 @@ parsed content date.</p>
 </tr>
 </tbody>
 </table></div>
-<p>Weekday-daily frequencies use the daily baseline. Survey-year
-verification uses 45-day and 90-day boundaries; as-required datasets do
-not infer a freshness window.</p>
+<p>Weekday-daily frequencies use the daily baseline. Survey-year verification uses 45-day and 90-day boundaries; as-required datasets do not infer a freshness window.</p>
 <!-- END EXTRACTED: freshness-baselines -->
 
-<h2 id="conventions-refusals-and-limits">Conventions, refusals and
-limits</h2>
+<h2 id="conventions-refusals-and-limits">Conventions, refusals and limits</h2>
 <!-- BEGIN EXTRACTED: freshness-conventions -->
 
-<h3 id="which-of-this-is-measurement-and-which-is-convention">Which of
-this is measurement, and which is convention</h3>
-<p>The observation layer is measurement. A freshness verdict is produced
-by comparing a measured age against a boundary that was chosen. This
-section states which is which, so that no reader has to infer it.</p>
-<p><strong>Measured.</strong> <code>last_checked</code> records when the
-row was last actually observed, and <code>content_freshness_date</code>
-records the newest date parsed out of the content itself.
-<code>staleness_days</code> is an operational definition, not a natural
-quantity: the greater of the age of the publication and the age of the
-newest observation in the file.</p>
-<p><strong>Chosen.</strong> The 1.5x and 3x cadence multiples that
-separate fresh, aging and stale are conventions, applied uniformly and
-revised deliberately rather than discovered. They are not properties of
-the datasets. A different choice of boundary would move rows between
-bands without any dataset having changed, and that is the honest
-description of them.</p>
-<h3 id="publication-lag-is-not-publisher-silence">Publication lag is not
-publisher silence</h3>
-<p>A series that is genuinely lagged can never reach fresh if its age is
-judged against zero from the moment of publication. A dataset may
-therefore declare
-<code>freshness_policy.expected_observation_lag_days</code>. When
-present and numeric it takes precedence over the cadence-derived
-observation age, and it offsets the observation-age component only. It
-never offsets the publication-age component, so a publisher that stops
-publishing still crosses the 1.5x and 3x boundaries and is still
-reported as stale. The allowance accommodates a known cadence; it does
-not excuse an absent publisher.</p>
+<h3 id="which-of-this-is-measurement-and-which-is-convention">Which of this is measurement, and which is convention</h3>
+<p>The observation layer is measurement. A freshness verdict is produced by comparing a measured age against a boundary that was chosen. This section states which is which, so that no reader has to infer it.</p>
+<p><strong>Measured.</strong> <code>last_checked</code> records when the row was last actually observed, and <code>content_freshness_date</code> records the newest date parsed out of the content itself. <code>staleness_days</code> is an operational definition, not a natural quantity: the greater of the age of the publication and the age of the newest observation in the file.</p>
+<p><strong>Chosen.</strong> The 1.5x and 3x cadence multiples that separate fresh, aging and stale are conventions, applied uniformly and revised deliberately rather than discovered. They are not properties of the datasets. A different choice of boundary would move rows between bands without any dataset having changed, and that is the honest description of them.</p>
+<h3 id="publication-lag-is-not-publisher-silence">Publication lag is not publisher silence</h3>
+<p>A series that is genuinely lagged can never reach fresh if its age is judged against zero from the moment of publication. A dataset may therefore declare <code>freshness_policy.expected_observation_lag_days</code>. When present and numeric it takes precedence over the cadence-derived observation age, and it offsets the observation-age component only. It never offsets the publication-age component, so a publisher that stops publishing still crosses the 1.5x and 3x boundaries and is still reported as stale. The allowance accommodates a known cadence; it does not excuse an absent publisher.</p>
 <h3 id="refusals">Refusals</h3>
-<p>Two rules constrain what this system will claim, and both are
-deliberate:</p>
+<p>Two rules constrain what this system will claim, and both are deliberate:</p>
 <ol type="1">
-<li>Evidence that is stale, discontinued, unreachable or degraded must
-not be used to support a currentness claim.</li>
-<li>A row whose contents are obtained by rendering a page in a browser
-cannot have its row set verified from the response: the render may
-succeed while the parsed shape remains untyped. Where that is the case
-the row is reported browser-dependent rather than assigned a freshness
-status, because a date alone does not establish that the contents were
-read. This refusal is scoped to the access method, not to the presence
-of <code>first_row_hash</code>: that field is populated for the shape
-families the probe currently types (<code>json-object</code>,
-<code>json-array</code>), so its absence for another format reflects
-probe coverage rather than unverifiability and is not by itself grounds
-for withholding a verdict.</li>
+<li>Evidence that is stale, discontinued, unreachable or degraded must not be used to support a currentness claim.</li>
+<li>A row whose contents are obtained by rendering a page in a browser cannot have its row set verified from the response: the render may succeed while the parsed shape remains untyped. Where that is the case the row is reported browser-dependent rather than assigned a freshness status, because a date alone does not establish that the contents were read. This refusal is scoped to the access method, not to the presence of <code>first_row_hash</code>: that field is populated for the shape families the probe currently types (<code>json-object</code>, <code>json-array</code>), so its absence for another format reflects probe coverage rather than unverifiability and is not by itself grounds for withholding a verdict.</li>
 </ol>
-<p>The second rule is a refusal to claim rather than a failure to
-measure, and it is load bearing: relaxing it would publish currentness
-verdicts for rows whose contents cannot be verified. Where a row cannot
-be measured the outcome is <code>unknown-freshness</code>, which is a
-first-class result and never a silent default.</p>
+<p>The second rule is a refusal to claim rather than a failure to measure, and it is load bearing: relaxing it would publish currentness verdicts for rows whose contents cannot be verified. Where a row cannot be measured the outcome is <code>unknown-freshness</code>, which is a first-class result and never a silent default.</p>
 <h3 id="known-limits">Known limits</h3>
 <ul>
-<li>A row carried over from an earlier cycle retains the measurement
-time in <code>last_checked</code>, which may be older than the
-artifact's own publication time. Consumers needing the measurement
-instant must read <code>last_checked</code>, not the publication
-timestamp.</li>
-<li>Cadence-extreme datasets are judged against their declared cadence,
-so a boundary that is correct for a daily series can misclassify a
-series that changes by the minute or by the second, and a boundary that
-suits a realtime feed is meaningless for a monthly series.</li>
-<li>Frequency declarations are publisher statements and are trusted as
-such; a wrong declared cadence produces a wrong verdict, and the
-declared value is published alongside the verdict so that it can be
-challenged.</li>
+<li>A row carried over from an earlier cycle retains the measurement time in <code>last_checked</code>, which may be older than the artifact's own publication time. Consumers needing the measurement instant must read <code>last_checked</code>, not the publication timestamp.</li>
+<li>Cadence-extreme datasets are judged against their declared cadence, so a boundary that is correct for a daily series can misclassify a series that changes by the minute or by the second, and a boundary that suits a realtime feed is meaningless for a monthly series.</li>
+<li>Frequency declarations are publisher statements and are trusted as such; a wrong declared cadence produces a wrong verdict, and the declared value is published alongside the verdict so that it can be challenged.</li>
 </ul>
 <!-- END EXTRACTED: freshness-conventions -->
 
-<p>Future content dates are rejected. A 200 response without either
-signal becomes <code>unknown-freshness</code>, not <code>fresh</code>,
-unless the manifest identifies the dataset as versioned
-<code>reference</code> data.</p>
-<p>BNM content dates are date-only. The dashboard adds the MYT time
-declared in each manifest <code>refresh_frequency</code> for display;
-that time is presentation metadata, not a timestamp parsed from the
-response.</p>
+<p>Future content dates are rejected. A 200 response without either signal becomes <code>unknown-freshness</code>, not <code>fresh</code>, unless the manifest identifies the dataset as versioned <code>reference</code> data.</p>
+<p>BNM content dates are date-only. The dashboard adds the MYT time declared in each manifest <code>refresh_frequency</code> for display; that time is presentation metadata, not a timestamp parsed from the response.</p>
 <h2 id="content-integrity">Content integrity</h2>
-<p>Record counts are compared with <code>expected_record_count</code>
-when it is known. A result below half the expectation is degraded;
-capped or estimated results are marked incomplete. Column-count or
-first-row-shape changes are also degraded so schema drift cannot appear
-green.</p>
-<p>Browser-backed sources always remain <code>browser-dependent</code>,
-even after a successful Camofox snapshot. In due mode, unprobed rows and
-a previous <code>last_checked</code> value are preserved. A probe that
-produces no measurement does not erase the last successful
-measurement.</p>
+<p>Record counts are compared with <code>expected_record_count</code> when it is known. A result below half the expectation is degraded; capped or estimated results are marked incomplete. Column-count or first-row-shape changes are also degraded so schema drift cannot appear green.</p>
+<p>Browser-backed sources always remain <code>browser-dependent</code>, even after a successful Camofox snapshot. In due mode, unprobed rows and a previous <code>last_checked</code> value are preserved. A probe that produces no measurement does not erase the last successful measurement.</p>
 <h2 id="blind-spots">Blind spots</h2>
 <ul>
-<li>HTTP and sampled content checks do not prove semantic accuracy or
-completeness.</li>
-<li>Generic row counting can be fooled by undocumented pagination or
-wrappers.</li>
-<li>Browser snapshots depend on client rendering, timing, and
-selector-free text.</li>
-<li>A stable first-row hash cannot detect changes elsewhere in a
-dataset.</li>
-<li>Licence and attribution are verified metadata, not legal
-advice.</li>
+<li>HTTP and sampled content checks do not prove semantic accuracy or completeness.</li>
+<li>Generic row counting can be fooled by undocumented pagination or wrappers.</li>
+<li>Browser snapshots depend on client rendering, timing, and selector-free text.</li>
+<li>A stable first-row hash cannot detect changes elsewhere in a dataset.</li>
+<li>Licence and attribution are verified metadata, not legal advice.</li>
 </ul>
       </div>
     </section>

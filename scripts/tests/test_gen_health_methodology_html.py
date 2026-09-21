@@ -19,7 +19,7 @@ def test_extract_title_and_pandoc_command(tmp_path: Path) -> None:
         "pandoc", source, tmp_path / "template", tmp_path / "output", "Health methodology", "DataPulse"
     )
     assert command == [
-        "pandoc", "--standalone", "--from=gfm", "--to=html5",
+        "pandoc", "--standalone", "--from=gfm", "--to=html5", "--wrap=none",
         "--metadata=title:Health methodology", "--metadata=product_name:DataPulse", f"--template={tmp_path / 'template'}",
         "--output", str(tmp_path / "output"), str(source),
     ]
@@ -48,6 +48,17 @@ def test_rendered_page_has_title_body_and_is_deterministic() -> None:
     assert 'id="health-methodology-content"' in page
     assert "Schema version" in page
     assert first_page == renderer.OUTPUT.read_bytes()
+
+
+def test_rendered_privacy_page_contains_the_disclosure_boundary() -> None:
+    result = subprocess.run(["python3", str(renderer.__file__)], capture_output=True, text=True)
+    page = renderer.ROOT / "docs/privacy.html"
+
+    assert result.returncode == 0, result.stderr
+    assert page.is_file()
+    rendered = page.read_text(encoding="utf-8")
+    assert "What we cannot avoid observing" in rendered
+    assert "<title>Data collection and privacy — DataPulse | DataPulse MY</title>" in rendered
 
 
 def test_main_fails_clearly_when_pandoc_is_missing(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:

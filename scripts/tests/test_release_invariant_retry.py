@@ -244,7 +244,7 @@ def test_served_fetch_rejects_docs_prefix_and_reports_persistent_failure(tmp_pat
 def test_local_mode_maps_canonical_pages_to_docs_sources() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
 
-    assert 'index.html|landing.html|dashboard.html|register.html|npra.html|buyer-api-reference.md|health-methodology.html|.well-known/*)' in script
+    assert 'index.html|landing.html|dashboard.html|register.html|npra.html|buyer-api-reference.md|health-methodology.html|privacy.html|.well-known/*)' in script
     assert 'path="docs/$path"' in script
 
 
@@ -360,6 +360,12 @@ def test_gate_8_fetches_public_methodology_path() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
     assert 'fetch "health-methodology.html" "health-methodology.html"' in script
     assert 'fetch "health-methodology.html" "$methodology_file"' not in script
+
+
+def test_gate_8_fetches_public_privacy_path() -> None:
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+    assert 'fetch "privacy.html" "privacy.html"' in script
+    assert 'fetch "privacy.html" "$privacy_file"' not in script
 
 
 def test_generate_shell_rejects_ambient_allow_unattested_health_bypass() -> None:

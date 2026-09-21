@@ -9,6 +9,16 @@ ROOT = Path(__file__).resolve().parents[2]
 CHECK_SCRIPT = ROOT / "scripts/check.sh"
 
 
+def test_content_signal_declares_search_ai_input_and_ai_training() -> None:
+    robots = (ROOT / "robots.txt").read_text(encoding="utf-8")
+    managed_block = robots.index("<!-- BEGIN public-discovery -->")
+    directive = "Content-Signal: search=yes, ai-input=yes, ai-train=yes"
+
+    assert robots.count("Content-Signal") == 1
+    assert directive in robots
+    assert robots.index(directive) < managed_block
+
+
 def _write_mock_curl(tmp_path: Path) -> Path:
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()

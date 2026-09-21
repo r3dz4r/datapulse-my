@@ -58,6 +58,12 @@ def docs_manifest() -> list[DocPage]:
             GENERIC_TEMPLATE,
             ROOT / "docs/datapulse-intro.html",
         ),
+        DocPage(
+            "privacy",
+            ROOT / "docs/privacy.md",
+            GENERIC_TEMPLATE,
+            ROOT / "docs/privacy.html",
+        ),
     ]
 
 
@@ -75,6 +81,7 @@ def pandoc_command(pandoc: str, source: Path, template: Path, output: Path, titl
         "--standalone",
         "--from=gfm",
         "--to=html5",
+        "--wrap=none",
         f"--metadata=title:{title}",
         f"--template={template}",
         "--output",
@@ -82,7 +89,7 @@ def pandoc_command(pandoc: str, source: Path, template: Path, output: Path, titl
         str(source),
     ]
     if product_name is not None:
-        command.insert(5, f"--metadata=product_name:{product_name}")
+        command.insert(6, f"--metadata=product_name:{product_name}")
     return command
 
 

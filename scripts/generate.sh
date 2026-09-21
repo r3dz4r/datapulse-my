@@ -199,9 +199,9 @@ case "$profile" in
       "docs/buyer-api-reference.md (marked runtime-derived API blocks)"
       "URL drift and cadence audit"
       "docs/trust-snapshot-<date>.{md,json}"
-      "docs/health-methodology.html; docs/mcp-reference.html; docs/datapulse-intro.html"
+      "docs/health-methodology.html; docs/mcp-reference.html; docs/datapulse-intro.html; docs/privacy.html"
       "docs/{landing,dashboard,register}.html (static compatibility aliases to the canonical root register)"
-      "docs/{index,npra,health-methodology,learn}.html site navigation"
+      "docs/{index,npra,health-methodology,privacy,learn}.html site navigation"
     )
     ;;
   *)

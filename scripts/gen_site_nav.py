@@ -126,7 +126,7 @@ def inject_nav(path: Path, nav: str | None = None) -> bool:
 
 
 def inject_all(root: Path = ROOT, *, check: bool = False) -> list[Path]:
-    """Inject the canonical nav into the whitelisted pages beneath ``root``."""
+    """Inject the canonical nav into every declared public page beneath ``root``."""
     nav = canonical_nav(root)
     surfaces = load_public_surfaces(root)
     changed: list[Path] = []

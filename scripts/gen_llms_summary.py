@@ -16,6 +16,7 @@ PUBLIC_SURFACE_LINKS = {
     "/": ("Live dashboard", "Human-readable dataset status cards with embedded health and manifest data."),
     "/npra.html": ("NPRA page", "Public NPRA dataset surface."),
     "/health-methodology.html": ("Health methodology", "Published status and freshness methodology."),
+    "/privacy.html": ("Data collection and privacy", "Published disclosure of public-lane data collection and privacy boundaries."),
     "/learn.html": ("Learn", "Practical verification-first guidance for building with Malaysian public data."),
     "/okf/": ("OKF v0.2 bundle", "Agent-consumable dataset concepts with provenance, trust, and freshness signals."),
     "/buyer-api-reference.md": ("Buyer API reference", "Read-only buyer API contract and examples."),

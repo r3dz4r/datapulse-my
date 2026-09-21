@@ -93,6 +93,7 @@ RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "docs/index.html",
     "docs/buyer-api-reference.md",
     "docs/health-methodology.html",
+    "docs/privacy.html",
     "docs/landing.html",
     "docs/dashboard.html",
     "docs/learn.html",
@@ -228,6 +229,7 @@ def _stage_source(tmp_path: Path) -> Path:
         source / "docs/mcp-reference.md",
     )
     shutil.copy2(ROOT / "docs/datapulse-intro.md", source / "docs/datapulse-intro.md")
+    shutil.copy2(ROOT / "docs/privacy.md", source / "docs/privacy.md")
     shutil.copy2(RELEASE_FIXTURE / "mcp.json", source / "mcp.json")
     shutil.copy2(RELEASE_FIXTURE / "agent.json", source / "agent.json")
     shutil.copy2(RELEASE_FIXTURE / "agent.schema.json", source / "agent.schema.json")
