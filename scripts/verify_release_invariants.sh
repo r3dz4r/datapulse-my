@@ -84,6 +84,34 @@ fetch_optional() {
   fetch "$name" "$path"
 }
 
+assert_readme_health_parity() {
+  local health_file="$1" readme_file="$2"
+  python3 - "$health_file" "$readme_file" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+health_path, readme_path = map(Path, sys.argv[1:])
+health = json.loads(health_path.read_text(encoding="utf-8"))
+summary = health["_trust_summary"]
+summary_statuses = {
+    key.replace("_", "-"): value for key, value in summary["by_status"].items()
+}
+readme = readme_path.read_text(encoding="utf-8")
+line = next(
+    line for line in readme.splitlines()
+    if line.startswith("Current distribution (`_trust_summary`):")
+)
+readme_statuses = {
+    label: int(count) for count, label in re.findall(r"\[(\d+) ([^]]+)\]", line)
+}
+assert readme_statuses == {
+    status: count for status, count in summary_statuses.items() if count
+}, "README trust-summary disagrees with health/latest.json"
+PY
+}
+
 fetch manifest.json datapulse.json
 fetch health.json health/latest.json
 fetch trends.json health/trends.json
@@ -337,18 +365,6 @@ summary_statuses = {
 assert sum(summary_statuses.values()) == expected_count
 assert summary_statuses == {status: actual_statuses[status] for status in summary_statuses}
 
-readme = Path("README.md").read_text(encoding="utf-8")
-line = next(
-    line for line in readme.splitlines()
-    if line.startswith("Current distribution (`_trust_summary`):")
-)
-readme_statuses = {
-    label: int(count) for count, label in re.findall(r"\[(\d+) ([^]]+)\]", line)
-}
-assert readme_statuses == {
-    status: count for status, count in summary_statuses.items() if count
-}
-
 assert catalog_snapshot["generated_at"] == health["checked_at"]
 assert catalog_snapshot["health"]["checked_at"] == health["checked_at"]
 assert catalog_snapshot["manifest"]["datasets_total"] == expected_count
@@ -453,6 +469,13 @@ with (work / "llms-urls.txt").open("w", encoding="utf-8") as output:
 
 print(f"release metadata assertions: PASS ({expected_count} datasets)")
 PY
+
+if $local_mode; then
+  printf 'README-to-health distribution parity: SKIPPED (--local validates a source checkout; README is refreshed only by release/profile builds)\n'
+else
+  assert_readme_health_parity "$work_dir/health.json" README.md
+  printf 'README-to-health distribution parity: PASS\n'
+fi
 
 if ! $local_mode; then
 python3 - "$work_dir" <<'PY'
