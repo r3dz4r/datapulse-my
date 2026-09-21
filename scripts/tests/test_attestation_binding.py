@@ -238,6 +238,17 @@ def test_superseded_key_is_rejected(tmp_path: Path) -> None:
         verify_contract(root, now=NOW + timedelta(hours=1))
 
 
+def test_non_attestation_key_purpose_is_rejected(tmp_path: Path) -> None:
+    root = generated_root(tmp_path)
+    registry_path = root / "docs/.well-known/datapulse-probe-keys.json"
+    registry = load(registry_path)
+    registry["keys"][0]["purpose"] = "observation-receipt-signing"
+    dump(registry_path, registry)
+
+    with pytest.raises(ContractError, match="wrong purpose"):
+        verify_contract(root, now=NOW + timedelta(hours=1))
+
+
 def test_non_current_active_key_is_rejected(tmp_path: Path) -> None:
     root = generated_root(tmp_path)
     registry_path = root / "docs/.well-known/datapulse-probe-keys.json"

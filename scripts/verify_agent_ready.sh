@@ -160,7 +160,7 @@ if [[ -f "$agent_root/attestations/latest/index.json" ]]; then
   index="$agent_root/attestations/latest/index.json"
   head="$agent_root/attestations/latest/chain_head.json"
   scores="$agent_root/attestations/latest/scores.json"
-  jq -e --argjson expected "$manifest_count" '.schema == "datapulse/v1/probe-key-registry" and (.keys | length > 0)' "$key_registry" >/dev/null
+  jq -e --argjson expected "$manifest_count" '.schema == "datapulse/v2/probe-key-registry" and (.keys | length > 0)' "$key_registry" >/dev/null
   jq -e --argjson expected "$manifest_count" '.schema == "datapulse/v1/attestation-index" and (.attestations | length == $expected)' "$index" >/dev/null
   jq -e --argjson expected "$manifest_count" '.schema == "datapulse/v1/daily-chain-head-envelope" and (.dataset_links | length == $expected) and (.chain_head | test("^[0-9a-f]{64}$"))' "$head" >/dev/null
   jq -e --argjson expected "$manifest_count" '

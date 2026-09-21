@@ -42,7 +42,7 @@ EOF
 
 mkdir -p "$fixture_root/attestations/latest" "$fixture_root/docs/.well-known"
 cat > "$fixture_root/docs/.well-known/datapulse-probe-keys.json" <<'EOF'
-{"schema":"datapulse/v1/probe-key-registry","keys":[{"key_id":"fixture"}]}
+{"schema":"datapulse/v2/probe-key-registry","keys":[{"key_id":"fixture"}]}
 EOF
 cat > "$fixture_root/attestations/latest/index.json" <<'EOF'
 {"schema":"datapulse/v1/attestation-index","attestations":{"alpha":"attestations/alpha.json","beta":"attestations/beta.json"}}
