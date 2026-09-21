@@ -278,3 +278,18 @@ canonicalisation; the fixture is the contract.
 - It does not sign anything, generate keys, or read key material.
 - It does not define a new canonical version, and it authorises no migration of
   the existing chain.
+
+## The `negative` section is unsigned by design
+
+The `positive` and `canonical_form` sections carry signatures; the `negative` section does not, and
+that is a property of the section rather than an omission. Every entry there asserts that
+verification must FAIL, so attaching a valid signature would contradict the case it describes.
+
+What a `negative` entry carries instead is the contract for that failure: `wrong_bytes` (the bytes a
+verifier must not accept), `reason` (why they must be rejected), and the `*_rejected_by_strict_parser`
+booleans naming which expectations hold. A reimplementation should run this section expecting
+rejection and compare against those fields, not against a signature.
+
+One entry deserves particular attention: `wrong_bytes_semantically_equal`, where the value is the same
+but the bytes differ. That is the case which catches an implementation that re-serialises before
+verifying, and it is the vector that distinguishes a real binding check from a coincidental one.
