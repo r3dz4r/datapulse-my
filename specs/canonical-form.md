@@ -250,9 +250,12 @@ literal vector:
 
 Every signed vector names `signature.algorithm` (`Ed25519`),
 `signature.key_id`, and `signature.signature_base64`. Its public key record is
-in the fixture's top-level `keys` array and names the same key ID, algorithm,
-and raw 32-byte `public_key_base64`. The key is explicitly test-only; no private
-key is in the repository or needed to verify a vector.
+published at `docs/.well-known/datapulse-vector-keys.json` and is copied into
+the fixture's top-level `keys` array when the vectors are re-signed. The
+published registry names the same key ID, algorithm, and raw 32-byte
+`public_key_base64`, and states that it signs canonical-form test vectors only,
+never observation receipts. No private key is in the repository or needed to
+verify a vector.
 
 An independent implementation MUST, for each signed vector, UTF-8 encode
 `canonical_bytes` exactly as recorded (or reproduce it by canonicalising the
