@@ -354,9 +354,44 @@ class HTTPRequestCorrelationMiddleware:
             HTTP_REQUEST_ID.reset(token)
 
 
+class MCPAcceptHeaderNormalisationMiddleware:
+    """Make JSON-only health probes acceptable to the streamable MCP transport."""
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
+        if (
+            scope.get("type") != "http"
+            or scope.get("method") != "POST"
+            or scope.get("path") != "/mcp"
+        ):
+            await self.app(scope, receive, send)
+            return
+
+        headers = list(scope.get("headers", []))
+        accept_indexes = [
+            index for index, (name, _) in enumerate(headers) if name.lower() == b"accept"
+        ]
+        accepts_event_stream = any(
+            b"text/event-stream" in headers[index][1].lower()
+            for index in accept_indexes
+        )
+        if accept_indexes and not accepts_event_stream:
+            index = accept_indexes[0]
+            name, value = headers[index]
+            headers[index] = (name, value + b", text/event-stream")
+            scope = {**scope, "headers": headers}
+
+        await self.app(scope, receive, send)
+
+
 # FastMCP passes HTTP middleware through to Starlette, whose application
 # builder requires wrapper entries rather than bare ASGI middleware classes.
-HTTP_MIDDLEWARE = [StarletteMiddleware(HTTPRequestCorrelationMiddleware)]
+HTTP_MIDDLEWARE = [
+    StarletteMiddleware(MCPAcceptHeaderNormalisationMiddleware),
+    StarletteMiddleware(HTTPRequestCorrelationMiddleware),
+]
 
 
 class ToolUsageLoggingMiddleware(Middleware):
