@@ -50,6 +50,17 @@ def test_rendered_page_has_title_body_and_is_deterministic() -> None:
     assert first_page == renderer.OUTPUT.read_bytes()
 
 
+def test_rendered_privacy_page_contains_the_disclosure_boundary() -> None:
+    result = subprocess.run(["python3", str(renderer.__file__)], capture_output=True, text=True)
+    page = renderer.ROOT / "docs/privacy.html"
+
+    assert result.returncode == 0, result.stderr
+    assert page.is_file()
+    rendered = page.read_text(encoding="utf-8")
+    assert "What we cannot avoid observing" in " ".join(rendered.split())
+    assert "<title>Data collection and privacy — DataPulse | DataPulse MY</title>" in rendered
+
+
 def test_main_fails_clearly_when_pandoc_is_missing(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     monkeypatch.setattr(renderer.shutil, "which", lambda _: None)
 

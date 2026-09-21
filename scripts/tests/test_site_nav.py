@@ -12,7 +12,7 @@ from scripts import gen_site_nav
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PAGES = ("index.html", "npra.html", "health-methodology.html", "learn.html")
+PAGES = ("index.html", "npra.html", "health-methodology.html", "privacy.html", "learn.html")
 LEARN_PAGE = ROOT / "docs/learn.html"
 HEALTH_METHODOLOGY_TEMPLATE = ROOT / "scripts/templates/health-methodology.html.tmpl"
 
@@ -157,3 +157,12 @@ def test_learn_page_is_declared_and_discoverable() -> None:
     assert "/learn.html" in config["pages"]
     assert LEARN_PAGE.is_file()
     assert "https://www.data-pulse.my/learn.html" in sitemap
+
+
+def test_privacy_page_is_declared_and_discoverable() -> None:
+    config = json.loads((ROOT / "config/public-surfaces.json").read_text(encoding="utf-8"))
+    sitemap = (ROOT / "sitemap.xml").read_text(encoding="utf-8")
+
+    assert "/privacy.html" in config["pages"]
+    assert (ROOT / "docs/privacy.html").is_file()
+    assert "https://www.data-pulse.my/privacy.html" in sitemap

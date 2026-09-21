@@ -58,6 +58,12 @@ def docs_manifest() -> list[DocPage]:
             GENERIC_TEMPLATE,
             ROOT / "docs/datapulse-intro.html",
         ),
+        DocPage(
+            "privacy",
+            ROOT / "docs/privacy.md",
+            GENERIC_TEMPLATE,
+            ROOT / "docs/privacy.html",
+        ),
     ]
 
 
