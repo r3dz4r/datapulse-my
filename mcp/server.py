@@ -482,59 +482,74 @@ SEARCH_DESCRIPTION = (
     "licence and attribution, or a government dataset source. Returns ranked matches "
     "with id, title, source, licence, published status, and score. This is not trust "
     "verification: a status is published pipeline context, not proof that a dataset is "
-    "current or reliable. For 'is this dataset current?' or verify before relying on data, "
-    "use search_datasets → verify_dataset → get_provenance."
+    "current or reliable. For pre-trust use search_datasets → verify_dataset → get_provenance. "
+    "Use it to discover candidates; do not use it for a trust decision—use verify_dataset instead. "
+    "It reads published catalogue data, so no match means the published "
+    "catalogue has no matching entry; DataPulse is read-only, requires no API key, and the edge "
+    "limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 GET_DATASET_DESCRIPTION = (
     "Return full detail for one dataset id, including its latest health status and "
     "last-verified timestamp, content_freshness_date, and freshness_signal_source "
     "(last_modified, content_parse, or none). Use to fetch the provenance/citation "
     "metadata for a dataset found via search_datasets and distinguish "
-    "unknown-freshness from proven stale data."
+    "unknown-freshness from proven stale data. Use it for one dataset's current published detail; "
+    "do not use it for citation context or a Passport—use get_provenance or get_data_passport instead. "
+    "It reads published data, so an absent health row is reported as unknown rather than probed live; "
+    "DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 GET_DATA_PASSPORT_DESCRIPTION = (
     "Return one bounded, machine-readable Dataset Passport v1 for a canonical dataset ID. "
     "It reads the published Passport artifact only; it does not fetch an upstream source or "
     "create evidence. The Passport describes observed metadata and evidence availability, not "
-    "semantic truth, completeness, certification, legal permission, safety, or AI admission."
+    "semantic truth, completeness, certification, legal permission, safety, or AI admission. Use it for the bounded Passport artifact; "
+    "do not use it for current health detail or citation context—use get_dataset or get_provenance instead. "
+    "It reads precomputed published data, and evidence_available=false identifies an unavailable or unsupported Passport; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 FIND_STALE_DESCRIPTION = (
     "Return datasets whose status is aging, stale, or degraded, plus datasets missing "
     "from the latest health snapshot. Use when an agent needs to know which data has "
-    "a freshness or schema-validity risk."
+    "a freshness or schema-validity risk. Use it to enumerate freshness or schema-risk candidates; do not use it for anomalies, trends, reliability, or drift—use find_anomalies, find_deteriorating, find_unreliable, or find_schema_drift instead. "
+    "It reads the published health snapshot, so an empty result means no rows met this snapshot-based rule; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 FIND_ANOMALIES_DESCRIPTION = (
     "Return datasets flagged by the latest published anomaly detection (anomalies), ranked by "
     "how far the observed update interval exceeds its threshold. Optionally require "
     "a minimum publish-reliability grade; includes pipeline-computed anomaly and "
-    "reliability evidence so agents do not recompute it."
+    "reliability evidence so agents do not recompute it. Use it for unusual update intervals; do not use it for worsening freshness, recovery, reliability grades, or structural drift—use find_deteriorating, find_recovering, find_unreliable, or find_schema_drift instead. "
+    "It reads precomputed anomaly data, so an empty result means no published row survives the selected filters; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 FIND_DETERIORATING_DESCRIPTION = (
     "Return datasets whose published freshness trend is deteriorating, ranked by "
     "staleness slope. Optionally require a minimum historical anomaly rate; includes "
-    "pipeline-computed trend and reliability evidence so agents do not recompute it."
+    "pipeline-computed trend and reliability evidence so agents do not recompute it. Use it for worsening freshness trends; do not use it for anomalies, recovery, reliability grades, or structural drift—use find_anomalies, find_recovering, find_unreliable, or find_schema_drift instead. "
+    "It reads precomputed trend data, so an empty result means no published deteriorating row survives the selected filters; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 FIND_RECOVERING_DESCRIPTION = (
     "Return datasets whose published freshness trend is recovering, with the fastest "
     "staleness reductions first. Includes pipeline-computed trend and publish-reliability "
-    "evidence."
+    "evidence. Use it for improving freshness trends; do not use it for deterioration, anomalies, reliability grades, or structural drift—use find_deteriorating, find_anomalies, find_unreliable, or find_schema_drift instead. "
+    "It reads precomputed trend data, so an empty result means no published recovering row exists; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 FIND_UNRELIABLE_DESCRIPTION = (
     "Return datasets whose evaluated publish-reliability grade is at or below a "
     "threshold (the unreliable ones), with the worst grades and lowest on-time percentages first. "
     "Reliability measures timeliness of successful freshness observations, not uptime; "
-    "sample days are included so agents can judge evidence depth."
+    "sample days are included so agents can judge evidence depth. Use it for timeliness reliability grades; do not use it for individual anomalies, trends, or structural drift—use find_anomalies, find_deteriorating, find_recovering, or find_schema_drift instead. "
+    "It reads precomputed reliability data, so an empty result means no published grade meets the threshold; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 FIND_SCHEMA_DRIFT_DESCRIPTION = (
     "Return datasets with published structural or record-count drift evidence, "
     "ranked with structural changes first. Optionally require a minimum number "
     "of structural transitions; includes pipeline-computed evidence so agents "
-    "do not infer drift from freshness alone."
+    "do not infer drift from freshness alone. Use it for structural or record-count changes; do not use it for freshness risk, anomalies, trends, or reliability—use find_stale, find_anomalies, find_deteriorating, or find_unreliable instead. "
+    "It reads precomputed drift data, so an empty result means no published drift row survives the selected filters; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 CHECK_RECONCILIATION_DESCRIPTION = (
     "Return the published cross-source reconciliation group for a dataset name or id, "
     "including per-member counts, dates, statuses, tolerances, and contextual deltas. "
-    "A discrepancy requires human review and does not prove either source is wrong."
+    "A discrepancy requires human review and does not prove either source is wrong. Use it to compare a dataset with its published cross-source group; do not use it for provenance or evidence receipts—use get_provenance or get_evidence instead. "
+    "It reads precomputed reconciliation data, and single_source means no group contains the resolved dataset; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 GET_PROVENANCE_DESCRIPTION = (
     "Use when asked 'can I cite this source?', for licence and attribution, or for "
@@ -545,7 +560,8 @@ GET_PROVENANCE_DESCRIPTION = (
     "last-checked time, DataPulse status/verdict, licence/attribution, and a receipt/evidence "
     "digest when available. You may cite the returned provenance and describe its published evidence; "
     "it is not a freshness guarantee and does not itself verify the source is current. "
-    "For pre-trust use search_datasets → verify_dataset → get_provenance."
+    "For pre-trust use search_datasets → verify_dataset → get_provenance. Use it for citation-ready provenance; do not use it for full evidence or a live comparison—use get_evidence or verify_evidence instead. "
+    "It reads published evidence context, so absent fields mean the pipeline did not publish that value; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 GET_EVIDENCE_DESCRIPTION = (
     "Use for a deep evidence audit or to inspect a provenance and evidence receipt. "
@@ -555,7 +571,8 @@ GET_EVIDENCE_DESCRIPTION = (
     "a live source fetch: you may report what the pipeline observed, but must not infer "
     "the source is currently reachable or semantically true. Use it for a deep audit before "
     "or alongside verification. "
-    "search_datasets → get_evidence → verify_evidence → verify_attestation."
+    "search_datasets → get_evidence → verify_evidence → verify_attestation. Use it for a complete published receipt; do not use it for a live transport check or signature verification—use verify_evidence or verify_attestation instead. "
+    "It reads precomputed evidence, so evidence_available=false means no published health row; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 VERIFY_EVIDENCE_DESCRIPTION = (
     "Use when a fresh, rate-limited live-vs-published comparison is needed for a "
@@ -565,7 +582,8 @@ VERIFY_EVIDENCE_DESCRIPTION = (
     "observation, not semantic truth: it does not recompute content dates, record counts, "
     "or shape fingerprints. Results are ephemeral and do not update published health artifacts. "
     "For a deep audit use "
-    "search_datasets → get_evidence → verify_evidence → verify_attestation."
+    "search_datasets → get_evidence → verify_evidence → verify_attestation. Use it for a live transport comparison; do not use it for published receipt integrity or signed-attestation verification—use verify_dataset or verify_attestation instead. "
+    "An unreachable or not_verifiable verdict reports that this live comparison could not establish a match, while cached results are still ephemeral; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 VERIFY_DATASET_DESCRIPTION = (
     "This is the preferred single-call pre-trust check for 'is this dataset current?', stale, "
@@ -574,21 +592,25 @@ VERIFY_DATASET_DESCRIPTION = (
     "evidence and fail-closed signed receipt verification with artifact "
     "references. It verifies published artifacts, not a live source check: you may infer "
     "whether their receipt verifies, but must not infer current upstream availability or "
-    "semantic truth. Use search_datasets → verify_dataset → get_provenance."
+    "semantic truth. Use search_datasets → verify_dataset → get_provenance. Use it for one published pre-trust check; do not use it for a live transport comparison or attestation-chain verification—use verify_evidence or verify_attestation instead. "
+    "It verifies precomputed published artifacts, so a failed check does not identify current upstream availability; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 FRESHNESS_SUMMARY_DESCRIPTION = (
     "Return a freshness-at-a-glance summary of the published catalogue: fresh, "
-    "aging, stale, and reference counts plus the latest health check time."
+    "aging, stale, and reference counts plus the latest health check time. Use it for catalogue-level freshness context; do not use it to enumerate affected datasets—use find_stale instead. "
+    "It reads the latest published snapshot, so missing counts or check time mean the artifact omitted them; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 FIND_BY_LICENCE_DESCRIPTION = (
     "Return all datasets with the given licence, summarised. Use to enumerate what's "
-    "available under a specific licence for compliance/reuse scoping."
+    "available under a specific licence for compliance/reuse scoping. Use it to enumerate one licence; do not use it to discover by topic or inspect a dataset's citation context—use search_datasets or get_provenance instead. "
+    "It reads published manifest data, so an empty list means no published dataset has the resolved licence; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 TRUST_VERDICT_DESCRIPTION = (
     "Return published attestation facts, the unsigned methodology-versioned trust score, "
     "numeric components, and component_availability reasons, plus existing "
     "health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. "
-    "This tool does not re-probe or verify the signature; call verify_attestation separately."
+    "This tool does not re-probe or verify the signature; call verify_attestation separately. Use it to assemble the published trust view; do not use it for receipt verification, live comparison, or signature verification—use verify_dataset, verify_evidence, or verify_attestation instead. "
+    "It reads precomputed artifacts, so missing component availability explains omitted evidence rather than a live probe; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 VERIFY_ATTESTATION_DESCRIPTION = (
     "Use to verify a signed published probe attestation after an evidence audit. Returns "
@@ -596,7 +618,8 @@ VERIFY_ATTESTATION_DESCRIPTION = (
     "to a Git-tag anchor; and L3 scope, which requires verify_evidence for live transport. "
     "A valid signature proves attestation integrity and scope, not upstream semantic truth "
     "or currentness. For a deep audit use search_datasets → get_evidence → "
-    "verify_evidence → verify_attestation."
+    "verify_evidence → verify_attestation. Use it for signed-attestation integrity; do not use it for published receipt verification, a live transport comparison, or an aggregate verdict—use verify_dataset, verify_evidence, or trust_verdict instead. "
+    "L2 is not run unless replay_chain is set, and a failed level reports an unsatisfied check rather than upstream semantic truth; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry."
 )
 
 class SourceImplementation(MCPImplementation):
@@ -942,8 +965,8 @@ async def search_datasets(
         Field(
             min_length=1,
             description=(
-                "Topic or task phrasing for Malaysian public-data discovery only, e.g. "
-                "'Malaysian public data inflation'; verify a result separately."
+                "Topic or task phrasing used to rank discovery candidates, e.g. "
+                "'Malaysian public data inflation'; use a returned id with get_dataset."
             ),
             examples=["Malaysian public data inflation"],
         ),
@@ -952,8 +975,8 @@ async def search_datasets(
         str | None,
         Field(
             description=(
-                "Optional exact licence name or supported alias for reuse discovery, e.g. "
-                "'CC BY 4.0'; this does not verify attribution compliance."
+                "Optional exact licence name or supported alias applied before ranking, e.g. "
+                "'CC BY 4.0'; omit it to search every licence."
             ),
             examples=["CC BY 4.0", "Open Government Licence (Malaysia)"],
         ),
@@ -962,7 +985,7 @@ async def search_datasets(
         str | None,
         Field(
             description=(
-                "Optional case-insensitive publisher/source filter, e.g. 'OpenDOSM'."
+                "Optional publisher/source substring filter applied before ranking, e.g. 'OpenDOSM'; omit it to search every source."
             ),
             examples=["OpenDOSM", "data.gov.my", "MET Malaysia"],
         ),
@@ -972,7 +995,7 @@ async def search_datasets(
         Field(
             ge=1,
             le=50,
-            description="Maximum discovery matches to return; integer from 1 to 50, e.g. 10.",
+            description="Maximum highest-ranked discovery matches to return, e.g. 10; omitted defaults to 10 and does not change ranking.",
         ),
     ] = 10,
 ) -> list[dict[str, Any]]:
@@ -1031,8 +1054,7 @@ async def get_dataset(
         Field(
             min_length=1,
             description=(
-                "Canonical dataset identifier, e.g. 'dosm_cpi_state'. See the "
-                "registry catalogue for valid IDs."
+                "Stable dataset slug returned by search_datasets, e.g. 'dosm_cpi_state'; this tool requires the slug, not a display name."
             ),
             examples=["dosm_cpi_state"],
         ),
@@ -1108,7 +1130,7 @@ async def get_data_passport(
         str,
         Field(
             min_length=1,
-            description="Canonical dataset identifier for its published Passport v1, e.g. 'fuelprice'.",
+            description="Stable dataset slug returned by search_datasets, e.g. 'fuelprice'; this tool requires the slug, not a display name.",
             examples=["fuelprice"],
         ),
     ],
@@ -1155,8 +1177,7 @@ async def find_stale(
         Field(
             ge=0,
             description=(
-                "Maximum acceptable age of the latest health check in whole hours; "
-                "non-negative integer, e.g. 72."
+                "Maximum published-snapshot age before otherwise healthy rows are included, e.g. 72; omit it to use 24 hours."
             ),
             examples=[24, 72],
         ),
@@ -1296,7 +1317,7 @@ async def find_anomalies(
             ge=1,
             le=200,
             description=(
-                "Maximum ranked anomalies to return; integer from 1 to 200, e.g. 50."
+                "Maximum highest-ranked anomalies to return, e.g. 50; omit it to use 50 without changing the ranking."
             ),
             examples=[10, 50],
         ),
@@ -1305,8 +1326,8 @@ async def find_anomalies(
         str | None,
         Field(
             description=(
-                "Optional exact detection mode; e.g. 'rolling_14d' or "
-                "'cadence_fallback'."
+                "Optional exact published detection mode filter, e.g. 'rolling_14d' or "
+                "'cadence_fallback'; omit it to include every mode."
             ),
             examples=["rolling_14d", "cadence_fallback"],
         ),
@@ -1315,8 +1336,8 @@ async def find_anomalies(
         str | None,
         Field(
             description=(
-                "Optional minimum publish-reliability grade; e.g. 'C' keeps A, B, "
-                "and C and excludes insufficient data."
+                "Optional inclusive published reliability floor, e.g. 'C' keeps A, B, "
+                "and C; omit it to retain rows regardless of grade."
             ),
             examples=["A", "C"],
         ),
@@ -1426,7 +1447,7 @@ async def find_deteriorating(
         Field(
             ge=1,
             le=200,
-            description="Maximum ranked deteriorating datasets to return; integer from 1 to 200, e.g. 50.",
+            description="Maximum highest-ranked deteriorating datasets to return, e.g. 50; omit it to use 50 without changing ranking.",
             examples=[10, 50],
         ),
     ] = 50,
@@ -1435,7 +1456,7 @@ async def find_deteriorating(
         Field(
             ge=0,
             le=100,
-            description="Optional minimum percent of anomaly-evaluable history days, e.g. 25.0.",
+            description="Optional inclusive anomaly-rate filter on published history, e.g. 25.0; omit it to retain every deteriorating row.",
             examples=[25.0, 50.0],
         ),
     ] = None,
@@ -1465,7 +1486,7 @@ async def find_recovering(
         Field(
             ge=1,
             le=200,
-            description="Maximum ranked recovering datasets to return; integer from 1 to 200, e.g. 50.",
+            description="Maximum fastest-recovering datasets to return, e.g. 50; omit it to use 50 without changing ranking.",
             examples=[10, 50],
         ),
     ] = 50,
@@ -1537,8 +1558,7 @@ async def find_unreliable(
             ge=1,
             le=200,
             description=(
-                "Maximum ranked unreliable datasets to return; integer from 1 to "
-                "200, e.g. 50."
+                "Maximum worst-ranked unreliable datasets to return, e.g. 50; omit it to use 50 without changing ranking."
             ),
             examples=[10, 50],
         ),
@@ -1547,8 +1567,8 @@ async def find_unreliable(
         str,
         Field(
             description=(
-                "Inclusive reliability threshold; e.g. 'C' returns grades C, D, "
-                "and F."
+                "Inclusive published reliability threshold; e.g. 'C' returns grades C, D, "
+                "and F; omit it to use C."
             ),
             examples=["C", "F"],
         ),
@@ -1606,8 +1626,8 @@ def _drift_results(manifest: dict[str, Any], drift: dict[str, Any], *, min_chang
 
 
 async def find_schema_drift(
-    limit: Annotated[int, Field(ge=1, le=200, description="Maximum ranked drift results to return; integer from 1 to 200, e.g. 50.", examples=[10, 50])] = 50,
-    min_change_count: Annotated[int, Field(ge=0, le=100, description="Minimum structural fingerprint or column-count transitions; integer from 0 to 100, e.g. 1.", examples=[0, 1])] = 0,
+    limit: Annotated[int, Field(ge=1, le=200, description="Maximum structural-first ranked drift results to return, e.g. 50; omit it to use 50 without changing ranking.", examples=[10, 50])] = 50,
+    min_change_count: Annotated[int, Field(ge=0, le=100, description="Inclusive filter on the larger published shape or column transition count, e.g. 1; omit it to include every drift row.", examples=[0, 1])] = 0,
 ) -> list[dict[str, Any]]:
     """Expose pipeline-computed schema and record-count drift decisions."""
     manifest, drift = await gather(_load_manifest(), _load_drift())
@@ -1653,7 +1673,7 @@ def _reconciliation_result(manifest: dict[str, Any], reconciliation: dict[str, A
 async def check_reconciliation(
     dataset_name: Annotated[
         str,
-        Field(min_length=1, description="Dataset id or name to reconcile, e.g. 'interestrates' or 'Monthly Interest Rates'.", examples=["interestrates", "Monthly Interest Rates"]),
+        Field(min_length=1, description="Stable dataset slug or exact display name to resolve, e.g. 'interestrates' or 'Monthly Interest Rates'; use search_datasets to discover valid values.", examples=["interestrates", "Monthly Interest Rates"]),
     ],
 ) -> dict[str, Any]:
     """Return published reconciliation evidence for one resolved dataset."""
@@ -1687,8 +1707,8 @@ async def get_provenance(
             min_length=1,
             max_length=50,
             description=(
-                "JSON array of 1 to 50 canonical dataset IDs for provenance and citation, "
-                "e.g. ['fuelprice', 'pricecatcher']; this is not a live freshness check."
+                "Dataset slugs returned by search_datasets for a batched citation lookup, "
+                "e.g. ['fuelprice', 'pricecatcher']; preserve order and use get_dataset for display-name resolution."
             ),
             examples=[["fuelprice", "pricecatcher"]],
         ),
@@ -1734,8 +1754,8 @@ async def get_evidence(
         Field(
             min_length=1,
             description=(
-                "Canonical dataset identifier for its complete published evidence receipt, "
-                "e.g. 'fuelprice'; this tool does not fetch the live source."
+                "Stable dataset slug returned by search_datasets for its complete receipt, "
+                "e.g. 'fuelprice'; this tool requires the slug, not a display name."
             ),
             examples=["fuelprice"],
         ),
@@ -1825,8 +1845,8 @@ async def verify_dataset(
         Field(
             min_length=1,
             description=(
-                "Canonical dataset identifier for the published pre-trust receipt check, "
-                "e.g. 'fuelprice'; this does not perform a live source fetch."
+                "Stable dataset slug returned by search_datasets for the published receipt check, "
+                "e.g. 'fuelprice'; this tool requires the slug, not a display name."
             ),
             examples=["fuelprice"],
         ),
@@ -1835,8 +1855,7 @@ async def verify_dataset(
         bool,
         Field(
             description=(
-                "Include bounded signed-receipt verifier diagnostics for an audit, e.g. false; "
-                "the result still does not establish upstream semantic truth."
+                "Set true to include bounded verifier diagnostics for an audit, e.g. false; omit it to suppress diagnostics without changing verification."
             ),
             examples=[False, True],
         ),
@@ -2003,8 +2022,8 @@ async def verify_evidence(
         Field(
             min_length=1,
             description=(
-                "Canonical direct-access dataset identifier for a rate-limited live transport "
-                "observation, e.g. 'fuelprice'; browser-dependent sources cannot be fetched here."
+                "Stable direct-access dataset slug returned by search_datasets for a live transport "
+                "observation, e.g. 'fuelprice'; browser-dependent sources return not_verifiable."
             ),
             examples=["fuelprice"],
         ),
@@ -2072,7 +2091,7 @@ def _reconciliation_for(dataset_id: str, artifact: dict[str, Any]) -> dict[str, 
 
 
 async def trust_verdict(
-    dataset_id: Annotated[str, Field(min_length=1, description="Canonical dataset identifier to aggregate, e.g. 'fuelprice'.", examples=["fuelprice"])]
+    dataset_id: Annotated[str, Field(min_length=1, description="Stable dataset slug returned by search_datasets to aggregate, e.g. 'fuelprice'; display names are not resolved here.", examples=["fuelprice"])]
 ) -> dict[str, Any]:
     catalogue, trends, drift, reconciliation, attestation_bundle = await gather(
         _load_catalogue(), _load_trends(), _load_drift(), _load_reconciliation(), _load_attestations()
@@ -2144,8 +2163,8 @@ async def _verify_git_anchor(anchor: dict[str, Any], expected_head: str) -> bool
 
 
 async def verify_attestation(
-    reference: Annotated[str, Field(min_length=1, description="Dataset id or safe relative published digest reference for signed-attestation verification, e.g. 'fuelprice'.", examples=["fuelprice", "attestations/2026-08-15/fuelprice.json"])],
-    replay_chain: Annotated[bool, Field(description="Replay signed daily heads to a Git-tag anchor for L2 verification, e.g. true for an auditor.", examples=[False, True])] = False,
+    reference: Annotated[str, Field(min_length=1, description="Dataset slug returned by search_datasets or an exact published digest reference, e.g. 'fuelprice'; the slug resolves through the attestation index.", examples=["fuelprice", "attestations/2026-08-15/fuelprice.json"])],
+    replay_chain: Annotated[bool, Field(description="Set true to perform the slower L2 daily-head replay to a Git tag, e.g. true; omit it to run L1 only.", examples=[False, True])] = False,
 ) -> dict[str, Any]:
     index, latest_head, _ = await _load_attestations()
     ref = _safe_attestation_ref(reference, index)
@@ -2197,8 +2216,8 @@ async def find_by_licence(
         Field(
             min_length=1,
             description=(
-                "Exact licence name or supported alias, e.g. "
-                "'Creative Commons Attribution 4.0'."
+                "Exact published licence name or supported alias, e.g. "
+                "'Creative Commons Attribution 4.0'; use search_datasets to discover licence values."
             ),
             examples=[
                 "Creative Commons Attribution 4.0",
@@ -2231,14 +2250,14 @@ async def find_by_licence(
 
 @mcp.tool(
     title="Summarize Aggregate Tool Usage",
-    description="Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, and `trust_distribution` (counts of returned trust verdicts by published score band: 90-100, 75-89, 50-74, 25-49, 0-24) for the inclusive range. Legacy identity fields are ignored.",
+    description="Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, and `trust_distribution` (counts of returned trust verdicts by published score band: 90-100, 75-89, 50-74, 25-49, 0-24) for the inclusive range. Use it for aggregate tool activity; do not use it to find data-quality risks—use find_stale, find_anomalies, find_deteriorating, find_recovering, find_unreliable, or find_schema_drift instead. It reads persisted usage records, so zero totals mean no retained records in that range; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
     icons=TOOL_ICONS,
     annotations=READ_ONLY_TOOL_ANNOTATIONS,
     meta=TOOL_META,
 )
 async def usage_summary(
-    since: Annotated[str, Field(description="Inclusive ISO start date YYYY-MM-DD, e.g. '2026-08-01'.", examples=["2026-08-01"])],
-    until: Annotated[str, Field(description="Inclusive ISO end date YYYY-MM-DD, e.g. '2026-08-07'.", examples=["2026-08-07"])],
+    since: Annotated[str, Field(description="Inclusive first day of the persisted-record window, e.g. '2026-08-01'; it must not be after until.", examples=["2026-08-01"])],
+    until: Annotated[str, Field(description="Inclusive last day of the persisted-record window, e.g. '2026-08-07'; it must not be before since.", examples=["2026-08-07"])],
 ) -> dict[str, Any]:
     """Aggregate persisted records without filtering or exposing caller identity."""
     try:
