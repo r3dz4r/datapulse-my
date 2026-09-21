@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.31.1](https://github.com/r3dz4r/datapulse-my/compare/v3.31.0...v3.31.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **mcp:** accept JSON-only health probes ([8b592ec](https://github.com/r3dz4r/datapulse-my/commit/8b592ec2911c4467e56251cdf9a0e073629ff9e5))
+
 ## [3.31.0](https://github.com/r3dz4r/datapulse-my/compare/v3.30.1...v3.31.0) (2026-09-21)
 
 
