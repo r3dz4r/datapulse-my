@@ -9,6 +9,7 @@ import shutil
 import socket
 import subprocess
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
@@ -365,6 +366,7 @@ def test_sync_verifies_fastmcp_identity_and_rolls_back_on_failure(
                 # the environment pair the server already honours.
                 "DATAPULSE_MCP_SOURCE_SHA": "a" * 40,
                 "DATAPULSE_MCP_SOURCE_DATE": "2024-01-15",
+                "DATAPULSE_MCP_READINESS_BUDGET_SECONDS": "1",
             },
             capture_output=True,
             text=True,
@@ -453,12 +455,24 @@ class _ReadinessStubHandler(BaseHTTPRequestHandler):
     """MCP stub honouring the sync script's identity and annotation contract."""
 
     runtime_version = "v1.2.3+aaaaaaa"
+    stale_runtime_version: str | None = None
+    switch_after_seconds: float | None = None
+    first_initialize_at = 0.0
 
     def do_POST(self) -> None:  # noqa: N802
         content_length = int(self.headers.get("Content-Length", "0"))
         request = json.loads(self.rfile.read(content_length))
         method = request["method"]
         if method == "initialize":
+            if self.first_initialize_at == 0.0:
+                type(self).first_initialize_at = time.monotonic()
+            runtime_version = self.runtime_version
+            if (
+                self.stale_runtime_version is not None
+                and self.switch_after_seconds is not None
+                and time.monotonic() - self.first_initialize_at < self.switch_after_seconds
+            ):
+                runtime_version = self.stale_runtime_version
             payload = json.dumps(
                 {
                     "jsonrpc": "2.0",
@@ -468,7 +482,7 @@ class _ReadinessStubHandler(BaseHTTPRequestHandler):
                         "capabilities": {},
                         "serverInfo": {
                             "name": "DataPulse MY",
-                            "version": self.runtime_version,
+                            "version": runtime_version,
                         },
                     },
                 }
@@ -615,6 +629,101 @@ def _run_readiness_sync(
         check=False,
         timeout=timeout,
     )
+
+
+def _start_identity_readiness_stub(
+    stale_runtime_version: str | None = None,
+    switch_after_seconds: float | None = None,
+) -> tuple[HTTPServer, threading.Thread]:
+    _ReadinessStubHandler.runtime_version = "v1.2.3+aaaaaaa"
+    _ReadinessStubHandler.stale_runtime_version = stale_runtime_version
+    _ReadinessStubHandler.switch_after_seconds = switch_after_seconds
+    _ReadinessStubHandler.first_initialize_at = 0.0
+    server = HTTPServer(("127.0.0.1", 0), _ReadinessStubHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server, thread
+
+
+def _stop_identity_readiness_stub(server: HTTPServer, thread: threading.Thread) -> None:
+    server.shutdown()
+    server.server_close()
+    thread.join(timeout=5)
+    _ReadinessStubHandler.stale_runtime_version = None
+    _ReadinessStubHandler.switch_after_seconds = None
+
+
+def test_readiness_waits_for_identity_not_first_response(tmp_path: Path) -> None:
+    source, deployed, env = _readiness_fixture(tmp_path)
+    server, thread = _start_identity_readiness_stub(
+        stale_runtime_version="v1.2.3+bbbbbbb", switch_after_seconds=2.0
+    )
+    try:
+        result = _run_readiness_sync(
+            source,
+            deployed,
+            f"http://127.0.0.1:{server.server_port}/mcp",
+            env,
+            budget="15",
+            timeout=30,
+        )
+    finally:
+        _stop_identity_readiness_stub(server, thread)
+
+    assert result.returncode == 0, result.stderr
+    waited = re.search(r"readiness wait=(\d+)s budget=15s", result.stdout)
+    assert waited is not None, result.stdout
+    assert int(waited.group(1)) >= 2
+
+
+def test_readiness_budget_exhausted_by_slow_restart(tmp_path: Path) -> None:
+    source, deployed, env = _readiness_fixture(tmp_path)
+    server, thread = _start_identity_readiness_stub(
+        stale_runtime_version="v1.2.3+bbbbbbb", switch_after_seconds=2.0
+    )
+    try:
+        result = _run_readiness_sync(
+            source,
+            deployed,
+            f"http://127.0.0.1:{server.server_port}/mcp",
+            env,
+            budget="1",
+            timeout=20,
+        )
+    finally:
+        _stop_identity_readiness_stub(server, thread)
+
+    assert result.returncode != 0
+    assert "rolling back failed deployment" in result.stdout
+    waited = re.search(r"readiness wait=(\d+)s budget=1s", result.stdout)
+    assert waited is not None, result.stdout
+    assert int(waited.group(1)) >= 1
+    assert deployed.read_text(encoding="utf-8") == "old deployed source\n"
+
+
+def test_stale_identity_is_never_accepted(tmp_path: Path) -> None:
+    source, deployed, env = _readiness_fixture(tmp_path)
+    server, thread = _start_identity_readiness_stub(
+        stale_runtime_version="v1.2.3+bbbbbbb", switch_after_seconds=60.0
+    )
+    try:
+        result = _run_readiness_sync(
+            source,
+            deployed,
+            f"http://127.0.0.1:{server.server_port}/mcp",
+            env,
+            budget="3",
+            timeout=20,
+        )
+    finally:
+        _stop_identity_readiness_stub(server, thread)
+
+    assert result.returncode != 0
+    assert "rolling back failed deployment" in result.stdout
+    waited = re.search(r"readiness wait=(\d+)s budget=3s", result.stdout)
+    assert waited is not None, result.stdout
+    assert int(waited.group(1)) >= 3
+    assert deployed.read_text(encoding="utf-8") == "old deployed source\n"
 
 
 def test_sync_readiness_budget_outlasts_refused_port(tmp_path: Path) -> None:

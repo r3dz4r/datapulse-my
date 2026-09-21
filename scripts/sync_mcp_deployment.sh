@@ -457,41 +457,8 @@ fi
 
 work_dir="$(mktemp -d /tmp/datapulse-mcp-sync.XXXXXX)"
 initialize_payload='{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"datapulse-mcp-sync","version":"1"}},"id":1}'
-# Readiness is a wall-clock deadline, not an attempt count: while the old
-# process drains, nothing listens, so curl fails instantly with
-# connection-refused instead of spending its 5s max-time. The previous
-# 10-attempt loop therefore covered ~10s of drain, not the 60s its constants
-# implied, and gave up on a restart measured to need ~34s — rolling back a
-# deployment that was about to come up. The deadline makes the window what
-# the number says it is, and the elapsed wait is logged on every exit path
-# so the next resize starts from evidence instead of inference.
-initialize_ok=false
-readiness_started=$SECONDS
-while (( SECONDS - readiness_started < readiness_budget_seconds )); do
-  if curl -fsS --connect-timeout 2 --max-time 5 \
-      -D "$work_dir/headers" -o "$work_dir/initialize" "$endpoint" \
-      -H "Accept: $ACCEPT" -H 'Content-Type: application/json' \
-      -d "$initialize_payload" 2> "$work_dir/curl-error"; then
-    initialize_ok=true
-    break
-  fi
-  sleep 1
-done
-readiness_wait=$(( SECONDS - readiness_started ))
-log "initialize readiness wait=${readiness_wait}s budget=${readiness_budget_seconds}s endpoint=$endpoint"
-if [[ "$initialize_ok" != true ]]; then
-  rollback
-  fail "local endpoint did not initialize after restart: $endpoint — waited ${readiness_wait}s of ${readiness_budget_seconds}s readiness budget (override: DATAPULSE_MCP_READINESS_BUDGET_SECONDS)"
-fi
-
-session_id="$(awk 'tolower($1)=="mcp-session-id:" {gsub("\r", "", $2); print $2}' "$work_dir/headers")"
-if [[ -z "$session_id" ]]; then
-  rollback
-  fail 'initialize response omitted Mcp-Session-Id'
-fi
-awk '/^data: / {sub(/^data: /, ""); print; exit}' "$work_dir/initialize" > "$work_dir/initialize.json"
-identity_surface=""
-if identity_surface="$(jq -er \
+served_identity_surface() {
+  jq -er \
     --arg sha "$expected_source_sha" \
     --arg source_version "$expected_source_version" \
     '(.result.serverInfo // {}) as $info
@@ -502,17 +469,60 @@ if identity_surface="$(jq -er \
        then "FastMCP serverInfo.version source marker"
        else false
        end' \
-    "$work_dir/initialize.json" 2>/dev/null)"; then
-  :
-else
-  live_sha="$(jq -r '.result.serverInfo.source_commit_sha // "<missing>"' "$work_dir/initialize.json" 2>/dev/null || printf '<invalid>')"
-  live_version="$(jq -r '.result.serverInfo.version // "<missing>"' "$work_dir/initialize.json" 2>/dev/null || printf '<invalid>')"
-  live_short_sha="$live_sha"
-  [[ "$live_short_sha" != "<missing>" ]] || live_short_sha="${live_version##*+}"
-  live_short_sha="${live_short_sha:0:7}"
+    "$1" 2>/dev/null
+}
+
+# Readiness is a wall-clock deadline, not an attempt count. In delegated mode
+# the old process can still answer while the path unit waits to restart it, so
+# reachability alone is not readiness: only the response carrying this copy's
+# stamped identity may end the wait.
+initialize_ok=false
+identity_surface=""
+last_initialize_json=""
+readiness_started=$SECONDS
+while (( SECONDS - readiness_started < readiness_budget_seconds )); do
+  attempt_suffix="${SECONDS}.${RANDOM}"
+  attempt_headers="$work_dir/headers.$attempt_suffix"
+  attempt_initialize="$work_dir/initialize.$attempt_suffix"
+  attempt_initialize_json="$work_dir/initialize.$attempt_suffix.json"
+  if curl -fsS --connect-timeout 2 --max-time 5 \
+      -D "$attempt_headers" -o "$attempt_initialize" "$endpoint" \
+      -H "Accept: $ACCEPT" -H 'Content-Type: application/json' \
+      -d "$initialize_payload" 2> "$work_dir/curl-error"; then
+    awk '/^data: / {sub(/^data: /, ""); print; exit}' "$attempt_initialize" > "$attempt_initialize_json"
+    if identity_surface="$(served_identity_surface "$attempt_initialize_json")"; then
+      mv -f -- "$attempt_headers" "$work_dir/headers"
+      mv -f -- "$attempt_initialize" "$work_dir/initialize"
+      mv -f -- "$attempt_initialize_json" "$work_dir/initialize.json"
+      initialize_ok=true
+      break
+    fi
+    last_initialize_json="$attempt_initialize_json"
+  fi
+  sleep 1
+done
+readiness_wait=$(( SECONDS - readiness_started ))
+log "initialize readiness wait=${readiness_wait}s budget=${readiness_budget_seconds}s endpoint=$endpoint"
+if [[ "$initialize_ok" != true ]]; then
+  if [[ -n "$last_initialize_json" && -f "$last_initialize_json" ]]; then
+    live_sha="$(jq -r '.result.serverInfo.source_commit_sha // "<missing>"' "$last_initialize_json" 2>/dev/null || printf '<invalid>')"
+    live_version="$(jq -r '.result.serverInfo.version // "<missing>"' "$last_initialize_json" 2>/dev/null || printf '<invalid>')"
+    live_short_sha="$live_sha"
+    [[ "$live_short_sha" != "<missing>" ]] || live_short_sha="${live_version##*+}"
+    live_short_sha="${live_short_sha:0:7}"
+    rollback
+    fail "live identity mismatch: served_short_sha=$live_short_sha does not match head_short_sha=$head_short_sha served_version=$live_version served_sha=$live_sha expected_version=$expected_source_version head_sha=$head_sha — the endpoint is not reporting the repository HEAD source marker"
+  fi
   rollback
-  fail "live identity mismatch: served_short_sha=$live_short_sha does not match head_short_sha=$head_short_sha served_version=$live_version served_sha=$live_sha expected_version=$expected_source_version head_sha=$head_sha — the endpoint is not reporting the repository HEAD source marker"
+  fail "local endpoint did not initialize after restart: $endpoint — waited ${readiness_wait}s of ${readiness_budget_seconds}s readiness budget (override: DATAPULSE_MCP_READINESS_BUDGET_SECONDS)"
 fi
+
+session_id="$(awk 'tolower($1)=="mcp-session-id:" {gsub("\r", "", $2); print $2}' "$work_dir/headers")"
+if [[ -z "$session_id" ]]; then
+  rollback
+  fail 'initialize response omitted Mcp-Session-Id'
+fi
+awk '/^data: / {sub(/^data: /, ""); print; exit}' "$work_dir/initialize" > "$work_dir/initialize.json"
 
 if ! curl -fsS --connect-timeout 2 --max-time 5 "$endpoint" \
     -H "Accept: $ACCEPT" -H 'Content-Type: application/json' \
