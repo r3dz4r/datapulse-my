@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.33.2](https://github.com/r3dz4r/datapulse-my/compare/v3.33.1...v3.33.2) (2026-09-21)
+
+
+### Bug Fixes
+
+* **mcp:** stop republishing unrecognised dataset ids in usage_summary ([#164](https://github.com/r3dz4r/datapulse-my/issues/164)) ([126b357](https://github.com/r3dz4r/datapulse-my/commit/126b35756508b0f88d43c1d3a9635c13ec03862e))
+
 ## [3.33.1](https://github.com/r3dz4r/datapulse-my/compare/v3.33.0...v3.33.1) (2026-09-21)
 
 
