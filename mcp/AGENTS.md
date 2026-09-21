@@ -48,8 +48,22 @@ The M8ven tool trust score (currently D, 41/100) audits this server. Tool annota
 # 1. Run the test suite
 uv run --isolated --prerelease=allow --with-requirements mcp/requirements.txt --with pytest python -m pytest mcp/tests/ -v
 
-# 2. Re-render the mcp.json catalog
-python scripts/gen_mcp_reference.py   # regenerates /mcp.json at repo root
+# 2. Re-render the discovery artefacts (writes BOTH /mcp.json and /agent.json at repo root)
+#    This generator requires the source identity to be injected explicitly; a bare
+#    invocation fails with "source commit SHA must be explicitly injected". Both values
+#    must match the marker block in mcp/server.py (SOURCE_COMMIT_SHA / SOURCE_COMMIT_DATE),
+#    because the generator refuses a SHA that differs from that marker unless
+#    DATAPULSE_RELEASE_BUILD=1. Read them from the marker rather than using HEAD:
+export DATAPULSE_SOURCE_COMMIT_SHA="$(grep -oE '"[0-9a-f]{40}"' mcp/server.py | head -1 | tr -d '"')"
+export DATAPULSE_SOURCE_COMMIT_DATE="$(grep -oE '"20[0-9]{2}-[0-9]{2}-[0-9]{2}"' mcp/server.py | head -1 | tr -d '"')"
+python3 scripts/gen_mcp_reference.py
+# Expected diffs on regeneration:
+#   mcp.json   - unicode escaping only (the committed file escapes em-dashes as \u2014,
+#                the generator emits them literally). Any other change is content.
+#   agent.json - its commit_sha must equal the mcp/server.py marker. A single-line change
+#                here means the committed agent.json named a different source commit;
+#                that is real drift, not formatting, and should be committed deliberately.
+# Revert any artefact you did not intend to change rather than leaving it dirty.
 
 # 3. Confirm the live tool count matches mcp.json (or update intentionally)
 jq '.tools | length' mcp.json
