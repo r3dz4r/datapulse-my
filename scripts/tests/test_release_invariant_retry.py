@@ -61,6 +61,50 @@ def test_local_gate_accepts_readme_prepared_source_without_binding() -> None:
     assert "Local pre-generation attestation structure: PASS" in completed.stdout
 
 
+def test_readme_health_parity_still_rejects_an_inconsistent_generated_readme(
+    tmp_path: Path,
+) -> None:
+    """Release-mode parity remains a hard failure for generated artifacts."""
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+    parity_function = script.split("assert_readme_health_parity() {\n", 1)[1].split(
+        "\nfetch manifest.json", 1
+    )[0]
+
+    health_file = tmp_path / "latest.json"
+    health_file.write_text(
+        '{"_trust_summary":{"by_status":{"fresh":2,"stale":1}}}',
+        encoding="utf-8",
+    )
+    readme_file = tmp_path / "README.md"
+    readme_file.write_text(
+        "Current distribution (`_trust_summary`): [1 fresh] · [1 stale]\n",
+        encoding="utf-8",
+    )
+    completed = subprocess.run(
+        [
+            "bash",
+            "-c",
+            f"set -Eeuo pipefail\nassert_readme_health_parity() {{\n{parity_function}\n"
+            f"assert_readme_health_parity {health_file!s} {readme_file!s}",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 1
+    assert "README trust-summary disagrees with health/latest.json" in completed.stderr
+
+
+def test_local_gate_explains_that_readme_health_parity_is_release_scoped() -> None:
+    """Cadence lag must be visibly skipped, never silently accepted locally."""
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+
+    assert "if $local_mode; then\n  printf 'README-to-health distribution parity: SKIPPED" in script
+    assert 'assert_readme_health_parity "$work_dir/health.json" README.md' in script
+
+
 def test_local_gate_does_not_require_current_release_proof() -> None:
     """Local source validation must not read stale or absent generated proof."""
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
