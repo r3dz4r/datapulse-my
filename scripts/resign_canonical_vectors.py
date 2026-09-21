@@ -100,13 +100,12 @@ def request_signature(socket_path: Path, payload: Any, key: dict[str, Any]) -> s
         raise ResignError("signer response is not valid JSON") from error
     if not isinstance(response, dict):
         raise ResignError("signer response must be a JSON object")
-    if response.get("status") == "error":
-        reason = response.get("reason")
-        raise ResignError(f"signer refused: {reason if isinstance(reason, str) else 'unspecified'}")
-    if response.get("status") != "signed":
-        raise ResignError("signer response has an unexpected status")
-    if response.get("key_id") != key["key_id"] or response.get("algorithm") != "Ed25519":
-        raise ResignError("signer response does not identify the active vector key")
+    if response.get("ok") is False:
+        error = response.get("error")
+        code = error.get("code") if isinstance(error, dict) else None
+        raise ResignError(f"signer refused: {code if isinstance(code, str) else 'unspecified'}")
+    if response.get("ok") is not True:
+        raise ResignError("signer response has an unexpected envelope")
     signature_b64 = response.get("signature_base64")
     if not isinstance(signature_b64, str):
         raise ResignError("signer response is missing signature_base64")

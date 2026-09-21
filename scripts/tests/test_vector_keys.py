@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import os
 import socket
@@ -34,9 +35,10 @@ def canonical(value: Any) -> bytes:
 class SignerStub:
     """One-request-per-connection signer that keeps its test key only in memory."""
 
-    def __init__(self, path: Path, private_key: Ed25519PrivateKey) -> None:
+    def __init__(self, path: Path, private_key: Ed25519PrivateKey, refuse_code: str | None = None) -> None:
         self.path = path
         self.private_key = private_key
+        self.refuse_code = refuse_code
         self.requests: list[dict[str, Any]] = []
         self._stop = threading.Event()
         self._server: socket.socket | None = None
@@ -82,16 +84,18 @@ class SignerStub:
                     continue
                 self.requests.append(request)
                 if set(request) != {"purpose", "payload"} or request["purpose"] != "canonical-form-v1":
-                    self._respond(connection, {"status": "error", "reason": "unsupported_request"})
+                    self._respond(connection, {"ok": False, "error": {"code": "unsupported_request"}})
+                    continue
+                if self.refuse_code is not None:
+                    self._respond(connection, {"ok": False, "error": {"code": self.refuse_code}})
                     continue
                 signature = self.private_key.sign(canonical(request["payload"]))
                 self._respond(
                     connection,
                     {
-                        "status": "signed",
-                        "key_id": KEY_ID,
-                        "algorithm": "Ed25519",
+                        "ok": True,
                         "signature_base64": base64.b64encode(signature).decode("ascii"),
+                        "payload_sha256": hashlib.sha256(canonical(request["payload"])).hexdigest(),
                     },
                 )
 
@@ -190,4 +194,22 @@ def test_resign_tool_fails_closed_without_socket(tmp_path: Path) -> None:
     original = fixture_path.read_bytes()
     result = _run_tool(tmp_path / "missing.sock", fixture_path, KEYS_PATH)
     assert result.returncode != 0
+    assert fixture_path.read_bytes() == original
+
+
+def test_resign_tool_names_signer_refusal_code_and_preserves_fixture(tmp_path: Path) -> None:
+    """A documented signer refusal is an error, not a successful re-sign."""
+    fixture_path = tmp_path / "canonical_vectors.json"
+    fixture_path.write_bytes(FIXTURE_PATH.read_bytes())
+    original = fixture_path.read_bytes()
+    private_key = Ed25519PrivateKey.generate()
+    keys_path = tmp_path / "vector-keys.json"
+    _write_test_registry(keys_path, private_key)
+    socket_path = tmp_path / "vectors.sock"
+
+    with SignerStub(socket_path, private_key, refuse_code="key_unavailable"):
+        result = _run_tool(socket_path, fixture_path, keys_path)
+
+    assert result.returncode != 0
+    assert "key_unavailable" in result.stderr
     assert fixture_path.read_bytes() == original
