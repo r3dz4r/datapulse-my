@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.33.0](https://github.com/r3dz4r/datapulse-my/compare/v3.32.0...v3.33.0) (2026-09-21)
+
+
+### Features
+
+* **mcp:** clarify tool selection guidance ([50bf779](https://github.com/r3dz4r/datapulse-my/commit/50bf779373afa21e8c02968495abe48aef4125a2))
+
 ## [3.32.0](https://github.com/r3dz4r/datapulse-my/compare/v3.31.1...v3.32.0) (2026-09-21)
 
 
