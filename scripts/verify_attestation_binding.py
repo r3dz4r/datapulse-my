@@ -20,6 +20,7 @@ DEFAULT_MAX_AGE_SECONDS = 36 * 60 * 60
 DIGEST = re.compile(r"[0-9a-f]{64}")
 DSSE_DIGEST = re.compile(r"[0-9a-f]{64}", re.IGNORECASE)
 REKOR_INTEGER = re.compile(r"[0-9]+$")
+ATTESTATION_KEY_PURPOSE = "attestation-chain-signing"
 
 
 class ContractError(ValueError):
@@ -129,12 +130,14 @@ def _registry_key(
     registry: dict[str, Any], key_id: object, published_at: datetime, now: datetime
 ) -> tuple[dict[str, Any], Ed25519PublicKey]:
     rows = registry.get("keys")
-    if registry.get("schema") != "datapulse/v1/probe-key-registry" or not isinstance(rows, list):
+    if registry.get("schema") != "datapulse/v2/probe-key-registry" or not isinstance(rows, list):
         raise ContractError("key registry is invalid")
     matches = [row for row in rows if isinstance(row, dict) and row.get("key_id") == key_id]
     if len(matches) != 1:
         raise ContractError("attestation key is missing or ambiguous")
     row = matches[0]
+    if row.get("purpose") != ATTESTATION_KEY_PURPOSE:
+        raise ContractError("attestation key has the wrong purpose")
     if registry.get("current_key_id") != key_id or row.get("status") != "active":
         raise ContractError("attestation key is not active")
     not_before = _parse_time(row.get("not_before"), "key not_before")

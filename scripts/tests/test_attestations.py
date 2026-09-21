@@ -27,7 +27,7 @@ def fixture_root(tmp_path: Path) -> tuple[Path, Path]:
     key_id = "ed25519-test"
     key = tmp_path / "private.json"
     write(key, {"key_id": key_id, "private_key_base64": base64.b64encode(raw).decode(), "public_key_base64": base64.b64encode(pub).decode()})
-    write(tmp_path / "docs/.well-known/datapulse-probe-keys.json", {"schema":"datapulse/v1/probe-key-registry", "current_key_id":key_id, "keys":[{"key_id":key_id,"public_key_base64":base64.b64encode(pub).decode(),"not_before":"2026-01-01T00:00:00Z","not_after":"2027-01-01T00:00:00Z","status":"active"}]})
+    write(tmp_path / "docs/.well-known/datapulse-probe-keys.json", {"schema":"datapulse/v2/probe-key-registry", "current_key_id":key_id, "keys":[{"key_id":key_id,"purpose":"attestation-chain-signing","public_key_base64":base64.b64encode(pub).decode(),"not_before":"2026-01-01T00:00:00Z","not_after":"2027-01-01T00:00:00Z","status":"active"}]})
     write(tmp_path / "datapulse.json", {"datasets":[{"id":"sample","name":"Sample","source":"Agency","url":"https://example.test/data","refresh_frequency":"daily","methodology_version":1}]})
     write(tmp_path / "health/latest.json", {"schema":"datapulse/v0.4/dataset-health","checked_at":"2026-08-15T00:00:00Z","_trust_summary":{},"datasets":[{"dataset_id":"sample","last_checked":"2026-08-15T00:00:00Z","request_url":"https://example.test/data","access_dependency":"direct","status":"fresh","staleness_days":0,"first_row_hash":"shape-v1:"+"a"*64}]})
     write(tmp_path / "health/trends.json", {"datasets":[{"dataset_id":"sample","publish_on_time_pct":100,"trend":"stable"}]})
@@ -255,8 +255,18 @@ def test_key_registry_rejects_expired_signer(tmp_path: Path):
         ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
 
 
+def test_key_registry_rejects_non_attestation_signer(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    registry_path = root / "docs/.well-known/datapulse-probe-keys.json"
+    registry = json.loads(registry_path.read_text())
+    registry["keys"][0]["purpose"] = "observation-receipt-signing"
+    write(registry_path, registry)
+    with pytest.raises(ValueError, match="not active"):
+        ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+
 def test_init_key_refuses_overwrite(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     path = tmp_path / "key.json"; path.write_text("{}")
-    monkeypatch.setattr("sys.argv", ["init_keys.py", "--private-key", str(path), "--registry", str(tmp_path / "registry.json")])
+    monkeypatch.setattr("sys.argv", ["init_keys.py", "--private-key", str(path), "--registry", str(tmp_path / "registry.json"), "--purpose", "attestation-chain-signing"])
     with pytest.raises(SystemExit, match="refusing to overwrite"):
         __import__("scripts.init_keys", fromlist=["main"]).main()

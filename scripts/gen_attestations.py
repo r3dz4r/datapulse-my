@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 ZERO = "0" * 64
 ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
+ATTESTATION_KEY_PURPOSE = "attestation-chain-signing"
 def canonical(value: object) -> bytes: return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
 def sha(value: bytes) -> str: return hashlib.sha256(value).hexdigest()
 def parse_time(value: str) -> datetime: return datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -179,7 +180,7 @@ def reuse_existing_day(root: Path, day: str) -> bool:
         registry = _load(root / "docs/.well-known/datapulse-probe-keys.json", "probe key registry")
         key_id = payload.get("ed25519", {}).get("key_id")
         matches = [row for row in registry.get("keys", []) if isinstance(row, dict) and row.get("key_id") == key_id]
-        if len(matches) != 1:
+        if len(matches) != 1 or matches[0].get("purpose") != ATTESTATION_KEY_PURPOSE:
             raise ContractError("same-day attestation key is missing or ambiguous")
         public = Ed25519PublicKey.from_public_bytes(base64.b64decode(matches[0]["public_key_base64"], validate=True))
         _verify_signature(public, payload, binding.get("signature_base64"), "same-day binding")
@@ -218,7 +219,7 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
     private=Ed25519PrivateKey.from_private_bytes(base64.b64decode(key["private_key_base64"])); public=base64.b64decode(key["public_key_base64"])
     if private.public_key().public_bytes(Encoding.Raw,PublicFormat.Raw)!=public: raise ValueError("private and public key do not match")
     registry=load(root/"docs/.well-known/datapulse-probe-keys.json"); row=next((r for r in registry["keys"] if r["key_id"]==key["key_id"]),None)
-    if row is None or registry.get("current_key_id")!=key["key_id"] or row.get("status")!="active" or not(parse_time(row["not_before"])<=now<=parse_time(row["not_after"])): raise ValueError("signing key is not active")
+    if row is None or registry.get("schema") != "datapulse/v2/probe-key-registry" or registry.get("current_key_id")!=key["key_id"] or row.get("purpose") != ATTESTATION_KEY_PURPOSE or row.get("status")!="active" or not(parse_time(row["not_before"])<=now<=parse_time(row["not_after"])): raise ValueError("signing key is not active")
     generated_at=now.replace(microsecond=0).isoformat().replace("+00:00","Z"); base=root/"attestations"; dated=base/day; health_claim=health_binding(root,health); rekor=rekor_binding(root,rekor_reference,health_claim["artifact_sha256"])
     previous=load(latest/"chain_head.json")["chain_head"] if (latest/"chain_head.json").exists() else ZERO
     hp=root/"health/history.jsonl"; history=[json.loads(line) for line in hp.read_text(encoding="utf-8").splitlines() if line.strip()] if hp.exists() else []; health_by={r["dataset_id"]:r for r in health["datasets"]}; links=[]; refs={}
