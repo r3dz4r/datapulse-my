@@ -1028,12 +1028,12 @@ async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_ide
     (tmp_path / "2026-08-01.jsonl").write_text(json.dumps({"buyer_id": "buyer-a", "tool": "search_datasets", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
     (tmp_path / "2026-08-02.jsonl").write_text("\n".join(json.dumps(row) for row in [
         {"buyer_id": "buyer-a", "tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}},
-        {"buyer_id": "buyer-a", "tool": "trust_verdict", "args": {"dataset_id": "cpi"}, "result_summary": {"score": 76}},
+        {"buyer_id": "buyer-a", "tool": "trust_verdict", "args": {"dataset_id": "eperolehan-diklankan"}, "result_summary": {"score": 76}},
         {"buyer_id": "other", "tool": "trust_verdict", "args": {"dataset_id": "ignored"}, "result_summary": {"score": 100}},
     ]) + "\n", encoding="utf-8")
     (tmp_path / "2026-08-03.jsonl").write_text(json.dumps({"buyer_id": "other", "tool": "get_dataset", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
     summary = await server.usage_summary("2026-08-01", "2026-08-03")
-    assert summary == {"total_calls": 5, "by_outcome": {"unknown": 5}, "by_tool": {"search_datasets": 1, "get_dataset": 2, "trust_verdict": 2}, "by_dataset": {"fuelprice": 1, "cpi": 1, "ignored": 1}, "trust_distribution": {"75-89": 1, "90-100": 1}}
+    assert summary == {"total_calls": 5, "by_outcome": {"unknown": 5}, "by_tool": {"search_datasets": 1, "get_dataset": 2, "trust_verdict": 2}, "by_dataset": {"fuelprice": 1, "eperolehan-diklankan": 1, "(unrecognised)": 3}, "trust_distribution": {"75-89": 1, "90-100": 1}}
     with pytest.raises(ValueError): await server.usage_summary("2026-08-03", "2026-08-02")
     with pytest.raises(ValueError): await server.usage_summary("invalid", day)
 
@@ -1048,7 +1048,7 @@ async def test_usage_summary_call_tool_aggregates_all_ledger_records(monkeypatch
         "\n".join(
             json.dumps(row)
             for row in [
-                {"buyer_id": "buyer-a", "tool": "trust_verdict", "args": {"dataset_id": "cpi"}, "result_summary": {"score": 92}},
+                {"buyer_id": "buyer-a", "tool": "trust_verdict", "args": {"dataset_id": "eperolehan-diklankan"}, "result_summary": {"score": 92}},
                 {"buyer_id": "other", "tool": "trust_verdict", "args": {"dataset_id": "ignored"}, "result_summary": {"score": 100}},
             ]
         ) + "\n",
@@ -1065,9 +1065,58 @@ async def test_usage_summary_call_tool_aggregates_all_ledger_records(monkeypatch
         "total_calls": 3,
         "by_outcome": {"unknown": 3},
         "by_tool": {"get_dataset": 1, "trust_verdict": 2},
-        "by_dataset": {"fuelprice": 1, "cpi": 1, "ignored": 1},
+        "by_dataset": {"fuelprice": 1, "eperolehan-diklankan": 1, "(unrecognised)": 1},
         "trust_distribution": {"90-100": 2},
     }
+
+
+async def test_unknown_dataset_id_is_not_republished(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    unknown_dataset_id = "not_a_real_dataset_xyz"
+    (tmp_path / "2026-08-01.jsonl").write_text(
+        json.dumps({"tool": "get_dataset", "args": {"dataset_id": unknown_dataset_id}, "result_summary": {}}) + "\n",
+        encoding="utf-8",
+    )
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("usage_summary", {"since": "2026-08-01", "until": "2026-08-01"})
+
+    assert unknown_dataset_id not in json.dumps(result.data)
+    assert result.data["by_dataset"]["(unrecognised)"] > 0
+
+
+async def test_known_dataset_id_still_counts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    (tmp_path / "2026-08-01.jsonl").write_text(
+        json.dumps({"tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}}) + "\n",
+        encoding="utf-8",
+    )
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("usage_summary", {"since": "2026-08-01", "until": "2026-08-01"})
+
+    assert result.data["by_dataset"] == {"fuelprice": 1}
+    assert "(unrecognised)" not in result.data["by_dataset"]
+
+
+async def test_counts_still_reconcile(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    (tmp_path / "2026-08-01.jsonl").write_text(
+        "\n".join(
+            json.dumps(record)
+            for record in [
+                {"tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}},
+                {"tool": "get_dataset", "args": {"dataset_id": "not_a_real_dataset_xyz"}, "result_summary": {}},
+                {"tool": "search_datasets", "args": {}, "result_summary": {}},
+            ]
+        ) + "\n",
+        encoding="utf-8",
+    )
+
+    async with Client(server.mcp) as client:
+        result = await client.call_tool("usage_summary", {"since": "2026-08-01", "until": "2026-08-01"})
+
+    assert sum(result.data["by_dataset"].values()) == result.data["total_calls"]
 
 
 async def test_usage_middleware_records_one_terminal_error_and_reraises(
