@@ -19,7 +19,7 @@ def test_extract_title_and_pandoc_command(tmp_path: Path) -> None:
         "pandoc", source, tmp_path / "template", tmp_path / "output", "Health methodology", "DataPulse"
     )
     assert command == [
-        "pandoc", "--standalone", "--from=gfm", "--to=html5",
+        "pandoc", "--standalone", "--from=gfm", "--to=html5", "--wrap=none",
         "--metadata=title:Health methodology", "--metadata=product_name:DataPulse", f"--template={tmp_path / 'template'}",
         "--output", str(tmp_path / "output"), str(source),
     ]
@@ -57,7 +57,7 @@ def test_rendered_privacy_page_contains_the_disclosure_boundary() -> None:
     assert result.returncode == 0, result.stderr
     assert page.is_file()
     rendered = page.read_text(encoding="utf-8")
-    assert "What we cannot avoid observing" in " ".join(rendered.split())
+    assert "What we cannot avoid observing" in rendered
     assert "<title>Data collection and privacy — DataPulse | DataPulse MY</title>" in rendered
 
 

@@ -40,91 +40,33 @@
       </div>
     </section>
     <section id="documentation-content">
-      <div class="wrap"><p><strong>Scope:</strong> the public lanes — the website at
-data-pulse.my, the read-only MCP server at mcp.data-pulse.my, and the
-published usage aggregate.</p>
-<p>This statement describes what DataPulse collects, what it does not
-collect, and who is unavoidably able to observe a request. It is written
-to be checkable: every claim below names the artefact or code path that
-makes it true, so a reader does not have to take our word for it.</p>
+      <div class="wrap"><p><strong>Scope:</strong> the public lanes — the website at data-pulse.my, the read-only MCP server at mcp.data-pulse.my, and the published usage aggregate.</p>
+<p>This statement describes what DataPulse collects, what it does not collect, and who is unavoidably able to observe a request. It is written to be checkable: every claim below names the artefact or code path that makes it true, so a reader does not have to take our word for it.</p>
 <h2 id="what-we-do-not-collect">What we do not collect</h2>
-<p><strong>No client identifiers.</strong> The MCP usage ledger records
-one row per tool call and contains no IP address, no User-Agent, no
-cookie, no session identifier, and no client fingerprint. The recorded
-fields are exactly:</p>
+<p><strong>No client identifiers.</strong> The MCP usage ledger records one row per tool call and contains no IP address, no User-Agent, no cookie, no session identifier, and no client fingerprint. The recorded fields are exactly:</p>
 <pre><code>ts, schema_era, tool, args, call_id, process_instance_id,
 result_summary, outcome, latency_ms, http_request_id</code></pre>
-<p><code>call_id</code> is a freshly generated random UUID per call.
-<code>process_instance_id</code> identifies <em>our</em> server process,
-not the caller. The claim is enforced in code, not by convention:
-<code>mcp/server.py</code> declares
-<code>USAGE_LEDGER_SCHEMA_ERA = "anonymous-correlated"</code> and
-carries the standing rule <em>"Telemetry must never change the public
-anonymous HTTP contract."</em></p>
-<p><strong>No tracking on the website.</strong> The public pages load no
-analytics or tag scripts — no Plausible, Google Analytics, Tag Manager,
-PostHog, Matomo, Umami, Segment, Mixpanel, or Cloudflare Insights — and
-access no cookies or browser storage. This is verifiable in the served
-HTML.</p>
-<p><strong>No account, no key, no login.</strong> The MCP endpoint
-requires no authentication by design. There is therefore no user
-identity to record even in principle.</p>
+<p><code>call_id</code> is a freshly generated random UUID per call. <code>process_instance_id</code> identifies <em>our</em> server process, not the caller. The claim is enforced in code, not by convention: <code>mcp/server.py</code> declares <code>USAGE_LEDGER_SCHEMA_ERA = "anonymous-correlated"</code> and carries the standing rule <em>"Telemetry must never change the public anonymous HTTP contract."</em></p>
+<p><strong>No tracking on the website.</strong> The public pages load no analytics or tag scripts — no Plausible, Google Analytics, Tag Manager, PostHog, Matomo, Umami, Segment, Mixpanel, or Cloudflare Insights — and access no cookies or browser storage. This is verifiable in the served HTML.</p>
+<p><strong>No account, no key, no login.</strong> The MCP endpoint requires no authentication by design. There is therefore no user identity to record even in principle.</p>
 <h2 id="what-we-do-collect">What we do collect</h2>
-<p><strong>Anonymous, aggregate usage.</strong> For each tool call we
-record the fields listed above and publish an aggregate summary: total
-calls, calls by outcome, calls by tool, calls by dataset, and a
-trust-score distribution.</p>
-<p><strong>Arguments are aggregated against the known
-catalogue.</strong> A requested dataset id is counted under its own name
-only if it exists in the published catalogue. Any other value — a typo,
-a probe, an arbitrary string — is counted under a single
-<code>(unrecognised)</code> bucket and is <strong>never
-republished</strong>. This matters because the aggregate is public:
-without that rule, a caller could cause an arbitrary string to be
-published here under our name.</p>
-<h2 id="what-we-cannot-avoid-observing">What we cannot avoid
-observing</h2>
-<p>A transparency statement that claims nothing is observed would be
-false, so here is the boundary.</p>
-<p><strong>The network sees the request.</strong> DataPulse is served
-through Cloudflare. Cloudflare necessarily observes connection metadata,
-including the client IP address and User-Agent, in order to route and
-protect the request. That observation happens at the network edge,
-outside the DataPulse application, and applies to essentially every
-website on the internet. DataPulse's own code never receives or stores
-that information.</p>
-<p><strong>One retained correlation handle.</strong> The ledger keeps
-<code>http_request_id</code>, a Cloudflare request identifier, to
-correlate the calls belonging to a single exchange. It does not by
-itself identify a client, but it is a handle, and it is named here
-rather than omitted because a disclosure that hides the one
-client-adjacent field would not be honest.</p>
-<p><strong>Aggregate statistics are public.</strong> The usage summary
-is published. It contains counts and no client-identifying values, but
-it is public.</p>
+<p><strong>Anonymous, aggregate usage.</strong> For each tool call we record the fields listed above and publish an aggregate summary: total calls, calls by outcome, calls by tool, calls by dataset, and a trust-score distribution.</p>
+<p><strong>Arguments are aggregated against the known catalogue.</strong> A requested dataset id is counted under its own name only if it exists in the published catalogue. Any other value — a typo, a probe, an arbitrary string — is counted under a single <code>(unrecognised)</code> bucket and is <strong>never republished</strong>. This matters because the aggregate is public: without that rule, a caller could cause an arbitrary string to be published here under our name.</p>
+<h2 id="what-we-cannot-avoid-observing">What we cannot avoid observing</h2>
+<p>A transparency statement that claims nothing is observed would be false, so here is the boundary.</p>
+<p><strong>The network sees the request.</strong> DataPulse is served through Cloudflare. Cloudflare necessarily observes connection metadata, including the client IP address and User-Agent, in order to route and protect the request. That observation happens at the network edge, outside the DataPulse application, and applies to essentially every website on the internet. DataPulse's own code never receives or stores that information.</p>
+<p><strong>One retained correlation handle.</strong> The ledger keeps <code>http_request_id</code>, a Cloudflare request identifier, to correlate the calls belonging to a single exchange. It does not by itself identify a client, but it is a handle, and it is named here rather than omitted because a disclosure that hides the one client-adjacent field would not be honest.</p>
+<p><strong>Aggregate statistics are public.</strong> The usage summary is published. It contains counts and no client-identifying values, but it is public.</p>
 <h2 id="why-it-is-built-this-way">Why it is built this way</h2>
-<p>DataPulse exists to make official Malaysian public data trustworthy
-and checkable. A transparency layer that quietly tracked its readers
-would contradict its own purpose, so the public lane is deliberately
-untracked even where tracking would be commercially useful. The trade is
-accepted knowingly: we get less information about our audience, and in
-exchange anyone can audit the claim rather than trust it.</p>
+<p>DataPulse exists to make official Malaysian public data trustworthy and checkable. A transparency layer that quietly tracked its readers would contradict its own purpose, so the public lane is deliberately untracked even where tracking would be commercially useful. The trade is accepted knowingly: we get less information about our audience, and in exchange anyone can audit the claim rather than trust it.</p>
 <h2 id="verifying-these-claims">Verifying these claims</h2>
 <ul>
-<li>The ledger record shape and the anonymous-contract rule:
-<code>mcp/server.py</code> — the usage middleware,
-<code>USAGE_LEDGER_SCHEMA_ERA</code>, and the
-<code>(unrecognised)</code> bucketing in the <code>usage_summary</code>
-handler.</li>
-<li>The absence of website trackers: fetch any public page and search
-the HTML for script tags and cookie access; there are none.</li>
-<li>The published aggregate itself: the <code>usage_summary</code> tool
-on the public MCP endpoint.</li>
+<li>The ledger record shape and the anonymous-contract rule: <code>mcp/server.py</code> — the usage middleware, <code>USAGE_LEDGER_SCHEMA_ERA</code>, and the <code>(unrecognised)</code> bucketing in the <code>usage_summary</code> handler.</li>
+<li>The absence of website trackers: fetch any public page and search the HTML for script tags and cookie access; there are none.</li>
+<li>The published aggregate itself: the <code>usage_summary</code> tool on the public MCP endpoint.</li>
 </ul>
 <h2 id="changes-to-this-statement">Changes to this statement</h2>
-<p>If what we collect changes, this statement changes in the same
-commit, and the code and the disclosure move together. A privacy claim
-that lags the implementation is worse than no claim at all.</p>
+<p>If what we collect changes, this statement changes in the same commit, and the code and the disclosure move together. A privacy claim that lags the implementation is worse than no claim at all.</p>
       </div>
     </section>
   </main>
