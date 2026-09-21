@@ -2212,6 +2212,12 @@ async def usage_summary(
         raise ValueError("since and until must be ISO dates (YYYY-MM-DD)") from exc
     if start > end:
         raise ValueError("since must be on or before until")
+    manifest, _ = await _load_catalogue()
+    catalogue_ids = {
+        entry["id"]
+        for entry in manifest.get("datasets", [])
+        if isinstance(entry, dict) and isinstance(entry.get("id"), str)
+    }
     summary: dict[str, Any] = {"total_calls": 0, "by_outcome": {}, "by_tool": {}, "by_dataset": {}, "trust_distribution": {}}
     current = start
     while current <= end:
@@ -2231,9 +2237,10 @@ async def usage_summary(
                 summary["by_outcome"][outcome] = summary["by_outcome"].get(outcome, 0) + 1
                 tool = record.get("tool", "unknown")
                 summary["by_tool"][tool] = summary["by_tool"].get(tool, 0) + 1
-                dataset_id = record.get("args", {}).get("dataset_id")
-                if isinstance(dataset_id, str):
-                    summary["by_dataset"][dataset_id] = summary["by_dataset"].get(dataset_id, 0) + 1
+                args = record.get("args")
+                dataset_id = args.get("dataset_id") if isinstance(args, dict) else None
+                dataset_bucket = dataset_id if isinstance(dataset_id, str) and dataset_id in catalogue_ids else "(unrecognised)"
+                summary["by_dataset"][dataset_bucket] = summary["by_dataset"].get(dataset_bucket, 0) + 1
                 score = record.get("result_summary", {}).get("score") if tool == "trust_verdict" else None
                 if isinstance(score, (int, float)):
                     bucket = "90-100" if score >= 90 else "75-89" if score >= 75 else "50-74" if score >= 50 else "25-49" if score >= 25 else "0-24"
