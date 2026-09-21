@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.31.0](https://github.com/r3dz4r/datapulse-my/compare/v3.30.1...v3.31.0) (2026-09-21)
+
+
+### Features
+
+* **vectors:** publish the vector-signing key and the re-sign tool ([#155](https://github.com/r3dz4r/datapulse-my/issues/155)) ([05d5e86](https://github.com/r3dz4r/datapulse-my/commit/05d5e86e9c696715e76e0337cb665c268c396a5c))
+
 ## [3.30.1](https://github.com/r3dz4r/datapulse-my/compare/v3.30.0...v3.30.1) (2026-09-20)
 
 
