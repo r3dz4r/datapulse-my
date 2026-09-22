@@ -29,8 +29,11 @@ which performs no I/O against the store.
 
 from __future__ import annotations
 
+import json
 import re
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Final
 
@@ -40,10 +43,21 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import observation_pilot as pilot  # noqa: E402
+from observation_normalize import (  # noqa: E402
+    NormalizationParseError,
+    normalize,
+)
 from observation_store import (  # noqa: E402
     DEFAULT_ROOT,
     ROOT_ENVIRONMENT_VARIABLE,
 )
+
+#: The live fuelprice source is a JSON array of objects; this frozen slice was
+#: copied from a real capture.  The pilot's own selftest still feeds a CSV body,
+#: which is exactly the fixture-versus-live drift these tests exist to catch:
+#: they run the real driver against the real shape, so a mapping that points
+#: fuelprice back at a CSV profile fails here instead of looking correct.
+FUELPRICE_FIXTURE: Final[Path] = ROOT / "scripts/tests/fixtures/fuelprice_live_array.json"
 
 #: The default refusal's message, verbatim — the tripwire's wording is part
 #: of the contract.  If this message changes, the change must be deliberate.
@@ -195,7 +209,7 @@ def _outcome(
         status=status,
         observation_id="obs-fuelprice-20260916" if status == "filed" else None,
         capture_status=capture_status,
-        projection_state="retained(profile=fuelprice_csv_v1,records=7)"
+        projection_state="retained(profile=fuelprice_json_v1,records=7)"
         if status == "filed"
         else "-",
         reason=reason,
@@ -317,3 +331,86 @@ def test_cli_summary_reports_payload_retention_not_a_captured_count(
     assert "4 dataset(s): 2 filed (1 with payload bytes, 1 metadata-only)" in summary
     assert "1 skipped by gate, 1 failed" in summary
     assert "captured," not in summary
+
+
+# ---------------------------------------------------------------------------
+# Fixture-versus-live drift guard
+# ---------------------------------------------------------------------------
+
+
+def test_fuelprice_live_fixture_is_the_json_array_shape() -> None:
+    """The fixture is the live shape, not a stand-in: a top-level JSON array
+    whose every element is an object carrying the ten live keys.  A CSV fixture
+    can never satisfy this, so it cannot silently re-enter the suite."""
+    document = json.loads(FUELPRICE_FIXTURE.read_text(encoding="utf-8"))
+    assert isinstance(document, list) and document
+    assert all(isinstance(record, dict) for record in document)
+    expected = {
+        "date",
+        "ron95",
+        "ron97",
+        "diesel",
+        "ron95_skps",
+        "diesel_budi",
+        "diesel_skds",
+        "series_type",
+        "ron95_budi95",
+        "diesel_eastmsia",
+    }
+    assert all(set(record) == expected for record in document)
+
+
+def test_pilot_maps_fuelprice_to_the_registered_json_profile() -> None:
+    """The mapping points at the fuelprice JSON designation, and that
+    designation is actually registered; an unregistered name would make
+    capture's normalization fail closed instead of projecting."""
+    assert pilot.NORMALIZATION_PROFILES["fuelprice"] == "fuelprice_json_v1"
+    result = normalize(FUELPRICE_FIXTURE.read_bytes(), "fuelprice_json_v1")
+    assert result.record_count > 0
+
+
+def test_pilot_fuelprice_live_fixture_reports_the_projection_as_retained() -> None:
+    """The end-to-end drift guard: driving the real ``run_pilot`` with the real
+    live shape files the capture and reports ``retained`` under
+    ``fuelprice_json_v1`` with a positive record count.  Re-pointing fuelprice
+    at ``fuelprice_csv_v1`` (the original drift) makes this report
+    ``normalization-failed`` and fails the test."""
+    scratch = Path(tempfile.mkdtemp(prefix=".test-observation-pilot-live-", dir=ROOT))
+    try:
+        body = FUELPRICE_FIXTURE.read_bytes()
+
+        def transport(dataset_id: str, source_url: str) -> Any:
+            stamp = "2026-09-23T00:00:00Z"
+            return pilot.RetrievalResult(
+                source_url=source_url,
+                observed_request_url=source_url,
+                http_status=200,
+                content_type="application/json",
+                retrieved_started_at=stamp,
+                retrieved_ended_at=stamp,
+                body=body,
+                etag=None,
+                last_modified=None,
+                source_content_date=None,
+                truncated=False,
+            )
+
+        outcomes = pilot.run_pilot(["fuelprice"], root=scratch, transport=transport)
+        assert len(outcomes) == 1
+        outcome = outcomes[0]
+        print(f"  {outcome.line}")
+        assert outcome.status == "filed"
+        assert outcome.capture_status == "captured"
+        assert outcome.projection_state.startswith("retained(")
+        assert "fuelprice_json_v1" in outcome.projection_state
+        assert outcome.record_count is not None and outcome.record_count > 0
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def test_pilot_fuelprice_live_fixture_still_fails_closed_under_the_csv_profile() -> None:
+    """The negative control: the same live bytes under the pinned CSV profile
+    raise a parse failure, proving the fixture really is JSON and that fixing
+    the mapping did not loosen the CSV profile into accepting it."""
+    with pytest.raises(NormalizationParseError):
+        normalize(FUELPRICE_FIXTURE.read_bytes(), "fuelprice_csv_v1")

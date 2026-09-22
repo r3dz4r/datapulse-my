@@ -142,7 +142,7 @@ PILOT_COHORT: Final[Mapping[str, str]] = {
 #: a dataset absent from this mapping is captured with ``profile=None`` and
 #: must be reported as unprofiled, never defaulted into a success shape.
 NORMALIZATION_PROFILES: Final[Mapping[str, str]] = {
-    "fuelprice": "fuelprice_csv_v1",
+    "fuelprice": "fuelprice_json_v1",
     "mbpp_weather_stations": "mbpp_json_v1",
 }
 
