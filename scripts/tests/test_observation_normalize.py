@@ -1,4 +1,4 @@
-"""Tests pinning observation_normalize's truth rules for both built-in profiles.
+"""Tests pinning observation_normalize's truth rules for all three built-in profiles.
 
 These tests exist because the module's own ``--selftest`` prints and exits but
 is not wired to CI: without pinned tests, a later change can silently drop a
@@ -13,6 +13,7 @@ never touched.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import shutil
 import sys
@@ -29,6 +30,7 @@ from observation_normalize import (  # noqa: E402
     NormalizationProfile,
     NormalizationProfileError,
     file_normalized,
+    get_profile,
     normalize,
     register_profile,
 )
@@ -77,6 +79,43 @@ CSV_MAIN_ROW_NONNUMERIC: dict[str, Any] = {
     "diesel": None,
     "region": "kl",
 }
+
+#: The live fuelprice source is a top-level JSON array of objects, one line
+#: with 9570 fields across 957 records.  The fixture is a frozen slice copied
+#: verbatim from a real capture (see config/observation-policies.json and the
+#: pilot's source URL), so a test can never again "verify" the JSON source
+#: with a CSV fixture: the same drift that let fuelprice_csv_v1 look correct
+#: against a hand-written CSV must fail here.
+FUELPRICE_FIXTURE: Path = ROOT / "scripts/tests/fixtures/fuelprice_live_array.json"
+
+#: The exact key set the live array carries; a projection must keep all ten.
+FUELPRICE_LIVE_KEYS: frozenset[str] = frozenset(
+    {
+        "date",
+        "ron95",
+        "ron97",
+        "diesel",
+        "ron95_skps",
+        "diesel_budi",
+        "diesel_skds",
+        "series_type",
+        "ron95_budi95",
+        "diesel_eastmsia",
+    }
+)
+
+
+def _live_fixture_bytes() -> bytes:
+    """The fixture payload exactly as it sits on disk."""
+    return FUELPRICE_FIXTURE.read_bytes()
+
+
+def _schema_format_enum() -> list[Any]:
+    """The envelope schema's admitted ``normalized_projection.format`` values."""
+    schema = json.loads(
+        (ROOT / "historical-observation.schema.json").read_text(encoding="utf-8")
+    )
+    return schema["properties"]["normalized_projection"]["properties"]["format"]["enum"]
 
 
 def _scratch_root() -> Path:
@@ -200,6 +239,7 @@ def test_projection_digest_is_bound_to_what_the_store_holds() -> None:
         for payload, designation in (
             (CSV_MAIN, "fuelprice_csv_v1"),
             (JSON_SPARSE, "mbpp_json_v1"),
+            (_live_fixture_bytes(), "fuelprice_json_v1"),
         ):
             result = normalize(payload, designation)
             recomputed = "sha256:" + hashlib.sha256(
@@ -219,6 +259,7 @@ def test_normalize_is_reproducible_byte_for_byte() -> None:
         (CSV_MAIN, "fuelprice_csv_v1"),
         (JSON_SPARSE, "mbpp_json_v1"),
         (JSON_EXPLICIT_NULL, "mbpp_json_v1"),
+        (_live_fixture_bytes(), "fuelprice_json_v1"),
     ):
         first = normalize(payload, designation)
         second = normalize(payload, designation)
@@ -270,3 +311,146 @@ def test_malformed_json_payloads_fail_closed_naming_the_problem() -> None:
         normalize(b'{"results": []}', "mbpp_json_v1")
     with pytest.raises(NormalizationParseError, match="attributes"):
         normalize(b'{"features": [{"geometry": {}}]}', "mbpp_json_v1")
+
+
+# ---------------------------------------------------------------------------
+# fuelprice_json_v1 — the live fuelprice source shape
+# ---------------------------------------------------------------------------
+
+
+def test_fuelprice_json_live_fixture_projects_a_positive_record_count() -> None:
+    """The load-bearing acceptance: the frozen slice of the real source — a
+    top-level JSON array of objects — projects under the newly registered
+    profile with a positive record count, the ten live keys as columns, and
+    nothing silently dropped.  If the profile is deleted or its engine is
+    mis-wired, this is the test that fails."""
+    result = normalize(_live_fixture_bytes(), "fuelprice_json_v1")
+    assert result.record_count > 0
+    assert result.projection["record_count"] == result.record_count
+    assert result.format == "json-array-of-objects"
+    assert result.projection["format"] == "json-array-of-objects"
+    assert set(result.projection["columns"]) == FUELPRICE_LIVE_KEYS
+    assert result.dropped_fields == []
+    assert len(result.record_ids) == result.record_count
+
+
+def test_fuelprice_json_format_is_admitted_by_the_envelope_schema() -> None:
+    """Protects the schema boundary the earlier attempt crossed: the projection
+    ``format`` the profile emits must be one the historical-observation schema
+    admits, or ``capture_observation`` rejects the envelope and the pilot can
+    never report the projection as retained.  A private dispatch-only format
+    such as ``json-top-level-array`` fails here by construction."""
+    result = normalize(_live_fixture_bytes(), "fuelprice_json_v1")
+    assert result.format in _schema_format_enum()
+    assert result.projection["format"] in _schema_format_enum()
+
+
+def test_fuelprice_json_mutation_control_reports_a_parse_failure() -> None:
+    """The mutation control: the same bytes with invalid JSON (its closing
+    bracket removed) must raise NormalizationParseError naming the parse
+    failure.  A projection here would mean malformed input was coerced."""
+    mutated = _live_fixture_bytes().rstrip()[:-1]
+    with pytest.raises(NormalizationParseError, match="JSON parse failed"):
+        normalize(mutated, "fuelprice_json_v1")
+
+
+def test_fuelprice_csv_profile_still_rejects_the_live_json_array() -> None:
+    """The negative control must keep failing: ``fuelprice_csv_v1`` is pinned
+    to CSV and must reject the JSON payload rather than silently projecting it.
+    The single line parses as one header row whose trimmed cells repeat, so the
+    duplicate-header guard fails closed."""
+    with pytest.raises(NormalizationParseError, match="duplicate header"):
+        normalize(_live_fixture_bytes(), "fuelprice_csv_v1")
+
+
+def test_fuelprice_json_and_csv_profiles_are_distinct_designations() -> None:
+    """Protects the versioning contract: the new profile is registered under
+    its own name/version and the pinned CSV profile is untouched, so an
+    existing CSV projection keeps its meaning."""
+    assert get_profile("fuelprice_json_v1").name == "fuelprice_json"
+    assert get_profile("fuelprice_json_v1").version == "v1"
+    assert get_profile("fuelprice_json_v1").format == "json-array-of-objects"
+    assert get_profile("fuelprice_json_v1").engine == "top-level-array"
+    assert get_profile("fuelprice_csv_v1").format == "csv"
+    assert get_profile("fuelprice_csv_v1").engine == ""
+
+
+def test_fuelprice_json_keeps_both_series_kinds_for_one_date() -> None:
+    """Protects the pilot's lead invariant: the same date as a ``level`` row
+    and as a ``change_weekly`` row is two records with two record_ids — not a
+    duplicate to drop — and ``series_type`` survives as a first-class column."""
+    body = (
+        b'[{"date":"2025-09-04","ron95":2.05,"series_type":"level"},'
+        b'{"date":"2025-09-04","ron95":0,"series_type":"change_weekly"}]'
+    )
+    result = normalize(body, "fuelprice_json_v1")
+    assert result.record_count == 2
+    assert result.projection["deduped_rows"] == 0
+    assert "series_type" in result.projection["columns"]
+    assert _row_record_id(
+        {"date": "2025-09-04", "ron95": 2.05, "series_type": "level"}
+    ) in result.record_ids
+    assert _row_record_id(
+        {"date": "2025-09-04", "ron95": 0, "series_type": "change_weekly"}
+    ) in result.record_ids
+
+
+def test_fuelprice_json_exact_duplicates_are_dropped_and_counted() -> None:
+    """Protects the dedup boundary: an exactly repeated row is dropped and
+    counted, while the two series kinds sharing a date are not duplicates."""
+    body = (
+        b'[{"date":"2025-09-04","ron95":2.05,"series_type":"level"},'
+        b'{"date":"2025-09-04","ron95":0,"series_type":"change_weekly"},'
+        b'{"date":"2025-09-04","ron95":2.05,"series_type":"level"}]'
+    )
+    result = normalize(body, "fuelprice_json_v1")
+    assert result.projection["deduped_rows"] == 1
+    assert result.record_count == 2
+
+
+def test_fuelprice_json_sparse_keys_are_declared_not_extractable() -> None:
+    """Protects the no-fabrication rule for the new engine: a key absent from
+    any record drops the column as not_extractable instead of being padded
+    with invented nulls."""
+    body = (
+        b'[{"date":"2025-09-04","ron95":2.05,"series_type":"level"},'
+        b'{"date":"2025-09-11","ron97":3.36,"series_type":"level"}]'
+    )
+    result = normalize(body, "fuelprice_json_v1")
+    assert result.dropped_fields == [
+        {"name": "ron95", "basis": "not_extractable"},
+        {"name": "ron97", "basis": "not_extractable"},
+    ]
+    assert result.projection["columns"] == ["date", "series_type"]
+
+
+def test_fuelprice_json_non_array_and_unanchored_records_fail_closed() -> None:
+    """Protects the shape contract: an object where the top-level array
+    belongs, an empty array, a record without ``date``, and a record without
+    ``series_type`` each fail closed naming the problem rather than producing
+    a partial projection."""
+    with pytest.raises(NormalizationParseError, match="not a JSON array"):
+        normalize(b'{"features": []}', "fuelprice_json_v1")
+    with pytest.raises(NormalizationParseError, match="empty JSON array"):
+        normalize(b"[]", "fuelprice_json_v1")
+    with pytest.raises(NormalizationParseError, match=r"record 0.*'date'"):
+        normalize(b'[{"ron95": 2.05, "series_type": "level"}]', "fuelprice_json_v1")
+    with pytest.raises(NormalizationParseError, match=r"record 1.*'series_type'"):
+        normalize(
+            b'[{"date":"2025-09-04","ron95":2.05,"series_type":"level"},'
+            b'{"date":"2025-09-11","ron95":2.05}]',
+            "fuelprice_json_v1",
+        )
+
+
+def test_fuelprice_json_out_of_order_rows_leave_the_projection_unchanged() -> None:
+    """Protects the pinned ordering: rows are placed in the total order of
+    their canonical bytes, so the same rows arriving in reverse still produce
+    the same record_ids sequence and the same projection digest."""
+    level = b'{"date":"2025-09-04","ron95":2.05,"series_type":"level"}'
+    change = b'{"date":"2025-09-04","ron95":0,"series_type":"change_weekly"}'
+    forward = normalize(b"[" + level + b"," + change + b"]", "fuelprice_json_v1")
+    backward = normalize(b"[" + change + b"," + level + b"]", "fuelprice_json_v1")
+    assert backward.projection_digest == forward.projection_digest
+    assert backward.record_ids == forward.record_ids
+    assert canonical_json(backward.projection) == canonical_json(forward.projection)
