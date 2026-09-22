@@ -144,6 +144,7 @@ PILOT_COHORT: Final[Mapping[str, str]] = {
 NORMALIZATION_PROFILES: Final[Mapping[str, str]] = {
     "fuelprice": "fuelprice_json_v1",
     "mbpp_weather_stations": "mbpp_json_v1",
+    "pharmaceutical_products": "pharmaceutical_products_csv_v1",
 }
 
 #: Refresh interval by the leading token of the manifest's

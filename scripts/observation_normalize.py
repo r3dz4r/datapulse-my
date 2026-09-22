@@ -106,6 +106,29 @@ always produces a byte-identical ``NormalizationResult``.
   ``record_ids``; only rows identical after normalization are duplicates.
 * Dedup, identity, and the output projection shape are identical to
   ``fuelprice_csv_v1`` (with ``format`` = ``"json-array-of-objects"``).
+
+``pharmaceutical_products_csv_v1`` rules (pinned; changing any of them is a new version)
+---------------------------------------------------------------------------------------
+* Input: the monthly NPRA pharmaceutical-product register CSV served by
+  ``storage.data.gov.my/healthcare/pharmaceutical_products.csv`` (dataset
+  ``pharmaceutical_products``, full_vintage retention per
+  ``config/observation-policies.json``).  It is a clean CSV with a fixed
+  16-column header — ``reg_no, ref_no, product, status, description, holder,
+  holder_osa, manufacturer, manufacturer_osa, importer, importer_osa,
+  date_reg, date_end, active_ingredient, mdc_code, generic_name`` — whose
+  optional columns (``importer``, ``importer_osa``, ``active_ingredient``,
+  ``mdc_code``, ``generic_name``) carry empty cells.
+* Engine: the shared CSV rules above apply unchanged; no rule needed its own
+  value for this dataset.  Measured on the live payload, only the three OSA
+  columns are majority-numeric and every one of their values parses, so they
+  become integers with nothing dropped; ``ref_no`` is not majority-numeric and
+  stays a string; each empty optional cell becomes ``null`` rather than a
+  fabricated value.  A *distinct* profile identity — never a reuse of
+  ``fuelprice_csv_v1`` — is what keeps one dataset's pinned rules from
+  silently governing the other's.
+* Format: ``format`` = ``"csv"`` and ``engine`` = ``"csv"``.
+* Dedup, identity, and the output projection shape are identical to
+  ``fuelprice_csv_v1``.
 """
 
 from __future__ import annotations
@@ -889,6 +912,36 @@ _FUELPRICE_JSON_V1: Final[NormalizationProfile] = NormalizationProfile(
 
 register_profile(_FUELPRICE_JSON_V1)
 
+_PHARMACEUTICAL_PRODUCTS_CSV_V1: Final[NormalizationProfile] = NormalizationProfile(
+    name="pharmaceutical_products_csv",
+    version="v1",
+    format="csv",
+    input_content_type="text/csv",
+    row_ordering="stable_sort_by_first_column_then_original_row_order",
+    null_handling="empty_cell_becomes_null",
+    numeric_handling=_NUMERIC_HANDLING_CSV,
+    dedup=True,
+    engine="csv",
+    description=(
+        "Monthly NPRA pharmaceutical-product register CSV from "
+        "storage.data.gov.my (dataset 'pharmaceutical_products', full_vintage "
+        "retention per config/observation-policies.json): the shared csv engine "
+        "applies unchanged to the fixed 16-column header — empty optional cells "
+        "(importer, importer_osa, active_ingredient, mdc_code, generic_name) are "
+        "nulled rather than fabricated, the majority-numeric holder_osa / "
+        "manufacturer_osa / importer_osa columns keep their integers integral, "
+        "ref_no stays a string, and exact duplicates are removed after a stable "
+        "sort by reg_no.  Registered under its own name so this dataset's pinned "
+        "rules cannot be confused with fuelprice_csv_v1's."
+    ),
+)
+
+#: The register is its own pinned identity, not an alias of ``fuelprice_csv_v1``:
+#: both are CSV, but a shared engine is not a shared profile, and reusing the
+#: fuelprice designation would let one dataset's pinned rules silently govern
+#: the other's projections.
+register_profile(_PHARMACEUTICAL_PRODUCTS_CSV_V1)
+
 
 # ---------------------------------------------------------------------------
 # CLI
@@ -978,6 +1031,53 @@ _SELFTEST_FUELPRICE_CHANGE_ROW: Final[dict[str, Any]] = {
     "series_type": "change_weekly",
 }
 
+#: The 16 live register columns, in order, and one live-shaped row whose
+#: importer/importer_osa/active_ingredient/mdc_code/generic_name cells are empty.
+_SELFTEST_PHARMACEUTICAL_HEADER: Final[list[str]] = [
+    "reg_no",
+    "ref_no",
+    "product",
+    "status",
+    "description",
+    "holder",
+    "holder_osa",
+    "manufacturer",
+    "manufacturer_osa",
+    "importer",
+    "importer_osa",
+    "date_reg",
+    "date_end",
+    "active_ingredient",
+    "mdc_code",
+    "generic_name",
+]
+
+_SELFTEST_PHARMACEUTICAL_FIELDS: Final[list[str]] = [
+    "MAL06061503TC",
+    "2006011301832",
+    "San Qi Hengxue Xing Dan Capsule",
+    "PRODUCT APPROVED",
+    "NATURAL PRODUCT",
+    "JINHAI BORUI INTERNATIONAL RESOURCES SDN BHD",
+    "937531",
+    "QIS RESEARCH LABORATORY SDN. BHD.",
+    "1105865",
+    "",
+    "",
+    "2021-07-01",
+    "2026-09-13",
+    "",
+    "",
+    "",
+]
+
+_SELFTEST_PHARMACEUTICAL_CSV: Final[bytes] = (
+    ",".join(_SELFTEST_PHARMACEUTICAL_HEADER)
+    + "\n"
+    + ",".join(_SELFTEST_PHARMACEUTICAL_FIELDS)
+    + "\n"
+).encode("utf-8")
+
 
 def _expected_record_id(row: dict[str, Any]) -> str:
     """The pinned record-id formula, recomputed for selftest expectations."""
@@ -985,7 +1085,7 @@ def _expected_record_id(row: dict[str, Any]) -> str:
 
 
 def _run_selftest() -> int:
-    """Acceptance selftest for the CSV and JSON profiles against a scratch store.
+    """Acceptance selftest for every registered profile against a scratch store.
 
     Runs inside a scratch root under the worktree; the production store root
     is never touched.  Output is deterministic (no paths, no timestamps) so
@@ -1179,6 +1279,35 @@ def _run_selftest() -> int:
             "get_profile('fuelprice_json_v1') returns the pinned fuelprice json profile",
             get_profile("fuelprice_json_v1") == _FUELPRICE_JSON_V1,
         )
+
+        pharma = normalize(_SELFTEST_PHARMACEUTICAL_CSV, "pharmaceutical_products_csv_v1")
+        print(f"profile={pharma.profile_name}/{pharma.profile_version}")
+        print(f"record_count={pharma.record_count}")
+        pharma_store_digest = file_normalized(pharma, root=scratch)
+        print(f"projection_digest={pharma.projection_digest}")
+        print(f"store_digest={pharma_store_digest}")
+        check(
+            "pharma: projection_digest matches the digest returned by file_normalized",
+            pharma.projection_digest == pharma_store_digest,
+        )
+        check("pharma: record_count>0", pharma.record_count > 0)
+        check(
+            "pharma: the 16 live columns survive in order",
+            pharma.projection["columns"] == _SELFTEST_PHARMACEUTICAL_HEADER,
+        )
+        check(
+            "pharma: empty optional cells become null without a dropped field",
+            pharma.dropped_fields == [],
+        )
+        pharma_again = normalize(_SELFTEST_PHARMACEUTICAL_CSV, "pharmaceutical_products_csv_v1")
+        check(
+            "pharma: two runs against the same payload are byte-identical",
+            _result_bytes(pharma) == _result_bytes(pharma_again),
+        )
+        check(
+            "get_profile('pharmaceutical_products_csv_v1') returns the pinned register profile",
+            get_profile("pharmaceutical_products_csv_v1") == _PHARMACEUTICAL_PRODUCTS_CSV_V1,
+        )
     except Exception as error:  # noqa: BLE001 — the selftest reports, never traces
         failures.append(f"selftest raised {type(error).__name__}: {error}")
     finally:
@@ -1188,7 +1317,7 @@ def _run_selftest() -> int:
         for failure in failures:
             print(f"FAIL {failure}", file=sys.stderr)
         return 1
-    print("selftest passed: all three profiles pinned, digests matched, results byte-identical")
+    print("selftest passed: all four profiles pinned, digests matched, results byte-identical")
     return 0
 
 
