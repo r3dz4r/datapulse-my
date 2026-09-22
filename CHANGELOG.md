@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.35.1](https://github.com/r3dz4r/datapulse-my/compare/v3.35.0...v3.35.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **observation:** normalize fuelprice from the JSON array it actually is ([#177](https://github.com/r3dz4r/datapulse-my/issues/177)) ([b389936](https://github.com/r3dz4r/datapulse-my/commit/b389936af23ac68a9be8b6fb88d5a9c02798e4a1))
+
 ## [3.35.0](https://github.com/r3dz4r/datapulse-my/compare/v3.34.2...v3.35.0) (2026-09-21)
 
 
