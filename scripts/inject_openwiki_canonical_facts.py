@@ -20,8 +20,11 @@ prose form.
 
 It also rejects (case-insensitive) the obsolete apex host
 ``https://data-pulse.my`` and stale current count claims in any supported
-space- or hyphen-separated form. The OpenWiki generator occasionally emits
-content that fails one or more of these checks.
+space- or hyphen-separated form, and rejects commercial or retired-boundary
+claims (a price, paid tier or quota, payment processor, or an authenticated
+API surface this repository does not serve) while allowing honest statements
+of absence. The OpenWiki generator occasionally emits content that fails one
+or more of these checks.
 
 This post-processor is the deterministic safety net that rewrites the four
 allowed pages to satisfy the contract:
@@ -32,7 +35,10 @@ allowed pages to satisfy the contract:
 4. Rewrite the obsolete apex host to the canonical ``www.`` host (using a
    negative lookbehind so a URL that already starts with ``www.`` is
    untouched).
-5. Append a fresh ``## Canonical facts`` section listing the canonical facts
+5. Neutralise literal authority claims with safe factual text, then remove the
+   whole sentence (or the list item or table row) carrying a commercial or
+   retired-boundary claim, leaving negated statements of absence intact.
+6. Append a fresh ``## Canonical facts`` section listing the canonical facts
    literals, sourced from the same three config files the verifier reads.
 
 Writes are atomic (``<path>.tmp`` then ``os.replace``). ``--dry-run``
@@ -55,6 +61,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.public_surface_generation import GenerationError, load_public_surfaces
+from scripts.verify_openwiki import COMMERCIAL_RULES, find_forbidden_claim, is_negated
 
 PAGES: tuple[str, ...] = (
     "openwiki/quickstart.md",
@@ -176,22 +183,124 @@ _NEUTRALIZATIONS = (
 
 
 def _neutralize_forbidden_claims(text: str) -> str:
-    folded_lower = text.casefold()
+    """Apply the literal claim mapping, leaving honest negatives untouched."""
     for claim, replacement in _NEUTRALIZATIONS:
-        idx = 0
-        while True:
-            folded = text.casefold()
-            pos = folded.find(claim, idx)
-            if pos < 0:
-                break
-            end = pos + len(claim)
-            # Preserve the surrounding prose: replace the literal span
-            # (case-insensitive) with the canonical neutral replacement.
-            text = text[:pos] + replacement + text[end:]
-            idx = pos + len(replacement)
-            folded_lower = text.casefold()  # refresh lower view
-            idx = idx  # fall through to next iteration
-        # Also re-check (in case the prior iteration appended a new candidate)
+        pattern = re.compile(re.escape(claim), re.IGNORECASE)
+
+        def _replace(match: re.Match[str], _current: str = text) -> str:
+            if is_negated(_current, match.start(), match.end()):
+                return match.group(0)
+            return replacement
+
+        text = pattern.sub(_replace, text)
+    return text
+
+
+# Removal units for the commercial and retired-boundary class the verifier
+# rejects. The withdrawn claims were free prose, so no phrase-level substitute
+# can be spliced in without leaving visible wreckage (a negation wedged into
+# the middle of a noun phrase). The operator's decision is that the sentence
+# carrying the claim goes as a whole. The unit is the smallest
+# Markdown-addressable record that still reads cleanly after removal:
+#
+# * a table row or a list item is one record, so the whole line is dropped; a
+#   half-removed cell or a dangling list marker is itself wreckage;
+# * prose is dropped sentence-by-sentence within its line, so honest sibling
+#   sentences on the same source line survive byte-for-byte. Boundaries are
+#   confined to a single line because generated pages write a paragraph as one
+#   source line; the verifier wraps prose mid-sentence, and refusing to cross a
+#   line break keeps a drop from ever spilling into a neighbouring block.
+#
+# Negation is decided against the original text with the verifier's own
+# is_negated(), so an honest statement of absence ("operates no authenticated
+# API", "sells nothing") survives exactly as written.
+_SENTENCE_TERMINATOR_RE = re.compile(r"[.!?]+(?=\s|$)")
+_TABLE_ROW_RE = re.compile(r"^\s*\|")
+_LIST_ITEM_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
+
+
+def _line_bounds(text: str, index: int) -> tuple[int, int]:
+    """Return the ``(start, end)`` offsets of the line containing ``index``."""
+    start = text.rfind("\n", 0, index) + 1
+    end = text.find("\n", index)
+    return start, (len(text) if end == -1 else end)
+
+
+def _sentence_bounds(text: str, start: int, end: int) -> tuple[int, int]:
+    """Return the sentence containing ``[start, end)`` inside its own line.
+
+    A ``.`` followed by a digit (a decimal) is not a boundary; a terminator is
+    only a boundary when whitespace or end-of-text follows it.
+    """
+    line_start, line_end = _line_bounds(text, start)
+    last: re.Match[str] | None = None
+    for last in _SENTENCE_TERMINATOR_RE.finditer(text[line_start:start]):
+        pass
+    if last is None:
+        sentence_start = line_start
+    else:
+        sentence_start = line_start + last.end()
+        while sentence_start < line_end and text[sentence_start] in " \t":
+            sentence_start += 1
+    match = _SENTENCE_TERMINATOR_RE.search(text, end)
+    if match is None or match.end() > line_end:
+        sentence_end = line_end
+    else:
+        sentence_end = match.end()
+        while sentence_end < line_end and text[sentence_end] in " \t":
+            sentence_end += 1
+    return sentence_start, sentence_end
+
+
+def _removal_unit(text: str, start: int, end: int) -> tuple[int, int]:
+    """Return the unit to drop for a claim matched on ``[start, end)``."""
+    line_start, line_end = _line_bounds(text, start)
+    end_line_start, end_line_end = _line_bounds(text, end)
+    if end_line_start != line_start:
+        # A rule matched across a line break; drop the whole spanned block.
+        return line_start, end_line_end
+    line = text[line_start:line_end]
+    if _TABLE_ROW_RE.match(line) or _LIST_ITEM_RE.match(line):
+        return line_start, line_end
+    return _sentence_bounds(text, start, end)
+
+
+def _expand_unit_for_removal(text: str, start: int, end: int) -> tuple[int, int]:
+    """Drop the line break when the unit is the whole line, so no blank line remains."""
+    start_line_start, _ = _line_bounds(text, start)
+    _, end_line_end = _line_bounds(text, end)
+    if not text[start_line_start:start].strip() and not text[end:end_line_end].strip():
+        return start_line_start, min(end_line_end + 1, len(text))
+    return start, end
+
+
+def _commercial_removal_spans(text: str) -> list[tuple[int, int]]:
+    """Select non-overlapping units to remove for positive commercial claims.
+
+    Negation is decided against the original text, before any removal, so a
+    unit dropped earlier cannot hide or expose a later claim.
+    """
+    units: list[tuple[int, int]] = []
+    for _label, pattern in COMMERCIAL_RULES:
+        for match in pattern.finditer(text):
+            if is_negated(text, match.start(), match.end()):
+                continue
+            units.append(_removal_unit(text, match.start(), match.end()))
+    units.sort()
+    merged: list[tuple[int, int]] = []
+    for start, end in units:
+        if merged and start <= merged[-1][1]:
+            previous_start, previous_end = merged[-1]
+            merged[-1] = (previous_start, max(previous_end, end))
+        else:
+            merged.append((start, end))
+    return [_expand_unit_for_removal(text, start, end) for start, end in merged]
+
+
+def _neutralize_commercial_claims(text: str) -> str:
+    """Remove the whole sentence (or list item/table row) carrying a claim."""
+    for start, end in reversed(_commercial_removal_spans(text)):
+        text = text[:start] + text[end:]
     return text
 
 
@@ -202,12 +311,14 @@ def _canonical_section(product_name: str, website: str, datasets_count: int, too
         datasets_count=datasets_count,
         tools_count=tools_count,
     )
-    # Reject accidental introduction of forbidden claims. The verifier rejects
-    # them case-insensitively, so check the folded form.
-    folded = body.casefold()
-    for claim in FORBIDDEN:
-        if claim in folded:
-            raise InjectError(f"canonical section would contain forbidden claim {claim!r}")
+    # Reject accidental introduction of any claim the verifier rejects, using
+    # the verifier's own matcher so the two stay in lockstep.
+    claim = find_forbidden_claim(body)
+    if claim is not None:
+        label, matched = claim
+        raise InjectError(
+            f"canonical section would contain forbidden claim ({label}): {matched!r}"
+        )
     return body
 
 
@@ -260,6 +371,16 @@ def inject_canonical_facts(root: Path, *, dry_run: bool = False) -> list[tuple[s
         rewritten = _rewrite_current_counts(rewritten, datasets_count, tools_count)
         rewritten = _rewrite_obsolete_url(rewritten)
         rewritten = _neutralize_forbidden_claims(rewritten)
+        rewritten = _neutralize_commercial_claims(rewritten)
+        # Fail closed: never write a page we could not rewrite cleanly. If a
+        # positive claim survived removal, refuse the whole injection rather
+        # than publish a page the verifier will reject.
+        claim = find_forbidden_claim(rewritten)
+        if claim is not None:
+            label, matched = claim
+            raise InjectError(
+                f"{relative} still contains a forbidden claim ({label}) after rewrite: {matched!r}"
+            )
         # Strip any trailing blank lines so we can append the section cleanly,
         # then ensure the final byte is a newline.
         rewritten = rewritten.rstrip() + "\n\n" + section

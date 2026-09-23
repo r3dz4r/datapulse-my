@@ -32,11 +32,45 @@ jobs:
       - name: Install project-local OpenWiki
         run: npm ci --prefix tools/openwiki
 
+      # Generation runs on OpenAI via ChatGPT OAuth (openai-chatgpt, gpt-5.6-luna),
+      # drawing on the ChatGPT/Codex plan allowance instead of a metered API key.
+      # Known failure mode: this route refuses with HTTP 429 once the plan's
+      # usage limit is reached. The switch was reversed once before, on
+      # 2026-08-29, for exactly that reason; re-check the plan allowance before
+      # changing it back.
+      - name: Write OpenWiki credentials
+        env:
+          OPENWIKI_PROVIDER: openai-chatgpt
+          OPENWIKI_MODEL_ID: gpt-5.6-luna
+          OPENAI_CHATGPT_REFRESH_TOKEN: ${{ secrets.OPENAI_CHATGPT_REFRESH_TOKEN }}
+          OPENAI_CHATGPT_ACCESS_TOKEN: ${{ secrets.OPENAI_CHATGPT_ACCESS_TOKEN }}
+          OPENAI_CHATGPT_ACCOUNT_ID: ${{ secrets.OPENAI_CHATGPT_ACCOUNT_ID }}
+          OPENAI_CHATGPT_EMAIL: ${{ secrets.OPENAI_CHATGPT_EMAIL }}
+          OPENAI_CHATGPT_EXPIRES_AT: ${{ secrets.OPENAI_CHATGPT_EXPIRES_AT }}
+          OPENAI_CHATGPT_PLAN: ${{ secrets.OPENAI_CHATGPT_PLAN }}
+        run: |
+          umask 077
+          mkdir -p ~/.openwiki
+          printf 'OPENWIKI_PROVIDER=openai-chatgpt\n' > ~/.openwiki/.env
+          printf 'OPENWIKI_MODEL_ID=gpt-5.6-luna\n' >> ~/.openwiki/.env
+          printf 'OPENAI_CHATGPT_REFRESH_TOKEN=%s\n' "$OPENAI_CHATGPT_REFRESH_TOKEN" >> ~/.openwiki/.env
+          printf 'OPENAI_CHATGPT_ACCESS_TOKEN=%s\n' "$OPENAI_CHATGPT_ACCESS_TOKEN" >> ~/.openwiki/.env
+          printf 'OPENAI_CHATGPT_ACCOUNT_ID=%s\n' "$OPENAI_CHATGPT_ACCOUNT_ID" >> ~/.openwiki/.env
+          printf 'OPENAI_CHATGPT_EMAIL=%s\n' "$OPENAI_CHATGPT_EMAIL" >> ~/.openwiki/.env
+          printf 'OPENAI_CHATGPT_EXPIRES_AT=%s\n' "$OPENAI_CHATGPT_EXPIRES_AT" >> ~/.openwiki/.env
+          printf 'OPENAI_CHATGPT_PLAN=%s\n' "$OPENAI_CHATGPT_PLAN" >> ~/.openwiki/.env
+          chmod 600 ~/.openwiki/.env
+
       - name: Generate derivative OpenWiki documentation
         env:
-          OPENWIKI_PROVIDER: openrouter
-          OPENWIKI_MODEL_ID: z-ai/glm-5.3:free
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENWIKI_PROVIDER: openai-chatgpt
+          OPENWIKI_MODEL_ID: gpt-5.6-luna
+          OPENAI_CHATGPT_REFRESH_TOKEN: ${{ secrets.OPENAI_CHATGPT_REFRESH_TOKEN }}
+          OPENAI_CHATGPT_ACCESS_TOKEN: ${{ secrets.OPENAI_CHATGPT_ACCESS_TOKEN }}
+          OPENAI_CHATGPT_ACCOUNT_ID: ${{ secrets.OPENAI_CHATGPT_ACCOUNT_ID }}
+          OPENAI_CHATGPT_EMAIL: ${{ secrets.OPENAI_CHATGPT_EMAIL }}
+          OPENAI_CHATGPT_EXPIRES_AT: ${{ secrets.OPENAI_CHATGPT_EXPIRES_AT }}
+          OPENAI_CHATGPT_PLAN: ${{ secrets.OPENAI_CHATGPT_PLAN }}
           OPENWIKI_TELEMETRY_DISABLED: "1"
         run: npm exec --prefix tools/openwiki -- openwiki code --update --print
 

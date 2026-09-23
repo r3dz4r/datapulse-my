@@ -17,11 +17,10 @@ count, and are enforced by `scripts/verify_openwiki.py`):
 - The canonical website origin: `https://www.data-pulse.my` (NOT the apex
   `https://data-pulse.my`).
 - The current dataset count: read `datapulse.json`'s `datasets` array length and
-  include the literal `<N> datasets` (currently `389 datasets`) in any page that
-  discusses discovery or the manifest.
+  include the literal `<N> datasets` in any page that discusses discovery or the
+  manifest.
 - The current tool count: read `mcp.json`'s `tools` array length and include the
-  literal `<N> read-only tools` (currently `16 read-only tools`) in any page
-  that discusses the MCP server.
+  literal `<N> read-only tools` in any page that discusses the MCP server.
 
 These counts and the URL MUST be derived from the live sources of record at the
 time of generation; never substitute a value remembered from prior context. Do
@@ -36,5 +35,7 @@ outputs and managed marker/pointer blocks.
 
 Describe observed published facts with dates or source links where useful. Do
 not claim universal trust, payment capability, reputation, certification, or
-guaranteed availability. Preserve DataPulse's read-only posture and state that
-upstream sources remain authoritative for substantive data.
+guaranteed availability, and never state a price, tier, paid quota, billing
+term, or commercial offer for any product: a retired price reached a public
+page this way. Preserve DataPulse's read-only posture and state that upstream
+sources remain authoritative for substantive data.

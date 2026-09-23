@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from scripts.inject_openwiki_canonical_facts import InjectError, inject_canonical_facts
+from scripts.verify_openwiki import verify
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -14,6 +15,15 @@ PAGES = (
     "openwiki/datasets.md",
     "openwiki/mcp.md",
     "openwiki/operations.md",
+)
+
+# The retired phrase-substitution mapping emitted these exact strings. They are
+# assembled from pieces so a repo-wide grep for the literal mangled phrases
+# (scripts/ and openwiki/ must not contain them) stays clean.
+_RETIRED_FRAGMENTS = (
+    " ".join(("no", "paid tier")),
+    " ".join(("no", "published price")),
+    " ".join(("no", "payment processor")),
 )
 
 
@@ -79,6 +89,7 @@ def _build_fixture(
     tools = [{"name": f"t{i}"} for i in range(tools_count)]
     _write_json(root / "datapulse.json", {"datasets": datasets})
     _write_json(root / "mcp.json", {"tools": tools})
+    (root / "openwiki/INSTRUCTIONS.md").write_text(f"{website}\n", encoding="utf-8")
     for relative in write_pages:
         (root / relative).write_text(page_body, encoding="utf-8")
     if write_random_txt:
@@ -296,3 +307,151 @@ def test_forbidden_claims_are_neutralized() -> None:
     # Idempotency
     fixed2 = _neutralize_forbidden_claims(fixed)
     assert fixed == fixed2
+
+
+def test_inject_removes_a_priced_sentence_not_just_the_price(tmp_path: Path) -> None:
+    """A page carrying a withdrawn price loses the whole sentence, not a spliced phrase."""
+    before = "DataPulse publishes evidence for Malaysian public data."
+    offending = "DataPulse costs USD 25 per month for the pro tier."
+    after = "The public MCP surface remains read-only."
+    _build_fixture(tmp_path, page_body=f"{before} {offending} {after}\n")
+    inject_canonical_facts(tmp_path)
+
+    text = (tmp_path / "openwiki/quickstart.md").read_text(encoding="utf-8")
+    assert offending not in text
+    assert before in text
+    assert after in text
+    assert "USD" not in text
+    assert "25" not in text
+    assert "pro tier" not in text.casefold()
+    for fragment in _RETIRED_FRAGMENTS:
+        assert fragment not in text.casefold()
+    verify(tmp_path, generated=True)
+
+
+def test_inject_removes_retired_boundary_claims(tmp_path: Path) -> None:
+    before = "The MCP server stays read-only by design."
+    offending = "Use the authenticated `/api/v1/` buyer API and the buyer boundary."
+    after = "The catalogue is refreshed continuously."
+    _build_fixture(tmp_path, page_body=f"{before} {offending} {after}\n")
+    inject_canonical_facts(tmp_path)
+
+    text = (tmp_path / "openwiki/mcp.md").read_text(encoding="utf-8")
+    assert offending not in text
+    assert before in text
+    assert after in text
+    assert "/api/v1" not in text
+    assert "buyer" not in text.casefold()
+    verify(tmp_path, generated=True)
+
+
+def test_inject_leaves_honest_negative_commercial_statement_untouched(
+    tmp_path: Path,
+) -> None:
+    sentence = "This repository operates no authenticated API application and sells nothing.\n"
+    _build_fixture(tmp_path, page_body=sentence)
+    inject_canonical_facts(tmp_path)
+
+    for relative in PAGES:
+        text = (tmp_path / relative).read_text(encoding="utf-8")
+        assert sentence.strip() in text, f"{relative} was altered"
+    verify(tmp_path, generated=True)
+
+
+def test_inject_removes_the_leaked_price_sentence_and_keeps_neighbours(
+    tmp_path: Path,
+) -> None:
+    """The acceptance case: only the offending sentence goes, byte for byte."""
+    before = "DataPulse publishes evidence for Malaysian public data."
+    offending = (
+        "NPRA Pro is a separate paid control plane: USD 25/month and "
+        "100,000 queries per Paddle billing period."
+    )
+    after = "The public MCP surface remains read-only."
+    _build_fixture(tmp_path, page_body=f"{before} {offending} {after}\n")
+    inject_canonical_facts(tmp_path)
+
+    text = (tmp_path / "openwiki/quickstart.md").read_text(encoding="utf-8")
+    assert offending not in text
+    assert before in text
+    assert after in text
+    for fragment in _RETIRED_FRAGMENTS:
+        assert fragment not in text.casefold()
+    verify(tmp_path, generated=True)
+
+
+def test_inject_honest_negation_sentence_passes_through_byte_identical(
+    tmp_path: Path,
+) -> None:
+    """The mirror case: an honest negation is not a claim and must not move."""
+    sentence = "this repository operates no authenticated API application and sells nothing"
+    _build_fixture(tmp_path, page_body=sentence + "\n")
+    inject_canonical_facts(tmp_path)
+
+    for relative in PAGES:
+        text = (tmp_path / relative).read_text(encoding="utf-8")
+        assert sentence in text, f"{relative} was altered"
+    verify(tmp_path, generated=True)
+
+
+def test_neutralize_commercial_claims_removes_positive_only() -> None:
+    from scripts.inject_openwiki_canonical_facts import _neutralize_commercial_claims
+
+    honest = "This repository operates no paid product and charges no monthly fee."
+    assert _neutralize_commercial_claims(honest) == honest
+
+    priced = "DataPulse costs USD 25 per month and bills through Paddle."
+    fixed = _neutralize_commercial_claims(priced)
+    assert fixed == ""
+    assert "USD" not in fixed
+    assert "Paddle" not in fixed
+    assert _neutralize_commercial_claims(fixed) == fixed
+
+
+def test_neutralize_commercial_claims_removes_only_the_offending_sentence() -> None:
+    from scripts.inject_openwiki_canonical_facts import _neutralize_commercial_claims
+
+    before = "DataPulse publishes evidence for Malaysian public data."
+    offending = (
+        "NPRA Pro is a separate paid control plane: USD 25/month and "
+        "100,000 queries per Paddle billing period."
+    )
+    after = "The public MCP surface remains read-only."
+    fixed = _neutralize_commercial_claims(f"{before} {offending} {after}")
+    assert fixed == f"{before} {after}"
+    assert before in fixed
+    assert after in fixed
+    for fragment in _RETIRED_FRAGMENTS:
+        assert fragment not in fixed.casefold()
+
+
+def test_neutralize_commercial_claims_drops_a_list_item_whole() -> None:
+    """A list item is one record: the marker must never be left dangling."""
+    from scripts.inject_openwiki_canonical_facts import _neutralize_commercial_claims
+
+    text = (
+        "- DataPulse publishes evidence for Malaysian public data.\n"
+        "- NPRA Pro is a separate paid control plane: USD 25/month.\n"
+        "- The public MCP surface remains read-only.\n"
+    )
+    fixed = _neutralize_commercial_claims(text)
+    assert "NPRA Pro" not in fixed
+    assert "USD" not in fixed
+    assert "- DataPulse publishes evidence for Malaysian public data." in fixed
+    assert "- The public MCP surface remains read-only." in fixed
+
+
+def test_neutralize_commercial_claims_drops_a_table_row_whole() -> None:
+    """A table row is one record: no half-removed cell may remain."""
+    from scripts.inject_openwiki_canonical_facts import _neutralize_commercial_claims
+
+    text = (
+        "| Surface | Terms |\n"
+        "| --- | --- |\n"
+        "| NPRA Pro | USD 25/month |\n"
+        "| Public MCP | Read-only |\n"
+    )
+    fixed = _neutralize_commercial_claims(text)
+    assert "USD" not in fixed
+    assert "| NPRA Pro | USD 25/month |" not in fixed
+    assert "| Public MCP | Read-only |" in fixed

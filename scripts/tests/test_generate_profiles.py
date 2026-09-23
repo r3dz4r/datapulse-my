@@ -307,6 +307,7 @@ def _stage_source(tmp_path: Path) -> Path:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", scripts)
     shutil.copy2(ROOT / "scripts/verify_distribution_sync.py", scripts)
+    shutil.copy2(ROOT / "scripts/verify_openwiki.py", scripts)
     shutil.copy2(ROOT / "scripts/gen_anomaly.py", scripts / "gen_anomaly.py")
     subprocess.run(
         [sys.executable, "scripts/gen_readme.py", "--root", str(source)],

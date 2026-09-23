@@ -215,13 +215,8 @@ The checked-in systemd/nginx/Tunnel files describe separate boundaries:
   the service. The Cloudflare Tunnel example terminates at local nginx; its
   tunnel UUID, credentials file, certificates, and actual activation are
   operator-managed, not repository facts.
-- `datapulse-api.service` binds the authenticated buyer API to
-  `127.0.0.1:8791`. Its environment files are outside the repository; durable
-  API keys, rate limits, entitlements, and audit state live under
-  `/home/redza/datapulse-my/var/`. The API forwards to the internal
-  `127.0.0.1:8001` engine and does not expose that engine directly. State updates
-  use locking and atomic replacement, and webhook secrets/internal credentials
-  stay environment-only.
+- This repository defines no authenticated API service. Commercial NPRA control
+  belongs to Malaysia Data Engine and is not operated by DataPulse.
 - MCP usage and verification telemetry belongs in the user journal
   (`journalctl --user -u datapulse-mcp.service`); `verify_evidence` has a
   process-local ten-minute cache and serialized verification, cleared on restart.

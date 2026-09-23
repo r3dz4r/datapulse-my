@@ -40,6 +40,101 @@ _DATASET_COUNT_RE = re.compile(r"\b(?P<count>\d+)(?=[ -]datasets?\b)", re.IGNORE
 _READ_ONLY_TOOL_COUNT_RE = re.compile(r"\b(?P<count>\d+)(?=[ -]read-only[ -]tools?\b)", re.IGNORECASE)
 _TOOL_COUNT_RE = re.compile(r"\b(?P<count>\d+)(?=[ -]tools?\b)", re.IGNORECASE)
 
+# A page can publish a price, quota, paid tier or a retired API boundary
+# without naming any of the four literal phrases above, because the withdrawn
+# claim was free prose. These patterns describe that class of paraphrase; the
+# negation guard below then exempts honest statements of absence such as
+# "this repository operates no authenticated API" (or the prohibition sentence
+# in openwiki/INSTRUCTIONS.md). Bare "tier"/"rate" are deliberately absent:
+# the health pipeline has a non-commercial `--tier` filter and anomaly rates.
+_CURRENCY = (
+    r"(?:USD|MYR|SGD|EUR|GBP|AUD|CAD|JPY|CNY|IDR|THB|PHP|INR|"
+    r"RM|US\$|S\$|A\$|HK\$|\$|€|£|¥)"
+)
+_PERIOD = r"(?:month|year|annum|quarter|week|day|seat|user|call|request|token|credit)"
+_PRICE = r"(?:price|pricing|fee|fees|cost|costs|rate|rates|charge|charges|subscription|billing)"
+_CURRENCY_AMOUNT = (
+    rf"(?:(?<![A-Za-z]){_CURRENCY}\s?\d[\d,]*(?:\.\d{{1,2}})?"
+    rf"|\d[\d,]*(?:\.\d{{1,2}})?\s?(?:{_CURRENCY}|dollars?|ringgit|cents?)\b)"
+)
+COMMERCIAL_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "named payment processor",
+        re.compile(
+            r"\b(?:Paddle|Stripe|PayPal|Braintree|Chargebee|Recurly|"
+            r"Lemon\s?Squeezy|Gumroad|Razorpay|Billplz|SenangPay|iPay88|"
+            r"2C2P|Adyen|Worldpay|Klarna|Afterpay|Checkout\.com|"
+            r"FastSpring|Payhip)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "commercial price",
+        re.compile(
+            rf"{_CURRENCY_AMOUNT}(?:\s*(?:/|per\s+|a\s+)(?:{_PERIOD})\b)?",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "per-period price",
+        re.compile(
+            rf"\b{_PRICE}\b[^\n.;|]{{0,40}}?\bper\b"
+            rf"|\b(?:monthly|annual|annually|yearly|quarterly|weekly|daily)\b"
+            rf"[^\n.;|]{{0,30}}?\b{_PRICE}\b"
+            rf"|\b{_PRICE}\b[^\n.;|]{{0,30}}?\b"
+            rf"(?:monthly|annual|annually|yearly|quarterly|weekly|daily)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "paid tier, plan, or quota",
+        re.compile(
+            r"\b(?:paid|premium|pro|enterprise|pricing|subscription|billing|"
+            r"commercial|monthly|annual|yearly|free)\s+"
+            r"(?:tier|tiers|plan|plans|package|packages|edition|editions|"
+            r"seat|seats|account|accounts|offering|offerings)\b"
+            r"|\b(?:quota|quotas|subscription|subscriptions|entitlement|"
+            r"entitlements|paid|premium)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "paid product or authenticated API",
+        re.compile(
+            r"\b(?:paid|commercial|chargeable|billable)\s+"
+            r"(?:product|products|service|services|offering|offerings|"
+            r"edition|editions|terms|licence|license|offer)\b"
+            r"|\bbuyer\s+(?:api|boundary|endpoint|surface)\b"
+            r"|(?<![A-Za-z0-9])/api/v\d+/?(?![A-Za-z0-9])"
+            r"|\bauthenticated\s+(?:buyer\s+)?(?:api|endpoint|surface|route|"
+            r"service|interface)\b"
+            r"|\b(?:api|access)\s+(?:key|token)s?\b"
+            r"|\bauthentication\s+(?:is\s+)?required\b",
+            re.IGNORECASE,
+        ),
+    ),
+)
+
+# Negation-aware guard. A claim is legitimate when it is stated as absent:
+# "operates no authenticated API", "does not sell a paid product", or the
+# instruction "never state a price, tier, paid quota". We look back within the
+# current clause, stop at a contrastive conjunction so "no free tier, but a
+# monthly fee" still fires, and also catch a directly negated predicate.
+_CLAUSE_BOUNDARY_RE = re.compile(r"[.;:!?|\u2014\u2013]|\n{2,}")
+_SUFFIX_BOUNDARY_RE = re.compile(r"[.;:!?|\n\u2014\u2013]")
+_CONTRAST_RE = re.compile(
+    r"\b(?:but|however|yet|although|though|whereas|nevertheless|nonetheless|"
+    r"except|instead)\b",
+    re.IGNORECASE,
+)
+_NEGATION_RE = re.compile(
+    r"(?:\b(?:no|not|never|none|neither|nor|without|cannot|can't|won't|"
+    r"doesn't|don't|isn't|aren't|wasn't|weren't|hasn't|haven't|didn't|"
+    r"nothing|zero)\b|n't\b)",
+    re.IGNORECASE,
+)
+_SUFFIX_NEGATION_RE = re.compile(r"\b(?:not|never|no longer)\b", re.IGNORECASE)
+
 
 class VerificationError(Exception):
     """Raised when a generated documentation contract is violated."""
@@ -75,6 +170,64 @@ def _facts(root: Path) -> tuple[str, str, int, int]:
 
 def _has_stale_count(text: str, current: int, pattern: re.Pattern[str]) -> bool:
     return any(int(match.group("count")) != current for match in pattern.finditer(text))
+
+
+def _clause_prefix(text: str, start: int) -> str:
+    """Return the current clause text preceding ``start``.
+
+    A single newline is not a boundary: generated pages and
+    openwiki/INSTRUCTIONS.md wrap prose mid-sentence, so the negation in
+    "never state a price ... or a commercial offer" must survive the wrap.
+    """
+    prefix = text[:start]
+    boundaries = list(_CLAUSE_BOUNDARY_RE.finditer(prefix))
+    if boundaries:
+        prefix = prefix[boundaries[-1].end() :]
+    prefix = prefix[-240:]
+    contrasts = list(_CONTRAST_RE.finditer(prefix))
+    if contrasts:
+        prefix = prefix[contrasts[-1].end() :]
+    return prefix
+
+
+def is_negated(text: str, start: int, end: int) -> bool:
+    """True when a claim span sits inside a statement of absence.
+
+    Shared with the injector so neutralisation and rejection agree on what
+    counts as an honest negative ("operates no authenticated API").
+    """
+    if _NEGATION_RE.search(_clause_prefix(text, start)):
+        return True
+    suffix = text[end:]
+    boundary = _SUFFIX_BOUNDARY_RE.search(suffix)
+    if boundary:
+        suffix = suffix[: boundary.start()]
+    return bool(_SUFFIX_NEGATION_RE.search(suffix[:120]))
+
+
+def _literal_claim(text: str, claim: str) -> tuple[int, int] | None:
+    folded = text.casefold()
+    position = 0
+    while True:
+        index = folded.find(claim, position)
+        if index < 0:
+            return None
+        if not is_negated(text, index, index + len(claim)):
+            return index, index + len(claim)
+        position = index + 1
+
+
+def find_forbidden_claim(text: str) -> tuple[str, str] | None:
+    """Return the (label, matched text) of the first positive forbidden claim."""
+    for claim in FORBIDDEN_CLAIMS:
+        span = _literal_claim(text, claim)
+        if span is not None:
+            return claim, text[span[0] : span[1]]
+    for label, pattern in COMMERCIAL_RULES:
+        for match in pattern.finditer(text):
+            if not is_negated(text, match.start(), match.end()):
+                return label, match.group(0)
+    return None
 
 
 def _changed_paths(root: Path, base: str) -> set[str]:
@@ -127,8 +280,12 @@ def verify(root: Path, *, generated: bool, changed_from: str | None = None) -> N
             raise VerificationError(f"{relative} uses the obsolete public product name")
         if "https://data-pulse.my" in text:
             raise VerificationError(f"{relative} uses the obsolete apex website origin")
-        if any(claim in folded for claim in FORBIDDEN_CLAIMS):
-            raise VerificationError(f"{relative} contains an unsupported claim")
+        claim = find_forbidden_claim(text)
+        if claim is not None:
+            label, matched = claim
+            raise VerificationError(
+                f"{relative} contains an unsupported claim ({label}): {matched!r}"
+            )
         if _has_stale_count(text, datasets, _DATASET_COUNT_RE):
             raise VerificationError(f"{relative} contains stale dataset count facts")
         stale_tool_count = _has_stale_count(text, tools, _READ_ONLY_TOOL_COUNT_RE) or _has_stale_count(
