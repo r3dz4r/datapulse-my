@@ -26,7 +26,7 @@ For future MCP tool calls, DataPulse records aggregate-only operational telemetr
 - Timestamp, tool name, allowlisted public filter dimensions and dataset identifiers where needed for demand counts, bounded result summaries, outcome, latency, and a bounded generic error classification when a call raises an error.
 - A presence signal for free-form search input, rather than the search/query text itself.
 
-DataPulse does **not** retain individual caller identifiers in future MCP telemetry: no IP address, buyer ID, request ID, session ID, client identity, user agent, API key, or pseudonymous replacement. Credential-shaped arguments are excluded from future records.
+DataPulse does **not** retain individual caller identifiers in future MCP telemetry: no IP address, request ID, session ID, client identity, user agent, API key, or pseudonymous replacement. Credential-shaped arguments are excluded from future records.
 
 ### 1.3 Environment variables (self-hosted deployments)
 
@@ -37,7 +37,7 @@ If you self-host the DataPulse MCP server, configuration values such as `DATAPUL
 - **No account creation.** You do not need an account to use the public MCP endpoint.
 - **No cookies, tracking pixels, or advertising identifiers.**
 - **No credentials.** DataPulse does not ask for or store API keys, passwords, or tokens for the public endpoint.
-- **No individual caller telemetry.** Future operational records do not retain IP addresses, buyer IDs, request IDs, session IDs, client identifiers, user agents, or free-form query text.
+- **No individual caller telemetry.** Future operational records do not retain IP addresses, request IDs, session IDs, client identifiers, user agents, or free-form query text.
 - **No personal data about Malaysian citizens.** The catalogue covers published government datasets; it does not collect personal information about individuals.
 
 ## 3. How collected information is used

@@ -26,7 +26,7 @@ NODE_FIELDS = {
     "reconciliation": frozenset(("id", "type", "dataset_ids", "verdict", "basis")),
 }
 EDGE_TYPES = frozenset(("observes", "derived_from", "attested_by", "supports", "supersedes", "conflicts_with"))
-FORBIDDEN_KEY_PARTS = ("identity", "buyer", "session", "cookie", "token", "password", "secret", "api_key", "ip_address")
+FORBIDDEN_KEY_PARTS = ("identity", "session", "cookie", "token", "password", "secret", "api_key", "ip_address")
 
 
 def _timestamp(value: object) -> datetime | None:

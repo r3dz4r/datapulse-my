@@ -62,7 +62,7 @@ allowlisted public filter dimensions or dataset identifiers needed for demand
 counts, bounded result summary, outcome, latency, and a bounded generic error
 classification. Free-form query text is represented only by a presence signal.
 
-It does not retain IP addresses, buyer IDs, request IDs, session IDs, client
+It does not retain IP addresses, request IDs, session IDs, client
 identity, user agents, credentials, or pseudonymous substitutes. Middleware
 writes exactly one terminal record for every successful call and every raised
 error; the original error still propagates to the MCP client. `usage_summary`

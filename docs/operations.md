@@ -68,11 +68,8 @@ always-on `datapulse-mcp.service` user unit is a
 separate read-only runtime owned by `redza`. Its installed command uses
 `/home/redza/.local/share/datapulse-mcp/venv/bin/python` to run
 `/home/redza/.local/share/datapulse-mcp/server.py`, with `Restart=on-failure`.
-The separate system-installed `datapulse-api.service` runs the authenticated
-read-only buyer API on `127.0.0.1:8791`; the public API origin is
-`https://api.data-pulse.my`. Its durable key, rate-limit, and audit state is
-under `/home/redza/datapulse-my/var/`. Commercial NPRA control belongs to
-Malaysia Data Engine and is not operated by DataPulse.
+Commercial NPRA control belongs to Malaysia Data Engine and is not operated by
+DataPulse.
 
 ## Paths and logs
 

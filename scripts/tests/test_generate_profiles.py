@@ -111,7 +111,6 @@ PROFILE_INPUTS = (
     "mcp",
     "openwiki",
     "config",
-    "api",
     "health.schema.json",
     "agent.schema.json",
     "mcp.schema.json",
@@ -256,7 +255,6 @@ def _stage_source(tmp_path: Path) -> Path:
         required.append("api")
     origins["properties"]["api"] = {"const": "https://api.data-pulse.my"}
     _write_json(source / "config/public-surfaces.schema.json", schema)
-    shutil.copytree(ROOT / "api", source / "api")
     shutil.copy2(RELEASE_FIXTURE / "robots.txt", source / "robots.txt")
     shutil.copy2(RELEASE_FIXTURE / "docs/mcp-deploy.md", source / "docs/mcp-deploy.md")
     shutil.copy2(ROOT / "docs/landing.html", source / "docs/landing.html")

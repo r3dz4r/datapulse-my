@@ -3,9 +3,11 @@
 
 NOTE FOR REVIEWERS: the default path (~/.config/datapulse/policy.yaml) is a
 LOCAL configuration file for self-hosted deployments, read only to validate
-the buyer-policy contract. It is never read by the public MCP endpoint, never
-exits the machine, and can be redirected via DATAPULSE_POLICY_FILE. No secrets
-or credentials are stored in it by default.
+the paid-lane policy contract. That contract belongs to the Malaysia Data Engine
+and not to DataPulse MY's open, read-only trust layer. It is never
+read by the public MCP endpoint, never exits the machine, and can be redirected
+via DATAPULSE_POLICY_FILE. No secrets or credentials are stored in it by
+default.
 
 Exits 0 on success. Exits 1 with a structured error on failure.
 Override path with DATAPULSE_POLICY_FILE.
@@ -70,14 +72,14 @@ def validate(data):
     for name in ("buyers", "datasets"):
         require(data.get(name, []), isinstance(data.get(name, []), list), f"{name} must be a list")
     ids = set()
-    for buyer in data["buyers"]:
-        require(buyer, isinstance(buyer, dict), "buyer must be a mapping")
-        identifier = buyer.get("id"); require(identifier, isinstance(identifier, str) and identifier and identifier not in ids, "buyer id must be a unique string"); ids.add(identifier)
-        require(buyer.get("tier"), buyer.get("tier") in TIERS, "buyer tier must be free, pro, or enterprise")
-        limit = buyer.get("rate_limit_per_day"); require(limit, isinstance(limit, int) or limit == "unlimited", "buyer rate_limit_per_day must be an integer or unlimited")
-        categories = buyer.get("allowed_categories"); require(categories, categories == "all" or isinstance(categories, list) and all(isinstance(x, str) and x in CATEGORIES for x in categories), "buyer allowed_categories must be all or known categories")
-        require(buyer.get("masking"), buyer.get("masking") in {"none", "redact_pii_columns"}, "buyer masking is invalid")
-        require(buyer.get("audit_log_export", True), isinstance(buyer.get("audit_log_export", True), bool), "buyer audit_log_export must be boolean")
+    for principal in data["buyers"]:
+        require(principal, isinstance(principal, dict), "principal must be a mapping")
+        identifier = principal.get("id"); require(identifier, isinstance(identifier, str) and identifier and identifier not in ids, "principal id must be a unique string"); ids.add(identifier)
+        require(principal.get("tier"), principal.get("tier") in TIERS, "principal tier must be free, pro, or enterprise")
+        limit = principal.get("rate_limit_per_day"); require(limit, isinstance(limit, int) or limit == "unlimited", "principal rate_limit_per_day must be an integer or unlimited")
+        categories = principal.get("allowed_categories"); require(categories, categories == "all" or isinstance(categories, list) and all(isinstance(x, str) and x in CATEGORIES for x in categories), "principal allowed_categories must be all or known categories")
+        require(principal.get("masking"), principal.get("masking") in {"none", "redact_pii_columns"}, "principal masking is invalid")
+        require(principal.get("audit_log_export", True), isinstance(principal.get("audit_log_export", True), bool), "principal audit_log_export must be boolean")
     patterns = set()
     for rule in data["datasets"]:
         require(rule, isinstance(rule, dict), "dataset rule must be a mapping")

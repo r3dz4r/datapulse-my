@@ -470,8 +470,6 @@
     "sources": [
       "config/public-surfaces.json",
       "config/public-surfaces.schema.json",
-      "api/public_contract.py",
-      "api/config.py",
       "scripts/embed_dashboard_data.py",
       "scripts/templates/register-home.html.tmpl",
       "scripts/gen_landing_page.py",
@@ -496,12 +494,33 @@
       "docs/index.html"
     ],
     "owned_markers": {
-      "README.md": ["mcp-tools", "public-discovery"],
-      "llms.txt": ["catalog-summary", "mcp-tools", "public-discovery", "featured-datasets", "public-artifacts"],
-      "robots.txt": ["public-discovery"],
-      "docs/mcp-deploy.md": ["mcp-tools"],
-      "docs/index.html": ["dashboard-summary", "dashboard-trust-facts", "changelog-strip"],
-      "docs/npra.html": ["npra-freshness", "npra-connect", "npra-surfaces"]
+      "README.md": [
+        "mcp-tools",
+        "public-discovery"
+      ],
+      "llms.txt": [
+        "catalog-summary",
+        "mcp-tools",
+        "public-discovery",
+        "featured-datasets",
+        "public-artifacts"
+      ],
+      "robots.txt": [
+        "public-discovery"
+      ],
+      "docs/mcp-deploy.md": [
+        "mcp-tools"
+      ],
+      "docs/index.html": [
+        "dashboard-summary",
+        "dashboard-trust-facts",
+        "changelog-strip"
+      ],
+      "docs/npra.html": [
+        "npra-freshness",
+        "npra-connect",
+        "npra-surfaces"
+      ]
     },
     "prohibited_unowned_patterns": [
       "8-status health taxonomy",
@@ -515,70 +534,134 @@
   "runtime_derived_surfaces": [
     {
       "surface": "README.md",
-      "markers": ["mcp-tools"],
-      "canonical_inputs": ["mcp/server.py", "mcp.schema.json", "agent.schema.json", "config/public-surfaces.json", "datapulse.json", "health.schema.json"],
+      "markers": [
+        "mcp-tools"
+      ],
+      "canonical_inputs": [
+        "mcp/server.py",
+        "mcp.schema.json",
+        "agent.schema.json",
+        "config/public-surfaces.json",
+        "datapulse.json",
+        "health.schema.json"
+      ],
       "generator": "scripts/gen_mcp_reference.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "marker-owned",
       "fixture": "scripts/tests/test_python_generators.py::test_mcp_reference_json_matches_runtime_schema",
       "invariant": "MCP runtime/tool parity and unique ordered marker replacement"
     },
     {
       "surface": "README.md",
-      "markers": ["public-discovery"],
-      "canonical_inputs": ["config/public-surfaces.json", "config/public-surfaces.schema.json"],
+      "markers": [
+        "public-discovery"
+      ],
+      "canonical_inputs": [
+        "config/public-surfaces.json",
+        "config/public-surfaces.schema.json"
+      ],
       "generator": "scripts/gen_public_discovery.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "marker-owned",
       "fixture": "scripts/tests/test_public_discovery.py",
       "invariant": "canonical origin and public-discovery marker parity"
     },
     {
       "surface": "llms.txt",
-      "markers": ["catalog-summary", "featured-datasets", "public-artifacts"],
-      "canonical_inputs": ["datapulse.json", "config/public-surfaces.json", "config/public-surfaces.schema.json"],
+      "markers": [
+        "catalog-summary",
+        "featured-datasets",
+        "public-artifacts"
+      ],
+      "canonical_inputs": [
+        "datapulse.json",
+        "config/public-surfaces.json",
+        "config/public-surfaces.schema.json"
+      ],
       "generator": "scripts/gen_llms_summary.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "marker-owned",
       "fixture": "scripts/tests/test_gen_llms_summary.py",
       "invariant": "catalog and public-artifact facts use canonical configuration"
     },
     {
       "surface": "llms.txt",
-      "markers": ["mcp-tools"],
-      "canonical_inputs": ["mcp/server.py", "mcp.schema.json", "agent.schema.json", "config/public-surfaces.json", "datapulse.json", "health.schema.json"],
+      "markers": [
+        "mcp-tools"
+      ],
+      "canonical_inputs": [
+        "mcp/server.py",
+        "mcp.schema.json",
+        "agent.schema.json",
+        "config/public-surfaces.json",
+        "datapulse.json",
+        "health.schema.json"
+      ],
       "generator": "scripts/gen_mcp_reference.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "marker-owned",
       "fixture": "scripts/tests/test_python_generators.py::test_mcp_reference_json_matches_runtime_schema",
       "invariant": "MCP runtime/tool parity and unique ordered marker replacement"
     },
     {
       "surface": "llms.txt",
-      "markers": ["public-discovery"],
-      "canonical_inputs": ["config/public-surfaces.json", "config/public-surfaces.schema.json"],
+      "markers": [
+        "public-discovery"
+      ],
+      "canonical_inputs": [
+        "config/public-surfaces.json",
+        "config/public-surfaces.schema.json"
+      ],
       "generator": "scripts/gen_public_discovery.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "marker-owned",
       "fixture": "scripts/tests/test_public_discovery.py",
       "invariant": "canonical origin and public-discovery marker parity"
     },
     {
       "surface": "robots.txt",
-      "markers": ["public-discovery"],
-      "canonical_inputs": ["config/public-surfaces.json", "config/public-surfaces.schema.json"],
+      "markers": [
+        "public-discovery"
+      ],
+      "canonical_inputs": [
+        "config/public-surfaces.json",
+        "config/public-surfaces.schema.json"
+      ],
       "generator": "scripts/gen_public_discovery.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "marker-owned",
       "fixture": "scripts/tests/test_public_discovery.py",
       "invariant": "canonical origin and public-discovery marker parity"
     },
     {
       "surface": "docs/mcp-deploy.md",
-      "markers": ["mcp-tools"],
-      "canonical_inputs": ["mcp/server.py", "mcp.schema.json", "agent.schema.json", "config/public-surfaces.json", "datapulse.json", "health.schema.json"],
+      "markers": [
+        "mcp-tools"
+      ],
+      "canonical_inputs": [
+        "mcp/server.py",
+        "mcp.schema.json",
+        "agent.schema.json",
+        "config/public-surfaces.json",
+        "datapulse.json",
+        "health.schema.json"
+      ],
       "generator": "scripts/gen_mcp_reference.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "marker-owned",
       "fixture": "scripts/tests/test_python_generators.py::test_mcp_reference_json_matches_runtime_schema",
       "invariant": "MCP runtime/tool parity and unique ordered marker replacement"
@@ -586,9 +669,15 @@
     {
       "surface": "openwiki/quickstart.md",
       "markers": [],
-      "canonical_inputs": ["config/public-surfaces.json", "datapulse.json", "mcp.json"],
+      "canonical_inputs": [
+        "config/public-surfaces.json",
+        "datapulse.json",
+        "mcp.json"
+      ],
       "generator": "scripts/inject_openwiki_canonical_facts.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_inject_openwiki_canonical_facts.py",
       "invariant": "allowlisted canonical facts injection is idempotent"
@@ -596,9 +685,15 @@
     {
       "surface": "openwiki/datasets.md",
       "markers": [],
-      "canonical_inputs": ["config/public-surfaces.json", "datapulse.json", "mcp.json"],
+      "canonical_inputs": [
+        "config/public-surfaces.json",
+        "datapulse.json",
+        "mcp.json"
+      ],
       "generator": "scripts/inject_openwiki_canonical_facts.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_inject_openwiki_canonical_facts.py",
       "invariant": "allowlisted canonical facts injection is idempotent"
@@ -606,9 +701,15 @@
     {
       "surface": "openwiki/mcp.md",
       "markers": [],
-      "canonical_inputs": ["config/public-surfaces.json", "datapulse.json", "mcp.json"],
+      "canonical_inputs": [
+        "config/public-surfaces.json",
+        "datapulse.json",
+        "mcp.json"
+      ],
       "generator": "scripts/inject_openwiki_canonical_facts.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_inject_openwiki_canonical_facts.py",
       "invariant": "allowlisted canonical facts injection is idempotent"
@@ -616,29 +717,64 @@
     {
       "surface": "openwiki/operations.md",
       "markers": [],
-      "canonical_inputs": ["config/public-surfaces.json", "datapulse.json", "mcp.json"],
+      "canonical_inputs": [
+        "config/public-surfaces.json",
+        "datapulse.json",
+        "mcp.json"
+      ],
       "generator": "scripts/inject_openwiki_canonical_facts.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_inject_openwiki_canonical_facts.py",
       "invariant": "allowlisted canonical facts injection is idempotent"
     },
     {
       "surface": "docs/index.html",
-      "markers": ["dashboard-summary", "dashboard-trust-facts", "changelog-strip"],
-      "canonical_inputs": ["datapulse.json", "health/latest.json", "docs/.dashboard_filters.json", "docs/.dashboard_sections.json", "config/public-surfaces.json", "config/register-page.json", "config/register-page.schema.json", "scripts/templates/register-home.html.tmpl", "scripts/templates/register.css", "scripts/gen_register_page.py"],
+      "markers": [
+        "dashboard-summary",
+        "dashboard-trust-facts",
+        "changelog-strip"
+      ],
+      "canonical_inputs": [
+        "datapulse.json",
+        "health/latest.json",
+        "docs/.dashboard_filters.json",
+        "docs/.dashboard_sections.json",
+        "config/public-surfaces.json",
+        "config/register-page.json",
+        "config/register-page.schema.json",
+        "scripts/templates/register-home.html.tmpl",
+        "scripts/templates/register.css",
+        "scripts/gen_register_page.py"
+      ],
       "generator": "scripts/embed_dashboard_data.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output-and-markers",
       "fixture": "scripts/tests/test_embed_dashboard_data.py",
       "invariant": "source-owned register homepage with marker facts and embedded canonical data parity"
     },
     {
       "surface": "docs/npra.html",
-      "markers": ["npra-freshness", "npra-connect", "npra-surfaces"],
-      "canonical_inputs": ["datapulse.json", "health/latest.json", "docs/.dashboard_filters.json", "docs/.dashboard_sections.json", "config/public-surfaces.json"],
+      "markers": [
+        "npra-freshness",
+        "npra-connect",
+        "npra-surfaces"
+      ],
+      "canonical_inputs": [
+        "datapulse.json",
+        "health/latest.json",
+        "docs/.dashboard_filters.json",
+        "docs/.dashboard_sections.json",
+        "config/public-surfaces.json"
+      ],
       "generator": "scripts/embed_dashboard_data.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "marker-owned",
       "fixture": "scripts/tests/test_dashboard.py::test_dashboard_and_npra_facts_are_explicit_marker_owned",
       "invariant": "NPRA marker facts and canonical public-origin parity"
@@ -646,9 +782,16 @@
     {
       "surface": "docs/landing.html",
       "markers": [],
-      "canonical_inputs": ["config/landing-page.json", "config/public-surfaces.json", "config/public-surfaces.schema.json", "scripts/templates/landing.html.tmpl"],
+      "canonical_inputs": [
+        "config/landing-page.json",
+        "config/public-surfaces.json",
+        "config/public-surfaces.schema.json",
+        "scripts/templates/landing.html.tmpl"
+      ],
       "generator": "scripts/gen_landing_page.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_landing_page.py",
       "invariant": "canonical redirect fallback, generated marker, and no duplicate landing surface"
@@ -656,9 +799,16 @@
     {
       "surface": "docs/dashboard.html",
       "markers": [],
-      "canonical_inputs": ["config/landing-page.json", "config/public-surfaces.json", "config/public-surfaces.schema.json", "scripts/templates/landing.html.tmpl"],
+      "canonical_inputs": [
+        "config/landing-page.json",
+        "config/public-surfaces.json",
+        "config/public-surfaces.schema.json",
+        "scripts/templates/landing.html.tmpl"
+      ],
       "generator": "scripts/gen_landing_page.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_landing_page.py",
       "invariant": "static compatibility alias with a canonical root fallback"
@@ -666,9 +816,18 @@
     {
       "surface": "mcp.json",
       "markers": [],
-      "canonical_inputs": ["mcp/server.py", "mcp.schema.json", "agent.schema.json", "config/public-surfaces.json", "datapulse.json", "health.schema.json"],
+      "canonical_inputs": [
+        "mcp/server.py",
+        "mcp.schema.json",
+        "agent.schema.json",
+        "config/public-surfaces.json",
+        "datapulse.json",
+        "health.schema.json"
+      ],
       "generator": "scripts/gen_mcp_reference.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_python_generators.py::test_mcp_reference_json_matches_runtime_schema",
       "invariant": "MCP runtime schema and ten-status taxonomy parity"
@@ -676,9 +835,16 @@
     {
       "surface": "agent.json",
       "markers": [],
-      "canonical_inputs": ["mcp/server.py", "agent.schema.json", "config/public-surfaces.json", "datapulse.json"],
+      "canonical_inputs": [
+        "mcp/server.py",
+        "agent.schema.json",
+        "config/public-surfaces.json",
+        "datapulse.json"
+      ],
       "generator": "scripts/gen_mcp_reference.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_python_generators.py::test_mcp_reference_json_matches_runtime_schema",
       "invariant": "MCP runtime tool/resource parity and stable source identity"
@@ -686,9 +852,14 @@
     {
       "surface": "sitemap.xml",
       "markers": [],
-      "canonical_inputs": ["config/public-surfaces.json", "config/public-surfaces.schema.json"],
+      "canonical_inputs": [
+        "config/public-surfaces.json",
+        "config/public-surfaces.schema.json"
+      ],
       "generator": "scripts/gen_public_discovery.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_public_discovery.py",
       "invariant": "configured public path and canonical hostname parity"
@@ -696,9 +867,18 @@
     {
       "surface": "docs/mcp-reference.md",
       "markers": [],
-      "canonical_inputs": ["mcp/server.py", "mcp.schema.json", "agent.schema.json", "config/public-surfaces.json", "datapulse.json", "health.schema.json"],
+      "canonical_inputs": [
+        "mcp/server.py",
+        "mcp.schema.json",
+        "agent.schema.json",
+        "config/public-surfaces.json",
+        "datapulse.json",
+        "health.schema.json"
+      ],
       "generator": "scripts/gen_mcp_reference.py",
-      "profiles": ["release-build"],
+      "profiles": [
+        "release-build"
+      ],
       "ownership": "full-output",
       "fixture": "scripts/tests/test_python_generators.py::test_mcp_reference_json_matches_runtime_schema",
       "invariant": "MCP runtime/tool/resource and taxonomy parity"

@@ -746,7 +746,7 @@ async def test_tool_call_logs_aggregate_safe_terminal_evidence(caplog: pytest.Lo
     assert journal["tool"] == "search_datasets"
     assert journal["outcome"] == "success"
     assert isinstance(journal["latency_ms"], int)
-    assert not {"query", "ip", "buyer_id", "request_id", "session_id", "client"} & set(journal)
+    assert not {"query", "ip", "legacy_id", "request_id", "session_id", "client"} & set(journal)
     assert server._sanitise_tool_arg({"api_key": "should-not-appear"}) == {
         "api_key": "[REDACTED]"
     }
@@ -988,7 +988,7 @@ async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_ide
     caplog.set_level("INFO", logger=server.logger.name)
     context = SimpleNamespace(message=SimpleNamespace(name="trust_verdict", arguments={
         "dataset_id": "fuelprice", "query": "private search phrase", "api_key": "secret",
-        "buyer_id": "buyer-a", "client_ip": "127.0.0.1", "request_id": "request-1",
+        "legacy_id": "legacy-a", "client_ip": "127.0.0.1", "request_id": "request-1",
         "session_id": "session-1", "client": "client-1",
     }), timestamp=datetime.now(timezone.utc))
     result = await server.ToolUsageLoggingMiddleware().on_call_tool(context, lambda _: _result({"score": {"score": 92.0, "methodology_version": 2}}))
@@ -1022,16 +1022,16 @@ async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_ide
     assert record["process_instance_id"] == journal["process_instance_id"]
     assert record["process_instance_id"] == server.PROCESS_INSTANCE_ID
     serialized = json.dumps(record)
-    for private_value in ("private search phrase", "secret", "buyer-a", "127.0.0.1", "request-1", "session-1", "client-1"):
+    for private_value in ("private search phrase", "secret", "legacy-a", "127.0.0.1", "request-1", "session-1", "client-1"):
         assert private_value not in serialized
     day = datetime.now(timezone.utc).date().isoformat()
-    (tmp_path / "2026-08-01.jsonl").write_text(json.dumps({"buyer_id": "buyer-a", "tool": "search_datasets", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
+    (tmp_path / "2026-08-01.jsonl").write_text(json.dumps({"legacy_id": "legacy-a", "tool": "search_datasets", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
     (tmp_path / "2026-08-02.jsonl").write_text("\n".join(json.dumps(row) for row in [
-        {"buyer_id": "buyer-a", "tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}},
-        {"buyer_id": "buyer-a", "tool": "trust_verdict", "args": {"dataset_id": "eperolehan-diklankan"}, "result_summary": {"score": 76}},
-        {"buyer_id": "other", "tool": "trust_verdict", "args": {"dataset_id": "ignored"}, "result_summary": {"score": 100}},
+        {"legacy_id": "legacy-a", "tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}},
+        {"legacy_id": "legacy-a", "tool": "trust_verdict", "args": {"dataset_id": "eperolehan-diklankan"}, "result_summary": {"score": 76}},
+        {"legacy_id": "other", "tool": "trust_verdict", "args": {"dataset_id": "ignored"}, "result_summary": {"score": 100}},
     ]) + "\n", encoding="utf-8")
-    (tmp_path / "2026-08-03.jsonl").write_text(json.dumps({"buyer_id": "other", "tool": "get_dataset", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
+    (tmp_path / "2026-08-03.jsonl").write_text(json.dumps({"legacy_id": "other", "tool": "get_dataset", "args": {}, "result_summary": {}}) + "\n", encoding="utf-8")
     summary = await server.usage_summary("2026-08-01", "2026-08-03")
     assert summary == {"total_calls": 5, "by_outcome": {"unknown": 5}, "by_tool": {"search_datasets": 1, "get_dataset": 2, "trust_verdict": 2}, "by_dataset": {"fuelprice": 1, "eperolehan-diklankan": 1, "(unrecognised)": 3}, "trust_verdict_calls": 2, "trust_distribution": {"75-89": 1, "90-100": 1}}
     with pytest.raises(ValueError): await server.usage_summary("2026-08-03", "2026-08-02")
@@ -1041,15 +1041,15 @@ async def test_usage_jsonl_sink_is_aggregate_only_and_summary_ignores_legacy_ide
 async def test_usage_summary_call_tool_aggregates_all_ledger_records(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
     (tmp_path / "2026-08-01.jsonl").write_text(
-        json.dumps({"buyer_id": "buyer-a", "tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}}) + "\n",
+        json.dumps({"legacy_id": "legacy-a", "tool": "get_dataset", "args": {"dataset_id": "fuelprice"}, "result_summary": {}}) + "\n",
         encoding="utf-8",
     )
     (tmp_path / "2026-08-02.jsonl").write_text(
         "\n".join(
             json.dumps(row)
             for row in [
-                {"buyer_id": "buyer-a", "tool": "trust_verdict", "args": {"dataset_id": "eperolehan-diklankan"}, "result_summary": {"score": 92}},
-                {"buyer_id": "other", "tool": "trust_verdict", "args": {"dataset_id": "ignored"}, "result_summary": {"score": 100}},
+                {"legacy_id": "legacy-a", "tool": "trust_verdict", "args": {"dataset_id": "eperolehan-diklankan"}, "result_summary": {"score": 92}},
+                {"legacy_id": "other", "tool": "trust_verdict", "args": {"dataset_id": "ignored"}, "result_summary": {"score": 100}},
             ]
         ) + "\n",
         encoding="utf-8",
