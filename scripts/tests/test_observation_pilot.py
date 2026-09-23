@@ -59,6 +59,16 @@ from observation_store import (  # noqa: E402
 #: fuelprice back at a CSV profile fails here instead of looking correct.
 FUELPRICE_FIXTURE: Final[Path] = ROOT / "scripts/tests/fixtures/fuelprice_live_array.json"
 
+#: The live pharmaceutical-products register shape: the 16-column CSV header
+#: plus the first 40 data lines copied verbatim from the live payload.  The
+#: pilot must project it under the register's own profile, not fuelprice's.
+PHARMACEUTICAL_FIXTURE: Final[Path] = (
+    ROOT / "scripts/tests/fixtures/pharmaceutical_products_live.csv"
+)
+
+#: The distinct profile the pilot maps ``pharmaceutical_products`` to.
+PHARMACEUTICAL_DESIGNATION: Final[str] = "pharmaceutical_products_csv_v1"
+
 #: The default refusal's message, verbatim — the tripwire's wording is part
 #: of the contract.  If this message changes, the change must be deliberate.
 REFUSAL_SUFFIX: Final[str] = (
@@ -414,3 +424,62 @@ def test_pilot_fuelprice_live_fixture_still_fails_closed_under_the_csv_profile()
     the mapping did not loosen the CSV profile into accepting it."""
     with pytest.raises(NormalizationParseError):
         normalize(FUELPRICE_FIXTURE.read_bytes(), "fuelprice_csv_v1")
+
+
+# ---------------------------------------------------------------------------
+# pharmaceutical_products — the live register shape
+# ---------------------------------------------------------------------------
+
+
+def test_pilot_maps_pharmaceutical_products_to_the_registered_csv_profile() -> None:
+    """The mapping points at the register's own CSV designation, and that
+    designation is actually registered; an unregistered name would make
+    capture's normalization fail closed instead of projecting, and pointing at
+    ``fuelprice_csv_v1`` would alias the two datasets' pinned rules."""
+    assert (
+        pilot.NORMALIZATION_PROFILES["pharmaceutical_products"]
+        == PHARMACEUTICAL_DESIGNATION
+    )
+    assert PHARMACEUTICAL_DESIGNATION != "fuelprice_csv_v1"
+    result = normalize(PHARMACEUTICAL_FIXTURE.read_bytes(), PHARMACEUTICAL_DESIGNATION)
+    assert result.record_count == 40
+
+
+def test_pilot_pharmaceutical_live_fixture_reports_the_projection_as_retained() -> None:
+    """The end-to-end acceptance: driving the real ``run_pilot`` with the live
+    register shape files the capture and reports ``retained`` under the
+    register's profile with the fixture's record count.  Leaving the dataset
+    unmapped makes this report ``unprofiled`` and fails the test."""
+    scratch = Path(tempfile.mkdtemp(prefix=".test-observation-pilot-pharma-", dir=ROOT))
+    try:
+        body = PHARMACEUTICAL_FIXTURE.read_bytes()
+
+        def transport(dataset_id: str, source_url: str) -> Any:
+            stamp = "2026-09-23T00:00:00Z"
+            return pilot.RetrievalResult(
+                source_url=source_url,
+                observed_request_url=source_url,
+                http_status=200,
+                content_type="text/csv",
+                retrieved_started_at=stamp,
+                retrieved_ended_at=stamp,
+                body=body,
+                etag=None,
+                last_modified=None,
+                source_content_date=None,
+                truncated=False,
+            )
+
+        outcomes = pilot.run_pilot(
+            ["pharmaceutical_products"], root=scratch, transport=transport
+        )
+        assert len(outcomes) == 1
+        outcome = outcomes[0]
+        print(f"  {outcome.line}")
+        assert outcome.status == "filed"
+        assert outcome.capture_status == "captured"
+        assert outcome.projection_state.startswith("retained(")
+        assert PHARMACEUTICAL_DESIGNATION in outcome.projection_state
+        assert outcome.record_count == 40
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)

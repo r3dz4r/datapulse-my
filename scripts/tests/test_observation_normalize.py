@@ -12,7 +12,9 @@ never touched.
 
 from __future__ import annotations
 
+import csv
 import hashlib
+import io
 import json
 import re
 import shutil
@@ -103,6 +105,76 @@ FUELPRICE_LIVE_KEYS: frozenset[str] = frozenset(
         "diesel_eastmsia",
     }
 )
+
+#: The live pharmaceutical-products register is a 16-column CSV whose optional
+#: columns carry empty cells.  This frozen slice is the header plus the first
+#: 40 data lines copied verbatim from the live payload (no embedded newlines,
+#: so a line-based slice is byte-faithful), so the fixture cannot silently
+#: drift into a shape the profile was not pinned against.
+PHARMACEUTICAL_FIXTURE: Path = (
+    ROOT / "scripts/tests/fixtures/pharmaceutical_products_live.csv"
+)
+
+#: The exact 16-column live header, in order.
+PHARMACEUTICAL_COLUMNS: tuple[str, ...] = (
+    "reg_no",
+    "ref_no",
+    "product",
+    "status",
+    "description",
+    "holder",
+    "holder_osa",
+    "manufacturer",
+    "manufacturer_osa",
+    "importer",
+    "importer_osa",
+    "date_reg",
+    "date_end",
+    "active_ingredient",
+    "mdc_code",
+    "generic_name",
+)
+
+#: The distinct designation this task registers; it is deliberately not
+#: ``fuelprice_csv_v1`` even though both read CSV through the same engine.
+PHARMACEUTICAL_DESIGNATION: str = "pharmaceutical_products_csv_v1"
+
+#: The three register columns the live payload is majority-numeric in.
+PHARMACEUTICAL_NUMERIC_COLUMNS: frozenset[str] = frozenset(
+    {"holder_osa", "manufacturer_osa", "importer_osa"}
+)
+
+
+def _pharmaceutical_fixture_bytes() -> bytes:
+    """The fixture payload exactly as it sits on disk."""
+    return PHARMACEUTICAL_FIXTURE.read_bytes()
+
+
+def _typed_pharmaceutical_row(raw: dict[str, str]) -> dict[str, Any]:
+    """The profile's pinning of one raw register row, stated independently.
+
+    Trim, empty -> null, the three OSA columns -> int, everything else stays a
+    string.  A test that puts this row back through ``_row_record_id`` pins the
+    null and numeric rules for the real live values.
+    """
+    row: dict[str, Any] = {}
+    for column in PHARMACEUTICAL_COLUMNS:
+        value = raw[column].strip()
+        if not value:
+            row[column] = None
+        elif column in PHARMACEUTICAL_NUMERIC_COLUMNS:
+            row[column] = int(value)
+        else:
+            row[column] = value
+    return row
+
+
+def _pharmaceutical_fixture_first_row() -> dict[str, str]:
+    """The fixture's first data line as a raw header-keyed mapping."""
+    rows = list(
+        csv.reader(io.StringIO(_pharmaceutical_fixture_bytes().decode("utf-8"), newline=""))
+    )
+    return dict(zip(rows[0], rows[1]))
 
 
 def _live_fixture_bytes() -> bytes:
@@ -454,3 +526,135 @@ def test_fuelprice_json_out_of_order_rows_leave_the_projection_unchanged() -> No
     assert backward.projection_digest == forward.projection_digest
     assert backward.record_ids == forward.record_ids
     assert canonical_json(backward.projection) == canonical_json(forward.projection)
+
+
+# ---------------------------------------------------------------------------
+# pharmaceutical_products_csv_v1 — the live NPRA register shape
+# ---------------------------------------------------------------------------
+
+
+def test_pharmaceutical_products_fixture_projects_a_pinned_record_count() -> None:
+    """The load-bearing acceptance: the live 16-column register slice projects
+    under the newly registered profile with the expected record count, exactly
+    the live columns in order, and nothing silently dropped.  Deleting the
+    profile or mis-wiring its engine makes this the test that fails."""
+    result = normalize(_pharmaceutical_fixture_bytes(), PHARMACEUTICAL_DESIGNATION)
+    assert result.record_count == 40
+    assert result.projection["record_count"] == result.record_count
+    assert result.format == "csv"
+    assert result.projection["format"] == "csv"
+    assert tuple(result.projection["columns"]) == PHARMACEUTICAL_COLUMNS
+    assert set(result.projection) == {
+        "format",
+        "record_count",
+        "columns",
+        "dropped_fields",
+        "deduped_rows",
+        "record_ids",
+    }
+    assert result.dropped_fields == []
+    assert len(result.record_ids) == result.record_count
+    assert len(set(result.record_ids)) == result.record_count
+
+
+def test_pharmaceutical_products_is_a_distinct_pinned_designation() -> None:
+    """Protects the versioning contract: the register is registered under its
+    own name/version, never as an alias of ``fuelprice_csv_v1``; reusing the
+    fuelprice designation would let one dataset's pinned rules silently govern
+    the other's projections."""
+    profile = get_profile(PHARMACEUTICAL_DESIGNATION)
+    assert profile.name == "pharmaceutical_products_csv"
+    assert profile.version == "v1"
+    assert profile.format == "csv"
+    assert profile.engine == "csv"
+    assert profile.dedup is True
+    fuelprice = get_profile("fuelprice_csv_v1")
+    assert profile.name != fuelprice.name
+    assert profile != fuelprice
+    # The base name resolves to the same pinned profile.
+    assert get_profile("pharmaceutical_products_csv") == profile
+
+
+def test_pharmaceutical_products_projection_digest_is_bound_to_what_the_store_holds() -> None:
+    """Protects the audit chain for the register: projection_digest equals the
+    digest file_normalized returns and equals sha256 over canonical_json of the
+    projection recomputed independently here."""
+    scratch = _scratch_root()
+    try:
+        result = normalize(_pharmaceutical_fixture_bytes(), PHARMACEUTICAL_DESIGNATION)
+        recomputed = "sha256:" + hashlib.sha256(
+            canonical_json(result.projection)
+        ).hexdigest()
+        assert recomputed == result.projection_digest
+        assert file_normalized(result, root=scratch) == result.projection_digest
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def test_pharmaceutical_products_normalize_is_reproducible_byte_for_byte() -> None:
+    """Protects determinism for the register: the same (payload, profile)
+    yields equal results — every field, including projection_digest and
+    record_ids, and byte-identical canonical projections."""
+    first = normalize(_pharmaceutical_fixture_bytes(), PHARMACEUTICAL_DESIGNATION)
+    second = normalize(_pharmaceutical_fixture_bytes(), PHARMACEUTICAL_DESIGNATION)
+    assert first == second
+    assert first.projection_digest == second.projection_digest
+    assert first.record_ids == second.record_ids
+    assert canonical_json(first.projection) == canonical_json(second.projection)
+
+
+def test_pharmaceutical_products_empty_optional_cells_become_null_not_fabricated() -> None:
+    """Protects the null and numeric rules on real live values: the fixture's
+    first row carries empty ``importer``/``importer_osa``/``mdc_code``/
+    ``generic_name`` cells that become null, and OSA values that stay integers.
+    A fabricated empty string or stringified number changes the record_id and
+    fails here."""
+    result = normalize(_pharmaceutical_fixture_bytes(), PHARMACEUTICAL_DESIGNATION)
+    raw_first = _pharmaceutical_fixture_first_row()
+    expected = _typed_pharmaceutical_row(raw_first)
+    assert expected["importer"] is None
+    assert expected["importer_osa"] is None
+    assert expected["mdc_code"] is None
+    assert expected["generic_name"] is None
+    assert expected["holder_osa"] == int(raw_first["holder_osa"])
+    assert _row_record_id(expected) in result.record_ids
+
+    fabricated_empty_string = dict(expected)
+    fabricated_empty_string["importer"] = ""  # empty string instead of null
+    assert _row_record_id(fabricated_empty_string) not in result.record_ids
+
+    fabricated_string_number = dict(expected)
+    fabricated_string_number["holder_osa"] = raw_first["holder_osa"]
+    assert _row_record_id(fabricated_string_number) not in result.record_ids
+
+
+def test_pharmaceutical_products_exact_duplicates_are_dropped_and_counted() -> None:
+    """Protects the dedup boundary for this profile: an exactly repeated
+    register row is dropped and counted, matching the live payload's one
+    duplicate across 28,285 data rows."""
+    lines = _pharmaceutical_fixture_bytes().split(b"\n")
+    header, first_row = lines[0], lines[1]
+    payload = header + b"\n" + first_row + b"\n" + first_row + b"\n"
+    result = normalize(payload, PHARMACEUTICAL_DESIGNATION)
+    assert result.record_count == 1
+    assert result.projection["deduped_rows"] == 1
+
+
+def test_pharmaceutical_products_profile_fails_closed_on_malformed_input() -> None:
+    """Protects the parse contract and proves validation was not loosened to
+    make the register project: a duplicate header, a payload with no header,
+    and invalid UTF-8 each raise NormalizationParseError naming the problem."""
+    with pytest.raises(NormalizationParseError, match="duplicate header"):
+        normalize(b"reg_no,reg_no\nMAL1,MAL2\n", PHARMACEUTICAL_DESIGNATION)
+    with pytest.raises(NormalizationParseError, match="no header row"):
+        normalize(b"", PHARMACEUTICAL_DESIGNATION)
+    with pytest.raises(NormalizationParseError, match="not valid UTF-8"):
+        normalize(b"reg_no\n\xff\xfe\n", PHARMACEUTICAL_DESIGNATION)
+
+
+def test_mbpp_json_engine_still_refuses_csv_input() -> None:
+    """The negative control the task names: registering a CSV profile must not
+    have loosened the JSON engine into accepting CSV bytes, so the same control
+    keeps failing closed with a parse error rather than projecting."""
+    with pytest.raises(NormalizationParseError, match="JSON parse failed"):
+        normalize(b"reg_no,product\nMAL06061503TC,Test Product\n", "mbpp_json_v1")
