@@ -15,8 +15,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def _fixture(root: Path) -> None:
     (root / "config").mkdir(parents=True)
     (root / "openwiki").mkdir()
-    (root / "config/public-surfaces.json").write_text(json.dumps({"schema": "datapulse/v1/public-surfaces", "product_name": "DataPulse", "origins": {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "api": "https://api.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}, "pages": ["/"], "artifacts": ["/llms.txt"], "featured_dataset_ids": ["alpha"]}), encoding="utf-8")
-    (root / "config/public-surfaces.schema.json").write_text(json.dumps({"additionalProperties": False, "properties": {"product_name": {"const": "DataPulse"}, "origins": {"additionalProperties": False, "properties": {"website": {"const": "https://www.data-pulse.my"}, "mcp": {"const": "https://mcp.data-pulse.my"}, "api": {"const": "https://api.data-pulse.my"}, "repository": {"const": "https://github.com/r3dz4r/datapulse-my"}}}}}), encoding="utf-8")
+    (root / "config/public-surfaces.json").write_text(json.dumps({"schema": "datapulse/v1/public-surfaces", "product_name": "DataPulse", "origins": {"website": "https://www.data-pulse.my", "mcp": "https://mcp.data-pulse.my", "repository": "https://github.com/r3dz4r/datapulse-my"}, "pages": ["/"], "artifacts": ["/llms.txt"], "featured_dataset_ids": ["alpha"]}), encoding="utf-8")
+    (root / "config/public-surfaces.schema.json").write_text(json.dumps({"additionalProperties": False, "properties": {"product_name": {"const": "DataPulse"}, "origins": {"additionalProperties": False, "properties": {"website": {"const": "https://www.data-pulse.my"}, "mcp": {"const": "https://mcp.data-pulse.my"}, "repository": {"const": "https://github.com/r3dz4r/datapulse-my"}}}}}), encoding="utf-8")
     (root / "datapulse.json").write_text('{"datasets":[{"id":"alpha"}]}', encoding="utf-8")
     (root / "mcp.json").write_text('{"tools":[{"name":"alpha"}]}', encoding="utf-8")
     (root / "openwiki/INSTRUCTIONS.md").write_text("https://www.data-pulse.my\n", encoding="utf-8")

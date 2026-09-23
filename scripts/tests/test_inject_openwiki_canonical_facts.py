@@ -49,7 +49,6 @@ def _build_fixture(
             "origins": {
                 "website": website,
                 "mcp": "https://mcp.data-pulse.my",
-                "api": "https://api.data-pulse.my",
                 "repository": "https://github.com/r3dz4r/datapulse-my",
             },
             "pages": ["/"],
@@ -68,7 +67,6 @@ def _build_fixture(
                     "properties": {
                         "website": {"const": website},
                         "mcp": {"const": "https://mcp.data-pulse.my"},
-                        "api": {"const": "https://api.data-pulse.my"},
                         "repository": {"const": "https://github.com/r3dz4r/datapulse-my"},
                     },
                 }

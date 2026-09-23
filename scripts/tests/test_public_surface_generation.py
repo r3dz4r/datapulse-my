@@ -22,7 +22,6 @@ def _config() -> dict:
         "origins": {
             "website": "https://www.data-pulse.my",
             "mcp": "https://mcp.data-pulse.my",
-            "api": "https://api.data-pulse.my",
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
         "pages": ["/", "/npra.html", "/health-methodology.html"],
@@ -46,7 +45,6 @@ def _write_config(root: Path, document: dict) -> None:
         "properties": {"product_name": {"const": "DataPulse"}, "origins": {"properties": {
             "website": {"const": "https://www.data-pulse.my"},
             "mcp": {"const": "https://mcp.data-pulse.my"},
-            "api": {"const": "https://api.data-pulse.my"},
             "repository": {"const": "https://github.com/r3dz4r/datapulse-my"},
         }, "additionalProperties": False}},
         "additionalProperties": False,

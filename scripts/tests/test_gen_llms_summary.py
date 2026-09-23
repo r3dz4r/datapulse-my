@@ -41,7 +41,6 @@ def _write_public_surface_fixture(
             "origins": {
                 "website": "https://www.data-pulse.my",
                 "mcp": "https://mcp.data-pulse.my",
-                "api": "https://api.data-pulse.my",
                 "repository": "https://github.com/r3dz4r/datapulse-my",
             },
             "pages": ["/", "/npra.html", "/health-methodology.html", "/privacy.html", "/learn.html"],
@@ -78,11 +77,10 @@ def _write_public_surface_fixture(
                 "product_name": {"const": "DataPulse"},
                 "origins": {
                     "type": "object",
-                    "required": ["website", "mcp", "api", "repository"],
+                    "required": ["website", "mcp", "repository"],
                     "properties": {
                         "website": {"const": "https://www.data-pulse.my"},
                         "mcp": {"const": "https://mcp.data-pulse.my"},
-                        "api": {"const": "https://api.data-pulse.my"},
                         "repository": {"const": "https://github.com/r3dz4r/datapulse-my"},
                     },
                     "additionalProperties": False,

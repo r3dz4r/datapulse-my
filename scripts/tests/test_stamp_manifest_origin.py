@@ -28,7 +28,6 @@ def _stage(root: Path, manifest: str = STALE_MANIFEST) -> None:
         "origins": {
             "website": "https://www.data-pulse.my",
             "mcp": "https://mcp.data-pulse.my",
-            "api": "https://api.data-pulse.my",
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
         "pages": ["/", "/npra.html"],
@@ -42,9 +41,8 @@ def _stage(root: Path, manifest: str = STALE_MANIFEST) -> None:
         "properties": {"product_name": {"const": "DataPulse"}, "origins": {"properties": {
             "website": {"const": "https://www.data-pulse.my"},
             "mcp": {"const": "https://mcp.data-pulse.my"},
-            "api": {"const": "https://api.data-pulse.my"},
             "repository": {"const": "https://github.com/r3dz4r/datapulse-my"},
-        }, "required": ["website", "mcp", "api", "repository"], "additionalProperties": False}},
+        }, "required": ["website", "mcp", "repository"], "additionalProperties": False}},
         "additionalProperties": False,
     }) + "\n")
     (root / "datapulse.json").write_text(manifest, encoding="utf-8")

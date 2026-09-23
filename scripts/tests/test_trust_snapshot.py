@@ -16,7 +16,6 @@ PUBLIC_SURFACES = {
     "origins": {
         "website": "https://www.data-pulse.my",
         "mcp": "https://mcp.data-pulse.my",
-        "api": "https://api.data-pulse.my",
         "repository": "https://github.com/r3dz4r/datapulse-my",
     },
     "pages": ["/"],

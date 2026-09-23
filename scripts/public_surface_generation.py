@@ -24,7 +24,7 @@ ALLOWED_CONFIG_KEYS = {
     "artifacts",
     "featured_dataset_ids",
 }
-ALLOWED_ORIGIN_KEYS = {"website", "mcp", "api", "repository"}
+ALLOWED_ORIGIN_KEYS = {"website", "mcp", "repository"}
 OLD_CANONICAL_HOSTS = {"r3dz4r.github.io"}
 
 
