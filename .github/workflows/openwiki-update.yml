@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 concurrency:
   group: openwiki-update
@@ -31,6 +30,36 @@ jobs:
 
       - name: Install project-local OpenWiki
         run: npm ci --prefix tools/openwiki
+
+      # A missing secret used to surface as a bare "ChatGPT token request
+      # failed (401)", which reads like a bad token. Fail first and name the
+      # unprovisioned variable so the fix is obviously a repo-secret change.
+      - name: Preflight ChatGPT credentials
+        env:
+          OPENAI_CHATGPT_ACCESS_TOKEN: ${{ secrets.OPENAI_CHATGPT_ACCESS_TOKEN }}
+          OPENAI_CHATGPT_REFRESH_TOKEN: ${{ secrets.OPENAI_CHATGPT_REFRESH_TOKEN }}
+          OPENAI_CHATGPT_EXPIRES_AT: ${{ secrets.OPENAI_CHATGPT_EXPIRES_AT }}
+          OPENAI_CHATGPT_ACCOUNT_ID: ${{ secrets.OPENAI_CHATGPT_ACCOUNT_ID }}
+          OPENAI_CHATGPT_EMAIL: ${{ secrets.OPENAI_CHATGPT_EMAIL }}
+          OPENAI_CHATGPT_PLAN: ${{ secrets.OPENAI_CHATGPT_PLAN }}
+        run: |
+          missing=()
+          for name in \
+            OPENAI_CHATGPT_ACCESS_TOKEN \
+            OPENAI_CHATGPT_REFRESH_TOKEN \
+            OPENAI_CHATGPT_EXPIRES_AT \
+            OPENAI_CHATGPT_ACCOUNT_ID \
+            OPENAI_CHATGPT_EMAIL \
+            OPENAI_CHATGPT_PLAN; do
+            if [[ -z "${!name:-}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error title=ChatGPT credentials not provisioned::${missing[*]} is empty. The secret is not provisioned for this repository; repository secrets (Settings > Secrets and variables > Actions) are the fix, not a code change."
+            exit 1
+          fi
+          echo "ChatGPT credential preflight passed: all six secrets are provisioned."
 
       # Generation runs on OpenAI via ChatGPT OAuth (openai-chatgpt, gpt-5.6-luna),
       # drawing on the ChatGPT/Codex plan allowance instead of a metered API key.
@@ -85,21 +114,48 @@ jobs:
           python3 scripts/inject_openwiki_canonical_facts.py --root .
           python3 scripts/verify_openwiki.py --generated --changed-from HEAD
 
-      - name: Create or update OpenWiki pull request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          branch: openwiki/update
-          delete-branch: true
-          commit-message: "docs: refresh OpenWiki derivative documentation"
-          title: "docs: refresh OpenWiki derivative documentation"
-          body: |
-            Generated with the project-local, locked OpenWiki 0.4.3 runtime.
-            The normal deterministic-safety-net must pass before merge.
-          add-paths: |
-            openwiki/quickstart.md
-            openwiki/datasets.md
-            openwiki/mcp.md
-            openwiki/operations.md
+      - name: Commit and push refreshed OpenWiki documentation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # The managed OpenWiki block inside the two agent doctrine files is
+          # generator-owned, but publishing doctrine from an unattended job
+          # skips review, so those files are deliberately updated by hand.
+          git add -- \
+            openwiki/quickstart.md \
+            openwiki/datasets.md \
+            openwiki/mcp.md \
+            openwiki/operations.md \
             openwiki/.last-update.json
-            AGENTS.md
-            CLAUDE.md
+          if git diff --cached --quiet; then
+            echo "No openwiki changes to commit"
+            exit 0
+          fi
+          git commit -m "docs: refresh OpenWiki derivative documentation"
+          # main is a moving target: the health pipeline signs and commits an
+          # observation on a timer, so a bare push is routinely rejected. Fetch,
+          # replay this one commit on top of the current origin/main, and retry a
+          # bounded number of times for the case where main moves again mid-air.
+          # Never force; a rebase conflict is a finding to report, not to resolve.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            if ! git rebase --autostash origin/main; then
+              if [[ -n "$(git diff --name-only --diff-filter=U)" ]]; then
+                echo "::error title=OpenWiki rebase conflict::Replaying the generated commit onto origin/main hit a conflict. Another writer is changing the same paths; refusing to resolve it automatically."
+                git diff --name-only --diff-filter=U
+                if git rebase --abort 2>/dev/null; then :; fi
+                exit 1
+              fi
+              echo "::warning::Rebase onto origin/main failed (attempt ${attempt}/3); reconciling again."
+              if git rebase --abort 2>/dev/null; then :; fi
+              sleep 5
+              continue
+            fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "::warning::Push to main rejected (attempt ${attempt}/3); main moved during generation, reconciling again."
+            sleep 5
+          done
+          echo "::error title=OpenWiki push failed::Could not push the refreshed OpenWiki commit to main after 3 reconciliation attempts; the git output above is the real failure."
+          exit 1

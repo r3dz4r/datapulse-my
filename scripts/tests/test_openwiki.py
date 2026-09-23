@@ -135,7 +135,7 @@ def test_matcher_accepts_the_real_instruction_prohibition_line() -> None:
     assert find_forbidden_claim(text) is None
 
 
-def test_workflow_uses_locked_local_runtime_and_pr_only_contract() -> None:
+def test_workflow_uses_locked_local_runtime_and_push_to_main_contract() -> None:
     workflow = (ROOT / ".github/workflows/openwiki-update.yml").read_text(encoding="utf-8")
     assert 'node-version: "22"' in workflow
     assert "npm ci --prefix tools/openwiki" in workflow
@@ -143,8 +143,8 @@ def test_workflow_uses_locked_local_runtime_and_pr_only_contract() -> None:
     assert "openwiki code --update --print" in workflow
     assert "OPENWIKI_TELEMETRY_DISABLED" in workflow
     assert "verify_openwiki.py --generated --changed-from HEAD" in workflow
-    assert "peter-evans/create-pull-request" in workflow
-    assert "git push" not in workflow
+    assert "git push" in workflow
+    assert "create-pull-request" not in workflow
     assert "continue-on-error" not in workflow and "|| true" not in workflow
     # OpenWiki is intentionally manual/weekly, never a production-push dependency.
     on_block = workflow.split("on:\n", 1)[1].split("\njobs:", 1)[0]
