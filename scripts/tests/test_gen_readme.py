@@ -103,7 +103,7 @@ def test_repository_template_is_the_canonical_public_readme_contract() -> None:
     assert template.count("## Connect an AI agent") == 1
     assert "## Who it is for" not in template
     assert "## Use this for" not in template
-    assert "Authenticated buyer API" not in template
+    assert "Authenticated API" not in template
     assert "DataPulse MY" not in template
     assert template.index("## Legal") > template.index("## Privacy")
     for marker in (

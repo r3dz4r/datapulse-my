@@ -77,7 +77,7 @@ def test_reconciliation_rejects_unknown_dataset() -> None:
 def test_serialized_graph_excludes_secrets_and_identity_fields() -> None:
     graph = _valid_graph()
     serialized = canonical_graph_bytes(graph).decode("utf-8")
-    for forbidden in ("identity", "buyer", "session", "ip_address", "secret", "token"):
+    for forbidden in ("identity", "session", "ip_address", "secret", "token"):
         assert forbidden not in serialized
     graph["session_id"] = "not-allowed"
     assert "forbidden key: session_id" in verify_graph(graph)

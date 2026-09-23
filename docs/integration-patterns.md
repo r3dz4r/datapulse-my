@@ -70,7 +70,7 @@ DataPulse public source evidence
         ↓
 private vertical policy and transformation
         ↓
-product-specific output and buyer workflow
+product-specific output and downstream commercial workflow
 ```
 
 A DataPulse health status does not automatically certify the Engine’s derived output, and an Engine result does not upgrade DataPulse’s source-of-record authority.
