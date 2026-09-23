@@ -1,11 +1,11 @@
 ---
 type: operational concept
 title: DataPulse Wiki Quickstart
-description: Route coding agents through DataPulse’s read-only trust-layer boundary to the dataset contract, MCP integration, or operations and contribution guidance. Use this page to identify the authoritative artifact, safe change owner, and focused verification path before editing.
+description: Route a coding agent from DataPulse’s read-only product boundary to the dataset contract, MCP request surface, or scheduled operations. Use the owning source of record and focused verification path before changing anything.
 tags: [quickstart, routing, read-only, datasets, MCP, operations]
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-29T10:52:57.734Z
+    at: 2026-09-23T12:26:29.249Z
 sources:
   - id: openwiki-source-164e2da859b5277df81c7d94
     resource: repo://.github/workflows/ci.yml
@@ -17,79 +17,83 @@ sources:
     resource: repo://config/public-surfaces.json
   - id: openwiki-source-53cc7c2d889d1fead610dba7
     resource: repo://datapulse.json
+  - id: openwiki-source-0e17bdbc51bd88531ff18a0f
+    resource: repo://datapulse.schema.json
   - id: openwiki-source-1a180b1bc921529852474c20
     resource: repo://health/latest.json
-  - id: openwiki-source-770cce86fff48e46671ba377
-    resource: repo://llms.txt
   - id: openwiki-source-83fe3cd6171f4749991ccee9
     resource: repo://mcp.json
   - id: openwiki-source-a142396a7263c3e58ad95b67
     resource: repo://mcp/server.py
+  - id: openwiki-source-73db7b1811c4b31152a67a0b
+    resource: repo://mcp/tests/test_server.py
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-  - id: openwiki-source-f9fafda300b014057921ac73
-    resource: repo://scripts/check.sh
   - id: openwiki-source-d470dc444e0001374b65b519
     resource: repo://scripts/generate.sh
-  - id: openwiki-source-9ba932a354745d3f1bf461f2
-    resource: repo://scripts/verify_agent_ready.sh
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:52:57.734Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-09-23T12:26:29.249Z" }
 ---
 
 # DataPulse Wiki Quickstart
 
 DataPulse is a read-only metadata and evidence layer around upstream public
-datasets. It records what an upstream source publishes, its declared licence and
-provenance, observed access and freshness signals, schema/record evidence, and
-known quirks; it is **not the official publisher**. Upstream sources remain
-authoritative for substantive data, content, licensing, and attribution.
+ datasets. It records catalogue metadata, declared licence and provenance,
+access and freshness observations, and evidence; it is **not the official
+publisher**. Upstream sources remain authoritative for substantive data,
+content, licensing, and attribution.
 
 The canonical website origin is **https://www.data-pulse.my**. The current
-manifest contains **418 datasets**, and the public MCP catalogue exposes **19 read-only tools**. Treat those as live facts from the sources of record, not as
-values to copy from an older page.
+manifest contains **418 datasets**, and the public MCP catalogue exposes **19
+read-only tools**. Derive these facts from `datapulse.json` and `mcp.json` when
+regenerating documentation; do not hand-maintain a copied count.
 
 ## Start here: route the task
 
-| If the task is about… | Start with | Safe investigation / change boundary |
+```mermaid
+flowchart TD
+    A["Read-only product question"] --> B{"What changes?"}
+    B -->|"Dataset identity or contract"| D["datasets.md"]
+    B -->|"Agent request or tool behavior"| M["mcp.md"]
+    B -->|"Probe, publication, deployment, or verification"| O["operations.md"]
+    D --> S["Edit canonical input, regenerate projections, run focused checks"]
+    M --> S
+    O --> S
+```
+
+*The route from a task to its conceptual page and safe change boundary.*
+
+| Task | Read first | Source of record and safe boundary |
 |---|---|---|
-| Finding a dataset, changing identity, licence, steward, namespace, URL, cadence, expected count, or schema contract | [Dataset manifest, health evidence, and schema](datasets.md) | Inspect `datapulse.json` and `datapulse.schema.json`; follow the dataset ID into its health row, `data/<id>.md`, envelope or sample. Change the canonical input, then use its generator and URL/contract checks rather than hand-editing derived output. |
-| Agent discovery, tool/resource behaviour, MCP sessions, provenance, live evidence checks, or the repository integration boundary | [Read-only MCP integration surface](mcp.md) | Use `mcp.json` for the advertised wire contract and `mcp/server.py` plus its tests for implementation behaviour. Keep public MCP reads on the unauthenticated read-only surface described there; `verify_evidence` is ephemeral and does not update health. |
-| Health probes, generated artifacts, scheduled jobs, deployment, attestations, rollback, contribution, or release testing | [Health operations, release workflows, and safe change boundaries](operations.md) | Identify the owner (`health-cycle` versus `release-build`), inspect commands with `bash scripts/generate.sh <profile> --list`, and run focused gates. Do not treat a generated artifact as an independent source of truth. |
-| OpenWiki wording or canonical fact refresh | This page and [OpenWiki instructions](INSTRUCTIONS.md) | Derive claims from the repository sources of record. Only the allowed OpenWiki outputs may change; OpenWiki documents the system and does not regenerate health or dataset envelopes. |
+| Find a dataset, or change its identity, licence, steward, URL, cadence, expected count, schema, or provenance | [Dataset catalogue and health contract](datasets.md) | `datapulse.json`, `datapulse.schema.json`, the matching health row, and the dataset report/envelope. Change canonical metadata, then regenerate derived outputs. |
+| Discover tools, call MCP, understand resources, provenance, evidence, or verification behavior | [Read-only MCP integration](mcp.md) | `mcp.json` is the advertised wire contract; `mcp/server.py` and `mcp/tests/` define runtime behavior. Keep the boundary read-only. |
+| Change probes, health publication, attestations, deployment, release packaging, or operational checks | [Pipeline, attestations, deployment, and verification](operations.md) | The checked-in workflows and `scripts/generate.sh` profiles define ownership. Distinguish `health-cycle` from `release-build`; do not patch generated artifacts as sources. |
+| Refresh this documentation | [OpenWiki instructions](INSTRUCTIONS.md) | OpenWiki may update only its permitted documentation outputs. It documents source-of-record artifacts; it does not regenerate dataset or health data. |
 
-## The trust-layer model
+## Contract model
 
-The principal joins are stable dataset identity and published observations:
+`datapulse.json` is the registry input: its `datasets` entries join stable IDs
+to official URLs, stewards, custodians, licences, attribution, cadence,
+geography, namespace, expected record counts, and health-report paths.
+`health/latest.json` is a complete published snapshot, not merely a log of the
+latest probes: a health cycle probes due rows and merges unchanged observations.
+Its statuses classify freshness, reachability, browser dependency, degradation,
+discontinuation, and missing evidence. Reports, envelopes, feeds, catalogues,
+badges, attestations, and discovery indexes are generated projections; change
+their inputs and regenerate them together.
 
-- `datapulse.json` is the canonical registry. Its `datasets` array supplies IDs,
-  official URLs, stewards, custodians, licences, attribution, cadence,
-  geography, namespace, expected record counts, and health-report paths.
-- `health/latest.json` is the complete published health snapshot. A due health
-  run probes selected rows and merges unchanged rows with new observations, so
-  consumers should not mistake it for a log containing only recently probed
-  datasets. Its statuses distinguish freshness, reachability, browser
-  dependency, degradation, discontinued upstream lifecycle, and missing evidence.
-- Reports, JSON envelopes, badges, feeds, catalogues, attestations, and discovery
-  indexes are projections owned by generators. Regenerate them from their source
-  inputs; do not “fix” one projection in isolation.
-- `llms.txt`, `config/public-surfaces.json`, and `mcp.json` describe public entry
-  points and declared capabilities. They do not grant DataPulse authority over
-  upstream content.
-
-A health label is evidence classification, not a semantic endorsement. In
-particular, `unknown-freshness` means no defensible freshness signal was found,
+A health status is evidence classification, not endorsement. In particular,
+`unknown-freshness` means no defensible freshness signal was found,
 `browser-dependent` records an access limitation, and `reference` is for
-versioned lookup data where date freshness does not apply. The latest snapshot
-currently reports 94 `fresh`, 134 `aging`, 144 `stale`, 1 `discontinued`, 5
-`browser_dependent`, and 11 `reference` datasets; consult the snapshot for the
-current checked timestamp and details.
+versioned lookup data where date freshness does not apply. The snapshot’s
+current status distribution and checked timestamp belong to
+`health/latest.json`, not this routing page.
 
-## Agent entrypoints
+## Agent entrypoints and request posture
 
-For a first machine-readable pass, fetch the canonical `llms.txt` from
-`https://www.data-pulse.my/llms.txt`; it links the manifest, health snapshot,
-MCP advertisement, and dataset reports. For native agent access, connect to
-`https://mcp.data-pulse.my/mcp` using Streamable HTTP and no authentication:
+For machine-readable discovery, fetch `https://www.data-pulse.my/llms.txt`.
+The advertised MCP endpoint is Streamable HTTP at
+`https://mcp.data-pulse.my/mcp`, with no authentication required by the
+catalogue advertisement:
 
 ```json
 {
@@ -102,49 +106,47 @@ MCP advertisement, and dataset reports. For native agent access, connect to
 }
 ```
 
-MCP is a read-only consumer of published repository artifacts. Initialize the
-session before requesting tool or resource discovery. Use `search_datasets`
-then `get_dataset` for discovery and a dataset’s current metadata/health; use
-`get_provenance` or `get_evidence` when citation and pipeline evidence matter.
-Use `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`,
-`find_unreliable`, or `find_schema_drift` for published risk signals. Use
-`verify_attestation` for attestation verification and `verify_evidence` only for
-its constrained transport check: its result is temporary and never updates
-`health/latest.json`.
+Initialize an MCP session before discovery. A safe read sequence is
+`search_datasets` then `get_dataset`; use `get_provenance` or `get_evidence`
+when citation or pipeline evidence matters. Risk-oriented published queries
+include `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`,
+`find_unreliable`, and `find_schema_drift`. `verify_attestation` checks an
+attestation; `verify_evidence` is a constrained, ephemeral transport check and
+does not update `health/latest.json`. MCP reads published repository artifacts
+and does not make DataPulse authoritative for upstream content.
 
-## Safe change and failure rules
+## Ownership and failure rules
 
-1. **Locate ownership first.** Manifest and source metadata changes belong to the
-   dataset contract; probe observations belong to the health cycle; public
+1. **Separate inputs from projections.** Manifest and source metadata belong to
+   the dataset contract; probe observations belong to the health cycle; public
    discovery, MCP metadata, envelopes, and dashboard packaging belong to the
-   release build. `scripts/generate.sh` orchestrates these profiles but never
-   commits, pushes, or deploys.
-2. **Preserve complete snapshots.** A health probe may record an individual source
-   failure and continue, but malformed snapshots, generator errors, missing
-   artifacts, stale health commits, URL drift, or contract violations must fail
-   closed. Concurrent health cycles skip on the lock rather than racing.
-3. **Respect access and legal boundaries.** Browser-dependent sources require the
-   configured Camofox sidecar; missing Camofox is reported honestly rather than
-   silently bypassed. Probes do not bypass authentication, CAPTCHAs, or terms of
-   service, and contributions must not add credentials, cookies, personal data,
-   or copied source records.
-4. **Separate publication from observation.** The canonical website workflow
-   validates `health/latest.json`; health-only changes use the health path, while
-   source/configuration/workflow changes use the release profile. A website or
-   endpoint definition is not proof that external infrastructure is currently
-   available.
+   release build. `scripts/generate.sh` orchestrates profiles but does not
+   commit, push, or deploy.
+2. **Fail closed at contract boundaries.** Individual source failures may be
+   recorded while a probe continues, but malformed snapshots, generator errors,
+   missing artifacts, stale health commits, URL drift, and contract violations
+   must fail verification. Concurrent health cycles skip on the lock rather than
+   racing.
+3. **Respect access limits.** Browser-dependent sources use the configured
+   Camofox sidecar. Probes do not bypass authentication, CAPTCHAs, or terms of
+   service; contributions must not add credentials, cookies, personal data, or
+   copied source records.
+4. **Do not infer availability from configuration.** A declared website or
+   endpoint is not proof that external infrastructure is currently available.
+   Health-only changes and source/configuration changes follow separate CI and
+   publication paths.
 
 ## Focused verification
 
-Before changing a contract or generated surface, inspect ownership without
-running generators:
+Inspect ownership without running generators:
 
 ```bash
 bash scripts/generate.sh health-cycle --list
 bash scripts/generate.sh release-build --list
 ```
 
-For repository changes, the CI-focused checks are:
+The repository CI gates include schema, repository-contract, MCP, OpenWiki,
+URL-drift, release-invariant, and fact checks:
 
 ```bash
 python3 -m pytest -q scripts/tests/ mcp/tests/
@@ -157,20 +159,21 @@ python3 scripts/fact_lint.py
 ```
 
 For a local published-surface check, run
-`bash scripts/verify_agent_ready.sh --local`; without `--local` it fetches the
-canonical public surfaces with retries and rejects non-canonical discovery
-hosts. Interpret failures as evidence to investigate the owning source or
-workflow, not as a reason to patch a derived JSON file manually.
+`bash scripts/verify_agent_ready.sh --local`. Without `--local`, the command
+fetches canonical public surfaces with retries and rejects non-canonical
+discovery hosts. Treat failures as evidence to investigate the owning source or
+workflow, not as a reason to hand-edit derived JSON.
 
 ## Sources of record
 
 - [`config/public-surfaces.json`](../config/public-surfaces.json) — canonical origins and declared public artifacts.
 - [`datapulse.json`](../datapulse.json) — dataset registry and metadata contract input.
-- [`health/latest.json`](../health/latest.json) — current aggregate health evidence.
+- [`health/latest.json`](../health/latest.json) — aggregate health evidence.
 - [`mcp.json`](../mcp.json) — advertised MCP endpoint, taxonomy, tools, and schemas.
 - [`README.md`](../README.md) — public purpose, trust posture, and consumer guidance.
 - [`llms.txt`](../llms.txt) — agent discovery index.
 - [`openwiki/INSTRUCTIONS.md`](INSTRUCTIONS.md) — documentation generation contract.
+- [Dataset catalogue and health contract](datasets.md), [read-only MCP integration](mcp.md), and [operations](operations.md) — conceptual routes for deeper work.
 
 ## Canonical facts
 
