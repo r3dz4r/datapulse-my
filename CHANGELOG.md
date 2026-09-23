@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.36.0](https://github.com/r3dz4r/datapulse-my/compare/v3.35.1...v3.36.0) (2026-09-23)
+
+
+### Features
+
+* **observation:** profile pharmaceutical_products so its changes become diffable ([#179](https://github.com/r3dz4r/datapulse-my/issues/179)) ([fd93e2c](https://github.com/r3dz4r/datapulse-my/commit/fd93e2c2b3557276414b25acdd440c1c11bce871))
+
 ## [3.35.1](https://github.com/r3dz4r/datapulse-my/compare/v3.35.0...v3.35.1) (2026-09-22)
 
 
