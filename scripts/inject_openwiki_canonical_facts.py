@@ -20,8 +20,11 @@ prose form.
 
 It also rejects (case-insensitive) the obsolete apex host
 ``https://data-pulse.my`` and stale current count claims in any supported
-space- or hyphen-separated form. The OpenWiki generator occasionally emits
-content that fails one or more of these checks.
+space- or hyphen-separated form, and rejects commercial or retired-boundary
+claims (a price, paid tier or quota, payment processor, or an authenticated
+API surface this repository does not serve) while allowing honest statements
+of absence. The OpenWiki generator occasionally emits content that fails one
+or more of these checks.
 
 This post-processor is the deterministic safety net that rewrites the four
 allowed pages to satisfy the contract:
@@ -32,7 +35,9 @@ allowed pages to satisfy the contract:
 4. Rewrite the obsolete apex host to the canonical ``www.`` host (using a
    negative lookbehind so a URL that already starts with ``www.`` is
    untouched).
-5. Append a fresh ``## Canonical facts`` section listing the canonical facts
+5. Neutralise literal authority claims and commercial/retired-boundary claims
+   with safe factual text, leaving negated statements intact.
+6. Append a fresh ``## Canonical facts`` section listing the canonical facts
    literals, sourced from the same three config files the verifier reads.
 
 Writes are atomic (``<path>.tmp`` then ``os.replace``). ``--dry-run``
@@ -55,6 +60,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.public_surface_generation import GenerationError, load_public_surfaces
+from scripts.verify_openwiki import COMMERCIAL_RULES, find_forbidden_claim, is_negated
 
 PAGES: tuple[str, ...] = (
     "openwiki/quickstart.md",
@@ -176,22 +182,66 @@ _NEUTRALIZATIONS = (
 
 
 def _neutralize_forbidden_claims(text: str) -> str:
-    folded_lower = text.casefold()
+    """Apply the literal claim mapping, leaving honest negatives untouched."""
     for claim, replacement in _NEUTRALIZATIONS:
-        idx = 0
-        while True:
-            folded = text.casefold()
-            pos = folded.find(claim, idx)
-            if pos < 0:
-                break
-            end = pos + len(claim)
-            # Preserve the surrounding prose: replace the literal span
-            # (case-insensitive) with the canonical neutral replacement.
-            text = text[:pos] + replacement + text[end:]
-            idx = pos + len(replacement)
-            folded_lower = text.casefold()  # refresh lower view
-            idx = idx  # fall through to next iteration
-        # Also re-check (in case the prior iteration appended a new candidate)
+        pattern = re.compile(re.escape(claim), re.IGNORECASE)
+
+        def _replace(match: re.Match[str], _current: str = text) -> str:
+            if is_negated(_current, match.start(), match.end()):
+                return match.group(0)
+            return replacement
+
+        text = pattern.sub(_replace, text)
+    return text
+
+
+# Regex-level neutralisations for the commercial and retired-boundary class the
+# verifier rejects. Keyed by the same labels scripts/verify_openwiki.py assigns,
+# so the injector and verifier cannot drift apart. Only positive claims are
+# rewritten; is_negated() leaves honest statements ("operates no paid product")
+# exactly as the model wrote them.
+_COMMERCIAL_REPLACEMENTS: dict[str, str] = {
+    "named payment processor": "no payment processor",
+    "commercial price": "no published price",
+    "per-period price": "no published price",
+    "paid tier, plan, or quota": "no paid tier",
+    "paid product or authenticated API": "the public MCP surface",
+}
+
+
+def _commercial_claim_spans(text: str) -> list[tuple[int, int, str]]:
+    """Select non-overlapping positive commercial claim spans in ``text``.
+
+    Negation is decided against the original text, before any replacement, so
+    a "no" the injector itself introduces cannot hide the next claim.
+    """
+    candidates: list[tuple[int, int, str]] = []
+    for label, pattern in COMMERCIAL_RULES:
+        replacement = _COMMERCIAL_REPLACEMENTS.get(label)
+        if replacement is None:
+            continue
+        for match in pattern.finditer(text):
+            if is_negated(text, match.start(), match.end()):
+                continue
+            candidates.append((match.start(), match.end(), replacement))
+    # Prefer the longest span, then the later start, so an explicit currency
+    # amount ("USD 25 per month") wins over a bare price-word phrase that
+    # merely reaches the same "per".
+    candidates.sort(key=lambda item: (-(item[1] - item[0]), -item[0]))
+    selected: list[tuple[int, int, str]] = []
+    occupied: list[tuple[int, int]] = []
+    for start, end, replacement in candidates:
+        if any(start < taken_end and end > taken_start for taken_start, taken_end in occupied):
+            continue
+        selected.append((start, end, replacement))
+        occupied.append((start, end))
+    selected.sort(key=lambda item: item[0])
+    return selected
+
+
+def _neutralize_commercial_claims(text: str) -> str:
+    for start, end, replacement in reversed(_commercial_claim_spans(text)):
+        text = text[:start] + replacement + text[end:]
     return text
 
 
@@ -202,12 +252,14 @@ def _canonical_section(product_name: str, website: str, datasets_count: int, too
         datasets_count=datasets_count,
         tools_count=tools_count,
     )
-    # Reject accidental introduction of forbidden claims. The verifier rejects
-    # them case-insensitively, so check the folded form.
-    folded = body.casefold()
-    for claim in FORBIDDEN:
-        if claim in folded:
-            raise InjectError(f"canonical section would contain forbidden claim {claim!r}")
+    # Reject accidental introduction of any claim the verifier rejects, using
+    # the verifier's own matcher so the two stay in lockstep.
+    claim = find_forbidden_claim(body)
+    if claim is not None:
+        label, matched = claim
+        raise InjectError(
+            f"canonical section would contain forbidden claim ({label}): {matched!r}"
+        )
     return body
 
 
@@ -260,6 +312,7 @@ def inject_canonical_facts(root: Path, *, dry_run: bool = False) -> list[tuple[s
         rewritten = _rewrite_current_counts(rewritten, datasets_count, tools_count)
         rewritten = _rewrite_obsolete_url(rewritten)
         rewritten = _neutralize_forbidden_claims(rewritten)
+        rewritten = _neutralize_commercial_claims(rewritten)
         # Strip any trailing blank lines so we can append the section cleanly,
         # then ensure the final byte is a newline.
         rewritten = rewritten.rstrip() + "\n\n" + section

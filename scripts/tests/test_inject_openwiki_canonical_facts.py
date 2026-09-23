@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from scripts.inject_openwiki_canonical_facts import InjectError, inject_canonical_facts
+from scripts.verify_openwiki import verify
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -79,6 +80,7 @@ def _build_fixture(
     tools = [{"name": f"t{i}"} for i in range(tools_count)]
     _write_json(root / "datapulse.json", {"datasets": datasets})
     _write_json(root / "mcp.json", {"tools": tools})
+    (root / "openwiki/INSTRUCTIONS.md").write_text(f"{website}\n", encoding="utf-8")
     for relative in write_pages:
         (root / relative).write_text(page_body, encoding="utf-8")
     if write_random_txt:
@@ -296,3 +298,54 @@ def test_forbidden_claims_are_neutralized() -> None:
     # Idempotency
     fixed2 = _neutralize_forbidden_claims(fixed)
     assert fixed == fixed2
+
+
+def test_inject_neutralizes_a_priced_page_and_verifier_accepts(tmp_path: Path) -> None:
+    """A page carrying a withdrawn price is rewritten to safe text, not just rejected."""
+    _build_fixture(tmp_path, page_body="DataPulse costs USD 25 per month for the pro tier.\n")
+    inject_canonical_facts(tmp_path)
+
+    text = (tmp_path / "openwiki/quickstart.md").read_text(encoding="utf-8")
+    assert "USD" not in text
+    assert "25" not in text
+    assert "pro tier" not in text.casefold()
+    verify(tmp_path, generated=True)
+
+
+def test_inject_neutralizes_retired_boundary_claims(tmp_path: Path) -> None:
+    _build_fixture(
+        tmp_path,
+        page_body="Use the authenticated `/api/v1/` buyer API and the buyer boundary.\n",
+    )
+    inject_canonical_facts(tmp_path)
+
+    text = (tmp_path / "openwiki/mcp.md").read_text(encoding="utf-8")
+    assert "/api/v1" not in text
+    assert "buyer" not in text.casefold()
+    verify(tmp_path, generated=True)
+
+
+def test_inject_leaves_honest_negative_commercial_statement_untouched(
+    tmp_path: Path,
+) -> None:
+    sentence = "This repository operates no authenticated API and sells no paid product.\n"
+    _build_fixture(tmp_path, page_body=sentence)
+    inject_canonical_facts(tmp_path)
+
+    for relative in PAGES:
+        text = (tmp_path / relative).read_text(encoding="utf-8")
+        assert sentence.strip() in text, f"{relative} was altered"
+    verify(tmp_path, generated=True)
+
+
+def test_neutralize_commercial_claims_rewrites_positive_only() -> None:
+    from scripts.inject_openwiki_canonical_facts import _neutralize_commercial_claims
+
+    honest = "This repository operates no paid product and charges no monthly fee."
+    assert _neutralize_commercial_claims(honest) == honest
+
+    priced = "DataPulse costs USD 25 per month and bills through Paddle."
+    fixed = _neutralize_commercial_claims(priced)
+    assert "USD" not in fixed
+    assert "Paddle" not in fixed
+    assert _neutralize_commercial_claims(fixed) == fixed
