@@ -8,12 +8,12 @@ on:
 # OpenWiki is intentionally manual/weekly, never a production-push dependency.
 
 permissions:
+  # contents: write lets the app token push the openwiki/update branch;
+  # pull-requests: write lets the action open/update the PR and enable
+  # auto-merge. No actions permission is needed: the app-authored PR
+  # triggers ci.yml by itself, so nothing dispatches a workflow any more.
   contents: write
-  # pull-requests: write lets the action open/update the PR and `gh pr merge
-  # --auto` enable auto-merge; actions: write lets `gh workflow run` dispatch
-  # ci.yml against the PR branch.
   pull-requests: write
-  actions: write
 
 concurrency:
   group: openwiki-update
@@ -119,10 +119,24 @@ jobs:
           python3 scripts/inject_openwiki_canonical_facts.py --root .
           python3 scripts/verify_openwiki.py --generated --changed-from HEAD
 
+      # Mint a repository GitHub App token. A PR authored by the workflow's own
+      # GITHUB_TOKEN has its pull_request runs held for approval
+      # (action_required), which blocks the merge even once the required check
+      # would pass. An app-authored PR runs CI normally and the required
+      # deterministic-safety-net check reports on the branch head by itself.
+      # The app credentials already exist and release-please.yml uses them too.
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: Create or update OpenWiki pull request
         id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
+          token: ${{ steps.app-token.outputs.token }}
           branch: openwiki/update
           delete-branch: true
           commit-message: "docs: refresh OpenWiki derivative documentation"
@@ -141,22 +155,17 @@ jobs:
             openwiki/operations.md
             openwiki/.last-update.json
 
-      # The action pushes the branch with this workflow's own GITHUB_TOKEN, and
-      # GitHub does not trigger workflows for token pushes. ci.yml therefore
-      # never starts from that push and the required "deterministic-safety-net"
-      # check would never report on the branch head, leaving the pull request
-      # permanently unmergeable. Dispatch ci.yml explicitly against the lane
-      # branch so the required check attaches to that commit.
-      - name: Dispatch required check on the pull request branch
-        if: steps.cpr.outputs.pull-request-number != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run ci.yml --ref openwiki/update
+      # No dispatch step any more. An app-authored PR triggers its own
+      # pull_request run of ci.yml, so the required deterministic-safety-net
+      # check attaches to the branch head by itself. The old dispatch only
+      # existed because a GITHUB_TOKEN-authored PR never triggered CI, and it
+      # could not help: those runs are held at action_required, which keeps the
+      # PR blocked even after a dispatched check passes.
 
       # Do not hold the runner open waiting for CI: auto-merge lets GitHub
-      # squash the pull request once the dispatched check passes.
+      # squash the pull request once the PR's own check passes.
       - name: Enable auto-merge
         if: steps.cpr.outputs.pull-request-number != ''
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: gh pr merge openwiki/update --auto --squash
