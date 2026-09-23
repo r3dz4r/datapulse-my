@@ -46,7 +46,6 @@ OWNED_CATEGORIES = (
     "docs/landing.html",
     "docs/dashboard.html",
     "docs/npra.html",
-    "docs/buyer-api-reference.md",
     "P5B public markers",
 )
 

@@ -27,7 +27,7 @@ Working agreement for AI agents editing the public-facing documentation that aut
 | `health-methodology.html` | generated | `scripts/gen_health_methodology.py` from `health/methodology.json` | Never hand-edit. |
 | `mcp-reference.md` | generated | `scripts/gen_mcp_reference.py` from `mcp/server.py` AST | Never hand-edit. |
 | `release-verification.md` | generated | `scripts/verify_release_reproducible.py` | Current proof only; includes source SHA, health freshness, dataset/tool counts, and protocol result. |
-| `architecture.md`, `branch-protection-handoff.md`, `mcp-deploy.md`, `operations.md`, `release-process.md`, `troubleshooting.md`, `buyer-api-reference.md` | hand-authored | operator + Codex drafts | Stable until the operator explicitly revises. |
+| `architecture.md`, `branch-protection-handoff.md`, `mcp-deploy.md`, `operations.md`, `release-process.md`, `troubleshooting.md` | hand-authored | operator + Codex drafts | Stable until the operator explicitly revises. |
 | `AUDIT-*.md`, `DESIGN-AUDIT-*.md`, `health-compatibility-report-*.md`, `trust-snapshot-*.md`, `data-json-workspace-proposal-*.md` | hand-authored, immutable | point-in-time audit captures | **Immutable.** Add a new dated audit file; do not edit existing ones. |
 | `field-notes/*.md` | operator log | operator's running notes | Personal style; no enforced structure. |
 | `health-methodology.md` | hand-authored source-of-truth for the generator | operator | Changes here propagate to `health-methodology.html` via `gen_health_methodology.py`. |

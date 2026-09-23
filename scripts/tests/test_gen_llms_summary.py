@@ -47,7 +47,6 @@ def _write_public_surface_fixture(
             "pages": ["/", "/npra.html", "/health-methodology.html", "/privacy.html", "/learn.html"],
             "compatibility_aliases": [{"path": "/landing.html", "target": "/"}],
             "artifacts": [
-                "/buyer-api-reference.md",
                 *DISCOVERY_ARTIFACTS,
                 *(DOCUMENTATION_ARTIFACTS if include_documentation else []),
                 "/llms.txt",

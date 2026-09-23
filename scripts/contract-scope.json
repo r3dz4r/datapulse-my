@@ -472,7 +472,6 @@
       "config/public-surfaces.schema.json",
       "api/public_contract.py",
       "api/config.py",
-      "scripts/gen_api_reference.py",
       "scripts/embed_dashboard_data.py",
       "scripts/templates/register-home.html.tmpl",
       "scripts/gen_landing_page.py",
@@ -492,7 +491,6 @@
       "openwiki/datasets.md",
       "openwiki/mcp.md",
       "openwiki/operations.md",
-      "docs/buyer-api-reference.md",
       "docs/landing.html",
       "docs/dashboard.html",
       "docs/index.html"
@@ -502,7 +500,6 @@
       "llms.txt": ["catalog-summary", "mcp-tools", "public-discovery", "featured-datasets", "public-artifacts"],
       "robots.txt": ["public-discovery"],
       "docs/mcp-deploy.md": ["mcp-tools"],
-      "docs/buyer-api-reference.md": ["buyer-api-host", "buyer-api-quickstart", "buyer-api-limits", "buyer-api-endpoints", "buyer-api-pagination"],
       "docs/index.html": ["dashboard-summary", "dashboard-trust-facts", "changelog-strip"],
       "docs/npra.html": ["npra-freshness", "npra-connect", "npra-surfaces"]
     },
@@ -625,16 +622,6 @@
       "ownership": "full-output",
       "fixture": "scripts/tests/test_inject_openwiki_canonical_facts.py",
       "invariant": "allowlisted canonical facts injection is idempotent"
-    },
-    {
-      "surface": "docs/buyer-api-reference.md",
-      "markers": ["buyer-api-host", "buyer-api-quickstart", "buyer-api-limits", "buyer-api-endpoints", "buyer-api-pagination"],
-      "canonical_inputs": ["api/public_contract.py", "api/config.py", "datapulse.json", "health/latest.json", "config/public-surfaces.json"],
-      "generator": "scripts/gen_api_reference.py",
-      "profiles": ["release-build"],
-      "ownership": "full-output-and-markers",
-      "fixture": "scripts/tests/test_api_reference.py",
-      "invariant": "API route, hostname, count, and unique ordered marker parity"
     },
     {
       "surface": "docs/index.html",
