@@ -1,162 +1,155 @@
 ---
 type: Reference
-title: Dataset Manifest, Health Evidence, and Schema
-description: The canonical contract for DataPulse dataset metadata and the generated health, report, envelope, sample, licence, namespace, and discovery surfaces. Use it to make registry changes without creating mismatched or stale derived artifacts.
-tags: [datasets, manifest, schema, health, provenance]
+title: Dataset Catalogue and Health Contract
+description: Explains how DataPulse combines the canonical dataset manifest, health snapshot, freshness policies, licences, provenance, evidence receipts, and deterministic discovery outputs. Use it to understand observed catalogue state and make safe metadata or generator changes.
+tags: [datasets, catalogue, manifest, health, provenance, receipts]
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-29T10:52:57.734Z
+    at: 2026-09-23T12:26:29.249Z
 sources:
-  - id: openwiki-source-b801e3030787d5f9ac603f52
-    resource: repo://config/public-surfaces.json
-  - id: openwiki-source-f317ee207e1653d2033c81a4
-    resource: repo://CONTRIBUTING.md
+  - id: openwiki-source-4e0ee586a51d042917903695
+    resource: repo://config/observation-policies.json
+  - id: openwiki-source-81f5ac5bc1080c55881355dd
+    resource: repo://config/privacy-classifications.json
+  - id: openwiki-source-01632230e690ede2588e4ad0
+    resource: repo://config/series-registry.json
+  - id: openwiki-source-53cc7c2d889d1fead610dba7
+    resource: repo://datapulse.json
   - id: openwiki-source-0e17bdbc51bd88531ff18a0f
     resource: repo://datapulse.schema.json
   - id: openwiki-source-2bab9e695a827aefac9555da
     resource: repo://health.schema.json
-  - id: openwiki-source-770cce86fff48e46671ba377
-    resource: repo://llms.txt
-  - id: openwiki-source-04beb4004d6d3fa272050b53
-    resource: repo://scripts/check_url_drift.py
+  - id: openwiki-source-1a180b1bc921529852474c20
+    resource: repo://health/latest.json
+  - id: openwiki-source-83fe3cd6171f4749991ccee9
+    resource: repo://mcp.json
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
   - id: openwiki-source-f9fafda300b014057921ac73
     resource: repo://scripts/check.sh
-  - id: openwiki-source-dee02f5c826029a92d8668a9
-    resource: repo://scripts/gen_catalog_graph.py
-  - id: openwiki-source-7da616de6c3a181d8260a6d6
-    resource: repo://scripts/gen_catalog_snapshot.py
-  - id: openwiki-source-d14402895e78cd5f6316eebb
-    resource: repo://scripts/gen_data_reports.sh
-  - id: openwiki-source-cec0018dd354b69bbb4bb691
-    resource: repo://scripts/gen_json_envelope.py
-  - id: openwiki-source-d112d540caab71215b5fca8b
-    resource: repo://scripts/tests/test_custodians.py
-  - id: openwiki-source-a78d091f653ca02da2082cb8
-    resource: repo://scripts/tests/test_repository_contract.py
-generated: { by: "openwiki/0.4.3", at: "2026-08-29T10:52:57.734Z" }
+  - id: openwiki-source-786badafc972b032044e4e00
+    resource: repo://scripts/gen_per_dataset_receipt.py
+  - id: openwiki-source-1295f958967f9f34c00c1e49
+    resource: repo://scripts/observation_verify.py
+  - id: openwiki-source-a5ba3b415d5b4c79654cdf91
+    resource: repo://scripts/tests/test_gen_per_dataset_receipt.py
+  - id: openwiki-source-6e0718a595a707ed7a69aca4
+    resource: repo://scripts/tests/test_observation_receipt.py
+  - id: openwiki-source-58c7add76279fc57979be378
+    resource: repo://scripts/tests/test_verify_per_dataset_receipt.py
+  - id: openwiki-source-86de83c93f4607789e448505
+    resource: repo://scripts/verify_per_dataset_receipt.py
+generated: { by: "openwiki/0.4.3", at: "2026-09-23T12:26:29.249Z" }
 ---
 
-# Dataset Manifest, Health Evidence, and Schema
+# Dataset Catalogue and Health Contract
 
-DataPulse's canonical origin is **https://www.data-pulse.my**. The source of truth for the portfolio is the root `datapulse.json` manifest: the current live count derived from its `datasets` array is **418 datasets**. The public MCP surface exposes **19 read-only tools** over that catalogue; it is another read-only consumer of repository data, not a second registry.
+DataPulse publishes its catalogue at **https://www.data-pulse.my**. The checked-in `datapulse.json` manifest currently describes **418 datasets**, while the public MCP surface provides **19 read-only tools** over repository-backed catalogue and health data. These numbers describe the current published contract, not a promise of availability or semantic correctness.
 
-This page describes current repository contracts only. Historical audits, dated design notes, and older wiki prose are not current metadata. For operational ownership and deployment checks, see [/openwiki/operations.md](/openwiki/operations.md); for agent/tool discovery, see [/openwiki/mcp.md](/openwiki/mcp.md).
+The central boundary is important: DataPulse measures observable access, shape, counts, timing, and provenance evidence. The upstream publisher remains authoritative for substantive data, definitions, licence terms, and the publisher's own lifecycle. DataPulse is read-only and does not become the source publisher.
 
-## The registry contract
+## Sources of record and identity
 
-`datapulse.json` is a JSON object containing `$schema` and a non-empty `datasets` array. The canonical `$schema` value is `https://www.data-pulse.my/datapulse.schema.json`; the schema also accepts the retired GitHub Pages identifier solely for legacy compatibility. The root shape is closed (`additionalProperties: false`), as is each dataset row.
+The sources of record are `datapulse.json`, `health/latest.json`, and the checked-in schemas and policy/configuration files. Generated reports, envelopes, catalogues, feeds, badges, MCP responses, and discovery prose are projections; they are not alternate registries.
 
-Every row requires these fields:
+The manifest is a closed JSON object with a canonical `$schema` of `https://www.data-pulse.my/datapulse.schema.json` (the retired GitHub Pages identifier remains accepted only for legacy compatibility). It requires a non-empty `datasets` array. Each row requires:
 
-- `id`, `name`, `source`, `steward`, `custodian`, and official `url`;
+- stable `id`, human-readable `name` and `steward`, stable `custodian`, and official `url`;
 - `licence`, `attribution`, `refresh_frequency`, `expected_record_count`, and `geo_coverage`;
-- `health_report` and `namespace`.
+- `health_report` and an enumerated `namespace`.
 
-`id` is the stable dataset key used to join health rows and generated files. The schema permits additional declared metadata, each with a defined type: `canonical_id`, `series_code`, `geography`, `schema_id`, `supersedes`, `data_type`, `discontinued`, `vertical`, `record_evidence_schema`, `record_source_url`, `real_status`, `verified_at`, `attestation_ref`, `methodology_version`, `probe_note`, and `discontinued_reason`. Do not add an ad-hoc key: the closed shape makes such a change a contract change.
+The closed row shape means extensions must be declared in `datapulse.schema.json`; ad-hoc metadata is a breaking contract change. Optional fields cover canonical and series identity, geography and shared schema, successor relationships, data type, lifecycle evidence, methodology, probe notes, and the opt-in `record-evidence/v1` fields. `expected_record_count` is an integer or `null`; it is an expectation, not a semantic validation result. `custodian` is an agency identifier resolved through `custodians.json`, while `steward` is display metadata. Custodian tests require non-empty values, exact manifest/registry identity sets, and pinned agency aliases.
 
-`namespace` is an enum, currently `economy`, `government_open_data`, `environment`, `weather`, `healthcare`, `financial`, `transport`, or `other`. `geo_coverage` and `refresh_frequency` are descriptive strings rather than parsed geographic or calendar objects. `expected_record_count` is either a non-negative integer or `null` when no defensible expectation exists.
+`real_status` (`live` or `discontinued`) and operator fields such as `verified_at` and `discontinued_reason` describe upstream lifecycle evidence. They are distinct from probe health. A source can be reachable yet marked discontinued, or unreachable without that proving that its substantive data is wrong.
 
-### Custodian and lifecycle boundaries
+## Manifest, observation, health, and projections
 
-`steward` remains human-readable metadata; `custodian` is the stable publishing-agency identifier resolved through `custodians.json`. The focused custodian tests require every manifest custodian to be non-empty, require the manifest ID set to equal the registry ID set, and pin important aliases such as BNM, DOSM, MET, and KTMB. Change an agency identity through that registry rather than inventing a spelling in one row.
-
-`real_status` describes the upstream lifecycle (`live` or `discontinued`) and is distinct from probe health. `discontinued`, `verified_at`, and `discontinued_reason` are operator-applied lifecycle evidence. A source publisher remains authoritative for the dataset's content and lifecycle; DataPulse observes and reports it, but does not become the official publisher.
-
-## One cycle: manifest to evidence to derived surfaces
-
-A full run probes the manifest's official URLs. A due run selects only rows whose cadence has elapsed, with optional `--tier` and `--cadence-minutes` filters. The scheduler waking periodically must not be described as probing all 418 datasets on every wake.
+A full check probes official URLs. `scripts/check.sh --due` selects rows whose cadence has elapsed, optionally narrowed with `--tier` or `--cadence-minutes`; a scheduler wake does not imply that all 418 datasets were probed. Due mode reads the previous `health/latest.json`, updates selected rows, preserves unchanged rows, and writes the complete snapshot in manifest order. With no due rows it returns the prior snapshot. This makes the snapshot a current compatibility document, not a log of only newly checked rows.
 
 ```mermaid
 flowchart TD
-    M["datapulse.json manifest"] --> P["scripts/check.sh probe"]
-    P --> H["health/latest.json compatibility snapshot"]
-    H --> R["data/id.md generated report sections"]
-    H --> E["data/json/id.json non-GTFS envelope"]
-    M --> C["catalog-snapshot.json and catalog-graph.json"]
-    H --> C
-    M --> E
+    M["datapulse.json manifest"] --> S["scripts/check.sh probe"]
+    S --> H["health/latest.json snapshot"]
+    M --> H
+    H --> G["reports and JSON envelopes"]
+    M --> G
+    H --> D["catalogue and discovery projections"]
+    M --> D
+    H --> R["per-dataset evidence receipt"]
     M --> R
+    H --> O["host observation receipt"]
 ```
 
-*Caption: The checked-in manifest supplies identity and policy, probes produce observations, `health/latest.json` provides the atomic compatibility snapshot, and generators project that state into reports, envelopes, and discovery artifacts.*
+*Caption: The manifest supplies identity and declared policy; probes produce observations; the health snapshot and receipts bind those observations before generators project them into read-only surfaces.*
 
-The edges are intentional: `check.sh` reads manifest rows and emits probe results; the snapshot combines those results with registry metadata; report and envelope generators read the manifest and snapshot; catalog generators join manifest and health. Generated outputs must not be treated as independent inputs.
+`health/latest.json` uses schema `datapulse/v0.4/dataset-health`. Its required top-level fields are `schema`, `checked_at`, `_trust_summary`, and `datasets`; the summary includes `datasets_total` and counts for every status. On **2026-09-23T12:18:36Z**, the checked-in summary recorded 418 rows: 143 `fresh`, 94 `aging`, 153 `stale`, 1 `discontinued`, 3 `degraded`, 5 `browser_dependent`, 1 `unreachable`, 4 `unknown_freshness`, and 14 `reference` (zero `unknown`). It also records signal-source counts and coverage limitations, including 254 rows without a `last_modified` header and 11 without an extracted record count. These are dated observations and can change on the next run.
 
-## `health/latest.json` is the compatibility surface
+The freshness taxonomy is evidence classification:
 
-`health/latest.json` is the atomic, machine-readable portfolio snapshot consumed by the API, dashboard, MCP service, reports, and downstream generators. Its current schema is `datapulse/v0.4/dataset-health`. It contains `checked_at`, `_trust_summary`, and one detailed row per manifest ID. The summary carries `datasets_total`, counts for every status, signal-source counts, and aggregate probe coverage.
-
-The compatibility detail is especially important in `scripts/check.sh --due`: the script reads the prior snapshot from `health/latest.json` (or `HEAD` when needed), probes only due entries, and merges unchanged prior rows with updated rows in manifest order. A no-due case returns the prior snapshot. Therefore a due run is not a partial document and consumers should read this file as the current complete cycle, not as a log of only newly probed datasets.
-
-Health statuses are evidence classifications, not claims that an upstream publisher is wrong:
-
-- `fresh`: the applicable freshness signal is within cadence;
+- `fresh`: the applicable signal is within cadence;
 - `aging`: beyond 1.5 times cadence and no more than 3 times cadence;
 - `stale`: beyond 3 times cadence;
-- `degraded`: reachable but shape, count, or other content checks fail;
-- `browser-dependent`: assessment requires the Camofox rendered-browser path;
-- `unreachable`: the request is not a successful HTTP response;
-- `unknown`: no usable classification is available;
-- `unknown-freshness`: reachable and usable, but no defensible freshness signal exists;
-- `reference`: versioned reference data for which date-based freshness does not apply;
-- `discontinued`: the upstream lifecycle is observed as stopped, not merely late.
+- `degraded`: reachable, but shape, count, or another configured content check fails;
+- `browser-dependent`: assessment needs the Camofox rendered-browser path;
+- `unreachable`: no successful HTTP response;
+- `unknown`: no usable classification;
+- `unknown-freshness`: usable response but no defensible freshness signal;
+- `reference`: versioned reference data where date freshness does not apply;
+- `discontinued`: observed upstream lifecycle stop, not merely lateness.
 
-A `last_modified` header or parsed content date is evidence used by the classifier. Missing headers are not permission to invent a date. A `browser-dependent` result records an access limitation, not proof that the source is unavailable. Record counts and shape comparisons can produce `degraded`; health is not a semantic validation of publisher content.
+A `last_modified` header or parsed content date is evidence, not an invented timestamp. `browser-dependent` records an access limitation, not proof of source unavailability. Shape and count checks do not establish that publisher content is substantively true.
 
-## Reports, envelopes, samples, and licences
+## Licence, privacy, provenance, and series metadata
 
-### Human report: `data/<id>.md`
+`licence` is the licence stated by the official publisher and `attribution` is the required credit. Before changing either, verify the upstream source; repeating these values in reports or envelopes does not transfer authority or change the upstream licence. Samples under `samples/` are small examples for reproducibility. Hand-constructed samples carry the repository `# SAMPLE:` marker and must not masquerade as copied source records. Contributions must not commit credentials, cookies, personal data, or copied source records.
 
-`health_report` points to a report path matching `data/[A-Za-z0-9_-]+.md`. `scripts/gen_data_reports.sh` owns generated report sections and health frontmatter values, including status, last checked, freshness, counts, and file size. It preserves the human-authored explanatory sections. One legacy exception, `eperolehan-diklankan`, has no original frontmatter; the generator supplies compatible fields without inventing measurements.
+The checked-in privacy classifications are review records, not a universal privacy guarantee. For example, the current reviewed entries classify `fuelprice`, `pharmaceutical_products`, `mbpp_weather_stations`, and `exchangerates_daily_1700` as `no_personal_data`, with dataset-specific written bases and review date **2026-09-15** ([`config/privacy-classifications.json`](https://github.com/r3dz4r/datapulse-my/blob/main/config/privacy-classifications.json)). Observation policy is likewise dataset-specific: the policy records byte limits, retention, whether raw bytes are captured, expiry, and review basis. Current examples include full-vintage retention for `fuelprice` and `pharmaceutical_products`, 90-day raw expiry for `mbpp_weather_stations`, and digest/shape-only retention for `exchangerates_daily_1700` ([`config/observation-policies.json`](https://github.com/r3dz4r/datapulse-my/blob/main/config/observation-policies.json)). These controls limit retained evidence; they do not change upstream ownership.
 
-Reports explain observed coverage, schema fields, known quirks, breaking changes, samples, reproducibility, licence, and attribution. They must say what was observed and how, not imply that DataPulse publishes or guarantees the source data.
+`series-registry.json` records explicit, reviewed identity relationships. Its current `cpi_core_inflation` entry maps `cpi_core_inflation` and `dosm_cpi_core_inflation` to one series and shared schema, so two catalogue rows are not automatically two independent series. Relationship fields and registry entries are deterministic declarations, not fuzzy semantic matching.
 
-### Machine envelope: `data/json/<id>.json`
+## Reports, envelopes, and the GTFS boundary
 
-`data/json/<id>.json` is generated from a manifest row, its latest health row, and the report. The envelope schema identifier is `datapulse/v0.1/dataset-health`; it carries `id`, status and freshness, fields inferred from a bounded source sample when possible, checks, quirks, reproducibility information, licence, and attribution. Its `checks` are projections of published observations; they must not silently reclassify health.
+`health_report` points to `data/<id>.md`. `scripts/gen_data_reports.sh` owns generated health frontmatter and observed values such as status, last checked, freshness, counts, and size while preserving human-authored explanatory sections. Reports should explain observed coverage, schema, quirks, reproducibility, licence, and attribution without implying that DataPulse publishes or guarantees upstream data.
 
-The current contract has a deliberate GTFS boundary: the 30 GTFS datasets have Markdown, JSON-LD, and files under `samples/gtfs-static/` or `samples/gtfs-realtime/`, but no `data/json/<id>.json`. The 136 non-GTFS datasets have envelopes. Do not create a placeholder envelope for a GTFS row; the excluded-ID contract is the authoritative exception.
+For non-GTFS datasets, `data/json/<id>.json` is generated from the manifest row, health row, and report. It carries observed status/freshness, bounded sample-derived fields where available, checks, quirks, reproducibility, licence, and attribution. Checks project observations and must not silently reclassify health. The deliberate exception is the 30 GTFS datasets: they have Markdown, JSON-LD, and static/realtime GTFS samples but no non-GTFS JSON envelope. The 136 non-GTFS datasets have envelopes; do not create GTFS placeholders.
 
-### Samples and reuse metadata
+Official URLs must remain aligned across the manifest, health request row, dashboard embedding, envelope reproducibility metadata, and JSON-LD `sameAs`. URL-drift checks also validate cadence vocabulary and flag informational lateness. Correcting a URL therefore means changing the manifest and regenerating all owned projections, not patching one output.
 
-Samples under `samples/` are small, source-downloaded examples used to make schemas reproducible. A hand-constructed sample must carry the repository's `# SAMPLE:` marker and must never masquerade as copied source data. Contributions must not commit credentials, cookies, personal data, or copied source records.
+## Evidence receipts and verification
 
-`licence` is the licence stated by the official publisher and `attribution` is the required credit. Verify both against the upstream source before changing them. An envelope or report can repeat these values for reuse, but repetition does not transfer authority or alter the upstream licence.
+Per-dataset receipts are deterministic bindings of a health row to manifest licence metadata. `scripts/gen_per_dataset_receipt.py` requires the health schema `datapulse/v0.4/dataset-health`, validates unique IDs and exact manifest/health identity equality, and emits `data/<id>.receipt.evidence.json` plus an in-toto statement. The evidence row includes dataset ID, check time, status, request/access details, HTTP and size observations, freshness fields, record count, and licence. Its statement subject is the SHA-256 digest of the canonical evidence bytes and uses the `https://www.data-pulse.my/predicates/per-dataset-evidence/v1` predicate.
 
-## URL alignment and generated discovery
+`scripts/verify_per_dataset_receipt.py` recomputes the canonical row and statement, rejects missing or mismatched persisted evidence, checks the DSSE bundle media and payload types, compares the payload to the expected statement, and can invoke `cosign` with explicit HTTPS certificate identity and OIDC issuer. A receipt proves consistency with the selected repository inputs; it does not certify the upstream data.
 
-A dataset URL is repeated across surfaces: manifest, health row or request URL, dashboard embedding, non-GTFS envelope reproducibility metadata, and JSON-LD `sameAs`. `scripts/check_url_drift.py` compares these literal values and reports missing or mismatched URLs; it also checks the allowed cadence vocabulary and flags cadence observations that are informationally late. URL drift must remain aligned before publishing a metadata change. A corrected official URL therefore requires updating the manifest and regenerating every owned surface, not patching one output.
+Host-side observation receipts are a separate signed chain. `scripts/observation_verify.py` performs offline checks of canonical payload hash, Ed25519 signature, active-key validity window, receipt identity, and (when supplied) binding to the served health artifact. Day files can be selected by receipt ID and checked for within-day and cross-day predecessor linkage. Without `--health`, artifact claims are explicitly not verified; a signed artifact pointer is a locator, not trust proof. This distinction prevents an integrity/timing observation from being mistaken for upstream semantic truth.
 
-The public-surface registry lists the canonical website, MCP, API, repository, and published artifacts including `datapulse.json`, `datapulse.schema.json`, `health/latest.json`, trends, drift, reconciliation, RSS, changelog, agent and MCP manifests, JSON-LD catalog, and badges. `llms.txt` is generated discovery prose and currently advertises the same 418-dataset catalogue and 19 read-only tools. These are discovery projections, not alternate sources of truth.
+## Safe changes and focused validation
 
-`catalog-snapshot.json` is generated by `scripts/gen_catalog_snapshot.py` from manifest plus health. It records totals by namespace, licence, and lifecycle and emits compact per-dataset status rows; its `changelog.json` output is a deprecated one-release byte-identical alias. `catalog-graph.json` is generated from literal declared relationships and requires manifest and health ID sets to match. It emits only deterministic edges such as same steward, same agency, same geography, canonical series, successor, and shared schema; it does no fuzzy matching or network access.
+1. Change the authoritative manifest row and, when needed, `custodians.json`, the human report section, series/privacy/observation policy, or source-grounded sample.
+2. Validate JSON and the closed schema; check unique IDs, report paths, and exact manifest/health joins.
+3. Run the appropriate probe or due-mode command. Do not hand-edit `health/latest.json`.
+4. Regenerate reports, envelopes, JSON-LD, feeds, badges, catalogue/discovery outputs, and receipts owned by the repository.
+5. Run focused contract tests and audits, including custodian referential integrity, receipt generation/verification, observation receipt verification, URL drift, repository-contract checks, and schema validation.
 
-## Safe change and validation workflow
-
-1. Change the authoritative manifest row and, when needed, `custodians.json`, the report's human-authored sections, and a source-grounded sample.
-2. Validate JSON and the closed manifest schema. Ensure the `health_report` exists, IDs are unique, and every health row joins exactly one manifest ID.
-3. Run the probe or the appropriate due-mode command. Do not hand-edit `health/latest.json`; due mode deliberately preserves prior evidence for rows not selected.
-4. Regenerate owned artifacts: reports, envelopes, JSON-LD, badges, feeds, summaries, catalog snapshot, graph, and discovery surfaces according to the checked-in generation profile.
-5. Run focused tests and audits, especially custodian referential integrity, repository-contract checks, drift generation, URL drift, and the repository's JSON/schema validation commands.
-
-Useful checks from `CONTRIBUTING.md` include:
+Useful checks include:
 
 ```sh
 python3 -m jsonschema -i datapulse.json datapulse.schema.json
-python3 -m pytest -q mcp/tests
-python3 -m json.tool data/json/<id>.json >/dev/null  # non-GTFS only
-python3 -m json.tool data/jsonld/<id>.json >/dev/null
-bash scripts/verify_agent_ready.sh
+python3 -m json.tool health/latest.json >/dev/null
+python3 scripts/gen_per_dataset_receipt.py --quick-test
+python3 -m pytest -q scripts/tests/test_gen_per_dataset_receipt.py scripts/tests/test_verify_per_dataset_receipt.py
+python3 -m pytest -q scripts/tests/test_observation_receipt.py
+bash scripts/check.sh --due
 ```
 
-The generator ownership boundary is operational: do not hand-edit `health/latest.json`, `badges/`, `data/jsonld/`, `feed.xml`, the README trust summary, `changelog.json`, or dashboard graph output. If a generated artifact appears stale, fix its canonical input or generator and regenerate. Use current repository sources and checked-in workflows rather than historical snapshots when deciding what the metadata means.
+Generated health, badges, JSON-LD, feeds, reports' generated sections, and discovery artifacts must be regenerated from canonical inputs rather than hand-edited. When a generated result is stale, fix its source or generator and rerun the relevant focused tests. The catalogue remains a read-only observation and evidence layer over authoritative upstream publishers.
 
 ## Current discovery facts
 
 - Canonical origin: **https://www.data-pulse.my**
-- Live manifest count: **418 datasets**
-- Cross-surface MCP capability: **19 read-only tools**
-- Primary machine-readable entrypoints: `datapulse.json`, `health/latest.json`, `data/json/<id>.json` where applicable, and the generated catalog/discovery artifacts
+- Published manifest: **418 datasets**
+- MCP surface: **19 read-only tools**
+- Primary machine-readable inputs: `datapulse.json`, `health/latest.json`, `datapulse.schema.json`, `health.schema.json`
 
 ## Canonical facts
 
