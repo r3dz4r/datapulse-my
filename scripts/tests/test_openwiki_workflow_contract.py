@@ -43,22 +43,38 @@ def test_source_validation_remains_a_separate_deterministic_ci_check() -> None:
     assert "verify_openwiki.py --generated --changed-from HEAD" in openwiki
 
 
-def test_openwiki_publishes_by_pushing_to_main_not_by_pull_request() -> None:
-    """A token-pushed PR branch never reports deterministic-safety-net."""
+def test_openwiki_publishes_by_pull_request_and_never_pushes_main() -> None:
+    """A direct push to main is refused by the ruleset's required check."""
     workflow = OPENWIKI_WORKFLOW.read_text(encoding="utf-8")
 
-    assert "git push" in workflow
-    assert "create-pull-request" not in workflow
+    assert "create-pull-request" in workflow
+    assert "HEAD:main" not in workflow
+    assert "git push" not in workflow
 
 
-def test_openwiki_reconciles_with_moved_main_before_pushing() -> None:
-    """main advances on a timer, so a bare push loses the whole generation."""
+def test_openwiki_dispatches_the_required_check_on_its_branch() -> None:
+    """A token-pushed branch never triggers ci.yml, so the check is dispatched."""
     workflow = OPENWIKI_WORKFLOW.read_text(encoding="utf-8")
 
-    assert "git fetch origin main" in workflow
-    assert "git rebase --autostash origin/main" in workflow
-    assert "pull --rebase" not in workflow
-    assert "--force" not in workflow
+    assert "gh workflow run ci.yml" in workflow
+    assert "--ref openwiki/update" in workflow
+
+
+def test_openwiki_enables_auto_merge_after_dispatching() -> None:
+    """Auto-merge lets the run exit instead of holding the runner for CI."""
+    workflow = OPENWIKI_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "gh pr merge openwiki/update --auto --squash" in workflow
+    assert "--auto" in workflow
+
+
+def test_openwiki_declares_the_permissions_publishing_needs() -> None:
+    workflow = yaml.safe_load(OPENWIKI_WORKFLOW.read_text(encoding="utf-8"))
+    permissions = workflow["permissions"]
+
+    assert permissions["contents"] == "write"
+    assert permissions["pull-requests"] == "write"
+    assert permissions["actions"] == "write"
 
 
 def test_openwiki_preflights_every_chatgpt_credential() -> None:

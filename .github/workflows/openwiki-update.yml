@@ -9,6 +9,11 @@ on:
 
 permissions:
   contents: write
+  # pull-requests: write lets the action open/update the PR and `gh pr merge
+  # --auto` enable auto-merge; actions: write lets `gh workflow run` dispatch
+  # ci.yml against the PR branch.
+  pull-requests: write
+  actions: write
 
 concurrency:
   group: openwiki-update
@@ -114,48 +119,44 @@ jobs:
           python3 scripts/inject_openwiki_canonical_facts.py --root .
           python3 scripts/verify_openwiki.py --generated --changed-from HEAD
 
-      - name: Commit and push refreshed OpenWiki documentation
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Create or update OpenWiki pull request
+        id: cpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: openwiki/update
+          delete-branch: true
+          commit-message: "docs: refresh OpenWiki derivative documentation"
+          title: "docs: refresh OpenWiki derivative documentation"
+          body: |
+            Generated with the project-local, locked OpenWiki runtime.
+            The normal deterministic-safety-net must pass before merge.
           # The managed OpenWiki block inside the two agent doctrine files is
           # generator-owned, but publishing doctrine from an unattended job
           # skips review, so those files are deliberately updated by hand.
-          git add -- \
-            openwiki/quickstart.md \
-            openwiki/datasets.md \
-            openwiki/mcp.md \
-            openwiki/operations.md \
+          # Only the five openwiki/ artefacts are published.
+          add-paths: |
+            openwiki/quickstart.md
+            openwiki/datasets.md
+            openwiki/mcp.md
+            openwiki/operations.md
             openwiki/.last-update.json
-          if git diff --cached --quiet; then
-            echo "No openwiki changes to commit"
-            exit 0
-          fi
-          git commit -m "docs: refresh OpenWiki derivative documentation"
-          # main is a moving target: the health pipeline signs and commits an
-          # observation on a timer, so a bare push is routinely rejected. Fetch,
-          # replay this one commit on top of the current origin/main, and retry a
-          # bounded number of times for the case where main moves again mid-air.
-          # Never force; a rebase conflict is a finding to report, not to resolve.
-          for attempt in 1 2 3; do
-            git fetch origin main
-            if ! git rebase --autostash origin/main; then
-              if [[ -n "$(git diff --name-only --diff-filter=U)" ]]; then
-                echo "::error title=OpenWiki rebase conflict::Replaying the generated commit onto origin/main hit a conflict. Another writer is changing the same paths; refusing to resolve it automatically."
-                git diff --name-only --diff-filter=U
-                if git rebase --abort 2>/dev/null; then :; fi
-                exit 1
-              fi
-              echo "::warning::Rebase onto origin/main failed (attempt ${attempt}/3); reconciling again."
-              if git rebase --abort 2>/dev/null; then :; fi
-              sleep 5
-              continue
-            fi
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-            echo "::warning::Push to main rejected (attempt ${attempt}/3); main moved during generation, reconciling again."
-            sleep 5
-          done
-          echo "::error title=OpenWiki push failed::Could not push the refreshed OpenWiki commit to main after 3 reconciliation attempts; the git output above is the real failure."
-          exit 1
+
+      # The action pushes the branch with this workflow's own GITHUB_TOKEN, and
+      # GitHub does not trigger workflows for token pushes. ci.yml therefore
+      # never starts from that push and the required "deterministic-safety-net"
+      # check would never report on the branch head, leaving the pull request
+      # permanently unmergeable. Dispatch ci.yml explicitly against the lane
+      # branch so the required check attaches to that commit.
+      - name: Dispatch required check on the pull request branch
+        if: steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run ci.yml --ref openwiki/update
+
+      # Do not hold the runner open waiting for CI: auto-merge lets GitHub
+      # squash the pull request once the dispatched check passes.
+      - name: Enable auto-merge
+        if: steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge openwiki/update --auto --squash
