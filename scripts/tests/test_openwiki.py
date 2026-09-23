@@ -145,7 +145,7 @@ def test_workflow_uses_locked_local_runtime_and_pull_request_contract() -> None:
     assert "verify_openwiki.py --generated --changed-from HEAD" in workflow
     assert "HEAD:main" not in workflow
     assert "create-pull-request" in workflow
-    assert "gh workflow run ci.yml" in workflow
+    assert "gh workflow run ci.yml" not in workflow
     assert "continue-on-error" not in workflow and "|| true" not in workflow
     # OpenWiki is intentionally manual/weekly, never a production-push dependency.
     on_block = workflow.split("on:\n", 1)[1].split("\njobs:", 1)[0]
