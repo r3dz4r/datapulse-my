@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.36.1](https://github.com/r3dz4r/datapulse-my/compare/v3.36.0...v3.36.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* **openwiki:** drop the whole sentence carrying a commercial claim ([c93a7c6](https://github.com/r3dz4r/datapulse-my/commit/c93a7c63f2a8507910b0d4f0f90a42669398a6cf))
+* **openwiki:** reject and neutralise commercial claims in generated pages ([0a71375](https://github.com/r3dz4r/datapulse-my/commit/0a71375c6df495f77484880498ea46f5ef73d3be))
+
 ## [3.36.0](https://github.com/r3dz4r/datapulse-my/compare/v3.35.1...v3.36.0) (2026-09-23)
 
 
