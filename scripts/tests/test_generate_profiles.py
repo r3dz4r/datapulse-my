@@ -51,7 +51,6 @@ GENERATORS = (
     "gen_dashboard_filters.py",
     "gen_dashboard_sections.py",
     "embed_dashboard_data.py",
-    "gen_api_reference.py",
     "check_url_drift.py",
     "gen_health_methodology_html.py",
     "gen_health_methodology.py",
@@ -91,7 +90,6 @@ RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
     "docs/.dashboard_filters.json",
     "docs/.dashboard_sections.json",
     "docs/index.html",
-    "docs/buyer-api-reference.md",
     "docs/health-methodology.html",
     "docs/privacy.html",
     "docs/landing.html",
@@ -219,7 +217,6 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copytree(ROOT / "openwiki", source / "openwiki")
     shutil.copy2(ROOT / "docs/assets/site-nav.html", source / "docs/assets/site-nav.html")
     shutil.copy2(ROOT / "docs/index.html", source / "docs/index.html")
-    shutil.copy2(ROOT / "docs/buyer-api-reference.md", source / "docs/buyer-api-reference.md")
     shutil.copy2(
         RELEASE_FIXTURE / "docs/health-methodology.md",
         source / "docs/health-methodology.md",
@@ -251,8 +248,6 @@ def _stage_source(tmp_path: Path) -> Path:
     surfaces["pages"] = production_surfaces["pages"]
     surfaces["artifacts"] = production_surfaces["artifacts"]
     surfaces["compatibility_aliases"] = production_surfaces["compatibility_aliases"]
-    if "/buyer-api-reference.md" not in surfaces["artifacts"]:
-        surfaces["artifacts"].append("/buyer-api-reference.md")
     _write_json(source / "config/public-surfaces.json", surfaces)
     schema = json.loads((source / "config/public-surfaces.schema.json").read_text(encoding="utf-8"))
     origins = schema["properties"]["origins"]

@@ -33,7 +33,7 @@ fetch() {
   mkdir -p "$(dirname "$work_dir/$name")"
   if $local_mode; then
     case "$path" in
-      index.html|landing.html|dashboard.html|register.html|npra.html|buyer-api-reference.md|health-methodology.html|privacy.html|.well-known/*)
+      index.html|landing.html|dashboard.html|register.html|npra.html|health-methodology.html|privacy.html|.well-known/*)
         path="docs/$path"
         ;;
     esac
@@ -128,7 +128,6 @@ if ! $local_mode; then
   fetch index.html dashboard
   fetch landing.html landing.html
   fetch npra.html npra.html
-  fetch buyer-api-reference.md buyer-api-reference.md
 fi
 if $local_mode; then
   fetch dashboard.html dashboard.html
@@ -249,7 +248,6 @@ catalog_graph = json.loads((work / "catalog-graph.json").read_text())
 surfaces = load_public_surfaces(Path.cwd())
 
 assert surfaces["pages"] == ["/", "/npra.html", "/health-methodology.html", "/privacy.html", "/learn.html", "/okf/"]
-assert "/buyer-api-reference.md" in surfaces["artifacts"]
 website, mcp_origin, api_origin = (surfaces["origins"][key] for key in ("website", "mcp", "api"))
 
 manifest_ids = [row["id"] for row in manifest["datasets"]]
@@ -527,13 +525,6 @@ assert dashboard == landing
 register = (work / "register.html").read_text(encoding="utf-8")
 assert register == landing
 assert not (Path.cwd() / "docs/_redirects").exists()
-buyer_blocks = "\n".join(
-    owned(work / "buyer-api-reference.md", marker) for marker in (
-        "buyer-api-host", "buyer-api-quickstart", "buyer-api-limits",
-        "buyer-api-endpoints", "buyer-api-pagination",
-    )
-)
-assert api_origin in buyer_blocks
 print("P5B generated surface assertions: PASS")
 PY
 fi

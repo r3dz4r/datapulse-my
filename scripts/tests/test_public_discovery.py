@@ -23,7 +23,6 @@ def _stage(root: Path) -> None:
         "pages": ["/", "/npra.html", "/health-methodology.html"],
         "compatibility_aliases": [{"path": "/landing.html", "target": "/"}],
         "artifacts": [
-            "/buyer-api-reference.md",
             "/llms.txt",
             "/agent.json",
             "/mcp.json",
@@ -71,7 +70,6 @@ def test_generation_is_deterministic_and_preserves_unowned_prose(tmp_path: Path)
         "https://www.data-pulse.my/",
         "https://www.data-pulse.my/npra.html",
         "https://www.data-pulse.my/health-methodology.html",
-        "https://www.data-pulse.my/buyer-api-reference.md",
         "https://www.data-pulse.my/llms.txt",
         "https://www.data-pulse.my/agent.json",
         "https://www.data-pulse.my/mcp.json",

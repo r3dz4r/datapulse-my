@@ -19,7 +19,6 @@ PUBLIC_SURFACE_LINKS = {
     "/privacy.html": ("Data collection and privacy", "Published disclosure of public-lane data collection and privacy boundaries."),
     "/learn.html": ("Learn", "Practical verification-first guidance for building with Malaysian public data."),
     "/okf/": ("OKF v0.2 bundle", "Agent-consumable dataset concepts with provenance, trust, and freshness signals."),
-    "/buyer-api-reference.md": ("Buyer API reference", "Read-only buyer API contract and examples."),
     "/documentation-map.md": ("Documentation map", "Canonical guide to DataPulse documentation and how to navigate it."),
     "/source-of-truth-map.md": ("Source-of-truth map", "Authority boundaries for DataPulse facts, configuration, and generated outputs."),
     "/glossary.md": ("Glossary", "Defined DataPulse terms and identifiers."),

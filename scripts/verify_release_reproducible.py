@@ -47,14 +47,9 @@ CATEGORY_ORDER = (
     "docs/landing.html",
     "docs/dashboard.html",
     "docs/npra.html",
-    "docs/buyer-api-reference.md",
     "P5B public markers",
 )
 P5B_MARKERS = {
-    "docs/buyer-api-reference.md": (
-        "buyer-api-host", "buyer-api-quickstart", "buyer-api-limits",
-        "buyer-api-endpoints", "buyer-api-pagination",
-    ),
     "docs/index.html": ("dashboard-summary", "dashboard-trust-facts"),
     "docs/npra.html": ("npra-freshness", "npra-connect", "npra-surfaces"),
 }
@@ -256,7 +251,6 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/landing.html": root / "docs/landing.html",
         "docs/dashboard.html": root / "docs/dashboard.html",
         "docs/npra.html": root / "docs/npra.html",
-        "docs/buyer-api-reference.md": root / "docs/buyer-api-reference.md",
     }
 
     required = [
@@ -298,7 +292,6 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/landing.html": 1,
         "docs/dashboard.html": 1,
         "docs/npra.html": 1,
-        "docs/buyer-api-reference.md": 1,
         "P5B public markers": sum(len(markers) for markers in P5B_MARKERS.values()),
     }
 
@@ -324,7 +317,6 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/landing.html": (singleton_paths["docs/landing.html"],),
         "docs/dashboard.html": (singleton_paths["docs/dashboard.html"],),
         "docs/npra.html": (singleton_paths["docs/npra.html"],),
-        "docs/buyer-api-reference.md": (singleton_paths["docs/buyer-api-reference.md"],),
     }
     actual_counts = {
         category: len(paths) for category, paths in category_paths.items()
