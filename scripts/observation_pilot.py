@@ -3,8 +3,11 @@
 
 This module is the thing that makes the pilot accumulate.  Every other module
 on this plane (predecessor links, bounded diffs, change reports) operates on
-*pairs* of observations; the production store held exactly one observation,
-captured by hand, because nothing scheduled ever fetched.  This driver walks
+*pairs* of observations; the health pipeline invokes this driver
+once per health cycle from ``run_observation_capture`` in
+``datapulse-pipeline.sh``, which passes the store root
+``${DATAPULSE_OBSERVATION_STORE:-${HOME}/runtime/datapulse-observations}``.
+This driver walks
 the cohort, fetches each source through the capture entry point, and files
 truthful envelopes — but only when a per-dataset cadence gate says the
 observation is due.
