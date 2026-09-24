@@ -5,7 +5,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
+import tempfile
 from collections import Counter
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -118,6 +121,82 @@ def read_history(
     return result
 
 
+@contextmanager
+def history_reader(
+    path: Path, *, generated_at: datetime, daily: Path | None = None
+) -> Any:
+    """Index JSONL on disk, then yield one dataset's bounded history at a time."""
+    cutoff = generated_at - timedelta(days=WINDOW_DAYS)
+    with tempfile.TemporaryDirectory(prefix="datapulse-drift-") as temporary:
+        database = sqlite3.connect(Path(temporary) / "history.sqlite3")
+        try:
+            database.execute(
+                "CREATE TABLE rows (dataset_id TEXT, observed TEXT, cycle TEXT, "
+                "payload TEXT, in_window INTEGER, PRIMARY KEY (dataset_id, observed, cycle))"
+            )
+            database.execute("CREATE TABLE raw_days (dataset_id TEXT, day TEXT, PRIMARY KEY (dataset_id, day))")
+            database.execute("CREATE TABLE baseline (dataset_id TEXT PRIMARY KEY, observed TEXT, payload TEXT)")
+
+            def add(row: dict[str, Any]) -> None:
+                observed = parse_time(row.get("observed_at"))
+                if observed is None or observed > generated_at:
+                    return
+                dataset_id = row["dataset_id"]
+                payload = json.dumps(row, ensure_ascii=False, separators=(",", ":"))
+                timestamp = observed.isoformat()
+                if observed < cutoff:
+                    database.execute(
+                        "INSERT INTO baseline VALUES (?, ?, ?) ON CONFLICT(dataset_id) DO UPDATE "
+                        "SET observed=excluded.observed, payload=excluded.payload "
+                        "WHERE excluded.observed > baseline.observed",
+                        (dataset_id, timestamp, payload),
+                    )
+                else:
+                    database.execute(
+                        "INSERT OR REPLACE INTO rows VALUES (?, ?, ?, ?, 1)",
+                        (dataset_id, row.get("observed_at", ""), row.get("cycle", ""), payload),
+                    )
+
+            try:
+                source = path.open(encoding="utf-8")
+            except FileNotFoundError:
+                source = None
+            if source is not None:
+                with source:
+                    for line in source:
+                        try:
+                            row = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        if not isinstance(row, dict) or not isinstance(row.get("dataset_id"), str):
+                            continue
+                        observed = parse_time(row.get("observed_at"))
+                        if observed is None:
+                            continue
+                        database.execute("INSERT OR IGNORE INTO raw_days VALUES (?, ?)", (row["dataset_id"], observed.date().isoformat()))
+                        add(row)
+            for row in _daily_observations(daily or path.with_name("history_daily.json"), generated_at=generated_at):
+                observed = parse_time(row.get("observed_at"))
+                if observed is not None and database.execute("SELECT 1 FROM raw_days WHERE dataset_id=? AND day=?", (row["dataset_id"], observed.date().isoformat())).fetchone() is None:
+                    add(row)
+            database.commit()
+
+            def rows_for(dataset_id: str) -> list[dict[str, Any]]:
+                values: list[dict[str, Any]] = []
+                baseline = database.execute("SELECT payload FROM baseline WHERE dataset_id=?", (dataset_id,)).fetchone()
+                if baseline is not None:
+                    row = json.loads(baseline[0])
+                    values.append(row | {"_observed": parse_time(row["observed_at"]), "_in_window": False})
+                for (payload,) in database.execute("SELECT payload FROM rows WHERE dataset_id=?", (dataset_id,)):
+                    row = json.loads(payload)
+                    values.append(row | {"_observed": parse_time(row["observed_at"]), "_in_window": True})
+                return sorted(values, key=lambda row: (row["_observed"], row.get("cycle", "")))
+
+            yield rows_for
+        finally:
+            database.close()
+
+
 def transition_summary(rows: list[dict[str, Any]], field: str) -> tuple[int, str | None, int, int]:
     values: list[tuple[Any, datetime, bool]] = []
     for row in rows:
@@ -216,8 +295,8 @@ def generate(
     if generated_at is None:
         raise ValueError("health snapshot has no valid checked_at timestamp")
     health_by_id = {row["dataset_id"]: row for row in latest.get("datasets", []) if isinstance(row, dict) and isinstance(row.get("dataset_id"), str)}
-    history_by_id = read_history(history, generated_at=generated_at, daily=daily)
-    datasets = [dataset_drift(entry, health_by_id.get(entry["id"], {}), history_by_id.get(entry["id"], [])) for entry in manifest.get("datasets", []) if isinstance(entry, dict) and isinstance(entry.get("id"), str) and isinstance(entry.get("name"), str)]
+    with history_reader(history, generated_at=generated_at, daily=daily) as rows_for:
+        datasets = [dataset_drift(entry, health_by_id.get(entry["id"], {}), rows_for(entry["id"])) for entry in manifest.get("datasets", []) if isinstance(entry, dict) and isinstance(entry.get("id"), str) and isinstance(entry.get("name"), str)]
     counts = Counter(row["verdict"] for row in datasets)
     return {"schema": SCHEMA, "generated_at": generated_at.isoformat().replace("+00:00", "Z"), "window_days": WINDOW_DAYS, "methodology": {"shape_signal": "adjacent versioned shape_hash transitions", "column_signal": "adjacent numeric column_count transitions", "window_baseline": "latest valid observation before the window", "daily_compaction_evidence": "latest retained observation per compacted UTC day; raw history takes precedence on overlap", "record_daily_sample": "latest successful numeric observation per UTC day", "minimum_record_sample_days": MIN_RECORD_SAMPLE_DAYS, "minimum_record_span_days": MIN_RECORD_SPAN_DAYS, "record_trend_threshold_pct": RECORD_TREND_THRESHOLD_PCT, "record_count_tolerance_ratio": RECORD_COUNT_TOLERANCE_RATIO, "verdict_precedence": list(VERDICTS)}, "summary": {"datasets_total": len(datasets), "by_verdict": {name: counts[name] for name in VERDICTS}}, "datasets": datasets}
 

@@ -8,6 +8,8 @@ import gzip
 import json
 import os
 import re
+import sqlite3
+import tempfile
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -241,6 +243,74 @@ def upsert_history(
             row["dataset_id"],
         ),
     )
+
+
+def write_upserted_history(path: Path, current: list[dict[str, Any]]) -> int:
+    """Upsert and globally sort history with a disk-backed index.
+
+    The output is still ordered by UTC observation, cycle, and dataset ID; only
+    the intermediate key map and sort run moved off the process heap.
+    """
+    with tempfile.TemporaryDirectory(prefix="datapulse-history-") as temporary:
+        database = sqlite3.connect(Path(temporary) / "history.sqlite3")
+        try:
+            database.execute(
+                "CREATE TABLE rows (dataset_id TEXT, cycle TEXT, observed_utc TEXT, "
+                "payload TEXT, PRIMARY KEY (dataset_id, cycle))"
+            )
+
+            def insert(row: dict[str, Any]) -> None:
+                observed = parse_datetime(row["observed_at"], field="observed_at").astimezone(UTC)
+                database.execute(
+                    "INSERT OR REPLACE INTO rows VALUES (?, ?, ?, ?)",
+                    (
+                        row["dataset_id"],
+                        row["cycle"],
+                        observed.isoformat(),
+                        json.dumps(row, ensure_ascii=False, separators=(",", ":")),
+                    ),
+                )
+
+            line_number = 0
+            if path.exists():
+                try:
+                    with path.open(encoding="utf-8") as history_file:
+                        for line_number, line in enumerate(history_file, start=1):
+                            if not line.strip():
+                                continue
+                            row = json.loads(line)
+                            if not isinstance(row, dict):
+                                raise ValueError("line is not a JSON object")
+                            if not isinstance(row.get("dataset_id"), str) or not isinstance(row.get("cycle"), str):
+                                raise ValueError("line has no dataset_id/cycle key")
+                            insert(row)
+                except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+                    raise ValueError(f"invalid history {path} at line {line_number}: {exc}") from exc
+            for row in current:
+                insert(row)
+            database.commit()
+
+            ensure_directory(path.parent)
+            descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+            try:
+                os.fchmod(descriptor, FILE_MODE)
+                with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+                    count = 0
+                    for (payload,) in database.execute("SELECT payload FROM rows ORDER BY observed_utc, cycle, dataset_id"):
+                        output.write(payload + "\n")
+                        count += 1
+                    output.flush()
+                    os.fsync(output.fileno())
+                os.replace(temporary_name, path)
+            except BaseException:
+                try:
+                    os.unlink(temporary_name)
+                except OSError:
+                    pass
+                raise
+            return count
+        finally:
+            database.close()
 
 
 def empty_distribution(names: tuple[str, ...]) -> dict[str, int]:
@@ -536,7 +606,11 @@ def main() -> None:
         }
         cycle = args.cycle or snapshot["checked_at"][:16]
         current = snapshot_observations(snapshot, cycle, catalog_by_id)
-        rows = upsert_history(read_history(args.history), current)
+        if args.compact:
+            rows = upsert_history(read_history(args.history), current)
+            raw_retained = len(rows)
+        else:
+            raw_retained = write_upserted_history(args.history, current)
         expired_count = 0
         archived_count = 0
         if args.compact:
@@ -556,13 +630,15 @@ def main() -> None:
                 args.daily,
                 json.dumps(daily, ensure_ascii=False, indent=2) + "\n",
             )
-        write_history(args.history, rows)
+            raw_retained = len(rows)
+        if args.compact:
+            write_history(args.history, rows)
     except ValueError as exc:
         raise SystemExit(f"health history generation failed: {exc}") from exc
 
     print(
         f"Health history upserted {len(current)} observations for {cycle}; "
-        f"{len(rows)} raw retained, {expired_count} compacted"
+        f"{raw_retained} raw retained, {expired_count} compacted"
     )
     if archived_count:
         print(f"archived {archived_count} rows to {args.archives_dir}")
