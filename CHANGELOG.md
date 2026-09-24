@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.36.2](https://github.com/r3dz4r/datapulse-my/compare/v3.36.1...v3.36.2) (2026-09-24)
+
+
+### Bug Fixes
+
+* bound compact health history generation ([d373912](https://github.com/r3dz4r/datapulse-my/commit/d3739128c58d031349b4e8141c7bed5de8046727))
+
 ## [3.36.1](https://github.com/r3dz4r/datapulse-my/compare/v3.36.0...v3.36.1) (2026-09-23)
 
 
