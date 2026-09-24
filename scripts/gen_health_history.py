@@ -313,6 +313,140 @@ def write_upserted_history(path: Path, current: list[dict[str, Any]]) -> int:
             database.close()
 
 
+def compact_upserted_history(
+    path: Path,
+    current: list[dict[str, Any]],
+    daily_path: Path,
+    *,
+    retention_days: int,
+    archives_dir: Path,
+    now: datetime,
+) -> tuple[dict[str, Any], int, int, int]:
+    """Compact an upserted history without retaining its raw rows in memory."""
+    cutoff = now - timedelta(days=retention_days)
+    daily, compacted_cycles = read_daily(daily_path)
+    with tempfile.TemporaryDirectory(prefix="datapulse-history-") as temporary:
+        database = sqlite3.connect(Path(temporary) / "history.sqlite3")
+        try:
+            database.execute(
+                "CREATE TABLE rows (dataset_id TEXT, cycle TEXT, observed_utc TEXT, "
+                "observed_date TEXT, payload TEXT, PRIMARY KEY (dataset_id, cycle))"
+            )
+
+            def insert(row: dict[str, Any]) -> None:
+                observed = parse_datetime(row["observed_at"], field="observed_at").astimezone(UTC)
+                database.execute(
+                    "INSERT OR REPLACE INTO rows VALUES (?, ?, ?, ?, ?)",
+                    (
+                        row["dataset_id"], row["cycle"], observed.isoformat(),
+                        observed.date().isoformat(),
+                        json.dumps(row, ensure_ascii=False, separators=(",", ":")),
+                    ),
+                )
+
+            line_number = 0
+            if path.exists():
+                try:
+                    with path.open(encoding="utf-8") as history_file:
+                        for line_number, line in enumerate(history_file, start=1):
+                            if not line.strip():
+                                continue
+                            row = json.loads(line)
+                            if not isinstance(row, dict):
+                                raise ValueError("line is not a JSON object")
+                            if not isinstance(row.get("dataset_id"), str) or not isinstance(row.get("cycle"), str):
+                                raise ValueError("line has no dataset_id/cycle key")
+                            insert(row)
+                except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+                    raise ValueError(f"invalid history {path} at line {line_number}: {exc}") from exc
+            for row in current:
+                insert(row)
+            database.commit()
+
+            expired = "observed_utc < ?"
+            expired_count = database.execute(
+                f"SELECT COUNT(*) FROM rows WHERE {expired}", (cutoff.isoformat(),)
+            ).fetchone()[0]
+            newly_expired_cycles: set[str] = set()
+            archived_count = 0
+            archives: dict[str, tuple[Any, gzip.GzipFile]] = {}
+            try:
+                for cycle, observed_date, payload in database.execute(
+                    f"SELECT cycle, observed_date, payload FROM rows WHERE {expired} "
+                    "ORDER BY observed_utc, cycle, dataset_id", (cutoff.isoformat(),)
+                ):
+                    if cycle in compacted_cycles:
+                        continue
+                    newly_expired_cycles.add(cycle)
+                    archived_count += 1
+                    month = observed_date[:7]
+                    archive = archives.get(month)
+                    if archive is None:
+                        ensure_directory(archives_dir)
+                        stream = (archives_dir / f"health-{month}.jsonl.gz").open("ab")
+                        archive = (stream, gzip.GzipFile(fileobj=stream, mode="ab"))
+                        archives[month] = archive
+                    archive[1].write((payload + "\n").encode("utf-8"))
+            finally:
+                for stream, archive in archives.values():
+                    archive.close()
+                    stream.close()
+            for month in archives:
+                os.chmod(archives_dir / f"health-{month}.jsonl.gz", FILE_MODE)
+
+            expired_groups = database.execute(
+                f"SELECT dataset_id, observed_date FROM rows WHERE {expired} "
+                "GROUP BY dataset_id, observed_date ORDER BY dataset_id, observed_date",
+                (cutoff.isoformat(),),
+            ).fetchall()
+            for dataset_id, observed_date in expired_groups:
+                group = []
+                for cycle, payload in database.execute(
+                    f"SELECT cycle, payload FROM rows WHERE {expired} AND dataset_id=? "
+                    "AND observed_date=? ORDER BY observed_utc, cycle, dataset_id",
+                    (cutoff.isoformat(), dataset_id, observed_date),
+                ):
+                    if cycle not in compacted_cycles:
+                        group.append(json.loads(payload))
+                if not group:
+                    continue
+                key = (dataset_id, observed_date)
+                aggregate = aggregate_rows(group)
+                daily[key] = merge_aggregates(daily[key], aggregate) if key in daily else aggregate
+            compacted_cycles.update(newly_expired_cycles)
+            document = {
+                "schema": DAILY_SCHEMA,
+                "retention_days": retention_days,
+                "compacted_cycles": sorted(compacted_cycles),
+                "aggregates": [daily[key] for key in sorted(daily)],
+            }
+
+            ensure_directory(path.parent)
+            descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+            try:
+                os.fchmod(descriptor, FILE_MODE)
+                with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+                    retained = 0
+                    for (payload,) in database.execute(
+                        "SELECT payload FROM rows WHERE observed_utc >= ? "
+                        "ORDER BY observed_utc, cycle, dataset_id", (cutoff.isoformat(),)
+                    ):
+                        output.write(payload + "\n")
+                        retained += 1
+                    output.flush()
+                    os.fsync(output.fileno())
+                os.replace(temporary_name, path)
+            except BaseException:
+                try:
+                    os.unlink(temporary_name)
+                except OSError:
+                    pass
+                raise
+            return document, retained, expired_count, archived_count
+        finally:
+            database.close()
+
+
 def empty_distribution(names: tuple[str, ...]) -> dict[str, int]:
     return dict.fromkeys(names, 0)
 
@@ -606,11 +740,6 @@ def main() -> None:
         }
         cycle = args.cycle or snapshot["checked_at"][:16]
         current = snapshot_observations(snapshot, cycle, catalog_by_id)
-        if args.compact:
-            rows = upsert_history(read_history(args.history), current)
-            raw_retained = len(rows)
-        else:
-            raw_retained = write_upserted_history(args.history, current)
         expired_count = 0
         archived_count = 0
         if args.compact:
@@ -619,8 +748,9 @@ def main() -> None:
                 if args.now
                 else datetime.now(UTC)
             )
-            rows, daily, expired_count, archived_count = compact_history(
-                rows,
+            daily, raw_retained, expired_count, archived_count = compact_upserted_history(
+                args.history,
+                current,
                 args.daily,
                 retention_days=args.retention_days,
                 archives_dir=args.archives_dir,
@@ -630,9 +760,8 @@ def main() -> None:
                 args.daily,
                 json.dumps(daily, ensure_ascii=False, indent=2) + "\n",
             )
-            raw_retained = len(rows)
-        if args.compact:
-            write_history(args.history, rows)
+        else:
+            raw_retained = write_upserted_history(args.history, current)
     except ValueError as exc:
         raise SystemExit(f"health history generation failed: {exc}") from exc
 
