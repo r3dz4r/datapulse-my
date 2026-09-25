@@ -14,6 +14,18 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.37.1](https://github.com/r3dz4r/datapulse-my/compare/v3.37.0...v3.37.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* coalesce and retry Pages deploys ([929df9d](https://github.com/r3dz4r/datapulse-my/commit/929df9d6f84f7382f9f70a674a7422c4691ea938))
+* distinguish served-surface transport failures ([0b1d105](https://github.com/r3dz4r/datapulse-my/commit/0b1d105dc3b1a00aeaad04360fcea8060a46900c))
+* make Pages redirect gate extensible ([ffd5b4f](https://github.com/r3dz4r/datapulse-my/commit/ffd5b4f58ccd42a3ca3159b223da0b0f91c972bb))
+* **npra:** make payload rendering idempotent ([28d77b0](https://github.com/r3dz4r/datapulse-my/commit/28d77b0a9b7296629e9aca1ab413d991b89611b1))
+* remove superseded Pages deploy coalescing gate ([5126eee](https://github.com/r3dz4r/datapulse-my/commit/5126eee4cdb9fc2d3310c330d21a6a24082e3000))
+* scope NPRA runtime marker to canonical output ([8c2ae5a](https://github.com/r3dz4r/datapulse-my/commit/8c2ae5aa96a7b8b4375d2f773970f26ee1fc3062))
+
 ## [3.37.0](https://github.com/r3dz4r/datapulse-my/compare/v3.36.2...v3.37.0) (2026-09-25)
 
 
