@@ -17,6 +17,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 LOGGER = logging.getLogger(__name__)
 CATALOG_VERSION = "1.0.0"
+ARD_SPEC_VERSION = "0.91"
 PUBLIC_ORIGIN = "https://www.data-pulse.my"
 MCP_ENDPOINT = "https://mcp.data-pulse.my/mcp"
 TRUST_MODEL = "Signed probe attestation (Ed25519 L1, git-tag L2 anchor, per-dataset cosign keyless Sigstore bundle)"
@@ -41,6 +42,21 @@ TAGS: dict[str, list[str]] = {
     "verify_attestation": ["attestation", "evidence", "malaysia", "read-only", "verification"],
     "find_by_licence": ["compliance", "discovery", "licence", "malaysia", "read-only"],
     "usage_summary": ["audit", "malaysia", "read-only", "summary", "usage"],
+}
+TRUST_MANIFEST = {
+    "identity": "https://data-pulse.my",
+    "identityType": "https",
+    "attestations": [
+        {
+            "type": "ed25519-probe-key-registry",
+            "uri": f"{PUBLIC_ORIGIN}/.well-known/datapulse-probe-keys.json",
+        },
+        {
+            "type": "ed25519-vector-signing-key-registry",
+            "uri": f"{PUBLIC_ORIGIN}/.well-known/datapulse-vector-keys.json",
+        },
+        {"type": "verification-metadata", "uri": f"{PUBLIC_ORIGIN}/llms.txt"},
+    ],
 }
 
 
@@ -92,6 +108,20 @@ def _tools(mcp: dict[str, Any]) -> list[dict[str, Any]]:
     return sorted(normalized, key=lambda tool: tool["name"])
 
 
+def _representative_query_corpus(root: Path, tools: list[dict[str, Any]]) -> dict[str, list[str]]:
+    corpus = _read_object(root / "scripts/mcp-representative-queries.json")
+    tool_names = {tool["name"] for tool in tools}
+    unknown_names = set(corpus) - tool_names
+    if unknown_names:
+        raise ValueError(f"representative query corpus has unknown tool(s): {', '.join(sorted(unknown_names))}")
+    normalized: dict[str, list[str]] = {}
+    for name, queries in corpus.items():
+        if not isinstance(queries, list) or not all(isinstance(query, str) for query in queries):
+            raise ValueError(f"representative query corpus for {name} must be an array of strings")
+        normalized[name] = queries
+    return normalized
+
+
 def _identifier(name: str) -> str:
     return f"urn:air:data-pulse.my:mcp:{name}"
 
@@ -103,7 +133,10 @@ def _capabilities(tool: dict[str, Any]) -> list[str]:
     return sorted([tool["name"], *(f"{tool['name']}.{key}" for key in properties)])
 
 
-def _representative_queries(tool: dict[str, Any]) -> list[str]:
+def _representative_queries(tool: dict[str, Any], corpus: dict[str, list[str]]) -> list[str]:
+    authored = corpus.get(tool["name"])
+    if authored is not None:
+        return authored
     properties = tool["inputSchema"].get("properties", {})
     if not isinstance(properties, dict):
         return []
@@ -132,6 +165,7 @@ def build_outputs(root: Path) -> tuple[bytes, dict[str, bytes]]:
     if not isinstance(datasets, list):
         raise ValueError("datapulse.json must contain a datasets array")
     tools = _tools(mcp)
+    representative_query_corpus = _representative_query_corpus(root, tools)
     source_commit_sha = _source_commit_sha(root, mcp)
     entries: list[dict[str, Any]] = []
     cards: dict[str, bytes] = {}
@@ -146,9 +180,13 @@ def build_outputs(root: Path) -> tuple[bytes, dict[str, bytes]]:
             "type": "application/mcp-server-card+json",
             "url": f"{PUBLIC_ORIGIN}/mcp/cards/{name}.json",
             "description": tool["description"],
-            "representativeQueries": _representative_queries(tool),
+            "representativeQueries": _representative_queries(tool, representative_query_corpus),
             "capabilities": capabilities,
             "tags": tags,
+            # trustManifest.provenance and trustManifest.signature are absent because
+            # per-entry lineage URLs and detached JWS signatures are not published yet;
+            # an unverifiable attestation is worse than omitting optional fields.
+            "trustManifest": TRUST_MANIFEST,
         })
         card = {
             "specVersion": "1.0",
@@ -169,7 +207,7 @@ def build_outputs(root: Path) -> tuple[bytes, dict[str, bytes]]:
         cards[name] = _json_bytes(card)
     catalog = {
         "specVersion": "1.0",
-        "ard_spec_version": "0.9",
+        "ard_spec_version": ARD_SPEC_VERSION,
         "contract_version": CATALOG_VERSION,
         "host": {"displayName": "DataPulse MY", "homepage": f"{PUBLIC_ORIGIN}/", "repository": "https://github.com/r3dz4r/datapulse-my"},
         "publisher": {"name": "DataPulse MY"},
@@ -196,8 +234,13 @@ def _atomic_write(path: Path, content: bytes) -> None:
 
 def generate(root: Path) -> list[Path]:
     catalog, cards = build_outputs(root)
-    outputs = [root / "docs/ai-catalog.json"]
-    _atomic_write(outputs[0], catalog)
+    outputs = [
+        root / "docs/ai-catalog.json",
+        root / "docs/.well-known/ard.json",
+        root / "docs/.well-known/ai-catalog.json",
+    ]
+    for path in outputs:
+        _atomic_write(path, catalog)
     for name, content in cards.items():
         path = root / "docs/mcp/cards" / f"{name}.json"
         _atomic_write(path, content)

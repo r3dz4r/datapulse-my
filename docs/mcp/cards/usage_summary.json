@@ -12,7 +12,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, and `trust_distribution` (counts of returned trust verdicts by published score band: 90-100, 75-89, 50-74, 25-49, 0-24) for the inclusive range. Legacy identity fields are ignored.",
+  "description": "Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, `trust_verdict_calls` (the count of trust_verdict records regardless of outcome or result shape), and `trust_distribution` (counts of returned trust verdicts by published score band: 90-100, 75-89, 50-74, 25-49, 0-24) for the inclusive range. Use it for aggregate tool activity; do not use it to find data-quality risks—use find_stale, find_anomalies, find_deteriorating, find_recovering, find_unreliable, or find_schema_drift instead. It reads persisted usage records, so zero totals mean no retained records in that range; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "usage_summary",
   "endpoint": {
     "method": "POST",
@@ -24,14 +24,14 @@
     "additionalProperties": false,
     "properties": {
       "since": {
-        "description": "Inclusive ISO start date YYYY-MM-DD, e.g. '2026-08-01'.",
+        "description": "Inclusive first day of the persisted-record window, e.g. '2026-08-01'; it must not be after until.",
         "examples": [
           "2026-08-01"
         ],
         "type": "string"
       },
       "until": {
-        "description": "Inclusive ISO end date YYYY-MM-DD, e.g. '2026-08-07'.",
+        "description": "Inclusive last day of the persisted-record window, e.g. '2026-08-07'; it must not be before since.",
         "examples": [
           "2026-08-07"
         ],
@@ -45,7 +45,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

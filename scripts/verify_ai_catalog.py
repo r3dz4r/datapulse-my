@@ -11,12 +11,13 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from gen_ai_catalog import PUBLIC_ORIGIN, build_outputs
+from gen_ai_catalog import ARD_SPEC_VERSION, PUBLIC_ORIGIN, build_outputs
 
 
 ROOT = Path(__file__).resolve().parents[1]
 LOGGER = logging.getLogger(__name__)
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
+IDENTIFIER = re.compile(r"^urn:air:([a-z0-9][a-z0-9.-]*):mcp:[a-z][a-z0-9_]*$")
 
 
 class OperatorError(Exception):
@@ -51,6 +52,37 @@ def _card_path(root: Path, url: object) -> Path:
     return path
 
 
+def _trust_manifest_domain_error(identifier: str, trust_manifest: object) -> str | None:
+    match = IDENTIFIER.fullmatch(identifier)
+    if match is None:
+        return "catalog entry identifier is not an ARD discovery URN"
+    if not isinstance(trust_manifest, dict):
+        return "catalog entry trustManifest must be an object"
+    identity = trust_manifest.get("identity")
+    if not isinstance(identity, str):
+        return "catalog entry trustManifest.identity must be a string"
+    parsed = urlparse(identity)
+    hostname = parsed.hostname.lower().rstrip(".") if parsed.hostname else None
+    publisher = match.group(1)
+    if (
+        parsed.scheme != "https"
+        or parsed.username is not None
+        or parsed.password is not None
+        or hostname is None
+        or (hostname != publisher and not hostname.endswith(f".{publisher}"))
+    ):
+        return "catalog entry trustManifest identity domain does not align with URN publisher"
+    return None
+
+
+def _well_known_error(canonical: bytes, path: Path, label: str) -> str | None:
+    if not path.is_file():
+        return f"missing well-known {label} manifest"
+    if path.read_bytes() != canonical:
+        return f"well-known {label} manifest is not byte-identical to docs/ai-catalog.json"
+    return None
+
+
 def verify(root: Path) -> list[str]:
     """Return every contract defect without mutating the generated public surface."""
     root = root.resolve()
@@ -59,8 +91,8 @@ def verify(root: Path) -> list[str]:
     errors: list[str] = []
     if catalog.get("specVersion") != "1.0":
         errors.append("catalog specVersion must equal 1.0")
-    if catalog.get("ard_spec_version") != "0.9":
-        errors.append("catalog ard_spec_version must equal 0.9")
+    if catalog.get("ard_spec_version") != ARD_SPEC_VERSION:
+        errors.append(f"catalog ard_spec_version must equal {ARD_SPEC_VERSION}")
     contract_version = catalog.get("contract_version")
     if not isinstance(contract_version, str) or SEMVER.fullmatch(contract_version) is None:
         errors.append("catalog contract_version must be semver-shaped")
@@ -78,6 +110,7 @@ def verify(root: Path) -> list[str]:
             raise OperatorError("mcp.json tools is missing")
         if len(entries) != len(tools):
             errors.append(f"catalog has {len(entries)} entries but mcp.json has {len(tools)} tools")
+        representative_query_corpus = _read_json(root / "scripts/mcp-representative-queries.json")
     except OperatorError:
         raise
     identifiers: set[str] = set()
@@ -92,11 +125,28 @@ def verify(root: Path) -> list[str]:
         if identifier in identifiers:
             errors.append(f"duplicate catalog entry identifier: {identifier}")
         identifiers.add(identifier)
+        representative_queries = entry.get("representativeQueries")
+        if (
+            not isinstance(representative_queries, list)
+            or not 2 <= len(representative_queries) <= 5
+            or not all(isinstance(query, str) for query in representative_queries)
+        ):
+            errors.append(f"catalog entry {identifier} must contain 2-5 representativeQueries")
+        if entry.get("displayName") not in representative_query_corpus:
+            errors.append(f"catalog entry {identifier} is missing an authored representative query corpus")
+        trust_error = _trust_manifest_domain_error(identifier, entry.get("trustManifest"))
+        if trust_error is not None:
+            errors.append(f"{trust_error}: {identifier}")
+        has_url = "url" in entry
+        has_data = "data" in entry
+        if has_url == has_data:
+            errors.append(f"catalog entry {identifier} must contain exactly one of url or data")
+            continue
         capabilities = entry.get("capabilities")
         if not isinstance(capabilities, list) or capabilities != sorted(capabilities):
             errors.append(f"catalog entry {identifier} capabilities are not sorted")
         try:
-            path = _card_path(root, entry.get("url"))
+            path = _card_path(root, entry["url"])
         except ValueError as exc:
             errors.append(str(exc))
             continue
@@ -118,6 +168,14 @@ def verify(root: Path) -> list[str]:
         raise OperatorError(f"cannot build expected catalog: {exc}") from exc
     if catalog_path.read_bytes() != expected_catalog:
         errors.append("catalog bytes differ from deterministic generator output")
+    canonical = catalog_path.read_bytes()
+    for path, label in (
+        (root / "docs/.well-known/ard.json", "ARD"),
+        (root / "docs/.well-known/ai-catalog.json", "AI catalog"),
+    ):
+        error = _well_known_error(canonical, path, label)
+        if error is not None:
+            errors.append(error)
     for name, expected in expected_cards.items():
         path = root / "docs/mcp/cards" / f"{name}.json"
         if not path.is_file():

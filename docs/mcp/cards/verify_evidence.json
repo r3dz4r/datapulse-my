@@ -11,7 +11,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Use when a fresh, rate-limited live-vs-published comparison is needed for a direct-access dataset, for example after asking whether a government dataset is reachable now. Performs a rate-limited live GET and returns comparable transport receipts plus a match, mismatch, unreachable, or not_verifiable verdict. This live check is an observation, not semantic truth: it does not recompute content dates, record counts, or shape fingerprints. Results are ephemeral and do not update published health artifacts. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation.",
+  "description": "Use when a fresh, rate-limited live-vs-published comparison is needed for a direct-access dataset, for example after asking whether a government dataset is reachable now. Performs a rate-limited live GET and returns comparable transport receipts plus a match, mismatch, unreachable, or not_verifiable verdict. This live check is an observation, not semantic truth: it does not recompute content dates, record counts, or shape fingerprints. Results are ephemeral and do not update published health artifacts. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation. Use it for a live transport comparison; do not use it for published receipt integrity or signed-attestation verification—use verify_dataset or verify_attestation instead. An unreachable or not_verifiable verdict reports that this live comparison could not establish a match, while cached results are still ephemeral; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "verify_evidence",
   "endpoint": {
     "method": "POST",
@@ -23,7 +23,7 @@
     "additionalProperties": false,
     "properties": {
       "dataset_id": {
-        "description": "Canonical direct-access dataset identifier for a rate-limited live transport observation, e.g. 'fuelprice'; browser-dependent sources cannot be fetched here.",
+        "description": "Stable direct-access dataset slug returned by search_datasets for a live transport observation, e.g. 'fuelprice'; browser-dependent sources return not_verifiable.",
         "examples": [
           "fuelprice"
         ],
@@ -37,7 +37,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

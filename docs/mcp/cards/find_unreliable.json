@@ -12,7 +12,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return datasets whose evaluated publish-reliability grade is at or below a threshold (the unreliable ones), with the worst grades and lowest on-time percentages first. Reliability measures timeliness of successful freshness observations, not uptime; sample days are included so agents can judge evidence depth.",
+  "description": "Return datasets whose evaluated publish-reliability grade is at or below a threshold (the unreliable ones), with the worst grades and lowest on-time percentages first. Reliability measures timeliness of successful freshness observations, not uptime; sample days are included so agents can judge evidence depth. Use it for timeliness reliability grades; do not use it for individual anomalies, trends, or structural drift—use find_anomalies, find_deteriorating, find_recovering, or find_schema_drift instead. It reads precomputed reliability data, so an empty result means no published grade meets the threshold; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_unreliable",
   "endpoint": {
     "method": "POST",
@@ -25,7 +25,7 @@
     "properties": {
       "at_or_below_grade": {
         "default": "C",
-        "description": "Inclusive reliability threshold; e.g. 'C' returns grades C, D, and F.",
+        "description": "Inclusive published reliability threshold; e.g. 'C' returns grades C, D, and F; omit it to use C.",
         "examples": [
           "C",
           "F"
@@ -34,7 +34,7 @@
       },
       "limit": {
         "default": 50,
-        "description": "Maximum ranked unreliable datasets to return; integer from 1 to 200, e.g. 50.",
+        "description": "Maximum worst-ranked unreliable datasets to return, e.g. 50; omit it to use 50 without changing ranking.",
         "examples": [
           10,
           50
@@ -48,7 +48,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

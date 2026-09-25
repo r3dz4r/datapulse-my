@@ -11,7 +11,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return datasets whose status is aging, stale, or degraded, plus datasets missing from the latest health snapshot. Use when an agent needs to know which data has a freshness or schema-validity risk.",
+  "description": "Return datasets whose status is aging, stale, or degraded, plus datasets missing from the latest health snapshot. Use when an agent needs to know which data has a freshness or schema-validity risk. Use it to enumerate freshness or schema-risk candidates; do not use it for anomalies, trends, reliability, or drift—use find_anomalies, find_deteriorating, find_unreliable, or find_schema_drift instead. It reads the published health snapshot, so an empty result means no rows met this snapshot-based rule; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_stale",
   "endpoint": {
     "method": "POST",
@@ -24,7 +24,7 @@
     "properties": {
       "max_age_hours": {
         "default": 24,
-        "description": "Maximum acceptable age of the latest health check in whole hours; non-negative integer, e.g. 72.",
+        "description": "Maximum published-snapshot age before otherwise healthy rows are included, e.g. 72; omit it to use 24 hours.",
         "examples": [
           24,
           72
@@ -37,7 +37,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

@@ -12,7 +12,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return datasets whose published freshness trend is deteriorating, ranked by staleness slope. Optionally require a minimum historical anomaly rate; includes pipeline-computed trend and reliability evidence so agents do not recompute it.",
+  "description": "Return datasets whose published freshness trend is deteriorating, ranked by staleness slope. Optionally require a minimum historical anomaly rate; includes pipeline-computed trend and reliability evidence so agents do not recompute it. Use it for worsening freshness trends; do not use it for anomalies, recovery, reliability grades, or structural drift—use find_anomalies, find_recovering, find_unreliable, or find_schema_drift instead. It reads precomputed trend data, so an empty result means no published deteriorating row survives the selected filters; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_deteriorating",
   "endpoint": {
     "method": "POST",
@@ -25,7 +25,7 @@
     "properties": {
       "limit": {
         "default": 50,
-        "description": "Maximum ranked deteriorating datasets to return; integer from 1 to 200, e.g. 50.",
+        "description": "Maximum highest-ranked deteriorating datasets to return, e.g. 50; omit it to use 50 without changing ranking.",
         "examples": [
           10,
           50
@@ -46,7 +46,7 @@
           }
         ],
         "default": null,
-        "description": "Optional minimum percent of anomaly-evaluable history days, e.g. 25.0.",
+        "description": "Optional inclusive anomaly-rate filter on published history, e.g. 25.0; omit it to retain every deteriorating row.",
         "examples": [
           25.0,
           50.0
@@ -57,7 +57,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

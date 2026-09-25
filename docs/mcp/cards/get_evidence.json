@@ -11,7 +11,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Use for a deep evidence audit or to inspect a provenance and evidence receipt. Returns the complete published evidence receipt for one dataset: probe time, transport, access dependency, freshness, schema drift / record-count drift, tolerance, status, anomaly fields, and receipt/evidence references. It reads published pipeline evidence, not a live source fetch: you may report what the pipeline observed, but must not infer the source is currently reachable or semantically true. Use it for a deep audit before or alongside verification. search_datasets → get_evidence → verify_evidence → verify_attestation.",
+  "description": "Use for a deep evidence audit or to inspect a provenance and evidence receipt. Returns the complete published evidence receipt for one dataset: probe time, transport, access dependency, freshness, schema drift / record-count drift, tolerance, status, anomaly fields, and receipt/evidence references. It reads published pipeline evidence, not a live source fetch: you may report what the pipeline observed, but must not infer the source is currently reachable or semantically true. Use it for a deep audit before or alongside verification. search_datasets → get_evidence → verify_evidence → verify_attestation. Use it for a complete published receipt; do not use it for a live transport check or signature verification—use verify_evidence or verify_attestation instead. It reads precomputed evidence, so evidence_available=false means no published health row; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "get_evidence",
   "endpoint": {
     "method": "POST",
@@ -23,7 +23,7 @@
     "additionalProperties": false,
     "properties": {
       "dataset_id": {
-        "description": "Canonical dataset identifier for its complete published evidence receipt, e.g. 'fuelprice'; this tool does not fetch the live source.",
+        "description": "Stable dataset slug returned by search_datasets for its complete receipt, e.g. 'fuelprice'; this tool requires the slug, not a display name.",
         "examples": [
           "fuelprice"
         ],
@@ -37,7 +37,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

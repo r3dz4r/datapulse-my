@@ -13,7 +13,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return datasets flagged by the latest published anomaly detection (anomalies), ranked by how far the observed update interval exceeds its threshold. Optionally require a minimum publish-reliability grade; includes pipeline-computed anomaly and reliability evidence so agents do not recompute it.",
+  "description": "Return datasets flagged by the latest published anomaly detection (anomalies), ranked by how far the observed update interval exceeds its threshold. Optionally require a minimum publish-reliability grade; includes pipeline-computed anomaly and reliability evidence so agents do not recompute it. Use it for unusual update intervals; do not use it for worsening freshness, recovery, reliability grades, or structural drift—use find_deteriorating, find_recovering, find_unreliable, or find_schema_drift instead. It reads precomputed anomaly data, so an empty result means no published row survives the selected filters; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_anomalies",
   "endpoint": {
     "method": "POST",
@@ -26,7 +26,7 @@
     "properties": {
       "limit": {
         "default": 50,
-        "description": "Maximum ranked anomalies to return; integer from 1 to 200, e.g. 50.",
+        "description": "Maximum highest-ranked anomalies to return, e.g. 50; omit it to use 50 without changing the ranking.",
         "examples": [
           10,
           50
@@ -45,7 +45,7 @@
           }
         ],
         "default": null,
-        "description": "Optional minimum publish-reliability grade; e.g. 'C' keeps A, B, and C and excludes insufficient data.",
+        "description": "Optional inclusive published reliability floor, e.g. 'C' keeps A, B, and C; omit it to retain rows regardless of grade.",
         "examples": [
           "A",
           "C"
@@ -61,7 +61,7 @@
           }
         ],
         "default": null,
-        "description": "Optional exact detection mode; e.g. 'rolling_14d' or 'cadence_fallback'.",
+        "description": "Optional exact published detection mode filter, e.g. 'rolling_14d' or 'cadence_fallback'; omit it to include every mode.",
         "examples": [
           "rolling_14d",
           "cadence_fallback"
@@ -72,7 +72,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

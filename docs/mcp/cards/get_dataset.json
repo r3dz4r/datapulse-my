@@ -11,7 +11,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return full detail for one dataset id, including its latest health status and last-verified timestamp, content_freshness_date, and freshness_signal_source (last_modified, content_parse, or none). Use to fetch the provenance/citation metadata for a dataset found via search_datasets and distinguish unknown-freshness from proven stale data.",
+  "description": "Return full detail for one dataset id, including its latest health status and last-verified timestamp, content_freshness_date, and freshness_signal_source (last_modified, content_parse, or none). Use to fetch the provenance/citation metadata for a dataset found via search_datasets and distinguish unknown-freshness from proven stale data. Use it for one dataset's current published detail; do not use it for citation context or a Passport—use get_provenance or get_data_passport instead. It reads published data, so an absent health row is reported as unknown rather than probed live; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "get_dataset",
   "endpoint": {
     "method": "POST",
@@ -23,7 +23,7 @@
     "additionalProperties": false,
     "properties": {
       "dataset_id": {
-        "description": "Canonical dataset identifier, e.g. 'dosm_cpi_state'. See the registry catalogue for valid IDs.",
+        "description": "Stable dataset slug returned by search_datasets, e.g. 'dosm_cpi_state'; this tool requires the slug, not a display name.",
         "examples": [
           "dosm_cpi_state"
         ],
@@ -37,7 +37,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

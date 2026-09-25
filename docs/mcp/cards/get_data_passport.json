@@ -11,7 +11,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return one bounded, machine-readable Dataset Passport v1 for a canonical dataset ID. It reads the published Passport artifact only; it does not fetch an upstream source or create evidence. The Passport describes observed metadata and evidence availability, not semantic truth, completeness, certification, legal permission, safety, or AI admission.",
+  "description": "Return one bounded, machine-readable Dataset Passport v1 for a canonical dataset ID. It reads the published Passport artifact only; it does not fetch an upstream source or create evidence. The Passport describes observed metadata and evidence availability, not semantic truth, completeness, certification, legal permission, safety, or AI admission. Use it for the bounded Passport artifact; do not use it for current health detail or citation context—use get_dataset or get_provenance instead. It reads precomputed published data, and evidence_available=false identifies an unavailable or unsupported Passport; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "get_data_passport",
   "endpoint": {
     "method": "POST",
@@ -23,7 +23,7 @@
     "additionalProperties": false,
     "properties": {
       "dataset_id": {
-        "description": "Canonical dataset identifier for its published Passport v1, e.g. 'fuelprice'.",
+        "description": "Stable dataset slug returned by search_datasets, e.g. 'fuelprice'; this tool requires the slug, not a display name.",
         "examples": [
           "fuelprice"
         ],
@@ -37,7 +37,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

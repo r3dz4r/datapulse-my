@@ -12,7 +12,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return datasets with published structural or record-count drift evidence, ranked with structural changes first. Optionally require a minimum number of structural transitions; includes pipeline-computed evidence so agents do not infer drift from freshness alone.",
+  "description": "Return datasets with published structural or record-count drift evidence, ranked with structural changes first. Optionally require a minimum number of structural transitions; includes pipeline-computed evidence so agents do not infer drift from freshness alone. Use it for structural or record-count changes; do not use it for freshness risk, anomalies, trends, or reliability—use find_stale, find_anomalies, find_deteriorating, or find_unreliable instead. It reads precomputed drift data, so an empty result means no published drift row survives the selected filters; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_schema_drift",
   "endpoint": {
     "method": "POST",
@@ -25,7 +25,7 @@
     "properties": {
       "limit": {
         "default": 50,
-        "description": "Maximum ranked drift results to return; integer from 1 to 200, e.g. 50.",
+        "description": "Maximum structural-first ranked drift results to return, e.g. 50; omit it to use 50 without changing ranking.",
         "examples": [
           10,
           50
@@ -36,7 +36,7 @@
       },
       "min_change_count": {
         "default": 0,
-        "description": "Minimum structural fingerprint or column-count transitions; integer from 0 to 100, e.g. 1.",
+        "description": "Inclusive filter on the larger published shape or column transition count, e.g. 1; omit it to include every drift row.",
         "examples": [
           0,
           1
@@ -50,7 +50,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

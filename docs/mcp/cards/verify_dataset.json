@@ -12,7 +12,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "This is the preferred single-call pre-trust check for 'is this dataset current?', stale, unknown-freshness, degraded, or browser-dependent questions, and whenever an agent must verify before relying on data. Returns dataset metadata, published evidence and fail-closed signed receipt verification with artifact references. It verifies published artifacts, not a live source check: you may infer whether their receipt verifies, but must not infer current upstream availability or semantic truth. Use search_datasets → verify_dataset → get_provenance.",
+  "description": "This is the preferred single-call pre-trust check for 'is this dataset current?', stale, unknown-freshness, degraded, or browser-dependent questions, and whenever an agent must verify before relying on data. Returns dataset metadata, published evidence and fail-closed signed receipt verification with artifact references. It verifies published artifacts, not a live source check: you may infer whether their receipt verifies, but must not infer current upstream availability or semantic truth. Use search_datasets → verify_dataset → get_provenance. Use it for one published pre-trust check; do not use it for a live transport comparison or attestation-chain verification—use verify_evidence or verify_attestation instead. It verifies precomputed published artifacts, so a failed check does not identify current upstream availability; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "verify_dataset",
   "endpoint": {
     "method": "POST",
@@ -24,7 +24,7 @@
     "additionalProperties": false,
     "properties": {
       "dataset_id": {
-        "description": "Canonical dataset identifier for the published pre-trust receipt check, e.g. 'fuelprice'; this does not perform a live source fetch.",
+        "description": "Stable dataset slug returned by search_datasets for the published receipt check, e.g. 'fuelprice'; this tool requires the slug, not a display name.",
         "examples": [
           "fuelprice"
         ],
@@ -33,7 +33,7 @@
       },
       "include_proof_steps": {
         "default": false,
-        "description": "Include bounded signed-receipt verifier diagnostics for an audit, e.g. false; the result still does not establish upstream semantic truth.",
+        "description": "Set true to include bounded verifier diagnostics for an audit, e.g. false; omit it to suppress diagnostics without changing verification.",
         "examples": [
           false,
           true
@@ -47,7 +47,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

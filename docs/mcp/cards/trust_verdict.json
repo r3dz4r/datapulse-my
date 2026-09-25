@@ -11,7 +11,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return published attestation facts, the unsigned methodology-versioned trust score, numeric components, and component_availability reasons, plus existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately.",
+  "description": "Return published attestation facts, the unsigned methodology-versioned trust score, numeric components, and component_availability reasons, plus existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately. Use it to assemble the published trust view; do not use it for receipt verification, live comparison, or signature verification—use verify_dataset, verify_evidence, or verify_attestation instead. It reads precomputed artifacts, so missing component availability explains omitted evidence rather than a live probe; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "trust_verdict",
   "endpoint": {
     "method": "POST",
@@ -23,7 +23,7 @@
     "additionalProperties": false,
     "properties": {
       "dataset_id": {
-        "description": "Canonical dataset identifier to aggregate, e.g. 'fuelprice'.",
+        "description": "Stable dataset slug returned by search_datasets to aggregate, e.g. 'fuelprice'; display names are not resolved here.",
         "examples": [
           "fuelprice"
         ],
@@ -37,7 +37,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

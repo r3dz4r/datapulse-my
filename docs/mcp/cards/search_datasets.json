@@ -14,7 +14,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Use for discovery only: find DataPulse's 418 Malaysian public datasets by topic, source, or licence—for example, 'Malaysian public data inflation', licence and attribution, or a government dataset source. Returns ranked matches with id, title, source, licence, published status, and score. This is not trust verification: a status is published pipeline context, not proof that a dataset is current or reliable. For 'is this dataset current?' or verify before relying on data, use search_datasets → verify_dataset → get_provenance.",
+  "description": "Use for discovery only: find DataPulse's 418 Malaysian public datasets by topic, source, or licence—for example, 'Malaysian public data inflation', licence and attribution, or a government dataset source. Returns ranked matches with id, title, source, licence, published status, and score. This is not trust verification: a status is published pipeline context, not proof that a dataset is current or reliable. For pre-trust use search_datasets → verify_dataset → get_provenance. Use it to discover candidates; do not use it for a trust decision—use verify_dataset instead. It reads published catalogue data, so no match means the published catalogue has no matching entry; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "search_datasets",
   "endpoint": {
     "method": "POST",
@@ -35,7 +35,7 @@
           }
         ],
         "default": null,
-        "description": "Optional exact licence name or supported alias for reuse discovery, e.g. 'CC BY 4.0'; this does not verify attribution compliance.",
+        "description": "Optional exact licence name or supported alias applied before ranking, e.g. 'CC BY 4.0'; omit it to search every licence.",
         "examples": [
           "CC BY 4.0",
           "Open Government Licence (Malaysia)"
@@ -43,13 +43,13 @@
       },
       "limit": {
         "default": 10,
-        "description": "Maximum discovery matches to return; integer from 1 to 50, e.g. 10.",
+        "description": "Maximum highest-ranked discovery matches to return, e.g. 10; omitted defaults to 10 and does not change ranking.",
         "maximum": 50,
         "minimum": 1,
         "type": "integer"
       },
       "query": {
-        "description": "Topic or task phrasing for Malaysian public-data discovery only, e.g. 'Malaysian public data inflation'; verify a result separately.",
+        "description": "Topic or task phrasing used to rank discovery candidates, e.g. 'Malaysian public data inflation'; use a returned id with get_dataset.",
         "examples": [
           "Malaysian public data inflation"
         ],
@@ -66,7 +66,7 @@
           }
         ],
         "default": null,
-        "description": "Optional case-insensitive publisher/source filter, e.g. 'OpenDOSM'.",
+        "description": "Optional publisher/source substring filter applied before ranking, e.g. 'OpenDOSM'; omit it to search every source.",
         "examples": [
           "OpenDOSM",
           "data.gov.my",
@@ -80,7 +80,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

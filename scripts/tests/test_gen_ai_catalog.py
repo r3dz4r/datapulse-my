@@ -19,6 +19,8 @@ def _fixture_root(tmp_path: Path) -> Path:
     root.mkdir()
     shutil.copy2(ROOT / "mcp.json", root / "mcp.json")
     shutil.copy2(ROOT / "datapulse.json", root / "datapulse.json")
+    (root / "scripts").mkdir()
+    shutil.copy2(ROOT / "scripts/mcp-representative-queries.json", root / "scripts/mcp-representative-queries.json")
     return root
 
 
@@ -90,3 +92,31 @@ def test_contract_version_present_and_semver(tmp_path: Path) -> None:
     root = _fixture_root(tmp_path)
     assert _generate(root).returncode == 0
     assert re.fullmatch(r"\d+\.\d+\.\d+", _catalog(root)["contract_version"])
+
+
+def test_ard_manifest_includes_well_known_copies_and_trust_manifests(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    assert _generate(root).returncode == 0
+    canonical = (root / "docs/ai-catalog.json").read_bytes()
+    assert (root / "docs/.well-known/ard.json").read_bytes() == canonical
+    assert (root / "docs/.well-known/ai-catalog.json").read_bytes() == canonical
+    catalog = _catalog(root)
+    assert catalog["ard_spec_version"] == "0.91"
+    for entry in catalog["entries"]:
+        assert entry["trustManifest"] == {
+            "identity": "https://data-pulse.my",
+            "identityType": "https",
+            "attestations": [
+                {"type": "ed25519-probe-key-registry", "uri": "https://www.data-pulse.my/.well-known/datapulse-probe-keys.json"},
+                {"type": "ed25519-vector-signing-key-registry", "uri": "https://www.data-pulse.my/.well-known/datapulse-vector-keys.json"},
+                {"type": "verification-metadata", "uri": "https://www.data-pulse.my/llms.txt"},
+            ],
+        }
+
+
+def test_authored_representative_queries_replace_schema_derived_fallback(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    assert _generate(root).returncode == 0
+    corpus = json.loads((root / "scripts/mcp-representative-queries.json").read_text(encoding="utf-8"))
+    for entry in _catalog(root)["entries"]:
+        assert entry["representativeQueries"] == corpus[entry["displayName"]]

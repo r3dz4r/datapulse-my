@@ -11,7 +11,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return datasets whose published freshness trend is recovering, with the fastest staleness reductions first. Includes pipeline-computed trend and publish-reliability evidence.",
+  "description": "Return datasets whose published freshness trend is recovering, with the fastest staleness reductions first. Includes pipeline-computed trend and publish-reliability evidence. Use it for improving freshness trends; do not use it for deterioration, anomalies, reliability grades, or structural drift—use find_deteriorating, find_anomalies, find_unreliable, or find_schema_drift instead. It reads precomputed trend data, so an empty result means no published recovering row exists; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_recovering",
   "endpoint": {
     "method": "POST",
@@ -24,7 +24,7 @@
     "properties": {
       "limit": {
         "default": 50,
-        "description": "Maximum ranked recovering datasets to return; integer from 1 to 200, e.g. 50.",
+        "description": "Maximum fastest-recovering datasets to return, e.g. 50; omit it to use 50 without changing ranking.",
         "examples": [
           10,
           50
@@ -38,7 +38,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

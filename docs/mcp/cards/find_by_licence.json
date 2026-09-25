@@ -11,7 +11,7 @@
   ],
   "contract_version": "1.0.0",
   "dataset_count": 418,
-  "description": "Return all datasets with the given licence, summarised. Use to enumerate what's available under a specific licence for compliance/reuse scoping.",
+  "description": "Return all datasets with the given licence, summarised. Use to enumerate what's available under a specific licence for compliance/reuse scoping. Use it to enumerate one licence; do not use it to discover by topic or inspect a dataset's citation context—use search_datasets or get_provenance instead. It reads published manifest data, so an empty list means no published dataset has the resolved licence; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_by_licence",
   "endpoint": {
     "method": "POST",
@@ -23,7 +23,7 @@
     "additionalProperties": false,
     "properties": {
       "licence": {
-        "description": "Exact licence name or supported alias, e.g. 'Creative Commons Attribution 4.0'.",
+        "description": "Exact published licence name or supported alias, e.g. 'Creative Commons Attribution 4.0'; use search_datasets to discover licence values.",
         "examples": [
           "Creative Commons Attribution 4.0",
           "CC BY 4.0",
@@ -39,7 +39,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "13601c0c930efe517636cebba6d838fe9df72d67",
+    "commit_sha": "aa43e74dc0c721adcec420b50da7a5587180ef91",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",
