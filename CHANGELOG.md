@@ -14,6 +14,19 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.37.0](https://github.com/r3dz4r/datapulse-my/compare/v3.36.2...v3.37.0) (2026-09-25)
+
+
+### Features
+
+* publish ARD discovery surfaces ([4fd950b](https://github.com/r3dz4r/datapulse-my/commit/4fd950be3125f4cb15ec7cde0ab743f765b537c7))
+* publish ARD-conformant AI catalog ([6e2fa78](https://github.com/r3dz4r/datapulse-my/commit/6e2fa7891c3680ae03d41641643db2a9a6c87422))
+
+
+### Bug Fixes
+
+* make AI catalog card verification commit-stamp aware ([8019e59](https://github.com/r3dz4r/datapulse-my/commit/8019e5912a77bbbf32be4826d03cb58eb6c39a3f))
+
 ## [3.36.2](https://github.com/r3dz4r/datapulse-my/compare/v3.36.1...v3.36.2) (2026-09-24)
 
 
