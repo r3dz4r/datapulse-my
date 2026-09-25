@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.37.2](https://github.com/r3dz4r/datapulse-my/compare/v3.37.1...v3.37.2) (2026-09-25)
+
+
+### Bug Fixes
+
+* **deploy:** stop the alias probe following the redirect it asserts on ([36c5835](https://github.com/r3dz4r/datapulse-my/commit/36c58354f53cd6a1ef74d3a1dc7254e51e388fa3))
+* preserve redirect semantics for served aliases ([b244de3](https://github.com/r3dz4r/datapulse-my/commit/b244de383f2cdb27a4116b611dae7ee60e11591d))
+
 ## [3.37.1](https://github.com/r3dz4r/datapulse-my/compare/v3.37.0...v3.37.1) (2026-09-25)
 
 
