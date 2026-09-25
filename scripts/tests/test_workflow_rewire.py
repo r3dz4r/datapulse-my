@@ -181,7 +181,8 @@ def test_cloudflare_workflow_uses_release_build_and_declared_inputs() -> None:
     assert "bash scripts/generate.sh release-build" in workflow
     assert '"scripts/**"' in paths_block
     assert '"health/**"' not in paths_block
-    assert "cloudflare/wrangler-action@v3" in workflow
+    assert "npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview --branch=main" in workflow
+    assert "cloudflare/wrangler-action" not in workflow
     assert "actions/deploy-pages" not in workflow
 
 
@@ -561,5 +562,14 @@ def test_cloudflare_served_fetches_remain_bounded_and_https_only() -> None:
     verify_step = _read(SERVED_VERIFIER)
 
     assert "fetch() {" in verify_step
-    for flag in ("--proto '=https'", "--retry 3", "--retry-delay 5", "--retry-all-errors", "--connect-timeout 10", "--max-time 30"):
+    for flag in ("--proto '=https'", "--retry 3", "--retry-delay 5", "--retry-all-errors", "--connect-timeout 10"):
         assert flag in verify_step
+    assert '--max-time "$fetch_max_time"' in verify_step
+    fetch_max_time_default = re.search(
+        r'^fetch_max_time="\$\{FETCH_MAX_TIME:-([0-9]+)\}"$',
+        verify_step,
+        re.MULTILINE,
+    )
+    assert fetch_max_time_default is not None
+    # A literal that a future edit can bump arbitrarily is weaker than parsing and bounding the default.
+    assert 30 <= int(fetch_max_time_default.group(1)) <= 300
