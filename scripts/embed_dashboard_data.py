@@ -60,6 +60,13 @@ NPRA_DATASET_IDS = {
     "cosmetics_manufacturers",
 }
 HOMEPAGE_TEMPLATE = Path("scripts/templates/register-home.html.tmpl")
+NPRA_RUNTIME_START = "  <script>\n    (() => {\n      const ids = "
+NPRA_RUNTIME_MANAGED_START = '  <script data-npra-runtime>'
+NPRA_RUNTIME_END = "\n    })();\n  </script>"
+NPRA_RUNTIME_ERROR = (
+    '  <p data-npra-register-error role="alert" hidden>'
+    "Unable to load NPRA register data from /health/index.json.</p>\n"
+)
 
 
 def _format_myt(value: str) -> str:
@@ -103,44 +110,83 @@ def _npra_freshness(html: str, health: object) -> str:
     )
 
 
+def npra_runtime_records(health: object) -> dict[str, dict[str, object]]:
+    """Return precisely the health fields consumed by the NPRA register."""
+    if not isinstance(health, dict) or not isinstance(health.get("datasets"), list):
+        raise EmbedError("health datasets must be an array")
+    return {
+        row["dataset_id"]: {
+            field: row.get(field)
+            for field in ("dataset_id", "status", "last_modified")
+        }
+        for row in health["datasets"]
+        if isinstance(row, dict) and isinstance(row.get("dataset_id"), str)
+        and row["dataset_id"] in NPRA_DATASET_IDS
+    }
+
+
 def _npra_runtime_script(html: str) -> str:
-    """Keep the browser's live-health enhancement aligned with the static fallback."""
-    return html.replace(
-        "          return records;",
-        "          return payload;",
-        1,
-    ).replace(
-        "          const response = await fetch('/health/latest.json', { cache: 'no-store' });",
-        "          let response;\n"
-        "          try {\n"
-        "            response = await fetch('/health/index.json', { cache: 'no-store' });\n"
-        "            if (!response.ok) throw new Error();\n"
-        "          } catch (_) {\n"
-        "            response = await fetch('/health/latest.json', { cache: 'no-store' });\n"
-        "          }",
-        1,
-    ).replace(
-        "      const render = records => {\n"
-        "        const counts = records.reduce",
-        "      const render = payload => {\n"
-        "        const records = payload.datasets.filter(row => plainObject(row) && ids.includes(row.dataset_id));\n"
-        "        const counts = records.reduce",
-        1,
-    ).replace(
-        "        const checkedDate = latest ? new Date(latest) : null;",
-        "        const checkedDate = new Date(payload.checked_at);",
-        1,
-    ).replace(
-        "        document.querySelector('[data-npra-cfd]').textContent = `${records.length} datasets · ${counts.fresh || 0} fresh · ${counts.stale || 0} stale · last checked ${checked} MYT`;",
-        "        const sourceUpdate = latest ? ` · Latest source update: ${new Intl.DateTimeFormat('en-MY', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kuala_Lumpur' }).format(new Date(latest))} MYT` : '';\n"
-        "        document.querySelector('[data-npra-cfd]').textContent = `${records.length} datasets · ${counts.fresh || 0} fresh · ${counts.stale || 0} stale · last checked ${checked} MYT${sourceUpdate}`;",
-        1,
-    ).replace(
-        "      health().then(records => { if (records) render(records); });",
-        "      health().then(payload => { if (payload) render(payload); });",
-        1,
-    )
-    return html
+    """Render NPRA from the established same-origin health projection only."""
+    start = html.find(NPRA_RUNTIME_MANAGED_START)
+    if start < 0:
+        start = html.find(NPRA_RUNTIME_START)
+    if start < 0:
+        raise EmbedError("NPRA runtime script marker was not found")
+    end = html.find(NPRA_RUNTIME_END, start)
+    if end < 0:
+        raise EmbedError("NPRA runtime script is not closed")
+    # The error node is an owned companion of the script.  Remove any prior
+    # copy before rendering so a second process sees the same source state.
+    html = html.replace(NPRA_RUNTIME_ERROR, "")
+    start = html.find(NPRA_RUNTIME_MANAGED_START)
+    if start < 0:
+        start = html.find(NPRA_RUNTIME_START)
+    if start < 0:
+        raise EmbedError("NPRA runtime script marker was not found")
+    end = html.find(NPRA_RUNTIME_END, start)
+    if end < 0:
+        raise EmbedError("NPRA runtime script is not closed")
+    runtime = '''  <p data-npra-register-error role="alert" hidden>Unable to load NPRA register data from /health/index.json.</p>
+  <script data-npra-runtime>
+    (() => {
+      const ids = ['pharmaceutical_products', 'pharmaceutical_importers', 'pharmaceutical_manufacturers', 'pharmaceutical_wholesalers', 'pharmaceutical_products_cancelled', 'cosmetic_notifications', 'cosmetic_notifications_cancelled', 'cosmetics_manufacturers'];
+      const statuses = ['fresh', 'aging', 'stale', 'discontinued', 'degraded', 'browser_dependent', 'unreachable', 'unknown', 'unknown_freshness', 'reference'];
+      const label = status => status.replaceAll('_', '-');
+      const plainObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+      const fail = () => { document.querySelector('[data-npra-register-error]').hidden = false; };
+      const health = async () => {
+        try {
+          const response = await fetch('/health/index.json', { cache: 'no-store' });
+          if (!response.ok) throw new Error();
+          const payload = await response.json();
+          if (!plainObject(payload) || !Array.isArray(payload.datasets)) throw new Error();
+          const records = payload.datasets.filter(row => plainObject(row) && ids.includes(row.dataset_id));
+          if (records.length !== ids.length || records.some(row => !statuses.includes(row.status))) throw new Error();
+          return payload;
+        } catch (_) { fail(); return null; }
+      };
+      const render = payload => {
+        const records = payload.datasets.filter(row => plainObject(row) && ids.includes(row.dataset_id));
+        const counts = records.reduce((result, row) => { result[row.status] = (result[row.status] || 0) + 1; return result; }, {});
+        const latest = records.map(row => row.last_modified).filter(Boolean).sort().at(-1);
+        const checkedDate = new Date(payload.checked_at);
+        const checked = checkedDate && !Number.isNaN(checkedDate.valueOf())
+          ? new Intl.DateTimeFormat('en-MY', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kuala_Lumpur' }).format(checkedDate)
+          : 'unavailable';
+        const sourceUpdate = latest ? ` · Latest source update: ${new Intl.DateTimeFormat('en-MY', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kuala_Lumpur' }).format(new Date(latest))} MYT` : '';
+        document.querySelector('[data-npra-cfd]').textContent = `${records.length} datasets · ${counts.fresh || 0} fresh · ${counts.stale || 0} stale · last checked ${checked} MYT${sourceUpdate}`;
+        records.forEach(row => {
+          const status = label(row.status);
+          document.querySelectorAll(`[data-npra-status="${row.dataset_id}"]`).forEach(node => { node.className = `legend-swatch ${status}`; });
+          document.querySelectorAll(`[data-npra-label="${row.dataset_id}"]`).forEach(node => { node.textContent = `${node.textContent.replace(/ · (fresh|aging|stale|discontinued|degraded|browser-dependent|unreachable|unknown|unknown-freshness|reference)$/, '')} · ${status}`; });
+          document.querySelectorAll(`[data-npra-card-status="${row.dataset_id}"]`).forEach(node => { node.textContent = status; });
+        });
+      };
+      health().then(payload => { if (payload) render(payload); });
+    })();
+  </script>'''
+    rendered = html[:start] + runtime + html[end + len(NPRA_RUNTIME_END):]
+    return rendered.replace("\n  \n</body>", "\n</body>")
 
 
 def _load(path: Path) -> object:
@@ -511,6 +557,8 @@ def _render_page(
             "};\n"
             "  </script>"
         )
+    elif html_path.name == "npra.html":
+        data = ""
     else:
         data = (
             '<script id="embedded-data">\n'
@@ -533,10 +581,10 @@ def _render_page(
         except ValueError as error:
             raise EmbedError(f"{html_path}: embedded-data script is not closed") from error
         html = html[:start] + data + html[end:]
-    elif "</body>" in html:
+    elif data:
+        if "</body>" not in html:
+            raise EmbedError(f"{html_path}: cannot find embedded-data block or </body>")
         html = html.replace("</body>", f"  {data}\n</body>", 1)
-    else:
-        raise EmbedError(f"{html_path}: cannot find embedded-data block or </body>")
 
     return html
 

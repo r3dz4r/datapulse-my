@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -349,3 +351,137 @@ def test_embed_rejects_missing_changelog_markers(tmp_path: Path) -> None:
 
     with pytest.raises(embed_dashboard_data.EmbedError, match="exactly one complete"):
         embed_dashboard_data.embed(html_path, *paths)
+
+
+def _render_production_npra() -> str:
+    return embed_dashboard_data._render_page(
+        ROOT / "docs/npra.html",
+        ROOT / "datapulse.json",
+        ROOT / "health/latest.json",
+        ROOT / "docs/.dashboard_filters.json",
+        ROOT / "docs/.dashboard_sections.json",
+        ROOT / "attestations/latest/index.json",
+        ROOT / "attestations/latest/binding.json",
+        ROOT,
+    )
+
+
+def test_production_npra_uses_the_same_origin_health_projection_without_inlining_global_data() -> None:
+    html = _render_production_npra()
+
+    assert len(html.encode("utf-8")) <= 307_200
+    assert "window.__DATAPULSE_DATA__" not in html
+    assert "fetch('/health/index.json'" in html
+    assert "fetch('/health/latest.json'" not in html
+
+    # Mutation controls: each public-payload assertion above has a nearby
+    # corruption that must be distinguishable from the checked-in contract.
+    assert len((html + ("x" * 307_200)).encode("utf-8")) > 307_200
+    assert "window.__DATAPULSE_DATA__" in html + "window.__DATAPULSE_DATA__"
+    assert "fetch('/health/index.json'" not in html.replace(
+        "fetch('/health/index.json'", "fetch('/health/latest.json'"
+    )
+    assert "fetch('/health/latest.json'" in html.replace(
+        "fetch('/health/index.json'", "fetch('/health/latest.json'"
+    )
+
+
+def test_production_npra_consumes_the_same_health_values_as_the_legacy_inline_payload() -> None:
+    health = json.loads((ROOT / "health/latest.json").read_text(encoding="utf-8"))
+    legacy = embed_dashboard_data.dashboard_health_payload(health)
+    legacy_records = {
+        row["dataset_id"]: {
+            field: row.get(field)
+            for field in ("dataset_id", "status", "last_modified")
+        }
+        for row in legacy["datasets"]
+        if row.get("dataset_id") in embed_dashboard_data.NPRA_DATASET_IDS
+    }
+    rendered_records = embed_dashboard_data.npra_runtime_records(health)
+
+    assert rendered_records == legacy_records
+    mutated = {key: value.copy() for key, value in rendered_records.items()}
+    dataset_id = next(iter(mutated))
+    mutated[dataset_id]["status"] = "mutation-control"
+    assert mutated != legacy_records
+
+
+def test_production_npra_has_a_visible_health_projection_failure_state() -> None:
+    html = _render_production_npra()
+
+    assert 'role="alert"' in html
+    assert "Unable to load NPRA register data from /health/index.json." in html
+    assert 'role="alert"' not in html.replace('role="alert"', "", 1)
+    assert "Unable to load NPRA register data from /health/index.json." not in html.replace(
+        "Unable to load NPRA register data from /health/index.json.", "", 1
+    )
+
+
+def _run_npra_embedder(output_dir: Path) -> Path:
+    """Run the CLI against isolated page copies without touching repo outputs."""
+    output_dir.mkdir()
+    paths = {}
+    for name in ("index.html", "catalogue.html", "npra.html"):
+        target = output_dir / name
+        shutil.copyfile(ROOT / "docs" / name, target)
+        paths[name] = target
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/embed_dashboard_data.py"),
+            "--html", str(paths["index.html"]),
+            "--catalogue", str(paths["catalogue.html"]),
+            "--npra", str(paths["npra.html"]),
+            "--manifest", str(ROOT / "datapulse.json"),
+            "--health", str(ROOT / "health/latest.json"),
+            "--filters", str(ROOT / "docs/.dashboard_filters.json"),
+            "--sections", str(ROOT / "docs/.dashboard_sections.json"),
+            "--attestations", str(ROOT / "attestations/latest/index.json"),
+            "--attestation-binding", str(ROOT / "attestations/latest/binding.json"),
+            "--public-surfaces", str(ROOT / "config"),
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+    return paths["npra.html"]
+
+
+def test_production_npra_is_cross_process_deterministic_and_idempotent(
+    tmp_path: Path,
+) -> None:
+    # Separate interpreters are required: an in-process double render cannot
+    # expose a generator whose output changes the next process's input.
+    first = _run_npra_embedder(tmp_path / "first")
+    second = _run_npra_embedder(tmp_path / "second")
+    first_bytes = first.read_bytes()
+    second_bytes = second.read_bytes()
+
+    assert first_bytes == second_bytes
+    assert len(first_bytes) <= 307_200
+    assert first_bytes != second_bytes + b"\n"
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/embed_dashboard_data.py"),
+            "--html", str(tmp_path / "first/index.html"),
+            "--catalogue", str(tmp_path / "first/catalogue.html"),
+            "--npra", str(first),
+            "--manifest", str(ROOT / "datapulse.json"),
+            "--health", str(ROOT / "health/latest.json"),
+            "--filters", str(ROOT / "docs/.dashboard_filters.json"),
+            "--sections", str(ROOT / "docs/.dashboard_sections.json"),
+            "--attestations", str(ROOT / "attestations/latest/index.json"),
+            "--attestation-binding", str(ROOT / "attestations/latest/binding.json"),
+            "--public-surfaces", str(ROOT / "config"),
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+    assert first.read_bytes() == first_bytes
+    assert first.read_bytes() != first_bytes + b"\n"
+
+
+def test_npra_runtime_marker_is_required() -> None:
+    with pytest.raises(embed_dashboard_data.EmbedError, match="marker was not found"):
+        embed_dashboard_data._npra_runtime_script("<body></body>")
