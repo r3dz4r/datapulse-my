@@ -472,7 +472,11 @@ jobs:
           test -s _site/index.html
           test -s _site/404.html
           test -s _site/catalogue.html
-          test "$(cat _site/_redirects)" = $'/methodology /health-methodology 301\n/trust-contract /trust-contract.md 301'
+          test "$(grep -c '[^[:space:]]' _site/_redirects)" -ge 4
+          grep -qxF '/methodology /health-methodology 301' _site/_redirects
+          grep -qxF '/trust-contract /trust-contract.md 301' _site/_redirects
+          grep -qxF '/okf/ /okf/index.md 301' _site/_redirects
+          grep -qxF '/okf /okf/index.md 301' _site/_redirects
           test -s _site/health/latest.json
 
       - name: Record deterministic release artifact manifest
