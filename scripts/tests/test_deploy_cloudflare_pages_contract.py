@@ -32,6 +32,56 @@ def _classifies_as_health_only(paths: tuple[str, ...]) -> bool:
     return is_health_only_change(paths)
 
 
+def _assert_deploy_resilience(workflow: str) -> None:
+    """Require coalescing and bounded rate-limit handling for both Pages deploys."""
+    parsed = yaml.safe_load(workflow)
+    steps = parsed["jobs"]["deploy"]["steps"]
+    checkout_index = next(index for index, step in enumerate(steps) if step.get("uses") == "actions/checkout@v4")
+    gate_index = next(index for index, step in enumerate(steps) if step.get("id") == "superseded_run")
+    gate = steps[gate_index]
+
+    assert gate_index == checkout_index + 1
+    assert gate["name"] == "Coalesce run superseded by newer origin/main"
+    assert 'git ls-remote origin refs/heads/main' in gate["run"]
+    assert '"$origin_main_tip" != "$GITHUB_SHA"' in gate["run"]
+    assert "origin/main tip $origin_main_tip" in gate["run"]
+    assert 'echo "current=false" >> "$GITHUB_OUTPUT"' in gate["run"]
+    assert 'exit 0' in gate["run"]
+
+    for name, branch in (
+        ("Deploy isolated Cloudflare Pages preview artifact", "--branch=staging-${{ github.run_id }}"),
+        ("Deploy canonical Cloudflare Pages artifact", "--branch=main"),
+    ):
+        deploy = next(step for step in steps if step.get("name") == name)
+        run = deploy["run"]
+        assert deploy["if"] == "steps.superseded_run.outputs.current == 'true'"
+        assert "for attempt in 1 2 3 4; do" in run
+        assert "npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview" in run
+        assert branch in run
+        assert 'grep -q "10429" "$output"' in run
+        assert 'if ! grep -q "10429" "$output"; then' in run
+        assert "non-rate-limit failure on attempt $attempt; not retrying." in run
+        assert 'exit "$status"' in run
+        assert 'if [[ "$attempt" -eq 4 ]]; then' in run
+        assert 'delay="$((attempt * 60))"' in run
+        assert 'sleep "$delay"' in run
+
+
+def test_pages_deploy_resilience_contract_and_mutation_proofs() -> None:
+    workflow = _workflow()
+
+    _assert_deploy_resilience(workflow)
+
+    mutations = (
+        workflow.replace("git ls-remote origin refs/heads/main", "git rev-parse HEAD", 1),
+        workflow.replace("for attempt in 1 2 3 4; do", "for attempt in 1 2 3; do", 1),
+        workflow.replace('if ! grep -q "10429" "$output"; then', "if false; then", 1),
+    )
+    for mutated in mutations:
+        with pytest.raises(AssertionError):
+            _assert_deploy_resilience(mutated)
+
+
 def _alias_helper() -> str:
     """Extract the deployed shell helper for direct state-machine testing."""
     match = re.search(r"(?ms)^fetch_alias\(\) \{.*?^\}\n", _served_verifier())
@@ -194,7 +244,7 @@ def test_health_only_path_is_selected_only_by_the_generated_output_classifier() 
 
     classify = workflow.split("      - id: classify\n", 1)[1].split("\n  sign_health:\n", 1)[0]
     assert "python3 scripts/classify_change.py" in classify
-    assert "skip deploy" not in workflow.lower()
+    assert "skip deploy" not in classify.lower()
     assert "head_commit.message" not in workflow
     assert "Embed canonical health dashboard (health-only path)" in workflow
     assert "if: needs.classify.outputs.health_only == 'true'" in workflow
@@ -556,7 +606,8 @@ def test_native_pages_uses_only_cloudflare_secrets_and_project() -> None:
     parsed = yaml.safe_load(workflow)
 
     assert parsed["permissions"] == {"contents": "read"}
-    assert "cloudflare/wrangler-action@v3" in workflow
+    assert "cloudflare/wrangler-action@v3" not in workflow
+    assert "npx --yes wrangler@3.90.0" in workflow
     assert "pages deploy _site --project-name=datapulse-p4b-preview --branch=main" in workflow
     assert "secrets.CLOUDFLARE_API_TOKEN" in workflow
     assert "secrets.CLOUDFLARE_ACCOUNT_ID" in workflow
@@ -588,17 +639,17 @@ def test_native_pages_stages_and_verifies_the_assembled_artifact_before_producti
     staging = steps[staging_index]
     preview = steps[preview_index]
     production = steps[production_index]
-    staging_command = staging["with"]["command"]
+    staging_command = staging["run"]
     preview_run = preview["run"]
 
     assert assemble_index < staging_index < preview_index < production_index
-    assert staging["uses"] == "cloudflare/wrangler-action@v3"
+    assert staging["id"] == "deploy_preview"
     assert "pages deploy _site --project-name=datapulse-p4b-preview" in staging_command
     assert "--branch=staging-${{ github.run_id }}" in staging_command
     assert "--branch=main" not in staging_command
     assert "data-pulse.my" not in staging_command
     assert "www.data-pulse.my" not in staging_command
-    assert "if" not in preview
+    assert preview["if"] == "steps.superseded_run.outputs.current == 'true'"
     assert 'preview_branch="staging-${GITHUB_RUN_ID}"' in preview_run
     assert 'preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"' in preview_run
     assert "bash scripts/verify_served_release.sh" in preview_run
@@ -606,9 +657,8 @@ def test_native_pages_stages_and_verifies_the_assembled_artifact_before_producti
     assert '--sigstore-signed "${{ needs.sign_health.outputs.signed }}"' in preview_run
     assert '--sigstore-publication "$RUNNER_TEMP/sigstore-publication"' in preview_run
     assert "verify_release_invariants.sh" not in preview_run
-    assert production["with"]["command"] == (
-        "pages deploy _site --project-name=datapulse-p4b-preview --branch=main"
-    )
+    assert production["id"] == "deploy"
+    assert "pages deploy _site --project-name=datapulse-p4b-preview --branch=main" in production["run"]
 
 
 def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manifest() -> None:
