@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import re
+import subprocess
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -13,6 +16,105 @@ SCRIPT = ROOT / "scripts/verify_served_release.sh"
 
 def verifier() -> str:
     return SCRIPT.read_text(encoding="utf-8")
+
+
+def _transport_helpers() -> str:
+    match = re.search(
+        r"(?ms)^fetch\(\) \{.*?^fetch_alias\(\) \{.*?^\}\n",
+        verifier(),
+    )
+    assert match is not None
+    return textwrap.dedent(match.group(0))
+
+
+def _run_redirect_sensitive_helper(
+    mode: str, script_mutation: tuple[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
+    alias_body = (
+        '<title>DataPulse dataset register</title>\\n'
+        '<link rel="canonical" href="/">\\n'
+        '<meta http-equiv="refresh" content="0; url=/">\\n'
+        '<a href="/">DataPulse dataset register</a>\\n'
+    )
+    helper = _transport_helpers()
+    if script_mutation:
+        helper = helper.replace(*script_mutation, 1)
+    if mode == "alias":
+        invocation = "fetch_alias 'landing alias' \"$base_url/landing.html\""
+    else:
+        invocation = "fetch 'landing surface' \"$base_url/landing.html\" \"$smoke_dir/landing.html\""
+    script = f"""
+set -Eeuo pipefail
+smoke_dir=$(mktemp -d)
+trap 'rm -rf "$smoke_dir"' EXIT
+base_url='https://example.test'
+fetch_max_time=120
+fail() {{ echo "$1" >&2; return 1; }}
+curl() {{
+  local follows=false dump='' output='' url='' arg status location body
+  while (($#)); do
+    arg="$1"
+    case "$arg" in
+      --location) follows=true; shift ;;
+      --dump-header) dump="$2"; shift 2 ;;
+      --output) output="$2"; shift 2 ;;
+      --write-out) shift 2 ;;
+      https://*) url="$arg"; shift ;;
+      *) shift ;;
+    esac
+  done
+  if [[ "$url" == "$base_url/landing.html" && "$follows" == true ]]; then
+    printf 'HTTP/2 308\\nLocation: /landing\\n' > "$dump"
+    url="$base_url/landing"
+  else
+    : > "$dump"
+  fi
+  case "$url" in
+    "$base_url/landing.html") status=308; location='/landing'; body='' ;;
+    "$base_url/landing") status=200; location=''; body={alias_body!r} ;;
+    *) return 1 ;;
+  esac
+  printf 'HTTP/2 %s\\n' "$status" >> "$dump"
+  if [[ -n "$location" ]]; then printf 'Location: %s\\n' "$location" >> "$dump"; fi
+  printf '%s' "$body" > "$output"
+  printf '%s 0.01 %s' "$status" "${{#body}}"
+}}
+{helper}
+{invocation}
+"""
+    return subprocess.run(["bash", "-c", script], check=False, capture_output=True, text=True)
+
+
+def test_alias_probe_observes_redirect_instead_of_following_it() -> None:
+    result = _run_redirect_sensitive_helper("alias")
+    assert result.returncode == 0, result.stderr
+
+
+def test_surface_fetch_follows_redirects() -> None:
+    result = _run_redirect_sensitive_helper("surface")
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        ('retrieve "$surface" "$url" "$body" "$headers" false', 'retrieve "$surface" "$url" "$body" "$headers"'),
+        ('retrieve "$surface" "$url" "$output" ""', 'retrieve "$surface" "$url" "$output" "" false'),
+    ),
+)
+def test_redirect_policy_mutations_are_rejected(mutation: tuple[str, str]) -> None:
+    needle, replacement = mutation
+    source = verifier()
+    mutated = source.replace(needle, replacement, 1)
+    assert mutated != source
+    helper = _transport_helpers()
+    assert needle in helper
+    mutated_helper = helper.replace(needle, replacement, 1)
+    assert mutated_helper != helper
+    result = _run_redirect_sensitive_helper(
+        "alias" if "body" in needle else "surface", mutation
+    )
+    assert result.returncode != 0
 
 
 def test_surface_retrieval_requests_compression() -> None:

@@ -46,8 +46,9 @@ fetch() {
   [[ "$last_status" == 2?? ]] || fail "missing or stale served surface: $surface (HTTP $last_status)"
 }
 retrieve() {
-  local surface="$1" url="$2" output="$3" headers="$4" metrics
-  local -a curl_args=(--location --silent --show-error --proto '=https' --compressed --retry 3 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time "$fetch_max_time" --output "$output" --write-out '%{http_code} %{time_total} %{size_download}')
+  local surface="$1" url="$2" output="$3" headers="$4" follow_redirects="${5:-true}" metrics
+  local -a curl_args=(--silent --show-error --proto '=https' --compressed --retry 3 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time "$fetch_max_time" --output "$output" --write-out '%{http_code} %{time_total} %{size_download}')
+  [[ "$follow_redirects" == true ]] && curl_args+=(--location)
   [[ -n "$headers" ]] && curl_args+=(--dump-header "$headers")
   if metrics="$(curl "${curl_args[@]}" "$url")"; then
     last_curl_status=0
@@ -62,12 +63,12 @@ fetch_alias() {
   local surface="$1" url="$2" requested_path headers body resolved_headers resolved_body location status
   requested_path="${url#"$base_url"}"; headers="$smoke_dir/${surface// /-}.headers"; body="$smoke_dir/${surface// /-}.body"; resolved_headers="$smoke_dir/${surface// /-}.resolved.headers"; resolved_body="$smoke_dir/${surface// /-}.resolved.body"
   [[ "$url" =~ ^https://[^[:space:]]+$ ]] || fail "invalid URL for $surface"
-  retrieve "$surface" "$url" "$body" "$headers" || fail "transport failure retrieving $surface: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
+  retrieve "$surface" "$url" "$body" "$headers" false || fail "transport failure retrieving $surface: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
   location="$(awk 'tolower($1) == "location:" { sub(/[\r ]+$/, "", $2); print $2; exit }' "$headers")"; [[ "$location" == "${location%#}" ]] || location="${location%#}"
   if [[ -n "$location" ]]; then
     [[ "$requested_path" == /landing.html && "$status" == 308 ]] || fail "$surface uses an unexpected edge redirect to ${location}"
     [[ "$location" == /landing || "$location" == "$base_url/landing" ]] || fail "$surface normalizes to an unexpected location: ${location}"
-    retrieve "$surface normalized" "$base_url/landing" "$resolved_body" "$resolved_headers" || fail "transport failure retrieving normalized compatibility alias $surface: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
+    retrieve "$surface normalized" "$base_url/landing" "$resolved_body" "$resolved_headers" false || fail "transport failure retrieving normalized compatibility alias $surface: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
     [[ "$status" == 200 ]] || fail "$surface normalized alias returned HTTP $status"
     location="$(awk 'tolower($1) == "location:" { sub(/[\r ]+$/, "", $2); print $2; exit }' "$resolved_headers")"; [[ -z "$location" ]] || fail "$surface normalized alias redirects again to ${location}"; body="$resolved_body"
   else [[ "$status" == 200 ]] || fail "$surface returned unexpected HTTP $status"; fi
