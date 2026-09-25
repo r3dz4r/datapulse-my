@@ -181,7 +181,12 @@ def test_cloudflare_workflow_uses_release_build_and_declared_inputs() -> None:
     assert "bash scripts/generate.sh release-build" in workflow
     assert '"scripts/**"' in paths_block
     assert '"health/**"' not in paths_block
-    assert "cloudflare/wrangler-action@v3" in workflow
+    # The Pages publish step now calls wrangler directly through npx; the
+    # cloudflare/wrangler-action form was replaced. Pin the deploy mechanism,
+    # not the vendor Action or its version -- pinning the Action was what made a
+    # correct workflow read as broken. Require the full `pages deploy` call so a
+    # stray mention of "wrangler" (e.g. in a comment) cannot satisfy this.
+    assert re.search(r"npx --yes wrangler(?:@[0-9.]+)?\s+pages deploy", workflow)
     assert "actions/deploy-pages" not in workflow
 
 
