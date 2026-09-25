@@ -78,7 +78,7 @@ def test_pages_deploy_resilience_contract_and_mutation_proofs() -> None:
 
 def _alias_helper() -> str:
     """Extract the deployed shell helper for direct state-machine testing."""
-    match = re.search(r"(?ms)^fetch_alias\(\) \{.*?^\}\n", _served_verifier())
+    match = re.search(r"(?ms)^retrieve\(\) \{.*?^\}\n^fetch_alias\(\) \{.*?^\}\n", _served_verifier())
     assert match is not None, "the alias verifier must remain executable and contract-tested"
     return textwrap.dedent(match.group(0))
 
@@ -95,6 +95,7 @@ smoke_dir=$(mktemp -d)
 trap 'rm -rf "$smoke_dir"' EXIT
 website_origin='https://example.test'
 base_url="$website_origin"
+fetch_max_time=120
 fail() {{ echo "$1" >&2; return 1; }}
 curl() {{
   local dump='' output='' url='' arg
