@@ -15,6 +15,9 @@ health_only="${DATAPULSE_HEALTH_ONLY:-}"
 publication_dir="${DATAPULSE_SIGSTORE_PUBLICATION_DIR:-}"
 source_commit="${DATAPULSE_SOURCE_COMMIT:-${GITHUB_SHA:-}}"
 cosign_bin="${DATAPULSE_COSIGN:-}"
+# This must exceed the time needed to move the largest declared surface, even
+# when the response is compressed on the wire but slow to arrive.
+fetch_max_time="${FETCH_MAX_TIME:-120}"
 while (($#)); do
   case "$1" in
     --base-url) base_url="$2"; shift 2 ;;
@@ -39,18 +42,32 @@ fetch() {
   local surface="$1" url="$2" output="$3"
   [[ "$url" =~ ^https://[^[:space:]]+$ ]] || fail "invalid URL for $surface"
   mkdir -p "$(dirname "$output")"
-  curl --fail --location --silent --show-error --proto '=https' --retry 3 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time 30 "$url" --output "$output" || fail "missing or stale served surface: $surface"
+  retrieve "$surface" "$url" "$output" "" || fail "transport failure retrieving $surface: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"
+  [[ "$last_status" == 2?? ]] || fail "missing or stale served surface: $surface (HTTP $last_status)"
+}
+retrieve() {
+  local surface="$1" url="$2" output="$3" headers="$4" metrics
+  local -a curl_args=(--location --silent --show-error --proto '=https' --compressed --retry 3 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time "$fetch_max_time" --output "$output" --write-out '%{http_code} %{time_total} %{size_download}')
+  [[ -n "$headers" ]] && curl_args+=(--dump-header "$headers")
+  if metrics="$(curl "${curl_args[@]}" "$url")"; then
+    last_curl_status=0
+  else
+    last_curl_status=$?
+  fi
+  read -r last_status last_elapsed last_bytes <<<"${metrics:-000 0 0}"
+  echo "served surface=$surface bytes=$last_bytes elapsed_seconds=$last_elapsed http_status=$last_status"
+  [[ "$last_curl_status" -eq 0 ]]
 }
 fetch_alias() {
   local surface="$1" url="$2" requested_path headers body resolved_headers resolved_body location status
   requested_path="${url#"$base_url"}"; headers="$smoke_dir/${surface// /-}.headers"; body="$smoke_dir/${surface// /-}.body"; resolved_headers="$smoke_dir/${surface// /-}.resolved.headers"; resolved_body="$smoke_dir/${surface// /-}.resolved.body"
   [[ "$url" =~ ^https://[^[:space:]]+$ ]] || fail "invalid URL for $surface"
-  status="$(curl --fail --silent --show-error --proto '=https' --retry 3 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time 30 --dump-header "$headers" --output "$body" --write-out '%{http_code}' "$url")" || fail "could not fetch compatibility alias: $surface"
+  retrieve "$surface" "$url" "$body" "$headers" || fail "transport failure retrieving $surface: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
   location="$(awk 'tolower($1) == "location:" { sub(/[\r ]+$/, "", $2); print $2; exit }' "$headers")"; [[ "$location" == "${location%#}" ]] || location="${location%#}"
   if [[ -n "$location" ]]; then
     [[ "$requested_path" == /landing.html && "$status" == 308 ]] || fail "$surface uses an unexpected edge redirect to ${location}"
     [[ "$location" == /landing || "$location" == "$base_url/landing" ]] || fail "$surface normalizes to an unexpected location: ${location}"
-    status="$(curl --fail --silent --show-error --proto '=https' --retry 3 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time 30 --dump-header "$resolved_headers" --output "$resolved_body" --write-out '%{http_code}' "$base_url/landing")" || fail "could not fetch normalized compatibility alias: $surface"
+    retrieve "$surface normalized" "$base_url/landing" "$resolved_body" "$resolved_headers" || fail "transport failure retrieving normalized compatibility alias $surface: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
     [[ "$status" == 200 ]] || fail "$surface normalized alias returned HTTP $status"
     location="$(awk 'tolower($1) == "location:" { sub(/[\r ]+$/, "", $2); print $2; exit }' "$resolved_headers")"; [[ -z "$location" ]] || fail "$surface normalized alias redirects again to ${location}"; body="$resolved_body"
   else [[ "$status" == 200 ]] || fail "$surface returned unexpected HTTP $status"; fi
@@ -95,8 +112,8 @@ if [[ "$sigstore_signed" == true ]]; then
   [[ -n "$cosign_bin" && -x "$cosign_bin" ]] || fail "Cosign verifier is required for a signed bundle"
   python3 scripts/verify_sigstore_bundle.py --health "$site_dir/health/latest.json" --manifest "$smoke_dir/signatures/datapulse.json" --legacy-chain-head "$publication_dir/chain_head.json" --source-commit "$source_commit" --bundle "$smoke_dir/health.latest.sigstore.json" --certificate-identity "https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" --cosign "$cosign_bin" || fail "served Sigstore bundle verification failed"
 else
-  status="$(curl --location --silent --show-error --proto '=https' --retry 3 --retry-delay 5 --retry-all-errors --connect-timeout 10 --max-time 30 --output "$smoke_dir/unsigned-sigstore-response" --write-out '%{http_code}' "$base_url/$sigstore_path")" || fail "could not prove optional Sigstore bundle absence"
-  if [[ "$status" == 200 ]]; then grep -q 'application/vnd.dev.sigstore.bundle' "$smoke_dir/unsigned-sigstore-response" && fail "stale Sigstore bundle is still served after signing became unavailable (HTTP $status)"; grep -Eq '<html[ >]|<head>|id="main-content"|hero-heading' "$smoke_dir/unsigned-sigstore-response" || fail "stale Sigstore bundle is still served after signing became unavailable (HTTP $status)"; elif [[ "$status" != 404 ]]; then fail "unexpected HTTP status while proving optional Sigstore bundle absence (HTTP $status)"; fi
+  retrieve "optional Sigstore health DSSE bundle" "$base_url/$sigstore_path" "$smoke_dir/unsigned-sigstore-response" "" || fail "transport failure retrieving optional Sigstore health DSSE bundle: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
+  if [[ "$status" == 200 ]]; then grep -q 'application/vnd.dev.sigstore.bundle' "$smoke_dir/unsigned-sigstore-response" && fail "stale Sigstore bundle is still served after signing became unavailable (HTTP $status)"; grep -Eq '<html[ >]|<head>|id="main-content"|hero-heading' "$smoke_dir/unsigned-sigstore-response" || fail "stale Sigstore bundle is still served after signing became unavailable (HTTP $status)"; elif [[ "$status" == 404 ]]; then :; else fail "unexpected HTTP status while proving optional Sigstore bundle absence (HTTP $status)"; fi
 fi
 if [[ "$health_only" == true ]]; then staged_proof="$RUNNER_TEMP/preserved-release-proof/release-verification.md"; else staged_proof="docs/release-verification.md"; fi
 test -s "$staged_proof" || fail "staged release proof is missing"; fetch "release reproducibility proof" "$base_url/release-verification.md" "$smoke_dir/release-verification.md"; cmp -s "$staged_proof" "$smoke_dir/release-verification.md" || fail "served release proof differs from staged artifact"
