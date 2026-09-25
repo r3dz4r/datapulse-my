@@ -334,7 +334,15 @@ def test_native_pages_preserves_full_release_build_and_surface_contract() -> Non
         "cp -R .attestations _site/",
     ):
         assert copy in workflow
-    assert 'test "$(cat _site/_redirects)" = $\'/methodology /health-methodology 301\\n/trust-contract /trust-contract.md 301\'' in workflow
+    assert "test \"$(grep -c '[^[:space:]]' _site/_redirects)\" -ge 4" in workflow
+    for redirect_rule in (
+        "/methodology /health-methodology 301",
+        "/trust-contract /trust-contract.md 301",
+        "/okf/ /okf/index.md 301",
+        "/okf /okf/index.md 301",
+    ):
+        assert f"grep -qxF '{redirect_rule}' _site/_redirects" in workflow
+    assert "cat _site/" + '_redirects)" = ' not in workflow
     verifier = _served_verifier()
     assert 'fetch_alias landing.html "$base_url/landing.html"' in verifier
     assert 'fetch_alias landing "$base_url/landing"' in verifier
