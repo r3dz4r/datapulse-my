@@ -19,6 +19,11 @@ def _fixture_root(tmp_path: Path) -> Path:
     shutil.copy2(ROOT / "datapulse.json", root / "datapulse.json")
     (root / "scripts").mkdir()
     shutil.copy2(ROOT / "scripts/mcp-representative-queries.json", root / "scripts/mcp-representative-queries.json")
+    subprocess.run(["git", "-C", str(root), "init", "--quiet"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.email", "test@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "Test User"], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "--quiet", "-m", "fixture"], check=True)
     return root
 
 
@@ -52,6 +57,42 @@ def test_modified_card_file_fails(tmp_path: Path) -> None:
     path = root / "docs/mcp/cards/search_datasets.json"
     path.write_text(path.read_text(encoding="utf-8").replace("search_datasets", "search_datasets_tampered", 1), encoding="utf-8")
     assert _run(VERIFIER, root).returncode == 1
+
+
+def test_card_with_nonexistent_source_commit_fails(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    _generate(root)
+    path = root / "docs/mcp/cards/search_datasets.json"
+    card = json.loads(path.read_text(encoding="utf-8"))
+    card["source"]["commit_sha"] = "f" * 40
+    path.write_text(json.dumps(card, indent=2) + "\n", encoding="utf-8")
+    result = _run(VERIFIER, root)
+    assert result.returncode == 1
+    assert "card source.commit_sha is not a repository commit: docs/mcp/cards/search_datasets.json" in result.stderr
+
+
+def test_changed_card_description_fails_with_same_source_stamp(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    _generate(root)
+    path = root / "docs/mcp/cards/search_datasets.json"
+    card = json.loads(path.read_text(encoding="utf-8"))
+    original_stamp = card["source"]["commit_sha"]
+    card["description"] += " drift"
+    card["source"]["commit_sha"] = original_stamp
+    path.write_text(json.dumps(card, indent=2) + "\n", encoding="utf-8")
+    result = _run(VERIFIER, root)
+    assert result.returncode == 1
+    assert "card bytes differ from deterministic generator output: docs/mcp/cards/search_datasets.json" in result.stderr
+
+
+def test_modified_well_known_copy_fails(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    _generate(root)
+    path = root / "docs/.well-known/ard.json"
+    path.write_bytes(path.read_bytes() + b" ")
+    result = _run(VERIFIER, root)
+    assert result.returncode == 1
+    assert "well-known ARD manifest is not byte-identical" in result.stderr
 
 
 def test_modified_catalog_fails(tmp_path: Path) -> None:

@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import re
+import subprocess
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -81,6 +82,41 @@ def _well_known_error(canonical: bytes, path: Path, label: str) -> str | None:
     if path.read_bytes() != canonical:
         return f"well-known {label} manifest is not byte-identical to docs/ai-catalog.json"
     return None
+
+
+def _normalize_card_source_stamp(content: bytes) -> bytes:
+    """Replace only a card's moving source commit value before byte comparison.
+
+    The stamp is derived from the commit that runs the generator, so it differs
+    by construction the moment generated files are committed. Every other byte
+    must remain strictly equal.
+    """
+    try:
+        card = json.loads(content)
+    except json.JSONDecodeError:
+        return content
+    source = card.get("source") if isinstance(card, dict) else None
+    commit_sha = source.get("commit_sha") if isinstance(source, dict) else None
+    if not isinstance(commit_sha, str):
+        return content
+    needle = json.dumps(commit_sha, ensure_ascii=False).encode("utf-8")
+    marker = b'"commit_sha"'
+    key_start = content.find(marker)
+    if key_start == -1:
+        return content
+    value_start = content.find(needle, key_start + len(marker))
+    if value_start == -1:
+        return content
+    return content[:value_start] + (b'"' + b"0" * 40 + b'"') + content[value_start + len(needle) :]
+
+
+def _commit_exists(root: Path, commit_sha: str) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(root), "cat-file", "-e", f"{commit_sha}^{{commit}}"],
+        capture_output=True,
+        check=False,
+    )
+    return result.returncode == 0
 
 
 def verify(root: Path) -> list[str]:
@@ -162,6 +198,12 @@ def verify(root: Path) -> list[str]:
             errors.append(f"card identifier does not match catalog: {path.relative_to(root)}")
         if card.get("contract_version") != contract_version:
             errors.append(f"card contract_version does not match catalog: {path.relative_to(root)}")
+        source = card.get("source")
+        commit_sha = source.get("commit_sha") if isinstance(source, dict) else None
+        if not isinstance(commit_sha, str) or not re.fullmatch(r"[0-9a-f]{40}", commit_sha):
+            errors.append(f"card source.commit_sha is missing or invalid: {path.relative_to(root)}")
+        elif not _commit_exists(root, commit_sha):
+            errors.append(f"card source.commit_sha is not a repository commit: {path.relative_to(root)}")
     try:
         expected_catalog, expected_cards = build_outputs(root)
     except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
@@ -180,7 +222,7 @@ def verify(root: Path) -> list[str]:
         path = root / "docs/mcp/cards" / f"{name}.json"
         if not path.is_file():
             continue
-        if path.read_bytes() != expected:
+        if _normalize_card_source_stamp(path.read_bytes()) != _normalize_card_source_stamp(expected):
             errors.append(f"card bytes differ from deterministic generator output: {path.relative_to(root)}")
     return errors
 
