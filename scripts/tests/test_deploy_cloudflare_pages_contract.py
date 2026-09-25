@@ -33,20 +33,10 @@ def _classifies_as_health_only(paths: tuple[str, ...]) -> bool:
 
 
 def _assert_deploy_resilience(workflow: str) -> None:
-    """Require coalescing and bounded rate-limit handling for both Pages deploys."""
+    """Require no coalescing gate and bounded rate-limit handling for both Pages deploys."""
     parsed = yaml.safe_load(workflow)
     steps = parsed["jobs"]["deploy"]["steps"]
-    checkout_index = next(index for index, step in enumerate(steps) if step.get("uses") == "actions/checkout@v4")
-    gate_index = next(index for index, step in enumerate(steps) if step.get("id") == "superseded_run")
-    gate = steps[gate_index]
-
-    assert gate_index == checkout_index + 1
-    assert gate["name"] == "Coalesce run superseded by newer origin/main"
-    assert 'git ls-remote origin refs/heads/main' in gate["run"]
-    assert '"$origin_main_tip" != "$GITHUB_SHA"' in gate["run"]
-    assert "origin/main tip $origin_main_tip" in gate["run"]
-    assert 'echo "current=false" >> "$GITHUB_OUTPUT"' in gate["run"]
-    assert 'exit 0' in gate["run"]
+    assert "superseded_run" not in workflow
 
     for name, branch in (
         ("Deploy isolated Cloudflare Pages preview artifact", "--branch=staging-${{ github.run_id }}"),
@@ -54,7 +44,7 @@ def _assert_deploy_resilience(workflow: str) -> None:
     ):
         deploy = next(step for step in steps if step.get("name") == name)
         run = deploy["run"]
-        assert deploy["if"] == "steps.superseded_run.outputs.current == 'true'"
+        assert "if" not in deploy
         assert "for attempt in 1 2 3 4; do" in run
         assert "npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview" in run
         assert branch in run
@@ -73,7 +63,11 @@ def test_pages_deploy_resilience_contract_and_mutation_proofs() -> None:
     _assert_deploy_resilience(workflow)
 
     mutations = (
-        workflow.replace("git ls-remote origin refs/heads/main", "git rev-parse HEAD", 1),
+        workflow.replace(
+            "      - name: Deploy isolated Cloudflare Pages preview artifact",
+            "      - id: superseded_run\n      - name: Deploy isolated Cloudflare Pages preview artifact",
+            1,
+        ),
         workflow.replace("for attempt in 1 2 3 4; do", "for attempt in 1 2 3; do", 1),
         workflow.replace('if ! grep -q "10429" "$output"; then', "if false; then", 1),
     )
@@ -649,7 +643,7 @@ def test_native_pages_stages_and_verifies_the_assembled_artifact_before_producti
     assert "--branch=main" not in staging_command
     assert "data-pulse.my" not in staging_command
     assert "www.data-pulse.my" not in staging_command
-    assert preview["if"] == "steps.superseded_run.outputs.current == 'true'"
+    assert "if" not in preview
     assert 'preview_branch="staging-${GITHUB_RUN_ID}"' in preview_run
     assert 'preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"' in preview_run
     assert "bash scripts/verify_served_release.sh" in preview_run

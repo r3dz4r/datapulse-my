@@ -244,23 +244,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Coalesce run superseded by newer origin/main
-        id: superseded_run
-        run: |
-          set -Eeuo pipefail
-          origin_main_tip="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
-          if [[ -z "$origin_main_tip" ]]; then
-            echo "::error title=Cloudflare Pages deploy gate failed::could not resolve origin/main tip"
-            exit 1
-          fi
-          if [[ "$origin_main_tip" != "$GITHUB_SHA" ]]; then
-            echo "current=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=Cloudflare Pages run coalesced::checked-out SHA $GITHUB_SHA is superseded by origin/main tip $origin_main_tip; no Pages deployment will run."
-            exit 0
-          fi
-          echo "current=true" >> "$GITHUB_OUTPUT"
-          echo "Cloudflare Pages deploy gate: checked-out SHA $GITHUB_SHA matches origin/main tip $origin_main_tip."
-
       - name: Validate canonical health snapshot
         run: |
           set -Eeuo pipefail
@@ -517,7 +500,6 @@ jobs:
 
       - name: Deploy isolated Cloudflare Pages preview artifact
         id: deploy_preview
-        if: steps.superseded_run.outputs.current == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -549,13 +531,12 @@ jobs:
           done
 
       - name: Install pinned Cosign verifier for preview served verification
-        if: steps.superseded_run.outputs.current == 'true' && needs.sign_health.outputs.signed == 'true'
+        if: needs.sign_health.outputs.signed == 'true'
         uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
         with:
           cosign-release: v3.1.3
 
       - name: Verify isolated Pages preview before production promotion
-        if: steps.superseded_run.outputs.current == 'true'
         run: |
           set -Eeuo pipefail
           preview_branch="staging-${GITHUB_RUN_ID}"
@@ -570,7 +551,6 @@ jobs:
             --cosign "$(command -v cosign || true)"
 
       - name: Verify release artifact after preview served verification
-        if: steps.superseded_run.outputs.current == 'true'
         run: |
           set -Eeuo pipefail
           python3 scripts/verify_release_artifact.py verify \
@@ -579,7 +559,6 @@ jobs:
             --source-commit "$GITHUB_SHA"
 
       - name: Verify release artifact before canonical production deployment
-        if: steps.superseded_run.outputs.current == 'true'
         run: |
           set -Eeuo pipefail
           python3 scripts/verify_release_artifact.py verify \
@@ -589,7 +568,6 @@ jobs:
 
       - name: Deploy canonical Cloudflare Pages artifact
         id: deploy
-        if: steps.superseded_run.outputs.current == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -621,13 +599,12 @@ jobs:
           done
 
       - name: Install pinned Cosign verifier
-        if: steps.superseded_run.outputs.current == 'true' && needs.sign_health.outputs.signed == 'true'
+        if: needs.sign_health.outputs.signed == 'true'
         uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
         with:
           cosign-release: v3.1.3
 
       - name: Verify canonical served surface
-        if: steps.superseded_run.outputs.current == 'true'
         run: |
           set -Eeuo pipefail
           website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)"
