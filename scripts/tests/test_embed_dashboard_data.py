@@ -485,3 +485,45 @@ def test_production_npra_is_cross_process_deterministic_and_idempotent(
 def test_npra_runtime_marker_is_required() -> None:
     with pytest.raises(embed_dashboard_data.EmbedError, match="marker was not found"):
         embed_dashboard_data._npra_runtime_script("<body></body>")
+
+
+def test_canonical_npra_without_runtime_marker_fails_but_fixture_does_not(
+    tmp_path: Path,
+) -> None:
+    """Only the canonical NPRA output owns the mandatory runtime projection."""
+    page = (
+        "<body><!-- BEGIN npra-freshness -->\nold\n<!-- END npra-freshness -->\n"
+        "<!-- BEGIN npra-connect -->\nold\n<!-- END npra-connect -->\n"
+        "<!-- BEGIN npra-surfaces -->\nold\n<!-- END npra-surfaces --></body>"
+    )
+    documents = {
+        "manifest.json": {"datasets": []},
+        "health.json": {
+            "checked_at": "2026-08-23T10:06:30Z",
+            "datasets": [],
+        },
+        "filters.json": {},
+        "sections.json": {},
+    }
+    for name, document in documents.items():
+        (tmp_path / name).write_text(json.dumps(document), encoding="utf-8")
+
+    canonical = tmp_path / "docs" / "npra.html"
+    canonical.parent.mkdir()
+    canonical.write_text(page, encoding="utf-8")
+    inputs = tuple(tmp_path / name for name in documents)
+
+    with pytest.raises(embed_dashboard_data.EmbedError, match="marker was not found"):
+        embed_dashboard_data._render_page(canonical, *inputs, public_surfaces_path=tmp_path)
+
+    fixture = tmp_path / "fixture" / "npra.html"
+    fixture.parent.mkdir()
+    fixture.write_text(page, encoding="utf-8")
+    rendered = embed_dashboard_data._render_page(
+        fixture, *inputs, public_surfaces_path=tmp_path
+    )
+
+    assert embed_dashboard_data.NPRA_RUNTIME_MANAGED_START not in rendered
+    assert embed_dashboard_data.NPRA_RUNTIME_MANAGED_START in (
+        rendered + embed_dashboard_data.NPRA_RUNTIME_MANAGED_START
+    )

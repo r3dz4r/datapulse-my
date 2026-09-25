@@ -534,7 +534,18 @@ def _render_page(
         html = _dashboard_facts(html, manifest, health, surfaces["origins"]["website"])
     if html_path.name == "npra.html":
         html = _npra_freshness(html, health)
-        html = _npra_runtime_script(html)
+        # The canonical artifact must retain its runtime projection marker: a
+        # missing marker there previously allowed an obsolete inline payload to
+        # survive a seemingly successful regeneration.  Fixture pages can
+        # share the filename and owned content markers without owning that
+        # runtime projection, so only rewrite those when the marker exists.
+        canonical_npra = root / "docs/npra.html"
+        if (
+            html_path.resolve() == canonical_npra
+            or NPRA_RUNTIME_MANAGED_START in html
+            or NPRA_RUNTIME_START in html
+        ):
+            html = _npra_runtime_script(html)
         html = _npra_links(html, surfaces["origins"])
     if html_path.name == "index.html":
         payload = _homepage_embedded_payload(
