@@ -34,6 +34,14 @@ FRESHNESS_BASELINE_SECONDS = {
     "monthly": 30 * 24 * 60 * 60,
     "quarterly": 90 * 24 * 60 * 60,
     "annual": 365 * 24 * 60 * 60,
+    # The served classifier in scripts/check.sh reads this cadence as 730 days
+    # (`elif $frequency | startswith("biennial") then 730`), so the published
+    # rule has to describe the behaviour a reader would actually observe. 730 is
+    # the two-year lower bound of the publisher's "biennial to triennial" cycle,
+    # not its three-year upper bound: a 1095-day baseline here would promise a
+    # looser threshold than the service enforces. This value and the check.sh
+    # cadence map must move together.
+    "biennial to triennial (survey years)": 730 * 24 * 60 * 60,
 }
 
 # The publisher's own cadence vocabulary, as declared on the data.gov.my
@@ -222,15 +230,6 @@ def _is_degraded(row: dict[str, object]) -> bool:
     return isinstance(probe_status, str) and probe_status.casefold() == "degraded"
 
 
-def _survey_status(last_checked: datetime, now: datetime) -> tuple[str, str]:
-    verification_age = (now - last_checked).total_seconds() / (24 * 60 * 60)
-    if verification_age >= 90:
-        return "stale", "survey-verification-stale"
-    if verification_age >= 45:
-        return "aging", "survey-verification-aging"
-    return "fresh", "survey-verification-current"
-
-
 def _as_required_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
     policy = row.get("freshness_policy")
     policy = policy if isinstance(policy, dict) else {}
@@ -274,8 +273,6 @@ def classify_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
     if last_checked > current_time:
         return "degraded", "future-last-checked"
 
-    if frequency == SURVEY_FREQUENCY:
-        return _survey_status(last_checked, current_time)
     if frequency == "as-required":
         return _as_required_status(row, current_time)
 
