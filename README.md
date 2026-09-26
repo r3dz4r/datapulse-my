@@ -138,14 +138,14 @@ frozen at the last known content date. This is not a freshness failure — it's 
 publisher decision.
 
 <!-- BEGIN readme-health -->
-Current distribution (`_trust_summary`): [136 fresh](badges/status-fresh.svg) · [118 aging](badges/status-aging.svg) · [141 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [1 degraded](badges/status-degraded.svg) · [2 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [4 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [156 fresh](badges/status-fresh.svg) · [98 aging](badges/status-aging.svg) · [141 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [1 degraded](badges/status-degraded.svg) · [1 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [5 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
 <!-- END readme-health -->
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
 
 ### Browser-dependent datasets
 
-The current health summary identifies **2 browser-dependent sources (0.5% of the catalogue)** that require a real browser to probe because their source pages render client-side JavaScript.
+The current health summary identifies **1 browser-dependent sources (0.2% of the catalogue)** that require a real browser to probe because their source pages render client-side JavaScript.
 
 DataPulse uses **[Camofox](https://github.com/jo-inc/camofox-browser)**, a
 self-hosted patched headless-Chromium sidecar, to probe these. The probe path
