@@ -26,7 +26,11 @@ complete, is echoed as ``artifact_binding: <commit>@<path>`` and resolved to a
 raw GitHub URL with explicit ``--repo owner/name`` input. It remains a locator,
 not a trust assertion: the caller-supplied ``--health`` digest is the binding
 proof. A null or incomplete pointer is reported ``artifact_binding: absent``.
-Every failure names its exact reason; the CLI exits 0 on success and 1 on
+When ``--health`` supplies the bound artifact, ``observation_age`` states the
+exact ``observed_at`` minus artifact ``checked_at`` duration; without it the
+age is reported ``unchecked`` rather than manufactured from the date-only
+``cycle_date``. The age is a reported fact, never a gate: a large age still
+exits 0. Every failure names its exact reason; the CLI exits 0 on success and 1 on
 failure with each reason on stderr.
 """
 
@@ -38,6 +42,7 @@ import json
 import logging
 import re
 import sys
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -452,6 +457,51 @@ def find_adjacent_chain_head(receipt_path: Path) -> Path | None:
     return None
 
 
+def _format_duration(delta: timedelta) -> str:
+    """Render a signed duration compactly, largest unit first.
+
+    The value is never clamped: a stale artifact must read as a large number
+    rather than being rounded toward zero and hidden.
+    """
+    total_seconds = int(delta.total_seconds())
+    sign = "-" if total_seconds < 0 else ""
+    remaining = abs(total_seconds)
+    days, remaining = divmod(remaining, 86400)
+    hours, remaining = divmod(remaining, 3600)
+    minutes, seconds = divmod(remaining, 60)
+    if days:
+        return f"{sign}{days}d {hours}h {minutes}m {seconds}s"
+    if hours:
+        return f"{sign}{hours}h {minutes}m {seconds}s"
+    if minutes:
+        return f"{sign}{minutes}m {seconds}s"
+    return f"{sign}{seconds}s"
+
+
+def _observation_age(payload: dict[str, Any], health: dict[str, Any] | None) -> str:
+    """State ``observed_at`` minus the supplied artifact's ``checked_at``.
+
+    The exact duration is the real answer and is reported as a fact, never used
+    to gate success. Without a supplied artifact the timestamp is unavailable,
+    so the fact degrades to ``unchecked`` with its reason, the same way
+    ``health_binding`` does. ``cycle_date`` is deliberately not consulted: it is
+    date-only, so subtracting it from ``observed_at`` would measure distance
+    from midnight and fabricate a duration finer than the date can express.
+    """
+    if health is None:
+        return "unchecked (reason: no --health artifact was supplied)"
+    try:
+        observed_at = parse_time(payload.get("observed_at"), label="observed_at")
+        checked_at = parse_time(health.get("checked_at"), label="health_checked_at")
+    except ObservationReceiptError as error:
+        return f"unchecked (reason: {error})"
+    age = _format_duration(observed_at - checked_at)
+    return (
+        f"{age} (observed_at {payload.get('observed_at')} "
+        f"minus artifact checked_at {health.get('checked_at')})"
+    )
+
+
 def checked_facts(
     receipt: dict[str, Any],
     registry: dict[str, Any],
@@ -459,13 +509,15 @@ def checked_facts(
     binding_checked: bool = False,
     claims_verified: bool = False,
     repository: str | None = None,
+    health: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return the public facts the verifier actually used, for its evidence report.
 
     Only public material appears here: the declared receipt id, the payload's
     key_id, the registry's public validity window, whether linkage was walked,
     whether the artifact digest was reproduced against a supplied health
-    file, and the signed artifact pointer (if the payload carries one). No key
+    file, the observation's age relative to that artifact's own ``checked_at``,
+    and the signed artifact pointer (if the payload carries one). No key
     bytes are read or reported.
     """
     payload = receipt.get("payload")
@@ -494,6 +546,7 @@ def checked_facts(
         "key_not_before": row.get("not_before") if row is not None else None,
         "key_not_after": row.get("not_after") if row is not None else None,
         "observed_at": payload.get("observed_at"),
+        "observation_age": _observation_age(payload, health),
         "linkage": "checked" if linkage_checked else "unchecked",
         "health_binding": "checked" if binding_checked else "unchecked",
         "artifact_claims": "verified" if claims_verified else "NOT verified",
@@ -538,6 +591,7 @@ def print_checked_facts(facts: dict[str, Any]) -> None:
         f"not_before={facts['key_not_before']} not_after={facts['key_not_after']}"
     )
     print(f"  observed_at: {facts['observed_at']}")
+    print(f"  observation_age: {facts['observation_age']}")
     print(f"  linkage: {facts['linkage']}")
     print(f"  health_binding: {facts.get('health_binding', 'unchecked')}")
     print(f"  artifact_binding: {facts.get('artifact_binding', 'absent')}")
@@ -725,6 +779,7 @@ def main(argv: list[str] | None = None) -> int:
         binding_checked=health_artifact is not None,
         claims_verified=claims_verified,
         repository=args.repo,
+        health=health_artifact,
     )
     artifact_url = facts.get("artifact_url")
     if artifact_url is not None:
