@@ -17,6 +17,12 @@ This paragraph is the single product description. Any surface that describes Dat
 
 Surfaces that quote it: this page, the repository README, the agent manifest, the MCP advertisement, and the LLM index. If they disagree with this page, this page wins.
 
+For surfaces with a hard length limit, the short canonical form is:
+
+> DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors.
+
+Both forms describe the same product with the same boundaries. Neither claims that a publisher's data is true.
+
 ## The expensive failure it prevents
 
 An answer that cites a Malaysian public figure is only as good as the state of the source behind it. The common failures are quiet ones: the dataset stopped updating months ago and nobody noticed, the licence does not permit the reuse being proposed, the schema changed and a downstream pipeline is now reading the wrong column, two agencies publish the same indicator and disagree, or the page being cited returns a successful response while serving year-old content.
