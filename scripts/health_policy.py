@@ -252,8 +252,6 @@ def classify_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
 
     frequency = _normalized_frequency(row.get("refresh_frequency"), str(row.get("dataset_id", "<unknown>")))
 
-    if _is_browser_dependent(row):
-        return "browser-dependent", "browser-access-required"
     if _is_transport_failure(row):
         return "unreachable", "transport-failure"
     if row.get("data_type") in NO_CLOCK_DATA_TYPES:
@@ -266,6 +264,12 @@ def classify_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
     if last_checked is None:
         if raw_last_checked is not None:
             return "degraded", "invalid-last-checked"
+        # Browser-rendered rows carry no direct HTTP status, so the transport
+        # branch above cannot see them. A browser probe that took no measurement
+        # at all is the one case that stays browser-dependent; a measured one is
+        # graded on its freshness signal below exactly like any other row.
+        if _is_browser_dependent(row):
+            return "browser-dependent", "browser-access-required"
         unknown_since = _as_datetime(row.get("unknown_since"))
         if unknown_since is not None and (current_time - unknown_since).total_seconds() > 30 * 24 * 60 * 60:
             return "unknown", "unknown-review-required"
