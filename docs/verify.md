@@ -111,7 +111,7 @@ Error calling tool 'verify_dataset': Unknown dataset id: not_a_real_dataset
 Verification here establishes **integrity, provenance of the observation, and timing**. It does not establish that an upstream publisher's figures are true, complete, or suitable for your purpose. In particular:
 
 - a valid signature proves who signed and that the bytes did not change, not that the underlying government figure is correct;
-- a fresh status means the content is within the source's declared cadence window, not that it is authoritative for every use;
+- a fresh status means the content is within the source's declared cadence window, not that it is suitable for every use;
 - a receipt shows what DataPulse observed at a time, not an independent re-observation of the publisher;
 - the historical window from 2026-08-15 to 2026-09-07 is disclosed as a sibling gap and has not been retrospectively re-signed.
 
