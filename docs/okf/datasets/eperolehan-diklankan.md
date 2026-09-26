@@ -8,11 +8,11 @@ sources:
   - {"id": "mof","resource": "https://www.eperolehan.gov.my/quotation-tender-notice","title": "Ministry of Finance Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T11:11:15Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T12:10:29Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "MOF ePerolehan"
-datapulse:real_status: "browser-dependent"
+datapulse:real_status: "fresh"
 datapulse:health_report: "/data/eperolehan-diklankan.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-ePerolehan Tender Notices (DIIKLANKAN) is published by Ministry of Finance Malaysia and tracked by DataPulse. The latest published probe classifies it as `browser-dependent`.
+ePerolehan Tender Notices (DIIKLANKAN) is published by Ministry of Finance Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
 
 # Schema
 
