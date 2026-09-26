@@ -104,3 +104,134 @@ def test_generator_drift_fails_using_injected_check_command(tmp_path: Path) -> N
 
     assert result.exit_code == 1
     assert any("scripts/gen_fake.py" in finding for finding in result.findings)
+
+
+def test_agent_guidance_is_exempt_only_from_terminology_and_volatile_literals(tmp_path: Path) -> None:
+    verifier = _module()
+    root = _fixture(tmp_path, "# Guide\n")
+    (root / "docs/guide.md").unlink()
+    (root / "docs/AGENTS.md").write_text(
+        "# An industry-leading guide\n419 datasets are listed.\n", encoding="utf-8"
+    )
+    (root / "config/public-surfaces.json").write_text(
+        json.dumps({"artifacts": ["/AGENTS.md"]}), encoding="utf-8"
+    )
+
+    result = verifier.verify(root, generated_checks={})
+
+    assert result.exit_code == 0
+    assert not [finding for finding in result.findings if not finding.startswith("REPORT ")]
+
+
+def test_ordinary_document_keeps_terminology_and_volatile_literal_findings(tmp_path: Path) -> None:
+    verifier = _module()
+    root = _fixture(tmp_path, "# An industry-leading guide\n419 datasets are listed.\n")
+
+    result = verifier.verify(root, generated_checks={})
+
+    assert result.exit_code == 1
+    assert any("banned claim: industry-leading" in finding for finding in result.findings)
+    assert any("volatile literal: 419 datasets" in finding for finding in result.findings)
+
+
+def test_exempt_files_keep_link_and_banned_claim_checks(tmp_path: Path) -> None:
+    verifier = _module()
+    root = _fixture(tmp_path, "# Guide\n")
+    (root / "docs/guide.md").unlink()
+    (root / "docs/AGENTS.md").write_text("[missing](missing.md)\n", encoding="utf-8")
+    (root / "docs/generated.md").write_text(
+        "<!-- generated: scripts/gen_guide.py -->\nAn industry-leading guide.\n", encoding="utf-8"
+    )
+
+    result = verifier.verify(root, generated_checks={})
+
+    assert result.exit_code == 1
+    assert "docs/AGENTS.md -> missing.md" in result.findings
+    assert any("docs/generated.md" in finding and "banned claim: industry-leading" in finding for finding in result.findings)
+
+
+def test_historical_record_exempts_volatile_literals_but_not_banned_claims(tmp_path: Path) -> None:
+    verifier = _module()
+    root = _fixture(tmp_path, "# Guide\n")
+    (root / "docs/guide.md").unlink()
+    (root / "docs/trust-snapshot-2026-01-01.md").write_text(
+        "419 datasets are listed.\nAn industry-leading record.\n", encoding="utf-8"
+    )
+
+    result = verifier.verify(root, generated_checks={})
+
+    assert result.exit_code == 1
+    assert not any("volatile literal" in finding for finding in result.findings)
+    assert any("banned claim: industry-leading" in finding for finding in result.findings)
+
+
+def test_generated_surface_exempts_volatile_literals(tmp_path: Path) -> None:
+    verifier = _module()
+    root = _fixture(tmp_path, "<!-- generated: scripts/gen_guide.py -->\n419 datasets are listed.\n")
+
+    marker_owned = verifier.verify(root, generated_checks={})
+    (root / "docs/guide.md").write_text("<!-- BEGIN generated -->\n419 datasets are listed.\n<!-- END generated -->\n", encoding="utf-8")
+    block_owned = verifier.verify(root, generated_checks={})
+
+    assert marker_owned.exit_code == 0
+    assert block_owned.exit_code == 0
+    assert not [finding for finding in marker_owned.findings if not finding.startswith("REPORT ")]
+    assert not [finding for finding in block_owned.findings if not finding.startswith("REPORT ")]
+
+
+def test_generator_injection_precondition_is_informational_but_drift_fails(tmp_path: Path) -> None:
+    verifier = _module()
+    root = _fixture(tmp_path)
+    injection = root / "scripts/gen_injection.py"
+    injection.write_text("import sys\nprint('source commit SHA must be explicitly injected')\nsys.exit(1)\n", encoding="utf-8")
+    drift = root / "scripts/gen_drift.py"
+    drift.write_text("import sys\nprint('outputs are stale')\nsys.exit(1)\n", encoding="utf-8")
+
+    informational = verifier.verify(
+        root, generated_checks={"scripts/gen_injection.py": (sys.executable, "scripts/gen_injection.py", "--check")}
+    )
+    failed = verifier.verify(
+        root, generated_checks={"scripts/gen_drift.py": (sys.executable, "scripts/gen_drift.py", "--check")}
+    )
+
+    assert informational.exit_code == 0
+    assert not [finding for finding in informational.findings if not finding.startswith("REPORT ")]
+    assert "informational: scripts/gen_injection.py requires injection: source commit SHA must be explicitly injected" in informational.informational
+    assert failed.exit_code == 1
+    assert any("outputs are stale" in finding for finding in failed.findings)
+
+
+def test_escaping_link_is_informational_only_when_artifact_root_target_exists(tmp_path: Path) -> None:
+    verifier = _module()
+    root = _fixture(tmp_path, "[schema](../record-evidence.schema.json)\n")
+    (root / "record-evidence.schema.json").write_text("{}\n", encoding="utf-8")
+
+    resolved = verifier.verify(root, generated_checks={})
+    (root / "record-evidence.schema.json").unlink()
+    missing = verifier.verify(root, generated_checks={})
+    (root / "docs/guide.md").write_text("[tmp](/tmp/private.md)\n", encoding="utf-8")
+    absolute = verifier.verify(root, generated_checks={})
+
+    assert resolved.exit_code == 0
+    assert resolved.informational == [
+        "informational: docs/guide.md -> ../record-evidence.schema.json resolves outside docs/ and is served from the artifact root"
+    ]
+    assert missing.exit_code == 1
+    assert "docs/guide.md -> ../record-evidence.schema.json: path escapes docs/" in missing.findings
+    assert absolute.exit_code == 1
+    assert "docs/guide.md -> /tmp/private.md: absolute filesystem path" in absolute.findings
+
+
+def test_report_only_prints_real_findings_but_exits_zero(tmp_path: Path, capsys) -> None:
+    verifier = _module()
+    root = _fixture(tmp_path, "# An industry-leading guide\n")
+    original_argv = sys.argv
+    try:
+        sys.argv = [str(SCRIPT), "--root", str(root), "--report-only"]
+        assert verifier.main() == 0
+    finally:
+        sys.argv = original_argv
+
+    output = capsys.readouterr().out
+    assert "banned claim: industry-leading" in output
+    assert "findings were reported and not enforced" in output
