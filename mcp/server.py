@@ -29,6 +29,8 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 import mcp.types as mcp_types
 from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError as FastMCPToolError
+from fastmcp.exceptions import ValidationError as FastMCPValidationError
 from fastmcp.server.middleware import Middleware
 from mcp.types import Icon, Implementation as MCPImplementation, ToolAnnotations
 from pydantic import Field
@@ -219,9 +221,43 @@ USAGE_ERROR_CLASSIFICATIONS = frozenset(
 USAGE_LEDGER_SCHEMA_ERA = "anonymous-correlated"
 
 
+# FastMCP catches any non-FastMCP exception a handler raises and re-raises it as
+# `ToolError` with the original attached as `__cause__` (the masking branch in
+# `fastmcp.server.server.FastMCP.call_tool`). Classifying the wrapper directly
+# would hide every handler-raised upstream failure behind the `internal_error`
+# fallback. Peel only FastMCP's own wrapper: a handler's `raise ... from ...`
+# chain must still classify by the exception the handler actually raised.
+MAX_ERROR_CAUSE_DEPTH = 8
+
+
+def _resolve_error(error: BaseException) -> BaseException:
+    """Return the handler exception hidden behind FastMCP's ToolError wrapper.
+
+    ``__cause__`` may be absent (``raise ... from None``) or None, so the walk
+    falls back to the error it was given. Traversal follows the chain only while
+    it stays inside FastMCP's wrapper type and is bounded and cycle-guarded, so a
+    missing, deeply nested, or cyclic cause chain cannot loop forever.
+    """
+    resolved = error
+    seen = {id(error)}
+    for _ in range(MAX_ERROR_CAUSE_DEPTH):
+        if not isinstance(resolved, FastMCPToolError):
+            break
+        cause = resolved.__cause__
+        if cause is None or id(cause) in seen:
+            break
+        seen.add(id(cause))
+        resolved = cause
+    return resolved
+
+
 def _error_record(error: BaseException) -> dict[str, str]:
     """Classify failures without recording potentially caller-supplied text."""
-    if isinstance(error, ValueError):
+    error = _resolve_error(error)
+    # FastMCP raises its own ValidationError (a sibling exception, not a
+    # ValueError) when a caller omits or mis-types a declared argument. Without
+    # this branch a malformed request is indistinguishable from an internal fault.
+    if isinstance(error, (ValueError, FastMCPValidationError)):
         classification = "validation_error"
     elif isinstance(error, (httpx.HTTPError, OSError, asyncio.TimeoutError)):
         classification = "upstream_read_error"

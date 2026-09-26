@@ -1293,6 +1293,111 @@ async def test_usage_middleware_separates_upstream_read_failures_from_internal(
     assert "secret upstream diagnostic" not in json.dumps(record)
 
 
+async def test_usage_ledger_classifies_missing_required_argument_from_real_call(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A real in-memory call with a required argument omitted must not be internal.
+
+    FastMCP validates tool arguments before the handler runs and raises its own
+    validation exception, which is neither a ValueError nor an upstream read
+    failure. This drives that path through the real server middleware rather
+    than handing ``_error_record`` a hand-raised exception, because a raw
+    ValueError is already discriminated and would prove nothing.
+    """
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+
+    async with Client(server.mcp) as client:
+        with pytest.raises(ToolError):
+            await client.call_tool("get_dataset", {})
+
+    records = [
+        json.loads(line)
+        for line in next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8").splitlines()
+    ]
+    assert len(records) == 1
+    assert records[0]["tool"] == "get_dataset"
+    assert records[0]["outcome"] == "error"
+    classification = records[0]["error"]["classification"]
+    assert classification != "internal_error"
+    assert classification == "validation_error"
+    assert records[0]["error"]["message"] == "tool call failed"
+
+
+async def test_usage_ledger_classifies_wrapped_httpx_error_from_real_call(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A handler-raised httpx error must survive FastMCP's ToolError wrapper.
+
+    FastMCP masks any non-FastMCP exception a handler raises into ``ToolError``,
+    keeping the original in ``__cause__``. Classifying the wrapper alone records
+    a real upstream outage as an internal fault. This drives the real in-memory
+    client through the server's own middleware and usage ledger; calling
+    ``_error_record`` with a bare httpx error is not enough, because an
+    unwrapped error already classified correctly and would prove nothing.
+    """
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+    tool = await server.mcp.get_tool("get_dataset")
+
+    def fail_upstream(dataset_id: str) -> dict:
+        raise httpx.ConnectError("secret upstream diagnostic")
+
+    monkeypatch.setattr(tool, "fn", fail_upstream)
+
+    async with Client(server.mcp) as client:
+        with pytest.raises(ToolError):
+            await client.call_tool("get_dataset", {"dataset_id": "fuelprice"})
+
+    records = [
+        json.loads(line)
+        for line in next(tmp_path.glob("*.jsonl")).read_text(encoding="utf-8").splitlines()
+    ]
+    assert len(records) == 1
+    assert records[0]["tool"] == "get_dataset"
+    assert records[0]["outcome"] == "error"
+    assert records[0]["error"]["classification"] == "upstream_read_error"
+    assert records[0]["error"]["classification"] != "internal_error"
+    assert records[0]["error"]["message"] == "tool call failed"
+    assert "secret upstream diagnostic" not in json.dumps(records[0])
+
+
+def test_usage_error_record_unwraps_tool_error_cause_chain() -> None:
+    """The ToolError wrapper must classify by ``__cause__``, bounded and safely.
+
+    Covers the single hop FastMCP adds, a nested wrapper, an absent cause (the
+    internal_error fallback), and a cyclic chain that must terminate.
+    """
+
+    def chained(outer: BaseException, cause: BaseException | None) -> BaseException:
+        outer.__cause__ = cause
+        return outer
+
+    assert server._error_record(
+        chained(ToolError("masked"), httpx.ConnectError("upstream"))
+    )["classification"] == "upstream_read_error"
+    assert server._error_record(
+        chained(ToolError("masked"), asyncio.TimeoutError("upstream"))
+    )["classification"] == "upstream_read_error"
+    assert server._error_record(
+        chained(ToolError("masked"), ValueError("caller"))
+    )["classification"] == "validation_error"
+    assert server._error_record(
+        chained(ToolError("masked"), KeyError("internal"))
+    )["classification"] == "internal_error"
+    assert server._error_record(
+        chained(
+            ToolError("outer"),
+            chained(ToolError("inner"), httpx.ReadTimeout("upstream")),
+        )
+    )["classification"] == "upstream_read_error"
+    assert server._error_record(ToolError("no cause"))["classification"] == "internal_error"
+
+    first = ToolError("first")
+    second = ToolError("second")
+    first.__cause__ = second
+    second.__cause__ = first
+    assert server._error_record(first)["classification"] == "internal_error"
+
+
 @pytest.mark.parametrize(
     ("error", "classification"),
     [
