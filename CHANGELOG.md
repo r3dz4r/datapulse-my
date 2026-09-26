@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.39.1](https://github.com/r3dz4r/datapulse-my/compare/v3.39.0...v3.39.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **health:** grade a measured browser row instead of short-circuiting it ([2db1112](https://github.com/r3dz4r/datapulse-my/commit/2db11122e332f578ec0b5331945e19e91dc71d3e))
+* **health:** grade a measured browser row instead of short-circuiting it ([69d156e](https://github.com/r3dz4r/datapulse-my/commit/69d156e01b4bc66fa7084eebbffcc16581edd0b5))
+
 ## [3.39.0](https://github.com/r3dz4r/datapulse-my/compare/v3.38.4...v3.39.0) (2026-09-26)
 
 
