@@ -60,15 +60,28 @@ retrieve() {
   [[ "$last_curl_status" -eq 0 ]]
 }
 fetch_alias() {
-  local surface="$1" url="$2" requested_path headers body resolved_headers resolved_body location status
+  local surface="$1" url="$2" target="${3:-}" requested_path headers body resolved_headers resolved_body location location_path accepted declared_alias_path status
   requested_path="${url#"$base_url"}"; headers="$smoke_dir/${surface// /-}.headers"; body="$smoke_dir/${surface// /-}.body"; resolved_headers="$smoke_dir/${surface// /-}.resolved.headers"; resolved_body="$smoke_dir/${surface// /-}.resolved.body"
   [[ "$url" =~ ^https://[^[:space:]]+$ ]] || fail "invalid URL for $surface"
   retrieve "$surface" "$url" "$body" "$headers" false || fail "transport failure retrieving $surface: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
   location="$(awk 'tolower($1) == "location:" { sub(/[\r ]+$/, "", $2); print $2; exit }' "$headers")"; [[ "$location" == "${location%#}" ]] || location="${location%#}"
   if [[ -n "$location" ]]; then
-    [[ "$requested_path" == /landing.html && "$status" == 308 ]] || fail "$surface uses an unexpected edge redirect to ${location}"
-    [[ "$location" == /landing || "$location" == "$base_url/landing" ]] || fail "$surface normalizes to an unexpected location: ${location}"
-    retrieve "$surface normalized" "$base_url/landing" "$resolved_body" "$resolved_headers" false || fail "transport failure retrieving normalized compatibility alias $surface: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
+    [[ "$status" == 308 ]] || fail "$surface uses an unexpected edge redirect to ${location}"
+    case "$location" in
+      "$base_url"/*) location_path="${location#"$base_url"}" ;;
+      /*) location_path="$location" ;;
+      *) fail "$surface normalizes to an unexpected location: ${location}" ;;
+    esac
+    [[ "$location_path" =~ ^/[A-Za-z0-9._/-]*$ && "$location_path" != //* && "$location_path" != *".."* ]] || fail "$surface normalizes to an unexpected location: ${location}"
+    accepted=false
+    [[ -n "$target" && "$location_path" == "$target" ]] && accepted=true
+    if [[ "$accepted" != true && "$location_path" != "$requested_path" ]]; then
+      while IFS= read -r declared_alias_path; do
+        [[ "$declared_alias_path" == "$location_path" ]] && { accepted=true; break; }
+      done < <(jq -r '.compatibility_aliases[]?.path' config/public-surfaces.json)
+    fi
+    [[ "$accepted" == true ]] || fail "$surface normalizes to an unexpected location: ${location}"
+    retrieve "$surface normalized" "$base_url$location_path" "$resolved_body" "$resolved_headers" false || fail "transport failure retrieving normalized compatibility alias $surface: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
     [[ "$status" == 200 ]] || fail "$surface normalized alias returned HTTP $status"
     location="$(awk 'tolower($1) == "location:" { sub(/[\r ]+$/, "", $2); print $2; exit }' "$resolved_headers")"; [[ -z "$location" ]] || fail "$surface normalized alias redirects again to ${location}"; body="$resolved_body"
   else [[ "$status" == 200 ]] || fail "$surface returned unexpected HTTP $status"; fi
@@ -93,7 +106,7 @@ grep -q '<title>DataPulse Dataset Register</title>' "$smoke_dir/index.html" || f
 grep -Fq "'/health/index.json'" "$smoke_dir/index.html" || fail "origin root does not fetch the dashboard health projection"
 observed_register_rows="$(grep -o '<article class="register-row' "$smoke_dir/index.html" | wc -l)"; [[ "$observed_register_rows" -eq "$expected_dataset_count" ]] || fail "origin root register rows mismatch: expected $expected_dataset_count, observed $observed_register_rows"
 grep -q 'DataPulse MY' "$smoke_dir/index.html" && fail "origin root retains the retired product-name alias"
-fetch_alias landing.html "$base_url/landing.html"; fetch_alias landing "$base_url/landing"; fetch_alias dashboard "$base_url/dashboard"
+fetch_alias landing.html "$base_url/landing.html" /; fetch_alias landing "$base_url/landing" /; fetch_alias dashboard "$base_url/dashboard" /; fetch_alias register "$base_url/register" /
 fetch "health snapshot" "$base_url/health/latest.json" "$smoke_dir/health/latest.json"
 python3 - "$site_dir/health/latest.json" "$smoke_dir/health/latest.json" <<'PY'
 import json,sys

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import textwrap
@@ -28,7 +29,12 @@ def _transport_helpers() -> str:
 
 
 def _run_redirect_sensitive_helper(
-    mode: str, script_mutation: tuple[str, str] | None = None
+    mode: str,
+    script_mutation: tuple[str, str] | None = None,
+    *,
+    requested_path: str = "/landing.html",
+    declared_target: str = "/landing",
+    redirect_location: str = "/landing",
 ) -> subprocess.CompletedProcess[str]:
     alias_body = (
         '<title>DataPulse dataset register</title>\\n'
@@ -36,13 +42,15 @@ def _run_redirect_sensitive_helper(
         '<meta http-equiv="refresh" content="0; url=/">\\n'
         '<a href="/">DataPulse dataset register</a>\\n'
     )
+    requested_url = f"https://example.test{requested_path}"
+    resolved_url = f"https://example.test{redirect_location}"
     helper = _transport_helpers()
     if script_mutation:
         helper = helper.replace(*script_mutation, 1)
     if mode == "alias":
-        invocation = "fetch_alias 'landing alias' \"$base_url/landing.html\""
+        invocation = f"fetch_alias 'landing alias' {requested_url!r} {declared_target!r}"
     else:
-        invocation = "fetch 'landing surface' \"$base_url/landing.html\" \"$smoke_dir/landing.html\""
+        invocation = f"fetch 'landing surface' {requested_url!r} \"$smoke_dir/landing.html\""
     script = f"""
 set -Eeuo pipefail
 smoke_dir=$(mktemp -d)
@@ -63,15 +71,15 @@ curl() {{
       *) shift ;;
     esac
   done
-  if [[ "$url" == "$base_url/landing.html" && "$follows" == true ]]; then
-    printf 'HTTP/2 308\\nLocation: /landing\\n' > "$dump"
-    url="$base_url/landing"
+  if [[ "$url" == {requested_url!r} && "$follows" == true ]]; then
+    printf 'HTTP/2 308\\nLocation: %s\\n' {redirect_location!r} > "$dump"
+    url={resolved_url!r}
   else
     : > "$dump"
   fi
   case "$url" in
-    "$base_url/landing.html") status=308; location='/landing'; body='' ;;
-    "$base_url/landing") status=200; location=''; body={alias_body!r} ;;
+    {requested_url!r}) status=308; location={redirect_location!r}; body='' ;;
+    {resolved_url!r}) status=200; location=''; body={alias_body!r} ;;
     *) return 1 ;;
   esac
   printf 'HTTP/2 %s\\n' "$status" >> "$dump"
@@ -93,6 +101,44 @@ def test_alias_probe_observes_redirect_instead_of_following_it() -> None:
 def test_surface_fetch_follows_redirects() -> None:
     result = _run_redirect_sensitive_helper("surface")
     assert result.returncode == 0, result.stderr
+
+
+def test_alias_redirect_to_declared_target_passes_for_non_landing_path() -> None:
+    # The guard must accept any declared alias that 308s to its declared target,
+    # not only the one path that historically redirected (/landing.html).
+    result = _run_redirect_sensitive_helper(
+        "alias",
+        requested_path="/register",
+        declared_target="/",
+        redirect_location="/",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_alias_redirect_to_undeclared_target_fails() -> None:
+    # A 308 that lands somewhere other than the declared target must still fail.
+    result = _run_redirect_sensitive_helper(
+        "alias",
+        requested_path="/register",
+        declared_target="/",
+        redirect_location="/not-the-declared-target",
+    )
+    assert result.returncode != 0
+
+
+def test_every_declared_compatibility_alias_is_fetched() -> None:
+    # The verifier fetches aliases explicitly; this pins the fetched set to the
+    # declared set so a newly declared alias cannot be forgotten.
+    declared = {
+        alias["path"]
+        for alias in json.loads(
+            (ROOT / "config/public-surfaces.json").read_text(encoding="utf-8")
+        )["compatibility_aliases"]
+    }
+    fetched = set(
+        re.findall(r'fetch_alias\s+\S+\s+"\$base_url([^"]+)"', verifier())
+    )
+    assert fetched == declared
 
 
 @pytest.mark.parametrize(
