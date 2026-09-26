@@ -118,6 +118,12 @@ jq -e '
   and (.datasets[0].first_row_hash | startswith("shape-v1:"))
   and .datasets[0].shape_basis == "json-array"
   and .datasets[0].content_shape_changed == false
+  and .datasets[0].newest_date == null
+  and .datasets[0].oldest_date == null
+  and .datasets[0].distinct_dates == 0
+  and .datasets[0].rows_per_date == null
+  and .datasets[0].largest_gap_days == null
+  and .datasets[0].dimension_cardinality == {"name": 1}
 ' "$fixture_dir/full-output.json" >/dev/null
 
 # A JSON object without a row array still has a value-insensitive structural
