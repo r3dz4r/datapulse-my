@@ -221,7 +221,7 @@ That is the whole shape of a defensible answer: **find → inspect → verify.**
 ## 5. Where to go next
 
 - [MCP reference](https://www.data-pulse.my/mcp-reference.html) — the generated
-  schema and signature for every one of the 19 tools; the exact field semantics.
+  schema and signature for every advertised MCP tool; the exact field semantics.
 - [Live health](https://www.data-pulse.my/health/latest.json) — the current
   freshness snapshot these tools read (and no-auth, so you can compare tool
   output to the raw JSON).
