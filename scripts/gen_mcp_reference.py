@@ -152,7 +152,10 @@ def render_mcp_document(
             "version": server.FASTMCP_VERSION,
             "source_commit_sha": source_sha,
             "source_commit_date": source_date,
-            "description": "DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors.",
+            "description": (
+                "DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors. "
+                f"Catalogue: {len(datasets)} datasets, {len(taxonomy)}-status health taxonomy, licence/attribution metadata."
+            ),
             "vendor": f"{product_name} (open source)",
             "homepage": f"{website}/",
             "repository": repository,
