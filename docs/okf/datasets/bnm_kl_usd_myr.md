@@ -8,7 +8,7 @@ sources:
   - {"id": "bnm","resource": "https://api.bnm.gov.my/public/kl-usd-reference-rate","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-08T03:01:24Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T11:11:15Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Bank Negara Malaysia via BNM Open API"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/bnm_kl_usd_myr.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2
-stale_after: "2026-09-08T00:00:00Z"
+stale_after: "2026-09-28T00:00:00Z"
 datapulse:stale_after_basis: "weekday_cadence"
 ---
 
@@ -26,6 +26,7 @@ Kuala Lumpur USD/MYR Reference Rate is published by Bank Negara Malaysia and tra
 
 # Schema
 
+- `first_row_hash`: `shape-v1:97f7c0f86ff1a2a9aeadf939bbeba9ac76f66ceb8dbf8c434c8db98606cdf9fa`
 - `record_count`: `2`
 
 # Quirks

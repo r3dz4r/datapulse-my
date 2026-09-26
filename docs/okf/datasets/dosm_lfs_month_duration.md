@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=lfs_month_duration","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Department of Statistics Malaysia via data.gov.my"
@@ -16,7 +16,7 @@ datapulse:real_status: "stale"
 datapulse:health_report: "/data/dosm_lfs_month_duration.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 125
-stale_after: "2026-06-16T12:00:00Z"
+stale_after: "2026-07-17T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Monthly Unemployment by Duration is published by Department of Statistics Malays
 
 - `column_count`: `8`
 - `first_row_hash`: `shape-v1:d4504e16e296abc3158971ed2fed1337e7658c06248b69fb3daa3387b36c3446`
-- `record_count`: `125`
+- `record_count`: `126`
 
 # Quirks
 

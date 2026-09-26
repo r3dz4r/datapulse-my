@@ -8,7 +8,7 @@ sources:
   - {"id": "npra","resource": "https://storage.data.gov.my/healthcare/cosmetic_notifications.csv","title": "National Pharmaceutical Regulatory Agency"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
@@ -26,7 +26,7 @@ Cosmetic Product Notifications is published by National Pharmaceutical Regulator
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:2c5366e10a0ff27b057ba18a8012e0f941385cc83358902f25498c60516cf2ce`
-- `record_count`: `242139`
+- `record_count`: `242942`
 
 # Quirks
 

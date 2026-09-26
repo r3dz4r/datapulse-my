@@ -8,19 +8,21 @@ sources:
   - {"id": "jdn","resource": "https://api.data.gov.my/data-catalogue?id=government_apps_downloads","title": "National Digital Department and Ministry of Digital"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Digital Department and Ministry of Digital via data.gov.my"
-datapulse:real_status: "unknown-freshness"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/government_apps_downloads.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 573
+stale_after: "2026-06-06T12:00:00Z"
+datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Downloads of Government Mobile Applications is published by National Digital Department and Ministry of Digital and tracked by DataPulse. The latest published probe classifies it as `unknown-freshness`.
+Downloads of Government Mobile Applications is published by National Digital Department and Ministry of Digital and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 

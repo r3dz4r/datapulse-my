@@ -8,7 +8,7 @@ sources:
   - {"id": "jpn","resource": "https://api.data.gov.my/data-catalogue?id=births","title": "National Registration Department"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-25T13:47:32Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Registration Department via data.gov.my"

@@ -8,11 +8,11 @@ sources:
   - {"id": "protecthealth","resource": "https://storage.data.gov.my/healthcare/pekab40_screenings_state.csv","title": "ProtectHealth Corporation and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-25T13:47:32Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "ProtectHealth Corporation and Ministry of Health Malaysia via data.gov.my"
-datapulse:real_status: "fresh"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/pekab40_screenings_state.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
@@ -20,13 +20,13 @@ datapulse:expected_record_count: null
 
 # Summary
 
-data.gov.my Daily PeKaB40 Health Screenings by State is published by ProtectHealth Corporation and Ministry of Health Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+data.gov.my Daily PeKaB40 Health Screenings by State is published by ProtectHealth Corporation and Ministry of Health Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:0729d7fe69db87c03f3de8115043309de3d614c914bd15080fb8d1b44232c43a`
-- `record_count`: `43216`
+- `record_count`: `43504`
 
 # Quirks
 

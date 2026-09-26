@@ -8,11 +8,11 @@ sources:
   - {"id": "national_blood_centre","resource": "https://storage.data.gov.my/healthcare/blood_donations_state.csv","title": "National Blood Centre and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-25T13:47:32Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "National Blood Centre and Ministry of Health Malaysia via data.gov.my"
-datapulse:real_status: "fresh"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/blood_donations_state.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
@@ -20,13 +20,13 @@ datapulse:expected_record_count: null
 
 # Summary
 
-data.gov.my Daily Blood Donations by Blood Group & State is published by National Blood Centre and Ministry of Health Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+data.gov.my Daily Blood Donations by Blood Group & State is published by National Blood Centre and Ministry of Health Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:d829d656a8eff3d7cc890b7172484e93b0f60cf571175dfede5b38ce1f89c124`
-- `record_count`: `491010`
+- `record_count`: `492115`
 
 # Quirks
 

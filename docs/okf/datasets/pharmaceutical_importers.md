@@ -8,7 +8,7 @@ sources:
   - {"id": "npra","resource": "https://storage.data.gov.my/healthcare/pharmaceutical_importers.csv","title": "National Pharmaceutical Regulatory Agency"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
@@ -26,7 +26,7 @@ Licensed Pharmaceutical Importers is published by National Pharmaceutical Regula
 
 - `column_count`: `8`
 - `first_row_hash`: `shape-v1:4146f8c1aeda43e51fdd693f691b5a5e0b01e1b3709d12111e6b7dc16e7b41fc`
-- `record_count`: `471`
+- `record_count`: `475`
 
 # Quirks
 

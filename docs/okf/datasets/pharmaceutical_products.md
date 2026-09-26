@@ -8,7 +8,7 @@ sources:
   - {"id": "npra","resource": "https://storage.data.gov.my/healthcare/pharmaceutical_products.csv","title": "National Pharmaceutical Regulatory Agency"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
@@ -26,7 +26,7 @@ Registered Pharmaceutical Products is published by National Pharmaceutical Regul
 
 - `column_count`: `16`
 - `first_row_hash`: `shape-v1:1143c46bab6ae6d3b3ea7026f273977afe3021f68da0ae5f4b9eee814b9030a0`
-- `record_count`: `28163`
+- `record_count`: `28228`
 
 # Quirks
 

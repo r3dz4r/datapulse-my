@@ -8,27 +8,27 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=ipi_1d","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Department of Statistics Malaysia via data.gov.my"
-datapulse:real_status: "stale"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_ipi_1d.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 1185
-stale_after: "2026-07-17T12:00:00Z"
+stale_after: "2026-08-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-IPI by Section (1 digit) is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
+IPI by Section (1 digit) is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `5`
 - `first_row_hash`: `shape-v1:bdf1ee2626258fabd21e5506a5c5f87eee5257890462fa6b150ca97cce172c97`
-- `record_count`: `1203`
+- `record_count`: `1212`
 
 # Quirks
 

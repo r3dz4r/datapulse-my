@@ -8,7 +8,7 @@ sources:
   - {"id": "mof","resource": "https://www.eperolehan.gov.my/quotation-tender-notice","title": "Ministry of Finance Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-08T03:21:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T11:11:15Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "MOF ePerolehan"
@@ -16,7 +16,7 @@ datapulse:real_status: "browser-dependent"
 datapulse:health_report: "/data/eperolehan-diklankan.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-09-08T12:00:00Z"
+stale_after: "2026-09-27T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
