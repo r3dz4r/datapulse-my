@@ -14,6 +14,19 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.38.2](https://github.com/r3dz4r/datapulse-my/compare/v3.38.1...v3.38.2) (2026-09-26)
+
+
+### Bug Fixes
+
+* **verify:** check every declared alias, not three hardcoded ones ([97acf45](https://github.com/r3dz4r/datapulse-my/commit/97acf45288a0c0fb26540ab967592408913419f1))
+* **verify:** check every declared alias, not three hardcoded ones ([c37c6a9](https://github.com/r3dz4r/datapulse-my/commit/c37c6a9ae50610c206f6ae5530fa70a29a93bb22))
+
+
+### Reverts
+
+* **config:** drop the /catalogue declaration ([eff2d14](https://github.com/r3dz4r/datapulse-my/commit/eff2d149a2dd2107220a41d65a117dc616fe6e46))
+
 ## [3.38.1](https://github.com/r3dz4r/datapulse-my/compare/v3.38.0...v3.38.1) (2026-09-26)
 
 
