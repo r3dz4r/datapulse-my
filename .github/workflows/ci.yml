@@ -152,6 +152,10 @@ jobs:
       - name: Lint current documentation facts
         run: python3 scripts/fact_lint.py
 
+      - name: Verify documentation integrity
+        # Promote when a report-only run has no non-REPORT finding on the clean tree.
+        run: python3 scripts/verify_documentation.py --report-only
+
   health-integrity:
     needs: classify
     if: github.event_name == 'push' && needs.classify.outputs.health_only == 'true'
