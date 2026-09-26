@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.39.3](https://github.com/r3dz4r/datapulse-my/compare/v3.39.2...v3.39.3) (2026-09-26)
+
+
+### Bug Fixes
+
+* **mcp:** classify an unknown-tool call as a caller error, not an internal fault ([31043af](https://github.com/r3dz4r/datapulse-my/commit/31043aff55da0be22cf34be46d780b9ee7013d4f))
+
 ## [3.39.2](https://github.com/r3dz4r/datapulse-my/compare/v3.39.1...v3.39.2) (2026-09-26)
 
 
