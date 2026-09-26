@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/dosm_hh_inequality_district.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2028-06-30T12:00:00Z"
+stale_after: "2026-12-31T00:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 

@@ -39,7 +39,14 @@ CADENCE_DAYS = {
     "monthly": 31,
     "quarterly": 92,
     "annual": 365,
-    "biennial to triennial (survey years)": 1095,
+    # The served classifier in scripts/check.sh reads this cadence as 730 days
+    # (`elif $frequency | startswith("biennial") then 730`), so the date this
+    # bundle publishes has to describe the behaviour a reader would actually
+    # observe. 730 is the two-year lower bound of the publisher's "biennial to
+    # triennial" cycle, not its three-year upper bound: a 1095-day baseline here
+    # would advertise a looser staleness date than the service enforces. This
+    # value and the check.sh cadence map must move together.
+    "biennial to triennial (survey years)": 730,
     "as-required": DEFAULT_CADENCE_DAYS,
 }
 NO_STALE_STATUSES = frozenset({"unknown-freshness", "reference", "discontinued"})

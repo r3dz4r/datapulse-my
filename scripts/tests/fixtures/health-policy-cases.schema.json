@@ -71,7 +71,7 @@
           "properties": {
             "tier": {"$ref": "#/$defs/tier"},
             "due_interval_seconds": {"type": "integer", "minimum": 1},
-            "freshness_mode": {"enum": ["cadence", "survey-verification", "as-required"]},
+            "freshness_mode": {"enum": ["cadence", "as-required"]},
             "freshness_baseline_seconds": {"type": "integer", "minimum": 1}
           }
         }

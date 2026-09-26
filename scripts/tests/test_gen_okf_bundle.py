@@ -160,7 +160,7 @@ def test_computation_sources_are_pinned_by_content_digest(tmp_path: Path) -> Non
         ("monthly", "2026-02-16T12:00:00Z", "cadence"),
         ("quarterly", "2026-05-19T00:00:00Z", "cadence"),
         ("annual", "2027-07-02T12:00:00Z", "cadence"),
-        ("biennial to triennial (survey years)", "2030-07-01T12:00:00Z", "cadence"),
+        ("biennial to triennial (survey years)", "2028-12-31T00:00:00Z", "cadence"),
         ("as-required", "2026-05-16T00:00:00Z", "default_90d"),
         (None, "2026-05-16T00:00:00Z", "default_90d"),
         ("unknown", "2026-05-16T00:00:00Z", "default_90d"),
