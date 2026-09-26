@@ -42,9 +42,9 @@ diff <(jq -r '.datasets[].id' datapulse.json | sort) \
 
 | Field | Distribution |
 |---|---|
-| **Namespace** (166 datasets) | economy: 70 · transport: 37 · government_open_data: 35 · healthcare: 11 · other: 7 · environment: 5 · weather: 1 |
-| **Licence** (166 datasets) | Creative Commons Attribution 4.0: 154 · Open Government Licence (Malaysia): 12 |
-| **Refresh frequency** (166 datasets) | monthly: 52 · annual: 43 · as-required: 15 · 30 seconds: 14 · daily: 13 · biennial to triennial (survey years): 11 · quarterly: 10 · hourly: 3 · weekly: 1 · daily (weekdays, 1700/1200/1130/0900 MYT): 4 |
+| **Namespace** (166 datasets at the 2026-08-08 snapshot) | economy: 70 · transport: 37 · government_open_data: 35 · healthcare: 11 · other: 7 · environment: 5 · weather: 1 |
+| **Licence** (166 datasets at the 2026-08-08 snapshot) | Creative Commons Attribution 4.0: 154 · Open Government Licence (Malaysia): 12 |
+| **Refresh frequency** (166 datasets at the 2026-08-08 snapshot) | monthly: 52 · annual: 43 · as-required: 15 · 30 seconds: 14 · daily: 13 · biennial to triennial (survey years): 11 · quarterly: 10 · hourly: 3 · weekly: 1 · daily (weekdays, 1700/1200/1130/0900 MYT): 4 |
 
 All counts derived via `jq -r '.datasets[].<field>' datapulse.json | sort | uniq -c | sort -rn`.
 

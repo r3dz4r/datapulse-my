@@ -164,7 +164,7 @@ def homepage_graph(manifest: dict, origins: dict[str, str]) -> dict:
         "@type": "Dataset",
         "@id": f"{base_url}/#catalog",
         "name": "DataPulse Dataset Catalog",
-        "description": f"Open trust layer for Malaysian public data. {len(datasets)} official datasets with continuous health monitoring and licence/attribution metadata.",
+        "description": f"DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors. {len(datasets)} official datasets.",
         "url": f"{base_url}/",
         "sameAs": origins["repository"],
         "identifier": "datapulse-my-catalog-v1",

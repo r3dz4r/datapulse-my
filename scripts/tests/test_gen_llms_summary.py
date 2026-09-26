@@ -6,22 +6,15 @@ import json
 import subprocess
 from pathlib import Path
 
+from scripts.gen_llms_summary import PUBLIC_SURFACE_LINKS
+
 
 ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = ROOT / "scripts/gen_llms_summary.py"
 DOCUMENTATION_ARTIFACTS = [
-    "/documentation-map.md",
-    "/source-of-truth-map.md",
-    "/glossary.md",
-    "/trust-contract.md",
-    "/status-semantics.md",
-    "/evidence-receipt-spec.md",
-    "/agent-workflows.md",
-    "/dataset-lifecycle.md",
-    "/incident-response.md",
-    "/reproducibility.md",
-    "/enterprise-governance.md",
-    "/integration-patterns.md",
+    path
+    for path in PUBLIC_SURFACE_LINKS
+    if path.endswith(".md") and path != "/agent-workflow-malaysia-public-data.md"
 ]
 DISCOVERY_ARTIFACTS = [
     "/ai-catalog.json",
@@ -143,7 +136,12 @@ def test_updates_count_from_manifest(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     output = (tmp_path / "llms.txt").read_text(encoding="utf-8")
-    assert "> DataPulse publishes a machine-readable manifest of 3 official datasets." in output
+    assert (
+        "> DataPulse — an open, read-only verification layer for Malaysian public data, "
+        "publishing per-dataset freshness, licence, structure and signed-observation evidence "
+        "for AI agents, analysts and auditors. It publishes a machine-readable manifest of 3 "
+        "official datasets."
+    ) in output
     assert "Unrelated content stays byte-identical." in output
     assert "dataset-0" in output
     artifacts = output.split("<!-- BEGIN public-artifacts -->", 1)[1].split("<!-- END public-artifacts -->", 1)[0]

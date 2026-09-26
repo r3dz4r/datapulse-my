@@ -27,17 +27,9 @@ An official-looking page does not tell an agent when the dataset behind it last
 updated, who published it, whether it may legally be reused, or whether the
 observation can be reproduced by a second party.
 
-DataPulse exists to make that uncertainty explicit. It is an open, read-only
-**verification layer for Malaysian public data**: it continuously probes
-<!-- BEGIN readme-cover -->**418 official datasets**<!-- END readme-cover -->,
-and publishes — for each one — machine-readable *evidence* about whether the
-source is reachable, how fresh the content is, what licence applies, how the
-schema behaves, and when the observation was signed.
+DataPulse is an open, read-only verification layer for Malaysian public data. It continuously observes Malaysia's official open datasets — those published through data.gov.my, Bank Negara Malaysia, DOSM, the Department of Environment, the Ministry of Health, KPDN and MET Malaysia — and publishes machine-readable evidence about each one: whether the source is reachable, how fresh its content is, which licence applies, whether its structure or record count has changed, and when the observation was signed. Every dataset carries one of ten explicit statuses instead of a blanket green tick, and each published observation can be checked by a third party: receipts are signed, the signing keys are published with validity windows and rotation history, and a single-file verifier reproduces the check with no DataPulse installation. DataPulse does not replace the official source and does not certify that a publisher's data is substantively correct — it makes the condition of the source observable, and the observation reproducible.
 
-It does **not** replace the official source. It documents, on an honest and
-reproducible basis, what the official portal states and whether that material is
-current, so you know what you are reusing or citing. The verification speaks
-for itself: every claim here is a live, checkable artefact, not a promise.
+<!-- BEGIN readme-cover -->**418 official datasets**<!-- END readme-cover --> are observed continuously.
 
 ## What we do, simply
 
@@ -223,22 +215,9 @@ deployment architecture.
 - [MCP endpoint](https://mcp.data-pulse.my/mcp)
 <!-- END public-discovery -->
 
-**Wire it into Claude Desktop** via `claude_desktop_config.json` (30 seconds, no
-API key):
-
-```json
-{
-  "mcpServers": {
-    "datapulse-my": {
-      "transport": "streamable-http",
-      "url": "https://mcp.data-pulse.my/mcp"
-    }
-  }
-}
-```
-
-Restart Claude Desktop, confirm the hammer icon shows "datapulse-my" with the
-read-only tools listed above. Cursor / Cline use the same JSON in their MCP config panel.
+Restart Claude Desktop after adding the configuration, then confirm the hammer
+icon shows "datapulse-my" with the read-only tools listed above. Cursor / Cline
+use the same JSON in their MCP config panel.
 
 ## Included datasets
 
