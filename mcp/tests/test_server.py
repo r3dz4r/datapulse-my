@@ -752,6 +752,37 @@ async def test_tool_call_logs_aggregate_safe_terminal_evidence(caplog: pytest.Lo
     }
 
 
+async def test_unknown_tool_call_records_validation_error_not_internal(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A call naming a tool the server does not expose is a caller error.
+
+    Driven through a real in-memory FastMCP client so the middleware observes
+    the exception FastMCP actually raises (``NotFoundError``), rather than a
+    hand-raised stand-in. The usage ledger must classify it as
+    ``validation_error``; classifying it as ``internal_error`` reports a
+    caller mistake as a server fault.
+    """
+    monkeypatch.setenv("DATAPULSE_USAGE_DIR", str(tmp_path))
+
+    async with Client(server.mcp) as client:
+        with pytest.raises(ToolError):
+            await client.call_tool("no_such_tool_for_notfound_classification", {})
+
+    records = [
+        json.loads(line)
+        for path in tmp_path.glob("*.jsonl")
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    error_records = [record for record in records if record.get("outcome") == "error"]
+    assert len(error_records) == 1
+    record = error_records[0]
+    assert record["tool"] == "no_such_tool_for_notfound_classification"
+    assert record["error"]["classification"] == "validation_error"
+    assert record["error"]["classification"] != "internal_error"
+
+
 class _ASGIResponse:
     def __init__(self, status: int = 200, body: bytes = b"ok") -> None:
         self.status = status

@@ -29,6 +29,8 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 import mcp.types as mcp_types
 from fastmcp import FastMCP
+from fastmcp.exceptions import DisabledError as FastMCPDisabledError
+from fastmcp.exceptions import NotFoundError as FastMCPNotFoundError
 from fastmcp.exceptions import ToolError as FastMCPToolError
 from fastmcp.exceptions import ValidationError as FastMCPValidationError
 from fastmcp.server.middleware import Middleware
@@ -255,9 +257,16 @@ def _error_record(error: BaseException) -> dict[str, str]:
     """Classify failures without recording potentially caller-supplied text."""
     error = _resolve_error(error)
     # FastMCP raises its own ValidationError (a sibling exception, not a
-    # ValueError) when a caller omits or mis-types a declared argument. Without
-    # this branch a malformed request is indistinguishable from an internal fault.
-    if isinstance(error, (ValueError, FastMCPValidationError)):
+    # ValueError) when a caller omits or mis-types a declared argument, and
+    # raises NotFoundError when a call names a tool the server does not expose;
+    # DisabledError is its sibling for a named-but-disabled component. FastMCP's
+    # own `to_mcp_error` maps all three to INVALID_PARAMS (-32602), so all three
+    # are caller mistakes. Without these branches a malformed or unknown-tool
+    # request is indistinguishable from an internal fault.
+    if isinstance(
+        error,
+        (ValueError, FastMCPValidationError, FastMCPNotFoundError, FastMCPDisabledError),
+    ):
         classification = "validation_error"
     elif isinstance(error, (httpx.HTTPError, OSError, asyncio.TimeoutError)):
         classification = "upstream_read_error"
