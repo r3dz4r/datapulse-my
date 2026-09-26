@@ -38,6 +38,18 @@ def fixture_root(tmp_path: Path) -> tuple[Path, Path]:
     return tmp_path, key
 
 
+def write_probe_window(root: Path, reference_at: str, counts: object) -> None:
+    write(
+        root / "health/probe-window.json",
+        {
+            "schema": "datapulse/v1/probe-window-counts",
+            "reference_at": reference_at,
+            "window_days": [14, 1],
+            "counts": counts,
+        },
+    )
+
+
 def fixture_rekor_reference(root: Path, name: str) -> Path:
     """Write deterministic Rekor evidence bound to the fixture health bytes."""
     digest = hashlib.sha256((root / "health/latest.json").read_bytes()).hexdigest()
@@ -112,6 +124,82 @@ def test_generator_signs_daily_digest_and_chain(tmp_path: Path):
     Ed25519PublicKey.from_public_bytes(base64.b64decode(payload["signer_pubkey_base64"])).verify(base64.b64decode(env["signature_base64"]), ga.canonical(payload))
     assert env["chain_link"] == ga.sha(bytes.fromhex(payload["previous_chain_head"])+ga.canonical(payload))
     assert payload["probe_count_24h"] == 1 and payload["content_fingerprint"]["scope"] == "first-row-or-headers"
+
+
+def test_probe_window_counts_are_used_without_local_history(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    (root / "health/history.jsonl").unlink()
+    write_probe_window(root, "2026-08-15T00:00:00Z", {"sample": {"probe_count_14d": 1585, "probe_count_24h": 170}})
+
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert payload["probe_count_14d"] == 1585
+    assert payload["probe_count_24h"] == 170
+
+
+def test_probe_window_reference_at_selects_its_fixed_counts(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    (root / "health/history.jsonl").unlink()
+    write_probe_window(root, "2026-08-14T00:00:00Z", {"sample": {"probe_count_14d": 7, "probe_count_24h": 3}})
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    first = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+
+    root, key = fixture_root(tmp_path)
+    (root / "health/history.jsonl").unlink()
+    write_probe_window(root, "2026-08-15T00:00:00Z", {"sample": {"probe_count_14d": 8, "probe_count_24h": 4}})
+    ga.generate(root, key, datetime(2026, 8, 16, 1, tzinfo=timezone.utc))
+    second = json.loads((root / "attestations/2026-08-16/sample.json").read_text())["payload"]
+
+    assert (first["probe_count_14d"], first["probe_count_24h"]) == (7, 3)
+    assert (second["probe_count_14d"], second["probe_count_24h"]) == (8, 4)
+
+
+def test_missing_probe_count_sources_fail_without_writing_envelope(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    (root / "health/history.jsonl").unlink()
+
+    with pytest.raises(
+        ga.ProbeCountSourceError,
+        match=r"dataset sample: neither health/probe-window\.json nor health/history\.jsonl is available",
+    ):
+        ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+    assert not (root / "attestations/2026-08-15/sample.json").exists()
+
+
+def test_history_counts_are_used_when_probe_window_is_absent(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    (root / "health/history.jsonl").write_text(
+        "\n".join(
+            json.dumps({"dataset_id": "sample", "observed_at": value})
+            for value in ("2026-08-14T01:00:00Z", "2026-08-01T01:00:00Z", "2026-07-01T01:00:00Z")
+        )
+        + "\n"
+    )
+
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert (payload["probe_count_14d"], payload["probe_count_24h"]) == (2, 1)
+
+
+@pytest.mark.parametrize(
+    "artifact",
+    [
+        {"reference_at": "2026-08-15T00:00:00Z", "window_days": [14, 1], "counts": {"sample": {"probe_count_14d": 1, "probe_count_24h": 1}}},
+        {"schema": "datapulse/v1/probe-window-counts", "reference_at": "2026-08-15T00:00:00Z", "window_days": [14, 1], "counts": {"sample": {"probe_count_14d": "1", "probe_count_24h": 1}}},
+        {"schema": "datapulse/v1/probe-window-counts", "reference_at": "2026-08-15T00:00:00Z", "window_days": [14, 1], "counts": []},
+    ],
+)
+def test_malformed_probe_window_falls_back_to_history(tmp_path: Path, artifact: dict):
+    root, key = fixture_root(tmp_path)
+    write(root / "health/probe-window.json", artifact)
+
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert payload["probe_count_24h"] == 1
 
 
 def test_signed_manifest_url_tamper_invalidates_signature(tmp_path: Path):

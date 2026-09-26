@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate signed daily probe attestations and unsigned trust scores."""
 from __future__ import annotations
-import argparse, base64, hashlib, json, shutil, subprocess
+import argparse, base64, hashlib, json, logging, shutil, subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
@@ -10,6 +10,14 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 ZERO = "0" * 64
 ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
 ATTESTATION_KEY_PURPOSE = "attestation-chain-signing"
+PROBE_WINDOW_SCHEMA = "datapulse/v1/probe-window-counts"
+logger = logging.getLogger(__name__)
+
+
+class ProbeCountSourceError(ValueError):
+    """Raised when a dataset has no trustworthy source for probe counts."""
+
+
 def canonical(value: object) -> bytes: return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
 def sha(value: bytes) -> str: return hashlib.sha256(value).hexdigest()
 def parse_time(value: str) -> datetime: return datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -130,6 +138,68 @@ def component_values_and_availability(did: str, h: dict | None, t: dict | None, 
 def load_score_inputs(root: Path) -> tuple[dict, dict, dict, dict, dict]:
     return tuple(load(root / path) for path in ("datapulse.json", "health/latest.json", "health/trends.json", "health/drift.json", "health/reconciliation.json"))
 
+
+def load_probe_window(path: Path) -> dict[str, tuple[int, int]] | None:
+    """Return validated committed probe counts, or None when the artifact is unusable."""
+    if not path.exists():
+        return None
+    try:
+        document = load(path)
+        if (
+            document.get("schema") != PROBE_WINDOW_SCHEMA
+            or not isinstance(document.get("reference_at"), str)
+            or parse_time(document["reference_at"]).tzinfo is None
+            or document.get("window_days") != [14, 1]
+            or not isinstance(document.get("counts"), dict)
+        ):
+            raise ValueError("invalid probe-window metadata")
+        counts: dict[str, tuple[int, int]] = {}
+        for dataset_id, value in document["counts"].items():
+            if not isinstance(dataset_id, str) or not dataset_id or not isinstance(value, dict):
+                raise ValueError("invalid probe-window count entry")
+            count_14d = value.get("probe_count_14d")
+            count_24h = value.get("probe_count_24h")
+            if (
+                not isinstance(count_14d, int)
+                or isinstance(count_14d, bool)
+                or count_14d < 0
+                or not isinstance(count_24h, int)
+                or isinstance(count_24h, bool)
+                or count_24h < 0
+            ):
+                raise ValueError("invalid probe-window count entry")
+            counts[dataset_id] = (count_14d, count_24h)
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
+        logger.warning("Ignoring unusable probe-window artifact %s: %s", path, error)
+        return None
+    return counts
+
+
+def resolve_probe_counts(root: Path, dataset_ids: list[str], now: datetime) -> dict[str, tuple[int, int]]:
+    """Resolve each dataset's probe counts from the committed artifact or local history."""
+    probe_window = load_probe_window(root / "health/probe-window.json")
+    history_path = root / "health/history.jsonl"
+    history = [json.loads(line) for line in history_path.read_text(encoding="utf-8").splitlines() if line.strip()] if history_path.exists() else None
+    cutoff_14d = now - timedelta(days=14)
+    cutoff_24h = now - timedelta(days=1)
+    counts: dict[str, tuple[int, int]] = {}
+    for dataset_id in dataset_ids:
+        if probe_window is not None and dataset_id in probe_window:
+            # The committed reference_at fixes these supplied windows, preventing a
+            # signing job's wall-clock time from changing the signed observation counts.
+            counts[dataset_id] = probe_window[dataset_id]
+            logger.info("probe counts for %s: probe-window artifact", dataset_id)
+            continue
+        if history is not None:
+            times = [parse_time(row["observed_at"]) for row in history if row.get("dataset_id") == dataset_id and row.get("observed_at")]
+            counts[dataset_id] = (sum(value >= cutoff_14d for value in times), sum(value >= cutoff_24h for value in times))
+            logger.info("probe counts for %s: local history", dataset_id)
+            continue
+        raise ProbeCountSourceError(
+            f"dataset {dataset_id}: neither health/probe-window.json nor health/history.jsonl is available"
+        )
+    return counts
+
 def score_rows(manifest: dict, health: dict, trends: dict, drift: dict, recon: dict, generated_at: str) -> dict:
     hs={r["dataset_id"]:r for r in health["datasets"]}; ts={r["dataset_id"]:r for r in trends["datasets"]}; ds={r["dataset_id"]:r for r in drift["datasets"]}; rs={m["id"]:g["verdict"] for g in recon["groups"] for m in g["members"]}; rows=[]
     for entry in manifest["datasets"]:
@@ -222,10 +292,10 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
     if row is None or registry.get("schema") != "datapulse/v2/probe-key-registry" or registry.get("current_key_id")!=key["key_id"] or row.get("purpose") != ATTESTATION_KEY_PURPOSE or row.get("status")!="active" or not(parse_time(row["not_before"])<=now<=parse_time(row["not_after"])): raise ValueError("signing key is not active")
     generated_at=now.replace(microsecond=0).isoformat().replace("+00:00","Z"); base=root/"attestations"; dated=base/day; health_claim=health_binding(root,health); rekor=rekor_binding(root,rekor_reference,health_claim["artifact_sha256"])
     previous=load(latest/"chain_head.json")["chain_head"] if (latest/"chain_head.json").exists() else ZERO
-    hp=root/"health/history.jsonl"; history=[json.loads(line) for line in hp.read_text(encoding="utf-8").splitlines() if line.strip()] if hp.exists() else []; health_by={r["dataset_id"]:r for r in health["datasets"]}; links=[]; refs={}
-    for entry in sorted(manifest["datasets"],key=lambda r:r["id"]):
-        did=entry["id"]; h=health_by.get(did,{}); observed=h.get("last_checked") or health["checked_at"]; cutoff14=now-timedelta(days=14); cutoff1=now-timedelta(days=1); times=[parse_time(r["observed_at"]) for r in history if r.get("dataset_id")==did and r.get("observed_at")]; fp=h.get("first_row_hash"); browser=h.get("access_dependency")=="browser"
-        payload={"schema":"datapulse/v1/probe-attestation","date":day,"observed_at":observed,"dataset_id":did,"source_url":entry["url"],"observed_request_url":h.get("request_url"),"access_dependency":h.get("access_dependency","direct"),"probe_count_14d":sum(t>=cutoff14 for t in times),"probe_count_24h":sum(t>=cutoff1 for t in times),"last_status":h.get("status"),"last_staleness_days":h.get("staleness_days"),"content_fingerprint":{"scheme":"shape-v1:sha256","scope":"first-row-or-headers","value":fp} if fp else None,"browser_receipt":{"available":False,"reason":"probe runner emitted no signed receipt" if browser else None},"previous_chain_head":previous,"key_id":key["key_id"],"signer_pubkey_base64":key["public_key_base64"]}
+    entries=sorted(manifest["datasets"],key=lambda r:r["id"]); probe_counts=resolve_probe_counts(root,[entry["id"] for entry in entries],now); health_by={r["dataset_id"]:r for r in health["datasets"]}; links=[]; refs={}
+    for entry in entries:
+        did=entry["id"]; h=health_by.get(did,{}); observed=h.get("last_checked") or health["checked_at"]; count_14d, count_24h=probe_counts[did]; fp=h.get("first_row_hash"); browser=h.get("access_dependency")=="browser"
+        payload={"schema":"datapulse/v1/probe-attestation","date":day,"observed_at":observed,"dataset_id":did,"source_url":entry["url"],"observed_request_url":h.get("request_url"),"access_dependency":h.get("access_dependency","direct"),"probe_count_14d":count_14d,"probe_count_24h":count_24h,"last_status":h.get("status"),"last_staleness_days":h.get("staleness_days"),"content_fingerprint":{"scheme":"shape-v1:sha256","scope":"first-row-or-headers","value":fp} if fp else None,"browser_receipt":{"available":False,"reason":"probe runner emitted no signed receipt" if browser else None},"previous_chain_head":previous,"key_id":key["key_id"],"signer_pubkey_base64":key["public_key_base64"]}
         link=sha(bytes.fromhex(previous)+canonical(payload)); ref=f"attestations/{day}/{did}.json"; envelope={"schema":"datapulse/v1/probe-attestation-envelope","payload":payload,"signature_base64":sign(private,payload),"chain_link":link,"verification_level":"L1-capable"}; Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(envelope["signature_base64"]),canonical(payload)); dump(root/ref,envelope); links.append({"dataset_id":did,"chain_link":link}); refs[did]=ref
     head_payload={"schema":"datapulse/v1/daily-chain-head","date":day,"previous_chain_head":previous,"dataset_count":len(links),"dataset_links_sha256":sha(canonical(links)),"key_id":key["key_id"]}; chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}; dump(dated/"chain_head.json",head)
     chain_index=load(base/"chain-index.json") if (base/"chain-index.json").exists() else {"schema":"datapulse/v1/chain-index","heads":{},"anchors":{}}
