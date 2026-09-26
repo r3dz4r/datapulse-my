@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.40.0](https://github.com/r3dz4r/datapulse-my/compare/v3.39.3...v3.40.0) (2026-09-26)
+
+
+### Features
+
+* **probe:** record the shape facts the probe already receives ([#226](https://github.com/r3dz4r/datapulse-my/issues/226)) ([7dc34f3](https://github.com/r3dz4r/datapulse-my/commit/7dc34f3fe9aecd52edec1c661f95599acb8d0966))
+
 ## [3.39.3](https://github.com/r3dz4r/datapulse-my/compare/v3.39.2...v3.39.3) (2026-09-26)
 
 
