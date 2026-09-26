@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.38.3](https://github.com/r3dz4r/datapulse-my/compare/v3.38.2...v3.38.3) (2026-09-26)
+
+
+### Bug Fixes
+
+* **tests:** stop the generator harness reading the repository's git directory ([c682b6b](https://github.com/r3dz4r/datapulse-my/commit/c682b6b57875bfc4f05f4c6bba06cbc19ae9aa5e))
+* **tests:** stop the generator harness reading the repository's git directory ([c1e8753](https://github.com/r3dz4r/datapulse-my/commit/c1e8753a7592883c7d9db9933125773a4c38ced3))
+
 ## [3.38.2](https://github.com/r3dz4r/datapulse-my/compare/v3.38.1...v3.38.2) (2026-09-26)
 
 
