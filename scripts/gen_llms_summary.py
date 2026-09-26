@@ -48,6 +48,10 @@ PUBLIC_SURFACE_LINKS = {
     "/data/jsonld/catalog.json": ("JSON-LD catalog", "Schema.org JSON-LD dataset catalog."),
     "/observation-receipts/chain_head.json": ("Observation receipt chain head", "Signed head pointer for the host-signed observation receipt chain."),
     "/badges/": ("Status badges", "Per-dataset SVG health badges."),
+    "/one-pager.md": ("DataPulse in one page", "Canonical product description, boundaries, and verification path."),
+    "/verify.md": ("Verify a DataPulse claim", "Independent verification instructions for published DataPulse evidence."),
+    "/quickstart.md": ("Quickstart", "Five-minute MCP setup and verification-first workflow for builders."),
+    "/verify-datapulse-externally.md": ("Verify DataPulse externally", "Standalone public-HTTPS verification guide for DataPulse evidence."),
 }
 
 
@@ -81,7 +85,7 @@ def generate(root: Path, *, check: bool = False, validate_only: bool = False) ->
         raise GenerationError(f"cannot read {path}: {error}") from error
     count = len(datasets)
     summary = (
-        f"> DataPulse publishes a machine-readable manifest of {count} official datasets.\n\n"
+        f"> DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors. It publishes a machine-readable manifest of {count} official datasets.\n\n"
         "Each manifest entry retains its human-readable `steward` and stable `custodian` publisher ID. "
         "Health anomaly fields explain freshness-delta outliers without adding statuses."
     )

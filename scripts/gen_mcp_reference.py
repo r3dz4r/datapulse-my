@@ -153,8 +153,8 @@ def render_mcp_document(
             "source_commit_sha": source_sha,
             "source_commit_date": source_date,
             "description": (
-                f"Read-only access to {product_name}'s Malaysian public dataset catalogue "
-                f"({len(datasets)} datasets, {len(taxonomy)}-status health taxonomy, licence/attribution metadata)."
+                "DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors. "
+                f"Catalogue: {len(datasets)} datasets, {len(taxonomy)}-status health taxonomy, licence/attribution metadata."
             ),
             "vendor": f"{product_name} (open source)",
             "homepage": f"{website}/",
@@ -196,7 +196,7 @@ def render_agent_document(
         "@type": "WebSite",
         "@id": f"{website}/#agent",
         "name": product_name,
-        "description": f"Open-source trust layer for Malaysian public data with {len(datasets)} official datasets and agent-native discovery.",
+        "description": "DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors.",
         "url": f"{website}/",
         "capabilities": {
             "data_access": {"read": True, "write": False},

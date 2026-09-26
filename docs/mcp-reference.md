@@ -610,7 +610,7 @@ Input schema:
 
 ### `usage_summary`
 
-Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, and `trust_distribution` (counts of returned trust verdicts by published score band: 90-100, 75-89, 50-74, 25-49, 0-24) for the inclusive range. Use it for aggregate tool activity; do not use it to find data-quality risks—use find_stale, find_anomalies, find_deteriorating, find_recovering, find_unreliable, or find_schema_drift instead. It reads persisted usage records, so zero totals mean no retained records in that range; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.
+Aggregate anonymous tool usage for an inclusive ISO date range, e.g. 2026-08-01 to 2026-08-07. Returns `total_calls`, `by_outcome`, `by_tool`, `by_dataset`, `trust_verdict_calls` (the count of trust_verdict records regardless of outcome or result shape), and `trust_distribution` (counts of returned trust verdicts by published score band: 90-100, 75-89, 50-74, 25-49, 0-24) for the inclusive range. Use it for aggregate tool activity; do not use it to find data-quality risks—use find_stale, find_anomalies, find_deteriorating, find_recovering, find_unreliable, or find_schema_drift instead. It reads persisted usage records, so zero totals mean no retained records in that range; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.
 
 Input schema:
 
