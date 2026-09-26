@@ -516,6 +516,24 @@ PY
     || printf '{"record_count":null,"column_count":null,"first_row":null,"first_record_timestamp":null,"body_format":"unknown"}\n'
 }
 
+# All-null shape facts. Missing helper output, an unparseable payload, or a
+# non-tabular body resolves here so the additive evidence never changes the
+# probe's outcome and never emits partial JSON.
+probe_facts_null='{"newest_date":null,"oldest_date":null,"distinct_dates":0,"rows_per_date":null,"largest_gap_days":null,"dimension_cardinality":{}}'
+
+extract_probe_facts() {
+  local body_path="$1"
+  local mode="$2"
+  local facts=""
+
+  facts="$(python3 "$script_dir/probe_facts.py" "$mode" < "$body_path" 2>/dev/null)" || facts=""
+  if [[ -z "$facts" ]] \
+    || ! jq -e 'type == "object" and has("dimension_cardinality")' >/dev/null 2>&1 <<< "$facts"; then
+    facts="$probe_facts_null"
+  fi
+  printf '%s' "$facts"
+}
+
 extract_npra_registration_format_metrics() {
   local body_path="$1"
   local counts legacy_count transition_count invalid_count total_count compatible
@@ -838,7 +856,7 @@ check_weather_dataset() {
   local source_url="$2"
   local http_status content_length record_count locations date_start date_end details
   local content_freshness_date
-  local column_count first_row_hash shape_basis
+  local column_count first_row_hash shape_basis facts
 
   if ! http_status="$(curl --location --silent --show-error \
     --max-time "$curl_timeout" \
@@ -865,6 +883,7 @@ check_weather_dataset() {
   column_count="$(jq 'if length > 0 and (.[0] | type) == "object" then (.[0] | keys | length) else null end' "$body_file")"
   first_row_hash="$(jq -cS '.[0] // null' "$body_file" | python3 "$script_dir/shape_fingerprint.py" --json)"
   shape_basis="json-array"
+  facts="$(extract_probe_facts "$body_file" --json)"
   locations="$(jq '[.[].location.location_id] | unique | length' "$body_file")"
   date_start="$(jq -r '[.[].date] | min // empty' "$body_file")"
   date_end="$(jq -r '[.[].date] | max // empty' "$body_file")"
@@ -883,6 +902,7 @@ check_weather_dataset() {
     --arg date_start "$date_start" \
     --arg date_end "$date_end" \
     --arg content_freshness_date "$content_freshness_date" \
+    --argjson facts "$facts" \
     '{
       request_url: $request_url,
       access_method: "direct curl GET",
@@ -897,7 +917,7 @@ check_weather_dataset() {
       content_freshness_date: (
         if $content_freshness_date == "" then null else $content_freshness_date end
       )
-    }')"
+    } + $facts')"
   emit "$dataset_id" "$source_url" "fresh" "HTTP ${http_status}" "$details"
 }
 
@@ -963,7 +983,7 @@ check_direct_dataset() {
   local http_status content_length first_record_timestamp details last_modified
   local content_freshness_date content_request_url date_field extraction_mode content_format
   local date_source metadata_page_url
-  local metrics record_count column_count first_row_hash first_row body_format shape_basis
+  local metrics record_count column_count first_row_hash first_row body_format shape_basis facts
   local estimated_record_count record_count_estimated incomplete
   local probe_status probe_message registration_metrics
   local registration_format_compatible legacy_registration_count
@@ -1067,6 +1087,15 @@ check_direct_dataset() {
   else
     first_row_hash=""
     shape_basis="untyped"
+  fi
+  # The helper reads the same downloaded body. Binary/unknown formats are
+  # skipped so the probe does not parse a payload it already declared untyped.
+  if [[ "$body_format" == "csv" ]]; then
+    facts="$(extract_probe_facts "$body_file" --csv)"
+  elif [[ "$body_format" == "json" ]]; then
+    facts="$(extract_probe_facts "$body_file" --json)"
+  else
+    facts="$probe_facts_null"
   fi
   first_record_timestamp="$(jq -r '.first_record_timestamp // empty' <<< "$metrics")"
   content_freshness_date=""
@@ -1180,6 +1209,7 @@ check_direct_dataset() {
     --argjson legacy_registration_count "$legacy_registration_count" \
     --argjson transition_registration_count "$transition_registration_count" \
     --argjson invalid_registration_count "$invalid_registration_count" \
+    --argjson facts "$facts" \
     '{
       request_url: $request_url,
       access_method: "direct curl GET",
@@ -1203,7 +1233,7 @@ check_direct_dataset() {
       first_record_timestamp: (
         if $first_record_timestamp == "" then null else $first_record_timestamp end
       )
-    }')"
+    } + $facts')"
   emit "$dataset_id" "$source_url" "$probe_status" "$probe_message" "$details"
 }
 
@@ -1880,6 +1910,12 @@ build_health_snapshot() {
           content_shape_changed: $shape_changed,
           locations: ($probe.locations // null),
           date_range: ($probe.date_range // null),
+          newest_date: ($probe.newest_date // null),
+          oldest_date: ($probe.oldest_date // null),
+          distinct_dates: ($probe.distinct_dates // null),
+          rows_per_date: ($probe.rows_per_date // null),
+          largest_gap_days: ($probe.largest_gap_days // null),
+          dimension_cardinality: ($probe.dimension_cardinality // null),
           agency: ($probe.agency // null),
           stops: ($probe.stops // null),
           routes: ($probe.routes // null),
