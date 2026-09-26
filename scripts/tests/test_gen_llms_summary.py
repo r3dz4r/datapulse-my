@@ -63,6 +63,7 @@ def _write_public_surface_fixture(
                 "/mcp.json",
                 "/data/jsonld/catalog.json",
                 "/observation-receipts/chain_head.json",
+                "/catalogue",
                 "/badges/",
             ],
             "featured_dataset_ids": [featured_dataset_id],
