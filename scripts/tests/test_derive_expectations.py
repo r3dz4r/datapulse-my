@@ -397,6 +397,19 @@ def test_audit_uses_authored_manifest_value_not_health_copy() -> None:
     assert audit["datasets"][0]["required_loss"] == 0.5
 
 
+def test_audit_flags_an_expectation_above_the_observed_count() -> None:
+    # The live shape of dosm_arc_dosm: 316 expected against 309 observed. It is
+    # a fixture finding rather than a live one because the observed count grows
+    # and clears the finding, while the rule itself must stay pinned.
+    manifest = {"dosm_arc_dosm": {"id": "dosm_arc_dosm", "expected_record_count": 316}}
+    health = {"dosm_arc_dosm": {"dataset_id": "dosm_arc_dosm", "record_count": 309}}
+
+    audit = build_audit(manifest, health)
+
+    assert audit["expectation_above_observed"] == ["dosm_arc_dosm"]
+    assert audit["flagged"] == 0
+
+
 # --- end to end -------------------------------------------------------------
 
 
@@ -624,37 +637,268 @@ def test_exit_status_is_the_gate_without_a_report(tmp_path: Path) -> None:
     assert report_path.exists()
 
 
-@pytest.mark.skipif(
-    not (REAL_MANIFEST.exists() and REAL_HEALTH.exists()),
-    reason="real pipeline artifacts are not present",
+# --- invariants that hold for any health file -------------------------------
+
+
+# The six facts the probe records. Pinned here rather than imported so the live
+# test still guards the six-field contract if the script's own tuple drifts.
+_LIVE_FACTS = (
+    "newest_date",
+    "oldest_date",
+    "distinct_dates",
+    "rows_per_date",
+    "largest_gap_days",
+    "dimension_cardinality",
 )
-def test_real_files_reproduce_the_committed_audit_shape(tmp_path: Path) -> None:
+
+# The audit's band labels, plus the bucket a zero/zero row can land in.
+_LIVE_BANDS = ("<=50%", "50-60%", "60-80%", "80-90%", ">90%", "undefined")
+
+# The six live rows main's pipeline has populated (measured 2026-09-27). They
+# force the classification paths in a copy of the real health file so the live
+# test still exercises `open`, `windowed`, and `no_date_column` even while the
+# branch's committed health file carries no facts yet.
+_MEASURED_FACTS: dict[str, dict] = {
+    "exchangerates_daily_0900": {
+        "newest_date": "2026-09-25",
+        "oldest_date": "2003-05-02",
+        "distinct_dates": 5738,
+        "rows_per_date": {"min": 2, "mean": 2.9998, "max": 3},
+        "largest_gap_days": 7,
+        "dimension_cardinality": {"rate_type": 3},
+        "record_count": 17213,
+    },
+    "exchangerates_daily_1130": {
+        "newest_date": "2026-09-25",
+        "oldest_date": "2003-05-02",
+        "distinct_dates": 5726,
+        "rows_per_date": {"min": 2, "mean": 2.0, "max": 2},
+        "largest_gap_days": 7,
+        "dimension_cardinality": {"rate_type": 2},
+        "record_count": 11452,
+    },
+    "exchangerates_daily_1200": {
+        "newest_date": "2026-09-25",
+        "oldest_date": "1997-01-02",
+        "distinct_dates": 7325,
+        "rows_per_date": {"min": 1, "mean": 2.5635, "max": 3},
+        "largest_gap_days": 7,
+        "dimension_cardinality": {"rate_type": 3},
+        "record_count": 18778,
+    },
+    "exchangerates_daily_1700": {
+        "newest_date": "2026-09-25",
+        "oldest_date": "2003-05-02",
+        "distinct_dates": 5749,
+        "rows_per_date": {"min": 3, "mean": 3.0, "max": 3},
+        "largest_gap_days": 7,
+        "dimension_cardinality": {"rate_type": 3},
+        "record_count": 17247,
+    },
+    "bnm_kl_usd_myr": {
+        "newest_date": None,
+        "oldest_date": None,
+        "distinct_dates": 0,
+        "rows_per_date": None,
+        "largest_gap_days": None,
+        "dimension_cardinality": {},
+        "record_count": 2,
+    },
+    "bnm_interbank_swap": {
+        "newest_date": None,
+        "oldest_date": None,
+        "distinct_dates": 0,
+        "rows_per_date": None,
+        "largest_gap_days": None,
+        "dimension_cardinality": {},
+        "record_count": 2,
+    },
+}
+
+
+def _ids_from(payload: object, key: str) -> set[str]:
+    if not isinstance(payload, dict):
+        return set()
+    rows = payload.get("datasets")
+    if not isinstance(rows, list):
+        return set()
+    return {
+        row[key]
+        for row in rows
+        if isinstance(row, dict) and isinstance(row.get(key), str) and row[key]
+    }
+
+
+def _assert_partition(report: dict, manifest: object, health: object) -> None:
+    """Nothing dropped, nothing classified twice, buckets cover the classified set."""
+    derivation = report["derivation"]
+    manifest_ids = _ids_from(manifest, "id")
+    health_ids = _ids_from(health, "dataset_id")
+    classified = [entry["dataset_id"] for entry in derivation["datasets"]]
+    skipped = [
+        item["dataset_id"]
+        for item in derivation["skipped"]
+        if item["dataset_id"] is not None
+    ]
+
+    assert derivation["classified"] == len(classified)
+    assert sum(derivation["counts"].values()) == derivation["classified"]
+    assert len(classified) == len(set(classified))
+    assert len(skipped) == len(set(skipped))
+    assert set(classified).isdisjoint(skipped)
+    # Every dataset in either input is accounted for exactly once, and a dataset
+    # only reaches classification when both inputs carry it.
+    assert set(classified) | set(skipped) == manifest_ids | health_ids
+    assert set(classified) == manifest_ids & health_ids
+    assert derivation["classified"] + len(skipped) == len(manifest_ids | health_ids)
+    for dataset_id in manifest_ids:
+        appearances = classified.count(dataset_id) + skipped.count(dataset_id)
+        assert appearances == 1, f"{dataset_id} appears {appearances} times"
+
+
+def _assert_absence_implies_unknown(report: dict) -> None:
+    """A row with no usable date is `unknown`, and the reason names which kind."""
+    for entry in report["derivation"]["datasets"]:
+        facts = entry["facts"]
+        if all(facts.get(field) is None for field in _LIVE_FACTS):
+            assert entry["classification"] == "unknown"
+            assert entry["reason"] == "no_facts"
+            assert entry["proposed_expected_record_count"] is None
+        elif facts.get("newest_date") is None:
+            # Some evidence exists but there is no date to read. An empty
+            # distinct_dates/dimension_cardinality is present-and-empty
+            # evidence, not absence, which is why the reason differs.
+            assert entry["classification"] == "unknown"
+            assert entry["reason"] == "no_date_column"
+            assert entry["proposed_expected_record_count"] is None
+
+
+def _assert_proposal_bounds(report: dict) -> None:
+    """Every proposal sits strictly above half the observed count and at or below it.
+
+    That is the property that lets the served truncation floor (expected * 0.5)
+    still fire while leaving room for the 10% retention cushion to matter.
+    """
+    for entry in report["derivation"]["datasets"]:
+        proposed = entry["proposed_expected_record_count"]
+        if proposed is None:
+            continue
+        observed = entry["observed_record_count"]
+        assert observed is not None, entry["dataset_id"]
+        assert proposed <= observed, (entry["dataset_id"], proposed, observed)
+        assert proposed > observed / 2, (entry["dataset_id"], proposed, observed)
+
+
+def _assert_audit_shape(report: dict) -> None:
+    audit = report["audit"]
+    audited = [entry["dataset_id"] for entry in audit["datasets"]]
+    guard = set(audit["guard_unreachable"])
+    above = set(audit["expectation_above_observed"])
+
+    assert audit["audited"] == len(audited)
+    assert len(audited) == len(set(audited))
+    assert set(audit["bands"]) <= set(_LIVE_BANDS)
+    assert sum(audit["bands"].values()) == audit["audited"]
+    assert audit["flagged"] == len(guard)
+    assert guard <= set(audited)
+    assert above <= set(audited)
+
+    by_id = {entry["dataset_id"]: entry for entry in audit["datasets"]}
+    for dataset_id in guard:
+        required_loss = by_id[dataset_id]["required_loss"]
+        assert required_loss is not None, dataset_id
+        assert required_loss >= 0.9, (dataset_id, required_loss)
+    for dataset_id in above:
+        entry = by_id[dataset_id]
+        assert entry["expected_record_count"] > entry["observed_record_count"], dataset_id
+    # The flag lists and the per-row flags must agree in both directions.
+    for entry in audit["datasets"]:
+        assert ("guard_unreachable" in entry["flags"]) == (entry["dataset_id"] in guard)
+        assert ("expectation_above_observed" in entry["flags"]) == (
+            entry["dataset_id"] in above
+        )
+
+
+@pytest.fixture(scope="module")
+def real_report(tmp_path_factory: pytest.TempPathFactory) -> dict:
+    if not (REAL_MANIFEST.exists() and REAL_HEALTH.exists()):
+        pytest.skip("real pipeline artifacts are not present")
+    report_path = tmp_path_factory.mktemp("real") / "report.json"
+    return _report_of(_run(REAL_MANIFEST, REAL_HEALTH, report=report_path), report_path)
+
+
+def test_real_files_derivation_is_a_complete_partition(real_report: dict) -> None:
+    manifest = json.loads(REAL_MANIFEST.read_text(encoding="utf-8"))
+    health = json.loads(REAL_HEALTH.read_text(encoding="utf-8"))
+    _assert_partition(real_report, manifest, health)
+
+
+def test_real_files_absence_implies_unknown(real_report: dict) -> None:
+    _assert_absence_implies_unknown(real_report)
+
+
+def test_real_files_proposals_stay_within_bounds(real_report: dict) -> None:
+    _assert_proposal_bounds(real_report)
+
+
+def test_real_files_audit_shape_is_self_consistent(real_report: dict) -> None:
+    _assert_audit_shape(real_report)
+
+
+def test_real_files_organ_pledges_state_guard_is_unreachable(real_report: dict) -> None:
+    # A live membership worth keeping: it needs a 95.2% loss, so it survives any
+    # plausible movement. dosm_arc_dosm is deliberately absent here - at 316
+    # expected against 309 observed a growing count clears it, so its
+    # above-observed case lives in the fixture test instead.
+    assert "organ_pledges_state" in real_report["audit"]["guard_unreachable"]
+
+
+def test_real_files_with_injected_facts_cover_every_classification_path(
+    tmp_path: Path,
+) -> None:
+    if not (REAL_MANIFEST.exists() and REAL_HEALTH.exists()):
+        pytest.skip("real pipeline artifacts are not present")
+
+    health = json.loads(REAL_HEALTH.read_text(encoding="utf-8"))
+    rows = health["datasets"]
+    by_id = {
+        row["dataset_id"]: row
+        for row in rows
+        if isinstance(row, dict) and isinstance(row.get("dataset_id"), str)
+    }
+    for dataset_id, measured in _MEASURED_FACTS.items():
+        row = by_id.get(dataset_id)
+        if row is None:
+            row = {"dataset_id": dataset_id}
+            rows.append(row)
+            by_id[dataset_id] = row
+        row.update(measured)
+
+    injected = _write(tmp_path / "health.json", health)
     report_path = tmp_path / "report.json"
-
     report = _report_of(
-        _run(REAL_MANIFEST, REAL_HEALTH, report=report_path), report_path
+        _run(REAL_MANIFEST, injected, report=report_path, as_of=AS_OF_TEXT),
+        report_path,
     )
 
-    assert report["derivation"]["counts"] == {
-        "unknown": 418,
-        "closed": 0,
-        "windowed": 0,
-        "open": 0,
+    manifest = json.loads(REAL_MANIFEST.read_text(encoding="utf-8"))
+    _assert_partition(report, manifest, health)
+    _assert_absence_implies_unknown(report)
+    _assert_proposal_bounds(report)
+    _assert_audit_shape(report)
+
+    expected = {
+        "exchangerates_daily_0900": ("open", "open"),
+        "exchangerates_daily_1130": ("open", "open"),
+        "exchangerates_daily_1200": ("windowed", "windowed_needs_history"),
+        "exchangerates_daily_1700": ("open", "open"),
+        "bnm_kl_usd_myr": ("unknown", "no_date_column"),
+        "bnm_interbank_swap": ("unknown", "no_date_column"),
     }
-    assert all(
-        entry["reason"] == "no_facts"
-        for entry in report["derivation"]["datasets"]
-    )
-    assert report["audit"]["audited"] == 230
-    assert report["audit"]["bands"] == {
-        "<=50%": 140,
-        "50-60%": 77,
-        "60-80%": 7,
-        "80-90%": 5,
-        ">90%": 1,
+    by_dataset = {
+        entry["dataset_id"]: entry for entry in report["derivation"]["datasets"]
     }
-    assert report["audit"]["flagged"] == 1
-    assert report["audit"]["guard_unreachable"] == ["organ_pledges_state"]
-    # The brief's "one flagged dataset" counts dead guards. This second,
-    # distinct finding is dosm_arc_dosm (expected 316 > observed 309).
-    assert report["audit"]["expectation_above_observed"] == ["dosm_arc_dosm"]
+    for dataset_id, (classification, reason) in expected.items():
+        entry = by_dataset[dataset_id]
+        assert entry["classification"] == classification, dataset_id
+        assert entry["reason"] == reason, dataset_id
