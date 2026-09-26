@@ -5,6 +5,11 @@ from pathlib import Path
 import pytest
 
 from scripts.health_policy import (
+    REALTIME_FREQUENCIES,
+    SLOW_FREQUENCIES,
+    WEEKDAY_DAILY_FREQUENCIES,
+    WEEKLY_MONTHLY_FREQUENCIES,
+    _normalized_frequency,
     age_in_days,
     classify_status,
     derive_trust_summary,
@@ -54,6 +59,57 @@ def test_unsupported_frequency_reports_manifest_id_and_value() -> None:
 def test_unapproved_weekday_frequency_is_rejected() -> None:
     with pytest.raises(ValueError, match="refresh_frequency 'daily \\(weekdays, 1300 MYT\\)'"):
         frequency_to_tier("daily (weekdays, 1300 MYT)")
+
+
+# The publisher's own cadence words, measured from the data.gov.my catalogue
+# pages per dataset across the 327 examined (YEARLY 138, INFREQUENT 11,
+# ONE-OFF 1) and per page across the 290 captured (YEARLY 116, INFREQUENT 11,
+# ONE-OFF 1). Each must land on the policy vocabulary word it was mapped to and
+# schedule exactly like that word.
+PUBLISHER_CADENCE_ALIASES = [
+    pytest.param("YEARLY", "annual", id="YEARLY-to-annual"),
+    pytest.param("yearly", "annual", id="yearly-to-annual"),
+    pytest.param("  YeArLy  ", "annual", id="yearly-case-and-whitespace"),
+    pytest.param("ONE-OFF", "as-required", id="ONE-OFF-to-as-required"),
+    pytest.param("one-off", "as-required", id="one-off-to-as-required"),
+    pytest.param("INFREQUENT", "as-required", id="INFREQUENT-to-as-required"),
+    pytest.param("infrequent", "as-required", id="infrequent-to-as-required"),
+]
+
+POLICY_VOCABULARY = (
+    sorted(REALTIME_FREQUENCIES)
+    + sorted(WEEKLY_MONTHLY_FREQUENCIES)
+    + sorted(SLOW_FREQUENCIES)
+    + ["daily"]
+    + sorted(WEEKDAY_DAILY_FREQUENCIES)
+)
+
+
+@pytest.mark.parametrize(("declared", "target"), PUBLISHER_CADENCE_ALIASES)
+def test_publisher_cadence_synonym_normalizes_to_policy_target(declared: str, target: str) -> None:
+    assert _normalized_frequency(declared, "probe") == target
+
+
+@pytest.mark.parametrize(("declared", "target"), PUBLISHER_CADENCE_ALIASES)
+def test_publisher_cadence_synonym_schedules_like_its_target(declared: str, target: str) -> None:
+    declared_tier = frequency_to_tier(declared, "probe")
+    target_tier = frequency_to_tier(target, "probe")
+
+    assert declared_tier == target_tier
+    assert due_interval(declared_tier, declared) == due_interval(target_tier, target)
+
+
+@pytest.mark.parametrize("frequency", POLICY_VOCABULARY)
+def test_existing_policy_vocabulary_is_unaffected_by_aliases(frequency: str) -> None:
+    assert _normalized_frequency(frequency, "probe") == frequency
+
+
+def test_unmapped_publisher_cadence_still_refused_with_identifier() -> None:
+    with pytest.raises(
+        ValueError,
+        match="manifest ID 'probe'.*refresh_frequency 'every blue moon'",
+    ):
+        _normalized_frequency("every blue moon", "probe")
 
 
 @pytest.mark.parametrize("case", CASES["signal_cases"], ids=lambda case: case["name"])
