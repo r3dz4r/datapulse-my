@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.39.2](https://github.com/r3dz4r/datapulse-my/compare/v3.39.1...v3.39.2) (2026-09-26)
+
+
+### Bug Fixes
+
+* **mcp:** classify handler errors by their real type, not FastMCP's wrapper ([0188eaa](https://github.com/r3dz4r/datapulse-my/commit/0188eaa591b266442a864a6dacc4c0b2a8384bbc))
+
 ## [3.39.1](https://github.com/r3dz4r/datapulse-my/compare/v3.39.0...v3.39.1) (2026-09-26)
 
 
