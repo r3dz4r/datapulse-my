@@ -213,7 +213,7 @@ def test_reference_current_transport_failure_still_wins() -> None:
     assert classify_status(row, NOW) == ("unreachable", "transport-failure")
 
 
-def test_reference_current_browser_dependency_still_wins() -> None:
+def test_reference_current_browser_row_is_graded_on_freshness() -> None:
     row = {
         "dataset_id": "bnm_base_rate",
         "data_type": "reference-current",
@@ -222,6 +222,41 @@ def test_reference_current_browser_dependency_still_wins() -> None:
         "http_status": 200,
         "access_method": "Camofox",
         "content_freshness_date": "2020-08-06",
+    }
+
+    assert classify_status(row, NOW) == ("stale", "freshness-stale")
+
+
+def test_camofox_row_with_freshness_date_is_graded_not_browser_dependent() -> None:
+    row = {
+        "dataset_id": "camofox-dated",
+        "refresh_frequency": "daily",
+        "last_checked": "2026-08-08T12:00:00Z",
+        "http_status": 200,
+        "access_method": "Camofox",
+        "content_freshness_date": "2026-08-08",
+    }
+
+    assert classify_status(row, NOW) == ("fresh", "freshness-within-window")
+
+
+def test_camofox_row_without_freshness_signal_is_unknown_freshness() -> None:
+    row = {
+        "dataset_id": "camofox-undated",
+        "refresh_frequency": "daily",
+        "last_checked": "2026-08-08T12:00:00Z",
+        "http_status": 200,
+        "access_method": "Camofox",
+    }
+
+    assert classify_status(row, NOW) == ("unknown-freshness", "no-freshness-signal")
+
+
+def test_unmeasured_camofox_row_remains_browser_dependent_fallback() -> None:
+    row = {
+        "dataset_id": "camofox-unmeasured",
+        "refresh_frequency": "daily",
+        "access_method": "Camofox",
     }
 
     assert classify_status(row, NOW) == ("browser-dependent", "browser-access-required")

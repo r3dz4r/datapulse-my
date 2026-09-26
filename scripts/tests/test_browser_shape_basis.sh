@@ -68,6 +68,7 @@ run_check() {
     cd "$destination"
     PATH="$fixture_dir/bin:$PATH" \
       DATAPULSE_PROBE_POLICY="$fixture_dir/policy.json" \
+      DATAPULSE_CHECKED_AT=2026-09-01T12:00:00Z \
       CAMOFOX_FIXTURE_MODE="$mode" CAMOFOX_TIMEOUT=1 \
       bash "$repo_root/scripts/check.sh" manifest.json
   )
@@ -75,7 +76,8 @@ run_check() {
 
 run_check "$fixture_dir/success" > "$fixture_dir/success/output.json"
 jq -e \
-  '.datasets[0].status == "browser-dependent" and
+  '.datasets[0].status == "fresh" and
+   .datasets[0].content_freshness_date == "2026-09-01" and
    .datasets[0].message == "Browser check succeeded" and
    .datasets[0].shape_basis == "untyped" and
    .datasets[0].first_row_hash == null' \
