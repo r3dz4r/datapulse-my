@@ -36,6 +36,19 @@ FRESHNESS_BASELINE_SECONDS = {
     "annual": 365 * 24 * 60 * 60,
 }
 
+# The publisher's own cadence vocabulary, as declared on the data.gov.my
+# catalogue pages on 2026-09-26 (YEARLY 146 datasets, INFREQUENT 2, ONE-OFF 1).
+# Our policy predates that page surface and only knows "annual" and
+# "as-required", so a cadence read from a catalogue page would otherwise raise
+# in `_normalized_frequency`. These are a bounded set of measured synonyms, not
+# a catch-all: a cadence outside our vocabulary and outside this map must still
+# raise, so a publisher cannot invent a new word into the schedule.
+PUBLISHER_FREQUENCY_ALIASES = {
+    "yearly": "annual",
+    "one-off": "as-required",
+    "infrequent": "as-required",
+}
+
 SURVEY_FREQUENCY = "biennial to triennial (survey years)"
 NO_CLOCK_DATA_TYPES = {"reference", "policy-reference"}
 HEALTH_STATUSES = (
@@ -56,6 +69,8 @@ def _normalized_frequency(frequency: object, manifest_id: str | None = None) -> 
         normalized = frequency.strip().casefold()
     else:
         normalized = ""
+
+    normalized = PUBLISHER_FREQUENCY_ALIASES.get(normalized, normalized)
 
     if (
         normalized in REALTIME_FREQUENCIES
