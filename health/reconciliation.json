@@ -1,6 +1,6 @@
 {
   "schema": "datapulse/v1/dataset-reconciliation",
-  "generated_at": "2026-09-26T05:49:57Z",
+  "generated_at": "2026-09-26T06:03:46Z",
   "window_days": 0,
   "methodology": {
     "identity_precedence": [
@@ -22,17 +22,297 @@
   },
   "summary": {
     "datasets_total": 418,
-    "groups_total": 23,
-    "datasets_grouped": 54,
-    "datasets_single_source": 364,
+    "groups_total": 28,
+    "datasets_grouped": 64,
+    "datasets_single_source": 354,
     "by_verdict": {
-      "agree": 22,
+      "agree": 27,
       "discrepancy": 1,
       "different_granularity": 0,
       "insufficient_data": 0
     }
   },
   "groups": [
+    {
+      "group_key": "name:dosm:household-expenditure-by-dun:f1adbfb82f15",
+      "logical_name": "OpenDOSM Household Expenditure by DUN",
+      "grouping_method": "semantic_title",
+      "relationship": "equivalent",
+      "confidence": "moderate",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "exact semantic title, custodian, cadence, and granularity match across endpoint channels",
+      "tolerances": {
+        "record_count_policy": "context_only",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "dosm_hh_expenditure_dun",
+          "name": "OpenDOSM Household Expenditure by DUN",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/hies/hh_expenditure_dun.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 1800,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "hh_expenditure_dun",
+          "name": "Household Expenditure by DUN",
+          "source": "data.gov.my",
+          "source_family": "dosm",
+          "url": "https://api.data.gov.my/data-catalogue?id=hh_expenditure_dun",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 1800,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "content_date_parse"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_hh_expenditure_dun",
+          "right_id": "hh_expenditure_dun",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": null,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "name:dosm:household-income-by-state:09e4acd738fd",
+      "logical_name": "OpenDOSM Household Income by State",
+      "grouping_method": "semantic_title",
+      "relationship": "equivalent",
+      "confidence": "moderate",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "exact semantic title, custodian, cadence, and granularity match across endpoint channels",
+      "tolerances": {
+        "record_count_policy": "context_only",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "dosm_hh_income_state",
+          "name": "OpenDOSM Household Income by State",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/hies/hh_income_state.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 319,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "hh_income_state",
+          "name": "Household Income by State",
+          "source": "data.gov.my",
+          "source_family": "dosm",
+          "url": "https://api.data.gov.my/data-catalogue?id=hh_income_state",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 319,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "content_date_parse"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_hh_income_state",
+          "right_id": "hh_income_state",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": null,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "name:dosm:income-inequality-by-district:41692506938b",
+      "logical_name": "OpenDOSM Income Inequality by District",
+      "grouping_method": "semantic_title",
+      "relationship": "equivalent",
+      "confidence": "moderate",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "exact semantic title, custodian, cadence, and granularity match across endpoint channels",
+      "tolerances": {
+        "record_count_policy": "context_only",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "dosm_hh_inequality_district",
+          "name": "OpenDOSM Income Inequality by District",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/hies/hh_inequality_district.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 480,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "hh_inequality_district",
+          "name": "Income Inequality by District",
+          "source": "data.gov.my",
+          "source_family": "dosm",
+          "url": "https://api.data.gov.my/data-catalogue?id=hh_inequality_district",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 480,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "content_date_parse"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_hh_inequality_district",
+          "right_id": "hh_inequality_district",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": null,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "name:dosm:income-inequality-by-state:e898c3f9891c",
+      "logical_name": "OpenDOSM Income Inequality by State",
+      "grouping_method": "semantic_title",
+      "relationship": "equivalent",
+      "confidence": "moderate",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "exact semantic title, custodian, cadence, and granularity match across endpoint channels",
+      "tolerances": {
+        "record_count_policy": "context_only",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "dosm_hh_inequality_state",
+          "name": "OpenDOSM Income Inequality by State",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/hies/hh_inequality_state.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 289,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "hh_inequality_state",
+          "name": "Income Inequality by State",
+          "source": "data.gov.my",
+          "source_family": "dosm",
+          "url": "https://api.data.gov.my/data-catalogue?id=hh_inequality_state",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 289,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "content_date_parse"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_hh_inequality_state",
+          "right_id": "hh_inequality_state",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": null,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
+    {
+      "group_key": "name:dosm:poverty-by-state:824cc894389c",
+      "logical_name": "OpenDOSM Poverty by State",
+      "grouping_method": "semantic_title",
+      "relationship": "equivalent",
+      "confidence": "moderate",
+      "verdict": "agree",
+      "requires_human_review": false,
+      "reason": "all evaluable publication signals are within the declared tolerance",
+      "rationale": "exact semantic title, custodian, cadence, and granularity match across endpoint channels",
+      "tolerances": {
+        "record_count_policy": "context_only",
+        "record_count_tolerance_pct": 5.0,
+        "content_date_tolerance_days": 2
+      },
+      "members": [
+        {
+          "id": "dosm_hh_poverty_state",
+          "name": "OpenDOSM Poverty by State",
+          "source": "OpenDOSM (storage.dosm.gov.my)",
+          "source_family": "dosm",
+          "url": "https://storage.dosm.gov.my/hies/hh_poverty_state.csv",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 310,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "last_modified_header"
+        },
+        {
+          "id": "hh_poverty_state",
+          "name": "Poverty by State",
+          "source": "data.gov.my",
+          "source_family": "dosm",
+          "url": "https://api.data.gov.my/data-catalogue?id=hh_poverty_state",
+          "status": "fresh",
+          "availability_class": "available",
+          "record_count": 310,
+          "record_count_estimated": false,
+          "content_date": "2024-01-01",
+          "content_date_source": "content_date_parse"
+        }
+      ],
+      "comparisons": [
+        {
+          "left_id": "dosm_hh_poverty_state",
+          "right_id": "hh_poverty_state",
+          "record_count_delta": 0,
+          "record_count_delta_pct": 0.0,
+          "record_count_within_tolerance": null,
+          "content_date_delta_days": 0,
+          "content_date_within_tolerance": true,
+          "availability_match": true
+        }
+      ]
+    },
     {
       "group_key": "name:dosm:quarterly-real-gdp-seasonally-adjusted:2cdaa5970204",
       "logical_name": "OpenDOSM Quarterly Real GDP (Seasonally Adjusted)",

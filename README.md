@@ -138,7 +138,7 @@ frozen at the last known content date. This is not a freshness failure — it's 
 publisher decision.
 
 <!-- BEGIN readme-health -->
-Current distribution (`_trust_summary`): [123 fresh](badges/status-fresh.svg) · [117 aging](badges/status-aging.svg) · [153 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [4 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [134 fresh](badges/status-fresh.svg) · [118 aging](badges/status-aging.svg) · [141 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [4 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
 <!-- END readme-health -->
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
@@ -249,7 +249,7 @@ read-only tools listed above. Cursor / Cline use the same JSON in their MCP conf
 ## Current coverage
 
 <!-- BEGIN readme-cadence -->
-Declared refresh cadences: annual (143); monthly (119); daily (49); as-required (35); quarterly (35); 30 seconds (14); biennial to triennial (survey years) (11); hourly (4); daily (weekdays) (2); weekly (2); daily (weekdays, 0900 MYT) (1); daily (weekdays, 1130 MYT) (1); daily (weekdays, 1200 MYT) (1); daily (weekdays, 1700 MYT) (1). Per-dataset cadence remains available in [`datapulse.json`](datapulse.json) and each published health report.
+Declared refresh cadences: annual (145); monthly (106); daily (49); as-required (35); quarterly (35); biennial to triennial (survey years) (22); 30 seconds (14); hourly (4); daily (weekdays) (2); weekly (2); daily (weekdays, 0900 MYT) (1); daily (weekdays, 1130 MYT) (1); daily (weekdays, 1200 MYT) (1); daily (weekdays, 1700 MYT) (1). Per-dataset cadence remains available in [`datapulse.json`](datapulse.json) and each published health report.
 <!-- END readme-cadence -->
 
 ## How to use it
