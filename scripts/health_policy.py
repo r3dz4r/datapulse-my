@@ -37,12 +37,15 @@ FRESHNESS_BASELINE_SECONDS = {
 }
 
 # The publisher's own cadence vocabulary, as declared on the data.gov.my
-# catalogue pages on 2026-09-26 (YEARLY 146 datasets, INFREQUENT 2, ONE-OFF 1).
-# Our policy predates that page surface and only knows "annual" and
-# "as-required", so a cadence read from a catalogue page would otherwise raise
-# in `_normalized_frequency`. These are a bounded set of measured synonyms, not
-# a catch-all: a cadence outside our vocabulary and outside this map must still
-# raise, so a publisher cannot invent a new word into the schedule.
+# catalogue pages on 2026-09-26, measured per dataset across the 327 the audit
+# examined (YEARLY 138, INFREQUENT 11, ONE-OFF 1; total 150) and per page
+# across the 290 captured (YEARLY 116, INFREQUENT 11, ONE-OFF 1); the two
+# denominators differ, so do not conflate them. Our policy predates that page
+# surface and only knows "annual" and "as-required", so a cadence read from a
+# catalogue page would otherwise raise in `_normalized_frequency`. These are a
+# bounded set of measured synonyms, not a catch-all: a cadence outside our
+# vocabulary and outside this map must still raise, so a publisher cannot
+# invent a new word into the schedule.
 PUBLISHER_FREQUENCY_ALIASES = {
     "yearly": "annual",
     "one-off": "as-required",

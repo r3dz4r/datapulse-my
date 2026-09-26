@@ -62,8 +62,10 @@ def test_unapproved_weekday_frequency_is_rejected() -> None:
 
 
 # The publisher's own cadence words, measured from the data.gov.my catalogue
-# pages (YEARLY 146, INFREQUENT 2, ONE-OFF 1). Each must land on the policy
-# vocabulary word it was mapped to and schedule exactly like that word.
+# pages per dataset across the 327 examined (YEARLY 138, INFREQUENT 11,
+# ONE-OFF 1) and per page across the 290 captured (YEARLY 116, INFREQUENT 11,
+# ONE-OFF 1). Each must land on the policy vocabulary word it was mapped to and
+# schedule exactly like that word.
 PUBLISHER_CADENCE_ALIASES = [
     pytest.param("YEARLY", "annual", id="YEARLY-to-annual"),
     pytest.param("yearly", "annual", id="yearly-to-annual"),
