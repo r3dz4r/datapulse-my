@@ -8,7 +8,7 @@ sources:
   - {"id": "apad","resource": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kangar","title": "Agensi Pengangkutan Awam Darat (APAD)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-08T03:21:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T11:11:15Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "BAS.MY via data.gov.my GTFS API"
@@ -16,7 +16,7 @@ datapulse:real_status: "stale"
 datapulse:health_report: "/data/gtfs_realtime_mybas_kangar.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-09-08T03:31:21Z"
+stale_after: "2026-09-26T11:21:15Z"
 datapulse:stale_after_basis: "realtime"
 ---
 
@@ -26,7 +26,7 @@ GTFS Realtime — BAS.MY Kangar Vehicle Positions is published by Agensi Pengang
 
 # Schema
 
-- `record_count`: `23`
+- `record_count`: `24`
 
 # Quirks
 

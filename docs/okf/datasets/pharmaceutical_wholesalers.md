@@ -8,7 +8,7 @@ sources:
   - {"id": "npra","resource": "https://storage.data.gov.my/healthcare/pharmaceutical_wholesalers.csv","title": "National Pharmaceutical Regulatory Agency"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
@@ -26,7 +26,7 @@ Licensed Pharmaceutical Wholesalers is published by National Pharmaceutical Regu
 
 - `column_count`: `10`
 - `first_row_hash`: `shape-v1:e554a2df3b3aa167ad654ae7f6587e7fee06bf6d89d2c4e07976ed8bb074e98c`
-- `record_count`: `1002`
+- `record_count`: `1012`
 
 # Quirks
 

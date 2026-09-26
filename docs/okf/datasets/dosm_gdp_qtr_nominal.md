@@ -8,11 +8,11 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/gdp/gdp_qtr_nominal.csv","title": "DOSM Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "DOSM via OpenDOSM"
-datapulse:real_status: "aging"
+datapulse:real_status: "fresh"
 datapulse:health_report: "/data/dosm_gdp_qtr_nominal.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-OpenDOSM Quarterly Nominal GDP is published by DOSM Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
+OpenDOSM Quarterly Nominal GDP is published by DOSM Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
 
 # Schema
 

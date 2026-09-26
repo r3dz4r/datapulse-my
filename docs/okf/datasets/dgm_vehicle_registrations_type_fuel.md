@@ -8,7 +8,7 @@ sources:
   - {"id": "jpj","resource": "https://storage.data.gov.my/transportation/registrations_type_fuel.csv","title": "Road Transport Department Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Road Transport Department Malaysia via data.gov.my"
@@ -26,7 +26,7 @@ data.gov.my Monthly Vehicle Registrations by Type and Fuel is published by Road 
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:7e1bdebf984580c6b36a1273eeea6f83465f79cef28690c536e117218112eec1`
-- `record_count`: `10801`
+- `record_count`: `10838`
 
 # Quirks
 

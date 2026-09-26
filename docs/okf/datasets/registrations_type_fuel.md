@@ -8,7 +8,7 @@ sources:
   - {"id": "jpj","resource": "https://api.data.gov.my/data-catalogue?id=registrations_type_fuel","title": "Road Transport Department Malaysia and Ministry of Transport"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Road Transport Department Malaysia and Ministry of Transport via data.gov.my"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/registrations_type_fuel.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 10000
-stale_after: "2026-08-16T12:00:00Z"
+stale_after: "2026-09-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Monthly Vehicle Registrations by Vehicle and Fuel Type is published by Road Tran
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:6fa57a8cbb22571d9f1f4c2a53ffb91a9bd8dc18e0692d19da7c0725d04db097`
-- `record_count`: `10801`
+- `record_count`: `10838`
 
 # Quirks
 

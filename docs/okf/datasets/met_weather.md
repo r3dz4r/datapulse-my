@@ -8,7 +8,7 @@ sources:
   - {"id": "met","resource": "https://api.data.gov.my/weather/forecast","title": "MET Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-25T13:47:32Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "MET Malaysia via data.gov.my"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/met_weather.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2520
-stale_after: "2026-09-08T12:00:00Z"
+stale_after: "2026-09-26T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ MET Malaysia Weather Forecast is published by MET Malaysia and tracked by DataPu
 
 - `column_count`: `9`
 - `first_row_hash`: `shape-v1:645ed633e9cd59951656d6162c9ba466a6687d04af54d5e516c6d484a0989c7a`
-- `record_count`: `3101`
+- `record_count`: `3080`
 
 # Quirks
 

@@ -8,7 +8,7 @@ sources:
   - {"id": "bnm","resource": "https://api.bnm.gov.my/public/opr","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Bank Negara Malaysia via BNM Open API"
@@ -24,6 +24,7 @@ Overnight Policy Rate (OPR) is published by Bank Negara Malaysia and tracked by 
 
 # Schema
 
+- `first_row_hash`: `shape-v1:112e3d921f8c2b5d106f2546c1a5b1201a9d99012f4823c200f7cd855d03d6cf`
 - `record_count`: `2`
 
 # Quirks
