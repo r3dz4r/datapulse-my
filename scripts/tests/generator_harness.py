@@ -9,8 +9,15 @@ import subprocess
 import tempfile
 import time
 import weakref
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+
+
+# Version-control metadata is never a generator input. Skip the repository's
+# top-level git directory so its hooks (which may be symlinks into the
+# operator's dotfiles) cannot trip the escape check or leak into the workdir.
+GIT_DIRECTORY_NAME = ".git"
 
 
 @dataclass(frozen=True)
@@ -30,8 +37,38 @@ def _relative_path(value: str, *, purpose: str) -> Path:
     return path
 
 
+def _input_symlinks(source: Path, source_root: Path) -> list[Path]:
+    """Collect symlinks under a directory input, ignoring the repository's git directory."""
+
+    symlinks: list[Path] = []
+    for root, directory_names, file_names in os.walk(source):
+        root_path = Path(root)
+        if root_path == source_root and GIT_DIRECTORY_NAME in directory_names:
+            directory_names.remove(GIT_DIRECTORY_NAME)
+        for name in (*directory_names, *file_names):
+            path = root_path / name
+            if path.is_symlink():
+                symlinks.append(path)
+    return symlinks
+
+
+def _ignore_git_directory(source_root: Path) -> Callable[[str, list[str]], set[str]]:
+    """Return a copytree ignore callable that drops the repository's git directory."""
+
+    def ignore(directory: str, names: list[str]) -> set[str]:
+        if Path(directory) == source_root and GIT_DIRECTORY_NAME in names:
+            return {GIT_DIRECTORY_NAME}
+        return set()
+
+    return ignore
+
+
 def _copy_input(source_root: Path, workdir: Path, value: str) -> None:
     relative = _relative_path(value, purpose="input")
+    if relative.parts[:1] == (GIT_DIRECTORY_NAME,):
+        # Version-control metadata is never a generator input: skip the
+        # repository's top-level .git rather than scanning or copying it.
+        return
     source = source_root / relative
     if not source.exists():
         raise FileNotFoundError(f"generator input does not exist: {source}")
@@ -43,10 +80,10 @@ def _copy_input(source_root: Path, workdir: Path, value: str) -> None:
     destination = workdir / relative
     destination.parent.mkdir(parents=True, exist_ok=True)
     if source.is_dir():
-        symlinks = [path for path in source.rglob("*") if path.is_symlink()]
+        symlinks = _input_symlinks(source, source_root)
         if symlinks:
             raise ValueError(f"generator input directory contains a symlink: {symlinks[0]}")
-        shutil.copytree(source, destination)
+        shutil.copytree(source, destination, ignore=_ignore_git_directory(source_root))
     else:
         shutil.copy2(source, destination)
 
@@ -153,6 +190,12 @@ def run_generator(
             environment = os.environ.copy()
             environment["DATAPULSE_REPO_ROOT"] = str(workdir)
             environment["DATAPULSE_ARCHIVES_DIR"] = str(workdir / ".archives")
+            git_directory = source_root / GIT_DIRECTORY_NAME
+            if git_directory.exists():
+                # The workdir deliberately omits .git, so point git at the source
+                # checkout for generators that read commit metadata. Same pattern
+                # as verify_release_reproducible.py.
+                environment["GIT_DIR"] = str(git_directory)
             environment.setdefault("DATAPULSE_SOURCE_COMMIT_SHA", "0123456789abcdef0123456789abcdef01234567")
             environment.setdefault("DATAPULSE_SOURCE_COMMIT_DATE", "2026-08-08")
             completed = subprocess.run(
