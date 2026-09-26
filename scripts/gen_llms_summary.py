@@ -48,6 +48,10 @@ PUBLIC_SURFACE_LINKS = {
     "/data/jsonld/catalog.json": ("JSON-LD catalog", "Schema.org JSON-LD dataset catalog."),
     "/observation-receipts/chain_head.json": ("Observation receipt chain head", "Signed head pointer for the host-signed observation receipt chain."),
     "/badges/": ("Status badges", "Per-dataset SVG health badges."),
+    "/one-pager.md": ("DataPulse in one page", "Canonical product description, boundaries, and verification path."),
+    "/verify.md": ("Verify a DataPulse claim", "Independent verification instructions for published DataPulse evidence."),
+    "/quickstart.md": ("Quickstart", "Five-minute MCP setup and verification-first workflow for builders."),
+    "/verify-datapulse-externally.md": ("Verify DataPulse externally", "Standalone public-HTTPS verification guide for DataPulse evidence."),
 }
 
 
