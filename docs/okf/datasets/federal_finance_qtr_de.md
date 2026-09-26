@@ -8,7 +8,7 @@ sources:
   - {"id": "mof","resource": "https://storage.data.gov.my/publicadmin/federal_finance_qtr_de.csv","title": "Ministry of Finance Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Ministry of Finance Malaysia via data.gov.my"

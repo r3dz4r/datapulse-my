@@ -8,21 +8,21 @@ sources:
   - {"id": "met","resource": "https://api.data.gov.my/data-catalogue?id=almanak_astronomi","title": "Malaysian Meteorological Department"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-25T13:47:32Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Malaysian Meteorological Department via data.gov.my"
-datapulse:real_status: "fresh"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/almanak_astronomi.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 538
-stale_after: "2026-09-08T12:00:00Z"
+stale_after: "2026-09-24T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Astronomy Almanac is published by Malaysian Meteorological Department and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Astronomy Almanac is published by Malaysian Meteorological Department and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 

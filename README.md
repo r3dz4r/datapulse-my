@@ -130,14 +130,14 @@ frozen at the last known content date. This is not a freshness failure — it's 
 publisher decision.
 
 <!-- BEGIN readme-health -->
-Current distribution (`_trust_summary`): [141 fresh](badges/status-fresh.svg) · [99 aging](badges/status-aging.svg) · [153 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [5 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [4 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [157 fresh](badges/status-fresh.svg) · [100 aging](badges/status-aging.svg) · [139 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [1 browser-dependent](badges/status-browser-dependent.svg) · [1 unreachable](badges/status-unreachable.svg) · [5 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
 <!-- END readme-health -->
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
 
 ### Browser-dependent datasets
 
-The current health summary identifies **5 browser-dependent sources (1.2% of the catalogue)** that require a real browser to probe because their source pages render client-side JavaScript.
+The current health summary identifies **1 browser-dependent sources (0.2% of the catalogue)** that require a real browser to probe because their source pages render client-side JavaScript.
 
 DataPulse uses **[Camofox](https://github.com/jo-inc/camofox-browser)**, a
 self-hosted patched headless-Chromium sidecar, to probe these. The probe path
@@ -228,7 +228,7 @@ use the same JSON in their MCP config panel.
 ## Current coverage
 
 <!-- BEGIN readme-cadence -->
-Declared refresh cadences: annual (144); monthly (119); daily (48); as-required (35); quarterly (35); 30 seconds (14); biennial to triennial (survey years) (11); hourly (4); daily (weekdays) (2); weekly (2); daily (weekdays, 0900 MYT) (1); daily (weekdays, 1130 MYT) (1); daily (weekdays, 1200 MYT) (1); daily (weekdays, 1700 MYT) (1). Per-dataset cadence remains available in [`datapulse.json`](datapulse.json) and each published health report.
+Declared refresh cadences: annual (145); monthly (106); daily (49); as-required (35); quarterly (35); biennial to triennial (survey years) (22); 30 seconds (14); hourly (4); daily (weekdays) (2); weekly (2); daily (weekdays, 0900 MYT) (1); daily (weekdays, 1130 MYT) (1); daily (weekdays, 1200 MYT) (1); daily (weekdays, 1700 MYT) (1). Per-dataset cadence remains available in [`datapulse.json`](datapulse.json) and each published health report.
 <!-- END readme-cadence -->
 
 ## How to use it

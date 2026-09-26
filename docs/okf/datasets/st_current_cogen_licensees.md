@@ -12,7 +12,7 @@ verified:
 status: "stable"
 datapulse:licence: "Publisher licence not stated; portal disclaimer applies"
 datapulse:attribution: "Suruhanjaya Tenaga (Malaysia Energy Commission) via MyEnergyStats"
-datapulse:real_status: "fresh"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/st_current_cogen_licensees.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
@@ -20,7 +20,7 @@ datapulse:expected_record_count: null
 
 # Summary
 
-Current Co-Generation Licensees — Malaysia is published by Suruhanjaya Tenaga (Malaysia Energy Commission) and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Current Co-Generation Licensees — Malaysia is published by Suruhanjaya Tenaga (Malaysia Energy Commission) and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 

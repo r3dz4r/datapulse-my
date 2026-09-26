@@ -8,7 +8,7 @@ sources:
   - {"id": "npra","resource": "https://storage.data.gov.my/healthcare/cosmetic_notifications_cancelled.csv","title": "National Pharmaceutical Regulatory Agency"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
@@ -26,7 +26,7 @@ Cancelled Cosmetic Product Notifications is published by National Pharmaceutical
 
 - `column_count`: `5`
 - `first_row_hash`: `shape-v1:fef692fcbcec0369bf11c82e9c980695df17d04d4b34063b52435549a7f351a1`
-- `record_count`: `124`
+- `record_count`: `125`
 
 # Quirks
 

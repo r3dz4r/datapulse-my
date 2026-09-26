@@ -14,6 +14,98 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.39.3](https://github.com/r3dz4r/datapulse-my/compare/v3.39.2...v3.39.3) (2026-09-26)
+
+
+### Bug Fixes
+
+* **mcp:** classify an unknown-tool call as a caller error, not an internal fault ([31043af](https://github.com/r3dz4r/datapulse-my/commit/31043aff55da0be22cf34be46d780b9ee7013d4f))
+
+## [3.39.2](https://github.com/r3dz4r/datapulse-my/compare/v3.39.1...v3.39.2) (2026-09-26)
+
+
+### Bug Fixes
+
+* **mcp:** classify handler errors by their real type, not FastMCP's wrapper ([0188eaa](https://github.com/r3dz4r/datapulse-my/commit/0188eaa591b266442a864a6dacc4c0b2a8384bbc))
+
+## [3.39.1](https://github.com/r3dz4r/datapulse-my/compare/v3.39.0...v3.39.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **health:** grade a measured browser row instead of short-circuiting it ([2db1112](https://github.com/r3dz4r/datapulse-my/commit/2db11122e332f578ec0b5331945e19e91dc71d3e))
+* **health:** grade a measured browser row instead of short-circuiting it ([69d156e](https://github.com/r3dz4r/datapulse-my/commit/69d156e01b4bc66fa7084eebbffcc16581edd0b5))
+
+## [3.39.0](https://github.com/r3dz4r/datapulse-my/compare/v3.38.4...v3.39.0) (2026-09-26)
+
+
+### Features
+
+* **surfaces:** declare the catalogue and give it an llms.txt rendering ([a944c31](https://github.com/r3dz4r/datapulse-my/commit/a944c31345a1ffbcc0826276cb02aebeae283fd8))
+* **surfaces:** declare the catalogue and give it an llms.txt rendering ([dcc0b7c](https://github.com/r3dz4r/datapulse-my/commit/dcc0b7c8709c67fb0a54d17d0a2a840b64230ab7))
+
+## [3.38.4](https://github.com/r3dz4r/datapulse-my/compare/v3.38.3...v3.38.4) (2026-09-26)
+
+
+### Bug Fixes
+
+* **policy:** band survey datasets on content age, and make the published rule match the served one ([#212](https://github.com/r3dz4r/datapulse-my/issues/212)) ([04479dd](https://github.com/r3dz4r/datapulse-my/commit/04479dd99a492b079afbb4f4ac285c767cefc147))
+
+## [3.38.3](https://github.com/r3dz4r/datapulse-my/compare/v3.38.2...v3.38.3) (2026-09-26)
+
+
+### Bug Fixes
+
+* **tests:** stop the generator harness reading the repository's git directory ([c682b6b](https://github.com/r3dz4r/datapulse-my/commit/c682b6b57875bfc4f05f4c6bba06cbc19ae9aa5e))
+* **tests:** stop the generator harness reading the repository's git directory ([c1e8753](https://github.com/r3dz4r/datapulse-my/commit/c1e8753a7592883c7d9db9933125773a4c38ced3))
+
+## [3.38.2](https://github.com/r3dz4r/datapulse-my/compare/v3.38.1...v3.38.2) (2026-09-26)
+
+
+### Bug Fixes
+
+* **verify:** check every declared alias, not three hardcoded ones ([97acf45](https://github.com/r3dz4r/datapulse-my/commit/97acf45288a0c0fb26540ab967592408913419f1))
+* **verify:** check every declared alias, not three hardcoded ones ([c37c6a9](https://github.com/r3dz4r/datapulse-my/commit/c37c6a9ae50610c206f6ae5530fa70a29a93bb22))
+
+
+### Reverts
+
+* **config:** drop the /catalogue declaration ([eff2d14](https://github.com/r3dz4r/datapulse-my/commit/eff2d149a2dd2107220a41d65a117dc616fe6e46))
+
+## [3.38.1](https://github.com/r3dz4r/datapulse-my/compare/v3.38.0...v3.38.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* **cadence:** one cadence per publisher page, and the publisher's declared vocabulary ([#208](https://github.com/r3dz4r/datapulse-my/issues/208)) ([e1d2016](https://github.com/r3dz4r/datapulse-my/commit/e1d20168150a640a1f3ffc926cc6ca9566577b43))
+
+## [3.38.0](https://github.com/r3dz4r/datapulse-my/compare/v3.37.2...v3.38.0) (2026-09-26)
+
+
+### Features
+
+* **verify:** report the observation's age as a stated fact ([#205](https://github.com/r3dz4r/datapulse-my/issues/205)) ([86dda19](https://github.com/r3dz4r/datapulse-my/commit/86dda19cd5032c314b9a7917cbe7b34e4b9bd4aa))
+
+## [3.37.2](https://github.com/r3dz4r/datapulse-my/compare/v3.37.1...v3.37.2) (2026-09-25)
+
+
+### Bug Fixes
+
+* **deploy:** stop the alias probe following the redirect it asserts on ([36c5835](https://github.com/r3dz4r/datapulse-my/commit/36c58354f53cd6a1ef74d3a1dc7254e51e388fa3))
+* preserve redirect semantics for served aliases ([b244de3](https://github.com/r3dz4r/datapulse-my/commit/b244de383f2cdb27a4116b611dae7ee60e11591d))
+
+## [3.37.1](https://github.com/r3dz4r/datapulse-my/compare/v3.37.0...v3.37.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* coalesce and retry Pages deploys ([929df9d](https://github.com/r3dz4r/datapulse-my/commit/929df9d6f84f7382f9f70a674a7422c4691ea938))
+* distinguish served-surface transport failures ([0b1d105](https://github.com/r3dz4r/datapulse-my/commit/0b1d105dc3b1a00aeaad04360fcea8060a46900c))
+* make Pages redirect gate extensible ([ffd5b4f](https://github.com/r3dz4r/datapulse-my/commit/ffd5b4f58ccd42a3ca3159b223da0b0f91c972bb))
+* **npra:** make payload rendering idempotent ([28d77b0](https://github.com/r3dz4r/datapulse-my/commit/28d77b0a9b7296629e9aca1ab413d991b89611b1))
+* remove superseded Pages deploy coalescing gate ([5126eee](https://github.com/r3dz4r/datapulse-my/commit/5126eee4cdb9fc2d3310c330d21a6a24082e3000))
+* scope NPRA runtime marker to canonical output ([8c2ae5a](https://github.com/r3dz4r/datapulse-my/commit/8c2ae5aa96a7b8b4375d2f773970f26ee1fc3062))
+
 ## [3.37.0](https://github.com/r3dz4r/datapulse-my/compare/v3.36.2...v3.37.0) (2026-09-25)
 
 

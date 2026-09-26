@@ -8,7 +8,7 @@ sources:
   - {"id": "prasarana","resource": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-mrtfeeder","title": "Prasarana Malaysia Berhad"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-08T03:21:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T12:10:29Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Prasarana Malaysia Berhad via data.gov.my GTFS API"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/gtfs_realtime_prasarana_bus_mrtfeeder.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-09-08T03:31:21Z"
+stale_after: "2026-09-26T12:20:29Z"
 datapulse:stale_after_basis: "realtime"
 ---
 
@@ -26,7 +26,7 @@ GTFS Realtime — MRT Feeder Bus Vehicle Positions is published by Prasarana Mal
 
 # Schema
 
-- `record_count`: `109`
+- `record_count`: `89`
 
 # Quirks
 

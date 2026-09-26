@@ -8,7 +8,7 @@ sources:
   - {"id": "jmg","resource": "https://api.data.gov.my/data-catalogue?id=mineral_extraction","title": "Department of Mineral and Geoscience and Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Department of Mineral and Geoscience and Department of Statistics Malaysia via data.gov.my"

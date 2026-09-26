@@ -140,8 +140,9 @@ from an HTTP `Last-Modified` header or parsed content date.
 | `monthly` | 30 days | ≤1.5× / >1.5×–≤3× / >3× |
 | `quarterly` | 90 days | ≤1.5× / >1.5×–≤3× / >3× |
 | `annual` | 365 days | ≤1.5× / >1.5×–≤3× / >3× |
+| `biennial to triennial (survey years)` | 730 days | ≤1.5× / >1.5×–≤3× / >3× |
 
-Weekday-daily frequencies use the daily baseline. Survey-year verification uses 45-day and 90-day boundaries; as-required datasets do not infer a freshness window.
+Weekday-daily frequencies use the daily baseline. Survey-year datasets band on content age against the served 730-day baseline, with the same 1.5x and 3x boundaries as other cadences; as-required datasets do not infer a freshness window.
 <!-- END EXTRACTED: freshness-baselines -->
 
 ## Conventions, refusals and limits

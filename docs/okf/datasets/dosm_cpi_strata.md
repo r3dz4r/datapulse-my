@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=cpi_strata","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Department of Statistics Malaysia via data.gov.my"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_cpi_strata.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 5544
-stale_after: "2026-08-16T12:00:00Z"
+stale_after: "2026-09-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Monthly CPI by Strata & Division (2-digit) is published by Department of Statist
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:0d3e24c567f718ed2bf08b33e942de4fd6d5d6a4acbbb3a1a59d8c44a10aaf9d`
-- `record_count`: `5572`
+- `record_count`: `5600`
 
 # Quirks
 

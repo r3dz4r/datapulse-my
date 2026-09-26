@@ -47,6 +47,7 @@ PUBLIC_SURFACE_LINKS = {
     "/mcp.json": ("MCP advertisement", "Machine-readable MCP server advertisement."),
     "/data/jsonld/catalog.json": ("JSON-LD catalog", "Schema.org JSON-LD dataset catalog."),
     "/observation-receipts/chain_head.json": ("Observation receipt chain head", "Signed head pointer for the host-signed observation receipt chain."),
+    "/catalogue": ("Dataset register", "Human-readable register of published datasets, served as one large HTML page."),
     "/badges/": ("Status badges", "Per-dataset SVG health badges."),
     "/one-pager.md": ("DataPulse in one page", "Canonical product description, boundaries, and verification path."),
     "/verify.md": ("Verify a DataPulse claim", "Independent verification instructions for published DataPulse evidence."),

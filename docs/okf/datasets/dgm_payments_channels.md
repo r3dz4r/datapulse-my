@@ -8,11 +8,11 @@ sources:
   - {"id": "bnm","resource": "https://storage.data.gov.my/finsector/payments/channels.csv","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Bank Negara Malaysia via data.gov.my"
-datapulse:real_status: "stale"
+datapulse:real_status: "fresh"
 datapulse:health_report: "/data/dgm_payments_channels.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-data.gov.my Monthly Payment Channels is published by Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
+data.gov.my Monthly Payment Channels is published by Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
 
 # Schema
 

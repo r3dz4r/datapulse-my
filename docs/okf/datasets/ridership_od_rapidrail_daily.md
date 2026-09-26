@@ -8,27 +8,25 @@ sources:
   - {"id": "prasarana","resource": "https://storage.data.gov.my/transportation/rail/rapidrail_2026_daily.csv","title": "Prasarana Malaysia Berhad and Ministry of Transport"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-07T05:30:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-25T13:47:32Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Prasarana Malaysia Berhad and Ministry of Transport via data.gov.my"
-datapulse:real_status: "stale"
+datapulse:real_status: "fresh"
 datapulse:health_report: "/data/ridership_od_rapidrail_daily.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 3639603
-stale_after: "2026-08-25T12:00:00Z"
-datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Daily Origin-Destination Ridership: Rapid Rail (KV) is published by Prasarana Malaysia Berhad and Ministry of Transport and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Daily Origin-Destination Ridership: Rapid Rail (KV) is published by Prasarana Malaysia Berhad and Ministry of Transport and tracked by DataPulse. The latest published probe classifies it as `fresh`.
 
 # Schema
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:f6ebe9551c362a442e16beb8d9cca909ddab62b32a404ec781e71751f7cc1e8e`
-- `record_count`: `3939064`
+- `record_count`: `4632450`
 
 # Quirks
 

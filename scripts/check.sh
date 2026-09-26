@@ -1807,9 +1807,10 @@ build_health_snapshot() {
          end) as $discontinued_status
       | (if $discontinued_status != null then
            $discontinued_status
-         elif ($probe.access_method // "" | ascii_downcase) == "camofox" then
-           "browser-dependent"
-         elif (($probe.http_status | type) != "number" or $probe.http_status < 200 or $probe.http_status >= 300) then
+         elif ((($probe.http_status | type) == "number")
+                and ($probe.http_status < 200 or $probe.http_status >= 300))
+              or ((($probe.access_method // "" | ascii_downcase) != "camofox")
+                 and (($probe.http_status | type) != "number")) then
            "unreachable"
           # reference/policy-reference are versioned rather than time-series, so no freshness clock applies.
           # reference-current stays subject to the ordinary staleness computation below.
@@ -1817,6 +1818,13 @@ build_health_snapshot() {
             "reference"
          elif $probe.status == "degraded" then
            "degraded"
+          # Browser-rendered rows carry no direct HTTP status, so the transport
+          # branch above exempts them. A browser probe that took no measurement at
+          # all is the one case that stays browser-dependent; a measured one is
+          # graded on its staleness status below exactly like a direct row.
+         elif (($probe.access_method // "" | ascii_downcase) == "camofox")
+              and ($probe_measured | not) then
+           "browser-dependent"
          elif $staleness_status == "unknown-freshness" then "unknown-freshness"
          elif $shape_changed
            or (($expected_record_count | type) == "number"

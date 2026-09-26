@@ -203,7 +203,7 @@ def freshness_baselines(policy: dict[str, object]) -> str:
         "from an HTTP `Last-Modified` header or parsed content date.\n\n"
         "| Frequency | Baseline | Fresh / aging / stale |\n| --- | --- | --- |\n"
         + "\n".join(rows)
-        + "\n\nWeekday-daily frequencies use the daily baseline. Survey-year verification uses 45-day and 90-day boundaries; as-required datasets do not infer a freshness window.",
+        + "\n\nWeekday-daily frequencies use the daily baseline. Survey-year datasets band on content age against the served 730-day baseline, with the same 1.5x and 3x boundaries as other cadences; as-required datasets do not infer a freshness window.",
     )
 
 

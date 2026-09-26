@@ -34,6 +34,30 @@ FRESHNESS_BASELINE_SECONDS = {
     "monthly": 30 * 24 * 60 * 60,
     "quarterly": 90 * 24 * 60 * 60,
     "annual": 365 * 24 * 60 * 60,
+    # The served classifier in scripts/check.sh reads this cadence as 730 days
+    # (`elif $frequency | startswith("biennial") then 730`), so the published
+    # rule has to describe the behaviour a reader would actually observe. 730 is
+    # the two-year lower bound of the publisher's "biennial to triennial" cycle,
+    # not its three-year upper bound: a 1095-day baseline here would promise a
+    # looser threshold than the service enforces. This value and the check.sh
+    # cadence map must move together.
+    "biennial to triennial (survey years)": 730 * 24 * 60 * 60,
+}
+
+# The publisher's own cadence vocabulary, as declared on the data.gov.my
+# catalogue pages on 2026-09-26, measured per dataset across the 327 the audit
+# examined (YEARLY 138, INFREQUENT 11, ONE-OFF 1; total 150) and per page
+# across the 290 captured (YEARLY 116, INFREQUENT 11, ONE-OFF 1); the two
+# denominators differ, so do not conflate them. Our policy predates that page
+# surface and only knows "annual" and "as-required", so a cadence read from a
+# catalogue page would otherwise raise in `_normalized_frequency`. These are a
+# bounded set of measured synonyms, not a catch-all: a cadence outside our
+# vocabulary and outside this map must still raise, so a publisher cannot
+# invent a new word into the schedule.
+PUBLISHER_FREQUENCY_ALIASES = {
+    "yearly": "annual",
+    "one-off": "as-required",
+    "infrequent": "as-required",
 }
 
 SURVEY_FREQUENCY = "biennial to triennial (survey years)"
@@ -56,6 +80,8 @@ def _normalized_frequency(frequency: object, manifest_id: str | None = None) -> 
         normalized = frequency.strip().casefold()
     else:
         normalized = ""
+
+    normalized = PUBLISHER_FREQUENCY_ALIASES.get(normalized, normalized)
 
     if (
         normalized in REALTIME_FREQUENCIES
@@ -204,15 +230,6 @@ def _is_degraded(row: dict[str, object]) -> bool:
     return isinstance(probe_status, str) and probe_status.casefold() == "degraded"
 
 
-def _survey_status(last_checked: datetime, now: datetime) -> tuple[str, str]:
-    verification_age = (now - last_checked).total_seconds() / (24 * 60 * 60)
-    if verification_age >= 90:
-        return "stale", "survey-verification-stale"
-    if verification_age >= 45:
-        return "aging", "survey-verification-aging"
-    return "fresh", "survey-verification-current"
-
-
 def _as_required_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
     policy = row.get("freshness_policy")
     policy = policy if isinstance(policy, dict) else {}
@@ -235,8 +252,6 @@ def classify_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
 
     frequency = _normalized_frequency(row.get("refresh_frequency"), str(row.get("dataset_id", "<unknown>")))
 
-    if _is_browser_dependent(row):
-        return "browser-dependent", "browser-access-required"
     if _is_transport_failure(row):
         return "unreachable", "transport-failure"
     if row.get("data_type") in NO_CLOCK_DATA_TYPES:
@@ -249,6 +264,12 @@ def classify_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
     if last_checked is None:
         if raw_last_checked is not None:
             return "degraded", "invalid-last-checked"
+        # Browser-rendered rows carry no direct HTTP status, so the transport
+        # branch above cannot see them. A browser probe that took no measurement
+        # at all is the one case that stays browser-dependent; a measured one is
+        # graded on its freshness signal below exactly like any other row.
+        if _is_browser_dependent(row):
+            return "browser-dependent", "browser-access-required"
         unknown_since = _as_datetime(row.get("unknown_since"))
         if unknown_since is not None and (current_time - unknown_since).total_seconds() > 30 * 24 * 60 * 60:
             return "unknown", "unknown-review-required"
@@ -256,8 +277,6 @@ def classify_status(row: dict[str, object], now: datetime) -> tuple[str, str]:
     if last_checked > current_time:
         return "degraded", "future-last-checked"
 
-    if frequency == SURVEY_FREQUENCY:
-        return _survey_status(last_checked, current_time)
     if frequency == "as-required":
         return _as_required_status(row, current_time)
 
