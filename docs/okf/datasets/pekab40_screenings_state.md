@@ -8,7 +8,7 @@ sources:
   - {"id": "protecthealth","resource": "https://storage.data.gov.my/healthcare/pekab40_screenings_state.csv","title": "ProtectHealth Corporation and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-25T13:47:32Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T13:51:35Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "ProtectHealth Corporation and Ministry of Health Malaysia via data.gov.my"

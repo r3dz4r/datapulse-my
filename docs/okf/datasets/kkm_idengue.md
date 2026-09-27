@@ -8,11 +8,11 @@ sources:
   - {"id": "kkm","resource": "https://idengue.mysa.gov.my/","title": "KKM (Bahagian Kawalan Penyakit) + MYSA"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-25T13:47:32Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T13:51:35Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "KKM via iDengue portal (MYSA hosted)"
-datapulse:real_status: "browser-dependent"
+datapulse:real_status: "unknown-freshness"
 datapulse:health_report: "/data/kkm_idengue.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
@@ -20,7 +20,7 @@ datapulse:expected_record_count: null
 
 # Summary
 
-KKM iDengue Weekly Dengue Cases is published by KKM (Bahagian Kawalan Penyakit) + MYSA and tracked by DataPulse. The latest published probe classifies it as `browser-dependent`.
+KKM iDengue Weekly Dengue Cases is published by KKM (Bahagian Kawalan Penyakit) + MYSA and tracked by DataPulse. The latest published probe classifies it as `unknown-freshness`.
 
 # Schema
 

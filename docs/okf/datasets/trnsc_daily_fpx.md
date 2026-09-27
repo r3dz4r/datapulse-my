@@ -8,7 +8,7 @@ sources:
   - {"id": "paynet","resource": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_fpx","title": "Payments Network Malaysia and Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-25T13:47:32Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-09-26T13:51:35Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Payments Network Malaysia and Bank Negara Malaysia via data.gov.my"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/trnsc_daily_fpx.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 7218
-stale_after: "2026-09-25T12:00:00Z"
+stale_after: "2026-09-26T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Daily FPX Transactions is published by Payments Network Malaysia and Bank Negara
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:9b3ea50ce04e7f0b4d10e1a3239b610653bc89f7b731947771f34328cc52e9db`
-- `record_count`: `7371`
+- `record_count`: `7374`
 
 # Quirks
 
