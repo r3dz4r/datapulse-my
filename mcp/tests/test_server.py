@@ -670,7 +670,7 @@ def test_dataset_count_follows_published_manifest_redirect(
 
     def fake_get(url: str, *, timeout: float, follow_redirects: bool):
         assert url == f"{server.DATA_BASE}/datapulse.json"
-        assert timeout == server.REQUEST_TIMEOUT_SECONDS
+        assert timeout == server.UPSTREAM_TIMEOUT
         assert follow_redirects is True
         return RedirectedManifestResponse()
 
@@ -681,6 +681,10 @@ def test_dataset_count_follows_published_manifest_redirect(
 
 @pytest.mark.anyio
 async def test_fetch_json_follows_redirects(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Force the network path so this exercises redirect handling, not the
+    # colocated-artefact fast path.
+    monkeypatch.setenv("DATAPULSE_DISABLE_LOCAL_ARTIFACTS", "1")
+
     class RedirectedResponse:
         def raise_for_status(self) -> None:
             return None
@@ -2092,7 +2096,7 @@ async def test_receipt_digest_matches_verify_and_citation_surfaces(monkeypatch: 
 def install_fake_live_http(monkeypatch: pytest.MonkeyPatch, responses: list[httpx.Response | Exception]) -> list[httpx.Request]:
     requests: list[httpx.Request] = []
     class FakeAsyncClient:
-        def __init__(self, *args, **kwargs) -> None: assert kwargs["timeout"] == server.REQUEST_TIMEOUT_SECONDS
+        def __init__(self, *args, **kwargs) -> None: assert kwargs["timeout"] == server.UPSTREAM_TIMEOUT
         async def __aenter__(self): return self
         async def __aexit__(self, *exc): return None
         def build_request(self, method: str, url: str) -> httpx.Request:
@@ -2168,13 +2172,17 @@ async def test_verify_evidence_reports_transport_mismatch(monkeypatch: pytest.Mo
     assert result["verdict"] == "mismatch"
 
 
-async def test_verify_evidence_reports_timeout_as_unreachable(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_verify_evidence_reports_timeout_as_unverified_within_budget(monkeypatch: pytest.MonkeyPatch) -> None:
     url = "https://api.data.gov.my/data-catalogue?id=sample"; manifest, health = _verification_fixture(url)
     async def load() -> tuple[dict, dict]: return manifest, health
     monkeypatch.setattr(server, "_load_catalogue", load)
     install_fake_live_http(monkeypatch, [httpx.ReadTimeout("timed out", request=httpx.Request("GET", url))])
     result = await server.verify_evidence("sample")
-    assert result["verdict"] == "unreachable" and result["live_http_status"] is None
+    assert result["verdict"] == "not_verifiable"
+    assert result["live_http_status"] is None
+    assert result["unverified_within_budget"] is True
+    assert result["budget_seconds"] == server.UPSTREAM_READ_TIMEOUT_SECONDS
+    assert any("unverified within budget" in detail for detail in result["details"])
 
 
 async def test_verify_evidence_refuses_browser_without_httpx(monkeypatch: pytest.MonkeyPatch) -> None:
