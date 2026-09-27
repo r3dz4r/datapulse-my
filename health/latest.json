@@ -1,13 +1,13 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-09-27T10:48:07Z",
+  "checked_at": "2026-09-27T10:54:22Z",
   "_trust_summary": {
-    "checked_at": "2026-09-27T10:48:07Z",
+    "checked_at": "2026-09-27T10:54:22Z",
     "datasets_total": 418,
     "by_status": {
       "fresh": 131,
-      "aging": 129,
-      "stale": 136,
+      "aging": 123,
+      "stale": 142,
       "discontinued": 1,
       "degraded": 0,
       "browser_dependent": 1,
@@ -544,34 +544,58 @@
       },
       {
         "dataset_id": "gtfs_realtime_mybas_seremban_a",
-        "days_since_modified": 0.0039004629629629628
+        "days_since_modified": 0.008240740740740741
       },
       {
         "dataset_id": "gtfs_realtime_ktmb",
-        "days_since_modified": 0.0011805555555555556
+        "days_since_modified": 0.005520833333333333
       },
       {
         "dataset_id": "gtfs_realtime_mybas_ipoh",
-        "days_since_modified": 0.0011111111111111111
+        "days_since_modified": 0.005451388888888889
       },
       {
         "dataset_id": "gtfs_realtime_mybas_kuala_terengganu",
-        "days_since_modified": 0.001099537037037037
+        "days_since_modified": 0.005439814814814815
       },
       {
         "dataset_id": "gtfs_realtime_mybas_seremban_b",
-        "days_since_modified": 0.0010416666666666667
+        "days_since_modified": 0.005381944444444444
       },
       {
         "dataset_id": "gtfs_realtime_mybas_johor",
-        "days_since_modified": 0.0009143518518518518
+        "days_since_modified": 0.00525462962962963
       },
       {
         "dataset_id": "gtfs_realtime_mybas_melaka",
-        "days_since_modified": 0.0009143518518518518
+        "days_since_modified": 0.00525462962962963
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_penang",
+        "days_since_modified": 0.0051736111111111115
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kuching",
+        "days_since_modified": 0.005127314814814815
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kota_bharu",
+        "days_since_modified": 0.005115740740740741
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kangar",
+        "days_since_modified": 0.005115740740740741
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_alor_setar",
+        "days_since_modified": 0.005092592592592593
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_kl",
+        "days_since_modified": 0.004976851851851852
       }
     ],
-    "pipeline_heartbeat_at": "2026-09-27T10:53:53Z"
+    "pipeline_heartbeat_at": "2026-09-27T10:59:31Z"
   },
   "datasets": [
     {
@@ -84561,7 +84585,7 @@
       "newest_vehicle_timestamp": 1790505985,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0011805555555555556,
+      "staleness_days": 0.005520833333333333,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -84574,7 +84598,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0011805555555555556,
+        "latest_days": 0.005520833333333333,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -85333,7 +85357,7 @@
       "last_checked": "2026-09-27T10:48:07Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-kl",
-      "status": "aging",
+      "status": "stale",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (89 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-kl",
@@ -85383,12 +85407,12 @@
       "newest_vehicle_timestamp": 1790506032,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0006365740740740741,
-      "staleness_status": "aging",
+      "staleness_days": 0.004976851851851852,
+      "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -85396,7 +85420,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0006365740740740741,
+        "latest_days": 0.004976851851851852,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -86155,7 +86179,7 @@
       "last_checked": "2026-09-27T10:48:07Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-penang",
-      "status": "aging",
+      "status": "stale",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (151 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-penang",
@@ -86205,12 +86229,12 @@
       "newest_vehicle_timestamp": 1790506015,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0008333333333333334,
-      "staleness_status": "aging",
+      "staleness_days": 0.0051736111111111115,
+      "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -86218,7 +86242,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0008333333333333334,
+        "latest_days": 0.0051736111111111115,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -87799,7 +87823,7 @@
       "last_checked": "2026-09-27T10:48:07Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kangar",
-      "status": "aging",
+      "status": "stale",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (24 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kangar",
@@ -87849,12 +87873,12 @@
       "newest_vehicle_timestamp": 1790506020,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0007754629629629629,
-      "staleness_status": "aging",
+      "staleness_days": 0.005115740740740741,
+      "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -87862,7 +87886,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0007754629629629629,
+        "latest_days": 0.005115740740740741,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -88621,7 +88645,7 @@
       "last_checked": "2026-09-27T10:48:07Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-alor-setar",
-      "status": "aging",
+      "status": "stale",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (42 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-alor-setar",
@@ -88671,12 +88695,12 @@
       "newest_vehicle_timestamp": 1790506022,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0007523148148148148,
-      "staleness_status": "aging",
+      "staleness_days": 0.005092592592592593,
+      "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -88684,7 +88708,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0007523148148148148,
+        "latest_days": 0.005092592592592593,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -89443,7 +89467,7 @@
       "last_checked": "2026-09-27T10:48:07Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kota-bharu",
-      "status": "aging",
+      "status": "stale",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (44 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kota-bharu",
@@ -89493,12 +89517,12 @@
       "newest_vehicle_timestamp": 1790506020,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0007754629629629629,
-      "staleness_status": "aging",
+      "staleness_days": 0.005115740740740741,
+      "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -89506,7 +89530,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0007754629629629629,
+        "latest_days": 0.005115740740740741,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -90315,7 +90339,7 @@
       "newest_vehicle_timestamp": 1790505992,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.001099537037037037,
+      "staleness_days": 0.005439814814814815,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -90328,7 +90352,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.001099537037037037,
+        "latest_days": 0.005439814814814815,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -91137,7 +91161,7 @@
       "newest_vehicle_timestamp": 1790505991,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0011111111111111111,
+      "staleness_days": 0.005451388888888889,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -91150,7 +91174,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0011111111111111111,
+        "latest_days": 0.005451388888888889,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -91959,7 +91983,7 @@
       "newest_vehicle_timestamp": 1790505750,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0039004629629629628,
+      "staleness_days": 0.008240740740740741,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -91972,7 +91996,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0039004629629629628,
+        "latest_days": 0.008240740740740741,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -92781,12 +92805,12 @@
       "newest_vehicle_timestamp": 1790505997,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0010416666666666667,
+      "staleness_days": 0.005381944444444444,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -92794,7 +92818,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0010416666666666667,
+        "latest_days": 0.005381944444444444,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -93603,12 +93627,12 @@
       "newest_vehicle_timestamp": 1790506008,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0009143518518518518,
+      "staleness_days": 0.00525462962962963,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -93616,7 +93640,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0009143518518518518,
+        "latest_days": 0.00525462962962963,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -94425,12 +94449,12 @@
       "newest_vehicle_timestamp": 1790506008,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0009143518518518518,
+      "staleness_days": 0.00525462962962963,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -94438,7 +94462,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0009143518518518518,
+        "latest_days": 0.00525462962962963,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -95197,7 +95221,7 @@
       "last_checked": "2026-09-27T10:48:07Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuching",
-      "status": "aging",
+      "status": "stale",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (29 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuching",
@@ -95247,12 +95271,12 @@
       "newest_vehicle_timestamp": 1790506019,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.000787037037037037,
-      "staleness_status": "aging",
+      "staleness_days": 0.005127314814814815,
+      "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -95260,7 +95284,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.000787037037037037,
+        "latest_days": 0.005127314814814815,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
