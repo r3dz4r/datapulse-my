@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.41.0](https://github.com/r3dz4r/datapulse-my/compare/v3.40.0...v3.41.0) (2026-09-27)
+
+
+### Features
+
+* **probe:** derive expected_record_count from recorded evidence ([#229](https://github.com/r3dz4r/datapulse-my/issues/229)) ([1985f3a](https://github.com/r3dz4r/datapulse-my/commit/1985f3ae9bd6b4712c940e1ceef1d31bacd9cd4f))
+
 ## [3.40.0](https://github.com/r3dz4r/datapulse-my/compare/v3.39.3...v3.40.0) (2026-09-26)
 
 
