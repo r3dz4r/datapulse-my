@@ -66,7 +66,29 @@ SOURCE_VERSION_STRING = (
 DATA_BASE = os.getenv("DATA_BASE", "https://www.data-pulse.my").rstrip("/")
 MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
 MCP_PORT = int(os.getenv("MCP_PORT", "8788"))
-REQUEST_TIMEOUT_SECONDS = 30.0
+
+# Latency budget (2026-09-27). The previous single 30s timeout let a hanging
+# upstream own the client connection, and a handler that chains upstream calls
+# (trust_verdict, verify_attestation L2, get_data_passport) could hold the
+# client for a multiple of it -- measured 40.1s locally and 39.4s in the 08:00
+# usage ledger. Every upstream call now shares a tight per-call budget and every
+# tool handler has a total wall-clock budget, so a verification that cannot
+# finish inside its budget returns an explicit "unverified within budget"
+# result instead of hanging or silently reusing stale data.
+UPSTREAM_CONNECT_TIMEOUT_SECONDS = 2.0
+UPSTREAM_READ_TIMEOUT_SECONDS = 3.0
+UPSTREAM_WRITE_TIMEOUT_SECONDS = 3.0
+UPSTREAM_POOL_TIMEOUT_SECONDS = 1.0
+UPSTREAM_TIMEOUT = httpx.Timeout(
+    connect=UPSTREAM_CONNECT_TIMEOUT_SECONDS,
+    read=UPSTREAM_READ_TIMEOUT_SECONDS,
+    write=UPSTREAM_WRITE_TIMEOUT_SECONDS,
+    pool=UPSTREAM_POOL_TIMEOUT_SECONDS,
+)
+TOOL_HANDLER_BUDGET_SECONDS = 5.0
+COSIGN_TIMEOUT_SECONDS = 5.0
+# Legacy alias for the import-time manifest probe and verifier subprocess.
+REQUEST_TIMEOUT_SECONDS = UPSTREAM_READ_TIMEOUT_SECONDS
 VERIFY_CACHE_SECONDS = 600.0
 VERIFY_MAX_REDIRECTS = 5
 SIGSTORE_CERTIFICATE_IDENTITY = (
@@ -127,6 +149,43 @@ PROCESS_INSTANCE_ID = uuid4().hex
 HTTP_REQUEST_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "datapulse_http_request_id", default=None
 )
+
+# Per-handler wall-clock deadline, set by the usage middleware at tool-call
+# entry and propagated into gather()/to_thread() child contexts. Upstream
+# primitives consult it so a handler that chains calls cannot exceed the total
+# budget even though each individual call is under its own per-call timeout.
+_TOOL_DEADLINE: contextvars.ContextVar[float | None] = contextvars.ContextVar(
+    "datapulse_tool_deadline", default=None
+)
+
+
+class _ToolBudgetExceeded(RuntimeError):
+    """Raised when a tool handler's total upstream budget is spent."""
+
+
+def _remaining_tool_budget() -> float:
+    """Seconds left in the current tool handler's budget, or the full budget."""
+    deadline = _TOOL_DEADLINE.get()
+    if deadline is None:
+        return TOOL_HANDLER_BUDGET_SECONDS
+    return deadline - monotonic()
+
+
+def _upstream_timeout() -> httpx.Timeout:
+    """Per-call timeout, capped by whatever remains of the handler budget."""
+    remaining = _remaining_tool_budget()
+    if remaining <= 0:
+        raise _ToolBudgetExceeded(
+            f"tool handler exceeded its {TOOL_HANDLER_BUDGET_SECONDS:g}s upstream budget"
+        )
+    if remaining >= UPSTREAM_READ_TIMEOUT_SECONDS:
+        return UPSTREAM_TIMEOUT
+    return httpx.Timeout(
+        connect=min(UPSTREAM_CONNECT_TIMEOUT_SECONDS, remaining),
+        read=min(UPSTREAM_READ_TIMEOUT_SECONDS, remaining),
+        write=min(UPSTREAM_WRITE_TIMEOUT_SECONDS, remaining),
+        pool=min(UPSTREAM_POOL_TIMEOUT_SECONDS, remaining),
+    )
 
 
 def _sanitise_tool_arg(value: Any, *, key: str | None = None) -> Any:
@@ -450,6 +509,7 @@ class ToolUsageLoggingMiddleware(Middleware):
         _apply_dataset_argument_aliases(message.name, message.arguments)
         args = _usage_arguments(message.arguments or {})
         started = monotonic()
+        budget_token = _TOOL_DEADLINE.set(started + TOOL_HANDLER_BUDGET_SECONDS)
         record: dict[str, Any] = {
             "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
             "schema_era": USAGE_LEDGER_SCHEMA_ERA,
@@ -468,6 +528,7 @@ class ToolUsageLoggingMiddleware(Middleware):
             return result
         finally:
             record["latency_ms"] = round((monotonic() - started) * 1000)
+            _TOOL_DEADLINE.reset(budget_token)
             http_request_id = HTTP_REQUEST_ID.get()
             if http_request_id is not None:
                 record["http_request_id"] = http_request_id
@@ -508,7 +569,7 @@ def _manifest_dataset_count(manifest_path: Path | None = None) -> int:
     else:
         response = httpx.get(
             f"{DATA_BASE}/datapulse.json",
-            timeout=REQUEST_TIMEOUT_SECONDS,
+            timeout=UPSTREAM_TIMEOUT,
             follow_redirects=True,
         )
         response.raise_for_status()
@@ -731,9 +792,89 @@ TOOL_META = {
 }
 
 
-async def _fetch_json(path: str) -> dict[str, Any]:
+def _local_artifact_roots() -> tuple[Path, ...]:
+    """Roots the server may read published artefacts from, most specific first.
+
+    Set ``DATAPULSE_DISABLE_LOCAL_ARTIFACTS=1`` to force the network path (used
+    by the measurement harness and the redirect test). ``DATAPULSE_ARTIFACT_ROOT``
+    overrides the roots entirely for a colocated deployment.
+    """
+    if os.getenv("DATAPULSE_DISABLE_LOCAL_ARTIFACTS", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
+        return ()
+    candidates: list[Path] = []
+    configured = os.getenv("DATAPULSE_ARTIFACT_ROOT")
+    if configured:
+        candidates.append(Path(configured))
+    # The deployed unit puts the published checkout on PYTHONPATH (it is also
+    # where scripts/ is imported from), so that root holds the freshest
+    # artefacts. The systemd WorkingDirectory and the module-relative root cover
+    # a colocated deployment and a checkout/test layout.
+    for entry in os.getenv("PYTHONPATH", "").split(os.pathsep):
+        if entry:
+            candidates.append(Path(entry))
+    candidates.append(Path.cwd())
+    candidates.append(Path(__file__).resolve().parents[1])
+    roots: list[Path] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if str(resolved) not in seen:
+            seen.add(str(resolved))
+            roots.append(resolved)
+    return tuple(roots)
+
+
+def _local_artifact_path(path: str) -> Path | None:
+    """Resolve a published artefact inside a configured root, or ``None``.
+
+    Callers pass fixed published paths or manifest-validated dataset ids, but
+    containment is enforced anyway so a caller-controlled segment can never
+    escape the artefact root.
+    """
+    relative = path.lstrip("/")
+    parts = Path(relative).parts
+    if not relative or any(part in {"", ".", ".."} for part in parts):
+        return None
+    for root in _local_artifact_roots():
+        candidate = (root / relative).resolve()
+        if candidate.is_relative_to(root) and candidate.is_file():
+            return candidate
+    return None
+
+
+def _load_local_json(path: str) -> dict[str, Any] | None:
+    local = _local_artifact_path(path)
+    if local is None:
+        return None
+    try:
+        return json.loads(local.read_text(encoding="utf-8"))
+    except OSError:
+        # A colocated artefact we cannot read (for example an ACL-denied
+        # health snapshot) must fall back to the bounded upstream fetch rather
+        # than fail the tool outright.
+        logger.warning("mcp-artifact: local %s is unreadable; using upstream", path)
+        return None
+
+
+def _load_local_bytes(path: str) -> bytes | None:
+    local = _local_artifact_path(path)
+    if local is None:
+        return None
+    try:
+        return local.read_bytes()
+    except OSError:
+        logger.warning("mcp-artifact: local %s is unreadable; using upstream", path)
+        return None
+
+
+async def _fetch_remote_json(path: str) -> dict[str, Any]:
     """Fetch one JSON document from the published DataPulse site."""
-    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+    async with httpx.AsyncClient(timeout=_upstream_timeout()) as client:
         response = await client.get(
             f"{DATA_BASE}/{path.lstrip('/')}", follow_redirects=True
         )
@@ -741,14 +882,35 @@ async def _fetch_json(path: str) -> dict[str, Any]:
         return response.json()
 
 
-async def _fetch_bytes(path: str) -> bytes:
-    """Fetch one published immutable artifact without accepting caller-controlled URLs."""
-    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
+async def _fetch_remote_bytes(path: str) -> bytes:
+    """Fetch one published immutable artifact without caller-controlled URLs."""
+    async with httpx.AsyncClient(timeout=_upstream_timeout()) as client:
         response = await client.get(
             f"{DATA_BASE}/{path.lstrip('/')}", follow_redirects=True
         )
         response.raise_for_status()
         return response.content
+
+
+async def _fetch_json(path: str) -> dict[str, Any]:
+    """Resolve one published document, preferring the colocated artefact.
+
+    Reading the published artefacts from disk removes the network from every
+    read-only tool's response path; only a genuinely live check (or a
+    deployment without the artefacts) pays the bounded upstream budget.
+    """
+    local = _load_local_json(path)
+    if local is not None:
+        return local
+    return await _fetch_remote_json(path)
+
+
+async def _fetch_bytes(path: str) -> bytes:
+    """Resolve one published immutable artifact, preferring the local copy."""
+    local = _load_local_bytes(path)
+    if local is not None:
+        return local
+    return await _fetch_remote_bytes(path)
 
 
 async def _load_manifest() -> dict[str, Any]:
@@ -892,7 +1054,7 @@ async def _fetch_live_receipts(source_url: str) -> dict[str, Any]:
     """Stream a safe GET and return headers without downloading the response body."""
     current_url = _validated_live_url(source_url)
     async with httpx.AsyncClient(
-        timeout=REQUEST_TIMEOUT_SECONDS,
+        timeout=_upstream_timeout(),
         headers={
             "Accept": "*/*",
             "Accept-Encoding": "identity",
@@ -1876,7 +2038,7 @@ def _verify_sigstore_receipt(
             check=False,
             capture_output=True,
             text=True,
-            timeout=REQUEST_TIMEOUT_SECONDS,
+            timeout=min(COSIGN_TIMEOUT_SECONDS, max(0.1, _remaining_tool_budget())),
         )
     output = _bounded_verifier_output(completed)
     if completed.returncode != 0:
@@ -1932,6 +2094,16 @@ async def verify_dataset(
             raise BundleError("bundle DSSE payload differs from canonical per-dataset statement")
         signed, verifier_output = await asyncio.to_thread(
             _verify_sigstore_receipt, evidence=canonical_evidence, bundle=bundle
+        )
+    except _ToolBudgetExceeded:
+        verifier_output = (
+            "receipt verification failed closed: unverified within the "
+            f"{TOOL_HANDLER_BUDGET_SECONDS:g}s per-tool budget"
+        )
+    except httpx.TimeoutException as exc:
+        verifier_output = (
+            "receipt verification failed closed: unverified within the "
+            f"{UPSTREAM_READ_TIMEOUT_SECONDS:g}s read per-call budget ({exc.__class__.__name__})"
         )
     except (httpx.HTTPError, json.JSONDecodeError, BundleError, OSError, subprocess.SubprocessError) as exc:
         verifier_output = f"receipt verification failed closed: {exc.__class__.__name__}"
@@ -2015,6 +2187,26 @@ async def _run_live_verification(
     try:
         try:
             live = await _fetch_live_receipts(source_url)
+        except _ToolBudgetExceeded:
+            result["verdict"] = "not_verifiable"
+            result["unverified_within_budget"] = True
+            result["budget_seconds"] = TOOL_HANDLER_BUDGET_SECONDS
+            result["details"].append(
+                "live verification did not complete within the "
+                f"{TOOL_HANDLER_BUDGET_SECONDS:g}s per-tool budget; unverified within budget"
+            )
+            return result
+        except httpx.TimeoutException as exc:
+            result["verdict"] = "not_verifiable"
+            result["unverified_within_budget"] = True
+            result["budget_seconds"] = UPSTREAM_READ_TIMEOUT_SECONDS
+            result["details"].append(
+                "live verification did not complete within the "
+                f"{UPSTREAM_CONNECT_TIMEOUT_SECONDS:g}s connect / "
+                f"{UPSTREAM_READ_TIMEOUT_SECONDS:g}s read per-call budget "
+                f"({exc.__class__.__name__}); unverified within budget"
+            )
+            return result
         except _LiveVerificationBlocked as exc:
             result["details"].append(str(exc))
             return result
@@ -2198,7 +2390,7 @@ def _daily_head_valid(head: dict[str, Any], registry: dict[str, Any]) -> bool:
 async def _verify_git_anchor(anchor: dict[str, Any], expected_head: str) -> bool:
     tag, declared_commit = anchor.get("tag"), anchor.get("commit")
     if not isinstance(tag, str) or not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag): return False
-    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS, follow_redirects=True) as client:
+    async with httpx.AsyncClient(timeout=_upstream_timeout(), follow_redirects=True) as client:
         response = await client.get(f"https://api.github.com/repos/r3dz4r/datapulse-my/git/ref/tags/{tag}"); response.raise_for_status(); target = response.json()["object"]
         if target["type"] == "tag":
             response = await client.get(f"https://api.github.com/repos/r3dz4r/datapulse-my/git/tags/{target['sha']}"); response.raise_for_status(); target = response.json()["object"]
@@ -2228,18 +2420,45 @@ async def verify_attestation(
     l1 = bool(signature_valid and key_match and link_valid and key_time_valid and key.get("algorithm", "Ed25519") == "Ed25519" and key.get("status") != "compromised" and not key.get("compromised_at")) if key else False
     l2 = {"covered": replay_chain, "satisfied": False, "anchor_tag": None, "anchor_commit": None, "reason": "set replay_chain=true"}
     if replay_chain:
-        chain_index = await _fetch_json("attestations/chain-index.json"); current = await _fetch_json(f"attestations/{payload['date']}/chain_head.json"); seen = set(); member = any(row.get("dataset_id") == payload.get("dataset_id") and row.get("chain_link") == envelope.get("chain_link") for row in current.get("dataset_links", []))
-        while current["chain_head"] not in seen:
-            if not member or not _daily_head_valid(current, registry): l2["reason"] = "daily head, membership, or signature is invalid"; break
-            seen.add(current["chain_head"]); anchor = chain_index.get("anchors", {}).get(current["chain_head"])
-            if anchor and await _verify_git_anchor(anchor, current["chain_head"]): l2 = {"covered": True, "satisfied": True, "anchor_tag": anchor["tag"], "anchor_commit": anchor["commit"], "reason": "signed daily heads replay to a Git-verified tag anchor"}; break
-            previous = current["payload"]["previous_chain_head"]
-            if previous == ZERO: l2["reason"] = "chain reached genesis without tag anchor"; break
-            prior_ref = chain_index.get("heads", {}).get(previous)
-            if not prior_ref: l2["reason"] = "previous daily head is not discoverable"; break
-            prior = await _fetch_json(prior_ref)
-            if prior.get("chain_head") != previous: l2["reason"] = "chain index points to the wrong prior head"; break
-            current = prior; member = True
+        try:
+            chain_index = await _fetch_json("attestations/chain-index.json")
+            current = await _fetch_json(f"attestations/{payload['date']}/chain_head.json")
+            seen = set()
+            member = any(row.get("dataset_id") == payload.get("dataset_id") and row.get("chain_link") == envelope.get("chain_link") for row in current.get("dataset_links", []))
+            while current["chain_head"] not in seen:
+                if not member or not _daily_head_valid(current, registry): l2["reason"] = "daily head, membership, or signature is invalid"; break
+                seen.add(current["chain_head"]); anchor = chain_index.get("anchors", {}).get(current["chain_head"])
+                if anchor and await _verify_git_anchor(anchor, current["chain_head"]): l2 = {"covered": True, "satisfied": True, "anchor_tag": anchor["tag"], "anchor_commit": anchor["commit"], "reason": "signed daily heads replay to a Git-verified tag anchor"}; break
+                previous = current["payload"]["previous_chain_head"]
+                if previous == ZERO: l2["reason"] = "chain reached genesis without tag anchor"; break
+                prior_ref = chain_index.get("heads", {}).get(previous)
+                if not prior_ref: l2["reason"] = "previous daily head is not discoverable"; break
+                prior = await _fetch_json(prior_ref)
+                if prior.get("chain_head") != previous: l2["reason"] = "chain index points to the wrong prior head"; break
+                current = prior; member = True
+        except _ToolBudgetExceeded:
+            l2 = {
+                "covered": True,
+                "satisfied": False,
+                "anchor_tag": None,
+                "anchor_commit": None,
+                "reason": (
+                    "L2 replay did not complete within the "
+                    f"{TOOL_HANDLER_BUDGET_SECONDS:g}s per-tool budget; unverified within budget"
+                ),
+            }
+        except httpx.TimeoutException as exc:
+            l2 = {
+                "covered": True,
+                "satisfied": False,
+                "anchor_tag": None,
+                "anchor_commit": None,
+                "reason": (
+                    "L2 replay did not complete within the "
+                    f"{UPSTREAM_READ_TIMEOUT_SECONDS:g}s read per-call budget "
+                    f"({exc.__class__.__name__}); unverified within budget"
+                ),
+            }
     return {"reference": reference, "digest_ref": ref, "dataset_id": payload.get("dataset_id"), "digest": envelope, "linked_chain_head": payload.get("previous_chain_head"), "latest_chain_head": latest_head.get("chain_head"), "levels": {"L1": {"covered": True, "satisfied": l1, "signature_valid": signature_valid, "key_registry_match": key_match, "key_time_valid": key_time_valid, "chain_link_valid": link_valid}, "L2": l2, "L3": {"covered": False, "satisfied": False, "reason": "call verify_evidence(dataset_id)"}}}
 
 
