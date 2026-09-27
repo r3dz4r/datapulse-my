@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.41.1](https://github.com/r3dz4r/datapulse-my/compare/v3.41.0...v3.41.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* **mcp:** bound upstream latency so a slow upstream cannot own the response ([#232](https://github.com/r3dz4r/datapulse-my/issues/232)) ([94daf2a](https://github.com/r3dz4r/datapulse-my/commit/94daf2a806cd420d4b84473a57235f984441d314))
+
 ## [3.41.0](https://github.com/r3dz4r/datapulse-my/compare/v3.40.0...v3.41.0) (2026-09-27)
 
 
