@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.42.0](https://github.com/r3dz4r/datapulse-my/compare/v3.41.1...v3.42.0) (2026-09-28)
+
+
+### Features
+
+* **web:** retire the duplicate /catalogue page and redirect it ([be56f66](https://github.com/r3dz4r/datapulse-my/commit/be56f665f8980e043165484bbc8468e34f04a0b2))
+
 ## [3.41.1](https://github.com/r3dz4r/datapulse-my/compare/v3.41.0...v3.41.1) (2026-09-27)
 
 
