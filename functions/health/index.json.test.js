@@ -17,7 +17,7 @@ test("populated binding returns 200 and the exact bytes", async () => {
 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("Content-Type"), "application/json");
-  assert.equal(response.headers.get("Cache-Control"), "public, max-age=60");
+  assert.equal(response.headers.get("Cache-Control"), "public, max-age=300, stale-while-revalidate=60");
   assert.deepEqual(new Uint8Array(await response.arrayBuffer()), expected);
 });
 

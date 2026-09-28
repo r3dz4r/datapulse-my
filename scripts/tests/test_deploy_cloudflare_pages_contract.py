@@ -7,6 +7,7 @@ import re
 import os
 from pathlib import Path
 import subprocess
+import tempfile
 import textwrap
 
 import pytest
@@ -121,7 +122,16 @@ curl() {{
 {_alias_helper()}
 fetch_alias 'test alias' "$website_origin{requested_path}"
 """
-    return subprocess.run(["bash", "-c", script], check=False, capture_output=True, text=True)
+    return subprocess.run(
+        ["bash", "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+        # The extracted helper shells out to `mktemp -d`, which trusts TMPDIR
+        # blindly. `tempfile.gettempdir()` has already resolved a writable
+        # fallback, so a sandboxed unwritable TMPDIR cannot fail the suite.
+        env={**os.environ, "TMPDIR": tempfile.gettempdir()},
+    )
 
 
 _ALIAS_BODY = (
@@ -402,6 +412,34 @@ def test_pages_assembly_includes_bounded_public_summary_artifact() -> None:
     root_file_copy = next(command for command in assemble["run"].splitlines() if command.startswith("cp llms.txt"))
 
     assert "datapulse_summary.json" in root_file_copy
+
+
+def test_health_latest_json_cache_rule_is_effective() -> None:
+    """Pin the ``_headers`` cache contract for the served health snapshot.
+
+    The rule must use the ``/health/latest.json*`` splat form and keep the exact
+    300-second TTL with stale-while-revalidate, so no edit silently drops the
+    health snapshot to a shorter or absent edge cache. Cloudflare does not apply
+    ``_headers`` to the Pages Function that also serves this path
+    (``functions/health/[[path]].js``); the served header is owned there, and
+    this test pins the static-layer half of the contract.
+    """
+    lines = (ROOT / "docs/_headers").read_text(encoding="utf-8").splitlines()
+
+    assert "/health/latest.json*" in lines
+    assert "/health/latest.json" not in lines
+    rule_index = lines.index("/health/latest.json*")
+    assert lines[rule_index + 1].strip() == (
+        "Cache-Control: public, max-age=300, stale-while-revalidate=60"
+    )
+
+    # The catch-all discovery block and the asset cache rule must both survive.
+    assert (
+        '  Link: </.well-known/ard.json>; rel="ard", '
+        '</.well-known/ai-catalog.json>; rel="ai-catalog"' in lines
+    )
+    assets_index = lines.index("/assets/*")
+    assert lines[assets_index + 1].strip() == "Cache-Control: public, max-age=86400"
 
 
 def test_health_only_legacy_release_proof_accepts_generated_and_verified_timestamps() -> None:

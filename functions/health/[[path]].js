@@ -41,7 +41,7 @@ export async function onRequest(context) {
     if (!(bytes instanceof ArrayBuffer) || bytes.byteLength === 0) return staticAsset(context);
     return new Response(bytes, {
       status: 200,
-      headers: { "Cache-Control": "public, max-age=60", "Content-Type": "application/json" },
+      headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=60", "Content-Type": "application/json" },
     });
   } catch (_) {
     return unavailable("KV read failed");

@@ -25,7 +25,7 @@ export async function onRequest(context) {
     return new Response(bytes, {
       status: 200,
       headers: {
-        "Cache-Control": "public, max-age=60",
+        "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
         "Content-Type": "application/json",
       },
     });
