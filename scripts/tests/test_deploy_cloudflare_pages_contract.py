@@ -40,12 +40,11 @@ def _assert_deploy_resilience(workflow: str) -> None:
     assert "superseded_run" not in workflow
 
     for name, branch in (
-        ("Deploy isolated Cloudflare Pages preview artifact", "--branch=staging-${{ github.run_id }}"),
+        ("Deploy isolated Cloudflare Pages preview artifact", "--branch=staging"),
         ("Deploy canonical Cloudflare Pages artifact", "--branch=main"),
     ):
         deploy = next(step for step in steps if step.get("name") == name)
         run = deploy["run"]
-        assert "if" not in deploy
         assert "for attempt in 1 2 3 4; do" in run
         assert "npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview" in run
         assert branch in run
@@ -56,6 +55,19 @@ def _assert_deploy_resilience(workflow: str) -> None:
         assert 'if [[ "$attempt" -eq 4 ]]; then' in run
         assert 'delay="$((attempt * 60))"' in run
         assert 'sleep "$delay"' in run
+
+    # The staging deploy always runs; the production deploy is conditional on it
+    # having succeeded in the same run.
+    preview_deploy = next(
+        step for step in steps
+        if step.get("name") == "Deploy isolated Cloudflare Pages preview artifact"
+    )
+    assert "if" not in preview_deploy
+    production_deploy = next(
+        step for step in steps
+        if step.get("name") == "Deploy canonical Cloudflare Pages artifact"
+    )
+    assert production_deploy["if"] == "steps.deploy_preview.outcome == 'success'"
 
 
 def test_pages_deploy_resilience_contract_and_mutation_proofs() -> None:
@@ -678,12 +690,15 @@ def test_native_pages_stages_and_verifies_the_assembled_artifact_before_producti
     assert assemble_index < staging_index < preview_index < production_index
     assert staging["id"] == "deploy_preview"
     assert "pages deploy _site --project-name=datapulse-p4b-preview" in staging_command
-    assert "--branch=staging-${{ github.run_id }}" in staging_command
+    assert re.search(r"--branch=staging(?:\s|$)", staging_command)
+    assert "github.run_id" not in staging_command
+    assert "GITHUB_RUN_ID" not in staging_command
     assert "--branch=main" not in staging_command
     assert "data-pulse.my" not in staging_command
     assert "www.data-pulse.my" not in staging_command
     assert "if" not in preview
-    assert 'preview_branch="staging-${GITHUB_RUN_ID}"' in preview_run
+    assert 'preview_branch="staging"' in preview_run
+    assert "GITHUB_RUN_ID" not in preview_run
     assert 'preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"' in preview_run
     assert "bash scripts/verify_served_release.sh" in preview_run
     assert '--base-url "$preview_origin"' in preview_run
