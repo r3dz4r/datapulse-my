@@ -471,7 +471,6 @@ jobs:
           fi
           test -s _site/index.html
           test -s _site/404.html
-          test -s _site/catalogue.html
           test "$(grep -c '[^[:space:]]' _site/_redirects)" -ge 4
           grep -qxF '/methodology /health-methodology 301' _site/_redirects
           grep -qxF '/trust-contract /trust-contract.md 301' _site/_redirects

@@ -190,6 +190,20 @@ def test_production_homepage_is_the_source_owned_register_with_compatible_payloa
     assert "not observed" in html
 
 
+def test_retired_catalogue_page_is_not_a_generator_target(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The /catalogue duplicate is retired: no generated page and no CLI target."""
+    assert not (ROOT / "docs/catalogue.html").exists()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["embed_dashboard_data.py", "--catalogue", str(tmp_path / "catalogue.html")],
+    )
+    with pytest.raises(SystemExit):
+        embed_dashboard_data.parse_args()
+
+
 def test_embed_escapes_script_end_sequences(tmp_path: Path) -> None:
     html_path = tmp_path / "index.html"
     html_path.write_text(f"<body>{_strip()}</body>\n", encoding="utf-8")
@@ -421,7 +435,7 @@ def _run_npra_embedder(output_dir: Path) -> Path:
     """Run the CLI against isolated page copies without touching repo outputs."""
     output_dir.mkdir()
     paths = {}
-    for name in ("index.html", "catalogue.html", "npra.html"):
+    for name in ("index.html", "npra.html"):
         target = output_dir / name
         shutil.copyfile(ROOT / "docs" / name, target)
         paths[name] = target
@@ -430,7 +444,6 @@ def _run_npra_embedder(output_dir: Path) -> Path:
             sys.executable,
             str(ROOT / "scripts/embed_dashboard_data.py"),
             "--html", str(paths["index.html"]),
-            "--catalogue", str(paths["catalogue.html"]),
             "--npra", str(paths["npra.html"]),
             "--manifest", str(ROOT / "datapulse.json"),
             "--health", str(ROOT / "health/latest.json"),
@@ -465,7 +478,6 @@ def test_production_npra_is_cross_process_deterministic_and_idempotent(
             sys.executable,
             str(ROOT / "scripts/embed_dashboard_data.py"),
             "--html", str(tmp_path / "first/index.html"),
-            "--catalogue", str(tmp_path / "first/catalogue.html"),
             "--npra", str(first),
             "--manifest", str(ROOT / "datapulse.json"),
             "--health", str(ROOT / "health/latest.json"),
