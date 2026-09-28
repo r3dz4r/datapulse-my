@@ -1,5 +1,8 @@
 /assets/*
   Cache-Control: public, max-age=86400
 
+/health/latest.json
+  Cache-Control: public, max-age=300, stale-while-revalidate=60
+
 /*
   Link: </.well-known/ard.json>; rel="ard", </.well-known/ai-catalog.json>; rel="ai-catalog"

@@ -140,7 +140,14 @@ def main() -> int:
     now = parse_time(args.now) if args.now else None
     if args.now and now is None:
         raise SystemExit("--now must be an ISO 8601 timestamp")
-    json.dump(annotate(snapshot, manifest, args.history, now), sys.stdout, ensure_ascii=False, indent=2)
+    # health/latest.json is served directly and is ~47% whitespace when
+    # indented, so emit the compact form. The parsed document is identical.
+    json.dump(
+        annotate(snapshot, manifest, args.history, now),
+        sys.stdout,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
     sys.stdout.write("\n")
     return 0
 
