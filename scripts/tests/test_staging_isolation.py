@@ -80,13 +80,29 @@ def test_repository_declares_isolated_kv_namespaces_per_environment() -> None:
 
     # Production stays on the production namespace and binding name.
     assert production["binding"] == BINDING
-    assert STAGING_NAMESPACE not in production["id"]
 
-    # Preview keeps the binding NAME the Functions read, but must resolve to the
-    # dedicated staging namespace instead of production's.
+    # Preview keeps the binding NAME the Functions read, but must resolve to a
+    # dedicated namespace that is not production's.
+    #
+    # The namespace ids are opaque hex, so the property has to be stated in terms
+    # of the ids themselves: both are real 32-hex ids, neither is a leftover
+    # placeholder, and they differ. An earlier revision asserted that the staging
+    # namespace TITLE appeared inside the id, which passed only because the
+    # placeholder string happened to contain that title and proved nothing once
+    # a real id was substituted.
     assert preview["binding"] == BINDING
-    assert STAGING_NAMESPACE in preview["id"]
-    assert preview["id"] != production["id"]
+    for label, entry in (("production", production), ("preview", preview)):
+        assert re.fullmatch(r"[0-9a-f]{32}", entry["id"]), (
+            f"the {label} KV binding id must be a real namespace id, "
+            f"found {entry['id']!r} — a placeholder or a title is not a binding"
+        )
+        assert "REPLACE" not in entry["id"].upper(), (
+            f"the {label} KV binding id is still a placeholder: {entry['id']!r}"
+        )
+    assert preview["id"] != production["id"], (
+        "preview and production must not share a KV namespace, which is the "
+        "defect this file exists to prevent"
+    )
 
     # The top-level default is production; only preview may move off it.
     top_level = [
