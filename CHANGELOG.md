@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.42.1](https://github.com/r3dz4r/datapulse-my/compare/v3.42.0...v3.42.1) (2026-09-28)
+
+
+### Performance Improvements
+
+* **health:** minify the served health snapshot and cache it for 5 minutes ([#236](https://github.com/r3dz4r/datapulse-my/issues/236)) ([218eda4](https://github.com/r3dz4r/datapulse-my/commit/218eda4384aa2e5744963d69212ea530487fdfc5))
+
 ## [3.42.0](https://github.com/r3dz4r/datapulse-my/compare/v3.41.1...v3.42.0) (2026-09-28)
 
 
