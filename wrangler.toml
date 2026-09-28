@@ -1,0 +1,47 @@
+# Cloudflare Pages configuration for the `datapulse-p4b-preview` project.
+#
+# This file is the source of truth for the project's KV binding so that the
+# staging/production split is reviewable in the repository instead of living
+# only in the Cloudflare dashboard. Cloudflare Pages reads `[env.preview]` for
+# every non-production branch (including the stable `staging` branch) and
+# `[env.production]` for the production branch (`main`).
+#
+# The health Functions read the binding as `context.env.DATAPULSE_HEALTH_INDEX`
+# (functions/health/[[path]].js and functions/health/index.json.js), so the
+# binding NAME stays `DATAPULSE_HEALTH_INDEX` in both environments and only the
+# namespace `id` differs. Do not rename the preview binding: that would break
+# the Functions, which already read this binding from the environment.
+#
+# `compatibility_date` / `compatibility_flags` are intentionally omitted so they
+# keep inheriting the project's existing (dashboard) settings; this change moves
+# only the KV binding.
+#
+# The namespace ids below are the real ones, verified against the Cloudflare API
+# on 2026-09-28: `DATAPULSE_HEALTH_INDEX` is the `datapulse-health` namespace that
+# production serves from today, and `DATAPULSE_HEALTH_INDEX_STAGING` is the
+# namespace created for preview. Both were read back from the Pages project
+# config after binding, so this file matches what is actually deployed.
+
+name = "datapulse-p4b-preview"
+pages_build_output_dir = "_site"
+
+# Production default (also inherited by local development). The preview
+# environment overrides this below; the production environment restates it.
+[[kv_namespaces]]
+binding = "DATAPULSE_HEALTH_INDEX"
+id = "043b3f20337f4744a21de947f35c67f0"
+
+# Production keeps the existing `DATAPULSE_HEALTH_INDEX` namespace untouched.
+[env.production]
+[[env.production.kv_namespaces]]
+binding = "DATAPULSE_HEALTH_INDEX"
+id = "043b3f20337f4744a21de947f35c67f0"
+
+# Preview deployments (every non-`main` branch, including `staging`) read and
+# write the dedicated staging namespace titled `DATAPULSE_HEALTH_INDEX_STAGING`,
+# never the production namespace. Same binding name so the Function code is
+# unchanged.
+[env.preview]
+[[env.preview.kv_namespaces]]
+binding = "DATAPULSE_HEALTH_INDEX"
+id = "5eb19104972f48ce9bdf8455343fbdeb"

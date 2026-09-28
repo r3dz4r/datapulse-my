@@ -507,7 +507,7 @@ jobs:
           for attempt in 1 2 3 4; do
             output="$(mktemp)"
             set +e
-            npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview --branch=staging-${{ github.run_id }} 2>&1 | tee "$output"
+            npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview --branch=staging 2>&1 | tee "$output"
             status="${PIPESTATUS[0]}"
             set -e
             if [[ "$status" -eq 0 ]]; then
@@ -538,7 +538,7 @@ jobs:
       - name: Verify isolated Pages preview before production promotion
         run: |
           set -Eeuo pipefail
-          preview_branch="staging-${GITHUB_RUN_ID}"
+          preview_branch="staging"
           preview_origin="https://${preview_branch}.datapulse-p4b-preview.pages.dev"
           bash scripts/verify_served_release.sh \
             --base-url "$preview_origin" \
@@ -567,6 +567,9 @@ jobs:
 
       - name: Deploy canonical Cloudflare Pages artifact
         id: deploy
+        # Production is promoted only after the staging deploy in this same run
+        # succeeded, so a failed staging deploy can never be bypassed here.
+        if: steps.deploy_preview.outcome == 'success'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
