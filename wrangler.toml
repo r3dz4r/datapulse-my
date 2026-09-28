@@ -16,11 +16,11 @@
 # keep inheriting the project's existing (dashboard) settings; this change moves
 # only the KV binding.
 #
-# Operator: replace the two `REPLACE_WITH_...` placeholders with real namespace
-# ids before the next deploy that uses this file. Because introducing this file
-# makes it the Pages source of truth, the production placeholder must be filled
-# with the namespace production serves from today, and the staging placeholder
-# with the newly created `DATAPULSE_HEALTH_INDEX_STAGING` namespace.
+# The namespace ids below are the real ones, verified against the Cloudflare API
+# on 2026-09-28: `DATAPULSE_HEALTH_INDEX` is the `datapulse-health` namespace that
+# production serves from today, and `DATAPULSE_HEALTH_INDEX_STAGING` is the
+# namespace created for preview. Both were read back from the Pages project
+# config after binding, so this file matches what is actually deployed.
 
 name = "datapulse-p4b-preview"
 pages_build_output_dir = "_site"
@@ -29,13 +29,13 @@ pages_build_output_dir = "_site"
 # environment overrides this below; the production environment restates it.
 [[kv_namespaces]]
 binding = "DATAPULSE_HEALTH_INDEX"
-id = "REPLACE_WITH_EXISTING_PRODUCTION_KV_NAMESPACE_ID"
+id = "043b3f20337f4744a21de947f35c67f0"
 
 # Production keeps the existing `DATAPULSE_HEALTH_INDEX` namespace untouched.
 [env.production]
 [[env.production.kv_namespaces]]
 binding = "DATAPULSE_HEALTH_INDEX"
-id = "REPLACE_WITH_EXISTING_PRODUCTION_KV_NAMESPACE_ID"
+id = "043b3f20337f4744a21de947f35c67f0"
 
 # Preview deployments (every non-`main` branch, including `staging`) read and
 # write the dedicated staging namespace titled `DATAPULSE_HEALTH_INDEX_STAGING`,
@@ -44,4 +44,4 @@ id = "REPLACE_WITH_EXISTING_PRODUCTION_KV_NAMESPACE_ID"
 [env.preview]
 [[env.preview.kv_namespaces]]
 binding = "DATAPULSE_HEALTH_INDEX"
-id = "REPLACE_WITH_DATAPULSE_HEALTH_INDEX_STAGING_KV_NAMESPACE_ID"
+id = "5eb19104972f48ce9bdf8455343fbdeb"
