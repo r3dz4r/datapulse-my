@@ -1,0 +1,100 @@
+name: Health Automation Merge
+
+# The VPS pipeline publishes to the health-automation branch because the main
+# ruleset (id 20884049, bypass_actors: []) refuses a direct push whose required
+# deterministic-safety-net check has not yet run (GH013). Nothing else promotes
+# that branch, so without this workflow health commits pile up on
+# health-automation and the published snapshot goes stale.
+#
+# This job opens (or reuses) the health-automation -> main pull request and
+# turns on auto-merge, so GitHub performs the merge once the PR's own required
+# check passes. It never writes to main itself.
+
+on:
+  push:
+    branches:
+      - health-automation
+
+permissions:
+  # contents: write mirrors openwiki-update.yml; pull-requests: write lets the
+  # run open/update the PR and enable auto-merge. No actions permission is
+  # needed: the app-authored PR triggers ci.yml by itself, so nothing dispatches
+  # a workflow.
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: health-automation-merge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout automation branch
+        uses: actions/checkout@v4
+        with:
+          ref: health-automation
+          # Read-only checkout; this workflow must never write to any branch.
+          persist-credentials: false
+
+      # A PR authored by the workflow's own GITHUB_TOKEN does not trigger its
+      # own pull_request runs, so the required deterministic-safety-net check
+      # would never attach and auto-merge would wait forever. An app-authored PR
+      # runs CI normally and the required check reports on the branch head by
+      # itself. The app credentials already exist and openwiki-update.yml and
+      # release-please.yml use them too.
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      # Reuse the open PR when one already exists so a fresh push updates it
+      # instead of opening a duplicate.
+      - name: Open or reuse the automation pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          base="main"
+          head="health-automation"
+
+          number="$(gh pr list --head "$head" --base "$base" --state open \
+            --json number --jq '.[0].number // empty')"
+          if [[ -z "$number" ]]; then
+            url="$(gh pr create --base "$base" --head "$head" \
+              --title "chore(health): merge health-automation into main" \
+              --body "Automated promotion of the health-automation branch. The main ruleset refuses a direct push before the required deterministic-safety-net check has run, so the pipeline publishes here and this pull request carries the change into main. Auto-merge is enabled; the branch is intentionally not deleted because the pipeline keeps publishing to it.")"
+            number="${url##*/}"
+            echo "Opened pull request #$number for $head -> $base."
+          else
+            echo "Reusing open pull request #$number for $head -> $base."
+          fi
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      # Auto-merge is the whole point: without it the PR sits forever and the
+      # staleness merely moves from the pipeline to the branch. gh pr merge
+      # --auto fails loudly if GitHub will not enable auto-merge, so this never
+      # silently skips. Guarded so a repeated push while auto-merge is already
+      # on stays idempotent.
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          number="${{ steps.pr.outputs.number }}"
+          if [[ -z "$number" ]]; then
+            echo "::error title=No pull request::Could not resolve the open health-automation -> main pull request."
+            exit 1
+          fi
+          enabled="$(gh pr view "$number" --json autoMergeRequest --jq '.autoMergeRequest != null')"
+          if [[ "$enabled" == "true" ]]; then
+            echo "Auto-merge already enabled on pull request #$number."
+          else
+            gh pr merge "$number" --auto --squash
+          fi
