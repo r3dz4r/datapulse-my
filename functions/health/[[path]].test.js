@@ -20,7 +20,7 @@ test("health artifact returns exact KV bytes by URL-mirrored key", async () => {
 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("Content-Type"), "application/json");
-  assert.equal(response.headers.get("Cache-Control"), "public, max-age=60");
+  assert.equal(response.headers.get("Cache-Control"), "public, max-age=300, stale-while-revalidate=60");
   assert.deepEqual(await response.arrayBuffer(), expected);
 });
 
