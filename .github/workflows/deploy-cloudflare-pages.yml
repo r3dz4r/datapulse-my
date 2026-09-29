@@ -478,6 +478,11 @@ jobs:
           grep -qxF '/okf /okf/index.md 301' _site/_redirects
           test -s _site/health/latest.json
 
+      - name: Exclude oversized Pages assets before upload
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/check_pages_asset_sizes.py _site
+
       - name: Record deterministic release artifact manifest
         run: |
           set -Eeuo pipefail

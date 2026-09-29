@@ -712,6 +712,10 @@ def test_native_pages_stages_and_verifies_the_assembled_artifact_before_producti
 def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manifest() -> None:
     """No `_site` generation may occur after its temp-only inventory is recorded."""
     steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    asset_guard_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Exclude oversized Pages assets before upload"
+    )
     manifest_create_index = next(
         index for index, step in enumerate(steps)
         if step.get("name") == "Record deterministic release artifact manifest"
@@ -737,10 +741,13 @@ def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manife
         if step.get("name") == "Deploy canonical Cloudflare Pages artifact"
     )
 
-    assert manifest_create_index == next(
+    assert asset_guard_index == next(
         index for index, step in enumerate(steps)
         if step.get("name") == "Assemble canonical Pages artifact"
     ) + 1
+    assert manifest_create_index == asset_guard_index + 1
+    assert "set -Eeuo pipefail" in steps[asset_guard_index]["run"]
+    assert "python3 scripts/check_pages_asset_sizes.py _site" in steps[asset_guard_index]["run"]
     assert preview_verify_index < next(
         index for index, step in enumerate(steps)
         if step.get("name") == "Deploy isolated Cloudflare Pages preview artifact"
