@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.43.1](https://github.com/r3dz4r/datapulse-my/compare/v3.43.0...v3.43.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **pages:** exclude oversized staged assets ([eabfb1f](https://github.com/r3dz4r/datapulse-my/commit/eabfb1fe5d0e00eb1637753a9d865e87bcb97b37))
+* **pages:** exclude oversized staged assets before upload ([48ca0a1](https://github.com/r3dz4r/datapulse-my/commit/48ca0a17a27e1de6464fcb7538a45dbc5d695877))
+
 ## [3.43.0](https://github.com/r3dz4r/datapulse-my/compare/v3.42.1...v3.43.0) (2026-09-28)
 
 
