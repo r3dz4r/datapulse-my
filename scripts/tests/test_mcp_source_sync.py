@@ -209,7 +209,7 @@ def test_verify_script_detects_mismatch() -> None:
     assert "MISMATCH: deployed=" in mismatch.stdout
     assert match.returncode == 0
     assert "OK: deployed" in match.stdout
-    assert "matches recorded stamp in mcp.json" in match.stdout
+    assert "matches newest mcp/ revision" in match.stdout
 
 
 def test_release_build_profile_includes_bump_step() -> None:

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 import subprocess
@@ -11,7 +10,11 @@ from typing import Any
 import pytest
 import yaml
 
-from scripts.verify_mcp_deployment import extract_deployed_sha, recorded_sha
+from scripts.verify_mcp_deployment import (
+    RepositoryHistoryError,
+    extract_deployed_sha,
+    newest_mcp_sha,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,10 +41,13 @@ def test_provenance_workflow_audits_default_branch_without_pr_or_push_gate() -> 
     assert job["permissions"] == {"contents": "read", "issues": "write"}
     checkout, verify, notify = job["steps"]
     assert checkout["with"]["ref"] == "${{ github.event.repository.default_branch }}"
+    assert checkout["with"]["fetch-depth"] == 0
     assert verify["id"] == "verify"
     assert verify["env"]["MCP_ENDPOINT"] == "https://mcp.data-pulse.my/mcp"
+    assert verify["env"]["DEFAULT_BRANCH"] == "${{ github.event.repository.default_branch }}"
     assert 'python3 scripts/verify_mcp_deployment.py' in verify["run"]
     assert '--repo-path "$GITHUB_WORKSPACE"' in verify["run"]
+    assert '--default-branch "$DEFAULT_BRANCH"' in verify["run"]
     assert "continue-on-error" not in verify
     assert notify["if"] == "failure() && steps.verify.outputs.exit_code == '1'"
     assert notify["uses"] == "actions/github-script@v7"
@@ -151,18 +157,139 @@ class TestExtractDeployedSha:
         assert extract_deployed_sha(server_info) == expected
 
 
-class TestRecordedSha:
-    def test_reads_from_mcp_json(self, tmp_path: Path) -> None:
-        mcp = tmp_path / "mcp.json"
-        mcp.write_text(
-            json.dumps({
-                "server": {
-                    "source_commit_sha": "45da36b487c7a329fc9c19adabb6d07c8976c3f3",
-                }
-            }),
-            encoding="utf-8",
+class TestNewestMcpSha:
+    def test_reads_newest_mcp_commit_from_origin_default_branch(self) -> None:
+        expected = subprocess.check_output(
+            ["git", "log", "-1", "--format=%H", "origin/main", "--", "mcp/"],
+            cwd=ROOT,
+            text=True,
+        ).strip()
+
+        assert newest_mcp_sha(ROOT) == expected
+
+    def test_derives_default_branch_when_origin_head_is_absent(
+        self, tmp_path: Path,
+    ) -> None:
+        clone = tmp_path / "ci-checkout"
+        subprocess.run(["git", "clone", "-q", str(ROOT), str(clone)], check=True)
+        subprocess.run(
+            ["git", "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main"],
+            cwd=clone,
+            check=True,
         )
-        assert recorded_sha(tmp_path) == "45da36b487c7a329fc9c19adabb6d07c8976c3f3"
+        assert subprocess.check_output(
+            ["git", "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"],
+            cwd=clone,
+            text=True,
+        ).strip() == "refs/remotes/origin/main"
+        subprocess.run(
+            ["git", "update-ref", "--no-deref", "-d", "refs/remotes/origin/HEAD"],
+            cwd=clone,
+            check=True,
+        )
+        assert subprocess.run(
+            ["git", "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"],
+            cwd=clone,
+            check=False,
+        ).returncode != 0
+        expected = subprocess.check_output(
+            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/"],
+            cwd=clone,
+            text=True,
+        ).strip()
+
+        assert newest_mcp_sha(clone) == expected
+
+    def test_derives_default_branch_when_origin_head_target_is_absent(
+        self, tmp_path: Path,
+    ) -> None:
+        clone = tmp_path / "ci-checkout"
+        subprocess.run(["git", "clone", "-q", str(ROOT), str(clone)], check=True)
+        subprocess.run(
+            ["git", "update-ref", "--no-deref", "refs/remotes/origin/HEAD", "HEAD"],
+            cwd=clone,
+            check=True,
+        )
+        assert subprocess.run(
+            ["git", "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"],
+            cwd=clone,
+            check=False,
+            capture_output=True,
+        ).returncode != 0
+        assert subprocess.check_output(
+            ["git", "rev-parse", "--verify", "refs/remotes/origin/HEAD^{commit}"],
+            cwd=clone,
+            text=True,
+        ).strip() == subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=clone, text=True,
+        ).strip()
+        assert subprocess.check_output(
+            ["git", "remote", "get-url", "origin"], cwd=clone, text=True,
+        ).strip() == str(ROOT)
+        subprocess.run(
+            ["git", "update-ref", "--no-deref", "-d", "refs/remotes/origin/HEAD"],
+            cwd=clone,
+            check=True,
+        )
+        assert subprocess.run(
+            ["git", "rev-parse", "--verify", "refs/remotes/origin/HEAD^{commit}"],
+            cwd=clone,
+            check=False,
+            capture_output=True,
+        ).returncode != 0
+        expected = subprocess.check_output(
+            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/"],
+            cwd=clone,
+            text=True,
+        ).strip()
+
+        assert newest_mcp_sha(clone) == expected
+
+    def test_uses_checked_out_history_when_origin_is_unavailable(self, tmp_path: Path) -> None:
+        clone = tmp_path / "no-origin-checkout"
+        subprocess.run(["git", "clone", "-q", str(ROOT), str(clone)], check=True)
+        subprocess.run(["git", "remote", "remove", "origin"], cwd=clone, check=True)
+        subprocess.run(
+            ["git", "update-ref", "--no-deref", "-d", "refs/remotes/origin/HEAD"],
+            cwd=clone,
+            check=True,
+        )
+        assert subprocess.check_output(
+            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/"],
+            cwd=clone,
+            text=True,
+        ).strip() == newest_mcp_sha(clone)
+
+    def test_shallow_clone_cannot_derive_a_passing_expected_revision(
+        self, tmp_path: Path,
+    ) -> None:
+        source = tmp_path / "source"
+        bare = tmp_path / "origin.git"
+        clone = tmp_path / "shallow"
+        source.mkdir()
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=source, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.invalid"], cwd=source, check=True,
+        )
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=source, check=True)
+        (source / "mcp").mkdir()
+        (source / "mcp/server.py").write_text("first\n", encoding="utf-8")
+        subprocess.run(["git", "add", "mcp/server.py"], cwd=source, check=True)
+        subprocess.run(["git", "commit", "-qm", "mcp revision"], cwd=source, check=True)
+        (source / "README.md").write_text("tip\n", encoding="utf-8")
+        subprocess.run(["git", "add", "README.md"], cwd=source, check=True)
+        subprocess.run(["git", "commit", "-qm", "non-mcp tip"], cwd=source, check=True)
+        subprocess.run(["git", "clone", "--bare", "-q", str(source), str(bare)], check=True)
+        subprocess.run(
+            ["git", "clone", "--depth", "1", "-q", f"file://{bare}", str(clone)],
+            check=True,
+        )
+        assert subprocess.check_output(
+            ["git", "rev-parse", "--is-shallow-repository"], cwd=clone, text=True,
+        ).strip() == "true"
+
+        with pytest.raises(RepositoryHistoryError, match="history is shallow"):
+            newest_mcp_sha(clone)
 
 
 class TestComparisonNormalization:
