@@ -15,6 +15,8 @@ from pathlib import Path
 
 import pytest
 
+from scripts.verify_mcp_deployment import newest_mcp_sha
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SYNC_SCRIPT = ROOT / "scripts/sync_mcp_deployment.sh"
@@ -183,10 +185,7 @@ def test_verify_script_detects_mismatch() -> None:
             check=False,
             timeout=10,
         )
-        recorded = json.loads((ROOT / "mcp.json").read_text(encoding="utf-8"))[
-            "server"
-        ]["source_commit_sha"]
-        MockMCPHandler.source_commit_sha = recorded
+        MockMCPHandler.source_commit_sha = newest_mcp_sha(ROOT)
         match = subprocess.run(
             [
                 "python3",
