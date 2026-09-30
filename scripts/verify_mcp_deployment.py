@@ -112,7 +112,12 @@ def newest_mcp_sha(repo_path: Path, default_branch: str | None = None) -> str:
         raise RepositoryHistoryError(
             "repository history is shallow; cannot derive newest mcp/ revision"
         )
-    ref = default_branch_ref(repo_path, default_branch)
+    try:
+        ref = default_branch_ref(repo_path, default_branch)
+    except RepositoryHistoryError:
+        # A remote is useful for identifying its default branch, but it is not
+        # required when the checked-out history already contains the answer.
+        ref = "HEAD"
     sha = _git(repo_path, "log", "-1", "--format=%H", ref, "--", "mcp/")
     if not SHA_RE.fullmatch(sha):
         raise RepositoryHistoryError(

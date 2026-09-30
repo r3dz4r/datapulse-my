@@ -173,7 +173,17 @@ class TestNewestMcpSha:
         clone = tmp_path / "ci-checkout"
         subprocess.run(["git", "clone", "-q", str(ROOT), str(clone)], check=True)
         subprocess.run(
-            ["git", "symbolic-ref", "-d", "refs/remotes/origin/HEAD"],
+            ["git", "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main"],
+            cwd=clone,
+            check=True,
+        )
+        assert subprocess.check_output(
+            ["git", "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"],
+            cwd=clone,
+            text=True,
+        ).strip() == "refs/remotes/origin/main"
+        subprocess.run(
+            ["git", "update-ref", "--no-deref", "-d", "refs/remotes/origin/HEAD"],
             cwd=clone,
             check=True,
         )
@@ -196,7 +206,28 @@ class TestNewestMcpSha:
         clone = tmp_path / "ci-checkout"
         subprocess.run(["git", "clone", "-q", str(ROOT), str(clone)], check=True)
         subprocess.run(
-            ["git", "update-ref", "-d", "refs/remotes/origin/HEAD"],
+            ["git", "update-ref", "--no-deref", "refs/remotes/origin/HEAD", "HEAD"],
+            cwd=clone,
+            check=True,
+        )
+        assert subprocess.run(
+            ["git", "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"],
+            cwd=clone,
+            check=False,
+            capture_output=True,
+        ).returncode != 0
+        assert subprocess.check_output(
+            ["git", "rev-parse", "--verify", "refs/remotes/origin/HEAD^{commit}"],
+            cwd=clone,
+            text=True,
+        ).strip() == subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=clone, text=True,
+        ).strip()
+        assert subprocess.check_output(
+            ["git", "remote", "get-url", "origin"], cwd=clone, text=True,
+        ).strip() == str(ROOT)
+        subprocess.run(
+            ["git", "update-ref", "--no-deref", "-d", "refs/remotes/origin/HEAD"],
             cwd=clone,
             check=True,
         )
@@ -204,6 +235,7 @@ class TestNewestMcpSha:
             ["git", "rev-parse", "--verify", "refs/remotes/origin/HEAD^{commit}"],
             cwd=clone,
             check=False,
+            capture_output=True,
         ).returncode != 0
         expected = subprocess.check_output(
             ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/"],
@@ -212,6 +244,21 @@ class TestNewestMcpSha:
         ).strip()
 
         assert newest_mcp_sha(clone) == expected
+
+    def test_uses_checked_out_history_when_origin_is_unavailable(self, tmp_path: Path) -> None:
+        clone = tmp_path / "no-origin-checkout"
+        subprocess.run(["git", "clone", "-q", str(ROOT), str(clone)], check=True)
+        subprocess.run(["git", "remote", "remove", "origin"], cwd=clone, check=True)
+        subprocess.run(
+            ["git", "update-ref", "--no-deref", "-d", "refs/remotes/origin/HEAD"],
+            cwd=clone,
+            check=True,
+        )
+        assert subprocess.check_output(
+            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/"],
+            cwd=clone,
+            text=True,
+        ).strip() == newest_mcp_sha(clone)
 
     def test_shallow_clone_cannot_derive_a_passing_expected_revision(
         self, tmp_path: Path,
