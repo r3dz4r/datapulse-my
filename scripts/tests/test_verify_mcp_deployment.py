@@ -3,12 +3,102 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+import subprocess
 from typing import Any
 
 import pytest
+import yaml
 
 from scripts.verify_mcp_deployment import extract_deployed_sha, recorded_sha
+
+
+ROOT = Path(__file__).resolve().parents[2]
+WORKFLOW = ROOT / ".github/workflows/provenance-drift.yml"
+
+
+def _provenance_workflow() -> dict[str, Any]:
+    return yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+
+
+def test_provenance_workflow_audits_default_branch_without_pr_or_push_gate() -> None:
+    workflow = _provenance_workflow()
+    # PyYAML's YAML 1.1 loader treats the Actions key 'on' as True.
+    triggers = workflow[True]
+    assert set(triggers) == {"schedule", "workflow_dispatch"}
+    assert triggers["schedule"] == [{"cron": "17 * * * *"}]
+    assert workflow["permissions"] == {"contents": "read"}
+    assert workflow["concurrency"] == {
+        "group": "provenance-drift", "cancel-in-progress": False,
+    }
+    job = workflow["jobs"]["provenance"]
+    assert job["if"] == "github.ref == format('refs/heads/{0}', github.event.repository.default_branch)"
+    assert job["timeout-minutes"] == 5
+    assert job["permissions"] == {"contents": "read", "issues": "write"}
+    checkout, verify, notify = job["steps"]
+    assert checkout["with"]["ref"] == "${{ github.event.repository.default_branch }}"
+    assert verify["id"] == "verify"
+    assert verify["env"]["MCP_ENDPOINT"] == "https://mcp.data-pulse.my/mcp"
+    assert 'python3 scripts/verify_mcp_deployment.py' in verify["run"]
+    assert '--repo-path "$GITHUB_WORKSPACE"' in verify["run"]
+    assert "continue-on-error" not in verify
+    assert notify["if"] == "failure() && steps.verify.outputs.exit_code == '1'"
+    assert notify["uses"] == "actions/github-script@v7"
+    script = notify["with"]["script"]
+    assert "@${context.repo.owner}" in script
+    assert "github.rest.issues.listForRepo" in script
+    assert "creator: 'github-actions[bot]'" in script
+    assert "!issue.pull_request && issue.title === title" in script
+    assert "github.rest.issues.update" in script
+    assert "github.rest.issues.create" in script
+    assert "actions/runs/${context.runId}" in script
+
+
+@pytest.mark.parametrize(
+    ("verifier_status", "gate_status", "annotation"),
+    [(0, 0, ""), (1, 1, "::error"), (2, 0, "::warning"), (7, 7, "::error")],
+)
+def test_provenance_gate_preserves_mismatch_and_skips_unreachable(
+    tmp_path: Path, verifier_status: int, gate_status: int, annotation: str,
+) -> None:
+    verify = _provenance_workflow()["jobs"]["provenance"]["steps"][1]
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    python = fake_bin / "python3"
+    python.write_text(
+        f"#!/bin/bash\nprintf 'verifier evidence\\n'\nexit {verifier_status}\n",
+        encoding="utf-8",
+    )
+    python.chmod(0o755)
+    output = tmp_path / "output"
+    summary = tmp_path / "summary"
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", verify["run"]],
+        cwd=ROOT,
+        env={
+            **os.environ,
+            **verify["env"],
+            "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
+            "GITHUB_WORKSPACE": str(ROOT),
+            "RUNNER_TEMP": str(tmp_path),
+            "GITHUB_OUTPUT": str(output),
+            "GITHUB_STEP_SUMMARY": str(summary),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=10,
+    )
+    assert result.returncode == gate_status, result.stdout + result.stderr
+    assert output.read_text(encoding="utf-8") == f"exit_code={verifier_status}\n"
+    assert "verifier evidence" in result.stdout
+    assert "verifier evidence" in summary.read_text(encoding="utf-8")
+    if annotation:
+        assert annotation in result.stdout
+    if verifier_status == 2:
+        assert "::error" not in result.stdout
+        assert "no mismatch established" in result.stdout
 
 
 class TestExtractDeployedSha:
