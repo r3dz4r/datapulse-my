@@ -14,6 +14,19 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.43.4](https://github.com/r3dz4r/datapulse-my/compare/v3.43.3...v3.43.4) (2026-09-30)
+
+
+### Bug Fixes
+
+* **mcp:** align recorded source stamp ([1a81df5](https://github.com/r3dz4r/datapulse-my/commit/1a81df54975485373534fde024770507cde16dd5))
+* **provenance:** derive MCP revision from history ([7951d02](https://github.com/r3dz4r/datapulse-my/commit/7951d02e1161fdb16cc50ed336f454213de76fa7))
+* **provenance:** derive the expected MCP revision from history, not a remembered stamp ([4f5b02e](https://github.com/r3dz4r/datapulse-my/commit/4f5b02e7ba2be66ec657f3571785cdab18e706e0))
+* **provenance:** fall back to checked-out MCP history ([b08edf9](https://github.com/r3dz4r/datapulse-my/commit/b08edf9c62475da421680b23e235d1b110f549e0))
+* **provenance:** recover dangling default refs ([5ef7cb0](https://github.com/r3dz4r/datapulse-my/commit/5ef7cb0226ca6be209ced07393bdd19da4b057ef))
+* **provenance:** resolve default branch without origin HEAD ([87dac36](https://github.com/r3dz4r/datapulse-my/commit/87dac36676ab3f6806deddf0a492c275cc3c4d54))
+* **test:** assert the verifier's derived revision, not the recorded stamp ([2620ed8](https://github.com/r3dz4r/datapulse-my/commit/2620ed84e541edf36637f681ef5d36b2c3153ff9))
+
 ## [3.43.3](https://github.com/r3dz4r/datapulse-my/compare/v3.43.2...v3.43.3) (2026-09-30)
 
 
