@@ -26,22 +26,27 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
+          # The expected revision is the newest mcp/ commit, which may predate
+          # the checkout tip; a shallow history could produce a false match.
+          fetch-depth: 0
 
-      - name: Compare recorded and served MCP provenance
+      - name: Compare expected and served MCP provenance
         id: verify
         shell: bash
         env:
           MCP_ENDPOINT: https://mcp.data-pulse.my/mcp
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
           status=0
           python3 scripts/verify_mcp_deployment.py \
             --repo-path "$GITHUB_WORKSPACE" \
+            --default-branch "$DEFAULT_BRANCH" \
             --endpoint "$MCP_ENDPOINT" > "$RUNNER_TEMP/provenance-drift.txt" 2>&1 || status=$?
           cat "$RUNNER_TEMP/provenance-drift.txt"
           printf 'exit_code=%s\n' "$status" >> "$GITHUB_OUTPUT"
           {
-            echo '### Recorded versus served MCP provenance'
+            echo '### Expected versus served MCP provenance'
             printf 'Verifier exit code: %s\n\n' "$status"
             echo '```text'
             cat "$RUNNER_TEMP/provenance-drift.txt"
@@ -50,7 +55,7 @@ jobs:
           case "$status" in
             0) exit 0 ;;
             1)
-              echo '::error title=MCP provenance mismatch::The served source differs from the recorded mcp.json stamp.'
+              echo '::error title=MCP provenance mismatch::The served source differs from the newest mcp/ revision on the default branch.'
               exit 1
               ;;
             2)
@@ -71,11 +76,11 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const title = 'MCP recorded-versus-served provenance drift';
+            const title = 'MCP expected-versus-served provenance drift';
             const evidence = fs.readFileSync(`${process.env.RUNNER_TEMP}/provenance-drift.txt`, 'utf8');
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const body = [
-              `@${context.repo.owner} the live MCP source differs from the recorded default-branch mcp.json stamp.`,
+              `@${context.repo.owner} the live MCP source differs from the newest mcp/ revision on the default branch.`,
               '',
               `Latest check: ${runUrl}`,
               '',
