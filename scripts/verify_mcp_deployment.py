@@ -68,6 +68,10 @@ def default_branch_ref(repo_path: Path, default_branch: str | None = None) -> st
         return _remote_default_branch_revision(repo_path)
     if not ref.startswith("refs/remotes/origin/"):
         raise RepositoryHistoryError(f"origin default branch has unexpected ref {ref!r}")
+    try:
+        _git(repo_path, "rev-parse", "--verify", f"{ref}^{{commit}}")
+    except RepositoryHistoryError:
+        return _remote_default_branch_revision(repo_path, expected_ref=ref)
     return ref
 
 

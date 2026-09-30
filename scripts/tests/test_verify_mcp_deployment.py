@@ -190,6 +190,29 @@ class TestNewestMcpSha:
 
         assert newest_mcp_sha(clone) == expected
 
+    def test_derives_default_branch_when_origin_head_target_is_absent(
+        self, tmp_path: Path,
+    ) -> None:
+        clone = tmp_path / "ci-checkout"
+        subprocess.run(["git", "clone", "-q", str(ROOT), str(clone)], check=True)
+        subprocess.run(
+            ["git", "update-ref", "-d", "refs/remotes/origin/HEAD"],
+            cwd=clone,
+            check=True,
+        )
+        assert subprocess.run(
+            ["git", "rev-parse", "--verify", "refs/remotes/origin/HEAD^{commit}"],
+            cwd=clone,
+            check=False,
+        ).returncode != 0
+        expected = subprocess.check_output(
+            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/"],
+            cwd=clone,
+            text=True,
+        ).strip()
+
+        assert newest_mcp_sha(clone) == expected
+
     def test_shallow_clone_cannot_derive_a_passing_expected_revision(
         self, tmp_path: Path,
     ) -> None:
