@@ -8,8 +8,84 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/publish_health_index.py"
+
+
+def test_namespace_override_routes_all_seven_keys_without_changing_payloads(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+    preview = "a" * 32
+    monkeypatch.setenv("DATAPULSE_KV_NAMESPACE_ID", preview)
+    monkeypatch.setattr(module, "resolve_account_id", lambda *_args: "account")
+    requests = []
+
+    def request(method, url, token, body=None, allowed_statuses=()):
+        requests.append((method, url, body))
+        return (404, b"") if method == "GET" else (200, b"{}")
+
+    monkeypatch.setattr(module, "request_bytes", request)
+    payloads = module.health_payloads(health)
+    assert module.publish_unchanged_aware("https://api.test", "test-token", payloads) == (7, 0)
+    assert len(requests) == 14
+    assert all(f"/namespaces/{preview}/values/" in url for _, url, _ in requests)
+    assert [body for method, _, body in requests if method == "PUT"] == list(payloads.values())
+    monkeypatch.delenv("DATAPULSE_KV_NAMESPACE_ID")
+    assert f"/namespaces/{module.NAMESPACE_ID}/" in module.key_url("https://api.test", "account", module.KEY)
+
+
+@pytest.mark.parametrize("namespace", ["", "abc", "../production", "g" * 32])
+def test_explicit_invalid_namespace_never_falls_back_to_production(
+    monkeypatch: pytest.MonkeyPatch, namespace: str,
+) -> None:
+    module = _module()
+    monkeypatch.setenv("DATAPULSE_KV_NAMESPACE_ID", namespace)
+    with pytest.raises(module.PublishError, match="namespace"):
+        module.key_url("https://api.test", "account", module.KEY)
+
+
+def test_oversized_artifact_compacts_without_changing_data_or_keys(monkeypatch, tmp_path: Path) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+    history = tmp_path / "history_daily.json"
+    history.write_text(json.dumps({"datasets": ["sample"]}) + " " * 4096)
+    monkeypatch.setattr(module, "MAX_KV_VALUE_BYTES", 2048, raising=False)
+
+    payloads = module.health_payloads(health)
+
+    assert len(payloads) == 7
+    assert all(len(payload) <= 2048 for payload in payloads.values())
+    for name in module.HEALTH_ARTIFACTS:
+        original = (tmp_path / name).read_bytes()
+        assert json.loads(payloads[f"health/{name}"]) == json.loads(original)
+        if name != "history_daily.json":
+            assert payloads[f"health/{name}"] == original
+    compact = payloads["health/history_daily.json"]
+    assert json.loads(payloads[module.KEY])[module.ARTIFACTS_FIELD]["health/history_daily.json"] == {
+        "sha256": hashlib.sha256(compact).hexdigest(), "bytes": len(compact),
+    }
+    assert payloads == module.health_payloads(health)
+
+
+def test_artifact_still_over_kv_limit_fails_before_network(monkeypatch, tmp_path: Path, capsys) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+    (tmp_path / "history_daily.json").write_text(json.dumps({"large": "x" * 4096}))
+    monkeypatch.setattr(module, "MAX_KV_VALUE_BYTES", 2048, raising=False)
+
+    def no_network(*args):
+        raise AssertionError("oversized values must fail before credential lookup or network I/O")
+
+    monkeypatch.setattr(module, "read_token", no_network)
+    assert module.main(["--health", str(health)]) == 1
+    assert "health/history_daily.json exceeds KV value limit" in capsys.readouterr().err
 
 
 def _module() -> ModuleType:

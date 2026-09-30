@@ -502,6 +502,41 @@ jobs:
             --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
             --source-commit "$GITHUB_SHA"
 
+      - name: Publish health artifacts to isolated preview KV
+        env:
+          # Requires Workers KV Storage Write on the deployment account.
+          DATAPULSE_KV_WRITE: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DATAPULSE_KV_PUBLICATION_STATE: ${{ runner.temp }}/preview-health-kv-${{ github.run_id }}-${{ github.run_attempt }}.json
+        run: |
+          set -Eeuo pipefail
+          # Reuse the VPS publisher and its complete key set, but target only
+          # the preview binding. Never fall back to the production namespace.
+          DATAPULSE_KV_NAMESPACE_ID="$(python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import tomllib
+
+          config = tomllib.loads(Path("wrangler.toml").read_text())
+
+          def namespace(section: dict) -> str:
+              matches = [item["id"] for item in section["kv_namespaces"]
+                         if item.get("binding") == "DATAPULSE_HEALTH_INDEX"]
+              if len(matches) != 1 or re.fullmatch(r"[0-9a-f]{32}", matches[0]) is None:
+                  raise SystemExit("Missing or invalid health KV namespace")
+              return matches[0]
+
+          preview = namespace(config["env"]["preview"])
+          if preview in {namespace(config), namespace(config["env"]["production"])}:
+              raise SystemExit("Preview health KV must be isolated from production")
+          print(preview)
+          PY
+          )"
+          export DATAPULSE_KV_NAMESPACE_ID
+          # The Pages size guard can exclude history_daily.json from _site.
+          # Publish the complete source set, tied to the assembled snapshot.
+          cmp health/latest.json _site/health/latest.json
+          python3 scripts/publish_health_index.py --health health/latest.json
+
       - name: Deploy isolated Cloudflare Pages preview artifact
         id: deploy_preview
         env:

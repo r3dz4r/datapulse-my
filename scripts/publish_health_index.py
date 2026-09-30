@@ -16,6 +16,7 @@ import http.client
 import json
 import math
 import os
+import re
 import signal
 import sys
 import tempfile
@@ -33,6 +34,7 @@ ACCOUNT_ID_PREFIX = "525ef763"
 NAMESPACE_ID = "043b3f20337f4744a21de947f35c67f0"
 DEFAULT_API_BASE = "https://api.cloudflare.com/client/v4"
 KEY = "health-index.json"
+MAX_KV_VALUE_BYTES = 25 * 1024 * 1024
 VERIFY_KEY = "health-index.test.json"
 HEALTH_ARTIFACTS = (
     "latest.json",
@@ -307,7 +309,12 @@ def resolve_account_id(api_base: str, token: str) -> str:
 
 def key_url(api_base: str, account_id: str, key: str) -> str:
     """Return the verified Cloudflare KV value endpoint for one key."""
-    return f"{api_base.rstrip('/')}/accounts/{account_id}/storage/kv/namespaces/{NAMESPACE_ID}/values/{quote(key, safe='')}"
+    # The VPS keeps its production default; preview publication explicitly
+    # injects the isolated namespace selected from wrangler.toml.
+    namespace = os.environ.get("DATAPULSE_KV_NAMESPACE_ID", NAMESPACE_ID)
+    if re.fullmatch(r"[0-9a-f]{32}", namespace) is None:
+        raise PublishError("KV namespace must be a 32-character lowercase hexadecimal ID")
+    return f"{api_base.rstrip('/')}/accounts/{account_id}/storage/kv/namespaces/{namespace}/values/{quote(key, safe='')}"
 
 
 def read_value(api_base: str, account_id: str, token: str, key: str) -> bytes | None:
@@ -330,14 +337,25 @@ def publish(api_base: str, token: str, key: str, payload: bytes) -> int:
     return publish_value(api_base, account_id, token, key, payload)
 
 
+def _bounded_kv_payload(key: str, payload: bytes) -> bytes:
+    """Compact oversized JSON without dropping data; reject values KV cannot hold."""
+    if len(payload) > MAX_KV_VALUE_BYTES:
+        payload = json.dumps(
+            json.loads(payload), ensure_ascii=False, separators=(",", ":")
+        ).encode("utf-8")
+    if len(payload) > MAX_KV_VALUE_BYTES:
+        raise PublishError(f"{key} exceeds KV value limit after JSON compaction")
+    return payload
+
+
 def health_payloads(health_path: Path) -> dict[str, bytes]:
     """Return the dashboard projection and every health artifact keyed by URL path."""
     health_dir = health_path.parent
     artifacts = {
-        f"health/{name}": (health_dir / name).read_bytes()
+        f"health/{name}": _bounded_kv_payload(f"health/{name}", (health_dir / name).read_bytes())
         for name in HEALTH_ARTIFACTS
     }
-    payloads = {KEY: build_projection(health_path, artifacts), **artifacts}
+    payloads = {KEY: _bounded_kv_payload(KEY, build_projection(health_path, artifacts)), **artifacts}
     return payloads
 
 
