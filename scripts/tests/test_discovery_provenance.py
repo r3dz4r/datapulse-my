@@ -21,16 +21,16 @@ def _agent_commit_sha(path: Path) -> str:
 
 
 def _assert_agent_identity(root: Path, agent_path: Path) -> None:
-    """Reject an agent manifest whose source SHA differs from server.py."""
-    expected_sha = gen_mcp_reference._checked_in_server_marker(root)
+    """Reject an agent manifest that does not follow MCP history."""
+    expected_sha, _ = gen_mcp_reference._source_identity(root, None, None)
     actual_sha = _agent_commit_sha(agent_path)
     assert actual_sha == expected_sha, (
         f"agent.json source.commit_sha ({actual_sha}) differs from "
-        f"mcp/server.py SOURCE_COMMIT_SHA ({expected_sha})"
+        f"the derived newest mcp/ revision ({expected_sha})"
     )
 
 
-def test_agent_manifest_commit_sha_matches_server_marker() -> None:
+def test_agent_manifest_commit_sha_matches_derived_mcp_revision() -> None:
     _assert_agent_identity(ROOT, ROOT / "agent.json")
 
 
@@ -42,7 +42,6 @@ def test_discovery_artifacts_are_byte_identical_to_regeneration(
         relative: (ROOT / relative).read_text(encoding="utf-8")
         for relative in DISCOVERY_ARTIFACTS
     }
-    agent = json.loads(committed["agent.json"])
     rendered: dict[Path, str] = {}
 
     def capture_outputs(outputs: dict[Path, str], *, check: bool = False) -> bool:
@@ -55,8 +54,6 @@ def test_discovery_artifacts_are_byte_identical_to_regeneration(
     asyncio.run(
         gen_mcp_reference.generate(
             ROOT,
-            source_sha=gen_mcp_reference._checked_in_server_marker(ROOT),
-            source_date=agent["source"]["commit_date"],
         )
     )
 

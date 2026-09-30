@@ -22,55 +22,6 @@ ROOT = Path(__file__).resolve().parents[2]
 SYNC_SCRIPT = ROOT / "scripts/sync_mcp_deployment.sh"
 
 
-@pytest.fixture
-def stamped_repo(tmp_path: Path) -> tuple[Path, str]:
-    repo = tmp_path / "repo"
-    (repo / "mcp").mkdir(parents=True)
-    (repo / "scripts").mkdir()
-    shutil.copy2(
-        ROOT / "scripts/bump_mcp_source_version.py",
-        repo / "scripts/bump_mcp_source_version.py",
-    )
-    (repo / "mcp/server.py").write_text(
-        'import os\n'
-        'SOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "dev")\n'
-        'SOURCE_COMMIT_DATE = os.getenv("DATAPULSE_MCP_SOURCE_DATE", "unreleased")\n',
-        encoding="utf-8",
-    )
-    (repo / "mcp.json").write_text(
-        json.dumps(
-            {
-                "server": {
-                    "source_commit_sha": "REPLACE_ME_AT_RELEASE",
-                    "source_commit_date": "REPLACE_ME_AT_RELEASE",
-                }
-            }
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
-    subprocess.run(
-        ["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True
-    )
-    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
-    subprocess.run(["git", "add", "."], cwd=repo, check=True)
-    subprocess.run(
-        ["git", "commit", "-q", "-m", "fixture"],
-        cwd=repo,
-        check=True,
-        env={
-            **os.environ,
-            "GIT_AUTHOR_DATE": "2026-08-09T00:00:00+08:00",
-            "GIT_COMMITTER_DATE": "2026-08-09T00:00:00+08:00",
-        },
-    )
-    sha = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
-    ).strip()
-    return repo, sha
-
-
 def test_server_py_exposes_source_commit_sha() -> None:
     server_source = (ROOT / "mcp/server.py").read_text(encoding="utf-8")
 
@@ -84,26 +35,17 @@ def test_mcp_json_includes_source_commit_sha_field() -> None:
     assert "source_commit_sha" in discovery["server"]
 
 
-def test_bump_script_stamps_server_py(stamped_repo: tuple[Path, str]) -> None:
-    repo, sha = stamped_repo
-
-    subprocess.run(
-        ["python3", "scripts/bump_mcp_source_version.py"], cwd=repo, check=True
+def test_bump_script_refuses_manual_stamping() -> None:
+    result = subprocess.run(
+        ["python3", "scripts/bump_mcp_source_version.py"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
-    server_source = (repo / "mcp/server.py").read_text(encoding="utf-8")
-    assert f'os.getenv("DATAPULSE_MCP_SOURCE_SHA", "{sha}")' in server_source
-
-
-def test_bump_script_stamps_mcp_json(stamped_repo: tuple[Path, str]) -> None:
-    repo, sha = stamped_repo
-
-    subprocess.run(
-        ["python3", "scripts/bump_mcp_source_version.py"], cwd=repo, check=True
-    )
-
-    discovery = json.loads((repo / "mcp.json").read_text(encoding="utf-8"))
-    assert discovery["server"]["source_commit_sha"] == sha
+    assert result.returncode != 0
+    assert "refusing manual MCP source stamping" in result.stderr
 
 
 def test_verify_script_detects_mismatch() -> None:
@@ -211,7 +153,7 @@ def test_verify_script_detects_mismatch() -> None:
     assert "matches newest mcp/ revision" in match.stdout
 
 
-def test_release_build_profile_includes_bump_step() -> None:
+def test_release_build_profile_omits_retired_bump_step() -> None:
     listed = subprocess.run(
         ["bash", "scripts/generate.sh", "release-build", "--list"],
         cwd=ROOT,
@@ -220,7 +162,7 @@ def test_release_build_profile_includes_bump_step() -> None:
         check=True,
     )
 
-    assert "0. python3 scripts/bump_mcp_source_version.py" in listed.stdout
+    assert "bump_mcp_source_version.py" not in listed.stdout
 
 
 def test_service_like_server_import_resolves_repository_scripts(tmp_path: Path) -> None:

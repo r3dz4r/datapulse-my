@@ -134,7 +134,6 @@ case "$profile" in
   release-build)
     description="$(profile_description "$profile")"
     generators=(
-      "bump_mcp_source_version.py"
       "gen_readme.py"
       "public_surface_preflight"
       "stamp_manifest_origin.py"
@@ -168,7 +167,6 @@ case "$profile" in
       "gen_site_nav.py"
     )
     outputs=(
-      "mcp/server.py source identity and mcp.json provenance"
       "README.md (dataset counts and trust-summary block)"
       "validation only (config, schemas, source identity, and all P5A markers)"
       'datapulse.json $schema canonical origin stamp'

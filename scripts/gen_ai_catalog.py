@@ -9,12 +9,17 @@ import json
 import logging
 import os
 import re
-import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from scripts.verify_mcp_deployment import RepositoryHistoryError, newest_mcp_sha
+
+
 LOGGER = logging.getLogger(__name__)
 CATALOG_VERSION = "1.0.0"
 ARD_SPEC_VERSION = "0.91"
@@ -71,18 +76,12 @@ def _read_object(path: Path) -> dict[str, Any]:
     return value
 
 
-def _source_commit_sha(root: Path, mcp: dict[str, Any]) -> str:
-    result = subprocess.run(
-        ["git", "-C", str(root), "rev-parse", "HEAD"], text=True, capture_output=True, check=False
-    )
-    if result.returncode == 0 and re.fullmatch(r"[0-9a-f]{40}", result.stdout.strip()):
-        return result.stdout.strip()
-    # Fixtures are deliberately not git worktrees; retain a pinned advertised source there.
-    server = mcp.get("server")
-    fallback = server.get("source_commit_sha") if isinstance(server, dict) else None
-    if isinstance(fallback, str) and re.fullmatch(r"[0-9a-f]{40}", fallback):
-        return fallback
-    raise ValueError(f"could not resolve source commit SHA for {root}")
+def _source_commit_sha(root: Path) -> str:
+    """Use the deployment check's default-branch MCP revision derivation."""
+    try:
+        return newest_mcp_sha(root)
+    except RepositoryHistoryError as error:
+        raise ValueError(f"could not derive source commit SHA for {root}: {error}") from error
 
 
 def _tools(mcp: dict[str, Any]) -> list[dict[str, Any]]:
@@ -166,7 +165,7 @@ def build_outputs(root: Path) -> tuple[bytes, dict[str, bytes]]:
         raise ValueError("datapulse.json must contain a datasets array")
     tools = _tools(mcp)
     representative_query_corpus = _representative_query_corpus(root, tools)
-    source_commit_sha = _source_commit_sha(root, mcp)
+    source_commit_sha = _source_commit_sha(root)
     entries: list[dict[str, Any]] = []
     cards: dict[str, bytes] = {}
     for tool in tools:
