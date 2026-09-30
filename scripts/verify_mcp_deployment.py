@@ -57,12 +57,45 @@ def default_branch_ref(repo_path: Path, default_branch: str | None = None) -> st
     """Return the default branch ref without guessing from the current HEAD."""
     if default_branch is not None:
         ref = f"refs/remotes/origin/{default_branch}"
-        _git(repo_path, "rev-parse", "--verify", f"{ref}^{{commit}}")
+        try:
+            _git(repo_path, "rev-parse", "--verify", f"{ref}^{{commit}}")
+        except RepositoryHistoryError:
+            return _remote_default_branch_revision(repo_path, expected_ref=ref)
         return ref
-    ref = _git(repo_path, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD")
+    try:
+        ref = _git(repo_path, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD")
+    except RepositoryHistoryError:
+        return _remote_default_branch_revision(repo_path)
     if not ref.startswith("refs/remotes/origin/"):
         raise RepositoryHistoryError(f"origin default branch has unexpected ref {ref!r}")
     return ref
+
+
+def _remote_default_branch_revision(
+    repo_path: Path, *, expected_ref: str | None = None,
+) -> str:
+    """Resolve the remote's advertised default branch when its local symref is absent."""
+    advertised = _git(repo_path, "ls-remote", "--symref", "origin", "HEAD").splitlines()
+    try:
+        symbolic, revision = advertised[:2]
+        advertised_ref, symbolic_name = symbolic.removeprefix("ref: ").split("\t", 1)
+        advertised_sha, revision_name = revision.split("\t", 1)
+    except ValueError as error:
+        raise RepositoryHistoryError("origin did not advertise a default branch") from error
+    if symbolic_name != "HEAD" or revision_name != "HEAD":
+        raise RepositoryHistoryError("origin default branch advertisement is malformed")
+    branch = advertised_ref.split("/", 2)[-1]
+    ref = f"refs/remotes/origin/{branch}"
+    if expected_ref is not None and ref != expected_ref:
+        raise RepositoryHistoryError(
+            f"origin default branch {ref!r} differs from requested {expected_ref!r}"
+        )
+    try:
+        _git(repo_path, "rev-parse", "--verify", f"{ref}^{{commit}}")
+        return ref
+    except RepositoryHistoryError:
+        _git(repo_path, "rev-parse", "--verify", f"{advertised_sha}^{{commit}}")
+        return advertised_sha
 
 
 def newest_mcp_sha(repo_path: Path, default_branch: str | None = None) -> str:
