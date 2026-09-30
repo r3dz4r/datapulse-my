@@ -14,6 +14,16 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.43.3](https://github.com/r3dz4r/datapulse-my/compare/v3.43.2...v3.43.3) (2026-09-30)
+
+
+### Bug Fixes
+
+* **discovery:** regenerate agent.json for the corrected source stamp ([10f91b6](https://github.com/r3dz4r/datapulse-my/commit/10f91b694a2858d17cf5c621918999a36f8d8ee1))
+* **mcp:** align deployed source stamp ([400a6b1](https://github.com/r3dz4r/datapulse-my/commit/400a6b121d03a40fb1d83c0353ae328b3927ea39))
+* **mcp:** align recorded deployed provenance ([2022a7e](https://github.com/r3dz4r/datapulse-my/commit/2022a7eabb5bfc6c615273e8156109e1246e84b8))
+* **mcp:** align recorded provenance with the served build, and audit it ([ad00787](https://github.com/r3dz4r/datapulse-my/commit/ad007878fb1e2171fb961ea8f1fc87c98554015d))
+
 ## [3.43.2](https://github.com/r3dz4r/datapulse-my/compare/v3.43.1...v3.43.2) (2026-09-30)
 
 
