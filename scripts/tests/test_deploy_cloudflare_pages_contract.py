@@ -29,6 +29,60 @@ def _served_verifier() -> str:
     return SERVED_VERIFIER.read_text(encoding="utf-8")
 
 
+def _preview_seed_step() -> dict:
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    names = [step.get("name") for step in steps]
+    name = "Publish health artifacts to isolated preview KV"
+    assert name in names
+    assert names.index("Verify release artifact before preview deployment") < names.index(name)
+    assert names.index(name) < names.index("Deploy isolated Cloudflare Pages preview artifact")
+    return steps[names.index(name)]
+
+
+def test_preview_kv_publication_uses_existing_writer_and_fails_closed() -> None:
+    step = _preview_seed_step()
+    assert "if" not in step and "continue-on-error" not in step
+    assert step["env"]["DATAPULSE_KV_WRITE"] == "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+    assert 'python3 scripts/publish_health_index.py --health health/latest.json' in step["run"]
+    assert 'DATAPULSE_KV_PUBLICATION_STATE' in step["env"]
+
+
+@pytest.mark.parametrize("config_case", ["isolated", "production", "default", "missing", "snapshot_mismatch"])
+@pytest.mark.parametrize("publisher_status", [0, 2])
+def test_preview_kv_step_selects_configured_namespace_and_propagates_errors(
+    tmp_path: Path, config_case: str, publisher_status: int,
+) -> None:
+    step = _preview_seed_step()
+    production, default, preview = "1" * 32, "2" * 32, "3" * 32
+    selected = {"production": production, "default": default}.get(config_case, preview)
+    config = (
+        '[[kv_namespaces]]\nbinding="DATAPULSE_HEALTH_INDEX"\nid="' + default + '"\n'
+        '[[env.production.kv_namespaces]]\nbinding="DATAPULSE_HEALTH_INDEX"\nid="' + production + '"\n'
+    )
+    if config_case != "missing":
+        config += '[[env.preview.kv_namespaces]]\nbinding="DATAPULSE_HEALTH_INDEX"\nid="' + selected + '"\n'
+    (tmp_path / "wrangler.toml").write_text(config)
+    for directory in ("health", "_site/health"):
+        (tmp_path / directory).mkdir(parents=True)
+        (tmp_path / directory / "latest.json").write_text('{"datasets": []}')
+    if config_case == "snapshot_mismatch":
+        (tmp_path / "_site/health/latest.json").write_text('{"datasets": [1]}')
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts/publish_health_index.py").write_text(
+        "import json, os, pathlib, sys\n"
+        "pathlib.Path('publication.json').write_text(json.dumps([os.environ['DATAPULSE_KV_NAMESPACE_ID'], sys.argv[1:]]))\n"
+        f"raise SystemExit({publisher_status})\n"
+    )
+    result = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, capture_output=True, text=True)
+    publication = tmp_path / "publication.json"
+    if config_case == "isolated":
+        assert result.returncode == publisher_status, result.stderr
+        assert json.loads(publication.read_text()) == [preview, ["--health", "health/latest.json"]]
+    else:
+        assert result.returncode != 0
+        assert not publication.exists()
+
+
 def _classifies_as_health_only(paths: tuple[str, ...]) -> bool:
     return is_health_only_change(paths)
 
