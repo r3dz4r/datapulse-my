@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import os
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 import subprocess
-from typing import Any
+from typing import Any, Iterator
 
 import pytest
 import yaml
@@ -19,6 +22,109 @@ from scripts.verify_mcp_deployment import (
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/provenance-drift.yml"
+VERIFY_SCRIPT = ROOT / "scripts/verify_mcp_deployment.py"
+
+
+@pytest.fixture
+def mock_mcp_endpoint() -> Iterator[tuple[str, type[BaseHTTPRequestHandler]]]:
+    """Serve the production handshake shape locally for verifier CLI tests."""
+
+    class MockMCPHandler(BaseHTTPRequestHandler):
+        source_commit_sha = "0" * 40
+
+        def do_POST(self) -> None:  # noqa: N802
+            content_length = int(self.headers.get("Content-Length", "0"))
+            request = json.loads(self.rfile.read(content_length))
+            assert self.headers["Accept"] == "application/json, text/event-stream"
+            method = request["method"]
+            if method == "initialize":
+                body: dict[str, Any] | None = {
+                    "jsonrpc": "2.0",
+                    "id": request["id"],
+                    "result": {
+                        "protocolVersion": "2025-03-26",
+                        "capabilities": {},
+                        "serverInfo": {
+                            "name": "DataPulse MY",
+                            "version": "v3.4.7+0000000",
+                            "source_commit_sha": self.source_commit_sha,
+                            "source_commit_date": "2026-08-09",
+                        },
+                    },
+                }
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Mcp-Session-Id", "test-session")
+            elif method == "notifications/initialized":
+                body = None
+                self.send_response(202)
+            else:
+                body = {
+                    "jsonrpc": "2.0",
+                    "id": request["id"],
+                    "result": {"tools": []},
+                }
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+            encoded = b"" if body is None else json.dumps(body).encode("utf-8")
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+
+        def log_message(self, format: str, *args: object) -> None:
+            return
+
+    server = HTTPServer(("127.0.0.1", 0), MockMCPHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}/mcp", MockMCPHandler
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def _run_verifier(endpoint: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["python3", str(VERIFY_SCRIPT), "--endpoint", endpoint],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=10,
+    )
+
+
+def test_verify_cli_reports_match_from_loopback_marker(
+    mock_mcp_endpoint: tuple[str, type[BaseHTTPRequestHandler]],
+) -> None:
+    endpoint, handler = mock_mcp_endpoint
+    handler.source_commit_sha = newest_mcp_sha(ROOT)  # type: ignore[attr-defined]
+
+    result = _run_verifier(endpoint)
+
+    assert result.returncode == 0
+    assert "OK: deployed" in result.stdout
+    assert "matches deployed MCP code revision" in result.stdout
+
+
+def test_verify_cli_reports_mismatch_from_loopback_marker(
+    mock_mcp_endpoint: tuple[str, type[BaseHTTPRequestHandler]],
+) -> None:
+    endpoint, _ = mock_mcp_endpoint
+
+    result = _run_verifier(endpoint)
+
+    assert result.returncode == 1
+    assert "MISMATCH: deployed=" in result.stdout
+
+
+def test_verify_cli_reports_unreachable_loopback_endpoint() -> None:
+    result = _run_verifier("http://127.0.0.1:1/mcp")
+
+    assert result.returncode == 2
+    assert "UNREACHABLE:" in result.stdout
 
 
 def _provenance_workflow() -> dict[str, Any]:
