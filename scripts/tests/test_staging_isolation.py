@@ -27,6 +27,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WRANGLER_CONFIG = ROOT / "wrangler.toml"
 WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
+PR_PREVIEW_WORKFLOW = ROOT / ".github/workflows/preview-verify.yml"
 
 BINDING = "DATAPULSE_HEALTH_INDEX"
 STAGING_NAMESPACE = "DATAPULSE_HEALTH_INDEX_STAGING"
@@ -138,3 +139,43 @@ def test_production_deploy_is_gated_on_the_staging_deploy() -> None:
 
     # The production branch itself is unchanged by this isolation work.
     assert "--branch=main" in production["run"]
+
+
+def test_pull_request_preview_workflow_cannot_deploy_to_production(
+    tmp_path: Path,
+) -> None:
+    """The independent PR rehearsal must have no production deployment route."""
+
+    workflow_text = PR_PREVIEW_WORKFLOW.read_text(encoding="utf-8")
+
+    def assert_isolated(text: str) -> None:
+        workflow = yaml.safe_load(text)
+        triggers = workflow.get("on", workflow.get(True, {}))
+        assert "pull_request" in triggers
+        assert "DATAPULSE_HEALTH_INDEX" not in text, (
+            "PR preview workflow must not reference the production KV namespace"
+        )
+        assert "--branch=main" not in text
+        assert "--branch=production" not in text
+        assert "datapulse-p4b-preview --branch=main" not in text
+        for step in workflow["jobs"]["preview"]["steps"]:
+            run = step.get("run", "")
+            assert "wrangler" not in run or "pages deploy" not in run or (
+                "--project-name=datapulse-p4b-preview" in run
+                and 'branch="pr-${{ github.event.pull_request.number }}"' in run
+                and '--branch="$branch"' in run
+            )
+
+    assert_isolated(workflow_text)
+
+    corrupted = tmp_path / "corrupted-preview-verify.yml"
+    corrupted.write_text(
+        workflow_text + "\n# production binding: DATAPULSE_HEALTH_INDEX\n",
+        encoding="utf-8",
+    )
+    try:
+        assert_isolated(corrupted.read_text(encoding="utf-8"))
+    except AssertionError as error:
+        assert "production KV namespace" in str(error)
+    else:
+        raise AssertionError("isolation assertion accepted a corrupted workflow")
