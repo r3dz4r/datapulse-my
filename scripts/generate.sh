@@ -323,6 +323,14 @@ for index in "${!generators[@]}"; do
       ;;
     gen_attestations.py)
       if [[ -z "${DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE:-}" ]]; then
+        # The pull-request lane rehearses the release build without the signing
+        # key and must opt in explicitly. The default stays fail-closed: a
+        # published key registry with no key is still a hard error, and a key
+        # that is present (even if unusable) is never bypassed by the opt-in.
+        if [[ "${DATAPULSE_ALLOW_UNSIGNED_BUILD:-}" == "1" ]]; then
+          printf 'DATAPULSE_ALLOW_UNSIGNED_BUILD=1: WARNING: attestations were NOT regenerated; this release-build is UNSIGNED\n' >&2
+          continue
+        fi
         if [[ -f docs/.well-known/datapulse-probe-keys.json ]]; then
           printf 'set DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE for attestation generation\n' >&2
           exit 1

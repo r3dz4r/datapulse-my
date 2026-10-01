@@ -1,0 +1,186 @@
+name: Verify pull request preview
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Build and verify isolated PR preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out pull request
+        uses: actions/checkout@v4
+
+      - name: Install Pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc=3.1.3+ds-2
+          pandoc --version | sed -n '1p'
+
+      - name: Install release verification dependencies
+        run: python -m pip install jsonschema --requirement mcp/requirements.txt 'datacontract-cli[duckdb]==0.12.5'
+
+      - name: Build release artifact
+        env:
+          DATAPULSE_SOURCE_COMMIT_SHA: ${{ github.sha }}
+          DATAPULSE_SOURCE_COMMIT_DATE: ${{ github.event.pull_request.head.sha }}
+          # Pull requests must rehearse the release build credential-free: this
+          # lane has no attestation signing key, so it opts in explicitly to an
+          # unsigned build. Scoped to this step only; the trusted deployment lane
+          # still signs, and scripts/generate.sh stays fail-closed without this.
+          DATAPULSE_ALLOW_UNSIGNED_BUILD: "1"
+        run: |
+          set -Eeuo pipefail
+          export DATAPULSE_SOURCE_COMMIT_DATE="$(git show -s --format=%cs "$GITHUB_SHA")"
+          bash scripts/generate.sh release-build
+          python3 scripts/gen_per_dataset_receipt.py
+          bash scripts/run_datacontract_validation.sh
+          python3 scripts/verify_release_reproducible.py \
+            --workdir-root "$RUNNER_TEMP" \
+            --output docs/release-verification.md
+          python3 scripts/verify_release_reproducible.py \
+            --verify-proof docs/release-verification.md
+          bash scripts/verify_release_invariants.sh --local
+
+      - name: Assemble canonical Pages artifact
+        run: |
+          set -Eeuo pipefail
+          rm -rf _site
+          mkdir -p _site/.well-known
+          cp -R docs/. _site/
+          cp -R functions _site/
+          cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json datapulse_summary.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
+          cp -R health deltas record-evidence badges samples data _site/
+          if [ -d observation-receipts ]; then cp -R observation-receipts _site/; fi
+          cp -R attestations _site/
+          cp -R .attestations _site/
+          cp docs/.well-known/datapulse-probe-keys.json _site/.well-known/
+          test -s _site/index.html
+          test -s _site/404.html
+          test "$(grep -c '[^[:space:]]' _site/_redirects)" -ge 4
+          grep -qxF '/methodology /health-methodology 301' _site/_redirects
+          grep -qxF '/trust-contract /trust-contract.md 301' _site/_redirects
+          grep -qxF '/okf/ /okf/index.md 301' _site/_redirects
+          grep -qxF '/okf /okf/index.md 301' _site/_redirects
+          test -s _site/health/latest.json
+
+      - name: Check Pages asset sizes
+        run: python3 scripts/check_pages_asset_sizes.py _site
+
+      - name: Record and verify release artifact manifest
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify_release_artifact.py create \
+            --site _site \
+            --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
+            --source-commit "$GITHUB_SHA"
+          python3 scripts/verify_release_artifact.py verify \
+            --site _site \
+            --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
+            --source-commit "$GITHUB_SHA"
+
+      - name: Deploy isolated Cloudflare Pages preview
+        id: deploy_preview
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -Eeuo pipefail
+          branch="pr-${{ github.event.pull_request.number }}"
+          output="$RUNNER_TEMP/pages-preview-deploy.log"
+          npx --yes wrangler@3.90.0 pages deploy _site \
+            --project-name=datapulse-p4b-preview \
+            --branch="$branch" 2>&1 | tee "$output"
+          preview_url="$(grep -Eo 'https://[A-Za-z0-9.-]+\.pages\.dev' "$output" | tail -n 1)"
+          test -n "$preview_url"
+          echo "url=$preview_url" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for preview deployment URL
+        env:
+          PREVIEW_URL: ${{ steps.deploy_preview.outputs.url }}
+        run: |
+          set -Eeuo pipefail
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error --output /dev/null "$PREVIEW_URL/"; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Preview URL did not serve a successful response: $PREVIEW_URL" >&2
+          exit 1
+
+      - name: Verify served preview
+        env:
+          PREVIEW_URL: ${{ steps.deploy_preview.outputs.url }}
+        run: |
+          set -Eeuo pipefail
+          # Verify the served preview with the repository's own served-release
+          # verifier, the same tool the production promotion gate uses. This lane
+          # rehearses the release build credential-free, so the deployed preview
+          # is unsigned: signing is declared false and no staged signing input is
+          # supplied. Staged signing input is a signature to compare against; it
+          # would be a false signature claim for this build, so the verifier
+          # demands it only when signing is declared true. Every static served
+          # surface is still compared byte-for-byte against the assembled _site
+          # bytes.
+          #
+          # The KV-backed health surfaces are excluded by name because this lane
+          # cannot control them: health/latest.json, the release-proof health
+          # cross-check and the /health/index.json dashboard projection are
+          # served from the isolated health namespace, which the production
+          # deploy lane publishes on its own cadence. This lane assembles a fresh
+          # snapshot minutes old and holds no KV write credential, so those
+          # surfaces are published by another lane on its own cadence and cannot
+          # be compared here. The option is not passed to the negative control or
+          # to any other step, and the production lane stays strict.
+          bash scripts/verify_served_release.sh \
+            --base-url "$PREVIEW_URL" \
+            --site _site \
+            --sigstore-signed false \
+            --health-only false \
+            --source-commit "$GITHUB_SHA" \
+            --kv-surfaces-published-elsewhere
+
+      - name: "Negative control: a mismatched built artifact must fail served verification"
+        env:
+          PREVIEW_URL: ${{ steps.deploy_preview.outputs.url }}
+        run: |
+          set -Eeuo pipefail
+          # Bounded negative control for the served comparison. Deploy nothing:
+          # change one dataset count in a copy of the assembled artifact and
+          # require the verifier to reject the real served preview against it.
+          # A verifier that skipped the served comparison would exit 0 here, so
+          # this step passing proves the comparison above actually ran.
+          negative_site="$RUNNER_TEMP/preview-negative-control-site"
+          rm -rf "$negative_site"
+          cp -R _site "$negative_site"
+          jq '.datasets += [{"dataset_id": "negative-control", "name": "negative control"}]' \
+            "$negative_site/datapulse.json" > "$negative_site/datapulse.json.tmp"
+          mv "$negative_site/datapulse.json.tmp" "$negative_site/datapulse.json"
+          set +e
+          negative_output="$(bash scripts/verify_served_release.sh \
+            --base-url "$PREVIEW_URL" \
+            --site "$negative_site" \
+            --sigstore-signed false \
+            --health-only false \
+            --source-commit "$GITHUB_SHA" 2>&1)"
+          negative_status=$?
+          set -e
+          if [[ "$negative_status" -eq 0 ]]; then
+            echo "::error title=Preview served verification negative control::verify_served_release.sh accepted a tampered built artifact, so the served comparison was skipped"
+            exit 1
+          fi
+          if ! grep -q 'origin root register rows mismatch' <<<"$negative_output"; then
+            echo "::error title=Preview served verification negative control::verification failed for an unexpected reason"
+            printf '%s\n' "$negative_output"
+            exit 1
+          fi
+          echo "negative control failed as required: served register rows did not match the tampered built manifest"
