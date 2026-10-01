@@ -16,8 +16,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
+      - name: Reject fork preview without credentials
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::Fork previews cannot receive deploy credentials. A maintainer must review the PR, create a branch in this repository, and open a PR using the dedicated preview-only secret. This staged check has not passed."
+          exit 1
+
       - name: Check out pull request
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install Pandoc
         run: |
@@ -34,8 +42,47 @@ jobs:
           DATAPULSE_SOURCE_COMMIT_DATE: ${{ github.event.pull_request.head.sha }}
         run: |
           set -Eeuo pipefail
+          umask 077
+          signer_dir="$(mktemp -d "$RUNNER_TEMP/datapulse-preview-signer.XXXXXX")"
+          export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE="$signer_dir/private-key.json"
+          trap 'rm -f "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"; rmdir "$signer_dir"' EXIT
+          preview_key_id="$(python3 scripts/init_keys.py \
+            --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" \
+            --registry docs/.well-known/datapulse-probe-keys.json \
+            --purpose attestation-chain-signing --lifetime-days 1)"
+          python3 - "$preview_key_id" <<'PY'
+          import json
+          import sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from scripts.gen_attestations import reuse_existing_day
+
+          root = Path.cwd()
+          day = datetime.now(timezone.utc).date().isoformat()
+          registry_path = root / "docs/.well-known/datapulse-probe-keys.json"
+          registry = json.loads(registry_path.read_text())
+          # Preserve historical public rows: an immutable same-day set may reuse
+          # its original signature rather than use the temporary private key.
+          if reuse_existing_day(root, day):
+              binding = json.loads((root / "attestations" / day / "binding.json").read_text())
+              registry["current_key_id"] = binding["payload"]["ed25519"]["key_id"]
+              print("Preview reuses verified immutable same-day attestations; no temporary signature claimed.")
+          else:
+              registry["current_key_id"] = sys.argv[1]
+              print("Preview prepared a temporary signing identity for fresh attestations.")
+          registry_path.write_text(json.dumps(registry, indent=2) + "\n")
+          PY
           export DATAPULSE_SOURCE_COMMIT_DATE="$(git show -s --format=%cs "$GITHUB_SHA")"
           bash scripts/generate.sh release-build
+          python3 - <<'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from scripts.gen_attestations import reuse_existing_day
+
+          if not reuse_existing_day(Path.cwd(), datetime.now(timezone.utc).date().isoformat()):
+              raise SystemExit("Preview build did not produce a verifiable dated attestation set")
+          print("Preview attestation signatures verified against the preserved public registry.")
+          PY
           python3 scripts/gen_per_dataset_receipt.py
           bash scripts/run_datacontract_validation.sh
           python3 scripts/verify_release_reproducible.py \
@@ -66,6 +113,12 @@ jobs:
           grep -qxF '/okf/ /okf/index.md 301' _site/_redirects
           grep -qxF '/okf /okf/index.md 301' _site/_redirects
           test -s _site/health/latest.json
+          private_scan_status=0
+          grep -RqE 'private_key_base64|BEGIN ([A-Z0-9]+ )?PRIVATE KEY' _site || private_scan_status=$?
+          if [[ "$private_scan_status" != 1 ]]; then
+            echo "::error::Pages artifact contains private signing material or could not be scanned." >&2
+            exit 1
+          fi
 
       - name: Check Pages asset sizes
         run: python3 scripts/check_pages_asset_sizes.py _site
@@ -85,16 +138,22 @@ jobs:
       - name: Deploy isolated Cloudflare Pages preview
         id: deploy_preview
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_PREVIEW_API_TOKEN: ${{ secrets.CLOUDFLARE_PREVIEW_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -Eeuo pipefail
+          if ! [[ -n "$CLOUDFLARE_PREVIEW_API_TOKEN" ]]; then
+            echo "::error::A maintainer must provision CLOUDFLARE_PREVIEW_API_TOKEN as a separate preview-scoped credential. This staged check has not passed." >&2
+            exit 1
+          fi
           branch="pr-${{ github.event.pull_request.number }}"
+          [[ "$branch" =~ ^pr-[0-9]+$ ]]
           output="$RUNNER_TEMP/pages-preview-deploy.log"
-          npx --yes wrangler@3.90.0 pages deploy _site \
+          CLOUDFLARE_API_TOKEN="$CLOUDFLARE_PREVIEW_API_TOKEN" \
+            npx --yes wrangler@3.90.0 pages deploy _site \
             --project-name=datapulse-p4b-preview \
             --branch="$branch" 2>&1 | tee "$output"
-          preview_url="$(grep -Eo 'https://[A-Za-z0-9.-]+\.pages\.dev' "$output" | tail -n 1)"
+          preview_url="$(grep -Eo 'https://[a-z0-9-]+\.datapulse-p4b-preview\.pages\.dev' "$output" | tail -n 1)"
           test -n "$preview_url"
           echo "url=$preview_url" >> "$GITHUB_OUTPUT"
 
