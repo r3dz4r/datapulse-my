@@ -68,11 +68,14 @@ jobs:
             require(re.fullmatch(r"[0-9a-f]{40}", candidate["head_sha"]) is not None, "Invalid head SHA")
             require(len(candidate["pull_requests"]) == 1, "Missing or ambiguous PR association")
         require(all(run[key] == trigger[key] for key in ("id", "run_attempt", "head_sha", "workflow_id", "pull_requests")), "Stale or changed triggering run")
+        run_merge_sha = run["head_sha"]
         number = run["pull_requests"][0]["number"]
         require(type(number) is int and number > 0, "Invalid PR number")
+        pr_head_sha = run["pull_requests"][0]["head"]["sha"]
+        require(re.fullmatch(r"[0-9a-f]{40}", pr_head_sha) is not None, "Invalid run PR head SHA")
         pr = metadata(f"/pulls/{number}")
         require(pr["number"] == number and pr["state"] == "open", "PR is no longer open")
-        require(pr["head"]["repo"]["full_name"] == repository and pr["head"]["repo"]["id"] == repo["id"] and pr["head"]["sha"] == run["head_sha"], "Fork or stale PR head")
+        require(pr["head"]["repo"]["full_name"] == repository and pr["head"]["repo"]["id"] == repo["id"] and pr["head"]["sha"] == pr_head_sha, "Fork or stale PR head")
         require(pr["base"]["repo"]["full_name"] == repository and pr["base"]["ref"] == "main", "Unexpected PR base")
         require(pr["head"]["ref"] == run["head_branch"], "PR branch mismatch")
         artifacts = metadata(f"/actions/runs/{run['id']}/artifacts?per_page=100")
@@ -81,9 +84,9 @@ jobs:
         require(type(artifact["id"]) is int and artifact["id"] > 0 and not artifact["expired"], "Invalid or expired artifact")
         require(artifact["name"] == f"preview-pages-{run['id']}-{run['run_attempt']}", "Artifact run/attempt mismatch")
         require(0 < artifact["size_in_bytes"] <= 200 * 1024 * 1024 and re.fullmatch(r"sha256:[0-9a-f]{64}", artifact["digest"]) is not None, "Artifact size or immutable digest missing")
-        for key, expected in {"id": run["id"], "repository_id": repo["id"], "head_repository_id": repo["id"], "head_sha": run["head_sha"]}.items():
+        for key, expected in {"id": run["id"], "repository_id": repo["id"], "head_repository_id": repo["id"], "head_sha": run_merge_sha}.items():
             require(artifact["workflow_run"][key] == expected, "Artifact belongs to another run or repository")
-        state = {"repository": repository, "run_id": run["id"], "run_attempt": run["run_attempt"], "pr_number": number, "head_sha": run["head_sha"], "workflow": workflow["name"], "event": "pull_request"}
+        state = {"repository": repository, "run_id": run["id"], "run_attempt": run["run_attempt"], "pr_number": number, "run_merge_sha": run_merge_sha, "pr_head_sha": pr_head_sha, "workflow": workflow["name"], "event": "pull_request"}
         state.update(artifact_id=artifact["id"], artifact_digest=artifact["digest"], artifact_size=artifact["size_in_bytes"])
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
             output.write("state=" + json.dumps(state, separators=(",", ":")) + "\n")
@@ -144,11 +147,14 @@ jobs:
             require(re.fullmatch(r"[0-9a-f]{40}", candidate["head_sha"]) is not None, "Invalid head SHA")
             require(len(candidate["pull_requests"]) == 1, "Missing or ambiguous PR association")
         require(all(run[key] == trigger[key] for key in ("id", "run_attempt", "head_sha", "workflow_id", "pull_requests")), "Stale or changed triggering run")
+        run_merge_sha = run["head_sha"]
         number = run["pull_requests"][0]["number"]
         require(type(number) is int and number > 0, "Invalid PR number")
+        pr_head_sha = run["pull_requests"][0]["head"]["sha"]
+        require(re.fullmatch(r"[0-9a-f]{40}", pr_head_sha) is not None, "Invalid run PR head SHA")
         pr = metadata(f"/pulls/{number}")
         require(pr["number"] == number and pr["state"] == "open", "PR is no longer open")
-        require(pr["head"]["repo"]["full_name"] == repository and pr["head"]["repo"]["id"] == repo["id"] and pr["head"]["sha"] == run["head_sha"], "Fork or stale PR head")
+        require(pr["head"]["repo"]["full_name"] == repository and pr["head"]["repo"]["id"] == repo["id"] and pr["head"]["sha"] == pr_head_sha, "Fork or stale PR head")
         require(pr["base"]["repo"]["full_name"] == repository and pr["base"]["ref"] == "main", "Unexpected PR base")
         require(pr["head"]["ref"] == run["head_branch"], "PR branch mismatch")
         artifacts = metadata(f"/actions/runs/{run['id']}/artifacts?per_page=100")
@@ -157,9 +163,9 @@ jobs:
         require(type(artifact["id"]) is int and artifact["id"] > 0 and not artifact["expired"], "Invalid or expired artifact")
         require(artifact["name"] == f"preview-pages-{run['id']}-{run['run_attempt']}", "Artifact run/attempt mismatch")
         require(0 < artifact["size_in_bytes"] <= 200 * 1024 * 1024 and re.fullmatch(r"sha256:[0-9a-f]{64}", artifact["digest"]) is not None, "Artifact size or immutable digest missing")
-        for key, expected in {"id": run["id"], "repository_id": repo["id"], "head_repository_id": repo["id"], "head_sha": run["head_sha"]}.items():
+        for key, expected in {"id": run["id"], "repository_id": repo["id"], "head_repository_id": repo["id"], "head_sha": run_merge_sha}.items():
             require(artifact["workflow_run"][key] == expected, "Artifact belongs to another run or repository")
-        state = {"repository": repository, "run_id": run["id"], "run_attempt": run["run_attempt"], "pr_number": number, "head_sha": run["head_sha"], "workflow": workflow["name"], "event": "pull_request"}
+        state = {"repository": repository, "run_id": run["id"], "run_attempt": run["run_attempt"], "pr_number": number, "run_merge_sha": run_merge_sha, "pr_head_sha": pr_head_sha, "workflow": workflow["name"], "event": "pull_request"}
         state.update(artifact_id=artifact["id"], artifact_digest=artifact["digest"], artifact_size=artifact["size_in_bytes"])
         require(state == json.loads(os.environ["EXPECTED_STATE"]), "Artifact or PR changed during approval")
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
@@ -298,12 +304,13 @@ jobs:
             files[name] = content
         require({name.split("/")[0] for name in files} == {"_site", "release-artifact-manifest.json", "preview-binding.json"}, "Missing artifact root members")
         binding = json.loads(files["preview-binding.json"], object_pairs_hook=object_pairs)
-        expected_binding = {key: state[key] for key in ("repository", "run_id", "run_attempt", "pr_number", "head_sha", "workflow", "event")}
+        expected_binding = {key: state[key] for key in ("repository", "run_id", "run_attempt", "pr_number", "workflow", "event")}
+        expected_binding["head_sha"] = state["pr_head_sha"]
         manifest_raw = files["release-artifact-manifest.json"]
         expected_binding["manifest_sha256"] = hashlib.sha256(manifest_raw).hexdigest()
         require(binding == expected_binding and all(type(binding[key]) is type(value) for key, value in expected_binding.items()), "Artifact binding mismatch")
         manifest = json.loads(manifest_raw, object_pairs_hook=object_pairs)
-        require(set(manifest) == {"schema", "source_commit", "file_count", "files", "aggregate_sha256"} and manifest["schema"] == "datapulse/v1/release-artifact-manifest" and manifest["source_commit"] == state["head_sha"], "Manifest source or schema mismatch")
+        require(set(manifest) == {"schema", "source_commit", "file_count", "files", "aggregate_sha256"} and manifest["schema"] == "datapulse/v1/release-artifact-manifest" and manifest["source_commit"] == state["pr_head_sha"], "Manifest source or schema mismatch")
         observed = sorted(({"path": name.removeprefix("_site/"), "sha256": hashlib.sha256(content).hexdigest(), "size": len(content)} for name, content in files.items() if name.startswith("_site/")), key=lambda entry: entry["path"])
         require(isinstance(manifest["files"], list) and all(isinstance(entry, dict) and set(entry) == {"path", "sha256", "size"} and isinstance(entry["path"], str) and isinstance(entry["sha256"], str) and type(entry["size"]) is int for entry in manifest["files"]), "Invalid manifest records")
         require(type(manifest["file_count"]) is int and manifest["file_count"] == len(observed) and manifest["files"] == observed, "Exact static inventory mismatch")
@@ -336,7 +343,7 @@ jobs:
         CLOUDFLARE_PREVIEW_API_TOKEN: ${{ secrets.CLOUDFLARE_PREVIEW_API_TOKEN }}
         CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         PR_NUMBER: ${{ fromJSON(needs.validate.outputs.state).pr_number }}
-        PREVIEW_HEAD_SHA: ${{ fromJSON(needs.validate.outputs.state).head_sha }}
+        PREVIEW_HEAD_SHA: ${{ fromJSON(needs.validate.outputs.state).pr_head_sha }}
       run: |
         set -Eeuo pipefail
         if ! [[ -n "$CLOUDFLARE_PREVIEW_API_TOKEN" ]]; then
@@ -425,8 +432,7 @@ jobs:
         repository = os.environ["GITHUB_REPOSITORY"]
         if repository != "r3dz4r/datapulse-my" or os.environ["GITHUB_REF"] != "refs/heads/main" or os.environ["GITHUB_WORKFLOW_REF"] != repository + "/.github/workflows/preview-deploy.yml@refs/heads/main":
             raise SystemExit("Reporter must be sourced from main")
-        sha = run["head_sha"]
-        if re.fullmatch(r"[0-9a-f]{40}", sha) is None or run["repository"]["full_name"] != repository:
+        if re.fullmatch(r"[0-9a-f]{40}", run["head_sha"]) is None or run["repository"]["full_name"] != repository:
             raise SystemExit("Invalid check target")
         def api(path, data=None):
             request = urllib.request.Request(os.environ["GITHUB_API_URL"] + "/repos/" + repository + path,
@@ -437,11 +443,15 @@ jobs:
             with urllib.request.urlopen(request, timeout=30) as response:
                 return json.load(response)
         success = os.environ["VALIDATE_RESULT"] == "success" and os.environ["DEPLOY_RESULT"] == "success"
+        number = run["pull_requests"][0]["number"]
+        current = api(f"/pulls/{number}")
+        sha = current["head"]["sha"]
+        if type(number) is not int or number <= 0 or re.fullmatch(r"[0-9a-f]{40}", sha) is None:
+            raise SystemExit("Invalid PR check target")
         if success:
             state = json.loads(os.environ["EXPECTED_STATE"])
-            current = api(f"/pulls/{state['pr_number']}")
             latest_run = api(f"/actions/runs/{state['run_id']}")
-            success = (current["state"] == "open" and current["head"]["repo"]["full_name"] == repository and current["head"]["sha"] == sha == state["head_sha"] and latest_run["run_attempt"] == state["run_attempt"] and latest_run["conclusion"] == "success")
+            success = (current["number"] == state["pr_number"] and current["state"] == "open" and current["head"]["repo"]["full_name"] == repository and current["head"]["ref"] == run["head_branch"] and current["head"]["sha"] == sha == state["pr_head_sha"] and latest_run["id"] == state["run_id"] and latest_run["run_attempt"] == state["run_attempt"] and latest_run["head_sha"] == state["run_merge_sha"] and latest_run["conclusion"] == "success")
         api("/check-runs", {"name": "Build and verify isolated PR preview", "head_sha": sha,
             "status": "completed", "conclusion": "success" if success else "failure",
             "details_url": f"https://github.com/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}",

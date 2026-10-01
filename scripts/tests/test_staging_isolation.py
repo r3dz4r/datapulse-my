@@ -218,7 +218,7 @@ def _assert_trusted_preview_isolated(text: str) -> None:
         "CLOUDFLARE_PREVIEW_API_TOKEN": "${{ secrets.CLOUDFLARE_PREVIEW_API_TOKEN }}",
         "CLOUDFLARE_ACCOUNT_ID": "${{ vars.CLOUDFLARE_ACCOUNT_ID }}",
         "PR_NUMBER": "${{ fromJSON(needs.validate.outputs.state).pr_number }}",
-        "PREVIEW_HEAD_SHA": "${{ fromJSON(needs.validate.outputs.state).head_sha }}",
+        "PREVIEW_HEAD_SHA": "${{ fromJSON(needs.validate.outputs.state).pr_head_sha }}",
     }
     assert "--project-name=datapulse-p4b-preview" in credential["run"]
     assert 'branch="pr-$PR_NUMBER"' in credential["run"]
@@ -561,26 +561,29 @@ urllib.request.urlopen = urlopen
 
 def _run_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     repo = {"id": 7, "full_name": "r3dz4r/datapulse-my", "default_branch": "main"}
+    merge_sha = "a" * 40
+    pr_head_sha = "b" * 40
     run = {"id": 123, "run_attempt": 2, "workflow_id": 15,
            "name": "Verify pull request preview", "path": ".github/workflows/preview-verify.yml",
            "event": "pull_request", "status": "completed", "conclusion": "success",
-           "head_sha": "a" * 40, "head_branch": "feature-$(touch-pwned)",
+           "head_sha": merge_sha, "head_branch": "feature-$(touch-pwned)",
            "repository": repo, "head_repository": repo,
-           "pull_requests": [{"number": 17, "head": {"sha": "a" * 40}}]}
+           "pull_requests": [{"number": 17, "head": {"sha": pr_head_sha}}]}
     artifact = {"id": 456, "name": "preview-pages-123-2", "expired": False,
                 "size_in_bytes": 1000, "digest": "sha256:" + "b" * 64,
                 "workflow_run": {"id": 123, "repository_id": 7, "head_repository_id": 7,
-                                 "head_sha": "a" * 40}}
+                                 "head_sha": merge_sha}}
     responses = {
         "": repo, "/branches/main": {"protected": True}, "/actions/runs/123": copy.deepcopy(run),
         "/actions/workflows/preview-verify.yml": {"id": 15, "name": run["name"], "path": run["path"], "state": "active"},
         "/pulls/17": {"number": 17, "state": "open",
-                      "head": {"repo": repo, "sha": "a" * 40, "ref": run["head_branch"]},
+                      "head": {"repo": repo, "sha": pr_head_sha, "ref": run["head_branch"]},
                       "base": {"repo": repo, "ref": "main"}},
         "/actions/runs/123/artifacts?per_page=100": {"total_count": 1, "artifacts": [artifact]},
     }
     state = {"repository": repo["full_name"], "run_id": 123, "run_attempt": 2, "pr_number": 17,
-             "head_sha": "a" * 40, "workflow": run["name"], "event": "pull_request",
+             "run_merge_sha": merge_sha, "pr_head_sha": pr_head_sha,
+             "workflow": run["name"], "event": "pull_request",
              "artifact_id": 456, "artifact_digest": artifact["digest"], "artifact_size": 1000}
     return {"workflow_run": run}, responses, state
 
@@ -589,7 +592,7 @@ def _run_fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     "valid", "valid-approved", "pr-definition", "wrong-ref", "unprotected-main", "wrong-default",
     "workflow-path", "workflow-name", "workflow-id", "inactive-workflow", "wrong-event",
     "failed-run", "incomplete-run", "fork", "cross-repository-run", "missing-pr", "ambiguous-pr",
-    "stale-attempt", "closed-pr", "stale-head", "fork-pr", "wrong-base", "wrong-branch",
+    "stale-attempt", "stale-run-head", "closed-pr", "stale-head", "fork-pr", "wrong-base", "wrong-branch",
     "missing-artifact", "ambiguous-artifact", "expired", "artifact-attempt", "artifact-run",
     "artifact-repository", "artifact-fork", "artifact-head", "missing-digest", "oversize",
     "denied-metadata", "changed-during-approval",
@@ -619,6 +622,7 @@ def test_trusted_preview_provenance_uses_real_event_and_api_shapes(tmp_path: Pat
     elif case == "missing-pr": trigger["pull_requests"] = []
     elif case == "ambiguous-pr": trigger["pull_requests"] *= 2
     elif case == "stale-attempt": run["run_attempt"] = 3
+    elif case == "stale-run-head": run["head_sha"] = "c" * 40
     elif case == "closed-pr": pr["state"] = "closed"
     elif case == "stale-head": pr["head"]["sha"] = "c" * 40
     elif case == "fork-pr": pr["head"]["repo"] = {"id": 9, "full_name": "fork/repo"}
@@ -658,12 +662,13 @@ def _archive_fixture(tmp_path: Path) -> tuple[dict[str, bytes], dict[str, Any]]:
         path = site / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("static public bytes\n")
+    _, _, state = _run_fixture()
     manifest_path = tmp_path / "manifest.json"
-    verify_release_artifact.create_manifest(site, manifest_path, "a" * 40)
+    verify_release_artifact.create_manifest(site, manifest_path, state["pr_head_sha"])
     files = {"_site/" + str(path.relative_to(site)): path.read_bytes() for path in site.rglob("*") if path.is_file()}
     files["release-artifact-manifest.json"] = manifest_path.read_bytes()
-    _, _, state = _run_fixture()
-    binding = {key: state[key] for key in ("repository", "run_id", "run_attempt", "pr_number", "head_sha", "workflow", "event")}
+    binding = {key: state[key] for key in ("repository", "run_id", "run_attempt", "pr_number", "workflow", "event")}
+    binding["head_sha"] = state["pr_head_sha"]
     binding["manifest_sha256"] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
     files["preview-binding.json"] = json.dumps(binding).encode()
     return files, state
@@ -785,7 +790,7 @@ def test_required_preview_check_never_treats_missing_actual_preview_as_success(
                                                      "EXPECTED_STATE": json.dumps(state)})
     check = json.loads((tmp_path / "check.json").read_text())
     assert check["name"] == "Build and verify isolated PR preview"
-    assert check["head_sha"] == "a" * 40
+    assert check["head_sha"] == responses["/pulls/17"]["head"]["sha"]
     assert check["conclusion"] == expected
     assert result.returncode == (0 if expected == "success" else 1), result.stderr
 
