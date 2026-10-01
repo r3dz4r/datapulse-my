@@ -14,6 +14,20 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.44.0](https://github.com/r3dz4r/datapulse-my/compare/v3.43.5...v3.44.0) (2026-10-01)
+
+
+### Features
+
+* add opt-in signed health integration and local Pages rehearsal ([4765192](https://github.com/r3dz4r/datapulse-my/commit/476519284a591fdec23c71144d268b32e399b7af))
+* stage exact signed health publication and verified reader ([c3d47ef](https://github.com/r3dz4r/datapulse-my/commit/c3d47ef33569bbe6aae919f2098d913e6518b0c6))
+* staged signed health response and verified reader ([23af3d4](https://github.com/r3dz4r/datapulse-my/commit/23af3d4d229dbb921f09b3943cf3829d1674eb95))
+
+
+### Bug Fixes
+
+* close deferred signed health integration review findings ([2030dc5](https://github.com/r3dz4r/datapulse-my/commit/2030dc5833519f0d1c8c80db14727a99193afee4))
+
 ## [3.43.5](https://github.com/r3dz4r/datapulse-my/compare/v3.43.4...v3.43.5) (2026-10-01)
 
 
