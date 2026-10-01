@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.44.1](https://github.com/r3dz4r/datapulse-my/compare/v3.44.0...v3.44.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **verify:** make the KV-surface exclusion argument-only ([cc0d477](https://github.com/r3dz4r/datapulse-my/commit/cc0d47712b702f9004471c8100e1ab7e63d6bbe0))
+
 ## [3.44.0](https://github.com/r3dz4r/datapulse-my/compare/v3.43.5...v3.44.0) (2026-10-01)
 
 
