@@ -27,7 +27,7 @@ cosign_bin="${DATAPULSE_COSIGN:-}"
 # satisfy a comparison against that store, so it opts in by name to excluding
 # exactly those comparisons. The default stays strict: without this flag every
 # comparison runs, and a stale served snapshot still fails.
-kv_surfaces_published_elsewhere="${DATAPULSE_KV_SURFACES_PUBLISHED_ELSEWHERE:-false}"
+kv_surfaces_published_elsewhere=false
 # This must exceed the time needed to move the largest declared surface, even
 # when the response is compressed on the wire but slow to arrive.
 fetch_max_time="${FETCH_MAX_TIME:-120}"

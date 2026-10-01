@@ -437,6 +437,20 @@ def test_default_still_fails_on_a_stale_served_health_snapshot(tmp_path: Path) -
     assert "published by another lane on its own cadence" not in combined
 
 
+def test_environment_cannot_enable_kv_surface_exclusion(tmp_path: Path, monkeypatch) -> None:
+    """A runner environment cannot relax the default strict comparison."""
+    root, built, served = _stage_fixture(tmp_path)
+    _stale_served_health(served)
+    monkeypatch.setenv("DATAPULSE_KV_SURFACES_PUBLISHED_ELSEWHERE", "true")
+
+    result = _run_verifier(tmp_path, root, built, served)
+    combined = result.stdout + result.stderr
+
+    assert result.returncode != 0
+    assert "served health snapshot is older than the assembled snapshot" in combined
+    assert "published by another lane on its own cadence" not in combined
+
+
 def test_option_skips_the_kv_backed_surfaces_and_names_them(tmp_path: Path) -> None:
     root, built, served = _stage_fixture(tmp_path)
     _stale_served_health(served)

@@ -108,6 +108,10 @@ promotion` and `Verify canonical served surface` in
 `deploy-cloudflare-pages.yml`) does **not** pass it: that lane seeds the KV
 namespace in-lane, so it keeps the strict comparison.
 
+The exclusion flag is argument-only. A verification relaxation must not be
+environment-reachable, because runner environment state must not weaken a
+lane's verification; only that lane's explicit workflow argument can opt in.
+
 ## Bounded negative control
 
 A passing happy path only proves the comparison happened if the comparison can
