@@ -4,7 +4,8 @@
 set -Eeuo pipefail
 
 usage() {
-  echo "usage: $0 --base-url URL --site DIR --sigstore-signed true|false --health-only true|false --sigstore-publication DIR --source-commit SHA [--cosign PATH]" >&2
+  echo "usage: $0 --base-url URL --site DIR --sigstore-signed true|false --health-only true|false --source-commit SHA [--sigstore-publication DIR] [--cosign PATH]" >&2
+  echo "  --sigstore-publication is required only when --sigstore-signed true" >&2
   exit 64
 }
 
@@ -35,7 +36,15 @@ fail() { echo "::error title=Cloudflare Pages contract failed::$1"; exit 1; }
 [[ -d "$site_dir" && -s "$site_dir/health/latest.json" ]] || fail "assembled site is missing health/latest.json"
 [[ "$sigstore_signed" == true || "$sigstore_signed" == false ]] || fail "invalid Sigstore signing result"
 [[ "$health_only" == true || "$health_only" == false ]] || fail "invalid health-only mode"
-[[ -n "$publication_dir" && -n "$source_commit" ]] || fail "missing staged signing inputs"
+[[ -n "$source_commit" ]] || fail "missing staged signing inputs"
+# The publication directory stages the signed bundle and manifest this verifier
+# compares the served bytes against. It is a signing input, so require it when
+# signing is declared true and not otherwise: an unsigned origin carries no
+# signature to compare, and demanding the directory for an unsigned run would
+# imply the served surface is signed when it is not.
+if [[ "$sigstore_signed" == true && -z "$publication_dir" ]]; then
+  fail "missing staged signing inputs"
+fi
 smoke_dir="$(mktemp -d)"
 trap 'rm -rf "$smoke_dir"' EXIT
 fetch() {

@@ -120,4 +120,55 @@ jobs:
       - name: Verify served preview
         env:
           PREVIEW_URL: ${{ steps.deploy_preview.outputs.url }}
-        run: python3 scripts/verify_external.py --base-url "$PREVIEW_URL"
+        run: |
+          set -Eeuo pipefail
+          # Verify the served preview with the repository's own served-release
+          # verifier, the same tool the production promotion gate uses. This lane
+          # rehearses the release build credential-free, so the deployed preview
+          # is unsigned: signing is declared false and no staged signing input is
+          # supplied. Staged signing input is a signature to compare against; it
+          # would be a false signature claim for this build, so the verifier
+          # demands it only when signing is declared true. The verifier still
+          # compares every served surface against the assembled _site bytes.
+          bash scripts/verify_served_release.sh \
+            --base-url "$PREVIEW_URL" \
+            --site _site \
+            --sigstore-signed false \
+            --health-only false \
+            --source-commit "$GITHUB_SHA"
+
+      - name: "Negative control: a mismatched built artifact must fail served verification"
+        env:
+          PREVIEW_URL: ${{ steps.deploy_preview.outputs.url }}
+        run: |
+          set -Eeuo pipefail
+          # Bounded negative control for the served comparison. Deploy nothing:
+          # change one dataset count in a copy of the assembled artifact and
+          # require the verifier to reject the real served preview against it.
+          # A verifier that skipped the served comparison would exit 0 here, so
+          # this step passing proves the comparison above actually ran.
+          negative_site="$RUNNER_TEMP/preview-negative-control-site"
+          rm -rf "$negative_site"
+          cp -R _site "$negative_site"
+          jq '.datasets += [{"dataset_id": "negative-control", "name": "negative control"}]' \
+            "$negative_site/datapulse.json" > "$negative_site/datapulse.json.tmp"
+          mv "$negative_site/datapulse.json.tmp" "$negative_site/datapulse.json"
+          set +e
+          negative_output="$(bash scripts/verify_served_release.sh \
+            --base-url "$PREVIEW_URL" \
+            --site "$negative_site" \
+            --sigstore-signed false \
+            --health-only false \
+            --source-commit "$GITHUB_SHA" 2>&1)"
+          negative_status=$?
+          set -e
+          if [[ "$negative_status" -eq 0 ]]; then
+            echo "::error title=Preview served verification negative control::verify_served_release.sh accepted a tampered built artifact, so the served comparison was skipped"
+            exit 1
+          fi
+          if ! grep -q 'origin root register rows mismatch' <<<"$negative_output"; then
+            echo "::error title=Preview served verification negative control::verification failed for an unexpected reason"
+            printf '%s\n' "$negative_output"
+            exit 1
+          fi
+          echo "negative control failed as required: served register rows did not match the tampered built manifest"
