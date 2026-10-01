@@ -1,5 +1,7 @@
 // Staged verifier: trust assets and package storage are separate inputs.
 // All time/age decisions use the consumer clock, not cryptographic time.
+import { loadTrustedRegistry, MAX_REGISTRY_BYTES } from "./signed-health-trust.js";
+
 const PACKAGE_SCHEMA = "datapulse/v1/signed-health-package";
 const BINDING_SCHEMA = "datapulse/v1/signed-health-binding";
 const RESPONSE_SCHEMA = "datapulse/v1/signed-health-response";
@@ -11,7 +13,6 @@ const PREFIX = "signed-health/v1/";
 const MAX_PACKAGE = 8 * 1024 * 1024;
 const MAX_HEALTH = 5 * 1024 * 1024;
 const MAX_BINDING = 4096;
-const MAX_REGISTRY = 256 * 1024;
 const DIGEST = /^[0-9a-f]{64}$/;
 const KEY_ID = /^ed25519-[0-9a-f]{16}$/;
 const encoder = new TextEncoder();
@@ -179,32 +180,12 @@ export async function verifyPackage(packageBytes, registry, { now, expectedPubli
   return { publication_sha256: identity, observed_at: binding.observed_at, age_seconds: now - observed, age_authenticated: false, policy: POLICY, source_truth_verified: false };
 }
 
-async function boundedAsset(response, limit) {
-  require(response.ok && response.body, "trusted_registry_unavailable");
-  const reader = response.body.getReader(), chunks = [];
-  let size = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.length;
-      require(size <= limit, "trusted_registry_oversized");
-      chunks.push(value);
-    }
-  } finally { await reader.cancel(); }
-  const bytes = new Uint8Array(size);
-  let offset = 0;
-  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-  return bytes;
-}
-
 export async function readVerified(context, identity, options) {
   const kv = context.env.DATAPULSE_HEALTH_INDEX, assets = context.env.ASSETS;
   require(kv && typeof kv.get === "function" && assets && typeof assets.fetch === "function", "trust_or_storage_unavailable");
-  // Fixed same-deployment trusted asset. No package-provided URL and no network fallback.
-  const assetURL = new URL("/.well-known/datapulse-probe-keys.json", context.request.url);
-  const registryResponse = await assets.fetch(new Request(assetURL, { headers: { "Cache-Control": "no-store" } }));
-  const registry = strictJSON(await boundedAsset(registryResponse, MAX_REGISTRY), MAX_REGISTRY, ["version"]);
+  // Fixed same-deployment trusted asset, delivered by the independent trust
+  // helper. No package-provided URL and no KV-provided registry.
+  const registry = strictJSON(await loadTrustedRegistry(context), MAX_REGISTRY_BYTES, ["version"]);
   if (identity === "latest") {
     const pointerRaw = await kv.get(PREFIX + "latest.json", "arrayBuffer");
     require(pointerRaw instanceof ArrayBuffer, "missing_pointer");
