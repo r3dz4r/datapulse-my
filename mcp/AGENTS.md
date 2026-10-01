@@ -60,7 +60,7 @@ python3 scripts/gen_mcp_reference.py
 # Expected diffs on regeneration:
 #   mcp.json   - unicode escaping only (the committed file escapes em-dashes as \u2014,
 #                the generator emits them literally). Any other change is content.
-#   agent.json - its commit_sha must equal the derived newest mcp/ revision. A single-line
+#   agent.json - its commit_sha must equal the deployed MCP code revision. A single-line
 #                change here is real provenance movement, not formatting.
 # Revert any artefact you did not intend to change rather than leaving it dirty.
 
