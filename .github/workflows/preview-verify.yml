@@ -11,17 +11,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  preview:
-    name: Build and verify isolated PR preview
+  build:
+    name: Build uncredentialed PR Pages artifact
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      manifest_sha256: ${{ steps.manifest.outputs.sha256 }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - name: Reject fork preview without credentials
-        if: github.event.pull_request.head.repo.full_name != github.repository
-        run: |
-          echo "::error::Fork previews cannot receive deploy credentials. A maintainer must review the PR, create a branch in this repository, and open a PR using the dedicated preview-only secret. This staged check has not passed."
-          exit 1
-
       - name: Check out pull request
         uses: actions/checkout@v4
         with:
@@ -98,7 +95,6 @@ jobs:
           rm -rf _site
           mkdir -p _site/.well-known
           cp -R docs/. _site/
-          cp -R functions _site/
           cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json datapulse_summary.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
           cp -R health deltas record-evidence badges samples data _site/
           if [ -d observation-receipts ]; then cp -R observation-receipts _site/; fi
@@ -135,43 +131,239 @@ jobs:
             --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
             --source-commit "$GITHUB_SHA"
 
+      - name: Package verified static artifact
+        id: manifest
+        run: |
+          set -Eeuo pipefail
+          # Transfer data only: no source scripts, signer, or deploy configuration.
+          test ! -e _site/functions
+          test ! -e _site/_worker.js
+          test ! -e _site/wrangler.toml
+          test ! -e _site/wrangler.json
+          test ! -e _site/wrangler.jsonc
+          mkdir -p "$RUNNER_TEMP/preview-artifact"
+          mv _site "$RUNNER_TEMP/preview-artifact/_site"
+          cp "$RUNNER_TEMP/release-artifact-manifest.json" "$RUNNER_TEMP/preview-artifact/"
+          private_scan_status=0
+          grep -rE 'private_key_base64|BEGIN ([A-Z0-9]+ )?PRIVATE KEY' "$RUNNER_TEMP/preview-artifact" >/dev/null || private_scan_status=$?
+          if [[ "$private_scan_status" != 1 ]]; then
+            echo "::error::Preview upload contains private material or could not be scanned." >&2
+            exit 1
+          fi
+          digest="$(sha256sum "$RUNNER_TEMP/preview-artifact/release-artifact-manifest.json" | cut -d ' ' -f 1)"
+          echo "sha256=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Upload verified static artifact
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/preview-artifact/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+
+  deploy_preview:
+    name: Deploy approved isolated PR preview
+    needs: build
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    # The operator must configure required reviewers and the secret here.
+    environment: datapulse-preview
+    steps:
+      - name: Verify protected environment and secret provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          endpoint = f"{os.environ['GITHUB_API_URL']}/repos/{os.environ['GITHUB_REPOSITORY']}/environments/datapulse-preview"
+          def metadata(url):
+              request = urllib.request.Request(url, headers={
+                  "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              })
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+
+          try:
+              environment = metadata(endpoint)
+              if environment.get("name") != "datapulse-preview" or not any(
+                  rule.get("type") == "required_reviewers" and rule.get("reviewers")
+                  for rule in environment.get("protection_rules", [])
+              ):
+                  raise ValueError("required reviewers are missing")
+              # The secret context can fall back to a repository secret. Verify
+              # environment metadata without retrieving any secret value.
+              secret = metadata(endpoint + "/secrets/CLOUDFLARE_PREVIEW_API_TOKEN")
+              if secret.get("name") != "CLOUDFLARE_PREVIEW_API_TOKEN":
+                  raise ValueError("environment secret is missing")
+          except Exception:
+              raise SystemExit("::error::Cannot verify protected datapulse-preview and its environment-only CLOUDFLARE_PREVIEW_API_TOKEN. Missing configuration, denied metadata access, and repository-secret fallback all block deployment. This staged check has not passed.")
+          PY
+
+      - name: Download this build's immutable artifact
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          run-id: ${{ github.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/preview-artifact
+          merge-multiple: true
+
+      - name: Verify downloaded static artifact
+        env:
+          EXPECTED_MANIFEST_SHA256: ${{ needs.build.outputs.manifest_sha256 }}
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import stat
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "preview-artifact"
+          if {path.name for path in root.iterdir()} != {"_site", "release-artifact-manifest.json"}:
+              raise SystemExit("Unexpected preview artifact members")
+          manifest_path = root / "release-artifact-manifest.json"
+          if not stat.S_ISREG(manifest_path.lstat().st_mode):
+              raise SystemExit("Preview manifest must be a regular file")
+          raw = manifest_path.read_bytes()
+          if hashlib.sha256(raw).hexdigest() != os.environ["EXPECTED_MANIFEST_SHA256"]:
+              raise SystemExit("Preview manifest does not match this build")
+          manifest = json.loads(raw)
+          if manifest["schema"] != "datapulse/v1/release-artifact-manifest" or manifest["source_commit"] != os.environ["GITHUB_SHA"]:
+              raise SystemExit("Preview source identity mismatch")
+          site = root / "_site"
+          if not stat.S_ISDIR(site.lstat().st_mode):
+              raise SystemExit("Preview site must be a directory")
+          for forbidden in ("functions", "_worker.js", "wrangler.toml", "wrangler.json", "wrangler.jsonc"):
+              if (site / forbidden).exists():
+                  raise SystemExit("Preview artifact must contain static Pages files only")
+          observed = []
+          for path in sorted(site.rglob("*")):
+              mode = path.lstat().st_mode
+              if stat.S_ISDIR(mode):
+                  continue
+              if not stat.S_ISREG(mode):
+                  raise SystemExit("Non-regular member in preview artifact")
+              content = path.read_bytes()
+              observed.append({"path": path.relative_to(site).as_posix(), "sha256": hashlib.sha256(content).hexdigest(), "size": len(content)})
+          observed.sort(key=lambda item: item["path"])
+          if observed != manifest["files"] or len(observed) != manifest["file_count"]:
+              raise SystemExit("Preview artifact inventory mismatch")
+          digest = hashlib.sha256()
+          for entry in observed:
+              digest.update(f"{entry['path']}\0{entry['sha256']}\0{entry['size']}\n".encode())
+          if digest.hexdigest() != manifest["aggregate_sha256"]:
+              raise SystemExit("Preview artifact aggregate digest mismatch")
+          print("Verified the exact static artifact from this build run.")
+          PY
+          private_scan_status=0
+          grep -rE 'private_key_base64|BEGIN ([A-Z0-9]+ )?PRIVATE KEY' "$RUNNER_TEMP/preview-artifact" >/dev/null || private_scan_status=$?
+          if [[ "$private_scan_status" != 1 ]]; then
+            echo "::error::Downloaded artifact contains private material or could not be scanned." >&2
+            exit 1
+          fi
+
+      - name: Install fixed preview deploy tooling outside the artifact
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/preview-deploy"
+          npm install --prefix "$RUNNER_TEMP/preview-deploy" --ignore-scripts --no-audit --no-fund wrangler@3.90.0
+
       - name: Deploy isolated Cloudflare Pages preview
         id: deploy_preview
+        working-directory: ${{ runner.temp }}/preview-deploy
         env:
           CLOUDFLARE_PREVIEW_API_TOKEN: ${{ secrets.CLOUDFLARE_PREVIEW_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -Eeuo pipefail
           if ! [[ -n "$CLOUDFLARE_PREVIEW_API_TOKEN" ]]; then
-            echo "::error::A maintainer must provision CLOUDFLARE_PREVIEW_API_TOKEN as a separate preview-scoped credential. This staged check has not passed." >&2
+            echo "::error::The protected datapulse-preview environment must provide CLOUDFLARE_PREVIEW_API_TOKEN. This staged check has not passed." >&2
             exit 1
           fi
-          branch="pr-${{ github.event.pull_request.number }}"
+          if ! [[ -n "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID must be configured as a non-secret variable." >&2
+            exit 1
+          fi
+          branch="pr-$PR_NUMBER"
           [[ "$branch" =~ ^pr-[0-9]+$ ]]
-          output="$RUNNER_TEMP/pages-preview-deploy.log"
+          preview_url="https://${branch}.datapulse-p4b-preview.pages.dev"
           CLOUDFLARE_API_TOKEN="$CLOUDFLARE_PREVIEW_API_TOKEN" \
-            npx --yes wrangler@3.90.0 pages deploy _site \
+            "$RUNNER_TEMP/preview-deploy/node_modules/.bin/wrangler" pages deploy "$RUNNER_TEMP/preview-artifact/_site" \
             --project-name=datapulse-p4b-preview \
-            --branch="$branch" 2>&1 | tee "$output"
-          preview_url="$(grep -Eo 'https://[a-z0-9-]+\.datapulse-p4b-preview\.pages\.dev' "$output" | tail -n 1)"
-          test -n "$preview_url"
+            --branch="$branch" --commit-hash="$GITHUB_SHA"
           echo "url=$preview_url" >> "$GITHUB_OUTPUT"
 
-      - name: Wait for preview deployment URL
+      - name: Verify served static preview
         env:
           PREVIEW_URL: ${{ steps.deploy_preview.outputs.url }}
         run: |
           set -Eeuo pipefail
           for attempt in $(seq 1 30); do
-            if curl --fail --silent --show-error --output /dev/null "$PREVIEW_URL/"; then
-              exit 0
+            status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 10 "$PREVIEW_URL/")"
+            if [[ "$status" == 200 ]]; then
+              break
             fi
             sleep 10
           done
-          echo "Preview URL did not serve a successful response: $PREVIEW_URL" >&2
-          exit 1
+          [[ "$status" == 200 ]]
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+          from urllib.parse import quote
 
-      - name: Verify served preview
+          class NoRedirects(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, request, response, code, message, headers, url):
+                  return None
+
+          manifest = json.loads((Path(os.environ["RUNNER_TEMP"]) / "preview-artifact/release-artifact-manifest.json").read_text())
+          opener = urllib.request.build_opener(NoRedirects)
+          # Verify representative byte identities at the exact PR host without
+          # following redirects to another deployment or origin.
+          for name in ("index.html", "datapulse.json", "health/latest.json"):
+              expected = next(entry for entry in manifest["files"] if entry["path"] == name)
+              with opener.open(os.environ["PREVIEW_URL"] + "/" + quote(name), timeout=30) as response:
+                  if response.status != 200 or hashlib.sha256(response.read()).hexdigest() != expected["sha256"]:
+                      raise SystemExit("Served preview does not match this build")
+          PY
+
+  preview:
+    # Preserve the existing required-check name, including for skipped deploys.
+    name: Build and verify isolated PR preview
+    needs: [build, deploy_preview]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require successful approved staging
         env:
-          PREVIEW_URL: ${{ steps.deploy_preview.outputs.url }}
-        run: python3 scripts/verify_external.py --base-url "$PREVIEW_URL"
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy_preview.result }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" ]]; then
+            echo "::error::Fork builds are uncredentialed and cannot deploy. A maintainer must review the PR and use a same-repository branch. This staged check has not passed."
+            exit 1
+          fi
+          if [[ "$BUILD_RESULT" != success || "$DEPLOY_RESULT" != success ]]; then
+            echo "::error::The build and approved isolated preview deployment must both succeed. This staged check has not passed."
+            exit 1
+          fi
