@@ -1,0 +1,452 @@
+# workflow_run is privileged: no checkout, PR programs, caches or artifact commands.
+# This file must land on protected main before GitHub can dispatch it.
+# Only the trusted reporter publishes the existing required check on the PR head.
+# If this path cannot run, that check remains missing/pending, never successful.
+name: Deploy trusted pull request preview
+'on':
+  workflow_run:
+    workflows:
+    - Verify pull request preview
+    types:
+    - completed
+permissions: {}
+concurrency:
+  group: trusted-preview-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    name: Validate preview provenance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    outputs:
+      state: ${{ steps.validate.outputs.state }}
+    steps:
+    - name: Validate protected-main and triggering build provenance
+      id: validate
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -Eeuo pipefail
+        python3 - <<'PY'
+        import json
+        import os
+        import re
+        import urllib.request
+        from pathlib import Path
+
+        repository = os.environ["GITHUB_REPOSITORY"]
+        event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+        trigger = event["workflow_run"]
+        def require(condition, message):
+            if not condition:
+                raise SystemExit("::error::" + message)
+        def metadata(path):
+            request = urllib.request.Request(os.environ["GITHUB_API_URL"] + "/repos/" + repository + path, headers={
+                "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
+            })
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return json.load(response)
+        require(repository == "r3dz4r/datapulse-my", "Unexpected repository")
+        repo = metadata("")
+        require(repo["full_name"] == repository and repo["default_branch"] == "main", "Default branch must be main")
+        require(os.environ["GITHUB_REF"] == "refs/heads/main" and os.environ["GITHUB_WORKFLOW_REF"] == repository + "/.github/workflows/preview-deploy.yml@refs/heads/main", "Deployment definition must come from protected main")
+        require(metadata("/branches/main")["protected"] is True, "Main must be protected")
+        require(type(trigger["id"]) is int and trigger["id"] > 0, "Invalid triggering run")
+        run = metadata(f"/actions/runs/{trigger['id']}")
+        workflow = metadata("/actions/workflows/preview-verify.yml")
+        require(workflow["path"] == ".github/workflows/preview-verify.yml" and workflow["name"] == "Verify pull request preview" and workflow["state"] == "active", "Unexpected build workflow")
+        for candidate in (trigger, run):
+            require(candidate["repository"]["full_name"] == repository and candidate["repository"]["id"] == repo["id"], "Cross-repository run")
+            require(candidate["head_repository"]["full_name"] == repository and candidate["head_repository"]["id"] == repo["id"], "Forks cannot receive a preview")
+            require(candidate["workflow_id"] == workflow["id"] and candidate["path"] == workflow["path"] and candidate["name"] == workflow["name"], "Build workflow provenance mismatch")
+            require(candidate["event"] == "pull_request" and candidate["status"] == "completed" and candidate["conclusion"] == "success", "Successful pull_request build required")
+            require(re.fullmatch(r"[0-9a-f]{40}", candidate["head_sha"]) is not None, "Invalid head SHA")
+            require(len(candidate["pull_requests"]) == 1, "Missing or ambiguous PR association")
+        require(all(run[key] == trigger[key] for key in ("id", "run_attempt", "head_sha", "workflow_id", "pull_requests")), "Stale or changed triggering run")
+        number = run["pull_requests"][0]["number"]
+        require(type(number) is int and number > 0, "Invalid PR number")
+        pr = metadata(f"/pulls/{number}")
+        require(pr["number"] == number and pr["state"] == "open", "PR is no longer open")
+        require(pr["head"]["repo"]["full_name"] == repository and pr["head"]["repo"]["id"] == repo["id"] and pr["head"]["sha"] == run["head_sha"], "Fork or stale PR head")
+        require(pr["base"]["repo"]["full_name"] == repository and pr["base"]["ref"] == "main", "Unexpected PR base")
+        require(pr["head"]["ref"] == run["head_branch"], "PR branch mismatch")
+        artifacts = metadata(f"/actions/runs/{run['id']}/artifacts?per_page=100")
+        require(artifacts["total_count"] == 1 and len(artifacts["artifacts"]) == 1, "Missing or ambiguous artifact")
+        artifact = artifacts["artifacts"][0]
+        require(type(artifact["id"]) is int and artifact["id"] > 0 and not artifact["expired"], "Invalid or expired artifact")
+        require(artifact["name"] == f"preview-pages-{run['id']}-{run['run_attempt']}", "Artifact run/attempt mismatch")
+        require(0 < artifact["size_in_bytes"] <= 200 * 1024 * 1024 and re.fullmatch(r"sha256:[0-9a-f]{64}", artifact["digest"]) is not None, "Artifact size or immutable digest missing")
+        for key, expected in {"id": run["id"], "repository_id": repo["id"], "head_repository_id": repo["id"], "head_sha": run["head_sha"]}.items():
+            require(artifact["workflow_run"][key] == expected, "Artifact belongs to another run or repository")
+        state = {"repository": repository, "run_id": run["id"], "run_attempt": run["run_attempt"], "pr_number": number, "head_sha": run["head_sha"], "workflow": workflow["name"], "event": "pull_request"}
+        state.update(artifact_id=artifact["id"], artifact_digest=artifact["digest"], artifact_size=artifact["size_in_bytes"])
+        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+            output.write("state=" + json.dumps(state, separators=(",", ":")) + "\n")
+        print("Verified protected-main definition, successful run, current same-repository PR and immutable artifact identity.")
+        PY
+  deploy_preview:
+    name: Deploy protected-main isolated PR preview
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    environment: datapulse-preview
+    steps:
+    - name: Revalidate run and PR after environment approval
+      id: current
+      env:
+        GH_TOKEN: ${{ github.token }}
+        EXPECTED_STATE: ${{ needs.validate.outputs.state }}
+      run: |
+        set -Eeuo pipefail
+        python3 - <<'PY'
+        import json
+        import os
+        import re
+        import urllib.request
+        from pathlib import Path
+
+        repository = os.environ["GITHUB_REPOSITORY"]
+        event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+        trigger = event["workflow_run"]
+        def require(condition, message):
+            if not condition:
+                raise SystemExit("::error::" + message)
+        def metadata(path):
+            request = urllib.request.Request(os.environ["GITHUB_API_URL"] + "/repos/" + repository + path, headers={
+                "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
+            })
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return json.load(response)
+        require(repository == "r3dz4r/datapulse-my", "Unexpected repository")
+        repo = metadata("")
+        require(repo["full_name"] == repository and repo["default_branch"] == "main", "Default branch must be main")
+        require(os.environ["GITHUB_REF"] == "refs/heads/main" and os.environ["GITHUB_WORKFLOW_REF"] == repository + "/.github/workflows/preview-deploy.yml@refs/heads/main", "Deployment definition must come from protected main")
+        require(metadata("/branches/main")["protected"] is True, "Main must be protected")
+        require(type(trigger["id"]) is int and trigger["id"] > 0, "Invalid triggering run")
+        run = metadata(f"/actions/runs/{trigger['id']}")
+        workflow = metadata("/actions/workflows/preview-verify.yml")
+        require(workflow["path"] == ".github/workflows/preview-verify.yml" and workflow["name"] == "Verify pull request preview" and workflow["state"] == "active", "Unexpected build workflow")
+        for candidate in (trigger, run):
+            require(candidate["repository"]["full_name"] == repository and candidate["repository"]["id"] == repo["id"], "Cross-repository run")
+            require(candidate["head_repository"]["full_name"] == repository and candidate["head_repository"]["id"] == repo["id"], "Forks cannot receive a preview")
+            require(candidate["workflow_id"] == workflow["id"] and candidate["path"] == workflow["path"] and candidate["name"] == workflow["name"], "Build workflow provenance mismatch")
+            require(candidate["event"] == "pull_request" and candidate["status"] == "completed" and candidate["conclusion"] == "success", "Successful pull_request build required")
+            require(re.fullmatch(r"[0-9a-f]{40}", candidate["head_sha"]) is not None, "Invalid head SHA")
+            require(len(candidate["pull_requests"]) == 1, "Missing or ambiguous PR association")
+        require(all(run[key] == trigger[key] for key in ("id", "run_attempt", "head_sha", "workflow_id", "pull_requests")), "Stale or changed triggering run")
+        number = run["pull_requests"][0]["number"]
+        require(type(number) is int and number > 0, "Invalid PR number")
+        pr = metadata(f"/pulls/{number}")
+        require(pr["number"] == number and pr["state"] == "open", "PR is no longer open")
+        require(pr["head"]["repo"]["full_name"] == repository and pr["head"]["repo"]["id"] == repo["id"] and pr["head"]["sha"] == run["head_sha"], "Fork or stale PR head")
+        require(pr["base"]["repo"]["full_name"] == repository and pr["base"]["ref"] == "main", "Unexpected PR base")
+        require(pr["head"]["ref"] == run["head_branch"], "PR branch mismatch")
+        artifacts = metadata(f"/actions/runs/{run['id']}/artifacts?per_page=100")
+        require(artifacts["total_count"] == 1 and len(artifacts["artifacts"]) == 1, "Missing or ambiguous artifact")
+        artifact = artifacts["artifacts"][0]
+        require(type(artifact["id"]) is int and artifact["id"] > 0 and not artifact["expired"], "Invalid or expired artifact")
+        require(artifact["name"] == f"preview-pages-{run['id']}-{run['run_attempt']}", "Artifact run/attempt mismatch")
+        require(0 < artifact["size_in_bytes"] <= 200 * 1024 * 1024 and re.fullmatch(r"sha256:[0-9a-f]{64}", artifact["digest"]) is not None, "Artifact size or immutable digest missing")
+        for key, expected in {"id": run["id"], "repository_id": repo["id"], "head_repository_id": repo["id"], "head_sha": run["head_sha"]}.items():
+            require(artifact["workflow_run"][key] == expected, "Artifact belongs to another run or repository")
+        state = {"repository": repository, "run_id": run["id"], "run_attempt": run["run_attempt"], "pr_number": number, "head_sha": run["head_sha"], "workflow": workflow["name"], "event": "pull_request"}
+        state.update(artifact_id=artifact["id"], artifact_digest=artifact["digest"], artifact_size=artifact["size_in_bytes"])
+        require(state == json.loads(os.environ["EXPECTED_STATE"]), "Artifact or PR changed during approval")
+        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+            output.write("state=" + json.dumps(state, separators=(",", ":")) + "\n")
+        print("Verified protected-main definition, successful run, current same-repository PR and immutable artifact identity.")
+        PY
+    - name: Verify protected environment and secret provenance
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -Eeuo pipefail
+        python3 - <<'PY'
+        import json
+        import os
+        import urllib.request
+
+        endpoint = f"{os.environ['GITHUB_API_URL']}/repos/{os.environ['GITHUB_REPOSITORY']}/environments/datapulse-preview"
+        def metadata(url):
+            request = urllib.request.Request(url, headers={
+                "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                "Accept": "application/vnd.github+json",
+                "X-GitHub-Api-Version": "2022-11-28",
+            })
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return json.load(response)
+
+        try:
+            environment = metadata(endpoint)
+            if environment.get("name") != "datapulse-preview" or not any(
+                rule.get("type") == "required_reviewers" and rule.get("reviewers")
+                for rule in environment.get("protection_rules", [])
+            ):
+                raise ValueError("required reviewers are missing")
+            # Restrict credential access to main, including PR-added workflows.
+            # Approval alone cannot make a PR workflow definition trusted.
+            if environment.get("deployment_branch_policy") != {
+                "protected_branches": False, "custom_branch_policies": True,
+            }:
+                raise ValueError("exact main-only deployment policy is required")
+            policies = metadata(endpoint + "/deployment-branch-policies?per_page=100")
+            if policies.get("total_count") != 1 or [
+                (policy.get("name"), policy.get("type"))
+                for policy in policies.get("branch_policies", [])
+            ] != [("main", "branch")]:
+                raise ValueError("only the exact main branch may access the environment")
+            # The secret context can fall back to a repository secret. Verify
+            # environment metadata without retrieving any secret value.
+            secret = metadata(endpoint + "/secrets/CLOUDFLARE_PREVIEW_API_TOKEN")
+            if secret.get("name") != "CLOUDFLARE_PREVIEW_API_TOKEN":
+                raise ValueError("environment secret is missing")
+        except Exception:
+            raise SystemExit("::error::Cannot verify main-only protected datapulse-preview and its environment-only CLOUDFLARE_PREVIEW_API_TOKEN. Missing configuration, denied metadata access, and repository-secret fallback all block deployment. This staged check has not passed.")
+        PY
+    - name: Download and verify immutable static archive
+      env:
+        GH_TOKEN: ${{ github.token }}
+        EXPECTED_STATE: ${{ needs.validate.outputs.state }}
+      run: |
+        set -Eeuo pipefail
+        python3 - <<'PY'
+        import hashlib
+        import io
+        import json
+        import os
+        import re
+        import stat
+        import urllib.error
+        import urllib.request
+        import zipfile
+        from pathlib import Path, PurePosixPath
+        from urllib.parse import urlsplit
+
+        state = json.loads(os.environ["EXPECTED_STATE"])
+        root = Path(os.environ["RUNNER_TEMP"]) / "preview-artifact"
+        def require(condition, message):
+            if not condition:
+                raise SystemExit("::error::" + message)
+        def object_pairs(pairs):
+            value = {}
+            for key, item in pairs:
+                require(key not in value, "Duplicate JSON key")
+                value[key] = item
+            return value
+        class NoRedirects(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, request, response, code, message, headers, url):
+                return None
+        require(type(state["artifact_id"]) is int and state["artifact_id"] > 0, "Invalid artifact id")
+        endpoint = os.environ["GITHUB_API_URL"] + "/repos/" + os.environ["GITHUB_REPOSITORY"] + f"/actions/artifacts/{state['artifact_id']}/zip"
+        request = urllib.request.Request(endpoint, headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"], "Accept": "application/vnd.github+json"})
+        try:
+            response = urllib.request.build_opener(NoRedirects).open(request, timeout=30)
+        except urllib.error.HTTPError as error:
+            require(error.code == 302, "Artifact download failed")
+            url = urlsplit(error.headers["Location"])
+            require(url.scheme == "https" and not url.username and not url.password and url.port in (None, 443) and any((url.hostname or "").endswith(suffix) for suffix in (".blob.core.windows.net", ".actions.githubusercontent.com")), "Unexpected artifact storage host")
+            # Never forward the GitHub token to the signed storage URL.
+            response = urllib.request.build_opener(NoRedirects).open(error.headers["Location"], timeout=30)
+        with response:
+            raw = response.read(200 * 1024 * 1024 + 1)
+        require(len(raw) == state["artifact_size"] and len(raw) <= 200 * 1024 * 1024, "Archive size mismatch")
+        require("sha256:" + hashlib.sha256(raw).hexdigest() == state["artifact_digest"], "Immutable archive digest mismatch")
+        archive = zipfile.ZipFile(io.BytesIO(raw))
+        entries = archive.infolist()
+        require(0 < len(entries) <= 25000, "Archive member limit")
+        require(sum(entry.file_size for entry in entries) <= 512 * 1024 * 1024, "Archive total size limit")
+        seen = set()
+        files = {}
+        for entry in entries:
+            name = entry.filename
+            parts = name.rstrip("/").split("/")
+            require(name == entry.orig_filename and name and not name.startswith("/") and "\\" not in name and all(part not in ("", ".", "..") for part in parts) and all(32 <= ord(char) <= 126 for char in name), "Unsafe archive path")
+            normalized = "/".join(parts)
+            require(normalized not in seen, "Duplicate archive path")
+            seen.add(normalized)
+            mode = entry.external_attr >> 16
+            kind = stat.S_IFMT(mode)
+            require(not entry.flag_bits & 1 and kind in (0, stat.S_IFDIR if entry.is_dir() else stat.S_IFREG), "Symlink or special archive member")
+            # upload-artifact normalizes static file modes; no executable payloads.
+            require(not mode & 0o111 or entry.is_dir(), "Executable artifact member")
+            require(entry.file_size <= 25 * 1024 * 1024, "Pages asset size limit")
+            require(parts[0] == "_site" or (len(parts) == 1 and name in ("release-artifact-manifest.json", "preview-binding.json") and not entry.is_dir()), "Unexpected archive root member")
+            if parts[0] == "_site":
+                forbidden = {"functions", "_worker.js", "_routes.json", "wrangler.toml", "wrangler.json", "wrangler.jsonc", ".git", ".github", "node_modules", "package.json", "package-lock.json", ".npmrc"}
+                require(not forbidden.intersection(parts), "Executable or deploy configuration in artifact")
+            if entry.is_dir():
+                require(entry.file_size == 0, "Directory contains data")
+                require(parts[0] == "_site", "Unexpected archive directory")
+                continue
+            require(len(parts) > 1 or name in ("release-artifact-manifest.json", "preview-binding.json"), "Site must be a directory")
+            if parts[0] == "_site":
+                suffix = PurePosixPath(name).suffix.lower()
+                require(suffix in {".html", ".md", ".json", ".jsonl", ".gz", ".txt", ".xml", ".css", ".js", ".svg", ".png", ".jpg", ".jpeg", ".ico", ".csv", ".zip", ".pb", ".ipynb"} or parts[-1] in {"_headers", "_redirects"}, "Unexpected static file type")
+            content = archive.read(entry)
+            require(len(content) == entry.file_size, "Truncated archive member")
+            require(re.search(rb"private_key_base64|BEGIN ([A-Z0-9]+ )?PRIVATE KEY", content) is None, "Private signing material in artifact")
+            files[name] = content
+        require({name.split("/")[0] for name in files} == {"_site", "release-artifact-manifest.json", "preview-binding.json"}, "Missing artifact root members")
+        binding = json.loads(files["preview-binding.json"], object_pairs_hook=object_pairs)
+        expected_binding = {key: state[key] for key in ("repository", "run_id", "run_attempt", "pr_number", "head_sha", "workflow", "event")}
+        manifest_raw = files["release-artifact-manifest.json"]
+        expected_binding["manifest_sha256"] = hashlib.sha256(manifest_raw).hexdigest()
+        require(binding == expected_binding and all(type(binding[key]) is type(value) for key, value in expected_binding.items()), "Artifact binding mismatch")
+        manifest = json.loads(manifest_raw, object_pairs_hook=object_pairs)
+        require(set(manifest) == {"schema", "source_commit", "file_count", "files", "aggregate_sha256"} and manifest["schema"] == "datapulse/v1/release-artifact-manifest" and manifest["source_commit"] == state["head_sha"], "Manifest source or schema mismatch")
+        observed = sorted(({"path": name.removeprefix("_site/"), "sha256": hashlib.sha256(content).hexdigest(), "size": len(content)} for name, content in files.items() if name.startswith("_site/")), key=lambda entry: entry["path"])
+        require(isinstance(manifest["files"], list) and all(isinstance(entry, dict) and set(entry) == {"path", "sha256", "size"} and isinstance(entry["path"], str) and isinstance(entry["sha256"], str) and type(entry["size"]) is int for entry in manifest["files"]), "Invalid manifest records")
+        require(type(manifest["file_count"]) is int and manifest["file_count"] == len(observed) and manifest["files"] == observed, "Exact static inventory mismatch")
+        require({"index.html", "404.html", "_headers", "_redirects", "datapulse.json", "health/latest.json", ".well-known/datapulse-probe-keys.json"} <= {entry["path"] for entry in observed}, "Missing required static files")
+        digest = hashlib.sha256()
+        for entry in observed:
+            digest.update(f"{entry['path']}\0{entry['sha256']}\0{entry['size']}\n".encode())
+        require(digest.hexdigest() == manifest["aggregate_sha256"], "Manifest aggregate digest mismatch")
+        for name in seen:
+            parts = name.split("/")
+            require(not any("/".join(parts[:index]) in files for index in range(1, len(parts))), "File/directory path collision")
+        # Write only regular bytes, after all checks; never extract attacker paths.
+        root.mkdir(mode=0o700)
+        for name, content in files.items():
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with target.open("xb") as output:
+                output.write(content)
+        print("Verified the exact static artifact from this build run before credential access.")
+        PY
+    - name: Install fixed preview deploy tooling outside the artifact
+      run: |
+        set -Eeuo pipefail
+        mkdir -p "$RUNNER_TEMP/preview-deploy"
+        npm install --prefix "$RUNNER_TEMP/preview-deploy" --ignore-scripts --no-audit --no-fund wrangler@3.90.0
+    - name: Deploy isolated Cloudflare Pages preview
+      id: deploy_preview
+      working-directory: ${{ runner.temp }}/preview-deploy
+      env:
+        CLOUDFLARE_PREVIEW_API_TOKEN: ${{ secrets.CLOUDFLARE_PREVIEW_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        PR_NUMBER: ${{ fromJSON(needs.validate.outputs.state).pr_number }}
+        PREVIEW_HEAD_SHA: ${{ fromJSON(needs.validate.outputs.state).head_sha }}
+      run: |
+        set -Eeuo pipefail
+        if ! [[ -n "$CLOUDFLARE_PREVIEW_API_TOKEN" ]]; then
+          echo "::error::The protected datapulse-preview environment must provide CLOUDFLARE_PREVIEW_API_TOKEN. This staged check has not passed." >&2
+          exit 1
+        fi
+        if ! [[ -n "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+          echo "::error::CLOUDFLARE_ACCOUNT_ID must be configured as a non-secret variable." >&2
+          exit 1
+        fi
+        branch="pr-$PR_NUMBER"
+        [[ "$branch" =~ ^pr-[0-9]+$ ]]
+        preview_url="https://${branch}.datapulse-p4b-preview.pages.dev"
+        CLOUDFLARE_API_TOKEN="$CLOUDFLARE_PREVIEW_API_TOKEN" \
+          "$RUNNER_TEMP/preview-deploy/node_modules/.bin/wrangler" pages deploy "$RUNNER_TEMP/preview-artifact/_site" \
+          --project-name=datapulse-p4b-preview \
+          --branch="$branch" --commit-hash="$PREVIEW_HEAD_SHA"
+        echo "url=$preview_url" >> "$GITHUB_OUTPUT"
+    - name: Verify served static preview
+      env:
+        PREVIEW_URL: ${{ steps.deploy_preview.outputs.url }}
+      run: |
+        set -Eeuo pipefail
+        for attempt in $(seq 1 30); do
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 10 "$PREVIEW_URL/")"
+          if [[ "$status" == 200 ]]; then
+            break
+          fi
+          sleep 10
+        done
+        [[ "$status" == 200 ]]
+        python3 - <<'PY'
+        import hashlib
+        import json
+        import os
+        import urllib.request
+        from pathlib import Path
+        from urllib.parse import quote
+
+        class NoRedirects(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, request, response, code, message, headers, url):
+                return None
+
+        manifest = json.loads((Path(os.environ["RUNNER_TEMP"]) / "preview-artifact/release-artifact-manifest.json").read_text())
+        opener = urllib.request.build_opener(NoRedirects)
+        # Verify representative byte identities at the exact PR host without
+        # following redirects to another deployment or origin.
+        for name in ("index.html", "datapulse.json", "health/latest.json"):
+            expected = next(entry for entry in manifest["files"] if entry["path"] == name)
+            served_path = "/" if name == "index.html" else "/" + quote(name)
+            with opener.open(os.environ["PREVIEW_URL"] + served_path, timeout=30) as response:
+                if response.status != 200 or hashlib.sha256(response.read()).hexdigest() != expected["sha256"]:
+                    raise SystemExit("Served preview does not match this build")
+        PY
+  preview:
+    name: Report actual PR preview result
+    needs:
+    - validate
+    - deploy_preview
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      checks: write
+      actions: read
+      contents: read
+      pull-requests: read
+    steps:
+    - name: Publish fail-closed required preview check
+      env:
+        GH_TOKEN: ${{ github.token }}
+        VALIDATE_RESULT: ${{ needs.validate.result }}
+        DEPLOY_RESULT: ${{ needs.deploy_preview.result }}
+        EXPECTED_STATE: ${{ needs.validate.outputs.state }}
+      run: |
+        set -Eeuo pipefail
+        python3 - <<'PY'
+        import json
+        import os
+        import re
+        import urllib.request
+        from pathlib import Path
+
+        event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+        run = event["workflow_run"]
+        repository = os.environ["GITHUB_REPOSITORY"]
+        if repository != "r3dz4r/datapulse-my" or os.environ["GITHUB_REF"] != "refs/heads/main" or os.environ["GITHUB_WORKFLOW_REF"] != repository + "/.github/workflows/preview-deploy.yml@refs/heads/main":
+            raise SystemExit("Reporter must be sourced from main")
+        sha = run["head_sha"]
+        if re.fullmatch(r"[0-9a-f]{40}", sha) is None or run["repository"]["full_name"] != repository:
+            raise SystemExit("Invalid check target")
+        def api(path, data=None):
+            request = urllib.request.Request(os.environ["GITHUB_API_URL"] + "/repos/" + repository + path,
+                data=None if data is None else json.dumps(data).encode(), headers={
+                    "Authorization": "Bearer " + os.environ["GH_TOKEN"], "Accept": "application/vnd.github+json",
+                    "Content-Type": "application/json", "X-GitHub-Api-Version": "2022-11-28",
+                })
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return json.load(response)
+        success = os.environ["VALIDATE_RESULT"] == "success" and os.environ["DEPLOY_RESULT"] == "success"
+        if success:
+            state = json.loads(os.environ["EXPECTED_STATE"])
+            current = api(f"/pulls/{state['pr_number']}")
+            latest_run = api(f"/actions/runs/{state['run_id']}")
+            success = (current["state"] == "open" and current["head"]["repo"]["full_name"] == repository and current["head"]["sha"] == sha == state["head_sha"] and latest_run["run_attempt"] == state["run_attempt"] and latest_run["conclusion"] == "success")
+        api("/check-runs", {"name": "Build and verify isolated PR preview", "head_sha": sha,
+            "status": "completed", "conclusion": "success" if success else "failure",
+            "details_url": f"https://github.com/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+            "output": {"title": "Actual isolated preview verified" if success else "Preview has not passed",
+                       "summary": "Protected-main deployment and served byte verification succeeded." if success else "Build/provenance/deployment was rejected, failed, skipped or cancelled. Forks and missing environment configuration cannot pass."}})
+        if not success:
+            raise SystemExit("::error::This staged check has not passed")
+        PY
