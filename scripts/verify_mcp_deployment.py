@@ -103,14 +103,14 @@ def _remote_default_branch_revision(
 
 
 def newest_mcp_sha(repo_path: Path, default_branch: str | None = None) -> str:
-    """Return the newest default-branch commit that changes ``mcp/``.
+    """Return the newest default-branch commit changing deployed MCP code.
 
     A shallow checkout can omit an older ``mcp/`` commit and would therefore
     manufacture a false match. Refuse it rather than treating its tip as proof.
     """
     if _git(repo_path, "rev-parse", "--is-shallow-repository") == "true":
         raise RepositoryHistoryError(
-            "repository history is shallow; cannot derive newest mcp/ revision"
+            "repository history is shallow; cannot derive deployed MCP code revision"
         )
     try:
         ref = default_branch_ref(repo_path, default_branch)
@@ -118,10 +118,22 @@ def newest_mcp_sha(repo_path: Path, default_branch: str | None = None) -> str:
         # A remote is useful for identifying its default branch, but it is not
         # required when the checked-out history already contains the answer.
         ref = "HEAD"
-    sha = _git(repo_path, "log", "-1", "--format=%H", ref, "--", "mcp/")
+    # Keep this list explicit: tests, docs, and future files under mcp/ do not
+    # change the deployed source identity unless they become runtime inputs.
+    sha = _git(
+        repo_path,
+        "log",
+        "-1",
+        "--format=%H",
+        ref,
+        "--",
+        "mcp/server.py",
+        "scripts/gen_per_dataset_receipt.py",
+        "scripts/verify_per_dataset_receipt.py",
+    )
     if not SHA_RE.fullmatch(sha):
         raise RepositoryHistoryError(
-            f"default branch {ref} has no resolvable commit touching mcp/"
+            f"default branch {ref} has no resolvable commit changing deployed MCP code"
         )
     return sha
 
@@ -218,7 +230,7 @@ def main() -> int:
         expected_sha = newest_mcp_sha(args.repo_path, args.default_branch)
         deployed_sha = deployed_source_sha(args.endpoint)
     except RepositoryHistoryError as error:
-        print(f"UNREACHABLE: cannot establish expected newest mcp/ revision: {error}")
+        print(f"UNREACHABLE: cannot establish expected deployed MCP code revision: {error}")
         return 2
     except (HTTPError, URLError, TimeoutError, OSError, ValueError) as error:
         print(f"UNREACHABLE: {error}")
@@ -226,13 +238,13 @@ def main() -> int:
 
     if deployed_sha[:7] == expected_sha[:7]:
         print(
-            f"OK: deployed {deployed_sha[:7]} matches newest mcp/ revision "
+            f"OK: deployed {deployed_sha[:7]} matches deployed MCP code revision "
             f"{expected_sha} on default branch, rather than matches recorded stamp "
             "in mcp.json"
         )
         return 0
     print(
-        f"MISMATCH: deployed={deployed_sha} newest mcp/ revision={expected_sha} "
+        f"MISMATCH: deployed={deployed_sha} expected deployed MCP code revision={expected_sha} "
         "on default branch"
     )
     return 1

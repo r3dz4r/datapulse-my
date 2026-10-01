@@ -156,8 +156,10 @@ merge: the MCP server and manifest are out of sync.
 
 ## Source-to-deployment sync
 
-Discovery generation derives the source revision from the newest commit that
-changes `mcp/` on the default branch, using the same derivation as
+Discovery generation derives the source revision from the newest default-branch
+commit that changes `mcp/server.py` or either imported module
+`scripts/gen_per_dataset_receipt.py` and
+`scripts/verify_per_dataset_receipt.py`, using the same derivation as
 `scripts/verify_mcp_deployment.py`. It records that commit and its commit date
 in `mcp.json` and `agent.json`; no hand-stamping step is involved.
 
@@ -171,7 +173,7 @@ in `mcp.json` and `agent.json`; no hand-stamping step is involved.
 - `scripts/bump_mcp_source_version.py` now refuses manual stamping because that
   workflow caused the provenance drift this derivation prevents.
 - `scripts/verify_mcp_deployment.py` compares the deployed service's
-  `source_commit_sha` to the same derived newest `mcp/` revision. It exits `0`
+  `source_commit_sha` to the same derived deployed MCP code revision. It exits `0`
   on a match, `1` on a mismatch, and `2` when it cannot establish the revision
   or reach the endpoint.
 

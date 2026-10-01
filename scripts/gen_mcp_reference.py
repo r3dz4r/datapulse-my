@@ -67,7 +67,7 @@ def _source_identity(root: Path, sha: str | None, date: str | None) -> tuple[str
             resolved_sha = newest_mcp_sha(root)
         except RepositoryHistoryError as error:
             raise GenerationError(
-                f"cannot derive newest mcp/ source revision: {error}"
+                f"cannot derive deployed MCP code source revision: {error}"
             ) from error
     if not SHA_RE.fullmatch(resolved_sha):
         raise GenerationError("source commit SHA must be 40 lowercase hex characters")
