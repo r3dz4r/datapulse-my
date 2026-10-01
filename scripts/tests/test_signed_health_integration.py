@@ -7,8 +7,10 @@ network traffic is the loopback fixture server and the loopback Pages runtime.
 """
 from __future__ import annotations
 
+import builtins
 import copy
 import json
+import os
 import subprocess
 import sys
 import time
@@ -733,3 +735,274 @@ def test_runtime_rehearsal_serves_real_pages_with_positive_and_negative_cases() 
     assert result["trust"]["refresh_forward"] == "200"
     assert result["unsigned_fallback"] == "not_served"
     assert result["source_truth_verified"] is False
+
+
+# --------------------------------------------------------------------------- #
+# Deferred review findings: one discriminating case per finding
+# --------------------------------------------------------------------------- #
+
+
+def _signer_document(material: dict[str, Any]) -> bytes:
+    private = material["private"]
+    public = private.public_key().public_bytes(shi.Encoding.Raw, shi.PublicFormat.Raw)
+    return shp.canonical(
+        {
+            "key_id": material["key_id"],
+            "public_key_base64": shp.b64(public),
+            "private_key_base64": shp.b64(private.private_bytes_raw()),
+        }
+    )
+
+
+def test_transient_authoritative_object_read_fails_closed(material: dict[str, Any], server: shi.MockKVRestServer, lock: shi.WriterLock) -> None:
+    # Finding 1: a transient read failure while resolving an otherwise valid
+    # pointer must fail closed, never be downgraded to "state unavailable".
+    missing = "0" * 64
+    server.storage[shp.LATEST_KEY] = shp.canonical({"schema": shp.POINTER_SCHEMA, "publication_sha256": missing})
+    server.behaviour["fail_object_key"] = shp.object_key(missing)
+    with pytest.raises(shi.TransportError):
+        publish(material, server, lock)
+    assert all(call["method"] != "PUT" for call in server.calls)
+
+
+def test_oversized_pointer_acknowledgement_is_unknown_not_a_no_write(material: dict[str, Any], server: shi.MockKVRestServer, lock: shi.WriterLock) -> None:
+    # Finding 2: an over-budget acknowledgement to the pointer write is ambiguous.
+    transport = make_transport(server, max_response_bytes=4096)
+    server.behaviour["oversized_pointer_ack"] = 20000
+    result = publish(material, server, lock, transport=transport)
+    assert result["ok"] is False
+    assert result["phase"] == "put_pointer"
+    assert result["outcome"] == "unknown"
+    assert result["pointer_outcome"] == "unknown"
+    assert result["claim"] == "no_rollback_claim"
+    # The pointer write may have landed before the acknowledgement was lost.
+    assert shp.LATEST_KEY in server.storage
+
+
+def test_cli_dry_run_success_writes_nothing_and_reaches_no_transport(
+    material: dict[str, Any],
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Finding 3: the dry-run success path, with the signer supplied through a
+    # pipe-backed descriptor, must sign nothing to disk and reach no transport.
+    health = tmp_path / "health.json"
+    health.write_bytes(material["health"])
+    registry = tmp_path / "registry.json"
+    registry.write_bytes(shp.canonical(material["registry"]))
+    read_fd, write_fd = os.pipe()
+    os.write(write_fd, _signer_document(material))
+    os.close(write_fd)
+    before = sorted(path.name for path in tmp_path.iterdir())
+
+    def forbidden(*_args: Any, **_kwargs: Any) -> Any:
+        raise AssertionError("dry-run must not construct a transport")
+
+    monkeypatch.setattr(shi, "KVRestTransport", forbidden)
+    try:
+        code = shi.main(
+            [
+                "--dry-run",
+                "--health",
+                str(health),
+                "--registry",
+                str(registry),
+                "--source-commit",
+                COMMIT,
+                "--assembled-at",
+                NOW,
+                "--signed-at",
+                NOW,
+                "--signer-key-fd",
+                str(read_fd),
+            ]
+        )
+    finally:
+        os.close(read_fd)
+    output = json.loads(capsys.readouterr().out)
+    assert code == 0, output
+    assert output["ok"] is True and output["signed"] is True and output["network_writes"] == 0
+    assert output["verified"] is True
+    assert sorted(path.name for path in tmp_path.iterdir()) == before
+
+
+def test_cli_publish_success_against_loopback_transport(
+    material: dict[str, Any],
+    server: shi.MockKVRestServer,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # Finding 3: the operator-facing publish path, with a generated secret file
+    # for the signer and a pipe-backed descriptor for the credential.
+    health = tmp_path / "health.json"
+    health.write_bytes(material["health"])
+    registry = tmp_path / "registry.json"
+    registry.write_bytes(shp.canonical(material["registry"]))
+    signer = tmp_path / "signer.json"
+    signer.write_bytes(_signer_document(material))
+    read_fd, write_fd = os.pipe()
+    os.write(write_fd, server.credential.encode("utf-8"))
+    os.close(write_fd)
+    try:
+        code = shi.main(
+            [
+                "--publish",
+                "--health",
+                str(health),
+                "--registry",
+                str(registry),
+                "--source-commit",
+                COMMIT,
+                "--assembled-at",
+                NOW,
+                "--signed-at",
+                NOW,
+                "--now",
+                NOW,
+                "--destination",
+                "fixture",
+                "--api-base",
+                server.api_base,
+                "--account-id",
+                "fixture-account",
+                "--namespace-id",
+                "fixture-namespace",
+                "--signer-key-file",
+                str(signer),
+                "--credential-fd",
+                str(read_fd),
+                "--lock-dir",
+                str(tmp_path / "locks"),
+            ]
+        )
+    finally:
+        os.close(read_fd)
+    output = json.loads(capsys.readouterr().out)
+    assert code == 0, output
+    assert output["ok"] is True
+    assert output["pointer_outcome"] == "acknowledged"
+    identity = shp.digest(material["package"])
+    assert server.storage[shp.object_key(identity)] == material["package"]
+    assert server.storage[shp.LATEST_KEY] == shp.canonical({"schema": shp.POINTER_SCHEMA, "publication_sha256": identity})
+
+
+def test_held_lock_must_identify_the_canonical_lock_for_the_destination(
+    material: dict[str, Any],
+    server: shi.MockKVRestServer,
+    tmp_path: Path,
+) -> None:
+    # Finding 4: a lock file built for alpha but labelled beta must not gate a
+    # beta publish; the held file identity, not the label, decides.
+    lock = shi.WriterLock(shi.writer_lock_path(tmp_path, "alpha"), "beta")
+    transport = make_transport(server, destination="beta")
+    with lock:
+        with pytest.raises(shi.IntegrationError, match="writer_lock_identity_mismatch"):
+            shi.serialized_publish(
+                material["health"],
+                registry=material["registry"],
+                key_id=material["key_id"],
+                signer=material["private"].sign,
+                assembled_at=material["assembled"],
+                signed_at=material["signed"],
+                source_commit=COMMIT,
+                destination="beta",
+                transport=transport,
+                lock=lock,
+                now=material["now"],
+            )
+    assert server.calls == []
+
+
+def test_registry_read_is_bounded_to_one_byte_over_the_limit(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    # Finding 5: the trust input must not be read whole before the size bound is
+    # checked; at most one byte beyond the bound may be read.
+    path = tmp_path / "registry.json"
+    path.write_bytes(b"{" + b" " * (shp.MAX_REGISTRY_BYTES + 1024))
+    observed: list[int] = []
+    real_open = builtins.open
+
+    class _Proxy:
+        def __init__(self, handle: Any) -> None:
+            self._handle = handle
+
+        def read(self, size: int = -1) -> bytes:
+            observed.append(size)
+            return self._handle.read(size)
+
+        def __enter__(self) -> "_Proxy":
+            return self
+
+        def __exit__(self, *_exc: object) -> bool:
+            self._handle.close()
+            return False
+
+        def __getattr__(self, name: str) -> Any:
+            return getattr(self._handle, name)
+
+    def spy_open(file: Any, mode: str = "r", *args: Any, **kwargs: Any) -> "_Proxy":
+        return _Proxy(real_open(file, mode, *args, **kwargs))
+
+    monkeypatch.setattr(builtins, "open", spy_open)
+    with pytest.raises(shi.IntegrationError, match="invalid_registry_size"):
+        shi._read_registry(str(path))
+    assert observed == [shp.MAX_REGISTRY_BYTES + 1]
+
+
+def test_cli_newline_credential_is_a_bounded_envelope_without_the_value(
+    material: dict[str, Any],
+    server: shi.MockKVRestServer,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # Finding 6: a credential the HTTP layer rejects as an argument error must
+    # produce the bounded envelope, never a traceback and never the value.
+    health = tmp_path / "health.json"
+    health.write_bytes(material["health"])
+    registry = tmp_path / "registry.json"
+    registry.write_bytes(shp.canonical(material["registry"]))
+    signer = tmp_path / "signer.json"
+    signer.write_bytes(_signer_document(material))
+    secret = "tok\nen-SUPER-SECRET-value"
+    credential = tmp_path / "credential.txt"
+    credential.write_bytes(secret.encode("utf-8") + b"\n")
+    code = shi.main(
+        [
+            "--publish",
+            "--health",
+            str(health),
+            "--registry",
+            str(registry),
+            "--source-commit",
+            COMMIT,
+            "--assembled-at",
+            NOW,
+            "--signed-at",
+            NOW,
+            "--now",
+            NOW,
+            "--destination",
+            "fixture",
+            "--api-base",
+            server.api_base,
+            "--account-id",
+            "fixture-account",
+            "--namespace-id",
+            "fixture-namespace",
+            "--signer-key-file",
+            str(signer),
+            "--credential-file",
+            str(credential),
+            "--lock-dir",
+            str(tmp_path / "locks"),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert code == 1
+    output = json.loads(captured.out)
+    assert output["ok"] is False
+    combined = captured.out + captured.err
+    assert "SUPER-SECRET" not in combined
+    assert "tok" not in combined
+    assert "Traceback" not in captured.err
+    assert server.calls == []

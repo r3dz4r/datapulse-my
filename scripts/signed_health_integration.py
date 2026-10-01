@@ -240,16 +240,20 @@ class KVRestTransport:
     def _read_bounded(self, response: http.client.HTTPResponse, evidence: dict[str, Any]) -> bytes:
         chunks: list[bytes] = []
         total = 0
+        phase = str(evidence.get("phase", ""))
         while True:
             chunk = response.read(65536)
             if not chunk:
                 break
             total += len(chunk)
             if total > self.max_response_bytes:
+                # An over-budget acknowledgement to a pointer write is ambiguous:
+                # the write may have landed before the body became unreadable.
+                outcome = "unknown" if phase == "put_pointer" else "failed"
                 raise TransportError(
                     "response_too_large",
-                    outcome="failed",
-                    phase=str(evidence.get("phase", "")),
+                    outcome=outcome,
+                    phase=phase,
                     evidence=evidence,
                 )
             chunks.append(chunk)
@@ -294,8 +298,8 @@ class KVRestTransport:
             )
             self.calls.append(evidence)
             return response.status, payload
-        except TransportError:
-            self.calls.append({**evidence, "outcome": "failed"})
+        except TransportError as error:
+            self.calls.append({**evidence, "outcome": error.outcome, "reason": error.reason})
             raise
         except (socket.timeout, TimeoutError):
             outcome = "unknown" if method == "PUT" else "failed"
@@ -382,6 +386,7 @@ class WriterLock:
         self.path = Path(path)
         self.timeout = float(timeout)
         self._fd: int | None = None
+        self._identity: tuple[int, int] | None = None
 
     def acquire(self) -> "WriterLock":
         _require(self._fd is None, "writer_lock_already_held")
@@ -391,7 +396,9 @@ class WriterLock:
         while True:
             try:
                 fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                stat = os.fstat(fd)
                 self._fd = fd
+                self._identity = (stat.st_dev, stat.st_ino)
                 return self
             except OSError:
                 if time.monotonic() >= deadline:
@@ -406,10 +413,21 @@ class WriterLock:
             finally:
                 os.close(self._fd)
                 self._fd = None
+                self._identity = None
 
     def assert_held(self, destination: object) -> None:
         _require(self._fd is not None, "writer_lock_not_held")
-        _require(_validate_destination(destination) == self.destination, "writer_lock_destination_mismatch")
+        value = _validate_destination(destination)
+        _require(value == self.destination, "writer_lock_destination_mismatch")
+        # The convention is one lock file per destination: the held descriptor
+        # must be the canonical lock for this destination, compared by file
+        # identity rather than the caller-supplied label alone.
+        canonical = writer_lock_path(self.path.parent, value)
+        try:
+            expected = os.stat(canonical)
+        except OSError:
+            raise IntegrationError("writer_lock_identity_mismatch") from None
+        _require(self._identity == (expected.st_dev, expected.st_ino), "writer_lock_identity_mismatch")
 
     def __enter__(self) -> "WriterLock":
         return self.acquire()
@@ -550,7 +568,12 @@ def authoritative_observed_at(
     registry: dict[str, Any],
     now: str,
 ) -> str | None:
-    """Observed time of the complete authoritative pointer, when available."""
+    """Observed time of the complete authoritative pointer, when available.
+
+    A genuinely absent or malformed pointer/package is reported as unavailable.
+    A transient read failure is not: it propagates so publication fails closed
+    instead of being silently downgraded to "state unavailable".
+    """
     raw = transport.get(destination, shp.LATEST_KEY)  # type: ignore[attr-defined]
     if raw is None:
         return None
@@ -558,9 +581,12 @@ def authoritative_observed_at(
         pointer = shp.strict_json(raw, 1024)
         _require(set(pointer) == {"schema", "publication_sha256"} and pointer["schema"] == shp.POINTER_SCHEMA, "invalid_pointer")
         identity = _token(pointer["publication_sha256"], shp.DIGEST, "invalid_publication")
-        package = transport.get(destination, shp.object_key(identity))  # type: ignore[attr-defined]
-        if package is None:
-            return None
+    except (shp.PublicationError, IntegrationError):
+        return None
+    package = transport.get(destination, shp.object_key(identity))  # type: ignore[attr-defined]
+    if package is None:
+        return None
+    try:
         verdict = shp.verify_package(package, registry=registry, now=now, expected_publication=identity)
     except (shp.PublicationError, IntegrationError):
         return None
@@ -736,6 +762,11 @@ class MockKVRestServer:
                 return
             if self.behaviour.get("write_timeout"):
                 time.sleep(float(self.behaviour["write_timeout"]))
+            if self.behaviour.get("oversized_pointer_ack") and key == shp.LATEST_KEY:
+                # Injected over-budget acknowledgement for a pointer write only.
+                payload = b'{"result":{},"success":true,"errors":[],"messages":[]}' + b"x" * int(self.behaviour["oversized_pointer_ack"])
+                self._respond(handler, 200, payload, "application/json")
+                return
             self._respond(handler, 200, b'{"result":{},"success":true,"errors":[],"messages":[]}', "application/json")
             return
         if self.behaviour.get("redirect"):
@@ -750,6 +781,12 @@ class MockKVRestServer:
             record["status"] = 200
             self.calls.append(record)
             self._respond(handler, 200, payload, "application/json")
+            return
+        if self.behaviour.get("fail_object_key") == key:
+            # Injected transient read failure for exactly one stored key.
+            record["status"] = 503
+            self.calls.append(record)
+            self._respond(handler, 503, b'{"result":null,"success":false,"errors":[{"code":1000,"message":"temporary"}],"messages":[]}', "application/json")
             return
         if key not in self.storage:
             record["status"] = 404
@@ -1237,7 +1274,13 @@ def _load_signer(args: argparse.Namespace) -> tuple[str, Callable[[bytes], bytes
 
 
 def _read_registry(path: str) -> dict[str, Any]:
-    return validate_registry_bytes(Path(path).read_bytes())
+    # Read at most one byte past the bound so an oversized trust input is
+    # rejected without loading the remainder into memory.
+    with open(str(path), "rb") as handle:
+        raw = handle.read(shp.MAX_REGISTRY_BYTES + 1)
+    if len(raw) > shp.MAX_REGISTRY_BYTES:
+        raise IntegrationError("invalid_registry_size")
+    return validate_registry_bytes(raw)
 
 
 def plan_mode(args: argparse.Namespace) -> dict[str, Any]:
@@ -1433,6 +1476,12 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     except (OSError, subprocess.SubprocessError, UnicodeError):
         print(json.dumps({"ok": False, "error": "local_io_failure"}, separators=(",", ":")))
+        return 1
+    except ValueError:
+        # The HTTP layer raises an argument error for an illegal header value
+        # (for example a credential with an embedded newline). Its message can
+        # contain that value, so emit a fixed bounded token instead.
+        print(json.dumps({"ok": False, "error": "invalid_request"}, separators=(",", ":")))
         return 1
 
 

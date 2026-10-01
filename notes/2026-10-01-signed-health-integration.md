@@ -85,6 +85,53 @@ adoption. The production site is not signed.
   `health/latest.json` is never served: the returned bytes are exactly the
   signed health.
 
+## Findings: deferred review items closed
+
+The six deferred low-severity review findings are closed in this change; the
+frozen protocol, the CLI's fail-loud behaviour when tooling is absent, and every
+declared limitation above are unchanged.
+
+1. **The authoritative-state guard no longer degrades silently.**
+   `authoritative_observed_at` now validates the pointer bytes inside its typed
+   except and reads the authoritative object outside it, so a transient read
+   failure propagates and publication fails closed. A genuinely absent or
+   malformed pointer/package is still reported as `authoritative_state_unavailable`.
+   Covered by `test_transient_authoritative_object_read_fails_closed`.
+2. **An oversized pointer acknowledgement is `unknown`, never a no-write.**
+   `KVRestTransport._read_bounded` classifies an over-budget response to a
+   `put_pointer` request as `unknown`, so `serialized_publish` reports
+   `pointer_outcome: unknown` with `claim: no_rollback_claim` rather than
+   `not_advanced`. Covered by
+   `test_oversized_pointer_acknowledgement_is_unknown_not_a_no_write`.
+3. **The operator-facing write paths are exercised.** The loopback fixture
+   transport now drives the dry-run success path (signer through a pipe-backed
+   descriptor, no transport constructed, nothing written) and the publish path
+   end to end (generated signer secret file plus pipe-backed credential
+   descriptor), using a disposable in-memory signer. Covered by
+   `test_cli_dry_run_success_writes_nothing_and_reaches_no_transport` and
+   `test_cli_publish_success_against_loopback_transport`.
+4. **One lock per destination is enforced where the lock is used.** `WriterLock`
+   records the held descriptor's file identity (device and inode), and
+   `assert_held` requires it to be the canonical `writer-<destination>.lock` for
+   the requested destination; an ad-hoc path or a lock file labelled for another
+   destination is refused before any transport call. Covered by
+   `test_held_lock_must_identify_the_canonical_lock_for_the_destination`.
+5. **The trust input is read within the bound.** `_read_registry` reads at most
+   `MAX_REGISTRY_BYTES + 1` bytes and rejects oversize without loading the
+   remainder, so the module's bounded-read promise holds for the registry as well
+   as the package. Covered by
+   `test_registry_read_is_bounded_to_one_byte_over_the_limit`.
+6. **A malformed credential is a bounded failure envelope, not a traceback.**
+   The CLI catches the HTTP layer's argument error and prints
+   `{"ok":false,"error":"invalid_request"}` with no credential value in the
+   output. Covered by
+   `test_cli_newline_credential_is_a_bounded_envelope_without_the_value`.
+
+Acceptance after this change (the exact brief command): `241 collected` /
+`241 passed`. Each behavioral finding above was observed failing before its fix
+and passing after; finding 3 is coverage, and its two cases passed once written
+(the previously unexecuted paths were correct but untested).
+
 ## Hermeticity
 
 Hermeticity: rehearsal case skips when local tooling is absent. The runtime
