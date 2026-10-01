@@ -150,7 +150,7 @@ def test_verify_script_detects_mismatch() -> None:
     assert "MISMATCH: deployed=" in mismatch.stdout
     assert match.returncode == 0
     assert "OK: deployed" in match.stdout
-    assert "matches newest mcp/ revision" in match.stdout
+    assert "matches deployed MCP code revision" in match.stdout
 
 
 def test_release_build_profile_omits_retired_bump_step() -> None:

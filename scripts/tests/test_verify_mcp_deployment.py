@@ -160,7 +160,7 @@ class TestExtractDeployedSha:
 class TestNewestMcpSha:
     def test_reads_newest_mcp_commit_from_origin_default_branch(self) -> None:
         expected = subprocess.check_output(
-            ["git", "log", "-1", "--format=%H", "origin/main", "--", "mcp/"],
+            ["git", "log", "-1", "--format=%H", "origin/main", "--", "mcp/server.py", "scripts/gen_per_dataset_receipt.py", "scripts/verify_per_dataset_receipt.py"],
             cwd=ROOT,
             text=True,
         ).strip()
@@ -193,7 +193,7 @@ class TestNewestMcpSha:
             check=False,
         ).returncode != 0
         expected = subprocess.check_output(
-            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/"],
+            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/server.py", "scripts/gen_per_dataset_receipt.py", "scripts/verify_per_dataset_receipt.py"],
             cwd=clone,
             text=True,
         ).strip()
@@ -238,7 +238,7 @@ class TestNewestMcpSha:
             capture_output=True,
         ).returncode != 0
         expected = subprocess.check_output(
-            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/"],
+            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/server.py", "scripts/gen_per_dataset_receipt.py", "scripts/verify_per_dataset_receipt.py"],
             cwd=clone,
             text=True,
         ).strip()
@@ -255,7 +255,7 @@ class TestNewestMcpSha:
             check=True,
         )
         assert subprocess.check_output(
-            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/"],
+            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/server.py", "scripts/gen_per_dataset_receipt.py", "scripts/verify_per_dataset_receipt.py"],
             cwd=clone,
             text=True,
         ).strip() == newest_mcp_sha(clone)

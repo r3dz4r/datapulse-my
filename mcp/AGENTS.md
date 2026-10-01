@@ -50,14 +50,17 @@ uv run --isolated --prerelease=allow --with-requirements mcp/requirements.txt --
 
 # 2. Re-render the discovery artefacts (writes BOTH /mcp.json and /agent.json at repo root)
 #    Without injection, the generator uses the same newest-mcp-revision derivation
-#    as scripts/verify_mcp_deployment.py. Deployment may inject a source identity
+#    as scripts/verify_mcp_deployment.py, derived only from mcp/server.py and
+#    its two imported scripts/gen_per_dataset_receipt.py and
+#    scripts/verify_per_dataset_receipt.py. Tests and documentation do not count.
+#    Deployment may inject a source identity
 #    explicitly; that injection wins. The literals in mcp/server.py are only runtime
 #    fallbacks and are not a generation authority.
 python3 scripts/gen_mcp_reference.py
 # Expected diffs on regeneration:
 #   mcp.json   - unicode escaping only (the committed file escapes em-dashes as \u2014,
 #                the generator emits them literally). Any other change is content.
-#   agent.json - its commit_sha must equal the derived newest mcp/ revision. A single-line
+#   agent.json - its commit_sha must equal the deployed MCP code revision. A single-line
 #                change here is real provenance movement, not formatting.
 # Revert any artefact you did not intend to change rather than leaving it dirty.
 
