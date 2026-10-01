@@ -23,6 +23,17 @@ from scripts import signed_health_publication as shp
 NOW = "2026-10-01T00:01:00Z"
 COMMIT = "eaf56e5fc910ac380b270ff0f655adc9bd0d658e"
 ROOT = Path(__file__).resolve().parents[2]
+# The local runtime rehearsal resolves its Wrangler binary from the module's own
+# repo-relative path. That path has no tracked files, so a clean checkout has no
+# tooling and the case must skip rather than error. The guard is a real presence
+# check on the exact binary (a missing install or a dangling symlink skips); a
+# PATH or name-based lookup would not be honest, and requiring the tooling here
+# would make the exercise silently disappear for every developer.
+LOCAL_WRANGLER = ROOT / shi.WRANGLER_RELATIVE
+SKIP_WITHOUT_LOCAL_WRANGLER = pytest.mark.skipif(
+    not LOCAL_WRANGLER.is_file(),
+    reason=f"local Wrangler tooling absent at {shi.WRANGLER_RELATIVE}",
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -703,6 +714,7 @@ def test_quick_test_failure_is_not_stubbed(monkeypatch: pytest.MonkeyPatch) -> N
 # --------------------------------------------------------------------------- #
 
 
+@SKIP_WITHOUT_LOCAL_WRANGLER
 def test_runtime_rehearsal_serves_real_pages_with_positive_and_negative_cases() -> None:
     # The real workerd run cannot pass on a Node-only or in-process substitute.
     result = shi.runtime_rehearsal(timeout=110)

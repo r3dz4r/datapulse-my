@@ -85,6 +85,21 @@ adoption. The production site is not signed.
   `health/latest.json` is never served: the returned bytes are exactly the
   signed health.
 
+## Hermeticity
+
+Hermeticity: rehearsal case skips when local tooling is absent. The runtime
+rehearsal case in `scripts/tests/test_signed_health_integration.py` resolves
+`health/staging-tooling/node_modules/.bin/wrangler` — the same repo-relative
+path and the same `.is_file()` presence rule `runtime_rehearsal` uses — and is
+skipped via a module-level `pytest.mark.skipif` when that binary is not present.
+A clean checkout has no vendored Wrangler/workerd, so the case is reported as
+**skipped**, never as an error or a pass; a skip means the real runtime exercise
+did not run on this checkout and is not evidence that the rehearsal succeeded.
+When the tooling is present the case runs unchanged, with the same positive and
+negative assertions. The guard does not touch the CLI: with the binary missing
+`--runtime-rehearsal` still fails loudly (`wrangler_missing`) and never reports
+success.
+
 ## Tooling confinement
 
 Wrangler honours `HOME`, `TMPDIR`, `XDG_CONFIG_HOME`, `XDG_CACHE_HOME`,
