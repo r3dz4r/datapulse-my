@@ -32,6 +32,11 @@ jobs:
         env:
           DATAPULSE_SOURCE_COMMIT_SHA: ${{ github.sha }}
           DATAPULSE_SOURCE_COMMIT_DATE: ${{ github.event.pull_request.head.sha }}
+          # Pull requests must rehearse the release build credential-free: this
+          # lane has no attestation signing key, so it opts in explicitly to an
+          # unsigned build. Scoped to this step only; the trusted deployment lane
+          # still signs, and scripts/generate.sh stays fail-closed without this.
+          DATAPULSE_ALLOW_UNSIGNED_BUILD: "1"
         run: |
           set -Eeuo pipefail
           export DATAPULSE_SOURCE_COMMIT_DATE="$(git show -s --format=%cs "$GITHUB_SHA")"

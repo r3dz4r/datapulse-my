@@ -442,6 +442,12 @@ def _build(
     key_path = os.environ.get("DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE")
     if key_path:
         environment["DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"] = key_path
+    # The isolated rebuild is otherwise hermetic and starts from an explicit
+    # environment. Forward the credential-free opt-in so the pull-request lane
+    # can reproduce an unsigned build; when it is unset the isolated build stays
+    # fail-closed without a signing key.
+    if os.environ.get("DATAPULSE_ALLOW_UNSIGNED_BUILD") == "1":
+        environment["DATAPULSE_ALLOW_UNSIGNED_BUILD"] = "1"
     try:
         completed = subprocess.run(
             ["bash", "scripts/generate.sh", "release-build"],
