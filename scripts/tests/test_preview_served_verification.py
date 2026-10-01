@@ -39,12 +39,16 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 PREVIEW_WORKFLOW = ROOT / ".github/workflows/preview-verify.yml"
+PRODUCTION_WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
 SERVED_VERIFIER = ROOT / "scripts/verify_served_release.sh"
 PUBLIC_SURFACES = ROOT / "config/public-surfaces.json"
 
 BASE_URL = "https://preview.example.test"
 SOURCE_COMMIT = "abc1234def5678"
 HEALTH_CHECKED_AT = "2026-10-01T00:00:00Z"
+STALE_SERVED_CHECKED_AT = "2025-01-01T00:00:00Z"
+STALER_PROJECTION_CHECKED_AT = "2024-01-01T00:00:00Z"
+KV_EXCLUSION_FLAG = "--kv-surfaces-published-elsewhere"
 VERIFY_STEP = "Verify served preview"
 NEGATIVE_CONTROL_STEP = (
     "Negative control: a mismatched built artifact must fail served verification"
@@ -319,6 +323,7 @@ def _run_verifier(
     *,
     sigstore_signed: str = "false",
     publication: Path | None = None,
+    kv_surfaces_published_elsewhere: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     stub = _stub_bin(tmp_path)
     tmpdir = tmp_path / "tmp"
@@ -344,6 +349,8 @@ def _run_verifier(
     ]
     if publication is not None:
         command += ["--sigstore-publication", str(publication)]
+    if kv_surfaces_published_elsewhere:
+        command.append(KV_EXCLUSION_FLAG)
     return subprocess.run(
         command,
         cwd=root,
@@ -396,3 +403,114 @@ def test_negative_control_fails_because_the_served_surface_differs(tmp_path: Pat
     assert "usage:" not in combined
     assert "invalid served base URL" not in combined
     assert "transport failure" not in combined
+
+
+def _stale_served_health(served: Path) -> None:
+    """Age and diverge the served KV-backed health surfaces.
+
+    The snapshot is older than the assembled one *and* the dashboard projection
+    is older and differently shaped than the served snapshot, so each of the two
+    excluded comparisons fails on its own if the verifier still runs it.
+    """
+    latest_path = served / "health/latest.json"
+    latest = json.loads(latest_path.read_text(encoding="utf-8"))
+    latest["checked_at"] = STALE_SERVED_CHECKED_AT
+    _write(latest_path, json.dumps(latest))
+
+    projection_path = served / "health/index.json"
+    projection = json.loads(projection_path.read_text(encoding="utf-8"))
+    projection["checked_at"] = STALER_PROJECTION_CHECKED_AT
+    projection["datasets"] = [*projection["datasets"], {"dataset_id": "projection-only"}]
+    _write(projection_path, json.dumps(projection))
+
+
+def test_default_still_fails_on_a_stale_served_health_snapshot(tmp_path: Path) -> None:
+    """The exclusion is opt-in: without it the freshness comparison stays strict."""
+    root, built, served = _stage_fixture(tmp_path)
+    _stale_served_health(served)
+
+    result = _run_verifier(tmp_path, root, built, served)
+    combined = result.stdout + result.stderr
+
+    assert result.returncode != 0
+    assert "served health snapshot is older than the assembled snapshot" in combined
+    assert "published by another lane on its own cadence" not in combined
+
+
+def test_option_skips_the_kv_backed_surfaces_and_names_them(tmp_path: Path) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    _stale_served_health(served)
+
+    result = _run_verifier(
+        tmp_path, root, built, served, kv_surfaces_published_elsewhere=True
+    )
+    combined = result.stdout + result.stderr
+
+    assert result.returncode == 0, combined
+    notices = [
+        line
+        for line in result.stdout.splitlines()
+        if "published by another lane on its own cadence" in line
+    ]
+    # One loud line, naming every excluded surface and the reason.
+    assert len(notices) == 1
+    assert "served health/latest.json" in notices[0]
+    assert "dataset-count" in notices[0]
+    assert "release-proof health" in notices[0]
+    assert "/health/index.json" in notices[0]
+    # The static surfaces were still fetched and compared under the option.
+    assert "served surface=dataset register" in result.stdout
+    assert "served surface=release reproducibility proof" in result.stdout
+
+
+def test_option_present_still_fails_on_a_tampered_static_surface(tmp_path: Path) -> None:
+    """The exclusion must not widen to the register the lane can genuinely prove."""
+    root, built, served = _stage_fixture(tmp_path)
+    _stale_served_health(served)
+    manifest_path = built / "datapulse.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["datasets"].append({"dataset_id": "tampered"})
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    result = _run_verifier(
+        tmp_path, root, built, served, kv_surfaces_published_elsewhere=True
+    )
+    combined = result.stdout + result.stderr
+
+    assert result.returncode != 0
+    assert "origin root register rows mismatch" in combined
+    assert "usage:" not in combined
+    assert "transport failure" not in combined
+
+
+def test_option_present_still_compares_the_release_proof(tmp_path: Path) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    _stale_served_health(served)
+    _write(root / "docs/release-verification.md", "tampered assembled proof\n")
+
+    result = _run_verifier(
+        tmp_path, root, built, served, kv_surfaces_published_elsewhere=True
+    )
+    combined = result.stdout + result.stderr
+
+    assert result.returncode != 0
+    assert "served release proof differs from staged artifact" in combined
+
+
+def test_preview_workflow_passes_the_exclusion_only_to_the_served_verification() -> None:
+    workflow = PREVIEW_WORKFLOW.read_text(encoding="utf-8")
+    verify_run = _step(VERIFY_STEP)["run"]
+    control_run = _step(NEGATIVE_CONTROL_STEP)["run"]
+
+    assert KV_EXCLUSION_FLAG in verify_run
+    # Requirement: the exclusion is opted into exactly once, on the served
+    # verification, never on the bounded negative control or the deploy step.
+    assert workflow.count(KV_EXCLUSION_FLAG) == 1
+    assert KV_EXCLUSION_FLAG not in control_run
+
+
+def test_production_deploy_workflow_does_not_pass_the_exclusion() -> None:
+    workflow = PRODUCTION_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "bash scripts/verify_served_release.sh" in workflow
+    assert KV_EXCLUSION_FLAG not in workflow

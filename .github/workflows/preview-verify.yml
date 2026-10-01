@@ -128,14 +128,26 @@ jobs:
           # is unsigned: signing is declared false and no staged signing input is
           # supplied. Staged signing input is a signature to compare against; it
           # would be a false signature claim for this build, so the verifier
-          # demands it only when signing is declared true. The verifier still
-          # compares every served surface against the assembled _site bytes.
+          # demands it only when signing is declared true. Every static served
+          # surface is still compared byte-for-byte against the assembled _site
+          # bytes.
+          #
+          # The KV-backed health surfaces are excluded by name because this lane
+          # cannot control them: health/latest.json, the release-proof health
+          # cross-check and the /health/index.json dashboard projection are
+          # served from the isolated health namespace, which the production
+          # deploy lane publishes on its own cadence. This lane assembles a fresh
+          # snapshot minutes old and holds no KV write credential, so those
+          # surfaces are published by another lane on its own cadence and cannot
+          # be compared here. The option is not passed to the negative control or
+          # to any other step, and the production lane stays strict.
           bash scripts/verify_served_release.sh \
             --base-url "$PREVIEW_URL" \
             --site _site \
             --sigstore-signed false \
             --health-only false \
-            --source-commit "$GITHUB_SHA"
+            --source-commit "$GITHUB_SHA" \
+            --kv-surfaces-published-elsewhere
 
       - name: "Negative control: a mismatched built artifact must fail served verification"
         env:
