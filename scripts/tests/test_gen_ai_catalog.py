@@ -21,6 +21,13 @@ def _fixture_root(tmp_path: Path) -> Path:
     shutil.copy2(ROOT / "datapulse.json", root / "datapulse.json")
     (root / "scripts").mkdir()
     shutil.copy2(ROOT / "scripts/mcp-representative-queries.json", root / "scripts/mcp-representative-queries.json")
+    (root / "mcp").mkdir()
+    shutil.copy2(ROOT / "mcp/server.py", root / "mcp/server.py")
+    subprocess.run(["git", "-C", str(root), "init", "--quiet"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.email", "test@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "Test User"], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "--quiet", "-m", "fixture"], check=True)
     return root
 
 

@@ -130,18 +130,22 @@ the failing gate.
 
 ## MCP source synchronization
 
-Each `release-build` invocation starts with `python3 scripts/bump_mcp_source_version.py`,
-which stamps the current commit SHA into:
+`scripts/gen_mcp_reference.py` derives the newest default-branch commit that
+changes `mcp/`, using `scripts/verify_mcp_deployment.py`'s revision derivation.
+It publishes that revision and its commit date in `mcp.json` and `agent.json`.
+The runtime receives the same revision through deployment injection; the
+literal in `mcp/server.py` is only a fallback.
 
-- `mcp/server.py` — exposed in JSON-RPC `initialize.serverInfo.source_commit_sha`
-- `mcp.json` — discovery doc field `server.source_commit_sha`
+- `mcp.json` — discovery document field `server.source_commit_sha`
+- `agent.json` — agent manifest field `source.commit_sha`
 
 `python3 scripts/verify_mcp_deployment.py` reads the deployed MCP service's
-`source_commit_sha` and compares against the repo HEAD. Exit codes:
+`source_commit_sha` and compares it with that same derived newest `mcp/`
+revision. Exit codes:
 
-- `0` — deployed matches HEAD
-- `1` — mismatch (deployed service lags)
-- `2` — endpoint unreachable (not a sync failure, transient network)
+- `0` — deployed revision matches the derived revision
+- `1` — mismatch
+- `2` — cannot establish the derived revision or reach the endpoint
 
 Run this after any MCP code change. If it reports `MISMATCH`, the
 deployed service needs a redeploy (copy `mcp/server.py` +

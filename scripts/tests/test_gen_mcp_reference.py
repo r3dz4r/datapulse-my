@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import shutil
 import subprocess
@@ -12,55 +13,77 @@ from pathlib import Path
 import pytest
 
 from scripts import gen_mcp_reference
-from scripts.public_surface_generation import GenerationError
+from scripts.verify_mcp_deployment import newest_mcp_sha
 
 
 ROOT = gen_mcp_reference.ROOT
-SERVER_SHA = gen_mcp_reference._checked_in_server_marker(ROOT)
 SERVER_DATE = "2026-09-07"
 OTHER_SHA = "f" * 40
 
 
-def test_direct_generation_accepts_the_checked_in_server_marker() -> None:
+def _capture_generation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> dict[Path, str]:
+    """Capture generated public surfaces without writing to the checkout."""
+    rendered: dict[Path, str] = {}
+
+    def capture_outputs(outputs: dict[Path, str], *, check: bool = False) -> bool:
+        assert check is False
+        rendered.update(outputs)
+        return False
+
+    monkeypatch.setattr(gen_mcp_reference, "publish_text_outputs", capture_outputs)
+    return rendered
+
+
+def test_direct_generation_publishes_identity_derived_from_mcp_history(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No injected identity publishes the newest revision that changed ``mcp/``."""
+    monkeypatch.delenv("DATAPULSE_SOURCE_COMMIT_SHA", raising=False)
+    monkeypatch.delenv("DATAPULSE_SOURCE_COMMIT_DATE", raising=False)
+    rendered = _capture_generation(monkeypatch)
+
+    changed = asyncio.run(gen_mcp_reference.generate(ROOT))
+
+    expected_sha = newest_mcp_sha(ROOT)
+    expected_date = gen_mcp_reference._source_commit_date(ROOT, expected_sha)
+    assert changed is False
+    mcp_server = json.loads(rendered[ROOT / "mcp.json"])["server"]
+    assert mcp_server["source_commit_sha"] == expected_sha
+    assert mcp_server["source_commit_date"] == expected_date
+    assert json.loads(rendered[ROOT / "agent.json"])["source"] == {
+        "commit_sha": expected_sha,
+        "commit_date": expected_date,
+    }
+
+
+def test_direct_generation_publishes_explicitly_injected_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An explicit source identity overrides the revision derived from history."""
+    rendered = _capture_generation(monkeypatch)
+
     changed = asyncio.run(
         gen_mcp_reference.generate(
             ROOT,
-            source_sha=SERVER_SHA,
+            source_sha=OTHER_SHA,
             source_date=SERVER_DATE,
-            validate_only=True,
         )
     )
 
     assert changed is False
+    assert json.loads(rendered[ROOT / "mcp.json"])["server"]["source_commit_sha"] == OTHER_SHA
+    assert json.loads(rendered[ROOT / "agent.json"])["source"] == {
+        "commit_sha": OTHER_SHA,
+        "commit_date": SERVER_DATE,
+    }
 
 
-def test_direct_generation_rejects_a_different_source_marker() -> None:
-    with pytest.raises(GenerationError, match="checked-in mcp/server.py marker"):
-        asyncio.run(
-            gen_mcp_reference.generate(
-                ROOT,
-                source_sha=OTHER_SHA,
-                source_date=SERVER_DATE,
-                validate_only=True,
-            )
-        )
-
-
-def test_direct_generation_accepts_injected_sha_for_dev_fixture_marker(tmp_path: Path) -> None:
-    server = tmp_path / "mcp" / "server.py"
-    server.parent.mkdir()
-    server.write_text(
-        'import os\nSOURCE_COMMIT_SHA = os.getenv("DATAPULSE_MCP_SOURCE_SHA", "dev")\n',
-        encoding="utf-8",
-    )
-
-    gen_mcp_reference._validate_server_marker(tmp_path, OTHER_SHA)
-
-
-def test_release_build_accepts_an_injected_source_marker(
+def test_environment_injection_supplies_the_source_identity(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("DATAPULSE_RELEASE_BUILD", "1")
+    """Environment injection remains a supported explicit identity source."""
     monkeypatch.setenv("DATAPULSE_SOURCE_COMMIT_SHA", OTHER_SHA)
     monkeypatch.setenv("DATAPULSE_SOURCE_COMMIT_DATE", SERVER_DATE)
 

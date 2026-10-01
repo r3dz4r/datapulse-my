@@ -17,6 +17,8 @@ def _fixture_root(tmp_path: Path) -> Path:
     root.mkdir()
     shutil.copy2(ROOT / "mcp.json", root / "mcp.json")
     shutil.copy2(ROOT / "datapulse.json", root / "datapulse.json")
+    (root / "mcp").mkdir()
+    shutil.copy2(ROOT / "mcp/server.py", root / "mcp/server.py")
     (root / "scripts").mkdir()
     shutil.copy2(ROOT / "scripts/mcp-representative-queries.json", root / "scripts/mcp-representative-queries.json")
     subprocess.run(["git", "-C", str(root), "init", "--quiet"], check=True)

@@ -156,20 +156,24 @@ merge: the MCP server and manifest are out of sync.
 
 ## Source-to-deployment sync
 
-Each release-build invocation stamps the current commit SHA into the
-MCP source so the deployed service can introspect its source-of-truth:
+Discovery generation derives the source revision from the newest commit that
+changes `mcp/` on the default branch, using the same derivation as
+`scripts/verify_mcp_deployment.py`. It records that commit and its commit date
+in `mcp.json` and `agent.json`; no hand-stamping step is involved.
 
 - `mcp/server.py` exposes `SOURCE_COMMIT_SHA` and `SOURCE_COMMIT_DATE` module
   constants, returned in the JSON-RPC `initialize` response's
   `serverInfo.source_commit_sha` and `serverInfo.source_commit_date` fields.
 - `mcp.json` discovery doc has `server.source_commit_sha` and
-  `server.source_commit_date` fields, kept in sync by the same bump.
-- `scripts/bump_mcp_source_version.py` is the first step of the
-  `release-build` profile; it reads `git rev-parse HEAD` and stamps both
-  files.
+  `server.source_commit_date` fields generated from that derived revision.
+- Deployment injects an explicit source SHA and date when it starts the server;
+  the checked-in values in `mcp/server.py` are runtime fallbacks only.
+- `scripts/bump_mcp_source_version.py` now refuses manual stamping because that
+  workflow caused the provenance drift this derivation prevents.
 - `scripts/verify_mcp_deployment.py` compares the deployed service's
-  `source_commit_sha` to the current repo HEAD. Exit 0 if they match,
-  exit 1 on mismatch, exit 2 if the endpoint is unreachable.
+  `source_commit_sha` to the same derived newest `mcp/` revision. It exits `0`
+  on a match, `1` on a mismatch, and `2` when it cannot establish the revision
+  or reach the endpoint.
 
 The five-minute health pipeline deploys MCP source automatically. It archives
 `origin/main` into a frozen `/tmp/datapulse-run.*` directory, probes and
@@ -185,9 +189,10 @@ source.
 2. If either the source or source-marker systemd configuration differs, create
    a timestamped `.bak`, copy through a same-directory temporary file, and
    atomically replace the deployed copy.
-3. Install `99-source-marker.conf`, whose `UnsetEnvironment=` removes legacy
-   `DATAPULSE_MCP_SOURCE_SHA` and `DATAPULSE_MCP_SOURCE_DATE` overrides. The
-   marker embedded by `release-build` is authoritative.
+3. Install `99-source-marker.conf`, whose explicit source identity is the
+   deployment marker served by the live process. If it is absent, the
+   checked-in server fallback is served and the deployment verifier reports
+   the resulting mismatch.
 4. Export `XDG_RUNTIME_DIR=/run/user/$(id -u)`, reload the user manager when its
    drop-in changed, and restart `datapulse-mcp.service`.
 5. Use `curl` against `http://127.0.0.1:8788/mcp` to initialize an MCP session,
