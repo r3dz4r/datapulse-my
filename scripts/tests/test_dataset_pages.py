@@ -4,6 +4,7 @@ import json
 import shutil
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from scripts.gen_dataset_pages import generate
@@ -38,14 +39,45 @@ def test_all_manifest_datasets_have_deterministic_published_pages(tmp_path: Path
     manifest = json.loads((tmp_path / "datapulse.json").read_text())["datasets"]
     health = {row["dataset_id"]: row for row in json.loads((tmp_path / "health/latest.json").read_text())["datasets"]}
     pages = list((tmp_path / "docs/datasets").glob("*.html"))
+    sitemap = ET.parse(ROOT / "sitemap.xml")
+    locations = {
+        node.text
+        for node in sitemap.findall("{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc")
+    }
     assert count == len(manifest) == len(pages)
     first = {path.name: path.read_bytes() for path in pages}
     for row in manifest:
         page = first[f'{row["id"]}.html'].decode()
         assert row["id"] in page
         assert f'>{health[row["id"]]["status"]} <small>' in page
+        canonical = f'https://www.data-pulse.my/datasets/{row["id"]}'
+        assert f'<link rel="canonical" href="{canonical}">' in page
+        assert canonical in locations
+        assert ".html" not in canonical
     assert generate(tmp_path) == count
     assert first == {path.name: path.read_bytes() for path in pages}
+
+
+def test_pages_depend_only_on_their_dataset_facts(tmp_path: Path) -> None:
+    _stage(tmp_path, synthetic=True)
+    assert generate(tmp_path) == 2
+    page_dir = tmp_path / "docs/datasets"
+    first = {path.name: path.read_bytes() for path in page_dir.glob("*.html")}
+
+    snapshot_path = tmp_path / "health/latest.json"
+    snapshot = json.loads(snapshot_path.read_text())
+    snapshot["checked_at"] = "2026-10-03T00:00:00Z"
+    snapshot["_trust_summary"] = {"changed": True}
+    snapshot_path.write_text(json.dumps(snapshot))
+    assert generate(tmp_path) == 2
+    after_snapshot = {path.name: path.read_bytes() for path in page_dir.glob("*.html")}
+    assert after_snapshot == first
+
+    snapshot["datasets"][0]["status"] = "stale"
+    snapshot_path.write_text(json.dumps(snapshot))
+    assert generate(tmp_path) == 2
+    after_dataset = {path.name: path.read_bytes() for path in page_dir.glob("*.html")}
+    assert {name for name in first if after_dataset[name] != first[name]} == {"present.html"}
 
 
 def test_missing_health_row_and_check_mode(tmp_path: Path) -> None:

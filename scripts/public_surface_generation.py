@@ -115,9 +115,9 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
         if expected != value:
             raise GenerationError(f"{path}: origin {key!r} violates canonical schema constraint")
     pages = _validate_paths("pages", document["pages"])
-    dataset_pages = document.get("dataset_pages", {"path_template": "/datasets/{id}.html"})
-    expected_template = schema.get("properties", {}).get("dataset_pages", {}).get("properties", {}).get("path_template", {}).get("const", "/datasets/{id}.html")
-    if not isinstance(dataset_pages, dict) or set(dataset_pages) != {"path_template"} or dataset_pages["path_template"] != expected_template or expected_template != "/datasets/{id}.html":
+    dataset_pages = document.get("dataset_pages", {"path_template": "/datasets/{id}"})
+    expected_template = schema.get("properties", {}).get("dataset_pages", {}).get("properties", {}).get("path_template", {}).get("const", "/datasets/{id}")
+    if not isinstance(dataset_pages, dict) or set(dataset_pages) != {"path_template"} or dataset_pages["path_template"] != expected_template or expected_template != "/datasets/{id}":
         raise GenerationError(f"{path}: invalid dataset_pages path_template")
     aliases = document.get("compatibility_aliases", [])
     if not isinstance(aliases, list) or not all(isinstance(alias, dict) for alias in aliases):

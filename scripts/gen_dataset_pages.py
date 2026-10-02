@@ -39,14 +39,14 @@ def _field(label: str, value: object, source: str, absent: str = "Not published"
     return f'<dt>{html.escape(label)}</dt><dd>{_value(value, absent)} <small>({source})</small></dd>'
 
 
-def render_page(dataset: dict[str, Any], health: dict[str, Any] | None, origin: str, observed_at: str) -> str:
+def render_page(dataset: dict[str, Any], health: dict[str, Any] | None, origin: str, path_template: str) -> str:
     """Render source-attributed facts for one dataset."""
     dataset_id = dataset["id"]
     name = dataset.get("name")
     status = health.get("status") if health is not None else "unknown"
     if status not in STATUSES:
         raise GenerationError(f"{dataset_id}: invalid published status {status!r}")
-    canonical = f"{origin}/datasets/{dataset_id}.html"
+    canonical = f"{origin}{path_template.format(id=dataset_id)}"
     jsonld_url = f"{origin}/data/jsonld/{dataset_id}.json"
     title = f"Is {_value(name)} ({_value(dataset_id)}) still updated?"
     source = "health/latest.json" if health is not None else "health/latest.json: no row for this dataset"
@@ -65,7 +65,6 @@ def render_page(dataset: dict[str, Any], health: dict[str, Any] | None, origin: 
         _field("Custodian", dataset.get("custodian"), "datapulse.json"),
         _field("Upstream source URL", dataset.get("url"), "datapulse.json"),
         _field("Canonical URL", canonical, "config/public-surfaces.json + datapulse.json"),
-        _field("Observation time", observed_at, "health/latest.json"),
     ]
     structured = {
         "@context": "https://schema.org", "@type": "Dataset", "identifier": dataset_id,
@@ -79,7 +78,6 @@ def render_page(dataset: dict[str, Any], health: dict[str, Any] | None, origin: 
             {"@type": "PropertyValue", "name": "attribution", "value": dataset.get("attribution")},
             {"@type": "PropertyValue", "name": "steward", "value": dataset.get("steward")},
             {"@type": "PropertyValue", "name": "custodian", "value": dataset.get("custodian")},
-            {"@type": "PropertyValue", "name": "observation time", "value": observed_at},
         ],
     }
     jsonld = json.dumps(structured, ensure_ascii=False, sort_keys=True).replace("<", "\\u003c")
@@ -103,9 +101,6 @@ def expected_outputs(root: Path) -> dict[Path, str]:
     manifest = _rows(load_json(root / "datapulse.json"), "datasets", "datapulse.json")
     snapshot = load_json(root / "health/latest.json")
     health_rows = _rows(snapshot, "datasets", "health/latest.json")
-    observed_at = snapshot.get("checked_at")
-    if not isinstance(observed_at, str) or not observed_at:
-        raise GenerationError("health/latest.json: checked_at must be a non-empty string")
     health_by_id: dict[str, dict[str, Any]] = {}
     for row in health_rows:
         key = row.get("dataset_id")
@@ -120,7 +115,7 @@ def expected_outputs(root: Path) -> dict[Path, str]:
         target = root / "docs/datasets" / f"{dataset_id}.html"
         if target in outputs:
             raise GenerationError(f"datapulse.json: duplicate dataset id {dataset_id!r}")
-        outputs[target] = render_page(dataset, health_by_id.get(dataset_id), config["origins"]["website"], observed_at)
+        outputs[target] = render_page(dataset, health_by_id.get(dataset_id), config["origins"]["website"], config["dataset_pages"]["path_template"])
     return outputs
 
 
