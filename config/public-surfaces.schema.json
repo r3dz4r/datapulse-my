@@ -7,6 +7,7 @@
     "product_name",
     "origins",
     "pages",
+    "dataset_pages",
     "artifacts",
     "featured_dataset_ids",
     "compatibility_aliases"
@@ -26,6 +27,7 @@
       "additionalProperties": false
     },
     "pages": {"type": "array", "items": {"type": "string", "pattern": "^/(?!.*(?:^|/)\\.\\.(?:/|$))"}, "uniqueItems": true},
+    "dataset_pages": {"type": "object", "required": ["path_template"], "properties": {"path_template": {"const": "/datasets/{id}.html"}}, "additionalProperties": false},
     "compatibility_aliases": {
       "type": "array",
       "default": [],
