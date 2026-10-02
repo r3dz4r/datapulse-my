@@ -54,6 +54,7 @@ jobs:
     needs: classify
     name: Sign current health with public Sigstore
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 20
     permissions:
       contents: read
@@ -238,6 +239,7 @@ jobs:
   deploy:
     needs: [classify, sign_health]
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4

@@ -14,6 +14,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       contains(github.event.pull_request.labels.*.name, 'autorelease: pending')
     runs-on: ubuntu-latest
+    environment: release-anchor
     steps:
       - uses: actions/create-github-app-token@v1
         id: app-token
