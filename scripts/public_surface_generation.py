@@ -20,6 +20,7 @@ ALLOWED_CONFIG_KEYS = {
     "product_name",
     "origins",
     "pages",
+    "dataset_pages",
     "compatibility_aliases",
     "artifacts",
     "featured_dataset_ids",
@@ -89,7 +90,10 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
         raise GenerationError(f"{schema_path}: missing strict origins schema: {error}") from error
     document = load_json(path)
     unknown = set(document) - ALLOWED_CONFIG_KEYS
-    missing = (ALLOWED_CONFIG_KEYS - {"compatibility_aliases"}) - set(document)
+    required_keys = ALLOWED_CONFIG_KEYS - {"compatibility_aliases"}
+    if "dataset_pages" not in schema.get("required", []):
+        required_keys -= {"dataset_pages"}
+    missing = required_keys - set(document)
     if unknown:
         raise GenerationError(f"{path}: unknown key(s): {', '.join(sorted(unknown))}")
     if missing:
@@ -111,6 +115,10 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
         if expected != value:
             raise GenerationError(f"{path}: origin {key!r} violates canonical schema constraint")
     pages = _validate_paths("pages", document["pages"])
+    dataset_pages = document.get("dataset_pages", {"path_template": "/datasets/{id}.html"})
+    expected_template = schema.get("properties", {}).get("dataset_pages", {}).get("properties", {}).get("path_template", {}).get("const", "/datasets/{id}.html")
+    if not isinstance(dataset_pages, dict) or set(dataset_pages) != {"path_template"} or dataset_pages["path_template"] != expected_template or expected_template != "/datasets/{id}.html":
+        raise GenerationError(f"{path}: invalid dataset_pages path_template")
     aliases = document.get("compatibility_aliases", [])
     if not isinstance(aliases, list) or not all(isinstance(alias, dict) for alias in aliases):
         raise GenerationError("compatibility_aliases must be an explicit object array")
@@ -144,6 +152,7 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
         "product_name": product_name,
         "origins": validated_origins,
         "pages": pages,
+        "dataset_pages": {"path_template": expected_template},
         "compatibility_aliases": validated_aliases,
         "artifacts": artifacts,
         "featured_dataset_ids": list(featured),

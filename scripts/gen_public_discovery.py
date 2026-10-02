@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.public_surface_generation import (
     GenerationError,
+    load_json,
     load_public_surfaces,
     publish_text_outputs,
     replace_owned_block,
@@ -41,10 +42,11 @@ def _url(origin: str, path: str) -> str:
     return origin + path if path != "/" else origin + "/"
 
 
-def render_sitemap(config: dict) -> str:
+def render_sitemap(config: dict, dataset_ids: list[str] | None = None) -> str:
     """Render configured public paths in declared order."""
     origin = config["origins"]["website"]
-    urls = [*config["pages"], *config["artifacts"]]
+    template = config["dataset_pages"]["path_template"]
+    urls = [*config["pages"], *config["artifacts"], *(template.format(id=dataset_id) for dataset_id in (dataset_ids or []))]
     lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     lines.extend(f"  <url><loc>{escape(_url(origin, path))}</loc></url>" for path in urls)
     lines.append("</urlset>")
@@ -70,7 +72,14 @@ def render_discovery_block(config: dict, target: str) -> str:
 def generate(root: Path, *, check: bool = False, validate_only: bool = False) -> bool:
     """Validate and render every discovery output before the first write."""
     config = load_public_surfaces(root)
-    outputs: dict[Path, str] = {root / "sitemap.xml": render_sitemap(config)}
+    manifest = load_json(root / "datapulse.json")
+    rows = manifest.get("datasets")
+    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+        raise GenerationError("datapulse.json: datasets must be an array of objects")
+    dataset_ids = [row.get("id") for row in rows]
+    if any(not isinstance(dataset_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", dataset_id) for dataset_id in dataset_ids) or len(dataset_ids) != len(set(dataset_ids)):
+        raise GenerationError("datapulse.json: invalid or duplicate dataset id")
+    outputs: dict[Path, str] = {root / "sitemap.xml": render_sitemap(config, sorted(dataset_ids))}
     for relative in ("README.md", "llms.txt", "robots.txt"):
         path = root / relative
         try:
