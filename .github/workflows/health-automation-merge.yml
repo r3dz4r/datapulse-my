@@ -30,6 +30,7 @@ concurrency:
 jobs:
   merge:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout automation branch
         uses: actions/checkout@v4
@@ -92,9 +93,71 @@ jobs:
             echo "::error title=No pull request::Could not resolve the open health-automation -> main pull request."
             exit 1
           fi
-          enabled="$(gh pr view "$number" --json autoMergeRequest --jq '.autoMergeRequest != null')"
-          if [[ "$enabled" == "true" ]]; then
-            echo "Auto-merge already enabled on pull request #$number."
-          else
-            gh pr merge "$number" --auto --squash
-          fi
+
+          # Bounded retry budget, tunable from the step environment without
+          # editing the loop. The merge job's timeout-minutes must comfortably
+          # exceed max_attempts * retry_seconds.
+          max_attempts="${ARM_MAX_ATTEMPTS:-20}"
+          retry_seconds="${ARM_RETRY_SECONDS:-30}"
+
+          # Retryable: the required check is queued or expected but not yet
+          # reported (the measured refusal was "Repository rule violations
+          # found" with 'Required status check "deterministic-safety-net" is
+          # queued.'), plus transient API failures (HTTP 5xx, secondary rate
+          # limit). Anything else is fatal on the first attempt.
+          is_retryable() {
+            local output="$1"
+            if grep -qiE 'required status check "?deterministic-safety-net"? .*is (queued|expected)' <<<"$output"; then
+              return 0
+            fi
+            if grep -qiE 'repository rule violations found' <<<"$output" && \
+               grep -qiE 'required status check' <<<"$output"; then
+              return 0
+            fi
+            if grep -qiE 'http[^0-9]*5[0-9][0-9]' <<<"$output"; then
+              return 0
+            fi
+            if grep -qiE 'secondary rate limit|rate limit exceeded|abuse detection' <<<"$output"; then
+              return 0
+            fi
+            return 1
+          }
+
+          attempt=1
+          last_error=""
+          while (( attempt <= max_attempts )); do
+            if state="$(gh pr view "$number" --json autoMergeRequest --jq '.autoMergeRequest != null' 2>&1)"; then
+              if [[ "$state" == "true" ]]; then
+                echo "Auto-merge already enabled on pull request #$number (attempt $attempt/$max_attempts)."
+                exit 0
+              fi
+            else
+              last_error="$state"
+              if ! is_retryable "$state"; then
+                echo "$state"
+                echo "::error title=Auto-merge state unreadable::Could not read auto-merge state for pull request #$number."
+                exit 1
+              fi
+            fi
+
+            if merge_output="$(gh pr merge "$number" --auto --squash 2>&1)"; then
+              echo "Auto-merge enabled on pull request #$number on attempt $attempt/$max_attempts."
+              exit 0
+            fi
+
+            last_error="$merge_output"
+            if ! is_retryable "$merge_output"; then
+              echo "$merge_output"
+              echo "::error title=Auto-merge refused::gh pr merge refused auto-merge on pull request #$number with a non-retryable error."
+              exit 1
+            fi
+
+            echo "::warning title=Auto-merge retry::Attempt $attempt/$max_attempts to arm auto-merge on #$number was refused as retryable; retrying in ${retry_seconds}s."
+            if (( attempt < max_attempts )); then
+              sleep "$retry_seconds"
+            fi
+            attempt=$(( attempt + 1 ))
+          done
+
+          echo "::error title=Auto-merge never armed::Gave up after $max_attempts attempts to arm auto-merge on pull request #$number; last error: $last_error"
+          exit 1
