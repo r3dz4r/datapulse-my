@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.46.0](https://github.com/r3dz4r/datapulse-my/compare/v3.45.1...v3.46.0) (2026-10-02)
+
+
+### Features
+
+* **pipeline:** classify per-dataset pages as health-cycle output ([#453](https://github.com/r3dz4r/datapulse-my/issues/453)) ([d01f593](https://github.com/r3dz4r/datapulse-my/commit/d01f593f1cdaa935bb743fa540153ceba342d4c3))
+
 ## [3.45.1](https://github.com/r3dz4r/datapulse-my/compare/v3.45.0...v3.45.1) (2026-10-02)
 
 
