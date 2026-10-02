@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.45.1](https://github.com/r3dz4r/datapulse-my/compare/v3.45.0...v3.45.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **datasets:** point page canonicals at the served URL and stop the per-cycle timestamp ([#446](https://github.com/r3dz4r/datapulse-my/issues/446)) ([eca4b87](https://github.com/r3dz4r/datapulse-my/commit/eca4b8709cb3ff455ca97dbfcddc235073b74a45))
+
 ## [3.45.0](https://github.com/r3dz4r/datapulse-my/compare/v3.44.2...v3.45.0) (2026-10-02)
 
 
