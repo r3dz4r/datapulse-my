@@ -58,6 +58,28 @@ def test_all_manifest_datasets_have_deterministic_published_pages(tmp_path: Path
     assert first == {path.name: path.read_bytes() for path in pages}
 
 
+def test_pages_depend_only_on_their_dataset_facts(tmp_path: Path) -> None:
+    _stage(tmp_path, synthetic=True)
+    assert generate(tmp_path) == 2
+    page_dir = tmp_path / "docs/datasets"
+    first = {path.name: path.read_bytes() for path in page_dir.glob("*.html")}
+
+    snapshot_path = tmp_path / "health/latest.json"
+    snapshot = json.loads(snapshot_path.read_text())
+    snapshot["checked_at"] = "2026-10-03T00:00:00Z"
+    snapshot["_trust_summary"] = {"changed": True}
+    snapshot_path.write_text(json.dumps(snapshot))
+    assert generate(tmp_path) == 2
+    after_snapshot = {path.name: path.read_bytes() for path in page_dir.glob("*.html")}
+    assert after_snapshot == first
+
+    snapshot["datasets"][0]["status"] = "stale"
+    snapshot_path.write_text(json.dumps(snapshot))
+    assert generate(tmp_path) == 2
+    after_dataset = {path.name: path.read_bytes() for path in page_dir.glob("*.html")}
+    assert {name for name in first if after_dataset[name] != first[name]} == {"present.html"}
+
+
 def test_missing_health_row_and_check_mode(tmp_path: Path) -> None:
     _stage(tmp_path, synthetic=True)
     assert generate(tmp_path) == 2
