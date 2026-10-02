@@ -126,7 +126,7 @@ def test_cli_writes_complete_artifact_and_skips_malformed_lines(tmp_path: Path) 
     history = _history(tmp_path, [_row("x", 12, shape_hash="shape-v1:x")])
     history.open("a", encoding="utf-8").write("not-json\n")
     destination = tmp_path / "health/drift.json"
-    completed = subprocess.run(["python3", str(ROOT / "scripts/gen_drift.py"), "--manifest", str(manifest), "--history", str(history), "--latest", str(latest), "--output", str(destination)], capture_output=True, text=True, check=False)
+    completed = subprocess.run([sys.executable, str(ROOT / "scripts/gen_drift.py"), "--manifest", str(manifest), "--history", str(history), "--latest", str(latest), "--output", str(destination)], capture_output=True, text=True, check=False)
     assert completed.returncode == 0, completed.stderr
     payload = json.loads(destination.read_text(encoding="utf-8"))
     assert payload["schema"] == "datapulse/v1/dataset-drift"

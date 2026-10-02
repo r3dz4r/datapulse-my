@@ -8,6 +8,7 @@ import re
 import shutil
 import socket
 import subprocess
+import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -37,7 +38,7 @@ def test_mcp_json_includes_source_commit_sha_field() -> None:
 
 def test_bump_script_refuses_manual_stamping() -> None:
     result = subprocess.run(
-        ["python3", "scripts/bump_mcp_source_version.py"],
+        [sys.executable, "scripts/bump_mcp_source_version.py"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -51,7 +52,7 @@ def test_bump_script_refuses_manual_stamping() -> None:
 def test_verify_script_detects_mismatch() -> None:
     unreachable = subprocess.run(
         [
-            "python3",
+            sys.executable,
             "scripts/verify_mcp_deployment.py",
             "--endpoint",
             "http://127.0.0.1:1",
@@ -116,7 +117,7 @@ def test_verify_script_detects_mismatch() -> None:
     try:
         mismatch = subprocess.run(
             [
-                "python3",
+                sys.executable,
                 "scripts/verify_mcp_deployment.py",
                 "--endpoint",
                 f"http://127.0.0.1:{server.server_port}/mcp",
@@ -130,7 +131,7 @@ def test_verify_script_detects_mismatch() -> None:
         MockMCPHandler.source_commit_sha = newest_mcp_sha(ROOT)
         match = subprocess.run(
             [
-                "python3",
+                sys.executable,
                 "scripts/verify_mcp_deployment.py",
                 "--endpoint",
                 f"http://127.0.0.1:{server.server_port}/mcp",
@@ -172,7 +173,7 @@ def test_service_like_server_import_resolves_repository_scripts(tmp_path: Path) 
 
     probe = subprocess.run(
         [
-            "python3",
+            sys.executable,
             "-c",
             (
                 "import importlib.util; "

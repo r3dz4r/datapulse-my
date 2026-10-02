@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 from scripts.gen_trust_snapshot import source_level_staleness
 
@@ -138,7 +139,7 @@ def _make_repo(tmp_path: Path, *, short_history: bool = False) -> Path:
 def _run(repo: Path) -> tuple[Path, Path]:
     env = os.environ.copy()
     env.update({"FAKE_DATE": FAKE_DATE, "DATAPULSE_REPO_ROOT": str(repo)})
-    subprocess.run(["python3", str(SCRIPT)], cwd=repo, env=env, check=True)
+    subprocess.run([sys.executable, str(SCRIPT)], cwd=repo, env=env, check=True)
     base = repo / "docs" / f"trust-snapshot-{FAKE_DATE}"
     return base.with_suffix(".md"), base.with_suffix(".json")
 

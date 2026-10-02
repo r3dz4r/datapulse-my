@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -34,9 +35,9 @@ def test_extract_title_rejects_missing_heading(tmp_path: Path) -> None:
 
 
 def test_rendered_page_has_title_body_and_is_deterministic() -> None:
-    first = subprocess.run(["python3", str(renderer.__file__)], capture_output=True, text=True)
+    first = subprocess.run([sys.executable, str(renderer.__file__)], capture_output=True, text=True)
     first_page = renderer.OUTPUT.read_bytes()
-    second = subprocess.run(["python3", str(renderer.__file__)], capture_output=True, text=True)
+    second = subprocess.run([sys.executable, str(renderer.__file__)], capture_output=True, text=True)
 
     assert first.returncode == second.returncode == 0, first.stderr or second.stderr
     page = renderer.OUTPUT.read_text(encoding="utf-8")
@@ -51,7 +52,7 @@ def test_rendered_page_has_title_body_and_is_deterministic() -> None:
 
 
 def test_rendered_privacy_page_contains_the_disclosure_boundary() -> None:
-    result = subprocess.run(["python3", str(renderer.__file__)], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, str(renderer.__file__)], capture_output=True, text=True)
     page = renderer.ROOT / "docs/privacy.html"
 
     assert result.returncode == 0, result.stderr

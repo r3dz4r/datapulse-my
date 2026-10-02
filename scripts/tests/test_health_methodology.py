@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from scripts.tests.test_generate_profiles import _stage_source
@@ -25,7 +26,7 @@ SECTIONS = (
 
 def run_methodology(source: Path, timer: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["python3", "scripts/gen_health_methodology.py", "--timer", str(timer)],
+        [sys.executable, "scripts/gen_health_methodology.py", "--timer", str(timer)],
         cwd=source,
         capture_output=True,
         text=True,
@@ -68,7 +69,7 @@ def test_methodology_html_retains_rendered_structure(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
 
     rendered = subprocess.run(
-        ["python3", "scripts/gen_health_methodology_html.py"],
+        [sys.executable, "scripts/gen_health_methodology_html.py"],
         cwd=source,
         capture_output=True,
         text=True,

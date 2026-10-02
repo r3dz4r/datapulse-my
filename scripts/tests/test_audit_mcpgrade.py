@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -114,7 +115,7 @@ class TestParseHelperCLI:
     def test_cli_valid(self) -> None:
         fixture = FIXTURES / "mcpgrade-valid.json"
         result = subprocess.run(
-            ["python3", str(PARSE_HELPER), str(fixture)],
+            [sys.executable, str(PARSE_HELPER), str(fixture)],
             capture_output=True, text=True,
         )
         assert result.returncode == 0
@@ -126,7 +127,7 @@ class TestParseHelperCLI:
     def test_cli_malformed(self) -> None:
         fixture = FIXTURES / "mcpgrade-malformed.json"
         result = subprocess.run(
-            ["python3", str(PARSE_HELPER), str(fixture)],
+            [sys.executable, str(PARSE_HELPER), str(fixture)],
             capture_output=True, text=True,
         )
         assert result.returncode == 3
@@ -135,7 +136,7 @@ class TestParseHelperCLI:
     def test_cli_json_format(self) -> None:
         fixture = FIXTURES / "mcpgrade-valid.json"
         result = subprocess.run(
-            ["python3", str(PARSE_HELPER), str(fixture), "--format", "json"],
+            [sys.executable, str(PARSE_HELPER), str(fixture), "--format", "json"],
             capture_output=True, text=True,
         )
         assert result.returncode == 0

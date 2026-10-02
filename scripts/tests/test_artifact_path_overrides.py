@@ -90,7 +90,7 @@ def test_history_cli_writes_archives_to_the_environment_root(
 
     result = subprocess.run(
         [
-            "python3",
+            sys.executable,
             str(WRITER),
             "--snapshot",
             str(snapshot),

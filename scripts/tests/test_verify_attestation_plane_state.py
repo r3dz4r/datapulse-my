@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -94,7 +95,7 @@ def test_cli_reports_signer_down_for_stale_unsigned_plane(tmp_path: Path) -> Non
 
     completed = subprocess.run(
         [
-            "python3",
+            sys.executable,
             "scripts/verify_attestation_plane_state.py",
             "--planedir",
             str(root),

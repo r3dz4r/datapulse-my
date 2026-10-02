@@ -7,6 +7,7 @@ import random
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -78,11 +79,11 @@ def _run(command: list[str], directory: Path) -> tuple[bytes, int]:
 
 
 def _health_command(script: Path, history: Path, manifest: Path, latest: Path) -> list[str]:
-    return ["python3", str(script), "--history", str(history), "--manifest", str(manifest), "--snapshot", str(latest), "--cycle", "2026-08-31T23:59"]
+    return [sys.executable, str(script), "--history", str(history), "--manifest", str(manifest), "--snapshot", str(latest), "--cycle", "2026-08-31T23:59"]
 
 
 def _drift_command(script: Path, history: Path, manifest: Path, latest: Path, output: Path) -> list[str]:
-    return ["python3", str(script), "--history", str(history), "--manifest", str(manifest), "--latest", str(latest), "--output", str(output)]
+    return [sys.executable, str(script), "--history", str(history), "--manifest", str(manifest), "--latest", str(latest), "--output", str(output)]
 
 
 def test_history_readers_are_bounded_and_preserve_baseline(tmp_path: Path) -> None:

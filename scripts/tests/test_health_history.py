@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import json
 import subprocess
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -36,7 +37,7 @@ def _run(
     archives_dir: Path | None = None,
 ) -> subprocess.CompletedProcess[str]:
     command = [
-        "python3",
+        sys.executable,
         str(WRITER),
         "--snapshot",
         str(snapshot),

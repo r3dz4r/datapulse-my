@@ -229,7 +229,7 @@ def test_cli_writes_complete_artifact_and_skips_malformed_lines(tmp_path: Path) 
 
     completed = subprocess.run(
         [
-            "python3",
+            sys.executable,
             str(ROOT / "scripts/gen_trends.py"),
             "--manifest",
             str(manifest),

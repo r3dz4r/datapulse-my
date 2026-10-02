@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -130,12 +131,12 @@ def test_compact_defaults_are_bounded_and_match_prechange_output(tmp_path: Path)
         history_script = _stage_script(candidate, "gen_health_history.py")
         drift_script = _stage_script(candidate, "gen_drift.py")
         compact_measurements.append(
-            _run(["python3", str(history_script), "--cycle", CYCLE, "--compact"], candidate)
+            _run([sys.executable, str(history_script), "--cycle", CYCLE, "--compact"], candidate)
         )
-        drift_measurements.append(_run(["python3", str(drift_script)], candidate))
+        drift_measurements.append(_run([sys.executable, str(drift_script)], candidate))
         first = _outputs(candidate)
-        _run(["python3", str(history_script), "--cycle", CYCLE, "--compact"], candidate)
-        _run(["python3", str(drift_script)], candidate)
+        _run([sys.executable, str(history_script), "--cycle", CYCLE, "--compact"], candidate)
+        _run([sys.executable, str(drift_script)], candidate)
         assert _outputs(candidate) == first
 
         if size == 50_000:
@@ -143,8 +144,8 @@ def test_compact_defaults_are_bounded_and_match_prechange_output(tmp_path: Path)
             shutil.copytree(seed, baseline)
             baseline_script = _baseline_script(baseline)
             baseline_drift_script = _stage_script(baseline, "gen_drift.py")
-            _run(["python3", str(baseline_script), "--cycle", CYCLE, "--compact"], baseline)
-            _run(["python3", str(baseline_drift_script)], baseline)
+            _run([sys.executable, str(baseline_script), "--cycle", CYCLE, "--compact"], baseline)
+            _run([sys.executable, str(baseline_drift_script)], baseline)
             golden = _outputs(baseline)
             assert first == golden
 
