@@ -89,3 +89,40 @@ uploaded to the shared `datapulse-p4b-preview` project on a per-PR branch and
 carries the committed (therefore possibly stale) attestation plane. This change
 does not alter that credential posture, the preview project, or the served
 verification; it only removes the signing-key requirement from the build.
+
+## Addendum — 2026-10-02
+
+The residual exposure recorded above has since been addressed.
+
+- `.github/workflows/preview-verify.yml` — the `Deploy isolated Cloudflare Pages
+  preview` step no longer draws `secrets.CLOUDFLARE_API_TOKEN`. It draws
+  `secrets.CLOUDFLARE_PREVIEW_API_TOKEN`, a repository secret carrying one
+  permission, Cloudflare Pages Write, and nothing else. The environment variable
+  name stays `CLOUDFLARE_API_TOKEN`, because that is the name wrangler reads;
+  only the secret on the right of the mapping changed.
+- The same step is gated with
+  `if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}`,
+  so a fork pull request never reaches a token-bearing step.
+- The production deploy lane is untouched and keeps the production credential.
+
+Two assertions in `scripts/tests/test_preview_credential_free.py` were written on
+2026-10-01 to pin that *that day's* change left the Cloudflare secret references
+unchanged. They hard-coded the old posture, so they failed against this change.
+They were re-expressed rather than deleted and now assert the stronger property:
+the reference set is `CLOUDFLARE_ACCOUNT_ID` plus
+`CLOUDFLARE_PREVIEW_API_TOKEN`, and `secrets.CLOUDFLARE_API_TOKEN` appears
+nowhere in the file. Their names were changed to state what they pin. The file's
+other thirteen tests are unchanged, and a mutation proof — restoring the old
+workflow into the path — showed both failing against it.
+
+Evidence that the preview-scoped credential is sufficient: the lane's own run on
+the pull request deployed, resolved the preview URL, verified the served preview
+and passed its negative control. `Deploy isolated Cloudflare Pages preview`,
+`Wait for preview deployment URL`, `Verify served preview` and the
+mismatched-artifact control all succeeded.
+
+Known limitation, unchanged in effect: three later steps consume
+`steps.deploy_preview.outputs.url`, so a fork pull request now skips the deploy
+and those steps receive an empty URL. A fork PR previously ran the deploy with no
+secret and failed anyway, so this is not a regression. Gating those three steps
+is the follow-up if fork PRs should skip the preview half entirely.
