@@ -39,14 +39,14 @@ def _field(label: str, value: object, source: str, absent: str = "Not published"
     return f'<dt>{html.escape(label)}</dt><dd>{_value(value, absent)} <small>({source})</small></dd>'
 
 
-def render_page(dataset: dict[str, Any], health: dict[str, Any] | None, origin: str, observed_at: str) -> str:
+def render_page(dataset: dict[str, Any], health: dict[str, Any] | None, origin: str, path_template: str, observed_at: str) -> str:
     """Render source-attributed facts for one dataset."""
     dataset_id = dataset["id"]
     name = dataset.get("name")
     status = health.get("status") if health is not None else "unknown"
     if status not in STATUSES:
         raise GenerationError(f"{dataset_id}: invalid published status {status!r}")
-    canonical = f"{origin}/datasets/{dataset_id}.html"
+    canonical = f"{origin}{path_template.format(id=dataset_id)}"
     jsonld_url = f"{origin}/data/jsonld/{dataset_id}.json"
     title = f"Is {_value(name)} ({_value(dataset_id)}) still updated?"
     source = "health/latest.json" if health is not None else "health/latest.json: no row for this dataset"
@@ -120,7 +120,7 @@ def expected_outputs(root: Path) -> dict[Path, str]:
         target = root / "docs/datasets" / f"{dataset_id}.html"
         if target in outputs:
             raise GenerationError(f"datapulse.json: duplicate dataset id {dataset_id!r}")
-        outputs[target] = render_page(dataset, health_by_id.get(dataset_id), config["origins"]["website"], observed_at)
+        outputs[target] = render_page(dataset, health_by_id.get(dataset_id), config["origins"]["website"], config["dataset_pages"]["path_template"], observed_at)
     return outputs
 
 

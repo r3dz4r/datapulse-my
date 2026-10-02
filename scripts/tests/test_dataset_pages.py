@@ -4,6 +4,7 @@ import json
 import shutil
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from scripts.gen_dataset_pages import generate
@@ -38,12 +39,21 @@ def test_all_manifest_datasets_have_deterministic_published_pages(tmp_path: Path
     manifest = json.loads((tmp_path / "datapulse.json").read_text())["datasets"]
     health = {row["dataset_id"]: row for row in json.loads((tmp_path / "health/latest.json").read_text())["datasets"]}
     pages = list((tmp_path / "docs/datasets").glob("*.html"))
+    sitemap = ET.parse(ROOT / "sitemap.xml")
+    locations = {
+        node.text
+        for node in sitemap.findall("{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc")
+    }
     assert count == len(manifest) == len(pages)
     first = {path.name: path.read_bytes() for path in pages}
     for row in manifest:
         page = first[f'{row["id"]}.html'].decode()
         assert row["id"] in page
         assert f'>{health[row["id"]]["status"]} <small>' in page
+        canonical = f'https://www.data-pulse.my/datasets/{row["id"]}'
+        assert f'<link rel="canonical" href="{canonical}">' in page
+        assert canonical in locations
+        assert ".html" not in canonical
     assert generate(tmp_path) == count
     assert first == {path.name: path.read_bytes() for path in pages}
 

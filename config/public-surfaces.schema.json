@@ -27,7 +27,7 @@
       "additionalProperties": false
     },
     "pages": {"type": "array", "items": {"type": "string", "pattern": "^/(?!.*(?:^|/)\\.\\.(?:/|$))"}, "uniqueItems": true},
-    "dataset_pages": {"type": "object", "required": ["path_template"], "properties": {"path_template": {"const": "/datasets/{id}.html"}}, "additionalProperties": false},
+    "dataset_pages": {"type": "object", "required": ["path_template"], "properties": {"path_template": {"const": "/datasets/{id}"}}, "additionalProperties": false},
     "compatibility_aliases": {
       "type": "array",
       "default": [],

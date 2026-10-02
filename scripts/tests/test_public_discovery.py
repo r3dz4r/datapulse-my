@@ -21,7 +21,7 @@ def _stage(root: Path) -> None:
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
         "pages": ["/", "/npra.html", "/health-methodology.html"],
-        "dataset_pages": {"path_template": "/datasets/{id}.html"},
+        "dataset_pages": {"path_template": "/datasets/{id}"},
         "compatibility_aliases": [{"path": "/landing.html", "target": "/"}],
         "artifacts": [
             "/llms.txt",
@@ -36,7 +36,7 @@ def _stage(root: Path) -> None:
     (root / "config/public-surfaces.json").write_text(json.dumps(config) + "\n")
     (root / "config/public-surfaces.schema.json").write_text(json.dumps({
         "required": ["schema", "product_name", "origins", "pages", "artifacts", "featured_dataset_ids"],
-        "properties": {"product_name": {"const": "DataPulse"}, "dataset_pages": {"properties": {"path_template": {"const": "/datasets/{id}.html"}}}, "origins": {"properties": {
+        "properties": {"product_name": {"const": "DataPulse"}, "dataset_pages": {"properties": {"path_template": {"const": "/datasets/{id}"}}}, "origins": {"properties": {
             "website": {"const": "https://www.data-pulse.my"},
             "mcp": {"const": "https://mcp.data-pulse.my"},
             "api": {"const": "https://api.data-pulse.my"},
@@ -77,8 +77,8 @@ def test_generation_is_deterministic_and_preserves_unowned_prose(tmp_path: Path)
         "https://www.data-pulse.my/mcp.json",
         "https://www.data-pulse.my/ai-catalog.json",
         "https://www.data-pulse.my/agent-workflow-malaysia-public-data.md",
-        "https://www.data-pulse.my/datasets/alpha.html",
-        "https://www.data-pulse.my/datasets/beta.html",
+        "https://www.data-pulse.my/datasets/alpha",
+        "https://www.data-pulse.my/datasets/beta",
     ]
 
     assert "https://www.data-pulse.my/.well-known/ai-catalog.json" not in first["sitemap.xml"].decode()
