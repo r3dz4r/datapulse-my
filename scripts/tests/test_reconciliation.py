@@ -91,7 +91,7 @@ def test_cli_writes_complete_artifact(tmp_path: Path):
     manifest.write_text(json.dumps({"datasets": [entry("alpha", "Alpha", "https://example.test/data.csv"), entry("beta", "Beta", "https://example.test/data.csv")] }), encoding="utf-8")
     health_file.write_text(json.dumps(snapshot(health("alpha"), health("beta"))), encoding="utf-8")
     seed_file.write_text(json.dumps(seeds()), encoding="utf-8")
-    result = subprocess.run(["python3", str(ROOT / "scripts/gen_reconciliation.py"), "--manifest", str(manifest), "--health", str(health_file), "--seeds", str(seed_file), "--output", str(output)], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, str(ROOT / "scripts/gen_reconciliation.py"), "--manifest", str(manifest), "--health", str(health_file), "--seeds", str(seed_file), "--output", str(output)], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["schema"] == "datapulse/v1/dataset-reconciliation"

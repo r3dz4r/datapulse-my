@@ -8,6 +8,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 import subprocess
+import sys
 from typing import Any, Iterator
 
 import pytest
@@ -87,7 +88,7 @@ def mock_mcp_endpoint() -> Iterator[tuple[str, type[BaseHTTPRequestHandler]]]:
 
 def _run_verifier(endpoint: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["python3", str(VERIFY_SCRIPT), "--endpoint", endpoint],
+        [sys.executable, str(VERIFY_SCRIPT), "--endpoint", endpoint],
         cwd=ROOT,
         capture_output=True,
         text=True,

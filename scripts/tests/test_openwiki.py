@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -33,8 +34,8 @@ def test_verifier_accepts_current_canonical_generated_pages(tmp_path: Path) -> N
 @pytest.mark.parametrize(
     "command",
     (
-        ("python3", "scripts/verify_openwiki.py"),
-        ("python3", "-m", "scripts.verify_openwiki"),
+        (sys.executable, "scripts/verify_openwiki.py"),
+        (sys.executable, "-m", "scripts.verify_openwiki"),
     ),
 )
 def test_source_only_verifier_supports_documented_invocations(command: tuple[str, ...]) -> None:

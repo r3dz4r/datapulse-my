@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -107,7 +108,7 @@ def _run_delta(
 ) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
-            "python3",
+            sys.executable,
             str(DELTA_GENERATOR),
             "--cycle",
             cycle,
@@ -357,7 +358,7 @@ def test_changelog_renamed(tmp_path: Path) -> None:
     )
     result = subprocess.run(
         [
-            "python3",
+            sys.executable,
             str(SNAPSHOT_GENERATOR),
             "--manifest",
             str(manifest),

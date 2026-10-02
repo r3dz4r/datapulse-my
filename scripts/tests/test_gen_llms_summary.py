@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 from scripts.gen_llms_summary import PUBLIC_SURFACE_LINKS
@@ -121,7 +122,7 @@ def _write_fixture(root: Path, *, count: int = 3, include_mcp_line: bool = True)
 
 def _run(root: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["python3", str(GENERATOR), "--root", str(root)],
+        [sys.executable, str(GENERATOR), "--root", str(root)],
         capture_output=True,
         text=True,
         check=False,

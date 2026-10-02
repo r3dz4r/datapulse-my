@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import weakref
@@ -181,7 +182,7 @@ def run_generator(
         if validation_error is None:
             suffix = isolated_generator.suffix.lower()
             if suffix == ".py":
-                command = ["python3", str(isolated_generator)]
+                command = [sys.executable, str(isolated_generator)]
             elif suffix == ".sh":
                 command = ["bash", str(isolated_generator)]
                 if "health/latest.json" in inputs:

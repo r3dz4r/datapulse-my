@@ -141,7 +141,7 @@ def test_zero_history_daily_aggregates_and_receipts_are_zero_coverage(tmp_path: 
 def test_denominator_thresholds_and_deterministic_cli_output(tmp_path: Path) -> None:
     paths = _fixture_inputs(tmp_path)
     output = tmp_path / "coverage.json"
-    command = ["python3", str(ROOT / "scripts/gen_evidence_coverage.py"), "--manifest", str(paths["manifest"]), "--trends", str(paths["trends"]), "--drift", str(paths["drift"]), "--history", str(paths["history"]), "--daily", str(paths["daily"]), "--record-evidence", str(paths["receipts"]), "--output", str(output), "--now", "2026-08-24T12:00:00Z"]
+    command = [sys.executable, str(ROOT / "scripts/gen_evidence_coverage.py"), "--manifest", str(paths["manifest"]), "--trends", str(paths["trends"]), "--drift", str(paths["drift"]), "--history", str(paths["history"]), "--daily", str(paths["daily"]), "--record-evidence", str(paths["receipts"]), "--output", str(output), "--now", "2026-08-24T12:00:00Z"]
 
     first = subprocess.run(command, capture_output=True, text=True, check=False)
     assert first.returncode == 0, first.stderr

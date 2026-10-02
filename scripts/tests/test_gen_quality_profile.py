@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -232,7 +233,7 @@ def test_cli_writes_atomically_to_explicit_output_without_network(tmp_path: Path
     health_path.write_text(json.dumps(health), encoding="utf-8")
 
     command = [
-        "python3", "scripts/gen_quality_profile.py", "--manifest", str(manifest_path),
+        sys.executable, "scripts/gen_quality_profile.py", "--manifest", str(manifest_path),
         "--health", str(health_path), "--out", str(output_path),
     ]
     first = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
@@ -256,7 +257,7 @@ def test_cli_rejects_invalid_source_health_without_overwriting_output(tmp_path: 
 
     result = subprocess.run(
         [
-            "python3", "scripts/gen_quality_profile.py", "--manifest", str(manifest_path),
+            sys.executable, "scripts/gen_quality_profile.py", "--manifest", str(manifest_path),
             "--health", str(health_path), "--out", str(output_path),
         ],
         cwd=ROOT,

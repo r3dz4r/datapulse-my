@@ -4,6 +4,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -45,7 +46,7 @@ def _write_config(root: Path, value: dict) -> None:
 
 
 def _run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["python3", "scripts/gen_landing_page.py", *args], cwd=root, capture_output=True, text=True, check=False)
+    return subprocess.run([sys.executable, "scripts/gen_landing_page.py", *args], cwd=root, capture_output=True, text=True, check=False)
 
 
 def test_landing_page_is_deterministic_generated_and_uses_canonical_links(tmp_path: Path) -> None:

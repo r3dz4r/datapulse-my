@@ -6,6 +6,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -80,7 +81,7 @@ def verification_run(tmp_path: Path) -> VerificationRun:
     status_before = _git_status()
     result = subprocess.run(
         [
-            "python3",
+            sys.executable,
             "scripts/verify_release_reproducible.py",
             "--workdir-root",
             str(workdir_root),

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -111,7 +112,7 @@ def test_inject_all_replaces_only_whitelisted_existing_nav_blocks(tmp_path: Path
 
 def test_check_is_clean_for_the_rendered_site_pages() -> None:
     result = subprocess.run(
-        ["python3", "scripts/gen_site_nav.py", "--check"],
+        [sys.executable, "scripts/gen_site_nav.py", "--check"],
         cwd=ROOT,
         capture_output=True,
         text=True,
