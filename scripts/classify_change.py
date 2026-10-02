@@ -8,6 +8,7 @@ source/release profile.
 
 from __future__ import annotations
 
+import re
 import sys
 from collections.abc import Iterable
 
@@ -63,6 +64,8 @@ def is_health_cycle_output(path: str) -> bool:
         return bool(parts[1].removesuffix(".svg")) and parts[1].endswith(".svg")
     if len(parts) == 3 and parts[:2] == ["data", "passports"]:
         return bool(parts[2].removesuffix(".json")) and parts[2].endswith(".json")
+    if len(parts) == 3 and parts[:2] == ["docs", "datasets"]:
+        return re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*\.html", parts[2]) is not None
     if len(parts) == 3 and parts[0] == "record-evidence":
         return bool(parts[1]) and parts[2] == "latest.json"
     if len(parts) == 3 and parts[:2] == [".attestations", "latest"]:

@@ -89,6 +89,16 @@ def test_dataset_passports_are_health_cycle_outputs() -> None:
     assert is_health_only_change(("health/latest.json", "data/passports/x.json"))
 
 
+def test_dataset_page_with_latest_snapshot_is_health_only() -> None:
+    assert is_health_only_change(
+        ("docs/datasets/cosmetic_notifications.html", "health/latest.json")
+    )
+
+
+def test_dataset_page_without_latest_snapshot_is_not_health_only() -> None:
+    assert not is_health_only_change(("docs/datasets/cosmetic_notifications.html",))
+
+
 def test_generated_outputs_without_latest_snapshot_are_not_health_only() -> None:
     assert not is_health_only_change(("datapulse_summary.json",))
     assert not is_health_only_change(("data/passports/x.json",))
@@ -135,6 +145,10 @@ def test_actual_health_cycle_commit_d4cae64e6_is_health_only() -> None:
         "scripts/generate.sh",
         ".github/workflows/ci.yml",
         "docs/index.html",
+        "docs/datasets/x.json",
+        "docs/datasets/x/cosmetic_notifications.html",
+        "docs/datasets/.html",
+        "docs/datasets/x.bad.html",
         "unknown/generated-output.json",
         "health/unrecognized.json",
         "data/pharmaceutical_products.md",
