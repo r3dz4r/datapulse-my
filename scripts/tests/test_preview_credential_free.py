@@ -12,7 +12,8 @@ explicitly. These tests pin the three properties the escape must preserve:
 * a key that is present is never bypassed by the opt-in, even when unusable.
 
 They also pin the workflow wiring: the opt-in is set only on the release-build
-step and no Cloudflare secret reference changes.
+step, the preview lane deploys with a preview-scoped credential, and it never
+references the production credential.
 """
 
 from __future__ import annotations
@@ -223,27 +224,29 @@ def test_preview_workflow_sets_the_escape_only_on_the_build_step() -> None:
         assert "DATAPULSE_ALLOW_UNSIGNED_BUILD" not in step.get("run", "")
 
 
-def test_preview_workflow_secret_references_are_unchanged() -> None:
+def test_preview_workflow_never_references_the_production_credential() -> None:
     workflow_text = PREVIEW_WORKFLOW.read_text(encoding="utf-8")
 
     references = re.findall(r"secrets\.[A-Za-z0-9_]+", workflow_text)
     assert sorted(set(references)) == [
         "secrets.CLOUDFLARE_ACCOUNT_ID",
-        "secrets.CLOUDFLARE_API_TOKEN",
+        "secrets.CLOUDFLARE_PREVIEW_API_TOKEN",
     ]
-    assert references.count("secrets.CLOUDFLARE_API_TOKEN") == 1
+    assert references.count("secrets.CLOUDFLARE_PREVIEW_API_TOKEN") == 1
     assert references.count("secrets.CLOUDFLARE_ACCOUNT_ID") == 1
+    assert "secrets.CLOUDFLARE_API_TOKEN" not in workflow_text
     assert not any("ATTESTATION" in reference for reference in references)
 
 
-def test_preview_workflow_keeps_deploy_and_served_steps_untouched() -> None:
+def test_preview_workflow_uses_preview_credentials_for_deploy_and_served_check() -> None:
     steps = {step.get("name"): step for step in _preview_workflow()["jobs"]["preview"]["steps"]}
 
     deploy = steps["Deploy isolated Cloudflare Pages preview"]
     assert deploy["env"] == {
-        "CLOUDFLARE_API_TOKEN": "${{ secrets.CLOUDFLARE_API_TOKEN }}",
+        "CLOUDFLARE_API_TOKEN": "${{ secrets.CLOUDFLARE_PREVIEW_API_TOKEN }}",
         "CLOUDFLARE_ACCOUNT_ID": "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
     }
+    assert deploy["if"] == "${{ github.event.pull_request.head.repo.full_name == github.repository }}"
     assert "DATAPULSE_ALLOW_UNSIGNED_BUILD" not in deploy
     assert "--project-name=datapulse-p4b-preview" in deploy["run"]
     assert "DATAPULSE_ALLOW_UNSIGNED_BUILD" not in steps["Verify served preview"].get("env", {})
