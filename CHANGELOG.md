@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.44.2](https://github.com/r3dz4r/datapulse-my/compare/v3.44.1...v3.44.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* **preview:** scope Cloudflare token to same-repo PRs ([50c58ef](https://github.com/r3dz4r/datapulse-my/commit/50c58effb5cc0594f8bf570a1fa6db56f6969adc))
+* **preview:** scope the Cloudflare token to same-repo PRs ([bad10d5](https://github.com/r3dz4r/datapulse-my/commit/bad10d5c71ecf90166696c5520780337c469aea5))
+
 ## [3.44.1](https://github.com/r3dz4r/datapulse-my/compare/v3.44.0...v3.44.1) (2026-10-01)
 
 
