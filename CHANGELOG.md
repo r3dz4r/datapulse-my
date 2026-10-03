@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.47.2](https://github.com/r3dz4r/datapulse-my/compare/v3.47.1...v3.47.2) (2026-10-03)
+
+
+### Bug Fixes
+
+* **probe:** derive ePerolehan freshness from HTTP listing ([e353027](https://github.com/r3dz4r/datapulse-my/commit/e353027f76e1d22f41ffe6d0b8117b1617981028))
+* **probe:** derive ePerolehan freshness from the served HTML over plain HTTP ([ea324a4](https://github.com/r3dz4r/datapulse-my/commit/ea324a490f204ff291a317f420ff868c45a87338))
+
 ## [3.47.1](https://github.com/r3dz4r/datapulse-my/compare/v3.47.0...v3.47.1) (2026-10-03)
 
 
