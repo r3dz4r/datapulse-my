@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -33,6 +34,15 @@ def test_local_gate_accepts_readme_prepared_source_without_binding() -> None:
             text=True,
         )
         try:
+            shutil.copy2(VERIFY_SCRIPT, worktree / "scripts/verify_release_invariants.sh")
+            snapshot = subprocess.run(
+                [sys.executable, "scripts/gen_catalog_snapshot.py"],
+                cwd=worktree,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            assert snapshot.returncode == 0, snapshot.stderr
             prepared = subprocess.run(
                 [sys.executable, "scripts/gen_readme.py"],
                 cwd=worktree,
@@ -84,7 +94,8 @@ def test_readme_health_parity_still_rejects_an_inconsistent_generated_readme(
         [
             "bash",
             "-c",
-            f"set -Eeuo pipefail\nassert_readme_health_parity() {{\n{parity_function}\n"
+            f"set -Eeuo pipefail\npython_bin=python3\n"
+            f"assert_readme_health_parity() {{\n{parity_function}\n"
             f"assert_readme_health_parity {health_file!s} {readme_file!s}",
         ],
         cwd=ROOT,
@@ -117,7 +128,7 @@ def test_local_gate_does_not_require_current_release_proof() -> None:
     assert "fetch release-verification.md docs/release-verification.md" not in script
     assert proof_fetch is not None
     proof_validation = re.search(
-        r"(?ms)^if ! \$local_mode; then\npython3 - \"\$work_dir/release-verification\.md\".*?^PY\n^fi\n",
+        r'(?ms)^if ! \$local_mode; then\n"\$python_bin" - "\$work_dir/release-verification\.md".*?^PY\n^fi\n',
         script,
     )
 
@@ -129,7 +140,7 @@ def test_served_gate_keeps_release_proof_drift_validation_strict() -> None:
     """Served validation must still reject proof metadata drift."""
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
     proof_validation = re.search(
-        r"(?ms)^if ! \$local_mode; then\npython3 - \"\$work_dir/release-verification\.md\".*?^PY\n^fi\n",
+        r'(?ms)^if ! \$local_mode; then\n"\$python_bin" - "\$work_dir/release-verification\.md".*?^PY\n^fi\n',
         script,
     )
 
@@ -157,14 +168,14 @@ def test_local_gate_skips_only_generated_p5b_surface_parity() -> None:
     assert not re.search(r'^\s*fetch\s+\S+\s+/?docs/', generated_fetches.group(0), re.MULTILINE)
 
     p5b_validation = re.search(
-        r"(?ms)^if ! \$local_mode; then\npython3 - \"\$work_dir\" <<'PY'.*?^fi\n\nPYTHONPATH=mcp",
+        r'''(?ms)^if ! \$local_mode; then\n"\$python_bin" - "\$work_dir" <<'PY'.*?^fi\n\nPYTHONPATH=mcp''',
         script,
     )
     assert p5b_validation is not None
     assert "P5B generated surface assertions: PASS" in p5b_validation.group(0)
     assert "dashboard-summary" in p5b_validation.group(0)
 
-    common_source = script.split('if ! $local_mode; then\npython3 - "$work_dir" <<\'PY\'', 1)[0]
+    common_source = script.split('if ! $local_mode; then\n"$python_bin" - "$work_dir" <<\'PY\'', 1)[0]
     assert 'load_public_surfaces(Path.cwd())' in common_source
     assert 'assert surfaces["pages"]' in common_source
     assert 'dashboard-summary' not in common_source
@@ -189,7 +200,7 @@ def test_served_mode_keeps_binding_verification_outside_the_local_exception() ->
     )
 
     assert served_contract is not None
-    assert 'python3 scripts/verify_attestation_binding.py "${binding_args[@]}"' in served_contract.group(1)
+    assert '"$python_bin" scripts/verify_attestation_binding.py "${binding_args[@]}"' in served_contract.group(1)
     assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" not in served_contract.group(1)
 
 

@@ -5,10 +5,10 @@
     "checked_at": "2026-10-03T10:36:37Z",
     "datasets_total": 418,
     "by_status": {
-      "fresh": 141,
+      "fresh": 142,
       "aging": 111,
       "stale": 145,
-      "discontinued": 2,
+      "discontinued": 1,
       "degraded": 0,
       "browser_dependent": 0,
       "unreachable": 0,
@@ -17,12 +17,12 @@
       "reference": 14
     },
     "datasets_health_signal_source": {
-      "last_modified_header": 160,
+      "last_modified_header": 161,
       "content_date_parse": 240,
-      "neither": 18
+      "neither": 17
     },
-    "datasets_with_no_last_modified_header": 255,
-    "datasets_with_no_record_count_extracted": 11,
+    "datasets_with_no_last_modified_header": 254,
+    "datasets_with_no_record_count_extracted": 10,
     "oldest_last_modified": "2023-09-15T07:20:46Z",
     "newest_last_modified": "2026-10-02T19:31:39Z",
     "stale_datasets": [
@@ -2262,18 +2262,18 @@
     },
     {
       "dataset_id": "pricecatcher",
-      "last_checked": "2026-10-03T10:36:37Z",
+      "last_checked": "2026-10-03T12:19:47Z",
       "namespace": "other",
-      "url": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-10.parquet",
-      "status": "discontinued",
-      "status_reason": "discontinued-on-404",
-      "message": "HTTP 404",
-      "request_url": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-10.parquet",
+      "url": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-09.parquet",
+      "status": "fresh",
+      "status_reason": null,
+      "message": "HTTP 200",
+      "request_url": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-09.parquet",
       "access_method": "direct curl GET",
-      "http_status": 404,
-      "content_length": null,
-      "last_modified": null,
-      "content_freshness_date": null,
+      "http_status": 200,
+      "content_length": 1786431,
+      "last_modified": "2026-09-30T12:00:28Z",
+      "content_freshness_date": "2026-09-24",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -2285,13 +2285,13 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
-      "estimated_record_count": null,
-      "record_count_estimated": false,
-      "incomplete": false,
+      "record_count": 14887,
+      "estimated_record_count": 14887,
+      "record_count_estimated": true,
+      "incomplete": true,
       "column_count": null,
       "first_row_hash": null,
-      "shape_basis": null,
+      "shape_basis": "untyped",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
@@ -2300,10 +2300,10 @@
       "date_range": null,
       "newest_date": null,
       "oldest_date": null,
-      "distinct_dates": null,
+      "distinct_dates": 0,
       "rows_per_date": null,
       "largest_gap_days": null,
-      "dimension_cardinality": null,
+      "dimension_cardinality": {},
       "agency": null,
       "stops": null,
       "routes": null,
@@ -2315,28 +2315,28 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 9,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
+      "freshness_signal": "last-modified-header",
+      "freshness_signal_source": "last_modified_header",
       "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
-        "sample_days": 7,
+        "sample_days": 0,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 90,
+        "latest_days": 9.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "unknown",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -2364,9 +2364,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_discontinued"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -2430,14 +2430,14 @@
             "coverage": {
               "applicable": 4,
               "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
+              "passed": 3,
+              "failed": 0,
               "unknown": 1,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_discontinued",
+              "observed_access_signal_present",
               "shape_metadata_missing",
               "reuse_metadata_declared"
             ],
@@ -2552,7 +2552,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "provenance": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "provenance.source_url",
@@ -2612,9 +2612,9 @@
               },
               {
                 "check_id": "provenance.source_observed_boundary",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "source_observed_url_conflict"
+                  "source_observed_boundary_recorded"
                 ],
                 "evidence_refs": [
                   {
@@ -2633,17 +2633,17 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 3,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 1,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "url_declared",
               "publisher_metadata_declared",
               "observation_reference_present",
-              "source_observed_url_conflict"
+              "source_observed_boundary_recorded"
             ],
             "evidence_refs": [
               {
@@ -2825,9 +2825,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_estimated"
                 ],
                 "evidence_refs": [
                   {
@@ -2866,16 +2866,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 3,
+              "passed": 3,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 1,
               "not_applicable": 0
             },
             "reason_codes": [
               "shape_fingerprint_missing",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_estimated",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -3076,7 +3076,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "indeterminate",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
