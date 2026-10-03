@@ -1551,7 +1551,7 @@ dispatch_dataset() {
   local dataset_id="$1"
   local source_url="$2"
   local dataset_result_file="$3"
-  local dynamic_template special_validator injected_date
+  local dynamic_template special_validator injected_date predicted_url
 
   results_file="$dataset_result_file"
   body_file="${dataset_result_file}.body"
@@ -1562,7 +1562,18 @@ dispatch_dataset() {
   dynamic_template="$(probe_policy_value "$dataset_id" '.["dynamic-url"].template' 2>/dev/null || true)"
   if [[ -n "$dynamic_template" ]]; then
     injected_date="${DATAPULSE_PROBE_DATE:-$(date -u +'%Y-%m-%d')}"
-    source_url="$(render_dynamic_url "$dataset_id" "$injected_date")" || return 1
+    predicted_url="$(render_dynamic_url "$dataset_id" "$injected_date")" || return 1
+    # The template predicts the current period's filename from the clock, but
+    # publishers roll those files out late (pricecatcher lags a month). Follow
+    # the prediction only when the upstream actually answers for it; otherwise
+    # keep the manifest's declared URL, which is the file the publisher was
+    # last observed to serve. Recording a predicted filename we have not
+    # confirmed publishes a dead link into the health snapshot.
+    if [[ "$predicted_url" == "$source_url" ]] \
+      || curl --location --silent --show-error --fail --head \
+           --max-time "$curl_timeout" "$predicted_url" >/dev/null 2>&1; then
+      source_url="$predicted_url"
+    fi
   fi
 
   special_validator="$(probe_policy_value "$dataset_id" '.["special-validator"]' 2>/dev/null || true)"
