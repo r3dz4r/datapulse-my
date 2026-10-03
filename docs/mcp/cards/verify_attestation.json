@@ -11,7 +11,7 @@
     "verify_attestation.replay_chain"
   ],
   "contract_version": "1.0.0",
-  "dataset_count": 418,
+  "dataset_count": 425,
   "description": "Use to verify a signed published probe attestation after an evidence audit. Returns L1 signature, key, time, and chain-link checks; optional L2 replay of daily heads to a Git-tag anchor; and L3 scope, which requires verify_evidence for live transport. A valid signature proves attestation integrity and scope, not upstream semantic truth or currentness. For a deep audit use search_datasets → get_evidence → verify_evidence → verify_attestation. Use it for signed-attestation integrity; do not use it for published receipt verification, a live transport comparison, or an aggregate verdict—use verify_dataset, verify_evidence, or trust_verdict instead. L2 is not run unless replay_chain is set, and a failed level reports an unsatisfied check rather than upstream semantic truth; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "verify_attestation",
   "endpoint": {

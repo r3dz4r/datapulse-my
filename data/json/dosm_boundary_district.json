@@ -1,0 +1,63 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_boundary_district",
+  "status": "reference",
+  "last_checked": "2026-10-03T02:55:45Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "as-required",
+  "record_count": 160,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "district",
+      "type": "string"
+    },
+    {
+      "name": "code_state",
+      "type": "integer"
+    },
+    {
+      "name": "code_district",
+      "type": "integer"
+    },
+    {
+      "name": "code_state_district",
+      "type": "string"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 160 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as reference"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 5 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://raw.githubusercontent.com/dosm-malaysia/data-open/main/datasets/geodata/administrative_2_district.geojson",
+    "access_method": "curl"
+  },
+  "licence": "Open Data License",
+  "attribution": "https://github.com/dosm-malaysia/data-open (government_open_data)"
+}

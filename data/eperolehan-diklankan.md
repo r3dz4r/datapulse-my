@@ -1,8 +1,8 @@
 ---
 dataset_id: eperolehan-diklankan
-last_checked: 2026-09-06T20:36:28Z
-status: browser-dependent
-freshness_delta: 0 days
+last_checked: 2026-10-03T01:45:56Z
+status: stale
+freshness_delta: 1 days
 next_expected_update: unknown
 file_size_bytes: null
 file_count: null
@@ -18,15 +18,15 @@ attribution: MOF ePerolehan
 
 ## Status
 
-**Status:** Browser dependent
+**Status:** Stale
 
-**Freshness:** 0 days
+**Freshness:** 1 days
 
 Browser check succeeded
 
 ## Last checked
 
-2026-09-06 at 20:36:28 UTC.
+2026-10-03 at 01:45:56 UTC.
 
 ## File size
 

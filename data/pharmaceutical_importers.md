@@ -5,15 +5,15 @@ source_url: "https://storage.data.gov.my/healthcare/pharmaceutical_importers.csv
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-09-26T02:49:53Z
 last_observed: null
-last_modified: 2026-09-04T01:08:17Z
-record_count: 471
+last_modified: 2026-09-26T00:55:19Z
+record_count: 475
 column_count: 8
 status: fresh
 notes: "Tier-1 wave E newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: pharmaceutical_importers
-freshness_delta: 1 days
+freshness_delta: 7 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,17 +28,17 @@ attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
 
 **Status:** Fresh
 
-**Freshness:** 1 days
+**Freshness:** 7 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 
-The checked resource is 74,525 bytes.
+The checked resource is 75,199 bytes.
 
 ## Provenance
 

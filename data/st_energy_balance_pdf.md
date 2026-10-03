@@ -13,7 +13,7 @@ column_count: null
 status: fresh
 notes: "Unprobed Suruhanjaya Tenaga annual PDF source; health remains unknown until the first DataPulse probe."
 dataset_id: st_energy_balance_pdf
-freshness_delta: 157 days
+freshness_delta: 185 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Suruhanjaya Tenaga (ST) via st.gov.my"
 
 **Status:** Fresh
 
-**Freshness:** 157 days
+**Freshness:** 185 days
 
 HTTP 200
 

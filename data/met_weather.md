@@ -1,10 +1,10 @@
 ---
 dataset_id: met_weather
-last_checked: 2026-09-06T05:22:25Z
+last_checked: 2026-10-02T15:40:53Z
 status: fresh
-freshness_delta: 0 days
+freshness_delta: 1 days
 next_expected_update: 2026-08-03
-record_count: 3101
+record_count: 3080
 date_range: 2026-08-02 to 2026-08-08
 schema_version: 1.0
 schema_drift: none
@@ -20,17 +20,17 @@ attribution: MET Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 0 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 05:22:25 UTC.
+2026-10-02 at 15:40:53 UTC.
 
 ## File size
 
-The checked resource is 886,714 bytes.
+The checked resource is 902,816 bytes.
 
 ## Coverage
 

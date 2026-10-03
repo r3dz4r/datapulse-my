@@ -5,7 +5,7 @@ source_url: "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/cov
 source_name: "github.com/MoH-Malaysia/kkmnow-data"
 licence: "MIT License"
 refresh_frequency: "weekly"
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-09-26T02:49:53Z
 last_observed: null
 last_modified: null
 record_count: 47
@@ -34,7 +34,7 @@ HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 

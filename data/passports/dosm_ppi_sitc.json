@@ -3,13 +3,13 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 63.0,
+        "latest_days": 94.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 90,
         "window_days": 14
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-03T10:36:37Z",
-    "record_count": 5283,
+    "last_checked": "2026-09-26T02:49:53Z",
+    "record_count": 5256,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:e476b1d321707a7b169fd5682e26192e8f00feb55957593b6c97508e9b464cc7"
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=ppi_sitc",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Monthly PPI by SITC Section (1 digit)",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-03T10:36:37Z",
+    "observed_verified_at": "2026-09-26T02:49:53Z",
     "source": "DOSM via data.gov.my",
     "steward": "Department of Statistics Malaysia"
   },
@@ -129,6 +129,90 @@
         },
         {
           "from": "cpi_core_inflation",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ppi_sitc",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ppi_sitc",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district_lookup",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ppi_sitc",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_dun",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ppi_sitc",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_malaysia",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ppi_sitc",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_parlimen",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ppi_sitc",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_parlimen_dun_lookup",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ppi_sitc",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_state",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",

@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_passports
-last_checked: 2026-09-05T02:34:56Z
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-09-26T02:49:53Z
+last_checked: 2026-09-26T02:49:53Z
 status: stale
-freshness_delta: 704 days
+freshness_delta: 732 days
 next_expected_update: monthly
 record_count: 5684
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Immigration Department of Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 704 days
+**Freshness:** 732 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 

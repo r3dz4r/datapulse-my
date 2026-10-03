@@ -2,7 +2,7 @@
 dataset_id: dosm_marriages_state_age
 last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 1708 days
+freshness_delta: 1736 days
 next_expected_update: overdue
 record_count: 2304
 date_range: 2017-01-01 to 2022-01-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Stale
 
-**Freshness:** 1708 days
+**Freshness:** 1736 days
 
 HTTP 200
 
