@@ -29,6 +29,8 @@ DEFAULT_ARCHIVES_DIR = Path.home() / "runtime/datapulse-history"
 ARCHIVES_ENVIRONMENT_VARIABLE: Final[str] = "DATAPULSE_ARCHIVES_DIR"
 DEFAULT_RETENTION_DAYS = 7
 DAILY_SCHEMA = "datapulse/v1/health-history-daily"
+PROBE_COUNTS_SCHEMA = "datapulse/v1/probe-counts"
+PROBE_COUNTS_WINDOW_DAYS = 14
 STATUSES = (
     "fresh",
     "aging",
@@ -313,6 +315,32 @@ def write_upserted_history(path: Path, current: list[dict[str, Any]]) -> int:
             database.close()
 
 
+def probe_counts_document(database: sqlite3.Connection, *, now: datetime) -> dict[str, Any]:
+    """Count per-dataset observations for the windows the attestation signs.
+
+    The counts are read from the whole upserted row set before compaction drops
+    expired rows, so a 14-day window still answers for a history file whose
+    retention is shorter than that window.
+    """
+    cutoff_1 = (now.astimezone(UTC) - timedelta(days=1)).isoformat()
+    cutoff_14 = (now.astimezone(UTC) - timedelta(days=PROBE_COUNTS_WINDOW_DAYS)).isoformat()
+    counts: dict[str, dict[str, int]] = {}
+    for dataset_id, observed_utc in database.execute(
+        "SELECT dataset_id, observed_utc FROM rows ORDER BY dataset_id, observed_utc"
+    ):
+        entry = counts.setdefault(dataset_id, {"d1": 0, "d14": 0})
+        if observed_utc >= cutoff_14:
+            entry["d14"] += 1
+        if observed_utc >= cutoff_1:
+            entry["d1"] += 1
+    return {
+        "schema": PROBE_COUNTS_SCHEMA,
+        "generated_at": now.astimezone(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "window_days": PROBE_COUNTS_WINDOW_DAYS,
+        "counts": counts,
+    }
+
+
 def compact_upserted_history(
     path: Path,
     current: list[dict[str, Any]],
@@ -321,7 +349,7 @@ def compact_upserted_history(
     retention_days: int,
     archives_dir: Path,
     now: datetime,
-) -> tuple[dict[str, Any], int, int, int]:
+) -> tuple[dict[str, Any], int, int, int, dict[str, Any]]:
     """Compact an upserted history without retaining its raw rows in memory."""
     cutoff = now - timedelta(days=retention_days)
     daily, compacted_cycles = read_daily(daily_path)
@@ -442,7 +470,8 @@ def compact_upserted_history(
                 except OSError:
                     pass
                 raise
-            return document, retained, expired_count, archived_count
+            probe_counts = probe_counts_document(database, now=now)
+            return document, retained, expired_count, archived_count, probe_counts
         finally:
             database.close()
 
@@ -713,6 +742,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--history", type=Path, default=DEFAULT_HISTORY)
     parser.add_argument("--daily", type=Path, default=DEFAULT_DAILY)
     parser.add_argument(
+        "--probe-counts",
+        type=Path,
+        default=None,
+        help="probe-count artifact path (default: sibling of --history)",
+    )
+    parser.add_argument(
         "--archives-dir",
         type=Path,
         default=None,
@@ -728,6 +763,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     args.archives_dir = resolve_archives_dir(args.archives_dir)
+    # A sibling of the history root keeps an overridden --history (as every test
+    # uses) from writing the artifact into the repository tree.
+    args.probe_counts = args.probe_counts or args.history.parent / "probe_counts.json"
     if args.retention_days < 1:
         raise SystemExit("--retention-days must be at least 1")
     try:
@@ -748,7 +786,7 @@ def main() -> None:
                 if args.now
                 else datetime.now(UTC)
             )
-            daily, raw_retained, expired_count, archived_count = compact_upserted_history(
+            daily, raw_retained, expired_count, archived_count, probe_counts = compact_upserted_history(
                 args.history,
                 current,
                 args.daily,
@@ -759,6 +797,10 @@ def main() -> None:
             atomic_write(
                 args.daily,
                 json.dumps(daily, ensure_ascii=False, indent=2) + "\n",
+            )
+            atomic_write(
+                args.probe_counts,
+                json.dumps(probe_counts, ensure_ascii=False, indent=2) + "\n",
             )
         else:
             raw_retained = write_upserted_history(args.history, current)

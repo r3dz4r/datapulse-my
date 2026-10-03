@@ -291,3 +291,50 @@ def test_history_latest_unchanged(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert snapshot.read_bytes() == before
+
+
+def test_probe_counts_artifact_counts_observations_in_window(tmp_path: Path) -> None:
+    rows = []
+    for dataset_id, observed_at in (
+        ("dataset-000", "2026-08-12T06:00:05Z"),
+        ("dataset-000", "2026-08-09T18:00:05Z"),
+        ("dataset-000", "2026-07-30T18:00:05Z"),
+        ("dataset-000", "2026-07-10T18:00:05Z"),
+        ("dataset-001", "2026-08-10T18:00:05Z"),
+        ("dataset-002", "2026-07-10T18:00:05Z"),
+    ):
+        rows.append(
+            {
+                "dataset_id": dataset_id,
+                "observed_at": observed_at,
+                "cycle": observed_at[:16],
+                "status": "fresh",
+                "probe_outcome": "success",
+                "record_count": 1,
+                "latency_ms": 10,
+            }
+        )
+    (tmp_path / "history.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8"
+    )
+    snapshot = _snapshot(tmp_path, count=2, checked_at="2026-07-01T00:00:05Z")
+
+    result = _run(tmp_path, snapshot, compact=True, now="2026-08-12T18:00:05+00:00")
+
+    assert result.returncode == 0, result.stderr
+    document = json.loads((tmp_path / "probe_counts.json").read_text(encoding="utf-8"))
+    assert document["schema"] == "datapulse/v1/probe-counts"
+    assert document["generated_at"] == "2026-08-12T18:00:05Z"
+    assert document["window_days"] == 14
+    assert document["counts"]["dataset-000"] == {"d1": 1, "d14": 3}
+    assert document["counts"]["dataset-001"] == {"d1": 0, "d14": 1}
+    assert document["counts"]["dataset-002"] == {"d1": 0, "d14": 0}
+
+
+def test_probe_counts_artifact_only_written_with_compaction(tmp_path: Path) -> None:
+    snapshot = _snapshot(tmp_path, count=1)
+
+    result = _run(tmp_path, snapshot)
+
+    assert result.returncode == 0, result.stderr
+    assert not (tmp_path / "probe_counts.json").exists()

@@ -10,6 +10,8 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 ZERO = "0" * 64
 ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
 ATTESTATION_KEY_PURPOSE = "attestation-chain-signing"
+PROBE_COUNTS_SCHEMA = "datapulse/v1/probe-counts"
+PROBE_COUNTS_MAX_AGE_SECONDS = 48 * 60 * 60
 def canonical(value: object) -> bytes: return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
 def sha(value: bytes) -> str: return hashlib.sha256(value).hexdigest()
 def parse_time(value: str) -> datetime: return datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -220,6 +222,43 @@ def refresh_manifest_refs(root: Path, day: str) -> None:
         entry["methodology_version"] = 3
     dump(root / "datapulse.json", manifest)
 
+def load_probe_counts(root: Path, now: datetime) -> dict | None:
+    """Return a fresh, schema-valid count map, or None when unusable.
+
+    The absent artefact is the honest-unknown case; a present-but-stale or
+    malformed artefact is rejected outright so its plausible numbers never
+    stand in for an observation the run cannot actually confirm.
+    """
+    try:
+        document = load(root / "health/probe_counts.json")
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        return None
+    if not isinstance(document, dict) or document.get("schema") != PROBE_COUNTS_SCHEMA:
+        return None
+    generated_at = document.get("generated_at")
+    if not isinstance(generated_at, str):
+        return None
+    try:
+        generated = parse_time(generated_at)
+    except ValueError:
+        return None
+    if generated.tzinfo is None:
+        return None
+    if now - generated > timedelta(seconds=PROBE_COUNTS_MAX_AGE_SECONDS):
+        return None
+    counts = document.get("counts")
+    return counts if isinstance(counts, dict) else None
+
+def probe_counts_for_dataset(counts: dict, dataset_id: str) -> tuple[int | None, int | None]:
+    """Map one dataset's artifact entry to (14d, 24h); absence is null, never zero."""
+    record = counts.get(dataset_id)
+    if not isinstance(record, dict):
+        return (None, None)
+    d14, d1 = record.get("d14"), record.get("d1")
+    if not isinstance(d14, int) or isinstance(d14, bool) or not isinstance(d1, int) or isinstance(d1, bool):
+        return (None, None)
+    return (d14, d1)
+
 def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | None = None) -> None:
     day=now.date().isoformat()
     latest = root / "attestations" / "latest"
@@ -236,9 +275,10 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
     if row is None or registry.get("schema") != "datapulse/v2/probe-key-registry" or registry.get("current_key_id")!=key["key_id"] or row.get("purpose") != ATTESTATION_KEY_PURPOSE or row.get("status")!="active" or not(parse_time(row["not_before"])<=now<=parse_time(row["not_after"])): raise ValueError("signing key is not active")
     generated_at=now.replace(microsecond=0).isoformat().replace("+00:00","Z"); base=root/"attestations"; dated=base/day; health_claim=health_binding(root,health); rekor=rekor_binding(root,rekor_reference,health_claim["artifact_sha256"])
     previous=load(latest/"chain_head.json")["chain_head"] if (latest/"chain_head.json").exists() else ZERO
-    hp=root/"health/history.jsonl"; history_available=hp.exists() and hp.stat().st_size>0; history=[json.loads(line) for line in hp.read_text(encoding="utf-8").splitlines() if line.strip()] if history_available else []; health_by={r["dataset_id"]:r for r in health["datasets"]}; links=[]; refs={}
+    pc_path=root/"health/probe_counts.json"; pc_present=pc_path.exists() and pc_path.stat().st_size>0; probe_artifact=load_probe_counts(root,now) if pc_present else None
+    hp=root/"health/history.jsonl"; history_available=hp.exists() and hp.stat().st_size>0; use_history=history_available and not pc_present; history=[json.loads(line) for line in hp.read_text(encoding="utf-8").splitlines() if line.strip()] if use_history else []; health_by={r["dataset_id"]:r for r in health["datasets"]}; links=[]; refs={}
     for entry in sorted(manifest["datasets"],key=lambda r:r["id"]):
-        did=entry["id"]; h=health_by.get(did,{}); observed=h.get("last_checked") or health["checked_at"]; cutoff14=now-timedelta(days=14); cutoff1=now-timedelta(days=1); times=[parse_time(r["observed_at"]) for r in history if r.get("dataset_id")==did and r.get("observed_at")]; probe_counts=(sum(t>=cutoff14 for t in times),sum(t>=cutoff1 for t in times)) if history_available else (None,None); fp=h.get("first_row_hash"); browser=h.get("access_dependency")=="browser"
+        did=entry["id"]; h=health_by.get(did,{}); observed=h.get("last_checked") or health["checked_at"]; cutoff14=now-timedelta(days=14); cutoff1=now-timedelta(days=1); times=[parse_time(r["observed_at"]) for r in history if r.get("dataset_id")==did and r.get("observed_at")]; probe_counts=probe_counts_for_dataset(probe_artifact,did) if probe_artifact is not None else ((sum(t>=cutoff14 for t in times),sum(t>=cutoff1 for t in times)) if use_history else (None,None)); fp=h.get("first_row_hash"); browser=h.get("access_dependency")=="browser"
         payload={"schema":"datapulse/v1/probe-attestation","date":day,"observed_at":observed,"dataset_id":did,"source_url":entry["url"],"observed_request_url":h.get("request_url"),"access_dependency":h.get("access_dependency","direct"),"probe_count_14d":probe_counts[0],"probe_count_24h":probe_counts[1],"last_status":h.get("status"),"last_staleness_days":h.get("staleness_days"),"content_fingerprint":{"scheme":"shape-v1:sha256","scope":"first-row-or-headers","value":fp} if fp else None,"browser_receipt":{"available":False,"reason":"probe runner emitted no signed receipt" if browser else None},"previous_chain_head":previous,"key_id":key["key_id"],"signer_pubkey_base64":key["public_key_base64"]}
         link=sha(bytes.fromhex(previous)+canonical(payload)); ref=f"attestations/{day}/{did}.json"; envelope={"schema":"datapulse/v1/probe-attestation-envelope","payload":payload,"signature_base64":sign(private,payload),"chain_link":link,"verification_level":"L1-capable"}; Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(envelope["signature_base64"]),canonical(payload)); dump(root/ref,envelope); links.append({"dataset_id":did,"chain_link":link}); refs[did]=ref
     head_payload={"schema":"datapulse/v1/daily-chain-head","date":day,"previous_chain_head":previous,"dataset_count":len(links),"dataset_links_sha256":sha(canonical(links)),"key_id":key["key_id"]}; chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}; dump(dated/"chain_head.json",head)
