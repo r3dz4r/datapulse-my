@@ -31,6 +31,7 @@ def test_boundary_contract_and_artifacts_are_source_honest() -> None:
     rows = {row["id"]: row for row in _json("datapulse.json")["datasets"]}
     policies = _json("scripts/probe-policy.json")["datasets"]
     approved = set(_json("scripts/contract-scope.json")["json_envelope"]["approved_ids"])
+    observations = {row["dataset_id"]: row for row in _json("health/latest.json")["datasets"]}
 
     for dataset_id, (filename, byte_size, feature_count) in BOUNDARIES.items():
         url = BASE_URL + filename
@@ -59,11 +60,24 @@ def test_boundary_contract_and_artifacts_are_source_honest() -> None:
 
         report = (ROOT / "data" / f"{dataset_id}.md").read_text(encoding="utf-8")
         jsonld = _json(f"data/jsonld/{dataset_id}.json")
+        envelope = _json(f"data/json/{dataset_id}.json")
+        observation = observations[dataset_id]
         badge = (ROOT / "badges" / f"{dataset_id}.svg").read_text(encoding="utf-8")
         assert f"dataset_id: {dataset_id}" in report
         assert jsonld["identifier"] == dataset_id
         assert jsonld["sameAs"] == url
         assert jsonld["license"] == "Open Data License"
+        assert envelope["id"] == jsonld["identifier"] == dataset_id
+        assert envelope["reproducibility"]["url"] == jsonld["sameAs"] == url
+        assert envelope["licence"] == jsonld["license"]
+        assert envelope["status"] == observation["status"]
+        assert envelope["last_checked"] == observation["last_checked"]
+        assert envelope["record_count"] == observation["record_count"] == feature_count
+        assert envelope["date_range"] is None
+        assert observation["status"] == "reference"
+        assert observation["http_status"] == 200
+        assert observation["content_length"] == byte_size
+        assert observation["content_freshness_date"] is None
         assert "dateModified" not in jsonld
         assert jsonld["variableMeasured"][0]["value"] in {"unknown", "reference", "unreachable", "degraded"}
         assert any(f'aria-label="health: {status}"' in badge for status in ("unknown", "reference", "unreachable", "degraded"))
