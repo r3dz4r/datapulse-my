@@ -481,6 +481,7 @@ PY
   jq -c '
     def wrapped_rows:
       if type == "array" then .
+      elif type == "object" and .type == "FeatureCollection" and (.features | type) == "array" then .features
       elif type == "object" then
         [.data, .result, .results, .records, .items, .rows]
         | map(select(. != null and type == "array"))
@@ -499,7 +500,9 @@ PY
           end
         ),
         column_count: (
-          if ($first_row | type) == "object" then ($first_row | keys | length)
+          if ($document | type) == "object" and $document.type == "FeatureCollection"
+              and ($first_row.properties | type) == "object" then ($first_row.properties | keys | length)
+          elif ($first_row | type) == "object" then ($first_row | keys | length)
           else null
           end
         ),
