@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.47.4](https://github.com/r3dz4r/datapulse-my/compare/v3.47.3...v3.47.4) (2026-10-03)
+
+
+### Bug Fixes
+
+* **attestations:** publish null probe counts when the history source is absent ([#496](https://github.com/r3dz4r/datapulse-my/issues/496)) ([5389e0e](https://github.com/r3dz4r/datapulse-my/commit/5389e0e4e0a58e88c0f26b01b79fd34760bf06e1))
+
 ## [3.47.3](https://github.com/r3dz4r/datapulse-my/compare/v3.47.2...v3.47.3) (2026-10-03)
 
 
