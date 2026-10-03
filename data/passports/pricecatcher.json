@@ -5,31 +5,31 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 9.0,
+        "latest_days": null,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "cadence_fallback",
+        "mode": "not_evaluated",
         "sample_days": 7,
         "stdev_days": null,
-        "threshold_days": 90,
+        "threshold_days": null,
         "window_days": 14
       }
     },
     "expected_record_count": null,
-    "freshness_signal": "last-modified-header",
-    "freshness_signal_source": "last_modified_header",
-    "http_status": 200,
-    "incomplete": true,
-    "last_checked": "2026-09-26T02:49:53Z",
-    "record_count": 14887,
-    "record_count_estimated": true,
+    "freshness_signal": "no-header",
+    "freshness_signal_source": "none",
+    "http_status": 404,
+    "incomplete": false,
+    "last_checked": "2026-10-03T10:36:37Z",
+    "record_count": null,
+    "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
       "column_count": null,
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "fresh"
+    "status": "discontinued"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-09.parquet",
@@ -39,7 +39,7 @@
     "geography": "national",
     "name": "PriceCatcher (Grocery Prices)",
     "namespace": "other",
-    "observed_verified_at": "2026-09-26T02:49:53Z",
+    "observed_verified_at": "2026-10-03T10:36:37Z",
     "source": "data.gov.my (KPDN)",
     "steward": "KPDN"
   },
@@ -275,9 +275,9 @@
               "Records one observed access signal; it does not promise continuing access."
             ],
             "reason_codes": [
-              "observed_access_signal_present"
+              "observed_access_discontinued"
             ],
-            "state": "pass"
+            "state": "fail"
           },
           {
             "check_id": "fair.shape_metadata",
@@ -327,9 +327,9 @@
         "coverage": {
           "applicable": 4,
           "evaluated": 3,
-          "failed": 0,
+          "failed": 1,
           "not_applicable": 0,
-          "passed": 3,
+          "passed": 2,
           "unknown": 1
         },
         "evidence_refs": [
@@ -380,11 +380,11 @@
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
           "catalogue_metadata_declared",
-          "observed_access_signal_present",
+          "observed_access_discontinued",
           "shape_metadata_missing",
           "reuse_metadata_declared"
         ],
-        "state": "unknown"
+        "state": "fail"
       },
       "governance": {
         "checks": [
@@ -623,18 +623,18 @@
               "Different declared and observed URLs are preserved rather than resolved automatically."
             ],
             "reason_codes": [
-              "source_observed_boundary_recorded"
+              "source_observed_url_conflict"
             ],
-            "state": "pass"
+            "state": "unknown"
           }
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 4,
+          "evaluated": 3,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 4,
-          "unknown": 0
+          "passed": 3,
+          "unknown": 1
         },
         "evidence_refs": [
           {
@@ -674,9 +674,9 @@
           "url_declared",
           "publisher_metadata_declared",
           "observation_reference_present",
-          "source_observed_boundary_recorded"
+          "source_observed_url_conflict"
         ],
-        "state": "pass"
+        "state": "unknown"
       },
       "reproducibility": {
         "checks": [
@@ -740,9 +740,9 @@
               "A count is an observed or estimated measurement, not a completeness guarantee."
             ],
             "reason_codes": [
-              "record_count_estimated"
+              "record_count_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           },
           {
             "check_id": "reproducibility.attestation_reference",
@@ -763,11 +763,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 3,
+          "evaluated": 2,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 3,
-          "unknown": 1
+          "passed": 2,
+          "unknown": 2
         },
         "evidence_refs": [
           {
@@ -810,7 +810,7 @@
         "reason_codes": [
           "shape_fingerprint_missing",
           "last_checked_declared",
-          "record_count_estimated",
+          "record_count_missing",
           "attestation_ref_declared"
         ],
         "state": "unknown"
@@ -819,7 +819,7 @@
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "indeterminate",
+    "overall": "not_ready",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },
@@ -828,8 +828,8 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-02/pricecatcher.json",
-    "chain_reference": "attestations/2026-10-02/chain_head.json",
+    "attestation": "attestations/2026-10-03/pricecatcher.json",
+    "chain_reference": "attestations/2026-10-03/chain_head.json",
     "source_digest": {
       "reason": "canonical_source_digest_not_available",
       "state": "not_evaluated"
