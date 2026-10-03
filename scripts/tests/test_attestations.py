@@ -115,6 +115,34 @@ def test_generator_signs_daily_digest_and_chain(tmp_path: Path):
     assert payload["probe_count_24h"] == 1 and payload["content_fingerprint"]["scope"] == "first-row-or-headers"
 
 
+@pytest.mark.parametrize("shape", ["absent", "zero_sized"])
+def test_missing_probe_history_publishes_null_counts(tmp_path: Path, shape: str):
+    root, key = fixture_root(tmp_path)
+    history = root / "health/history.jsonl"
+    if shape == "absent":
+        history.unlink()
+    else:
+        history.write_bytes(b"")
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert "probe_count_14d" in payload and "probe_count_24h" in payload
+    assert payload["probe_count_14d"] is None
+    assert payload["probe_count_24h"] is None
+
+
+def test_present_history_without_window_rows_publishes_real_zero(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    (root / "health/history.jsonl").write_text(
+        json.dumps({"dataset_id": "sample", "observed_at": "2026-07-01T00:00:00Z"}) + "\n"
+    )
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert isinstance(payload["probe_count_14d"], int)
+    assert isinstance(payload["probe_count_24h"], int)
+    assert payload["probe_count_14d"] == 0
+    assert payload["probe_count_24h"] == 0
+
+
 def test_signed_manifest_url_tamper_invalidates_signature(tmp_path: Path):
     root, key = fixture_root(tmp_path); ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
     env = json.loads((root / "attestations/2026-08-15/sample.json").read_text()); env["payload"]["source_url"] = "https://attacker.test/data"
