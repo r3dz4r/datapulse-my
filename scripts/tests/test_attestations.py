@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -125,6 +126,67 @@ def test_second_day_links_to_first_day(tmp_path: Path):
     root, key = fixture_root(tmp_path); ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc)); first = json.loads((root / "attestations/latest/chain_head.json").read_text())["chain_head"]
     ga.generate(root, key, datetime(2026, 8, 16, 1, tzinfo=timezone.utc)); second = json.loads((root / "attestations/latest/chain_head.json").read_text())
     assert second["payload"]["previous_chain_head"] == first and second["chain_head"] != first
+
+
+def test_reuse_path_refreshes_manifest(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    manifest = json.loads((root / "datapulse.json").read_text())
+    manifest["datasets"].append({"id": "sample-two", "name": "Sample Two", "source": "Agency", "url": "https://example.test/data-two", "refresh_frequency": "daily", "methodology_version": 1})
+    write(root / "datapulse.json", manifest)
+    day = "2026-08-15"
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    # Reproduce the defect's shape: the manifest froze on an older day while
+    # the dated set on disk (and its derived latest view) moved on.
+    stale = json.loads((root / "datapulse.json").read_text())
+    for entry in stale["datasets"]:
+        entry["attestation_ref"] = f"attestations/2026-07-20/{entry['id']}.json"
+    write(root / "datapulse.json", stale)
+    shutil.rmtree(root / "attestations/latest")
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    refreshed = json.loads((root / "datapulse.json").read_text())
+    assert refreshed["datasets"]
+    assert all(entry["attestation_ref"] == f"attestations/{day}/{entry['id']}.json" for entry in refreshed["datasets"])
+    assert json.loads((root / "attestations/latest/index.json").read_text())["date"] == day
+
+
+def _break_dated_set(root: Path, kind: str) -> None:
+    dated = root / "attestations" / "2026-08-15"
+    if kind == "incomplete":
+        (dated / "scores.json").unlink()
+    elif kind == "mismatched":
+        binding = json.loads((dated / "binding.json").read_text())
+        binding["payload"]["ed25519"]["chain_head"] = "f" * 64
+        write(dated / "binding.json", binding)
+    elif kind == "unsigned":
+        binding = json.loads((dated / "binding.json").read_text())
+        binding["signature_base64"] = base64.b64encode(b"not-a-signature").decode()
+        write(dated / "binding.json", binding)
+    elif kind == "ambiguous":
+        chain = json.loads((root / "attestations/chain-index.json").read_text())
+        chain["heads"]["f" * 64] = "attestations/2026-08-15/chain_head.json"
+        write(root / "attestations/chain-index.json", chain)
+    else:
+        raise AssertionError(kind)
+
+
+@pytest.mark.parametrize("kind", ["incomplete", "mismatched", "unsigned", "ambiguous"])
+def test_reuse_path_refuses_broken_dated_set(tmp_path: Path, kind: str):
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    _break_dated_set(root, kind)
+    with pytest.raises(ValueError, match="corrupt or inconsistent"):
+        ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+
+def test_build_path_writes_manifest_refs_without_preexisting_set(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    assert not (root / "attestations/2026-08-15").exists()
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    manifest = json.loads((root / "datapulse.json").read_text())
+    assert all(entry["attestation_ref"] == f"attestations/2026-08-15/{entry['id']}.json" for entry in manifest["datasets"])
+    assert (root / "attestations/2026-08-15/binding.json").is_file()
+    dated = json.loads((root / "attestations/2026-08-15/index.json").read_text())
+    assert dated["attestations"] == {entry["id"]: entry["attestation_ref"] for entry in manifest["datasets"]}
 
 
 def test_browser_digest_does_not_invent_receipt(tmp_path: Path):

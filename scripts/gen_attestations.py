@@ -207,6 +207,19 @@ def reuse_existing_day(root: Path, day: str) -> bool:
         shutil.copy2(dated / filename, latest / filename)
     return True
 
+def refresh_manifest_refs(root: Path, day: str) -> None:
+    """Publish the verified dated set's per-dataset refs onto the manifest.
+
+    The dated index is the authoritative copy of the ref list, so both the
+    build path and the reuse path read it here instead of carrying their own.
+    """
+    refs = load(root / "attestations" / day / "index.json")["attestations"]
+    manifest = load(root / "datapulse.json")
+    for entry in manifest["datasets"]:
+        entry["attestation_ref"] = refs[entry["id"]]
+        entry["methodology_version"] = 3
+    dump(root / "datapulse.json", manifest)
+
 def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | None = None) -> None:
     day=now.date().isoformat()
     latest = root / "attestations" / "latest"
@@ -214,6 +227,7 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
     if isinstance(latest_date,str) and latest_date>day:
         raise ValueError("older dated attestation cannot supersede latest")
     if reuse_existing_day(root, day):
+        refresh_manifest_refs(root, day)
         return
     manifest, health, trends, drift, recon = load_score_inputs(root); key=load(key_path)
     private=Ed25519PrivateKey.from_private_bytes(base64.b64decode(key["private_key_base64"])); public=base64.b64decode(key["public_key_base64"])
@@ -234,8 +248,7 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
     if latest.exists(): shutil.rmtree(latest)
     latest.mkdir(parents=True)
     for filename in ("chain_head.json","index.json","scores.json","binding.json"): shutil.copy2(dated/filename,latest/filename)
-    for entry in manifest["datasets"]: entry["attestation_ref"]=refs[entry["id"]]; entry["methodology_version"]=3
-    dump(root/"datapulse.json",manifest)
+    refresh_manifest_refs(root, day)
 
 def main() -> int:
     parser=argparse.ArgumentParser(); parser.add_argument("--root",type=Path,default=Path(__file__).resolve().parent.parent); parser.add_argument("--private-key",type=Path,required=True); parser.add_argument("--now"); parser.add_argument("--rekor-reference",type=Path); args=parser.parse_args(); generate(args.root,args.private_key,parse_time(args.now) if args.now else datetime.now(timezone.utc),args.rekor_reference); return 0
