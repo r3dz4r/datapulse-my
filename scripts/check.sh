@@ -251,9 +251,26 @@ probe_adapter() {
 validate_adapter_config() {
   local dataset_id="$1"
   local adapter="$2"
+  local html_date_pattern html_date_cell_index
 
   case "$adapter" in
-    direct|gtfs-static|gtfs-realtime|hansard-script)
+    direct)
+      if [[ "$(probe_policy_value "$dataset_id" '.format' 2>/dev/null || true)" == "html" ]] \
+        || probe_policy_value "$dataset_id" '.html' >/dev/null; then
+        [[ "$(probe_policy_value "$dataset_id" '.format')" == "html" ]] \
+          && probe_policy_value "$dataset_id" '.html' >/dev/null \
+          && probe_policy_value "$dataset_id" '.html["row-attribute"]' >/dev/null \
+          && probe_policy_value "$dataset_id" '.html["date-cell-index"]' >/dev/null \
+          && probe_policy_value "$dataset_id" '.html["date-pattern"]' >/dev/null \
+          || { printf 'Probe policy error: %s direct HTML rule requires format, row-attribute, date-cell-index, date-pattern\n' "$dataset_id" >&2; return 1; }
+        html_date_pattern="$(probe_policy_value "$dataset_id" '.html["date-pattern"]')"
+        html_date_cell_index="$(probe_policy_value "$dataset_id" '.html["date-cell-index"]')"
+        [[ "$html_date_cell_index" =~ ^(0|[1-9][0-9]*)$ ]] \
+          && python3 -c 'import re, sys; re.compile(sys.argv[1])' "$html_date_pattern" 2>/dev/null \
+          || { printf 'Probe policy error: %s direct HTML rule has invalid date-cell-index or date-pattern\n' "$dataset_id" >&2; return 1; }
+      fi
+      ;;
+    gtfs-static|gtfs-realtime|hansard-script)
       ;;
     weather)
       probe_policy_value "$dataset_id" '.freshness["content-date-field"]' >/dev/null \
@@ -982,7 +999,7 @@ check_direct_dataset() {
   local request_url="$source_url"
   local http_status content_length first_record_timestamp details last_modified
   local content_freshness_date content_request_url date_field extraction_mode content_format
-  local date_source metadata_page_url
+  local date_source metadata_page_url html_row_attribute html_date_cell_index html_date_pattern
   local metrics record_count column_count first_row_hash first_row body_format shape_basis facts
   local estimated_record_count record_count_estimated incomplete
   local probe_status probe_message registration_metrics
@@ -998,6 +1015,9 @@ check_direct_dataset() {
   date_field="$(probe_policy_value "$dataset_id" '.freshness["content-date-field"]' 2>/dev/null || true)"
   extraction_mode="$(probe_policy_value "$dataset_id" '.freshness["extraction-mode"]' 2>/dev/null || true)"
   content_format="$(probe_policy_value "$dataset_id" '.format' 2>/dev/null || true)"
+  html_row_attribute="$(probe_policy_value "$dataset_id" '.html["row-attribute"]' 2>/dev/null || true)"
+  html_date_cell_index="$(probe_policy_value "$dataset_id" '.html["date-cell-index"]' 2>/dev/null || true)"
+  html_date_pattern="$(probe_policy_value "$dataset_id" '.html["date-pattern"]' 2>/dev/null || true)"
   date_source="$(probe_policy_value "$dataset_id" '.freshness["date-source"]' 2>/dev/null || true)"
   if [[ -n "$date_field" && -z "$extraction_mode" ]]; then
     printf 'Probe policy error: %s content date field requires extraction-mode\n' "$dataset_id" >&2
@@ -1053,7 +1073,11 @@ check_direct_dataset() {
   fi
 
   content_length="$(wc -c < "$body_file" | tr -d '[:space:]')"
-  metrics="$(extract_json_metrics "$body_file")"
+  if [[ "$content_format" == "html" ]]; then
+    metrics='{"record_count":null,"column_count":null,"first_row":null,"body_format":"html","first_record_timestamp":null}'
+  else
+    metrics="$(extract_json_metrics "$body_file")"
+  fi
   record_count="$(jq '.record_count' <<< "$metrics")"
   column_count="$(jq '.column_count' <<< "$metrics")"
   first_row="$(jq -cS '.first_row' <<< "$metrics")"
@@ -1099,7 +1123,18 @@ check_direct_dataset() {
   fi
   first_record_timestamp="$(jq -r '.first_record_timestamp // empty' <<< "$metrics")"
   content_freshness_date=""
-  if [[ -n "$date_field" && ( "$body_format" == "parquet" || "$content_format" == "parquet" ) ]]; then
+  if [[ -n "$html_row_attribute" ]]; then
+    if ! content_freshness_date="$(python3 "$script_dir/extract_html_listing_date.py" \
+      --row-attribute "$html_row_attribute" --date-cell-index "$html_date_cell_index" \
+      --date-pattern "$html_date_pattern" "$body_file")"; then
+      printf 'HTML publication-date extraction failed for %s\n' "$dataset_id" >&2
+      return 1
+    fi
+    if [[ -z "$content_freshness_date" ]]; then
+      probe_status="degraded"
+      probe_message="HTTP ${http_status}; publication date not found"
+    fi
+  elif [[ -n "$date_field" && ( "$body_format" == "parquet" || "$content_format" == "parquet" ) ]]; then
     # Parquet is binary, so its configured date column is read by the shared
     # pyarrow helper rather than the JSON or CSV branches below.
     content_freshness_date="$(DATAPULSE_CONTENT_FILE="$body_file" \

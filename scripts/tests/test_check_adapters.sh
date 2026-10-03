@@ -26,6 +26,7 @@ malformed_csv_metrics="$(extract_json_metrics "$fixture")"
 [[ "$(probe_adapter fuelprice)" == "direct" ]]
 [[ "$(probe_adapter met_weather)" == "weather" ]]
 [[ "$(probe_adapter doe_apims)" == "browser" ]]
+[[ "$(probe_adapter eperolehan-diklankan)" == "direct" ]]
 [[ "$(probe_adapter gtfs_realtime_ktmb)" == "gtfs-realtime" ]]
 [[ "$(probe_adapter hansard_sittings)" == "hansard-script" ]]
 [[ "$(probe_adapter st_installed_capacity_mw)" == "st-energy" ]]
@@ -55,6 +56,36 @@ if validate_adapter_config broken browser 2>/dev/null; then
   printf 'browser adapter unexpectedly accepted missing configuration\n' >&2
   exit 1
 fi
+probe_policy="$repo_root/scripts/probe-policy.json"
+
+# The second date in each notice is its closing date, not page freshness.
+cat > "$fixture" <<'HTML'
+<table><tbody>
+<tr data-ri="0"><td><a>Notice A closes 31/12/2026</a></td><td>Agency A</td><td>02/10/2026 12:00 PM</td><td>30/10/2026 12:00 PM</td></tr>
+<tr data-ri="1"><td><a>Notice B</a></td><td>Agency B</td><td>03/10/2026 12:00 PM</td><td>14/10/2026 12:00 PM</td></tr>
+<tr data-ri="2"><td><a>Notice C</a></td><td>Agency C</td><td>01/10/2026 12:00 PM</td><td>31/10/2026 12:00 PM</td></tr>
+</tbody></table>
+HTML
+html_pattern="$(probe_policy_value eperolehan-diklankan '.html["date-pattern"]')"
+html_row_attribute="$(probe_policy_value eperolehan-diklankan '.html["row-attribute"]')"
+html_date_cell_index="$(probe_policy_value eperolehan-diklankan '.html["date-cell-index"]')"
+[[ "$(python3 "$repo_root/scripts/extract_html_listing_date.py" --row-attribute "$html_row_attribute" --date-cell-index "$html_date_cell_index" --date-pattern "$html_pattern" "$fixture")" == "2026-10-03" ]]
+printf '%s\n' '{"version":1,"defaults":{"adapter":"direct","freshness-fallback":"last-modified"},"datasets":{"broken":{"adapter":"direct","format":"html","html":{"row-attribute":"data-ri","date-cell-index":2}}}}' > "$invalid_policy"
+probe_policy="$invalid_policy"
+if validate_adapter_config broken direct 2>/dev/null; then
+  printf 'direct HTML adapter unexpectedly accepted missing date-pattern\n' >&2
+  exit 1
+fi
+printf '%s\n' '{"version":1,"defaults":{"adapter":"direct","freshness-fallback":"last-modified"},"datasets":{"broken":{"adapter":"direct","format":"html","html":{"row-attribute":"data-ri","date-pattern":"[0-9]{4}-[0-9]{2}-[0-9]{2}"}}}}' > "$invalid_policy"
+if validate_adapter_config broken direct 2>/dev/null; then
+  printf 'direct HTML adapter unexpectedly accepted missing date-cell-index\n' >&2
+  exit 1
+fi
+printf '%s\n' '{"version":1,"defaults":{"adapter":"direct","freshness-fallback":"last-modified"},"datasets":{"broken":{"adapter":"direct","format":"html"}}}' > "$invalid_policy"
+if validate_adapter_config broken direct 2>/dev/null; then
+  printf 'direct HTML adapter unexpectedly accepted missing HTML rule\n' >&2
+  exit 1
+fi
 
 probe_policy="$repo_root/scripts/probe-policy.json"
 check_direct_dataset() { printf 'direct:%s\n' "$1"; }
@@ -65,6 +96,7 @@ check_hansard_script_dataset() { printf 'hansard:%s\n' "$1"; }
 check_st_energy_dataset() { printf 'st-energy:%s\n' "$1"; }
 
 [[ "$(dispatch_policy_adapter fuelprice https://example.invalid)" == "direct:fuelprice" ]]
+[[ "$(dispatch_policy_adapter eperolehan-diklankan https://example.invalid)" == "direct:eperolehan-diklankan" ]]
 [[ "$(dispatch_policy_adapter met_weather https://example.invalid)" == "weather:met_weather" ]]
 [[ "$(dispatch_policy_adapter doe_apims https://example.invalid)" == "browser:doe_apims:30" ]]
 [[ "$(dispatch_policy_adapter gtfs_realtime_ktmb https://example.invalid)" == "gtfs:gtfs_realtime_ktmb" ]]
