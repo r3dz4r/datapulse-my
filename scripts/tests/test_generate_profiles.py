@@ -268,8 +268,13 @@ def _stage_source(tmp_path: Path) -> Path:
             ("0-dataset catalogue", "2-dataset catalogue"),
             ("0 datasets", "2 datasets"),
         ),
-        "docs/index.html": (),
+        "docs/index.html": (
+            ("418 datasets", "2 datasets"),
+            ("418 official datasets", "2 official datasets"),
+            ("418 of 2 datasets", "2 of 2 datasets"),
+        ),
         "docs/learn.html": (
+            ("418 datasets", "2 datasets"),
             ("19 read-only tools", "0 read-only tools"),
         ),
     }.items():
@@ -277,15 +282,6 @@ def _stage_source(tmp_path: Path) -> Path:
         text = path.read_text(encoding="utf-8")
         for old, new in replacements:
             text = text.replace(old, new)
-        if relative in {"docs/index.html", "docs/learn.html"}:
-            # The fixture catalogue holds two datasets. Normalise whatever
-            # count the canonical surface declares rather than pinning the
-            # repository's live catalogue size into the harness.
-            text = re.sub(
-                r"\b\d+(?=(?:\s+(?:official|Malaysian|public|current|manifest|catalogue|catalog)){0,4}\s+datasets?\b)",
-                "2",
-                text,
-            )
         path.write_text(text, encoding="utf-8")
     shutil.copytree(RELEASE_FIXTURE / "mcp", source / "mcp")
 
