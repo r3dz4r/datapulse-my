@@ -143,6 +143,95 @@ def test_present_history_without_window_rows_publishes_real_zero(tmp_path: Path)
     assert payload["probe_count_24h"] == 0
 
 
+def write_probe_counts(
+    root: Path,
+    generated_at: str,
+    counts: dict | None = None,
+    *,
+    schema: str = "datapulse/v1/probe-counts",
+) -> Path:
+    path = root / "health/probe_counts.json"
+    write(
+        path,
+        {
+            "schema": schema,
+            "generated_at": generated_at,
+            "window_days": 14,
+            "counts": counts or {},
+        },
+    )
+    return path
+
+
+def test_probe_counts_artifact_fresh_publishes_artifact_counts(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    write_probe_counts(root, "2026-08-15T00:00:00Z", {"sample": {"d1": 7, "d14": 88}})
+
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert payload["probe_count_14d"] == 88
+    assert payload["probe_count_24h"] == 7
+
+
+def test_probe_counts_artifact_absent_publishes_null(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    # The release workflow reaches neither the raw history nor the artifact, so
+    # an absent artifact with no reachable fallback stays an honest null.
+    (root / "health/history.jsonl").unlink()
+
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert "probe_count_14d" in payload and "probe_count_24h" in payload
+    assert payload["probe_count_14d"] is None
+    assert payload["probe_count_24h"] is None
+
+
+def test_probe_counts_artifact_stale_publishes_null(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    write_probe_counts(root, "2026-08-12T01:00:00Z", {"sample": {"d1": 7, "d14": 88}})
+
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert payload["probe_count_14d"] is None
+    assert payload["probe_count_24h"] is None
+
+
+@pytest.mark.parametrize("kind", ["unparseable", "wrong-schema"])
+def test_probe_counts_artifact_invalid_publishes_null(tmp_path: Path, kind: str):
+    root, key = fixture_root(tmp_path)
+    if kind == "unparseable":
+        (root / "health/probe_counts.json").write_text("{not json", encoding="utf-8")
+    else:
+        write_probe_counts(
+            root,
+            "2026-08-15T00:00:00Z",
+            {"sample": {"d1": 7, "d14": 88}},
+            schema="datapulse/v1/not-probe-counts",
+        )
+
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+    assert (root / "attestations/2026-08-15/sample.json").is_file()
+    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert payload["probe_count_14d"] is None
+    assert payload["probe_count_24h"] is None
+
+
+def test_probe_counts_artifact_missing_dataset_publishes_null(tmp_path: Path):
+    root, key = fixture_root(tmp_path)
+    write_probe_counts(root, "2026-08-15T00:00:00Z", {"other": {"d1": 3, "d14": 9}})
+
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert payload["probe_count_14d"] is None
+    assert payload["probe_count_24h"] is None
+    assert (root / "attestations/latest/scores.json").is_file()
+
+
 def test_signed_manifest_url_tamper_invalidates_signature(tmp_path: Path):
     root, key = fixture_root(tmp_path); ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
     env = json.loads((root / "attestations/2026-08-15/sample.json").read_text()); env["payload"]["source_url"] = "https://attacker.test/data"
