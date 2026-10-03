@@ -75,6 +75,16 @@
         "wait-seconds": {"type": "integer", "minimum": 1, "maximum": 120}
       }
     },
+    "html": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["row-attribute", "date-cell-index", "date-pattern"],
+      "properties": {
+        "row-attribute": {"type": "string", "pattern": "^data-[a-z][a-z0-9-]*$"},
+        "date-cell-index": {"type": "integer", "minimum": 0},
+        "date-pattern": {"type": "string", "format": "regex", "minLength": 1, "maxLength": 500}
+      }
+    },
     "st-energy": {
       "type": "object",
       "additionalProperties": false,
@@ -166,6 +176,7 @@
         "freshness": {"$ref": "#/$defs/freshness"},
         "rolling": {"$ref": "#/$defs/rolling"},
         "browser": {"$ref": "#/$defs/browser"},
+        "html": {"$ref": "#/$defs/html"},
         "st-energy": {"$ref": "#/$defs/st-energy"},
         "arcgis-feature": {"$ref": "#/$defs/arcgis-feature"},
         "dynamic-url": {"$ref": "#/$defs/dynamic-url"},
@@ -181,6 +192,14 @@
         {
           "if": {"properties": {"adapter": {"const": "browser"}}, "required": ["adapter"]},
           "then": {"required": ["browser"]}
+        },
+        {
+          "if": {"required": ["html"]},
+          "then": {"required": ["adapter", "format"], "properties": {"adapter": {"const": "direct"}, "format": {"const": "html"}}}
+        },
+        {
+          "if": {"properties": {"adapter": {"const": "direct"}, "format": {"const": "html"}}, "required": ["adapter", "format"]},
+          "then": {"required": ["html"]}
         },
         {
           "if": {"properties": {"adapter": {"const": "weather"}}, "required": ["adapter"]},

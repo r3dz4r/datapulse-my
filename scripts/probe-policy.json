@@ -588,10 +588,12 @@
       }
     },
     "eperolehan-diklankan": {
-      "adapter": "browser",
-      "browser": {
-        "date-pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}|[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
-        "wait-seconds": 30
+      "adapter": "direct",
+      "format": "html",
+      "html": {
+        "row-attribute": "data-ri",
+        "date-cell-index": 2,
+        "date-pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}|[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}"
       }
     },
     "exchangerates": {
