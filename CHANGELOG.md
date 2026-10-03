@@ -14,6 +14,17 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.47.1](https://github.com/r3dz4r/datapulse-my/compare/v3.47.0...v3.47.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* **ci:** stop the release-invariant gate failing for environmental reasons ([62fb21e](https://github.com/r3dz4r/datapulse-my/commit/62fb21e8fcee1cb04e2174fc01e91c3cbfd2c375))
+* **health:** keep the refresh's status change without restamping provenance ([8f5ab28](https://github.com/r3dz4r/datapulse-my/commit/8f5ab28ca8dc75d3ebc7b7df66af9d2aa8ad05d3))
+* **health:** record a predicted dataset URL only when the upstream serves it ([43f4041](https://github.com/r3dz4r/datapulse-my/commit/43f40419766156fc5e044f9f4da710246bff6c32))
+* **health:** record a predicted dataset URL only when the upstream serves it ([ee90dc5](https://github.com/r3dz4r/datapulse-my/commit/ee90dc563b653231b5f312fb4e196f456409bdbb))
+* **health:** refresh pricecatcher out of a discontinued status it never earned ([76559fb](https://github.com/r3dz4r/datapulse-my/commit/76559fbf783fc6ed1c1d8c1c9aba907336734275))
+
 ## [3.47.0](https://github.com/r3dz4r/datapulse-my/compare/v3.46.0...v3.47.0) (2026-10-03)
 
 
