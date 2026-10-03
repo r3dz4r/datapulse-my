@@ -165,10 +165,11 @@ def test_generator_rejects_manifest_health_id_mismatch(tmp_path: Path) -> None:
 
 def test_generator_is_atomic_schema_valid_and_byte_identical(tmp_path: Path) -> None:
     first, second = tmp_path / "first", tmp_path / "second"
-    assert generate(ROOT, first) == 418
-    assert generate(ROOT, second) == 418
+    dataset_count = len(_inputs()[0]["datasets"])
+    assert generate(ROOT, first) == dataset_count
+    assert generate(ROOT, second) == dataset_count
     assert sorted(path.name for path in first.glob("*.json")) == sorted(path.name for path in second.glob("*.json"))
-    assert len(list(first.glob("*.json"))) == 419
+    assert len(list(first.glob("*.json"))) == dataset_count + 1
     assert not list(first.glob("*.tmp"))
     assert all((first / name).read_bytes() == (second / name).read_bytes() for name in (path.name for path in first.glob("*.json")))
     schema = json.loads((ROOT / "passport.schema.json").read_text(encoding="utf-8"))
