@@ -12,7 +12,7 @@
 > **🤖 AI-agent-ready** — Wire DataPulse into Claude Desktop, Cursor, Cline, or
 > any MCP-compatible client with one config block. Your agent gets
 > <!-- BEGIN readme-hero -->
-**423 official Malaysian datasets** — including **30 GTFS transit feeds (KTMB,
+**418 official Malaysian datasets** — including **30 GTFS transit feeds (KTMB,
 Prasarana, BAS.MY)** — with declared licences and an honest ten-status trust
 taxonomy instead of a blanket green checkmark.
 <!-- END readme-hero -->
@@ -29,7 +29,7 @@ observation can be reproduced by a second party.
 
 DataPulse is an open, read-only verification layer for Malaysian public data. It continuously observes Malaysia's official open datasets — those published through data.gov.my, Bank Negara Malaysia, DOSM, the Department of Environment, the Ministry of Health, KPDN and MET Malaysia — and publishes machine-readable evidence about each one: whether the source is reachable, how fresh its content is, which licence applies, whether its structure or record count has changed, and when the observation was signed. Every dataset carries one of ten explicit statuses instead of a blanket green tick, and each published observation can be checked by a third party: receipts are signed, the signing keys are published with validity windows and rotation history, and a single-file verifier reproduces the check with no DataPulse installation. DataPulse does not replace the official source and does not certify that a publisher's data is substantively correct — it makes the condition of the source observable, and the observation reproducible.
 
-<!-- BEGIN readme-cover -->**423 official datasets**<!-- END readme-cover -->
+<!-- BEGIN readme-cover -->**418 official datasets**<!-- END readme-cover -->
 
 ## What we do, simply
 
@@ -130,7 +130,7 @@ frozen at the last known content date. This is not a freshness failure — it's 
 publisher decision.
 
 <!-- BEGIN readme-health -->
-Current distribution (`_trust_summary`): [138 fresh](badges/status-fresh.svg) · [111 aging](badges/status-aging.svg) · [148 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [1 browser-dependent](badges/status-browser-dependent.svg) · [5 unknown-freshness](badges/status-unknown-freshness.svg) · [19 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [138 fresh](badges/status-fresh.svg) · [119 aging](badges/status-aging.svg) · [140 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [1 browser-dependent](badges/status-browser-dependent.svg) · [5 unknown-freshness](badges/status-unknown-freshness.svg) · [14 reference](badges/status-reference.svg)
 <!-- END readme-health -->
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
@@ -164,7 +164,7 @@ isolated smoke tests.
 | Topic | DataPulse's position |
 |---|---|
 | **Health status** | Ten-status taxonomy, judged by reachability + an honest freshness signal (`Last-Modified`, parseable content date, or declared policy) — never a fabricated green checkmark. A series that stopped publishing is `discontinued` (a publisher decision, frozen data), not a freshness failure. |
-| **Licence** | Every dataset declares its licence machine-readably. <!-- BEGIN readme-licences -->Creative Commons Attribution 4.0 (285); MBPP Government Open Data Terms (attribution required) (1); MIT License (8); Open Data License (5); Open Government Licence (Malaysia) (115); Publisher licence not stated; portal disclaimer applies (4); Singapore Open Data Licence v1.0 (attribution required) (5).<!-- END readme-licences --> A second party can reproduce this from `datapulse.json` → `.datasets[].licence`. |
+| **Licence** | Every dataset declares its licence machine-readably. <!-- BEGIN readme-licences -->Creative Commons Attribution 4.0 (285); MBPP Government Open Data Terms (attribution required) (1); MIT License (8); Open Government Licence (Malaysia) (115); Publisher licence not stated; portal disclaimer applies (4); Singapore Open Data Licence v1.0 (attribution required) (5).<!-- END readme-licences --> A second party can reproduce this from `datapulse.json` → `.datasets[].licence`. |
 | **Freshness cadence** | Each dataset is probed on its own tiered schedule (5-minute timer, cadence-aware) — `daily` references, `weekly` fuel prices, `monthly` surveys, etc. Always with the human-readable `steward` and a stable `custodian` ID for publisher provenance. |
 | **Provenance** | Stable `custodian` per dataset; signed probe attestations per observation |
 | **Observed claim** | The platform proves what an official source was *observed to be at a known time* — it does not claim upstream data is semantically true |
@@ -184,7 +184,7 @@ Graded by [mcpgrade](https://www.npmjs.com/package/mcpgrade) — replay with `ba
 - 19 tools: `search_datasets`, `get_dataset`, `get_data_passport`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 
 The public endpoint serves all 19 read-only tools over the
-423-dataset catalogue.
+418-dataset catalogue.
 <!-- END mcp-tools -->
 
 `get_evidence` exposes pipeline receipts; `verify_evidence` performs cached
@@ -222,13 +222,13 @@ read-only tools listed above. Cursor / Cline use the same JSON in their MCP conf
 ## Included datasets
 
 <!-- BEGIN readme-inventory -->
-**423 official datasets across 44 publishers**, including **30 GTFS transit feeds**. Browse the [published reports](data/) for plain-language health assessments, or use [`datapulse.json`](datapulse.json) as the machine-readable index of every source, licence, health-report path, and declared refresh cadence.
+**418 official datasets across 44 publishers**, including **30 GTFS transit feeds**. Browse the [published reports](data/) for plain-language health assessments, or use [`datapulse.json`](datapulse.json) as the machine-readable index of every source, licence, health-report path, and declared refresh cadence.
 <!-- END readme-inventory -->
 
 ## Current coverage
 
 <!-- BEGIN readme-cadence -->
-Declared refresh cadences: annual (145); monthly (106); daily (49); as-required (40); quarterly (35); biennial to triennial (survey years) (22); 30 seconds (14); hourly (4); daily (weekdays) (2); weekly (2); daily (weekdays, 0900 MYT) (1); daily (weekdays, 1130 MYT) (1); daily (weekdays, 1200 MYT) (1); daily (weekdays, 1700 MYT) (1). Per-dataset cadence remains available in [`datapulse.json`](datapulse.json) and each published health report.
+Declared refresh cadences: annual (145); monthly (106); daily (49); as-required (35); quarterly (35); biennial to triennial (survey years) (22); 30 seconds (14); hourly (4); daily (weekdays) (2); weekly (2); daily (weekdays, 0900 MYT) (1); daily (weekdays, 1130 MYT) (1); daily (weekdays, 1200 MYT) (1); daily (weekdays, 1700 MYT) (1). Per-dataset cadence remains available in [`datapulse.json`](datapulse.json) and each published health report.
 <!-- END readme-cadence -->
 
 ## How to use it
