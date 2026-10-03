@@ -11,12 +11,17 @@ if (( $# > 0 )); then
   exit 2
 fi
 
-for command in curl jq python3; do
+python_bin="${DATAPULSE_PYTHON_BIN:-python3}"
+for command in curl jq "$python_bin"; do
   command -v "$command" >/dev/null 2>&1 || {
     printf 'Required command not found: %s\n' "$command" >&2
     exit 1
   }
 done
+if ! "$python_bin" -c 'import jsonschema'; then
+  printf 'Required Python module jsonschema is unavailable in %s\n' "$python_bin" >&2
+  exit 1
+fi
 
 configured_base_url="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)"
 base_url="${DATAPULSE_RELEASE_BASE_URL:-$configured_base_url}"
@@ -86,7 +91,7 @@ fetch_optional() {
 
 assert_readme_health_parity() {
   local health_file="$1" readme_file="$2"
-  python3 - "$health_file" "$readme_file" <<'PY'
+  "$python_bin" - "$health_file" "$readme_file" <<'PY'
 import json
 import re
 import sys
@@ -168,14 +173,14 @@ if ! $local_mode; then
 
   binding_args=(--root "$contract_root" --head-only)
   if attestation_plane_state="$(
-    python3 scripts/verify_attestation_plane_state.py \
+    "$python_bin" scripts/verify_attestation_plane_state.py \
       --planedir "$contract_root" --head-only
   )"; then
     if [[ "$attestation_plane_state" == "signer_down" ]]; then
       echo '::warning title=Signer lane down (P6); attestation failed-closed::Served attestation plane is stale and explicitly reports artifact_signed:false; preserving it unchanged.'
     fi
   else
-    python3 scripts/verify_attestation_binding.py "${binding_args[@]}"
+    "$python_bin" scripts/verify_attestation_binding.py "${binding_args[@]}"
     exit 1
   fi
 fi
@@ -193,7 +198,7 @@ dataset_count="$(
 )"
 
 if ! $local_mode; then
-python3 - "$work_dir/release-verification.md" "$work_dir/health.json" "$work_dir/mcp.json" <<'PY'
+"$python_bin" - "$work_dir/release-verification.md" "$work_dir/health.json" "$work_dir/mcp.json" <<'PY'
 import json
 import subprocess
 import sys
@@ -218,9 +223,21 @@ assert not missing, "release proof drift: " + "; ".join(missing)
 PY
 fi
 
-python3 -m jsonschema -i "$work_dir/manifest.json" datapulse.schema.json
+"$python_bin" - "$work_dir/manifest.json" datapulse.schema.json <<'PY'
+import json
+import sys
+from pathlib import Path
 
-python3 - "$work_dir" "$canonical_base_url" "$attestation_plane_state" <<'PY'
+from jsonschema import validate
+
+instance_path, schema_path = map(Path, sys.argv[1:])
+validate(
+    instance=json.loads(instance_path.read_text(encoding="utf-8")),
+    schema=json.loads(schema_path.read_text(encoding="utf-8")),
+)
+PY
+
+"$python_bin" - "$work_dir" "$canonical_base_url" "$attestation_plane_state" <<'PY'
 import json
 import re
 import sys
@@ -476,7 +493,7 @@ else
 fi
 
 if ! $local_mode; then
-python3 - "$work_dir" <<'PY'
+"$python_bin" - "$work_dir" <<'PY'
 import json
 import re
 import sys
@@ -529,7 +546,7 @@ print("P5B generated surface assertions: PASS")
 PY
 fi
 
-PYTHONPATH=mcp python3 - "$work_dir/mcp.json" "$work_dir/llms.txt" health.schema.json agent.json <<'PY'
+PYTHONPATH=mcp "$python_bin" - "$work_dir/mcp.json" "$work_dir/llms.txt" health.schema.json agent.json <<'PY'
 import asyncio
 import json
 import re
