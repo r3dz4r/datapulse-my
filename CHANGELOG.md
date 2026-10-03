@@ -14,6 +14,24 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.47.0](https://github.com/r3dz4r/datapulse-my/compare/v3.46.0...v3.47.0) (2026-10-03)
+
+
+### Features
+
+* **data:** onboard five DOSM boundary GeoJSON datasets ([515d0c9](https://github.com/r3dz4r/datapulse-my/commit/515d0c90eb5782673ffa144d6b3bbfca64ae3a08))
+* **data:** register DOSM boundary GeoJSON references ([e0b439c](https://github.com/r3dz4r/datapulse-my/commit/e0b439c083b53547d2133e246a04c3d77edb7b81))
+
+
+### Bug Fixes
+
+* **dashboard:** keep expanded register within HTML budget ([db1415d](https://github.com/r3dz4r/datapulse-my/commit/db1415dc0e4f6daae0b18fafea7e118fc1e31927))
+
+
+### Reverts
+
+* **data:** withdraw the DOSM boundary onboarding pending the attestation window ([9a47fd3](https://github.com/r3dz4r/datapulse-my/commit/9a47fd3b91b0a5986a890fce487292eaf7781581))
+
 ## [3.46.0](https://github.com/r3dz4r/datapulse-my/compare/v3.45.1...v3.46.0) (2026-10-02)
 
 
