@@ -5,42 +5,42 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1006.0,
+        "latest_days": null,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "cadence_fallback",
-        "sample_days": 8,
+        "mode": "not_evaluated",
+        "sample_days": 0,
         "stdev_days": null,
-        "threshold_days": 1095,
+        "threshold_days": null,
         "window_days": 14
       }
     },
-    "expected_record_count": 5550,
-    "freshness_signal": "last-modified-header",
-    "freshness_signal_source": "last_modified_header",
+    "expected_record_count": 160,
+    "freshness_signal": "no-header",
+    "freshness_signal_source": "none",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-09-05T02:34:56Z",
-    "record_count": 5550,
+    "last_checked": "2026-10-03T02:55:45Z",
+    "record_count": 160,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
-      "column_count": 7,
+      "column_count": 5,
       "content_shape_changed": false,
-      "first_row_hash": "shape-v1:7bdd50deeea70345ac0620338e7d214526bd83885ce025227e768cb3ea6dddd3"
+      "first_row_hash": "shape-v1:8301481e396e8d56176db328b357f9d3c8411586f3e3f92b72d1ffbbdd9f140b"
     },
-    "status": "aging"
+    "status": "reference"
   },
   "identity": {
-    "canonical_url": "https://storage.dosm.gov.my/population/population_parlimen.csv",
+    "canonical_url": "https://raw.githubusercontent.com/dosm-malaysia/data-open/main/datasets/geodata/administrative_2_district.geojson",
     "custodian": "dosm",
-    "dataset_id": "population_parlimen",
-    "declared_verified_at": "2026-08-08",
+    "dataset_id": "dosm_boundary_district",
+    "declared_verified_at": "2026-10-03",
     "geography": "Malaysia",
-    "name": "Annual Population by Parliamentary Constituency",
-    "namespace": "economy",
-    "observed_verified_at": "2026-09-05T02:34:56Z",
-    "source": "OpenDOSM (also indexed by data.gov.my)",
+    "name": "District Administrative Boundaries",
+    "namespace": "government_open_data",
+    "observed_verified_at": "2026-10-03T02:55:45Z",
+    "source": "https://github.com/dosm-malaysia/data-open",
     "steward": "Department of Statistics Malaysia"
   },
   "intended_use": {
@@ -53,9 +53,9 @@
     }
   },
   "licence_and_attribution": {
-    "attribution": "Department of Statistics Malaysia via OpenDOSM",
-    "declared_licence": "Creative Commons Attribution 4.0",
-    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "Department of Statistics Malaysia via github.com/dosm-malaysia/data-open",
+    "declared_licence": "Open Data License",
+    "licence_url": null,
     "limitation": "Declared metadata and evidence only; not legal advice or legal permission."
   },
   "limitations": [
@@ -68,6 +68,78 @@
       "limitation": "Catalogue relationships are literal metadata context, not full transformation lineage.",
       "relationship_edges": [
         {
+          "from": "bop_balance",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_district",
+          "weight": 1
+        },
+        {
+          "from": "cpi_3d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_district",
+          "weight": 1
+        },
+        {
+          "from": "cpi_4d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_district",
+          "weight": 1
+        },
+        {
+          "from": "cpi_5d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_district",
+          "weight": 1
+        },
+        {
+          "from": "cpi_core",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_district",
+          "weight": 1
+        },
+        {
+          "from": "cpi_core_inflation",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_district",
+          "weight": 1
+        },
+        {
           "from": "cpi_headline",
           "kind": "same_agency",
           "provenance": {
@@ -76,7 +148,7 @@
               "steward"
             ]
           },
-          "to": "population_parlimen",
+          "to": "dosm_boundary_district",
           "weight": 1
         },
         {
@@ -88,11 +160,1199 @@
               "steward"
             ]
           },
-          "to": "population_parlimen",
+          "to": "dosm_boundary_district",
           "weight": 1
         },
         {
           "from": "dosm_bec",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_district",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_cpi_annual",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_cpi_annual_inflation",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_cpi_headline_inflation",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_cpi_lowincome",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_cpi_strata",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_death_district_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_death_maternal",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_fertility",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_fertility_state",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_annual_nominal_demand",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_annual_nominal_demand_granular",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_annual_nominal_income",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_annual_nominal_supply_granular",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_annual_real_demand",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_annual_real_demand_granular",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_annual_real_supply_granular",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_district_real_supply",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_gni_annual_real",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_lookup",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_qtr_nominal_demand",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_qtr_nominal_demand_granular",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_qtr_nominal_supply",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_qtr_nominal_supply_granular",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_qtr_real_demand",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_qtr_real_demand_granular",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_qtr_real_sa_demand",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_qtr_real_sa_supply",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_qtr_real_supply",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_gdp_qtr_real_supply_granular",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_access_amenities",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_expenditure_dun",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_expenditure_parlimen",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_income",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_income_district",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_income_dun",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_income_parlimen",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_income_state",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_inequality",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_inequality_district",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_inequality_dun",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_inequality_parlimen",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_inequality_state",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_poverty",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_poverty_district",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_poverty_dun",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_poverty_parlimen",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_poverty_state",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_profile",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hh_profile_state",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hies_district",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hies_malaysia_percentile",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hies_state",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_hies_state_percentile",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_iowrt",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_iowrt_2d",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_iowrt_3d",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ipi",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ipi_1d",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_district",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_dun",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_month_duration",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_month_sa",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_month_status",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_month_youth",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_parlimen",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_qtr_sru_age",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_qtr_sru_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_qtr_tru_age",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_qtr_tru_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_state_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_lfs_year_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_marriages",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_marriages_age",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_marriages_state_age",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_mcoicop",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_msic",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_population_malaysia",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_population_parlimen",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ppi_1d",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_ppi_sitc",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_productivity_annual",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_productivity_annual_priority",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_productivity_lookup",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_productivity_qtr",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_sitc",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_sitc_sop",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_sppi",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_sppi_1d",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "dosm_sppi_2d",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "economic_indicators",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "fdi_flows",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ipi_2d",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ipi_3d",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ipi_5d",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ipi_domestic",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ipi_export",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "population_dun",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "population_malaysia",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -112,11 +1372,11 @@
               "steward"
             ]
           },
-          "to": "population_parlimen",
+          "to": "ppi_2d",
           "weight": 1
         },
         {
-          "from": "dosm_boundary_dun",
+          "from": "dosm_boundary_district",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -124,1139 +1384,11 @@
               "steward"
             ]
           },
-          "to": "population_parlimen",
+          "to": "ppi_3d",
           "weight": 1
         },
         {
-          "from": "dosm_boundary_malaysia",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_boundary_parlimen",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_boundary_state",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_cpi_annual",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_cpi_annual_inflation",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_cpi_headline_inflation",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_cpi_lowincome",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_cpi_strata",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_death_district_sex",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_death_maternal",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_fertility",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_fertility_state",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_annual_nominal_demand",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_annual_nominal_demand_granular",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_annual_nominal_income",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_annual_nominal_supply_granular",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_annual_real_demand",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_annual_real_demand_granular",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_annual_real_supply_granular",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_district_real_supply",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_gni_annual_real",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_lookup",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_qtr_nominal_demand",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_qtr_nominal_demand_granular",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_qtr_nominal_supply",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_qtr_nominal_supply_granular",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_qtr_real_demand",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_qtr_real_demand_granular",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_qtr_real_sa_demand",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_qtr_real_sa_supply",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_qtr_real_supply",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_gdp_qtr_real_supply_granular",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_access_amenities",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_expenditure_dun",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_expenditure_parlimen",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_income",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_income_district",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_income_dun",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_income_parlimen",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_income_state",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_inequality",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_inequality_district",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_inequality_dun",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_inequality_parlimen",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_inequality_state",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_poverty",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_poverty_district",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_poverty_dun",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_poverty_parlimen",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_poverty_state",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_profile",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hh_profile_state",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hies_district",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hies_malaysia_percentile",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hies_state",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_hies_state_percentile",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_iowrt",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_iowrt_2d",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_iowrt_3d",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_ipi",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_ipi_1d",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_district",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_dun",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_month_duration",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_month_sa",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_month_status",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_month_youth",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_parlimen",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_qtr_sru_age",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_qtr_sru_sex",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_qtr_tru_age",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_qtr_tru_sex",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_state_sex",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_lfs_year_sex",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_marriages",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_marriages_age",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_marriages_state_age",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_mcoicop",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_msic",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_population_malaysia",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_population_parlimen",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_ppi_1d",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_ppi_sitc",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_productivity_annual",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_productivity_annual_priority",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_productivity_lookup",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_productivity_qtr",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_sitc",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_sitc_sop",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_sppi",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_sppi_1d",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "dosm_sppi_2d",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "economic_indicators",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "population_malaysia",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 1
-        },
-        {
-          "from": "population_parlimen",
+          "from": "dosm_boundary_district",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -1268,7 +1400,7 @@
           "weight": 1
         },
         {
-          "from": "population_parlimen",
+          "from": "dosm_boundary_district",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -1280,211 +1412,67 @@
           "weight": 1
         },
         {
-          "from": "bop_balance",
-          "kind": "same_steward",
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
             "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "cpi_3d",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "cpi_4d",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "cpi_5d",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "cpi_core",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "cpi_core_inflation",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "fdi_flows",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "ipi_2d",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "ipi_3d",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "ipi_5d",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "ipi_domestic",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "ipi_export",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "population_dun",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "population_parlimen",
-          "weight": 2
-        },
-        {
-          "from": "population_parlimen",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "ppi_2d",
-          "weight": 2
-        },
-        {
-          "from": "population_parlimen",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "ppi_3d",
-          "weight": 2
-        },
-        {
-          "from": "population_parlimen",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
               "steward"
             ]
           },
           "to": "sppi_3d",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_dun",
+          "weight": 2
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_malaysia",
+          "weight": 2
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_parlimen",
+          "weight": 2
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_state",
           "weight": 2
         }
       ]
@@ -1502,7 +1490,7 @@
             "check_id": "catalogue_readiness.stable_id",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].id",
+                "path": "datasets['dosm_boundary_district'].id",
                 "source": "manifest"
               }
             ],
@@ -1518,15 +1506,15 @@
             "check_id": "catalogue_readiness.identity_metadata",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].name",
+                "path": "datasets['dosm_boundary_district'].name",
                 "source": "manifest"
               },
               {
-                "path": "datasets['population_parlimen'].steward",
+                "path": "datasets['dosm_boundary_district'].steward",
                 "source": "manifest"
               },
               {
-                "path": "datasets['population_parlimen'].source",
+                "path": "datasets['dosm_boundary_district'].source",
                 "source": "manifest"
               }
             ],
@@ -1542,7 +1530,7 @@
             "check_id": "catalogue_readiness.health_report",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].health_report",
+                "path": "datasets['dosm_boundary_district'].health_report",
                 "source": "manifest"
               }
             ],
@@ -1558,11 +1546,11 @@
             "check_id": "catalogue_readiness.manifest_health_parity",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].id",
+                "path": "datasets['dosm_boundary_district'].id",
                 "source": "manifest"
               },
               {
-                "path": "datasets['population_parlimen'].dataset_id",
+                "path": "datasets['dosm_boundary_district'].dataset_id",
                 "source": "health"
               }
             ],
@@ -1578,11 +1566,11 @@
             "check_id": "catalogue_readiness.schema_valid_envelope",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].id",
+                "path": "datasets['dosm_boundary_district'].id",
                 "source": "manifest"
               },
               {
-                "path": "datasets['population_parlimen'].dataset_id",
+                "path": "datasets['dosm_boundary_district'].dataset_id",
                 "source": "health"
               }
             ],
@@ -1605,39 +1593,39 @@
         },
         "evidence_refs": [
           {
-            "path": "datasets['population_parlimen'].id",
+            "path": "datasets['dosm_boundary_district'].id",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].name",
+            "path": "datasets['dosm_boundary_district'].name",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].steward",
+            "path": "datasets['dosm_boundary_district'].steward",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].source",
+            "path": "datasets['dosm_boundary_district'].source",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].health_report",
+            "path": "datasets['dosm_boundary_district'].health_report",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].id",
+            "path": "datasets['dosm_boundary_district'].id",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].dataset_id",
+            "path": "datasets['dosm_boundary_district'].dataset_id",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].id",
+            "path": "datasets['dosm_boundary_district'].id",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].dataset_id",
+            "path": "datasets['dosm_boundary_district'].dataset_id",
             "source": "health"
           }
         ],
@@ -1660,15 +1648,15 @@
             "check_id": "fair.catalogue_metadata",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].id",
+                "path": "datasets['dosm_boundary_district'].id",
                 "source": "manifest"
               },
               {
-                "path": "datasets['population_parlimen'].name",
+                "path": "datasets['dosm_boundary_district'].name",
                 "source": "manifest"
               },
               {
-                "path": "datasets['population_parlimen'].url",
+                "path": "datasets['dosm_boundary_district'].url",
                 "source": "manifest"
               }
             ],
@@ -1684,11 +1672,11 @@
             "check_id": "fair.observed_access",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].request_url",
+                "path": "datasets['dosm_boundary_district'].request_url",
                 "source": "health"
               },
               {
-                "path": "datasets['population_parlimen'].status",
+                "path": "datasets['dosm_boundary_district'].status",
                 "source": "health"
               }
             ],
@@ -1704,15 +1692,15 @@
             "check_id": "fair.shape_metadata",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].schema_fingerprint",
+                "path": "datasets['dosm_boundary_district'].schema_fingerprint",
                 "source": "health"
               },
               {
-                "path": "datasets['population_parlimen'].first_row_hash",
+                "path": "datasets['dosm_boundary_district'].first_row_hash",
                 "source": "health"
               },
               {
-                "path": "datasets['population_parlimen'].column_count",
+                "path": "datasets['dosm_boundary_district'].column_count",
                 "source": "health"
               }
             ],
@@ -1728,11 +1716,11 @@
             "check_id": "fair.reuse_metadata",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].licence",
+                "path": "datasets['dosm_boundary_district'].licence",
                 "source": "manifest"
               },
               {
-                "path": "datasets['population_parlimen'].attribution",
+                "path": "datasets['dosm_boundary_district'].attribution",
                 "source": "manifest"
               }
             ],
@@ -1755,43 +1743,43 @@
         },
         "evidence_refs": [
           {
-            "path": "datasets['population_parlimen'].id",
+            "path": "datasets['dosm_boundary_district'].id",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].name",
+            "path": "datasets['dosm_boundary_district'].name",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].url",
+            "path": "datasets['dosm_boundary_district'].url",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].request_url",
+            "path": "datasets['dosm_boundary_district'].request_url",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].status",
+            "path": "datasets['dosm_boundary_district'].status",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].schema_fingerprint",
+            "path": "datasets['dosm_boundary_district'].schema_fingerprint",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].first_row_hash",
+            "path": "datasets['dosm_boundary_district'].first_row_hash",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].column_count",
+            "path": "datasets['dosm_boundary_district'].column_count",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].licence",
+            "path": "datasets['dosm_boundary_district'].licence",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].attribution",
+            "path": "datasets['dosm_boundary_district'].attribution",
             "source": "manifest"
           }
         ],
@@ -1813,7 +1801,7 @@
             "check_id": "governance.methodology_version",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].methodology_version",
+                "path": "datasets['dosm_boundary_district'].methodology_version",
                 "source": "manifest"
               }
             ],
@@ -1829,11 +1817,11 @@
             "check_id": "governance.status_reason_slot",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].status",
+                "path": "datasets['dosm_boundary_district'].status",
                 "source": "health"
               },
               {
-                "path": "datasets['population_parlimen'].status_reason",
+                "path": "datasets['dosm_boundary_district'].status_reason",
                 "source": "health"
               }
             ],
@@ -1849,11 +1837,11 @@
             "check_id": "governance.declared_cadence",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].data_type",
+                "path": "datasets['dosm_boundary_district'].data_type",
                 "source": "manifest"
               },
               {
-                "path": "datasets['population_parlimen'].refresh_frequency",
+                "path": "datasets['dosm_boundary_district'].refresh_frequency",
                 "source": "manifest"
               }
             ],
@@ -1861,38 +1849,38 @@
               "Cadence is explicitly not applicable only to manifest-declared reference data; otherwise it is not evidence that the publisher followed it."
             ],
             "reason_codes": [
-              "refresh_frequency_declared"
+              "cadence_not_applicable_reference_dataset"
             ],
-            "state": "pass"
+            "state": "not_applicable"
           }
         ],
         "coverage": {
-          "applicable": 3,
-          "evaluated": 3,
+          "applicable": 2,
+          "evaluated": 2,
           "failed": 0,
-          "not_applicable": 0,
-          "passed": 3,
+          "not_applicable": 1,
+          "passed": 2,
           "unknown": 0
         },
         "evidence_refs": [
           {
-            "path": "datasets['population_parlimen'].methodology_version",
+            "path": "datasets['dosm_boundary_district'].methodology_version",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].status",
+            "path": "datasets['dosm_boundary_district'].status",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].status_reason",
+            "path": "datasets['dosm_boundary_district'].status_reason",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].data_type",
+            "path": "datasets['dosm_boundary_district'].data_type",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].refresh_frequency",
+            "path": "datasets['dosm_boundary_district'].refresh_frequency",
             "source": "manifest"
           }
         ],
@@ -1903,7 +1891,7 @@
         "reason_codes": [
           "methodology_version_declared",
           "status_reason_slot_present",
-          "refresh_frequency_declared"
+          "cadence_not_applicable_reference_dataset"
         ],
         "state": "pass"
       },
@@ -1913,7 +1901,7 @@
             "check_id": "licensing.declared_licence",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].licence",
+                "path": "datasets['dosm_boundary_district'].licence",
                 "source": "manifest"
               }
             ],
@@ -1929,7 +1917,7 @@
             "check_id": "licensing.declared_attribution",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].attribution",
+                "path": "datasets['dosm_boundary_district'].attribution",
                 "source": "manifest"
               }
             ],
@@ -1952,11 +1940,11 @@
         },
         "evidence_refs": [
           {
-            "path": "datasets['population_parlimen'].licence",
+            "path": "datasets['dosm_boundary_district'].licence",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].attribution",
+            "path": "datasets['dosm_boundary_district'].attribution",
             "source": "manifest"
           }
         ],
@@ -1976,7 +1964,7 @@
             "check_id": "provenance.source_url",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].url",
+                "path": "datasets['dosm_boundary_district'].url",
                 "source": "manifest"
               }
             ],
@@ -1992,11 +1980,11 @@
             "check_id": "provenance.steward_or_custodian",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].steward",
+                "path": "datasets['dosm_boundary_district'].steward",
                 "source": "manifest"
               },
               {
-                "path": "datasets['population_parlimen'].custodian",
+                "path": "datasets['dosm_boundary_district'].custodian",
                 "source": "manifest"
               }
             ],
@@ -2012,11 +2000,11 @@
             "check_id": "provenance.observation",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].last_checked",
+                "path": "datasets['dosm_boundary_district'].last_checked",
                 "source": "health"
               },
               {
-                "path": "datasets['population_parlimen'].request_url",
+                "path": "datasets['dosm_boundary_district'].request_url",
                 "source": "health"
               }
             ],
@@ -2032,11 +2020,11 @@
             "check_id": "provenance.source_observed_boundary",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].url",
+                "path": "datasets['dosm_boundary_district'].url",
                 "source": "manifest"
               },
               {
-                "path": "datasets['population_parlimen'].request_url",
+                "path": "datasets['dosm_boundary_district'].request_url",
                 "source": "health"
               }
             ],
@@ -2059,31 +2047,31 @@
         },
         "evidence_refs": [
           {
-            "path": "datasets['population_parlimen'].url",
+            "path": "datasets['dosm_boundary_district'].url",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].steward",
+            "path": "datasets['dosm_boundary_district'].steward",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].custodian",
+            "path": "datasets['dosm_boundary_district'].custodian",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].last_checked",
+            "path": "datasets['dosm_boundary_district'].last_checked",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].request_url",
+            "path": "datasets['dosm_boundary_district'].request_url",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].url",
+            "path": "datasets['dosm_boundary_district'].url",
             "source": "manifest"
           },
           {
-            "path": "datasets['population_parlimen'].request_url",
+            "path": "datasets['dosm_boundary_district'].request_url",
             "source": "health"
           }
         ],
@@ -2105,15 +2093,15 @@
             "check_id": "reproducibility.shape_fingerprint",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].schema_fingerprint",
+                "path": "datasets['dosm_boundary_district'].schema_fingerprint",
                 "source": "health"
               },
               {
-                "path": "datasets['population_parlimen'].first_row_hash",
+                "path": "datasets['dosm_boundary_district'].first_row_hash",
                 "source": "health"
               },
               {
-                "path": "datasets['population_parlimen'].column_count",
+                "path": "datasets['dosm_boundary_district'].column_count",
                 "source": "health"
               }
             ],
@@ -2129,7 +2117,7 @@
             "check_id": "reproducibility.retrieval_timestamp",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].last_checked",
+                "path": "datasets['dosm_boundary_district'].last_checked",
                 "source": "health"
               }
             ],
@@ -2145,15 +2133,15 @@
             "check_id": "reproducibility.record_count",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].record_count",
+                "path": "datasets['dosm_boundary_district'].record_count",
                 "source": "health"
               },
               {
-                "path": "datasets['population_parlimen'].record_count_estimated",
+                "path": "datasets['dosm_boundary_district'].record_count_estimated",
                 "source": "health"
               },
               {
-                "path": "datasets['population_parlimen'].record_count_within_tolerance",
+                "path": "datasets['dosm_boundary_district'].record_count_within_tolerance",
                 "source": "health"
               }
             ],
@@ -2169,7 +2157,7 @@
             "check_id": "reproducibility.attestation_reference",
             "evidence_refs": [
               {
-                "path": "datasets['population_parlimen'].attestation_ref",
+                "path": "datasets['dosm_boundary_district'].attestation_ref",
                 "source": "manifest"
               }
             ],
@@ -2177,50 +2165,50 @@
               "A declared reference is not verified here; missing evidence remains unknown."
             ],
             "reason_codes": [
-              "attestation_ref_declared"
+              "attestation_ref_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           }
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 4,
+          "evaluated": 3,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 4,
-          "unknown": 0
+          "passed": 3,
+          "unknown": 1
         },
         "evidence_refs": [
           {
-            "path": "datasets['population_parlimen'].schema_fingerprint",
+            "path": "datasets['dosm_boundary_district'].schema_fingerprint",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].first_row_hash",
+            "path": "datasets['dosm_boundary_district'].first_row_hash",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].column_count",
+            "path": "datasets['dosm_boundary_district'].column_count",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].last_checked",
+            "path": "datasets['dosm_boundary_district'].last_checked",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].record_count",
+            "path": "datasets['dosm_boundary_district'].record_count",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].record_count_estimated",
+            "path": "datasets['dosm_boundary_district'].record_count_estimated",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].record_count_within_tolerance",
+            "path": "datasets['dosm_boundary_district'].record_count_within_tolerance",
             "source": "health"
           },
           {
-            "path": "datasets['population_parlimen'].attestation_ref",
+            "path": "datasets['dosm_boundary_district'].attestation_ref",
             "source": "manifest"
           }
         ],
@@ -2232,15 +2220,15 @@
           "shape_fingerprint_observed",
           "last_checked_declared",
           "record_count_observed",
-          "attestation_ref_declared"
+          "attestation_ref_missing"
         ],
-        "state": "pass"
+        "state": "unknown"
       }
     },
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "ready",
+    "overall": "indeterminate",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },
@@ -2249,13 +2237,16 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-02/population_parlimen.json",
+    "attestation": {
+      "reason": "attestation_reference_not_available",
+      "state": "not_evaluated"
+    },
     "chain_reference": "attestations/2026-10-02/chain_head.json",
     "source_digest": {
       "reason": "canonical_source_digest_not_available",
       "state": "not_evaluated"
     },
-    "source_envelope": "data/json/population_parlimen.json",
+    "source_envelope": "data/json/dosm_boundary_district.json",
     "verification_method": "deterministic_local_projection_of_current_canonical_inputs",
     "witness_reference": {
       "reason": "witness_reference_not_available",
