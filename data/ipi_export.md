@@ -5,15 +5,15 @@ source_url: "https://storage.dosm.gov.my/ipi/ipi_export.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-09-05T02:34:56Z
-last_observed: 2026-06-01
-last_modified: 2026-08-12T22:38:48Z
-record_count: 5213
+last_checked: 2026-09-26T02:49:53Z
+last_observed: 2026-07-01
+last_modified: 2026-09-11T05:59:53Z
+record_count: 5252
 column_count: 4
-status: stale
+status: fresh
 notes: "Tier-1 wave D newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: ipi_export
-freshness_delta: 96 days
+freshness_delta: 22 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 ## Status
 
-**Status:** Stale
+**Status:** Fresh
 
-**Freshness:** 96 days
+**Freshness:** 22 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 
-The checked resource is 156,995 bytes.
+The checked resource is 158,167 bytes.
 
 ## Provenance
 

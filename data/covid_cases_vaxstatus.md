@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_covid_cases_vaxstatus
-last_checked: 2026-09-06T05:22:25Z
-last_checked: 2026-09-06T05:22:25Z
+last_checked: 2026-10-02T15:40:53Z
+last_checked: 2026-10-02T15:40:53Z
 status: stale
-freshness_delta: 463 days
+freshness_delta: 490 days
 next_expected_update: daily
 record_count: 33218
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 463 days
+**Freshness:** 490 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 05:22:25 UTC.
+2026-10-02 at 15:40:53 UTC.
 
 ## File size
 

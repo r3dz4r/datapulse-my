@@ -3,7 +3,7 @@ dataset_id: dosm_stillbirths_state
 last_checked: 2026-09-05T02:34:56Z
 last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 978 days
+freshness_delta: 1006 days
 next_expected_update: annual
 record_count: 390
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Ministry of Health and Department of Statistics Malaysia via data.g
 
 **Status:** Aging
 
-**Freshness:** 978 days
+**Freshness:** 1006 days
 
 HTTP 200
 

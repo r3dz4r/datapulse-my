@@ -36,7 +36,7 @@ generated: { by: "openwiki/0.4.3", at: "2026-09-28T16:37:06.116Z" }
 
 # MCP Server Runtime and Agent Integration
 
-DataPulse publishes a **public, unauthenticated, read-only** MCP surface at **https://mcp.data-pulse.my/mcp**. The canonical website origin for catalogue and published artifacts is **https://www.data-pulse.my**. The live `datapulse.json` catalogue contains **418 datasets**, while the canonical `mcp.json` advertisement defines **19 read-only tools**. These are published-surface counts, not guarantees of availability, semantic truth, or upstream freshness.
+DataPulse publishes a **public, unauthenticated, read-only** MCP surface at **https://mcp.data-pulse.my/mcp**. The canonical website origin for catalogue and published artifacts is **https://www.data-pulse.my**. The live `datapulse.json` catalogue contains **425 datasets**, while the canonical `mcp.json` advertisement defines **19 read-only tools**. These are published-surface counts, not guarantees of availability, semantic truth, or upstream freshness.
 
 ## Public contract and session lifecycle
 
@@ -182,11 +182,11 @@ Also run `scripts/verify_mcp_deployment.py` against the intended endpoint after 
 
 This page documents the public MCP integration only. It does not claim universal trust, certification, guaranteed availability, prices, tiers, quotas, billing terms, or commercial offers. Verification tools are read-only and do not mutate health; upstream sources remain authoritative for substantive data. For catalogue semantics see `/openwiki/datasets.md`; for health-generation operations see `/openwiki/operations.md`; for a concise client sequence see `/openwiki/quickstart.md`.
 
-**Canonical facts:** https://www.data-pulse.my · **418 datasets** · **19 read-only tools**
+**Canonical facts:** https://www.data-pulse.my · **425 datasets** · **19 read-only tools**
 
 ## Canonical facts
 
 - Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 418 datasets
+- Datasets: 425 datasets
 - MCP server: 19 read-only tools

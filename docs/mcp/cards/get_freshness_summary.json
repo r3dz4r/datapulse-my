@@ -9,7 +9,7 @@
     "get_freshness_summary"
   ],
   "contract_version": "1.0.0",
-  "dataset_count": 418,
+  "dataset_count": 425,
   "description": "Return a freshness-at-a-glance summary of the published catalogue: fresh, aging, stale, and reference counts plus the latest health check time. Use it for catalogue-level freshness context; do not use it to enumerate affected datasets—use find_stale instead. It reads the latest published snapshot, so missing counts or check time mean the artifact omitted them; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "get_freshness_summary",
   "endpoint": {

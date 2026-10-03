@@ -5,15 +5,15 @@ source_url: "https://storage.dosm.gov.my/ppi/ppi_2d.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-09-26T02:49:53Z
 last_observed: 2026-07-01
 last_modified: 2026-09-01T04:17:04Z
 record_count: 11312
 column_count: 4
-status: aging
+status: fresh
 notes: "Tier-1 wave D newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: ppi_2d
-freshness_delta: 66 days
+freshness_delta: 32 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -26,15 +26,15 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 ## Status
 
-**Status:** Aging
+**Status:** Fresh
 
-**Freshness:** 66 days
+**Freshness:** 32 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 

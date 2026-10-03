@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_mybas_ipoh
-last_checked: 2026-09-06T20:36:28Z
+last_checked: 2026-10-03T01:45:56Z
 status: stale
-freshness_delta: 5.833125 days
-record_count: 22
+freshness_delta: 0.0010416666666666667 days
+record_count: 19
 content_freshness_date: 2026-08-03
 schema_version: GTFS
 schema_drift: none
@@ -19,17 +19,17 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Stale
 
-**Freshness:** 5.833125 days
+**Freshness:** 0.0010416666666666667 days
 
-HTTP 200; valid GTFS realtime protobuf (22 vehicles)
+HTTP 200; valid GTFS realtime protobuf (19 vehicles)
 
 ## Last checked
 
-2026-09-06 at 20:36:28 UTC.
+2026-10-03 at 01:45:56 UTC.
 
 ## File size
 
-The checked resource is 2,992 bytes.
+The checked resource is 2,608 bytes.
 
 ## Provenance
 

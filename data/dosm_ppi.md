@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_ppi
-last_checked: 2026-09-05T02:34:56Z
-status: aging
-freshness_delta: 66 days
+last_checked: 2026-09-26T02:49:53Z
+status: fresh
+freshness_delta: 32 days
 next_expected_update: monthly
 record_count: 584
 date_range: 2010-01-01 to 2026-06-01
@@ -18,15 +18,15 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Aging
+**Status:** Fresh
 
-**Freshness:** 66 days
+**Freshness:** 32 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 

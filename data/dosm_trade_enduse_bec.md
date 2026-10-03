@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_trade_enduse_bec
-last_checked: 2026-09-05T02:34:56Z
-status: stale
-freshness_delta: 96 days
+last_checked: 2026-09-26T02:49:53Z
+status: fresh
+freshness_delta: 14 days
 next_expected_update: overdue
-record_count: 14478
+record_count: 14624
 date_range: 2010-01-01 to 2026-04-01
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Stale
+**Status:** Fresh
 
-**Freshness:** 96 days
+**Freshness:** 14 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 
-The checked resource is 617,667 bytes.
+The checked resource is 623,926 bytes.
 
 ## Provenance
 

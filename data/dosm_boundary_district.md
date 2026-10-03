@@ -1,7 +1,7 @@
 ---
 dataset_id: dosm_boundary_district
-last_checked: 2026-10-03T02:21:02Z
-status: unknown
+last_checked: 2026-10-03T02:55:45Z
+status: reference
 freshness_delta: unknown
 ---
 
@@ -9,15 +9,15 @@ freshness_delta: unknown
 
 ## Status
 
-**Status:** Unknown
+**Status:** Reference
 
 **Freshness:** unknown
 
-No canonical DataPulse health observation yet; upstream GeoJSON was checked during onboarding.
+HTTP 200
 
 ## Last checked
 
-2026-10-03 at 02:21:02 UTC.
+2026-10-03 at 02:55:45 UTC.
 
 ## File size
 

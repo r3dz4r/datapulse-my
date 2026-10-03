@@ -1437,6 +1437,19 @@
           "weight": 2
         },
         {
+          "from": "dosm_boundary_district_lookup",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_malaysia",
+          "weight": 2
+        },
+        {
           "from": "dosm_boundary_dun",
           "kind": "same_steward",
           "provenance": {
@@ -1460,6 +1473,19 @@
             ]
           },
           "to": "dosm_boundary_parlimen",
+          "weight": 2
+        },
+        {
+          "from": "dosm_boundary_malaysia",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "dosm_boundary_parlimen_dun_lookup",
           "weight": 2
         },
         {
@@ -2241,7 +2267,7 @@
       "reason": "attestation_reference_not_available",
       "state": "not_evaluated"
     },
-    "chain_reference": "attestations/2026-10-02/chain_head.json",
+    "chain_reference": "attestations/2026-10-03/chain_head.json",
     "source_digest": {
       "reason": "canonical_source_digest_not_available",
       "state": "not_evaluated"

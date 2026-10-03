@@ -1,10 +1,10 @@
 ---
 dataset_id: cpi_headline
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-09-26T02:49:53Z
 status: aging
-freshness_delta: 66 days
+freshness_delta: 63 days
 next_expected_update: monthly
-record_count: 7826
+record_count: 7840
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: When interpreting inflation rates derived from the CPI, it is important to remember that the rate of inflation experienced by a specific individual may be higher or lower than this number. This does not invalidate the CPI, which is meant to be an average value representative of the entire population."]
@@ -19,17 +19,17 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 66 days
+**Freshness:** 63 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 
-The checked resource is 451,646 bytes.
+The checked resource is 452,461 bytes.
 
 ## Provenance
 
