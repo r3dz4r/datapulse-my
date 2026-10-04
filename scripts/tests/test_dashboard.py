@@ -29,7 +29,14 @@ CANONICAL_KEYS = [
 # The server-rendered register preserves the no-JavaScript public surface.
 # Only the client-side contract stays inline; complete machine-readable health
 # data is published separately at /health/index.json and /health/latest.json.
-MAX_HOMEPAGE_BYTES = 1_050_000
+# Raised 1_050_000 -> 1_062_600 (+1.2%) on 2026-10-04 by operator decision: the
+# catalogue reached 425 datasets (five DOSM boundary layers and two lookup tables)
+# and the rendered rows measured 1,052,921 bytes, 2,921 over the old cap.
+# This is a stopgap, not the intended end state: the register renders one row per
+# dataset, so the page grows with the catalogue. Paginating it - which removes that
+# growth structurally and touches seven verifiers, including the deployed-count
+# parity gate - is queued as its own change.
+MAX_HOMEPAGE_BYTES = 1_062_600
 MAX_EMBEDDED_DATA_BYTES = 60_000
 EMBEDDED_DATA_BLOCK = re.compile(rb'<script id="embedded-data">.*?</script>', re.DOTALL)
 
