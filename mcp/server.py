@@ -2422,7 +2422,13 @@ async def verify_attestation(
     if replay_chain:
         try:
             chain_index = await _fetch_json("attestations/chain-index.json")
-            current = await _fetch_json(f"attestations/{payload['date']}/chain_head.json")
+            containing_ref = ref.rsplit("/", 1)[0] + "/chain_head.json"
+            containing_hashes = [h for h, p in chain_index.get("heads", {}).items() if p == containing_ref]
+            if len(containing_hashes) != 1:
+                raise ValueError("containing head is missing or ambiguous")
+            current = await _fetch_json(containing_ref)
+            if current.get("chain_head") != containing_hashes[0]:
+                raise ValueError("containing head mapping disagrees with signed evidence")
             seen = set()
             member = any(row.get("dataset_id") == payload.get("dataset_id") and row.get("chain_link") == envelope.get("chain_link") for row in current.get("dataset_links", []))
             while current["chain_head"] not in seen:
