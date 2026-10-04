@@ -3,7 +3,7 @@ dataset_id: dosm_deaths_early_childhood_state
 last_checked: 2026-09-05T02:34:56Z
 last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 978 days
+freshness_delta: 1006 days
 next_expected_update: annual
 record_count: 1950
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: National Registration Department and Department of Statistics Malay
 
 **Status:** Aging
 
-**Freshness:** 978 days
+**Freshness:** 1006 days
 
 HTTP 200
 

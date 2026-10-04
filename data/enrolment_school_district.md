@@ -3,7 +3,7 @@ dataset_id: dgm_enrolment_school_district
 last_checked: 2026-09-05T02:34:56Z
 last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 432 days
+freshness_delta: 460 days
 next_expected_update: annual
 record_count: 12756
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Ministry of Education Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 432 days
+**Freshness:** 460 days
 
 HTTP 200
 

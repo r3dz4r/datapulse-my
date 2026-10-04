@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_gdp_qtr_nominal
-last_checked: 2026-09-05T02:34:56Z
-status: aging
-freshness_delta: 157 days
+last_checked: 2026-09-26T02:49:53Z
+status: fresh
+freshness_delta: 50 days
 next_expected_update: quarterly
 record_count: 133
 date_range: 2015-01-01 to 2026-01-01
@@ -18,15 +18,15 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Aging
+**Status:** Fresh
 
-**Freshness:** 157 days
+**Freshness:** 50 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 

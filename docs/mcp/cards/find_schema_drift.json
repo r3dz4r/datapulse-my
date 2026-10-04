@@ -11,7 +11,7 @@
     "find_schema_drift.min_change_count"
   ],
   "contract_version": "1.0.0",
-  "dataset_count": 418,
+  "dataset_count": 425,
   "description": "Return datasets with published structural or record-count drift evidence, ranked with structural changes first. Optionally require a minimum number of structural transitions; includes pipeline-computed evidence so agents do not infer drift from freshness alone. Use it for structural or record-count changes; do not use it for freshness risk, anomalies, trends, or reliability—use find_stale, find_anomalies, find_deteriorating, or find_unreliable instead. It reads precomputed drift data, so an empty result means no published drift row survives the selected filters; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_schema_drift",
   "endpoint": {

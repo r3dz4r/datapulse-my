@@ -2,7 +2,7 @@
 dataset_id: dosm_death_state
 last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 978 days
+freshness_delta: 1006 days
 next_expected_update: annual
 record_count: 390
 date_range: 2000-01-01 to 2024-01-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 978 days
+**Freshness:** 1006 days
 
 HTTP 200
 

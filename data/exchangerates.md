@@ -5,15 +5,15 @@ source_url: "https://storage.data.gov.my/finsector/exr/monthly.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-09-05T02:34:56Z
-last_observed: 2026-03-01
-last_modified: 2026-05-01T01:52:15Z
-record_count: 1755
+last_checked: 2026-09-26T02:49:53Z
+last_observed: 2026-08-01
+last_modified: 2026-09-09T21:27:39Z
+record_count: 1780
 column_count: 29
-status: stale
+status: aging
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: exchangerates
-freshness_delta: 188 days
+freshness_delta: 63 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Bank Negara Malaysia via data.gov.my"
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 188 days
+**Freshness:** 63 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 
-The checked resource is 339,458 bytes.
+The checked resource is 345,102 bytes.
 
 ## Provenance
 

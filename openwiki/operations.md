@@ -39,7 +39,7 @@ generated: { by: "openwiki/0.4.3", at: "2026-09-28T16:37:06.116Z" }
 # Operations, Publication, and Failure Handling
 
 DataPulse publishes its canonical website at **https://www.data-pulse.my**. The
-current `datapulse.json` manifest contains **418 datasets** and `mcp.json`
+current `datapulse.json` manifest contains **425 datasets** and `mcp.json`
 advertises **19 read-only tools**. These are checked-in discovery counts, not
 availability guarantees. DataPulse is read-only: upstream custodians remain
 authoritative for substantive data, while health observations and signatures
@@ -299,5 +299,5 @@ pre-generation contracts and does not claim a current signed binding.
 
 - Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 418 datasets
+- Datasets: 425 datasets
 - MCP server: 19 read-only tools

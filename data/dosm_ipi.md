@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_ipi
-last_checked: 2026-09-05T02:34:56Z
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-09-26T02:49:53Z
+last_checked: 2026-09-26T02:49:53Z
 status: stale
-freshness_delta: 96 days
+freshness_delta: 94 days
 next_expected_update: monthly
-record_count: 401
+record_count: 404
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The most recent 1 year of data may be revised in future releases."]
@@ -20,17 +20,17 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 96 days
+**Freshness:** 94 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 
-The checked resource is 32,905 bytes.
+The checked resource is 33,157 bytes.
 
 ## Provenance
 

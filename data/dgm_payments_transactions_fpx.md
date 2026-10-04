@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_payments_transactions_fpx
-last_checked: 2026-09-06T05:22:25Z
-status: stale
-freshness_delta: 4 days
+last_checked: 2026-10-02T15:40:53Z
+status: fresh
+freshness_delta: 1 days
 next_expected_update: daily
-record_count: 7302
+record_count: 7392
 date_range: 2020-01-01 to 2026-08-01
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Fresh
 
-**Freshness:** 4 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 05:22:25 UTC.
+2026-10-02 at 15:40:53 UTC.
 
 ## File size
 
-The checked resource is 274,645 bytes.
+The checked resource is 277,958 bytes.
 
 ## Provenance
 

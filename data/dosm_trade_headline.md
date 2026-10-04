@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_trade_headline
-last_checked: 2026-09-05T02:34:56Z
-status: stale
-freshness_delta: 157 days
+last_checked: 2026-09-26T02:49:53Z
+status: fresh
+freshness_delta: 14 days
 next_expected_update: overdue
-record_count: 743
+record_count: 755
 date_range: 2000-01-01 to 2026-04-01
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Stale
+**Status:** Fresh
 
-**Freshness:** 157 days
+**Freshness:** 14 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 
-The checked resource is 56,287 bytes.
+The checked resource is 57,138 bytes.
 
 ## Provenance
 

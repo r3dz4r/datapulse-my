@@ -1,8 +1,8 @@
 ---
 dataset_id: electricity_consumption
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-09-26T02:49:53Z
 status: stale
-freshness_delta: 826 days
+freshness_delta: 854 days
 next_expected_update: monthly
 schema_version: unknown
 schema_drift: none
@@ -18,13 +18,13 @@ attribution: Tenaga Nasional Berhad via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 826 days
+**Freshness:** 854 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 

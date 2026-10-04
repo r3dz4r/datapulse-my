@@ -2,7 +2,7 @@
 dataset_id: dgm_prisoners_prison
 last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 1708 days
+freshness_delta: 1736 days
 next_expected_update: annual
 record_count: 648
 schema_version: unknown
@@ -19,7 +19,7 @@ attribution: Prisons Department of Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1708 days
+**Freshness:** 1736 days
 
 HTTP 200
 

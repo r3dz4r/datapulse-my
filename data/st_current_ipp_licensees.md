@@ -1,8 +1,8 @@
 ---
 dataset_id: st_current_ipp_licensees
 last_checked: 2026-09-05T02:34:56Z
-status: fresh
-freshness_delta: 116 days
+status: aging
+freshness_delta: 144 days
 next_expected_update: unknown
 file_size_bytes: 5613
 file_count: null
@@ -22,9 +22,9 @@ attribution: Suruhanjaya Tenaga (Malaysia Energy Commission) via MyEnergyStats
 
 ## Status
 
-**Status:** Fresh
+**Status:** Aging
 
-**Freshness:** 116 days
+**Freshness:** 144 days
 
 HTTP 200
 

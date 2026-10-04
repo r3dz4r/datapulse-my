@@ -5,15 +5,15 @@ source_url: "https://storage.dosm.gov.my/cpi/cpi_2d_core.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-09-05T02:34:56Z
-last_observed: 2026-07-01
-last_modified: 2026-08-17T08:07:07Z
-record_count: 1442
+last_checked: 2026-09-26T02:49:53Z
+last_observed: 2026-08-01
+last_modified: 2026-09-18T04:25:22Z
+record_count: 1456
 column_count: 3
-status: aging
+status: fresh
 notes: "Tier-1 wave B already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: cpi_core
-freshness_delta: 66 days
+freshness_delta: 14 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 ## Status
 
-**Status:** Aging
+**Status:** Fresh
 
-**Freshness:** 66 days
+**Freshness:** 14 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-09-26 at 02:49:53 UTC.
 
 ## File size
 
-The checked resource is 28,654 bytes.
+The checked resource is 28,932 bytes.
 
 ## Provenance
 
