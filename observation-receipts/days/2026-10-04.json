@@ -1110,7 +1110,47 @@
       },
       "receipt_id": "1fdcd5d2c7ed27343153f04f62dcef401b5e1a03956b61d50eafbdf3fff3b0e4",
       "signature_base64": "R3GbBAr1KXpL4p36WlpISjFrqvpkp1DWDAsbxvi/uVS0jhid5PWv/tpzr9TB8Gs1sQuX0l+zLfETAcU5kYZEDg=="
+    },
+    {
+      "payload": {
+        "schema": "datapulse/v1/observation-receipt",
+        "observed_at": "2026-10-04T13:44:25Z",
+        "cycle_date": "2026-10-04",
+        "health_artifact_sha256": "3b3d62c6534e902aade719e7aaae0f08e4de05f8cec566360d07c6239ec9509b",
+        "artifact_path": "health/latest.json",
+        "artifact_commit": "a200e6c4dff3f9670a54158e22061bfc086e3e5d",
+        "normalization": "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing",
+        "dataset_count": 425,
+        "freshness_status_counts": {
+          "fresh": 134,
+          "aging": 118,
+          "unknown-freshness": 5,
+          "stale": 145,
+          "discontinued": 1,
+          "reference": 21,
+          "degraded": 1
+        },
+        "verification_profile_version": "257494e9163a37cf68e0c91dc86c81888d61c43ddd9d603c74d8ae421dd361b0",
+        "policy_version": null,
+        "key_id": "ed25519-e075218fa8086893",
+        "sequence_number": 2086,
+        "previous_receipt_id": "1fdcd5d2c7ed27343153f04f62dcef401b5e1a03956b61d50eafbdf3fff3b0e4",
+        "valid_until": "2026-10-05T15:44:25Z",
+        "limitations": [
+          "operator-produced evidence: the observing host signs its own observation at execution time",
+          "timestamps rely on the host clock and are not independently witnessed",
+          "upstream truth is not asserted; freshness statuses reflect this observation only"
+        ],
+        "observer_attestation": {
+          "key_id": "ed25519-a4ac279ec3354508",
+          "signature_base64": "Ev4Lhhn1/fUll6xtlwjWpjzQ2ZEeeUZVIod7hCktXXsC424j/U5csFOkPdhZHauEyXZZUhWhvoOI71LafLp4Ag==",
+          "signed_at": "2026-10-04T13:44:25Z",
+          "statement_sha256": "2eb3f483ea0d6185da55aeab65c50c218675aa0d1273194de92de6811cefa4da"
+        }
+      },
+      "receipt_id": "9c1ab5095e994dcbcb8c78c0e9c1d4bbc05c44d15248a9095d4acf55bb3b075e",
+      "signature_base64": "GJtFEnH+1CO6scvT9HAED66fbTLXX5/KD8b4Ju9rdOjgp5ElmCiJ0i397kwMF6yjFY7MzF2ZopjWIcSlO/YLBA=="
     }
   ],
-  "updated_at": "2026-10-04T12:57:59Z"
+  "updated_at": "2026-10-04T13:44:25Z"
 }
