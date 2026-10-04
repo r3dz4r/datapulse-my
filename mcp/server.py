@@ -747,7 +747,7 @@ mcp = FastMCP(
     "DataPulse",
     version=SOURCE_VERSION_STRING,
     instructions=(
-        "DataPulse is a read-only evidence and freshness layer for 418 official Malaysian "
+        "DataPulse is a read-only evidence and freshness layer for 425 official Malaysian "
         "public datasets. Use it for Malaysian data questions about currentness, freshness, "
         "licence, provenance, reachability, schema or record drift, reliability, signed "
         "evidence, or citation verification. For a currentness/provenance claim use "
