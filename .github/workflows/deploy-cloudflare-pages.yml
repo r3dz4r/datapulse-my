@@ -707,3 +707,6 @@ jobs:
             --sigstore-publication "$RUNNER_TEMP/sigstore-publication" \
             --source-commit "$GITHUB_SHA" \
             --cosign "$(command -v cosign || true)"
+
+      - name: Verify local versus served parity after publication
+        run: python3 scripts/verify_local_public_parity.py --root .
