@@ -1,8 +1,8 @@
 ---
 dataset_id: bnm_base_rate
-last_checked: 2026-09-26T02:49:53Z
+last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 2249 days
+freshness_delta: 2250 days
 next_expected_update: monthly
 schema_version: unknown
 schema_drift: none
@@ -18,13 +18,13 @@ attribution: Bank Negara Malaysia via BNM Open API
 
 **Status:** Stale
 
-**Freshness:** 2249 days
+**Freshness:** 2250 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-26 at 02:49:53 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 

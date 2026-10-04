@@ -13,7 +13,7 @@ column_count: 3
 status: stale
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: ghg_emissions
-freshness_delta: 2101 days
+freshness_delta: 2102 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Ministry of Natural Resources and Environmental Sustainability via
 
 **Status:** Stale
 
-**Freshness:** 2101 days
+**Freshness:** 2102 days
 
 HTTP 200
 

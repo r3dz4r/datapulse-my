@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_mybas_melaka
-last_checked: 2026-10-03T01:45:56Z
+last_checked: 2026-10-04T00:30:57Z
 status: stale
-freshness_delta: 0.0009143518518518518 days
-record_count: 25
+freshness_delta: 0.000925925925925926 days
+record_count: 32
 content_freshness_date: 2026-08-03
 schema_version: GTFS
 schema_drift: none
@@ -19,17 +19,17 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Stale
 
-**Freshness:** 0.0009143518518518518 days
+**Freshness:** 0.000925925925925926 days
 
-HTTP 200; valid GTFS realtime protobuf (25 vehicles)
+HTTP 200; valid GTFS realtime protobuf (32 vehicles)
 
 ## Last checked
 
-2026-10-03 at 01:45:56 UTC.
+2026-10-04 at 00:30:57 UTC.
 
 ## File size
 
-The checked resource is 3,902 bytes.
+The checked resource is 4,985 bytes.
 
 ## Provenance
 

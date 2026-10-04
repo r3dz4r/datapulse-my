@@ -2,7 +2,7 @@
 dataset_id: dgm_gdp_state_real_supply
 last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 640 days
+freshness_delta: 641 days
 next_expected_update: unknown
 record_count: 2163
 date_range: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 640 days
+**Freshness:** 641 days
 
 HTTP 200
 

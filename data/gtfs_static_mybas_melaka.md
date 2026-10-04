@@ -2,7 +2,7 @@
 dataset_id: gtfs_static_mybas_melaka
 last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 28 days
+freshness_delta: 29 days
 record_count: 25107
 content_freshness_date: 2026-11-02
 schema_version: GTFS
@@ -19,7 +19,7 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 28 days
+**Freshness:** 29 days
 
 HTTP 200; valid GTFS static ZIP
 

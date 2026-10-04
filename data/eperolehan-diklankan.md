@@ -1,10 +1,10 @@
 ---
 dataset_id: eperolehan-diklankan
-last_checked: 2026-10-03T01:45:56Z
+last_checked: 2026-10-04T00:30:57Z
 status: stale
 freshness_delta: 1 days
 next_expected_update: unknown
-file_size_bytes: null
+file_size_bytes: 162877
 file_count: null
 schema_version: unknown
 schema_drift: none
@@ -22,15 +22,15 @@ attribution: MOF ePerolehan
 
 **Freshness:** 1 days
 
-Browser check succeeded
+HTTP 200
 
 ## Last checked
 
-2026-10-03 at 01:45:56 UTC.
+2026-10-04 at 00:30:57 UTC.
 
 ## File size
 
-The health snapshot did not report a file size.
+The checked resource is 162,877 bytes.
 
 ## Coverage
 

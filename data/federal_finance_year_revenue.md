@@ -13,7 +13,7 @@ column_count: 4
 status: stale
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: federal_finance_year_revenue
-freshness_delta: 1371 days
+freshness_delta: 1372 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Ministry of Finance Malaysia via data.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 1371 days
+**Freshness:** 1372 days
 
 HTTP 200
 

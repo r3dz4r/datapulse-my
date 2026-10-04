@@ -2,7 +2,7 @@
 dataset_id: dgm_hh_expenditure_dun
 last_checked: 2026-09-26T02:49:53Z
 status: fresh
-freshness_delta: 1006 days
+freshness_delta: 1007 days
 next_expected_update: unknown
 record_count: 1800
 date_range: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 1006 days
+**Freshness:** 1007 days
 
 HTTP 200
 

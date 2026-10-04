@@ -2,7 +2,7 @@
 dataset_id: dosm_population_parlimen
 last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 1006 days
+freshness_delta: 1007 days
 next_expected_update: annual
 record_count: 5550
 date_range: 2020-01-01 to 2024-01-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 1006 days
+**Freshness:** 1007 days
 
 HTTP 200
 

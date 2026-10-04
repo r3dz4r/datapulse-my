@@ -13,7 +13,7 @@ column_count: 7
 status: aging
 notes: "Tier-1 wave G newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: population_parlimen
-freshness_delta: 1006 days
+freshness_delta: 1007 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Aging
 
-**Freshness:** 1006 days
+**Freshness:** 1007 days
 
 HTTP 200
 

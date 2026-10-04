@@ -5,7 +5,7 @@ source_url: "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/blo
 source_name: "github.com/MoH-Malaysia/kkmnow-data"
 licence: "MIT License"
 refresh_frequency: "daily"
-last_checked: 2026-10-02T15:40:53Z
+last_checked: 2026-10-03T15:47:47Z
 last_observed: 2022-10-26
 last_modified: null
 record_count: 133
@@ -13,7 +13,7 @@ column_count: null
 status: stale
 notes: "Unprobed KKMNOW live-tail parquet source; health remains unknown until the first DataPulse probe."
 dataset_id: kkmnow_blood
-freshness_delta: 1438 days
+freshness_delta: 1439 days
 next_expected_update: "daily"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Ministry of Health Malaysia via GitHub kkmnow-data"
 
 **Status:** Stale
 
-**Freshness:** 1438 days
+**Freshness:** 1439 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-02 at 15:40:53 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 

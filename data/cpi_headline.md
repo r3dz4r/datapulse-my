@@ -1,8 +1,8 @@
 ---
 dataset_id: cpi_headline
-last_checked: 2026-09-26T02:49:53Z
+last_checked: 2026-10-03T10:36:37Z
 status: aging
-freshness_delta: 63 days
+freshness_delta: 64 days
 next_expected_update: monthly
 record_count: 7840
 schema_version: unknown
@@ -19,13 +19,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 63 days
+**Freshness:** 64 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-26 at 02:49:53 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 

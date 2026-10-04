@@ -1,9 +1,9 @@
 ---
 dataset_id: registration_transactions_motorcycle
-last_checked: 2026-10-02T15:40:53Z
-last_checked: 2026-10-02T15:40:53Z
+last_checked: 2026-10-03T15:47:47Z
+last_checked: 2026-10-03T15:47:47Z
 status: stale
-freshness_delta: 33 days
+freshness_delta: 34 days
 next_expected_update: daily
 record_count: 534866
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Road Transport Department Malaysia and Ministry of Transport via da
 
 **Status:** Stale
 
-**Freshness:** 33 days
+**Freshness:** 34 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-02 at 15:40:53 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 

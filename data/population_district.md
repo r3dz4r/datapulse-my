@@ -2,7 +2,7 @@
 dataset_id: population_district
 last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 640 days
+freshness_delta: 641 days
 next_expected_update: annual
 record_count: 383040
 date_range: 2020-01-01 to 2025-01-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 640 days
+**Freshness:** 641 days
 
 HTTP 200
 

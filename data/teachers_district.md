@@ -3,7 +3,7 @@ dataset_id: dgm_teachers_district
 last_checked: 2026-09-05T02:34:56Z
 last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 460 days
+freshness_delta: 461 days
 next_expected_update: annual
 record_count: 8805
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Ministry of Education Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 460 days
+**Freshness:** 461 days
 
 HTTP 200
 

@@ -3,7 +3,7 @@ dataset_id: dosm_marriages
 last_checked: 2026-09-05T02:34:56Z
 last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 1736 days
+freshness_delta: 1737 days
 next_expected_update: annual
 record_count: 12
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1736 days
+**Freshness:** 1737 days
 
 HTTP 200
 

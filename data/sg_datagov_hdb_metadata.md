@@ -2,7 +2,7 @@
 dataset_id: sg_datagov_hdb_metadata
 last_checked: 2026-09-27T20:42:07Z
 status: fresh
-freshness_delta: 5 days
+freshness_delta: 6 days
 ---
 
 # sg_datagov_hdb_metadata
@@ -11,7 +11,7 @@ freshness_delta: 5 days
 
 **Status:** Fresh
 
-**Freshness:** 5 days
+**Freshness:** 6 days
 
 HTTP 200
 

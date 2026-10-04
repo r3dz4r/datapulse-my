@@ -2,7 +2,7 @@
 dataset_id: dgm_marriages_state_age
 last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 1736 days
+freshness_delta: 1737 days
 next_expected_update: unknown
 record_count: 2304
 date_range: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1736 days
+**Freshness:** 1737 days
 
 HTTP 200
 

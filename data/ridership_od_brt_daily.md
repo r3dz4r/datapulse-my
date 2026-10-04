@@ -1,11 +1,11 @@
 ---
 dataset_id: ridership_od_brt_daily
-last_checked: 2026-10-02T15:40:53Z
-last_checked: 2026-10-02T15:40:53Z
+last_checked: 2026-10-03T15:47:47Z
+last_checked: 2026-10-03T15:47:47Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: daily
-record_count: 16988
+record_count: 17050
 schema_version: unknown
 schema_drift: none
 known_quirks: ["The serving filename rotates by UTC year; the health probe resolves it at runtime."]
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-02 at 15:40:53 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 
-The checked resource is 1,042,154 bytes.
+The checked resource is 1,045,964 bytes.
 
 ## Provenance
 

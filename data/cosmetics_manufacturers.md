@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_cosmetics_manufacturers
-last_checked: 2026-10-02T15:40:53Z
-last_checked: 2026-10-02T15:40:53Z
-status: fresh
-freshness_delta: 1 days
+last_checked: 2026-10-03T15:47:47Z
+last_checked: 2026-10-03T15:47:47Z
+status: aging
+freshness_delta: 2 days
 next_expected_update: daily
 record_count: 629
 schema_version: unknown
@@ -18,15 +18,15 @@ attribution: National Pharmaceutical Regulatory Agency and Ministry of Health Ma
 
 ## Status
 
-**Status:** Fresh
+**Status:** Aging
 
-**Freshness:** 1 days
+**Freshness:** 2 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-02 at 15:40:53 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 

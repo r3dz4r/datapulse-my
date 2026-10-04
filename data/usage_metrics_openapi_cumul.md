@@ -1,7 +1,7 @@
 ---
 dataset_id: dgm_usage_metrics_openapi_cumul
-last_checked: 2026-10-02T15:40:53Z
-last_checked: 2026-10-02T15:40:53Z
+last_checked: 2026-10-03T15:47:47Z
+last_checked: 2026-10-03T15:47:47Z
 status: aging
 freshness_delta: 2 days
 next_expected_update: daily
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-02 at 15:40:53 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 
-The checked resource is 2,586 bytes.
+The checked resource is 2,590 bytes.
 
 ## Provenance
 

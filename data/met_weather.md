@@ -1,6 +1,6 @@
 ---
 dataset_id: met_weather
-last_checked: 2026-10-02T15:40:53Z
+last_checked: 2026-10-03T15:47:47Z
 status: fresh
 freshness_delta: 1 days
 next_expected_update: 2026-08-03
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-02 at 15:40:53 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 
-The checked resource is 902,816 bytes.
+The checked resource is 898,023 bytes.
 
 ## Coverage
 

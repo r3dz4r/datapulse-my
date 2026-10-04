@@ -1,10 +1,10 @@
 ---
 dataset_id: fuelprice
-last_checked: 2026-09-26T02:49:53Z
+last_checked: 2026-10-03T10:36:37Z
 status: fresh
-freshness_delta: 9 days
+freshness_delta: 3 days
 next_expected_update: 2026-08-06
-record_count: 959
+record_count: 961
 date_range: 2017-03-30 to 2026-07-30
 schema_version: 1.1
 schema_drift: none
@@ -25,17 +25,17 @@ attribution: Ministry of Finance Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 9 days
+**Freshness:** 3 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-26 at 02:49:53 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 
-The checked resource is 207,936 bytes.
+The checked resource is 208,391 bytes.
 
 ## Known quirks
 

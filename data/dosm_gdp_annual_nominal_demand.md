@@ -3,7 +3,7 @@ dataset_id: dosm_gdp_annual_nominal_demand
 last_checked: 2026-09-05T02:34:56Z
 last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 640 days
+freshness_delta: 641 days
 next_expected_update: annual
 record_count: 137
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 640 days
+**Freshness:** 641 days
 
 HTTP 200
 

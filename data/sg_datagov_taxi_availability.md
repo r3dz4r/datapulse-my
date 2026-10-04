@@ -1,6 +1,6 @@
 ---
 dataset_id: sg_datagov_taxi_availability
-last_checked: 2026-10-02T04:02:10Z
+last_checked: 2026-10-03T10:36:37Z
 status: fresh
 freshness_delta: 0 days
 ---
@@ -17,8 +17,8 @@ HTTP 200
 
 ## Last checked
 
-2026-10-02 at 04:02:10 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 
-The checked resource is 43,851 bytes.
+The checked resource is 45,678 bytes.

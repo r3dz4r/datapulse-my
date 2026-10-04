@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_ppi
-last_checked: 2026-09-26T02:49:53Z
-status: stale
-freshness_delta: 94 days
+last_checked: 2026-10-03T10:36:37Z
+status: aging
+freshness_delta: 64 days
 next_expected_update: unknown
-record_count: 584
+record_count: 587
 date_range: unknown
 schema_version: 1.0
 schema_drift: unknown
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 94 days
+**Freshness:** 64 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-26 at 02:49:53 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 
-The checked resource is 46,883 bytes.
+The checked resource is 47,125 bytes.
 
 ## Provenance
 

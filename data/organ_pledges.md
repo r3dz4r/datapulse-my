@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_organ_pledges
-last_checked: 2026-10-02T15:40:53Z
-last_checked: 2026-10-02T15:40:53Z
+last_checked: 2026-10-03T15:47:47Z
+last_checked: 2026-10-03T15:47:47Z
 status: aging
 freshness_delta: 2 days
 next_expected_update: daily
-record_count: 6470
+record_count: 6471
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The digital organ donation pledge process allows an individual to pledge their organs, and subsequently withdraw their pledge if they so choose. Therefore, the data shown here is dynamic; the number of pledges for a specific date may reduce (but not increase) in future if pledges are withdrawn."]
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-02 at 15:40:53 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 
-The checked resource is 252,472 bytes.
+The checked resource is 252,512 bytes.
 
 ## Provenance
 

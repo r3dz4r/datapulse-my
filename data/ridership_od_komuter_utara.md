@@ -5,10 +5,10 @@ source_url: "https://storage.data.gov.my/transportation/ktmb/komuter_utara_2026.
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "daily"
-last_checked: 2026-10-02T15:40:53Z
-last_observed: 2026-10-01
-last_modified: 2026-10-01T19:31:30Z
-record_count: 1099035
+last_checked: 2026-10-03T15:47:47Z
+last_observed: 2026-10-02
+last_modified: 2026-10-02T19:31:35Z
+record_count: 1103758
 column_count: 5
 status: aging
 notes: "Tier-1 wave F newly verified direct-storage source; HTTP 200 and CSV header verified."
@@ -34,11 +34,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-02 at 15:40:53 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 
-The checked resource is 45,074,788 bytes.
+The checked resource is 45,268,984 bytes.
 
 ## Provenance
 
