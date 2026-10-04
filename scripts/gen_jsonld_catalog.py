@@ -41,7 +41,7 @@ def publisher_reference(base_url: str) -> dict:
 def dataset_object(entry: dict, health: dict, *, base_url: str) -> dict:
     report_url = f"{base_url}/{entry['health_report']}"
     record_count = health.get("record_count")
-    return {
+    dataset = {
         "@context": "https://schema.org",
         "@type": "Dataset",
         "@id": report_url,
@@ -82,6 +82,10 @@ def dataset_object(entry: dict, health: dict, *, base_url: str) -> dict:
             },
         ],
     }
+    if entry.get("data_type") == "reference":
+        # Verification of a no-clock reference is not a source modification date.
+        dataset.pop("dateModified")
+    return dataset
 
 
 def dashboard_part(dataset: dict) -> dict:
