@@ -349,8 +349,15 @@ def compact_upserted_history(
     retention_days: int,
     archives_dir: Path,
     now: datetime,
-) -> tuple[dict[str, Any], int, int, int, dict[str, Any]]:
-    """Compact an upserted history without retaining its raw rows in memory."""
+) -> tuple[dict[str, Any], int, int, int, dict[str, Any] | None]:
+    """Compact an upserted history without retaining its raw rows in memory.
+
+    The probe-count document is returned only when the history file itself
+    supplied observations. Without them the upsert holds just this snapshot's
+    single cycle, so every dataset would count exactly one row in every window:
+    a fact about the checkout, not about the data, that the attestation would
+    otherwise sign as a measurement.
+    """
     cutoff = now - timedelta(days=retention_days)
     daily, compacted_cycles = read_daily(daily_path)
     with tempfile.TemporaryDirectory(prefix="datapulse-history-") as temporary:
@@ -373,6 +380,7 @@ def compact_upserted_history(
                 )
 
             line_number = 0
+            history_rows = 0
             if path.exists():
                 try:
                     with path.open(encoding="utf-8") as history_file:
@@ -385,6 +393,7 @@ def compact_upserted_history(
                             if not isinstance(row.get("dataset_id"), str) or not isinstance(row.get("cycle"), str):
                                 raise ValueError("line has no dataset_id/cycle key")
                             insert(row)
+                            history_rows += 1
                 except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
                     raise ValueError(f"invalid history {path} at line {line_number}: {exc}") from exc
             for row in current:
@@ -470,7 +479,9 @@ def compact_upserted_history(
                 except OSError:
                     pass
                 raise
-            probe_counts = probe_counts_document(database, now=now)
+            probe_counts = (
+                probe_counts_document(database, now=now) if history_rows else None
+            )
             return document, retained, expired_count, archived_count, probe_counts
         finally:
             database.close()
@@ -798,10 +809,11 @@ def main() -> None:
                 args.daily,
                 json.dumps(daily, ensure_ascii=False, indent=2) + "\n",
             )
-            atomic_write(
-                args.probe_counts,
-                json.dumps(probe_counts, ensure_ascii=False, indent=2) + "\n",
-            )
+            if probe_counts is not None:
+                atomic_write(
+                    args.probe_counts,
+                    json.dumps(probe_counts, ensure_ascii=False, indent=2) + "\n",
+                )
         else:
             raw_retained = write_upserted_history(args.history, current)
     except ValueError as exc:

@@ -7,6 +7,8 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 WRITER = ROOT / "scripts/gen_health_history.py"
 FIXTURE = ROOT / "scripts/tests/fixtures/health-history-snapshot.json"
@@ -338,3 +340,55 @@ def test_probe_counts_artifact_only_written_with_compaction(tmp_path: Path) -> N
 
     assert result.returncode == 0, result.stderr
     assert not (tmp_path / "probe_counts.json").exists()
+
+
+@pytest.mark.parametrize("shape", ["absent", "empty"])
+def test_probe_counts_artifact_withheld_without_history(
+    tmp_path: Path, shape: str
+) -> None:
+    snapshot = _snapshot(tmp_path, count=2)
+    history_path = tmp_path / "history.jsonl"
+    if shape == "empty":
+        history_path.write_text("", encoding="utf-8")
+
+    result = _run(tmp_path, snapshot, compact=True)
+
+    assert result.returncode == 0, result.stderr
+    # With no prior history the upsert holds only this snapshot's single cycle,
+    # so every dataset would trivially count one row in every window. That count
+    # describes the checkout, not the data; the artifact is withheld so the
+    # attestation publishes null instead of signing a fabricated measurement.
+    assert not (tmp_path / "probe_counts.json").exists()
+
+
+def test_probe_counts_artifact_present_history_keeps_real_integers(
+    tmp_path: Path,
+) -> None:
+    rows = [
+        {
+            "dataset_id": "dataset-000",
+            "observed_at": observed_at,
+            "cycle": observed_at[:16],
+            "status": "fresh",
+            "probe_outcome": "success",
+            "record_count": 1,
+            "latency_ms": 10,
+        }
+        for observed_at in (
+            "2026-08-12T06:00:05Z",
+            "2026-08-11T18:00:05Z",
+            "2026-08-09T18:00:05Z",
+        )
+    ]
+    (tmp_path / "history.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8"
+    )
+    # The snapshot's own observation predates both windows, so every integer in
+    # the artifact is substantiated by the history file and nothing else.
+    snapshot = _snapshot(tmp_path, count=1, checked_at="2026-07-01T00:00:05Z")
+
+    result = _run(tmp_path, snapshot, compact=True, now="2026-08-12T18:00:05+00:00")
+
+    assert result.returncode == 0, result.stderr
+    document = json.loads((tmp_path / "probe_counts.json").read_text(encoding="utf-8"))
+    assert document["counts"]["dataset-000"] == {"d1": 2, "d14": 3}
