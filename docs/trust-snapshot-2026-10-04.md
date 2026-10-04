@@ -2,17 +2,17 @@
 
 **Dates covered:** 2026-09-28 to 2026-10-04 (UTC)
 **Snapshot date:** 2026-10-04
-**Source commit:** `c1858f73dc417f8c891e1e898b35ea7b6b4d2f39`
+**Source commit:** `43f54711191869f7313c2cb531880e6997664a77`
 
 ## Status distribution
 
 | Status | Count | Percent |
 | --- | --- | --- |
-| `fresh` | 134 | 31.5% |
-| `aging` | 125 | 29.4% |
-| `stale` | 139 | 32.8% |
+| `fresh` | 135 | 31.9% |
+| `aging` | 128 | 30.1% |
+| `stale` | 134 | 31.5% |
 | `discontinued` | 1 | 0.2% |
-| `degraded` | 0 | 0.0% |
+| `degraded` | 1 | 0.2% |
 | `browser-dependent` | 0 | 0.0% |
 | `unreachable` | 0 | 0.0% |
 | `unknown` | 0 | 0.0% |
@@ -24,7 +24,7 @@
 
 | Dataset | Old status | New status | Last checked |
 | --- | --- | --- | --- |
-| `eperolehan-diklankan` | fresh | stale | 2026-10-04T00:30:57Z |
+| `eperolehan-diklankan` | fresh | stale | 2026-10-04T03:05:39Z |
 
 ## Recovered
 
@@ -33,7 +33,9 @@
 | `arrivals_soe` | stale | fresh | 2026-10-03T10:36:37Z |
 | `doe_mqims` | browser-dependent | fresh | 2026-10-03T10:36:37Z |
 | `exchangerates` | aging | fresh | 2026-10-03T10:36:37Z |
-| `mbpp_weather_stations` | unreachable | fresh | 2026-10-04T00:30:57Z |
+| `gtfs_realtime_ktmb` | aging | fresh | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_mybas_kangar` | stale | fresh | 2026-10-04T03:05:39Z |
+| `mbpp_weather_stations` | unreachable | fresh | 2026-10-04T03:05:39Z |
 | `pekab40_screenings_state` | aging | fresh | 2026-10-03T15:47:47Z |
 | `ridership_ktmb_monthly` | aging | fresh | 2026-10-03T10:36:37Z |
 
@@ -55,28 +57,27 @@
 | `dosm_ppi_sitc` | 5256 | 5283 | 4 | 4 | 2026-10-03T10:36:37Z |
 | `economic_indicators` | 426 | 427 | 6 | 6 | 2026-10-03T10:36:37Z |
 | `exchangerates` | 1780 | 1785 | 29 | 29 | 2026-10-03T10:36:37Z |
-| `exchangerates_daily_0900` | 17213 | 17228 | 29 | 29 | 2026-10-04T00:30:57Z |
-| `exchangerates_daily_1130` | 11452 | 11462 | 9 | 9 | 2026-10-04T00:30:57Z |
-| `exchangerates_daily_1200` | 18778 | 18793 | 29 | 29 | 2026-10-04T00:30:57Z |
-| `exchangerates_daily_1700` | 17247 | 17262 | 29 | 29 | 2026-10-04T00:30:57Z |
+| `exchangerates_daily_0900` | 17213 | 17228 | 29 | 29 | 2026-10-04T02:35:45Z |
+| `exchangerates_daily_1130` | 11452 | 11462 | 9 | 9 | 2026-10-04T02:35:45Z |
+| `exchangerates_daily_1200` | 18778 | 18793 | 29 | 29 | 2026-10-04T02:35:45Z |
+| `exchangerates_daily_1700` | 17247 | 17262 | 29 | 29 | 2026-10-04T02:35:45Z |
 | `fuelprice` | 959 | 961 | 10 | 10 | 2026-10-03T10:36:37Z |
-| `gtfs_realtime_ktmb` | 7 | 0 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_mybas_alor_setar` | 38 | 41 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_mybas_ipoh` | 27 | 20 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_mybas_johor` | 80 | 71 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_mybas_kangar` | 21 | 24 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_mybas_kota_bharu` | 51 | 57 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_mybas_kuching` | 43 | 41 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_mybas_melaka` | 24 | 32 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_mybas_seremban_a` | 11 | 15 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_mybas_seremban_b` | 27 | 20 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_prasarana_bus_kl` | 123 | 61 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_prasarana_bus_mrtfeeder` | 148 | 111 | None | None | 2026-10-04T00:30:57Z |
-| `gtfs_realtime_prasarana_bus_penang` | 172 | 154 | None | None | 2026-10-04T00:30:57Z |
+| `gtfs_realtime_ktmb` | 7 | 0 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_mybas_alor_setar` | 38 | 43 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_mybas_ipoh` | 27 | 24 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_mybas_johor` | 80 | 72 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_mybas_kangar` | 21 | 24 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_mybas_kota_bharu` | 51 | 61 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_mybas_melaka` | 24 | 34 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_mybas_seremban_a` | 11 | 19 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_mybas_seremban_b` | 27 | 28 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_prasarana_bus_kl` | 123 | 81 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_prasarana_bus_mrtfeeder` | 148 | 99 | None | None | 2026-10-04T03:05:39Z |
+| `gtfs_realtime_prasarana_bus_penang` | 172 | 148 | None | None | 2026-10-04T03:05:39Z |
 | `gtfs_static_ktmb` | 5229 | 5155 | None | None | 2026-10-03T15:47:47Z |
 | `kkmnow_organ` | 1688 | 1691 | None | None | 2026-10-03T15:47:47Z |
 | `kkmnow_pekab40` | 1224 | 1219 | None | None | 2026-10-03T15:47:47Z |
-| `mbpp_weather_stations` | None | 28 | None | 50 | 2026-10-04T00:30:57Z |
+| `mbpp_weather_stations` | None | 28 | None | 50 | 2026-10-04T03:05:39Z |
 | `metrics_content` | 37 | 38 | 3 | 3 | 2026-10-03T10:36:37Z |
 | `organ_pledges` | 6465 | 6471 | 2 | 2 | 2026-10-03T15:47:47Z |
 | `organ_pledges_state` | 103440 | 103536 | 3 | 3 | 2026-10-03T15:47:47Z |
@@ -97,6 +98,7 @@
 | `ridership_od_komuter_utara` | 1078922 | 1103758 | 5 | 5 | 2026-10-03T15:47:47Z |
 | `ridership_od_rapidrail_daily` | 4667688 | 4771800 | 4 | 4 | 2026-10-03T15:47:47Z |
 | `ridership_od_shuttle_tebrau` | 7416 | 7580 | 5 | 5 | 2026-10-03T15:47:47Z |
+| `sg_datagov_weather_readings` | 1 | 1 | 2 | 2 | 2026-10-04T02:35:45Z |
 | `trnsc_daily_directdebit` | 1238 | 1243 | 3 | 3 | 2026-10-03T15:47:47Z |
 | `trnsc_daily_fpx` | 7377 | 7395 | 4 | 4 | 2026-10-03T15:47:47Z |
 | `trnsc_daily_jompay` | 2822 | 2828 | 3 | 3 | 2026-10-03T15:47:47Z |

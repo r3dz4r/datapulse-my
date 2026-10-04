@@ -8,7 +8,16 @@
   "refresh_frequency": "as-required",
   "record_count": 1,
   "date_range": null,
-  "fields": [],
+  "fields": [
+    {
+      "name": "country",
+      "type": "string"
+    },
+    {
+      "name": "code_iso",
+      "type": "string"
+    }
+  ],
   "checks": [
     {
       "name": "file_reachable",
@@ -31,9 +40,7 @@
       "method": "Probe observed 2 column(s) with no content-shape change"
     }
   ],
-  "known_quirks": [
-    "Fields are inferred at the next probe run."
-  ],
+  "known_quirks": [],
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://raw.githubusercontent.com/dosm-malaysia/data-open/main/datasets/geodata/administrative_0_malaysia.geojson",

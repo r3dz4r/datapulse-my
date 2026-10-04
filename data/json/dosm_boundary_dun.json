@@ -8,7 +8,36 @@
   "refresh_frequency": "as-required",
   "record_count": 600,
   "date_range": null,
-  "fields": [],
+  "fields": [
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "parlimen",
+      "type": "string"
+    },
+    {
+      "name": "dun",
+      "type": "string"
+    },
+    {
+      "name": "code_state",
+      "type": "integer"
+    },
+    {
+      "name": "code_parlimen",
+      "type": "string"
+    },
+    {
+      "name": "code_dun",
+      "type": "string"
+    },
+    {
+      "name": "code_state_dun",
+      "type": "string"
+    }
+  ],
   "checks": [
     {
       "name": "file_reachable",
@@ -31,9 +60,7 @@
       "method": "Probe observed 7 column(s) with no content-shape change"
     }
   ],
-  "known_quirks": [
-    "Fields are inferred at the next probe run."
-  ],
+  "known_quirks": [],
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://raw.githubusercontent.com/dosm-malaysia/data-open/main/datasets/geodata/electoral_1_dun.geojson",

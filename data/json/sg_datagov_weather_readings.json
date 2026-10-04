@@ -1,8 +1,8 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "sg_datagov_weather_readings",
-  "status": "fresh",
-  "last_checked": "2026-10-03T02:25:07Z",
+  "status": "degraded",
+  "last_checked": "2026-10-04T02:35:45Z",
   "freshness_days": 0,
   "next_expected_update": null,
   "refresh_frequency": "daily",
@@ -35,13 +35,13 @@
     },
     {
       "name": "freshness",
-      "status": "pass",
-      "method": "Health snapshot classifies the dataset as fresh"
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as degraded"
     },
     {
       "name": "schema_stable",
-      "status": "pass",
-      "method": "Probe observed 2 column(s) with no content-shape change"
+      "status": "fail",
+      "method": "Probe detected a content-shape change"
     }
   ],
   "known_quirks": [],
