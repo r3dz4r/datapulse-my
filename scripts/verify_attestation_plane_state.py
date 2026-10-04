@@ -94,7 +94,12 @@ def _validate_fail_closed_binding(root: Path) -> dict[str, Any]:
         raise ContractError("published trust claims do not match verified evidence")
 
     binding_date = _parse_date(payload.get("date"), "binding date").isoformat()
-    dated_binding = root / f"attestations/{binding_date}/binding.json"
+    try:
+        from scripts.verify_attestation_binding import _selected_directory
+    except ModuleNotFoundError:
+        from verify_attestation_binding import _selected_directory
+    directory = _selected_directory(root, verify_datasets=False)
+    dated_binding = root / directory / "binding.json"
     if not dated_binding.is_file() or dated_binding.read_bytes() != binding_path.read_bytes():
         raise ContractError("latest binding is stale or not the dated binding")
 
@@ -102,7 +107,7 @@ def _validate_fail_closed_binding(root: Path) -> dict[str, Any]:
     if not isinstance(ed25519, dict):
         raise ContractError("attestation binding payload is incomplete")
     dated_head = _load(
-        root / f"attestations/{binding_date}/chain_head.json", "dated chain head"
+        root / directory / "chain_head.json", "dated chain head"
     )
     head_payload = dated_head.get("payload")
     if (

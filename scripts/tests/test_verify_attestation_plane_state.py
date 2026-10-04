@@ -42,7 +42,7 @@ def test_stale_explicitly_unsigned_plane_is_signer_down(tmp_path: Path) -> None:
     assert result.state is PlaneState.SIGNER_DOWN
 
 
-def test_split_date_stale_unsigned_plane_is_signer_down(tmp_path: Path) -> None:
+def test_split_date_stale_unsigned_plane_is_corrupt(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
     first_day = NOW.date().isoformat()
@@ -60,7 +60,7 @@ def test_split_date_stale_unsigned_plane_is_signer_down(tmp_path: Path) -> None:
 
     result = classify_plane(root, now=NOW + timedelta(days=4))
 
-    assert result.state is PlaneState.SIGNER_DOWN
+    assert result.state is PlaneState.CORRUPT
 
 
 def test_truncated_chain_head_is_corrupt(tmp_path: Path) -> None:

@@ -1,9 +1,11 @@
-#!/usr/bin/env python3
-"""Fail closed unless the latest chain head mirrors the newest dated head.
-
-This verifies the forward-linearity seed only.  It intentionally does not
-retroactively require the historical dated envelopes to form one chain.
-"""
+#!/bin/sh
+""":"
+exec python3 "$0" "$@"
+":"""
+# Fail closed unless the latest chain head mirrors the newest dated head.
+# 
+# This verifies the forward-linearity seed only.  It intentionally does not
+# retroactively require the historical dated envelopes to form one chain.
 
 from __future__ import annotations
 
@@ -83,6 +85,18 @@ def _dated_heads(root: Path) -> list[tuple[date, str]]:
 
 def verify_chain_linearity(root: Path) -> ChainLinearityReport:
     """Require latest/chain_head.json to equal the newest dated chain head."""
+    index_path = root / "attestations/chain-index.json"
+    if index_path.exists() and json.loads(index_path.read_text()).get("schema") == "datapulse/v2/chain-index":
+        try:
+            import sys
+            sys.path.insert(0, str(ROOT))
+            from scripts.attestation_sets import discovery, selected_directory
+            document = discovery(root)
+            selected_directory(root)
+            newest_head = document["current_head"]
+            return ChainLinearityReport(document["envelopes"][newest_head]["date"], newest_head)
+        except (ValueError, OSError, KeyError, TypeError) as error:
+            raise ChainLinearityError(str(error)) from error
     newest_day, newest_head = max(_dated_heads(root), key=lambda item: item[0])
     latest_head = _load_head(
         root / "attestations/latest/chain_head.json", "latest chain head"

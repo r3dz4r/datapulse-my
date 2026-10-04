@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Submit a reviewed append candidate; publication waits for authoritative acceptance.
+set -Eeuo pipefail
+expected_source="$(git rev-parse HEAD)"
+python3 scripts/verify_attestation_append.py --base "$expected_source"
+git fetch origin main
+[[ "$(git rev-parse origin/main)" == "$expected_source" ]] || {
+  echo 'Accepted source moved; discard this candidate and prepare from the new parent.' >&2
+  exit 1
+}
+head="$(jq -er '.current_head' attestations/chain-index.json)"
+day="$(jq -er '.date' attestations/latest/index.json)"
+branch="attestation/append-$head"
+git config user.name github-actions[bot]
+git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+git switch -c "$branch"
+git add -- "attestations/$day" "attestations/rekor/$day" attestations/latest/index.json \
+  attestations/latest/binding.json attestations/latest/chain_head.json \
+  attestations/chain-index.json .attestations/chain_head.json
+git diff --cached --quiet && exit 0
+message="$(git diff --cached --name-only | python3 scripts/attestation_commit_back.py --date "$day")"
+[[ -n "$message" ]]
+git commit -m "$message"
+# Credentials stay in the runner environment; neither configuration nor logs
+# contain their values. A unique hash branch is never force-updated or rebased.
+git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
+  push origin "HEAD:refs/heads/$branch"
+gh pr create --base main --head "$branch" \
+  --title "chore(attestations): append signed set $day" \
+  --body "Append immutable signed evidence from source $expected_source. Publication must wait for this append to be accepted; existing evidence is preserved."

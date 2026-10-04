@@ -31,8 +31,9 @@ def test_daily_rekor_evidence_is_committable_and_staged_with_its_binding() -> No
     daily = (ROOT / ".github/workflows/datapulse-attest-daily.yml").read_text(encoding="utf-8")
 
     assert "attestations/rekor/" not in gitignore
-    commit_step = daily.split("      - name: Commit dated envelopes and open or update their pull request\n", 1)[1]
-    assert 'git add -- "attestations/rekor/$day"' in commit_step
+    assert 'bash scripts/submit_attestation_append.sh' in daily
+    commit_step = (ROOT / "scripts/submit_attestation_append.sh").read_text()
+    assert '"attestations/rekor/$day"' in commit_step
 
 
 def test_matching_rekor_reference_marks_new_binding_as_witnessed(tmp_path: Path) -> None:
@@ -106,24 +107,28 @@ def _run_guard(scratch_root: Path) -> subprocess.CompletedProcess[str]:
         check=False,
         capture_output=True,
         text=True,
-        env={**os.environ, "GITHUB_OUTPUT": str(scratch_root / "github_output")},
+        env={**os.environ, "GITHUB_OUTPUT": str(scratch_root / "github_output"), "GITHUB_ENV": str(scratch_root / "github_env")},
     )
 
 
-def _write_dated_set(scratch_root: Path) -> None:
-    dated = scratch_root / "attestations" / _GUARD_DAY
-    dated.mkdir(parents=True)
-    (dated / "binding.json").write_text("{}\n", encoding="utf-8")
-    (dated / "chain_head.json").write_text("{}\n", encoding="utf-8")
+def _write_dated_set(scratch_root: Path, witnessed: bool = False) -> None:
+    scratch_root.mkdir(parents=True, exist_ok=True)
+    root, key = fixture_root(scratch_root)
+    now = datetime.now(timezone.utc)
+    health = ga.load(root / "health/latest.json")
+    stamp = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    health["checked_at"] = stamp
+    health["datasets"][0]["last_checked"] = stamp
+    ga.dump(root / "health/latest.json", health)
+    reference = fixture_rekor_reference(root, "rekor-fixture") if witnessed else None
+    ga.generate(root, key, now, reference)
+    (root / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
 
 
-def test_guard_skip_branch_tests_today_s_rekor_reference_not_dated_set_existence() -> None:
-    """Skipping on set-existence alone strands a binding that references missing evidence."""
-    condition = _guard_step_text().split("if [[", 1)[1].split("]]; then", 1)[0]
-
-    assert '"$rekor_dir/reference.json"' in condition
-    assert '"$rekor_dir/health.sigstore.bundle.json"' in condition
-    assert "attestations/$day" not in condition
+def test_guard_requires_verified_binding_instead_of_file_existence() -> None:
+    guard = _guard_step_text()
+    assert 'verify_attestation_binding.py --root . --require-rekor' in guard
+    assert 'rm -rf' not in guard
 
 
 @pytest.mark.parametrize(
@@ -153,17 +158,14 @@ def test_guard_does_not_skip_rekor_evidence_when_today_s_reference_is_absent(
     outputs = (scratch_root / "github_output").read_text(encoding="utf-8")
     assert "needed=true" in outputs
     assert "needed=false" not in outputs
-    assert "producing the missing evidence" in result.stdout
     assert evidence_dir.is_dir()
 
 
 def test_guard_skips_rekor_upload_only_when_today_s_evidence_is_committed(tmp_path: Path) -> None:
     """Committed same-day Rekor evidence, and only that, makes the guard skip."""
     scratch_root = tmp_path / "repo"
-    evidence_dir = scratch_root / "attestations" / "rekor" / _GUARD_DAY
-    evidence_dir.mkdir(parents=True)
-    (evidence_dir / "reference.json").write_text("{}\n", encoding="utf-8")
-    (evidence_dir / "health.sigstore.bundle.json").write_text("{}\n", encoding="utf-8")
+    _write_dated_set(scratch_root, witnessed=True)
+    before = (scratch_root / "attestations/rekor-fixture/reference.json").read_bytes()
 
     result = _run_guard(scratch_root)
 
@@ -171,4 +173,4 @@ def test_guard_skips_rekor_upload_only_when_today_s_evidence_is_committed(tmp_pa
     outputs = (scratch_root / "github_output").read_text(encoding="utf-8")
     assert "needed=false" in outputs
     assert "needed=true" not in outputs
-    assert (evidence_dir / "reference.json").read_text(encoding="utf-8") == "{}\n"
+    assert (scratch_root / "attestations/rekor-fixture/reference.json").read_bytes() == before

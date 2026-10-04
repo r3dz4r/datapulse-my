@@ -27,18 +27,12 @@ fi
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
-# The generator verifies unchanged input or appends a signed correction. Copying
-# revision zero here would bypass that decision and rewind a corrected head.
+# The generator owns validated reuse and append; the shell has no date shortcut.
 generate_args=(--root . --private-key "$private_key")
 if [[ -n "${DATAPULSE_REKOR_REFERENCE:-}" ]]; then
   generate_args+=(--rekor-reference "$DATAPULSE_REKOR_REFERENCE")
 fi
 python3 scripts/gen_attestations.py "${generate_args[@]}"
-
-# gen_attestations.generate() copies the fresh head into attestations/latest/
-# but never into the top-level legacy envelope that
-# gen_sigstore_bundle.py --legacy-chain-head consumes, so add that mirror.
-cp attestations/latest/chain_head.json .attestations/chain_head.json
 
 health_count="$(jq -er '.datasets | length' health/latest.json)"
 head_count="$(jq -er '.payload.dataset_count' .attestations/chain_head.json)"

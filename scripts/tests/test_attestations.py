@@ -250,6 +250,9 @@ def test_reuse_path_refreshes_manifest(tmp_path: Path):
     manifest = json.loads((root / "datapulse.json").read_text())
     manifest["datasets"].append({"id": "sample-two", "name": "Sample Two", "source": "Agency", "url": "https://example.test/data-two", "refresh_frequency": "daily", "methodology_version": 1})
     write(root / "datapulse.json", manifest)
+    health = json.loads((root / "health/latest.json").read_text())
+    health["datasets"].append({**health["datasets"][0], "dataset_id": "sample-two"})
+    write(root / "health/latest.json", health)
     day = "2026-08-15"
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
     # Reproduce the defect's shape: the manifest froze on an older day while
@@ -449,3 +452,98 @@ def test_init_key_refuses_overwrite(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr("sys.argv", ["init_keys.py", "--private-key", str(path), "--registry", str(tmp_path / "registry.json"), "--purpose", "attestation-chain-signing"])
     with pytest.raises(SystemExit, match="refusing to overwrite"):
         __import__("scripts.init_keys", fromlist=["main"]).main()
+
+
+def ledger_bytes(root: Path) -> dict[str, bytes]:
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in (root / "attestations").rglob("*.json") if "/latest/" not in str(p) and p.name != "chain-index.json"}
+
+
+def test_same_day_418_to_425_append_and_next_day(tmp_path: Path) -> None:
+    from scripts.verify_attestation_binding import verify_contract
+    from scripts.verify_chain_linearity import verify_chain_linearity
+    root, key = fixture_root(tmp_path)
+    manifest, health = ga.load(root / "datapulse.json"), ga.load(root / "health/latest.json")
+    template, probe = manifest["datasets"][0], health["datasets"][0]
+    for count, hour in [(418, 1), (425, 2)]:
+        manifest["datasets"] = [{**template, "id": f"sample-{n}"} for n in range(count)]
+        health["datasets"] = [{**probe, "dataset_id": f"sample-{n}"} for n in range(count)]
+        write(root / "datapulse.json", manifest)
+        write(root / "health/latest.json", health)
+        ga.generate(root, key, datetime(2026, 8, 15, hour, tzinfo=timezone.utc))
+        if count == 418:
+            old = ledger_bytes(root)
+            parent = ga.load(root / "attestations/latest/chain_head.json")["chain_head"]
+    child = ga.load(root / "attestations/latest/chain_head.json")
+    assert child["payload"]["previous_chain_head"] == parent
+    assert child["payload"]["dataset_count"] == 425
+    assert all((root / path).read_bytes() == value for path, value in old.items())
+    index = ga.load(root / "attestations/latest/index.json")
+    assert f"/revisions/{child['chain_head']}/" in index["chain_head_ref"]
+    verify_contract(root, now=datetime(2026, 8, 15, 2, tzinfo=timezone.utc))
+    assert verify_chain_linearity(root).chain_head == child["chain_head"]
+    accepted = {p.relative_to(root): p.read_bytes() for p in (root / "attestations").rglob("*.json")}
+    ga.generate(root, key, datetime(2026, 8, 15, 3, tzinfo=timezone.utc))
+    assert all((root / p).read_bytes() == value for p, value in accepted.items())
+    ga.generate(root, key, datetime(2026, 8, 16, 1, tzinfo=timezone.utc))
+    assert ga.load(root / "attestations/latest/chain_head.json")["payload"]["previous_chain_head"] == child["chain_head"]
+
+
+@pytest.mark.parametrize("change", ["health", "url", "ids"])
+def test_equal_count_corrections_append(tmp_path: Path, change: str) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    before = ledger_bytes(root)
+    parent = ga.load(root / "attestations/latest/chain_head.json")["chain_head"]
+    manifest, health = ga.load(root / "datapulse.json"), ga.load(root / "health/latest.json")
+    if change == "health":
+        health["datasets"][0]["status"] = "degraded"
+    elif change == "url":
+        manifest["datasets"][0]["url"] = "https://example.test/corrected"
+    else:
+        manifest["datasets"][0]["id"] = "replacement"
+        health["datasets"][0]["dataset_id"] = "replacement"
+    write(root / "datapulse.json", manifest)
+    write(root / "health/latest.json", health)
+    ga.generate(root, key, datetime(2026, 8, 15, 2, tzinfo=timezone.utc))
+    assert ga.load(root / "attestations/latest/chain_head.json")["payload"]["previous_chain_head"] == parent
+    assert all((root / path).read_bytes() == value for path, value in before.items())
+
+
+def test_signing_failure_does_not_move_projections(tmp_path: Path) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    before = {p.relative_to(root): p.read_bytes() for p in (root / "attestations").rglob("*.json")}
+    health = ga.load(root / "health/latest.json")
+    health["datasets"][0]["status"] = "degraded"
+    write(root / "health/latest.json", health)
+    write(key, {})
+    with pytest.raises(ValueError):
+        ga.generate(root, key, datetime(2026, 8, 15, 2, tzinfo=timezone.utc))
+    assert all((root / p).read_bytes() == value for p, value in before.items())
+
+
+@pytest.mark.parametrize("corruption", ["selector", "parent", "sequence", "days", "projection"])
+def test_revision_discovery_rejects_tampering(tmp_path: Path, corruption: str) -> None:
+    from scripts.verify_chain_linearity import ChainLinearityError, verify_chain_linearity
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    parent = ga.load(root / "attestations/latest/chain_head.json")["chain_head"]
+    health = ga.load(root / "health/latest.json")
+    health["datasets"][0]["status"] = "degraded"
+    write(root / "health/latest.json", health)
+    ga.generate(root, key, datetime(2026, 8, 15, 2, tzinfo=timezone.utc))
+    discovery = ga.load(root / "attestations/chain-index.json")
+    current = discovery["current_head"]
+    if corruption == "selector":
+        discovery["current_head"] = parent
+    elif corruption == "parent":
+        discovery["envelopes"][current]["parent_head"] = "f" * 64
+    elif corruption == "sequence":
+        discovery["envelopes"][current]["sequence"] = 3
+    elif corruption == "days":
+        discovery["days"]["2026-08-15"].reverse()
+    else:
+        write(root / "attestations/latest/scores.json", {})
+    write(root / "attestations/chain-index.json", discovery)
+    with pytest.raises(ChainLinearityError):
+        verify_chain_linearity(root)

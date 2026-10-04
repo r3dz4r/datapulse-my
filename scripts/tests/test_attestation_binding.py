@@ -146,21 +146,24 @@ def test_same_day_generation_is_byte_idempotent(tmp_path: Path) -> None:
     }
 
 
-def test_same_day_unchanged_health_with_different_key_reuses_committed_dated_set(tmp_path: Path) -> None:
+def test_same_day_changed_health_with_invalid_key_refuses_reuse(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
     dated = root / "attestations/2026-08-15"
     committed = {path.name: path.read_bytes() for path in dated.glob("*.json")}
+    health = load(root / "health/latest.json")
+    health["datasets"][0]["status"] = "stale"
+    write(root / "health/latest.json", health)
     other_key = tmp_path / "different-private-key.json"
     write(other_key, {"key_id": "not-the-committed-key"})
     (root / "attestations/latest/binding.json").write_text("{}\n")
 
-    ga.generate(root, other_key, NOW + timedelta(hours=1))
+    before_latest = (root / "attestations/latest/binding.json").read_bytes()
+    with pytest.raises(ValueError):
+        ga.generate(root, other_key, NOW + timedelta(hours=1))
 
     assert committed == {path.name: path.read_bytes() for path in dated.glob("*.json")}
-    for name in ("chain_head.json", "index.json", "scores.json", "binding.json"):
-        contents = committed[name]
-        assert (root / "attestations/latest" / name).read_bytes() == contents
+    assert (root / "attestations/latest/binding.json").read_bytes() == before_latest
 
 
 def test_same_day_corrupt_dated_set_fails_closed_without_mutating_latest(tmp_path: Path) -> None:
@@ -260,7 +263,8 @@ def test_non_current_active_key_is_rejected(tmp_path: Path) -> None:
 def test_unattested_health_policy_still_requires_an_active_legacy_plane(tmp_path: Path) -> None:
     root = generated_root(tmp_path)
     (root / "attestations/latest/binding.json").unlink()
-    verify_unbound_legacy_plane(root, now=NOW + timedelta(hours=1))
+    with pytest.raises(ContractError, match="projection"):
+        verify_unbound_legacy_plane(root, now=NOW + timedelta(hours=1))
 
     registry_path = root / "docs/.well-known/datapulse-probe-keys.json"
     registry = load(registry_path)
@@ -277,7 +281,7 @@ def test_duplicate_date_chain_index_is_rejected(tmp_path: Path) -> None:
     index["heads"]["f" * 64] = "attestations/2026-08-15/other-chain-head.json"
     dump(index_path, index)
 
-    with pytest.raises(ContractError, match="duplicate-date"):
+    with pytest.raises(ContractError, match="unresolved head"):
         verify_contract(root, now=NOW + timedelta(hours=1))
 
 
@@ -371,8 +375,9 @@ def test_same_day_rekor_reference_does_not_mutate_committed_binding(tmp_path: Pa
 
     assert (root / "attestations/2026-08-15/sample.json").read_bytes() == legacy_before
     assert (root / "attestations/2026-08-15/binding.json").read_bytes() == dated_binding
-    assert (root / "attestations/latest/binding.json").read_bytes() == dated_binding
-    assert verify_contract(root, now=NOW + timedelta(hours=2))["claims"]["rekor_witnessed"] is False
+    assert (root / "attestations/latest/binding.json").read_bytes() != dated_binding
+    assert verify_contract(root, now=NOW + timedelta(hours=2))["claims"]["rekor_witnessed"] is True
+    assert len(load(root / "attestations/chain-index.json")["days"]["2026-08-15"]) == 2
 
 
 def test_missing_rekor_proof_reference_is_rejected(tmp_path: Path) -> None:
@@ -415,12 +420,13 @@ def test_merkle_proof_prefers_proof_level_index_over_entry_index() -> None:
     _verify_merkle_proof(entry)
 
 
-def test_same_day_rekor_proof_is_not_validated_or_published(tmp_path: Path) -> None:
+def test_same_day_invalid_rekor_proof_is_rejected_without_publication(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
     reference = install_rekor_fixture(root, missing_proof=True, attach=False)
 
-    ga.generate(root, key, NOW + timedelta(hours=1), reference)
+    with pytest.raises(ContractError, match="inclusion proof"):
+        ga.generate(root, key, NOW + timedelta(hours=1), reference)
 
     binding = load(root / "attestations/latest/binding.json")
     assert binding["claims"]["rekor_witnessed"] is False

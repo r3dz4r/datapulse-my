@@ -1,5 +1,8 @@
-#!/usr/bin/env python3
-"""Fail closed when daily and Pages Sigstore workflow contracts drift."""
+#!/bin/sh
+""":"
+exec python3 "$0" "$@"
+":"""
+# Fail closed when daily and Pages Sigstore workflow contracts drift.
 
 from __future__ import annotations
 
@@ -98,7 +101,10 @@ def _require_daily_guards(workflow: str) -> None:
         "id: rekor_guard",
         "id: produce_rekor_witness",
         "DATAPULSE_REKOR_REFERENCE",
-        "python3 scripts/attestation_commit_back.py",
+        "bash scripts/submit_attestation_append.sh",
+        "--force-append",
+        "python3 scripts/bind_candidate_witness.py",
+        "statement_digest=",
     ):
         _require(workflow, "daily workflow", fragment)
 
@@ -130,6 +136,18 @@ def verify_workflows(daily_path: Path, pages_path: Path) -> None:
     )
     _require_daily_guards(daily)
     _require_pages_boundaries(pages)
+    for label, workflow in (("daily workflow", daily), ("Pages workflow", pages)):
+        _require(workflow, label, "group: cloudflare-pages-production")
+        _require(workflow, label, "cancel-in-progress: false")
+    _require(pages, "Pages workflow", "--require-committed")
+    _require(pages, "Pages workflow", "bash scripts/submit_attestation_append.sh")
+    if daily.index("bash scripts/refresh_chain_head.sh") > daily.index("python3 scripts/gen_sigstore_bundle.py"):
+        raise ContractError("daily workflow: candidate head must precede DSSE")
+    if 'rm -rf -- "$rekor_dir"' in daily:
+        raise ContractError("daily workflow: witness evidence cannot be deleted")
+    _require(daily, "daily workflow", "health.$statement_digest.sigstore.bundle.json")
+    _require(daily, "daily workflow", "verify_attestation_binding.py --root . --require-rekor")
+
 
 
 def parse_args() -> argparse.Namespace:

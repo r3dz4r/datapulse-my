@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """Generate signed daily probe attestations and unsigned trust scores."""
 from __future__ import annotations
-import argparse, base64, hashlib, json, shutil, subprocess
+import argparse, base64, hashlib, json, shutil, subprocess, tempfile, os, fcntl, sys
 from datetime import datetime, timedelta, timezone
+from contextlib import contextmanager
 from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.verify_attestation_binding import ContractError
+from scripts.attestation_sets import discovery, verify_set, descriptor, validate_discovery, FILES
 
 ZERO = "0" * 64
 ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
@@ -17,10 +22,7 @@ def sha(value: bytes) -> str: return hashlib.sha256(value).hexdigest()
 def parse_time(value: str) -> datetime: return datetime.fromisoformat(value.replace("Z", "+00:00"))
 def load(path: Path) -> dict: return json.loads(path.read_text(encoding="utf-8"))
 def dump(path: Path, value: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    path.parent.mkdir(parents=True, exist_ok=True); path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 def sign(private: Ed25519PrivateKey, payload: dict) -> str: return base64.b64encode(private.sign(canonical(payload))).decode()
 
 def health_binding(root: Path, health: dict) -> dict:
@@ -88,6 +90,8 @@ def rekor_binding(root: Path, reference: Path | None, expected_digest: str) -> d
     return metadata
 
 def discover_git_anchors(root: Path) -> dict[str, dict[str, str]]:
+    if not (root / ".git").exists():
+        return {}
     anchors = {}; result = subprocess.run(["git", "tag", "--list", "v[0-9]*"], cwd=root, text=True, capture_output=True)
     if result.returncode: return anchors
     for tag in result.stdout.splitlines():
@@ -148,52 +152,39 @@ def score_rows(manifest: dict, health: dict, trends: dict, drift: dict, recon: d
         rows.append({"dataset_id":did,"methodology_version":3,"score":value,"components":components,"component_availability":component_availability,"observed_at":h.get("last_checked") if h else None})
     return {"schema":"datapulse/v1/trust-scores","generated_at":generated_at,"methodology_version":3,"datasets":rows}
 
-def reuse_existing_day(root: Path, day: str) -> bool:
-    """Reuse the verified day tip only when the exact health input is unchanged."""
-    dated = root / "attestations" / day
-    if not dated.exists():
-        return False
-    if not dated.is_dir():
-        raise ValueError("same-day attestation is corrupt or inconsistent: dated set is not a directory")
-    required = ("binding.json", "chain_head.json", "index.json", "scores.json")
-    present = [name for name in required if (dated / name).is_file()]
-    if not present:
-        # Sigstore preparation may have created the directory before signing.
-        return False
-    if len(present) != len(required):
-        raise ValueError("same-day attestation is corrupt or inconsistent: dated set is incomplete")
-    try:
-        from scripts.verify_attestation_binding import ContractError, _load, verified_day_tip
-    except ModuleNotFoundError:
-        from verify_attestation_binding import ContractError, _load, verified_day_tip
-    try:
-        tip = root / verified_day_tip(root, day)
-        selected = tip.parent
-        _load(selected / "scores.json", "same-day trust scores")
-        binding = _load(selected / "binding.json", "same-day binding")
-        if binding["payload"]["health"] != health_binding(root, load(root / "health/latest.json")):
-            return False
-    except (ContractError, KeyError, TypeError, ValueError) as error:
-        raise ValueError(f"same-day attestation is corrupt or inconsistent: {error}") from error
-    latest = root / "attestations" / "latest"
-    if latest.exists(): shutil.rmtree(latest)
-    latest.mkdir(parents=True)
-    for filename in required:
-        shutil.copy2(selected / filename, latest / filename)
-    return True
-
-def refresh_manifest_refs(root: Path, day: str) -> None:
-    """Publish the verified dated set's per-dataset refs onto the manifest.
-
-    The dated index is the authoritative copy of the ref list, so both the
-    build path and the reuse path read it here instead of carrying their own.
-    """
-    refs = load(root / "attestations/latest/index.json")["attestations"]
+def refresh_manifest_refs(root: Path, directory: str) -> None:
+    """Derive mutable manifest references from the selected immutable index."""
+    refs = load(root / directory / "index.json")["attestations"]
     manifest = load(root / "datapulse.json")
     for entry in manifest["datasets"]:
         entry["attestation_ref"] = refs[entry["id"]]
         entry["methodology_version"] = 3
     dump(root / "datapulse.json", manifest)
+
+
+def promote(root: Path, directory: str) -> None:
+    """Refresh only the named mutable projections from verified immutable bytes."""
+    latest = root / "attestations/latest"
+    latest.mkdir(parents=True, exist_ok=True)
+    for filename in FILES:
+        shutil.copy2(root / directory / filename, latest / filename)
+    mirror = root / ".attestations/chain_head.json"
+    mirror.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(root / directory / "chain_head.json", mirror)
+    refresh_manifest_refs(root, directory)
+
+
+def agrees(root: Path, directory: str, manifest: dict, health_claim: dict, registry: dict, rekor: dict | None) -> bool:
+    """Ignore generated refs and execution time when comparing accepted inputs."""
+    binding = load(root / directory / "binding.json")
+    index = load(root / directory / "index.json")
+    if (binding["payload"]["health"] != health_claim
+            or binding["payload"]["ed25519"]["key_id"] != registry.get("current_key_id")
+            or set(index["attestations"]) != {r["id"] for r in manifest["datasets"]}
+            or (rekor is not None and binding.get("rekor") != rekor)):
+        return False
+    return all(load(root / index["attestations"][r["id"]])["payload"]["source_url"] == r["url"] for r in manifest["datasets"])
+
 
 def load_probe_counts(root: Path, now: datetime) -> dict | None:
     """Return a fresh, schema-valid count map, or None when unusable.
@@ -232,71 +223,153 @@ def probe_counts_for_dataset(counts: dict, dataset_id: str) -> tuple[int | None,
         return (None, None)
     return (d14, d1)
 
-def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | None = None) -> None:
+def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | None = None, force_append: bool = False) -> None:
     day=now.date().isoformat()
     latest = root / "attestations" / "latest"
     latest_date=load(latest/"index.json").get("date") if (latest/"index.json").exists() else None
     if isinstance(latest_date,str) and latest_date>day:
         raise ValueError("older dated attestation cannot supersede latest")
-    if reuse_existing_day(root, day):
-        refresh_manifest_refs(root, day)
-        return
-    manifest, health, trends, drift, recon = load_score_inputs(root); key=load(key_path)
+    manifest, health, trends, drift, recon = load_score_inputs(root)
+    ids = [r["id"] for r in manifest["datasets"]]
+    if len(ids) != len(set(ids)) or set(ids) != {r["dataset_id"] for r in health["datasets"]}:
+        raise ValueError("catalogue and health dataset IDs disagree")
+    chain_index = discovery(root)
+    previous = chain_index["current_head"] or ZERO
+    if previous != ZERO and load(root / chain_index["heads"][previous])["payload"]["date"] > day:
+        raise ValueError("older dated attestation cannot supersede latest")
+    health_claim = health_binding(root, health)
+    registry = load(root / "docs/.well-known/datapulse-probe-keys.json")
+    rekor = rekor_binding(root, rekor_reference, health_claim["artifact_sha256"])
+    if previous != ZERO:
+        directory = chain_index["heads"][previous].rsplit("/", 1)[0]
+        verify_set(root, chain_index["heads"][previous])
+        if not force_append and load(root / chain_index["heads"][previous])["payload"]["date"] == day and agrees(root, directory, manifest, health_claim, registry, rekor):
+            from scripts.verify_attestation_binding import _registry_key, _parse_time
+            _registry_key(registry, registry.get("current_key_id"), _parse_time(load(root / directory / "binding.json")["payload"]["published_at"], "published"), now)
+            observed = parse_time(health_claim["observed_at"])
+            published = parse_time(load(root / directory / "binding.json")["payload"]["published_at"])
+            if now < observed or now < published or max((now-observed).total_seconds(), (now-published).total_seconds()) > ATTESTATION_MAX_AGE_SECONDS:
+                raise ValueError("served attestation is stale or in the future")
+            promote(root, directory)
+            dump(root / "attestations/chain-index.json", chain_index)
+            return
+    key=load(key_path)
     private=Ed25519PrivateKey.from_private_bytes(base64.b64decode(key["private_key_base64"])); public=base64.b64decode(key["public_key_base64"])
     if private.public_key().public_bytes(Encoding.Raw,PublicFormat.Raw)!=public: raise ValueError("private and public key do not match")
     registry=load(root/"docs/.well-known/datapulse-probe-keys.json"); row=next((r for r in registry["keys"] if r["key_id"]==key["key_id"]),None)
-    if row is None or registry.get("schema") != "datapulse/v2/probe-key-registry" or registry.get("current_key_id")!=key["key_id"] or row.get("purpose") != ATTESTATION_KEY_PURPOSE or row.get("status")!="active" or not(parse_time(row["not_before"])<=now<=parse_time(row["not_after"])): raise ValueError("signing key is not active")
+    if row is None or registry.get("schema") != "datapulse/v2/probe-key-registry" or registry.get("current_key_id")!=key["key_id"] or row.get("purpose") != ATTESTATION_KEY_PURPOSE or row.get("public_key_base64") != key["public_key_base64"] or row.get("status")!="active" or not(parse_time(row["not_before"])<=now<=parse_time(row["not_after"])): raise ValueError("signing key is not active")
     generated_at=now.replace(microsecond=0).isoformat().replace("+00:00","Z"); base=root/"attestations"; dated=base/day; health_claim=health_binding(root,health); rekor=rekor_binding(root,rekor_reference,health_claim["artifact_sha256"])
-    health_bytes = (root / "health/latest.json").read_bytes()
-    if sha(health_bytes) != health_claim["artifact_sha256"]:
-        raise ValueError("health input changed during generation")
-    previous=load(latest/"chain_head.json")["chain_head"] if (latest/"chain_head.json").exists() else ZERO
-    correction = None
-    if (dated / "binding.json").exists():
-        try:
-            from scripts.verify_attestation_binding import correction_record, verified_day_tip
-        except ModuleNotFoundError:
-            from verify_attestation_binding import correction_record, verified_day_tip
-        predecessor_ref = verified_day_tip(root, day)
-        predecessor = load(root / predecessor_ref)
-        previous = predecessor["chain_head"]
-        prior_binding = load((root / predecessor_ref).parent / "binding.json")["payload"]
-        if now < parse_time(prior_binding["published_at"]):
-            raise ValueError("correction cannot predate its predecessor")
-        original = load(dated / "chain_head.json")["chain_head"]
-        correction = correction_record(day, original, previous, prior_binding["health"]["artifact_sha256"], health_claim["artifact_sha256"])
-        dated = (root / correction["health_snapshot_ref"]).parent
-        if dated.exists():
-            raise ValueError("correction revision already exists but is not indexed")
-    set_ref = dated.relative_to(root).as_posix()
     pc_path=root/"health/probe_counts.json"; pc_present=pc_path.exists() and pc_path.stat().st_size>0; probe_artifact=load_probe_counts(root,now) if pc_present else None
     hp=root/"health/history.jsonl"; history_available=hp.exists() and hp.stat().st_size>0; use_history=history_available and not pc_present; history=[json.loads(line) for line in hp.read_text(encoding="utf-8").splitlines() if line.strip()] if use_history else []; health_by={r["dataset_id"]:r for r in health["datasets"]}; links=[]; refs={}
+    envelopes = {}
     for entry in sorted(manifest["datasets"],key=lambda r:r["id"]):
         did=entry["id"]; h=health_by.get(did,{}); observed=h.get("last_checked") or health["checked_at"]; cutoff14=now-timedelta(days=14); cutoff1=now-timedelta(days=1); times=[parse_time(r["observed_at"]) for r in history if r.get("dataset_id")==did and r.get("observed_at")]; probe_counts=probe_counts_for_dataset(probe_artifact,did) if probe_artifact is not None else ((sum(t>=cutoff14 for t in times),sum(t>=cutoff1 for t in times)) if use_history else (None,None)); fp=h.get("first_row_hash"); browser=h.get("access_dependency")=="browser"
         payload={"schema":"datapulse/v1/probe-attestation","date":day,"observed_at":observed,"dataset_id":did,"source_url":entry["url"],"observed_request_url":h.get("request_url"),"access_dependency":h.get("access_dependency","direct"),"probe_count_14d":probe_counts[0],"probe_count_24h":probe_counts[1],"last_status":h.get("status"),"last_staleness_days":h.get("staleness_days"),"content_fingerprint":{"scheme":"shape-v1:sha256","scope":"first-row-or-headers","value":fp} if fp else None,"browser_receipt":{"available":False,"reason":"probe runner emitted no signed receipt" if browser else None},"previous_chain_head":previous,"key_id":key["key_id"],"signer_pubkey_base64":key["public_key_base64"]}
-        link=sha(bytes.fromhex(previous)+canonical(payload)); ref=f"{set_ref}/{did}.json"; envelope={"schema":"datapulse/v1/probe-attestation-envelope","payload":payload,"signature_base64":sign(private,payload),"chain_link":link,"verification_level":"L1-capable"}; Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(envelope["signature_base64"]),canonical(payload)); dump(root/ref,envelope); links.append({"dataset_id":did,"chain_link":link}); refs[did]=ref
-    head_payload={"schema":"datapulse/v1/daily-chain-head","date":day,"previous_chain_head":previous,"dataset_count":len(links),"dataset_links_sha256":sha(canonical(links)),"key_id":key["key_id"]}
-    if correction is not None: head_payload["correction"] = correction
-    chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}; dump(dated/"chain_head.json",head)
-    chain_index=load(base/"chain-index.json") if (base/"chain-index.json").exists() else {"schema":"datapulse/v1/chain-index","heads":{},"anchors":{}}
-    if correction is None and any(isinstance(ref,str) and ref.startswith(f"attestations/{day}/") for ref in chain_index.get("heads",{}).values()): raise ValueError("duplicate-date attestation already exists in chain index")
-    chain_index["heads"][chain_head]=f"{set_ref}/chain_head.json"; chain_index["anchors"].update(discover_git_anchors(root)); dump(dated/"index.json",{"schema":"datapulse/v1/attestation-index","date":day,"chain_head_ref":f"{set_ref}/chain_head.json","binding_ref":f"{set_ref}/binding.json","attestations":refs}); dump(dated/"scores.json",score_rows(manifest,health,trends,drift,recon,generated_at)); binding=binding_envelope(private,day,generated_at,health_claim,head,key["key_id"],rekor)
-    if correction is not None:
-        binding["payload"]["ed25519"]["chain_head_ref"] = f"{set_ref}/chain_head.json"
-        binding["payload"]["correction"] = correction
-        binding["signature_base64"] = sign(private, binding["payload"])
-    Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(binding["signature_base64"]),canonical(binding["payload"])); dump(dated/"binding.json",binding)
-    # Keep the exact raw input independently of the mutable health alias.
-    snapshot_temporary = dated / "health.json.tmp"
-    snapshot_temporary.write_bytes(health_bytes)
-    snapshot_temporary.replace(dated / "health.json")
-    # Make a revision discoverable only after all its signed evidence exists.
+        link=sha(bytes.fromhex(previous)+canonical(payload)); ref=f"attestations/{day}/{did}.json"; envelope={"schema":"datapulse/v1/probe-attestation-envelope","payload":payload,"signature_base64":sign(private,payload),"chain_link":link,"verification_level":"L1-capable"}; Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(envelope["signature_base64"]),canonical(payload)); envelopes[did] = envelope; links.append({"dataset_id":did,"chain_link":link}); refs[did]=ref
+    head_payload={"schema":"datapulse/v1/daily-chain-head","date":day,"previous_chain_head":previous,"dataset_count":len(links),"dataset_links_sha256":sha(canonical(links)),"key_id":key["key_id"]}; chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}
+    run = chain_index["days"].get(day, [])
+    directory = f"attestations/{day}" + (f"/revisions/{chain_head}" if run else "")
+    dated = root / directory
+    if dated.exists() and any((dated / name).exists() for name in FILES):
+        raise ValueError("same-day attestation is corrupt or inconsistent: destination already exists")
+    refs = {did: f"{directory}/{did}.json" for did in envelopes}
+    for did, envelope in envelopes.items():
+        dump(root / refs[did], envelope)
+    dump(dated / "chain_head.json", head)
+    dump(dated / "index.json", {"schema": "datapulse/v1/attestation-index", "date": day,
+        "chain_head_ref": directory + "/chain_head.json", "binding_ref": directory + "/binding.json", "attestations": refs})
+    dump(dated / "scores.json", score_rows(manifest,health,trends,drift,recon,generated_at))
+    binding = binding_envelope(private,day,generated_at,health_claim,head,key["key_id"],rekor)
+    binding["payload"]["ed25519"]["chain_head_ref"] = directory + "/chain_head.json"
+    binding["signature_base64"] = sign(private, binding["payload"])
+    dump(dated / "binding.json", binding)
+    verify_set(root, directory + "/chain_head.json")
+    chain_index["heads"][chain_head] = directory + "/chain_head.json"
+    chain_index["envelopes"][chain_head] = descriptor(head, directory + "/chain_head.json", len(run) + 1)
+    chain_index["days"].setdefault(day, []).append(chain_head)
+    chain_index["current_head"] = chain_head
+    for digest, anchor in discover_git_anchors(root).items():
+        if digest in chain_index["anchors"] and chain_index["anchors"][digest] != anchor:
+            raise ValueError("existing anchor cannot be replaced")
+        chain_index["anchors"].setdefault(digest, anchor)
+    validate_discovery(root, chain_index)
     dump(base / "chain-index.json", chain_index)
-    if latest.exists(): shutil.rmtree(latest)
-    latest.mkdir(parents=True)
-    for filename in ("chain_head.json","index.json","scores.json","binding.json"): shutil.copy2(dated/filename,latest/filename)
-    refresh_manifest_refs(root, day)
+    promote(root, directory)
+
+
+@contextmanager
+def writer_lock(directory: Path):
+    """Lock the evidence directory without adding a tracked lock file."""
+    fd = os.open(directory, os.O_RDONLY)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        os.close(fd)
+
+
+def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | None = None, force_append: bool = False) -> None:
+    """Prepare and validate privately, then accept under a repository writer lock."""
+    root = root.resolve()
+    key_path = key_path.resolve()
+    now = now.astimezone(timezone.utc)
+    base = root / ".attestations"
+    base.mkdir(parents=True, exist_ok=True)
+    with writer_lock(base):
+        paths = ["datapulse.json", "health/latest.json", "health/trends.json", "health/drift.json", "health/reconciliation.json", "health/history.jsonl", "health/probe_counts.json", "docs/.well-known/datapulse-probe-keys.json"]
+        snapshots = {p: (root / p).read_bytes() for p in paths if (root / p).is_file()}
+        index_path = root / "attestations/chain-index.json"
+        original_index = index_path.read_bytes() if index_path.exists() else None
+        source = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True).stdout
+        with tempfile.TemporaryDirectory(prefix="candidate-", dir=base) as temporary:
+            staging = Path(temporary)
+            for path, data in snapshots.items():
+                target = staging / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+            if (root / "attestations").exists():
+                shutil.copytree(root / "attestations", staging / "attestations")
+            if (base / "chain_head.json").exists():
+                (staging / ".attestations").mkdir()
+                shutil.copy2(base / "chain_head.json", staging / ".attestations/chain_head.json")
+            reference = staging / rekor_reference.resolve().relative_to(root) if rekor_reference else None
+            try:
+                _generate(staging, key_path, now, reference, force_append)
+            except (ValueError, KeyError, TypeError, OSError) as error:
+                error_type = ContractError if isinstance(error, ContractError) else ValueError
+                raise error_type(f"same-day attestation is corrupt or inconsistent: {error}") from error
+            if (source != subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True).stdout
+                    or original_index != (index_path.read_bytes() if index_path.exists() else None)
+                    or any((root / p).read_bytes() != data for p, data in snapshots.items())):
+                raise ValueError("accepted source/head or canonical inputs changed during preparation")
+            # Frozen --now fixtures need no wall-clock check; live callers check midnight.
+            candidate = load(staging / "attestations/chain-index.json")
+            directory = candidate["heads"][candidate["current_head"]].rsplit("/", 1)[0]
+            destination = root / directory
+            if not destination.exists():
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                os.rename(staging / directory, destination)
+            elif any((destination / name).read_bytes() != (staging / directory / name).read_bytes() for name in FILES):
+                raise ValueError("immutable destination cannot be overwritten")
+            mutable = ["attestations/chain-index.json", "datapulse.json", ".attestations/chain_head.json"] + ["attestations/latest/" + n for n in FILES]
+            backup = {p: (root / p).read_bytes() if (root / p).exists() else None for p in mutable}
+            try:
+                for path in mutable:
+                    target = root / path
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    pending = target.with_name(target.name + ".tmp")
+                    pending.write_bytes((staging / path).read_bytes())
+                    os.replace(pending, target)
+            except BaseException:
+                for path, data in backup.items():
+                    target = root / path
+                    if data is None:
+                        target.unlink(missing_ok=True)
+                    else:
+                        target.write_bytes(data)
+                raise
+
 
 def main() -> int:
-    parser=argparse.ArgumentParser(); parser.add_argument("--root",type=Path,default=Path(__file__).resolve().parent.parent); parser.add_argument("--private-key",type=Path,required=True); parser.add_argument("--now"); parser.add_argument("--rekor-reference",type=Path); args=parser.parse_args(); generate(args.root,args.private_key,parse_time(args.now) if args.now else datetime.now(timezone.utc),args.rekor_reference); return 0
+    parser=argparse.ArgumentParser(); parser.add_argument("--root",type=Path,default=Path(__file__).resolve().parent.parent); parser.add_argument("--private-key",type=Path,required=True); parser.add_argument("--now"); parser.add_argument("--rekor-reference",type=Path); parser.add_argument("--force-append", action="store_true"); args=parser.parse_args(); generate(args.root,args.private_key,parse_time(args.now) if args.now else datetime.now(timezone.utc),args.rekor_reference, args.force_append); return 0
 if __name__=="__main__": raise SystemExit(main())
