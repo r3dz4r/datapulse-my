@@ -1,6 +1,6 @@
 ---
 dataset_id: bnm_kl_usd_myr
-last_checked: 2026-10-04T02:35:45Z
+last_checked: 2026-10-04T03:40:24Z
 status: aging
 freshness_delta: 2 days
 next_expected_update: daily (weekdays)
@@ -24,7 +24,7 @@ HTTP 200
 
 ## Last checked
 
-2026-10-04 at 02:35:45 UTC.
+2026-10-04 at 03:40:24 UTC.
 
 ## File size
 

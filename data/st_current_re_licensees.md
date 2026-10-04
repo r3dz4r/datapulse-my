@@ -2,7 +2,7 @@
 dataset_id: st_current_re_licensees
 last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 145 days
+freshness_delta: 146 days
 next_expected_update: unknown
 file_size_bytes: 110147
 file_count: null
@@ -24,7 +24,7 @@ attribution: Suruhanjaya Tenaga (Malaysia Energy Commission) via MyEnergyStats
 
 **Status:** Aging
 
-**Freshness:** 145 days
+**Freshness:** 146 days
 
 HTTP 200
 
