@@ -13,7 +13,7 @@ column_count: null
 status: stale
 notes: "Unprobed Suruhanjaya Tenaga MyEnergyStats HTML dashboard; health remains unknown until the first DataPulse probe."
 dataset_id: st_cogenerators
-freshness_delta: 1343 days
+freshness_delta: 1372 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Suruhanjaya Tenaga (ST) via meih.st.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 1343 days
+**Freshness:** 1372 days
 
 ST PDF report returned a valid document year
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: bnm_kijang_emas
-last_checked: 2026-09-06T05:22:25Z
+last_checked: 2026-10-03T15:47:47Z
 status: aging
-freshness_delta: 2 days
+freshness_delta: 3 days
 next_expected_update: daily
 schema_version: unknown
 schema_drift: none
@@ -18,13 +18,13 @@ attribution: Bank Negara Malaysia via BNM Open API
 
 **Status:** Aging
 
-**Freshness:** 2 days
+**Freshness:** 3 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 05:22:25 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 

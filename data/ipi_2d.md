@@ -5,15 +5,15 @@ source_url: "https://storage.dosm.gov.my/ipi/ipi_2d.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-09-05T02:34:56Z
-last_observed: 2026-06-01
-last_modified: 2026-08-12T22:38:32Z
-record_count: 10426
+last_checked: 2026-10-03T10:36:37Z
+last_observed: 2026-07-01
+last_modified: 2026-09-11T05:59:50Z
+record_count: 10504
 column_count: 4
-status: stale
+status: fresh
 notes: "Tier-1 wave D newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: ipi_2d
-freshness_delta: 96 days
+freshness_delta: 23 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 ## Status
 
-**Status:** Stale
+**Status:** Fresh
 
-**Freshness:** 96 days
+**Freshness:** 23 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 
-The checked resource is 307,403 bytes.
+The checked resource is 309,696 bytes.
 
 ## Provenance
 

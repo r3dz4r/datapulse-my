@@ -2,7 +2,7 @@
 dataset_id: dgm_crops_state
 last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 1708 days
+freshness_delta: 1737 days
 next_expected_update: overdue
 record_count: 864
 date_range: 2017-01-01 to 2022-01-01
@@ -20,7 +20,7 @@ attribution: MAFS, Department of Agriculture, and DOSM via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1708 days
+**Freshness:** 1737 days
 
 HTTP 200
 

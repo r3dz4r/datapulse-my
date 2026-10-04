@@ -1,11 +1,11 @@
 ---
 dataset_id: registrations_type_fuel
-last_checked: 2026-09-05T02:34:56Z
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-03T10:36:37Z
 status: aging
-freshness_delta: 66 days
+freshness_delta: 64 days
 next_expected_update: monthly
-record_count: 10801
+record_count: 10838
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This dataset captures the registration of vehicles, not their sale, import, or any other transaction. Therefore, if a vehicle is not registered for use on the road, it will not be counted in this dataset (e.g. vehicles purchased purely for private display). Furthermore, users should note that the dataset includes rows for 'all_types' and 'all_fuels' to facilitate top-level comparisons; these should not be double-counted with the breakdown rows."]
@@ -20,17 +20,17 @@ attribution: Road Transport Department Malaysia and Ministry of Transport via da
 
 **Status:** Aging
 
-**Freshness:** 66 days
+**Freshness:** 64 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 
-The checked resource is 897,870 bytes.
+The checked resource is 900,954 bytes.
 
 ## Provenance
 

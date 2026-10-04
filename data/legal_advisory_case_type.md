@@ -1,8 +1,8 @@
 ---
 dataset_id: legal_advisory_case_type
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 643 days
+freshness_delta: 672 days
 record_count: 31775
 schema_version: unknown
 schema_drift: none
@@ -18,13 +18,13 @@ attribution: Legal Aid Department via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 643 days
+**Freshness:** 672 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 

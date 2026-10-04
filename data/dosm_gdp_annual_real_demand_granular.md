@@ -3,7 +3,7 @@ dataset_id: dosm_gdp_annual_real_demand_granular
 last_checked: 2026-09-05T02:34:56Z
 last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 44 days
+freshness_delta: 73 days
 next_expected_update: annual
 record_count: 893
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 44 days
+**Freshness:** 73 days
 
 HTTP 200
 

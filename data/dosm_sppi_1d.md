@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_sppi_1d
-last_checked: 2026-09-05T02:34:56Z
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-03T10:36:37Z
 status: aging
-freshness_delta: 247 days
+freshness_delta: 186 days
 next_expected_update: quarterly
-record_count: 1040
+record_count: 1064
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Data for the most recent 4 quarters may be revised in subsequent releases."]
@@ -20,17 +20,17 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 247 days
+**Freshness:** 186 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 
-The checked resource is 80,112 bytes.
+The checked resource is 81,960 bytes.
 
 ## Provenance
 

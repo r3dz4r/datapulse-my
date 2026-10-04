@@ -1,24 +1,24 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "sg_datagov_taxi_availability",
-  "status": "unknown-freshness",
-  "last_checked": "2026-09-06T20:36:28Z",
-  "freshness_days": null,
+  "status": "fresh",
+  "last_checked": "2026-10-03T10:36:37Z",
+  "freshness_days": 0,
   "next_expected_update": null,
   "refresh_frequency": "daily",
   "record_count": 3,
   "date_range": null,
   "fields": [
     {
-      "name": "type",
-      "type": "string"
+      "name": "timestamp",
+      "type": "date"
     },
     {
-      "name": "crs",
-      "type": "string"
+      "name": "taxi_count",
+      "type": "integer"
     },
     {
-      "name": "features",
+      "name": "api_info",
       "type": "string"
     }
   ],
@@ -35,8 +35,8 @@
     },
     {
       "name": "freshness",
-      "status": "warn",
-      "method": "Health snapshot classifies the dataset as unknown-freshness"
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
     },
     {
       "name": "schema_stable",

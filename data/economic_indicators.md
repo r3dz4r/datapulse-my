@@ -1,8 +1,8 @@
 ---
 dataset_id: economic_indicators
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 127 days
+freshness_delta: 95 days
 next_expected_update: monthly
 schema_version: unknown
 schema_drift: none
@@ -18,14 +18,14 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 127 days
+**Freshness:** 95 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 
-The checked resource is 58,769 bytes.
+The checked resource is 59,086 bytes.

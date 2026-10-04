@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_blood_donations_state
-last_checked: 2026-09-06T05:22:25Z
+last_checked: 2026-10-03T15:47:47Z
 status: fresh
-freshness_delta: 0 days
+freshness_delta: 1 days
 next_expected_update: daily
-record_count: 490945
+record_count: 492700
 date_range: 2006-01-01 to 2026-08-01
 schema_version: 1.0
 schema_drift: none
@@ -20,17 +20,17 @@ attribution: National Blood Centre and Ministry of Health Malaysia via data.gov.
 
 **Status:** Fresh
 
-**Freshness:** 0 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 05:22:25 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 
-The checked resource is 12,604,121 bytes.
+The checked resource is 12,649,470 bytes.
 
 ## Provenance
 

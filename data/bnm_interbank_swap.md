@@ -1,6 +1,6 @@
 ---
 dataset_id: bnm_interbank_swap
-last_checked: 2026-09-06T20:36:28Z
+last_checked: 2026-10-04T03:40:24Z
 status: aging
 freshness_delta: 2 days
 next_expected_update: daily (weekdays)
@@ -24,8 +24,8 @@ HTTP 200
 
 ## Last checked
 
-2026-09-06 at 20:36:28 UTC.
+2026-10-04 at 03:40:24 UTC.
 
 ## File size
 
-The checked resource is 272 bytes.
+The checked resource is 303 bytes.

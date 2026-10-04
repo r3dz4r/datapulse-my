@@ -3,7 +3,7 @@ dataset_id: dgm_water_pollution_basin
 last_checked: 2026-09-05T02:34:56Z
 last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 2073 days
+freshness_delta: 2102 days
 next_expected_update: annual
 record_count: 198
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Department of Environment Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 2073 days
+**Freshness:** 2102 days
 
 HTTP 200
 

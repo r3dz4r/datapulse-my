@@ -1,11 +1,11 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "covid_deaths_linelist",
-  "status": "aging",
-  "last_checked": "2026-09-05T02:34:56Z",
-  "freshness_days": 840,
+  "status": "stale",
+  "last_checked": "2026-10-03T10:36:37Z",
+  "freshness_days": 869,
   "next_expected_update": null,
-  "refresh_frequency": "annual",
+  "refresh_frequency": "daily",
   "record_count": 37351,
   "date_range": null,
   "fields": [
@@ -83,8 +83,8 @@
     },
     {
       "name": "freshness",
-      "status": "warn",
-      "method": "Health snapshot classifies the dataset as aging"
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
     },
     {
       "name": "schema_stable",

@@ -2,7 +2,7 @@
 dataset_id: deaths
 last_checked: 2026-09-05T02:34:56Z
 status: aging
-freshness_delta: 978 days
+freshness_delta: 1007 days
 next_expected_update: annual
 schema_version: unknown
 schema_drift: none
@@ -18,7 +18,7 @@ attribution: National Registration Department via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 978 days
+**Freshness:** 1007 days
 
 HTTP 200
 

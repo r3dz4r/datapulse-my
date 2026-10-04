@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_cpi_state_inflation
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-03T14:01:26Z
 status: aging
-freshness_delta: 66 days
+freshness_delta: 64 days
 next_expected_update: unknown
-record_count: 44352
+record_count: 44576
 date_range: unknown
 schema_version: 1.0
 schema_drift: unknown
@@ -20,17 +20,17 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 66 days
+**Freshness:** 64 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-03 at 14:01:26 UTC.
 
 ## File size
 
-The checked resource is 4,815,451 bytes.
+The checked resource is 4,839,716 bytes.
 
 ## Provenance
 

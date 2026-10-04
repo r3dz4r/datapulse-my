@@ -217,7 +217,7 @@ async def test_modern_and_legacy_clients_preserve_discovery_surface_and_cache_hi
         assert modern.protocol_version == "2026-07-28"
         assert modern.server_info.name == "DataPulse"
         assert modern.instructions == (
-            "DataPulse is a read-only evidence and freshness layer for 418 official Malaysian "
+            "DataPulse is a read-only evidence and freshness layer for 425 official Malaysian "
             "public datasets. Use it for Malaysian data questions about currentness, freshness, "
             "licence, provenance, reachability, schema or record drift, reliability, signed "
             "evidence, or citation verification. For a currentness/provenance claim use "

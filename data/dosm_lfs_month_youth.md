@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_lfs_month_youth
-last_checked: 2026-09-05T02:34:56Z
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 127 days
+freshness_delta: 125 days
 next_expected_update: monthly
-record_count: 125
+record_count: 126
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Data prior to 2025 is compiled in concordance with population data from the 2010 Census. Data from 2025 onwards is compiled in concordance with population data from the 2020 Census. As such, you may observe a trend break in the series due to the different references used. Furthermore, sums of each category may not always equal to the totals shown in related tables because of independent rounding to one decimal place. However, the differences are not obvious."]
@@ -20,17 +20,17 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 127 days
+**Freshness:** 125 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 
-The checked resource is 15,120 bytes.
+The checked resource is 15,241 bytes.
 
 ## Provenance
 

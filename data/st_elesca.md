@@ -13,7 +13,7 @@ column_count: 8
 status: stale
 notes: "Unprobed Suruhanjaya Tenaga MyEnergyStats HTML dashboard; health remains unknown until the first DataPulse probe."
 dataset_id: st_elesca
-freshness_delta: 5726 days
+freshness_delta: 5755 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Suruhanjaya Tenaga (ST) via meih.st.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 5726 days
+**Freshness:** 5755 days
 
 ST report table returned a valid year
 

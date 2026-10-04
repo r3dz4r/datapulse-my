@@ -2,7 +2,7 @@
 dataset_id: gtfs_static_mybas_kangar
 last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 0 days
+freshness_delta: 29 days
 record_count: 16160
 content_freshness_date: 2026-12-31
 schema_version: GTFS
@@ -19,7 +19,7 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 0 days
+**Freshness:** 29 days
 
 HTTP 200; valid GTFS static ZIP
 

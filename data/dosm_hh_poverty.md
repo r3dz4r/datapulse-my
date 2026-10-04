@@ -2,7 +2,7 @@
 dataset_id: dosm_hh_poverty
 last_checked: 2026-09-05T02:34:56Z
 status: fresh
-freshness_delta: 978 days
+freshness_delta: 1007 days
 next_expected_update: biennial to triennial (survey years)
 record_count: 21
 date_range: 1970-01-01 to 2024-01-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 978 days
+**Freshness:** 1007 days
 
 HTTP 200
 

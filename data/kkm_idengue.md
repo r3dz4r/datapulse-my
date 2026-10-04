@@ -1,7 +1,7 @@
 ---
 dataset_id: kkm_idengue
-last_checked: 2026-09-06T05:22:25Z
-status: browser-dependent
+last_checked: 2026-10-03T15:47:47Z
+status: unknown-freshness
 freshness_delta: unknown
 next_expected_update: 2026-08-02
 record_count: null
@@ -18,7 +18,7 @@ attribution: KKM via iDengue portal (MYSA hosted)
 
 ## Status
 
-**Status:** Browser dependent
+**Status:** Unknown freshness
 
 **Freshness:** unknown
 
@@ -26,7 +26,7 @@ Browser check succeeded
 
 ## Last checked
 
-2026-09-06 at 05:22:25 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 

@@ -52,7 +52,7 @@ generated: { by: "openwiki/0.4.3", at: "2026-09-28T16:37:06.116Z" }
 
 # Dataset Catalogue, Health, and Evidence Contract
 
-DataPulse publishes its catalogue at **https://www.data-pulse.my**. The checked-in `datapulse.json` manifest currently contains **418 datasets**, and `mcp.json` advertises **19 read-only tools**. These are current discovery facts, not promises of availability, completeness, semantic correctness, payment capability, prices, tiers, quotas, billing terms, or commercial offers.
+DataPulse publishes its catalogue at **https://www.data-pulse.my**. The checked-in `datapulse.json` manifest currently contains **425 datasets**, and `mcp.json` advertises **19 read-only tools**. These are current discovery facts, not promises of availability, completeness, semantic correctness, payment capability, prices, tiers, quotas, billing terms, or commercial offers.
 
 The ownership boundary is explicit: upstream sources remain authoritative for substantive data, definitions, licence terms, and publisher lifecycle. DataPulse observes access, shape, counts, timing, and provenance signals. An observation or receipt proves the condition, timing, and integrity of that observation; it does **not** prove the semantic truth of upstream data.
 
@@ -66,7 +66,7 @@ The manifest is a closed JSON object whose canonical schema is `https://www.data
 
 ## Probe, snapshot, and discovery flow
 
-A full run probes official URLs. `scripts/check.sh --due` selects rows whose cadence has elapsed, optionally restricted by `--tier` or `--cadence-minutes`; waking the scheduler does not mean all 418 datasets were probed. Due mode reads the previous snapshot, probes selected rows, preserves unchanged rows, and writes a complete snapshot in manifest order. If no row is due, it keeps the prior snapshot. Probe failures are recorded as data so the summary remains complete.
+A full run probes official URLs. `scripts/check.sh --due` selects rows whose cadence has elapsed, optionally restricted by `--tier` or `--cadence-minutes`; waking the scheduler does not mean all 425 datasets were probed. Due mode reads the previous snapshot, probes selected rows, preserves unchanged rows, and writes a complete snapshot in manifest order. If no row is due, it keeps the prior snapshot. Probe failures are recorded as data so the summary remains complete.
 
 ```mermaid
 flowchart TD
@@ -113,7 +113,7 @@ A `Last-Modified` header or parsed content date is evidence, not an invented tim
 
 Each manifest row's `health_report` points to `data/<id>.md`. `scripts/gen_data_reports.sh` owns generated report frontmatter and observed values such as status, check time, freshness, counts, and size while preserving human-authored explanatory sections. Reports should explain observed coverage, schema, quirks, reproducibility, licence, and attribution without implying that DataPulse publishes or guarantees the upstream data.
 
-For non-GTFS datasets, `data/json/<id>.json` is generated from the manifest row, health row, and report. It projects observed status/freshness, bounded sample-derived fields where available, checks, quirks, reproducibility, licence, and attribution; it must not silently reclassify health. The deliberate exception is the 30 GTFS datasets, which have Markdown, JSON-LD, and static/realtime GTFS samples but no non-GTFS JSON envelope. The other 418 datasets have envelopes; do not add GTFS placeholders.
+For non-GTFS datasets, `data/json/<id>.json` is generated from the manifest row, health row, and report. It projects observed status/freshness, bounded sample-derived fields where available, checks, quirks, reproducibility, licence, and attribution; it must not silently reclassify health. The deliberate exception is the 30 GTFS datasets, which have Markdown, JSON-LD, and static/realtime GTFS samples but no non-GTFS JSON envelope. The other 425 datasets have envelopes; do not add GTFS placeholders.
 
 ## Receipts and verification
 
@@ -146,7 +146,7 @@ When a generated result is stale, fix its source or generator and rerun the rele
 ## Current discovery facts
 
 - Canonical origin: **https://www.data-pulse.my**
-- Published manifest: **418 datasets**
+- Published manifest: **425 datasets**
 - MCP surface: **19 read-only tools**
 - Primary machine-readable inputs: `datapulse.json`, `health/latest.json`, `datapulse.schema.json`, `health.schema.json`
 
@@ -154,5 +154,5 @@ When a generated result is stale, fix its source or generator and rerun the rele
 
 - Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 418 datasets
+- Datasets: 425 datasets
 - MCP server: 19 read-only tools

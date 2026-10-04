@@ -3,7 +3,7 @@ dataset_id: dgm_drug_addicts_drugtype
 last_checked: 2026-09-05T02:34:56Z
 last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 1343 days
+freshness_delta: 1372 days
 next_expected_update: annual
 record_count: 93
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: National Anti-Drugs Agency and Ministry of Home Affairs via data.go
 
 **Status:** Stale
 
-**Freshness:** 1343 days
+**Freshness:** 1372 days
 
 HTTP 200
 

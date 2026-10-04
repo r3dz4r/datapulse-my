@@ -1,11 +1,11 @@
 ---
 dataset_id: registration_transactions_motorcycle
-last_checked: 2026-09-06T05:22:25Z
-last_checked: 2026-09-06T05:22:25Z
+last_checked: 2026-10-03T15:47:47Z
+last_checked: 2026-10-03T15:47:47Z
 status: stale
-freshness_delta: 37 days
+freshness_delta: 34 days
 next_expected_update: daily
-record_count: 466158
+record_count: 534866
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This dataset captures the registration of motorcycles, not the sale or import or any other transaction. Therefore, if a motorcycle is not registered for use on the road, it will not be present in this dataset (e.g. motorcycles which are purchased purely for private display). Furthermore, it should be noted that this dataset was extremely difficult to prepare, especially for data from the early 2000s when data collection systems were not as sophisticated as they are now. Accordingly, if you spot any errors in the dataset or have any suggestions to improve its quality, please write to help.dtsa@jdn.gov.my so the data.gov.my team can work with JPJ to fix or improve it as soon as possible.", "The serving filename rotates by UTC year; the health probe resolves it at runtime."]
@@ -20,17 +20,17 @@ attribution: Road Transport Department Malaysia and Ministry of Transport via da
 
 **Status:** Stale
 
-**Freshness:** 37 days
+**Freshness:** 34 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-06 at 05:22:25 UTC.
+2026-10-03 at 15:47:47 UTC.
 
 ## File size
 
-The checked resource is 24,365,214 bytes.
+The checked resource is 27,944,793 bytes.
 
 ## Provenance
 

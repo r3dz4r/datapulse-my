@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_arrivals
-last_checked: 2026-09-05T02:34:56Z
-last_checked: 2026-09-05T02:34:56Z
-status: stale
-freshness_delta: 704 days
+last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-03T10:36:37Z
+status: aging
+freshness_delta: 64 days
 next_expected_update: monthly
-record_count: 13050
+record_count: 18240
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This data is based solely on records in MyIMMS. Furthermore, it should be noted that approximately 0.01% of arrivals do not have a nationality specified, including stateless individuals and refugees."]
@@ -18,19 +18,19 @@ attribution: Immigration Department of Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 704 days
+**Freshness:** 64 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-03 at 10:36:37 UTC.
 
 ## File size
 
-The checked resource is 1,327,635 bytes.
+The checked resource is 1,863,570 bytes.
 
 ## Provenance
 

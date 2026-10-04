@@ -2,7 +2,7 @@
 dataset_id: dgm_infant_immunisation
 last_checked: 2026-09-05T02:34:56Z
 status: stale
-freshness_delta: 1343 days
+freshness_delta: 1372 days
 next_expected_update: overdue
 record_count: 120
 date_range: 2000-01-01 to 2023-01-01
@@ -20,7 +20,7 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1343 days
+**Freshness:** 1372 days
 
 HTTP 200
 

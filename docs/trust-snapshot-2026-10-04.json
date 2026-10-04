@@ -1,0 +1,1042 @@
+{
+  "week": "2026-10-04",
+  "iso_week": "2026-W40",
+  "generated_at": "2026-10-04T00:00:00Z",
+  "source_commit": "03e3036a1e5c36e7660b54282764d7aad774960f",
+  "date_range": {
+    "start": "2026-09-28",
+    "end": "2026-10-04"
+  },
+  "status_distribution": {
+    "fresh": 133,
+    "aging": 129,
+    "stale": 135,
+    "discontinued": 1,
+    "degraded": 1,
+    "browser-dependent": 0,
+    "unreachable": 0,
+    "unknown": 0,
+    "unknown-freshness": 5,
+    "reference": 21,
+    "percentages": {
+      "fresh": 31.3,
+      "aging": 30.4,
+      "stale": 31.8,
+      "discontinued": 0.2,
+      "degraded": 0.2,
+      "browser-dependent": 0.0,
+      "unreachable": 0.0,
+      "unknown": 0.0,
+      "unknown-freshness": 1.2,
+      "reference": 4.9
+    },
+    "total": 425
+  },
+  "coverage": {
+    "total_datasets": 425,
+    "by_namespace": {
+      "economy": 147,
+      "environment": 14,
+      "government_open_data": 92,
+      "healthcare": 36,
+      "other": 84,
+      "transport": 49,
+      "weather": 3
+    },
+    "by_licence": {
+      "Creative Commons Attribution 4.0": 285,
+      "MBPP Government Open Data Terms (attribution required)": 1,
+      "MIT License": 8,
+      "Open Data License": 7,
+      "Open Government Licence (Malaysia)": 115,
+      "Publisher licence not stated; portal disclaimer applies": 4,
+      "Singapore Open Data Licence v1.0 (attribution required)": 5
+    }
+  },
+  "changes": {
+    "baseline": {
+      "manifest_commit": "274bae948c1e3c8f5a46fa3b31cd469cf1a9a724",
+      "health_commit": "0793d321551e69f3b8bed6740bcc7bf5eaa27114"
+    },
+    "new_breaks": [
+      {
+        "dataset_id": "eperolehan-diklankan",
+        "old_status": "fresh",
+        "new_status": "stale",
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      }
+    ],
+    "recovered": [
+      {
+        "dataset_id": "arrivals_soe",
+        "old_status": "stale",
+        "new_status": "fresh",
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "doe_mqims",
+        "old_status": "browser-dependent",
+        "new_status": "fresh",
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates",
+        "old_status": "aging",
+        "new_status": "fresh",
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "mbpp_weather_stations",
+        "old_status": "unreachable",
+        "new_status": "fresh",
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "pekab40_screenings_state",
+        "old_status": "aging",
+        "new_status": "fresh",
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ridership_ktmb_monthly",
+        "old_status": "aging",
+        "new_status": "fresh",
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      }
+    ],
+    "schema_changes": [
+      {
+        "dataset_id": "air_pollution",
+        "old_record_count": 432,
+        "new_record_count": 576,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "arrivals",
+        "old_record_count": 13050,
+        "new_record_count": 18240,
+        "old_content_shape": {
+          "column_count": 5
+        },
+        "new_content_shape": {
+          "column_count": 5
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "arrivals_soe",
+        "old_record_count": 92674,
+        "new_record_count": 117236,
+        "old_content_shape": {
+          "column_count": 6
+        },
+        "new_content_shape": {
+          "column_count": 6
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "blood_donations",
+        "old_record_count": 37870,
+        "new_record_count": 37900,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "blood_donations_state",
+        "old_record_count": 492310,
+        "new_record_count": 492700,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "cosmetic_notifications",
+        "old_record_count": 242942,
+        "new_record_count": 243017,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dgm_ktmb_ridership_monthly",
+        "old_record_count": 295,
+        "new_record_count": 300,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dgm_payments_transactions_fpx",
+        "old_record_count": 7377,
+        "new_record_count": 7395,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_arc_dosm",
+        "old_record_count": 309,
+        "new_record_count": 311,
+        "old_content_shape": {
+          "column_count": 12
+        },
+        "new_content_shape": {
+          "column_count": 12
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ppi",
+        "old_record_count": 584,
+        "new_record_count": 587,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ppi_1d",
+        "old_record_count": 2920,
+        "new_record_count": 2935,
+        "old_content_shape": {
+          "column_count": 5
+        },
+        "new_content_shape": {
+          "column_count": 5
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_ppi_sitc",
+        "old_record_count": 5256,
+        "new_record_count": 5283,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "economic_indicators",
+        "old_record_count": 426,
+        "new_record_count": 427,
+        "old_content_shape": {
+          "column_count": 6
+        },
+        "new_content_shape": {
+          "column_count": 6
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates",
+        "old_record_count": 1780,
+        "new_record_count": 1785,
+        "old_content_shape": {
+          "column_count": 29
+        },
+        "new_content_shape": {
+          "column_count": 29
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates_daily_0900",
+        "old_record_count": 17213,
+        "new_record_count": 17228,
+        "old_content_shape": {
+          "column_count": 29
+        },
+        "new_content_shape": {
+          "column_count": 29
+        },
+        "last_checked": "2026-10-04T03:40:24Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates_daily_1130",
+        "old_record_count": 11452,
+        "new_record_count": 11462,
+        "old_content_shape": {
+          "column_count": 9
+        },
+        "new_content_shape": {
+          "column_count": 9
+        },
+        "last_checked": "2026-10-04T03:40:24Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates_daily_1200",
+        "old_record_count": 18778,
+        "new_record_count": 18793,
+        "old_content_shape": {
+          "column_count": 29
+        },
+        "new_content_shape": {
+          "column_count": 29
+        },
+        "last_checked": "2026-10-04T03:40:24Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "exchangerates_daily_1700",
+        "old_record_count": 17247,
+        "new_record_count": 17262,
+        "old_content_shape": {
+          "column_count": 29
+        },
+        "new_content_shape": {
+          "column_count": 29
+        },
+        "last_checked": "2026-10-04T03:40:24Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "fuelprice",
+        "old_record_count": 959,
+        "new_record_count": 961,
+        "old_content_shape": {
+          "column_count": 10
+        },
+        "new_content_shape": {
+          "column_count": 10
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_ktmb",
+        "old_record_count": 7,
+        "new_record_count": 8,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_alor_setar",
+        "old_record_count": 38,
+        "new_record_count": 43,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_ipoh",
+        "old_record_count": 27,
+        "new_record_count": 16,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_johor",
+        "old_record_count": 80,
+        "new_record_count": 82,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kangar",
+        "old_record_count": 21,
+        "new_record_count": 22,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kota_bharu",
+        "old_record_count": 51,
+        "new_record_count": 62,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kuching",
+        "old_record_count": 43,
+        "new_record_count": 45,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_melaka",
+        "old_record_count": 24,
+        "new_record_count": 23,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_seremban_a",
+        "old_record_count": 11,
+        "new_record_count": 17,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_seremban_b",
+        "old_record_count": 27,
+        "new_record_count": 18,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_kl",
+        "old_record_count": 123,
+        "new_record_count": 76,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_mrtfeeder",
+        "old_record_count": 148,
+        "new_record_count": 96,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_penang",
+        "old_record_count": 172,
+        "new_record_count": 140,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "gtfs_static_ktmb",
+        "old_record_count": 5229,
+        "new_record_count": 5155,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "kkmnow_organ",
+        "old_record_count": 1688,
+        "new_record_count": 1691,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "kkmnow_pekab40",
+        "old_record_count": 1224,
+        "new_record_count": 1219,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": null
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "mbpp_weather_stations",
+        "old_record_count": null,
+        "new_record_count": 28,
+        "old_content_shape": {
+          "column_count": null
+        },
+        "new_content_shape": {
+          "column_count": 50
+        },
+        "last_checked": "2026-10-04T03:50:43Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "metrics_content",
+        "old_record_count": 37,
+        "new_record_count": 38,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "organ_pledges",
+        "old_record_count": 6465,
+        "new_record_count": 6471,
+        "old_content_shape": {
+          "column_count": 2
+        },
+        "new_content_shape": {
+          "column_count": 2
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "organ_pledges_state",
+        "old_record_count": 103440,
+        "new_record_count": 103536,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "passports",
+        "old_record_count": 5684,
+        "new_record_count": 7920,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "pekab40_screenings_state",
+        "old_record_count": 43504,
+        "new_record_count": 43648,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_products",
+        "old_record_count": 28228,
+        "new_record_count": 28196,
+        "old_content_shape": {
+          "column_count": 16
+        },
+        "new_content_shape": {
+          "column_count": 16
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "pharmaceutical_wholesalers",
+        "old_record_count": 1012,
+        "new_record_count": 1014,
+        "old_content_shape": {
+          "column_count": 10
+        },
+        "new_content_shape": {
+          "column_count": 10
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ppi",
+        "old_record_count": 584,
+        "new_record_count": 587,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ppi_2d",
+        "old_record_count": 11312,
+        "new_record_count": 11396,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ppi_3d",
+        "old_record_count": 37260,
+        "new_record_count": 37476,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ppi_sop",
+        "old_record_count": 12221,
+        "new_record_count": 12271,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ridership_ktmb_daily",
+        "old_record_count": 9193,
+        "new_record_count": 9223,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ridership_ktmb_monthly",
+        "old_record_count": 295,
+        "new_record_count": 300,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T10:36:37Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_brt_daily",
+        "old_record_count": 16678,
+        "new_record_count": 17050,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_ets",
+        "old_record_count": 622969,
+        "new_record_count": 636996,
+        "old_content_shape": {
+          "column_count": 5
+        },
+        "new_content_shape": {
+          "column_count": 5
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_intercity",
+        "old_record_count": 148386,
+        "new_record_count": 151619,
+        "old_content_shape": {
+          "column_count": 5
+        },
+        "new_content_shape": {
+          "column_count": 5
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_komuter",
+        "old_record_count": 1330508,
+        "new_record_count": 1355591,
+        "old_content_shape": {
+          "column_count": 5
+        },
+        "new_content_shape": {
+          "column_count": 5
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_komuter_utara",
+        "old_record_count": 1078922,
+        "new_record_count": 1103758,
+        "old_content_shape": {
+          "column_count": 5
+        },
+        "new_content_shape": {
+          "column_count": 5
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_rapidrail_daily",
+        "old_record_count": 4667688,
+        "new_record_count": 4771800,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "ridership_od_shuttle_tebrau",
+        "old_record_count": 7416,
+        "new_record_count": 7580,
+        "old_content_shape": {
+          "column_count": 5
+        },
+        "new_content_shape": {
+          "column_count": 5
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "sg_datagov_weather_readings",
+        "old_record_count": 1,
+        "new_record_count": 1,
+        "old_content_shape": {
+          "column_count": 2
+        },
+        "new_content_shape": {
+          "column_count": 2
+        },
+        "last_checked": "2026-10-04T02:35:45Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "trnsc_daily_directdebit",
+        "old_record_count": 1238,
+        "new_record_count": 1243,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "trnsc_daily_fpx",
+        "old_record_count": 7377,
+        "new_record_count": 7395,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "trnsc_daily_jompay",
+        "old_record_count": 2822,
+        "new_record_count": 2828,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "trnsc_daily_san",
+        "old_record_count": 7372,
+        "new_record_count": 7390,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "usage_metrics",
+        "old_record_count": 1106,
+        "new_record_count": 1115,
+        "old_content_shape": {
+          "column_count": 4
+        },
+        "new_content_shape": {
+          "column_count": 4
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "usage_metrics_openapi",
+        "old_record_count": 19128,
+        "new_record_count": 19376,
+        "old_content_shape": {
+          "column_count": 3
+        },
+        "new_content_shape": {
+          "column_count": 3
+        },
+        "last_checked": "2026-10-03T15:47:47Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      }
+    ],
+    "newly_probed": [
+      {
+        "dataset_id": "dosm_boundary_district",
+        "status": "reference",
+        "last_checked": "2026-10-03T02:55:45Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_district_lookup",
+        "status": "reference",
+        "last_checked": "2026-10-03T11:10:24Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_dun",
+        "status": "reference",
+        "last_checked": "2026-10-03T02:55:45Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_malaysia",
+        "status": "reference",
+        "last_checked": "2026-10-03T02:55:45Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_parlimen",
+        "status": "reference",
+        "last_checked": "2026-10-03T02:55:45Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_parlimen_dun_lookup",
+        "status": "reference",
+        "last_checked": "2026-10-03T11:10:24Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_state",
+        "status": "reference",
+        "last_checked": "2026-10-03T02:55:45Z",
+        "source": "health/latest.json@0793d321551e..HEAD"
+      }
+    ],
+    "added": [
+      {
+        "dataset_id": "dosm_boundary_district",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-10-03T02:55:45Z",
+        "source": "datapulse.json@274bae948c1e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_district_lookup",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-10-03T11:10:24Z",
+        "source": "datapulse.json@274bae948c1e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_dun",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-10-03T02:55:45Z",
+        "source": "datapulse.json@274bae948c1e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_malaysia",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-10-03T02:55:45Z",
+        "source": "datapulse.json@274bae948c1e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_parlimen",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-10-03T02:55:45Z",
+        "source": "datapulse.json@274bae948c1e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_parlimen_dun_lookup",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-10-03T11:10:24Z",
+        "source": "datapulse.json@274bae948c1e..HEAD"
+      },
+      {
+        "dataset_id": "dosm_boundary_state",
+        "old_status": null,
+        "new_status": "reference",
+        "last_checked": "2026-10-03T02:55:45Z",
+        "source": "datapulse.json@274bae948c1e..HEAD"
+      }
+    ]
+  },
+  "source_level_staleness": [],
+  "caveats": {
+    "unknown_freshness": 5,
+    "unreachable": 0,
+    "history": "Compared with manifest and health baselines 274bae948c1e / 0793d321551e."
+  },
+  "reproducibility": {
+    "command": "bash scripts/gen_trust_snapshot.sh",
+    "license": "MIT",
+    "cite": "https://www.data-pulse.my/trust-snapshot-2026-10-04.md"
+  }
+}

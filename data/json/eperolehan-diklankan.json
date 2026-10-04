@@ -1,9 +1,9 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "eperolehan-diklankan",
-  "status": "browser-dependent",
-  "last_checked": "2026-09-06T20:36:28Z",
-  "freshness_days": 0,
+  "status": "stale",
+  "last_checked": "2026-10-04T03:50:43Z",
+  "freshness_days": 1,
   "next_expected_update": null,
   "refresh_frequency": "hourly",
   "record_count": null,
@@ -12,8 +12,8 @@
   "checks": [
     {
       "name": "file_reachable",
-      "status": "warn",
-      "method": "Browser check succeeded"
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
     },
     {
       "name": "row_count",
@@ -22,8 +22,8 @@
     },
     {
       "name": "freshness",
-      "status": "warn",
-      "method": "Health snapshot classifies the dataset as browser-dependent"
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
     },
     {
       "name": "schema_stable",
@@ -40,7 +40,7 @@
   "breaking_changes": [],
   "reproducibility": {
     "url": "https://www.eperolehan.gov.my/quotation-tender-notice",
-    "access_method": "Camofox; 30s before snapshot"
+    "access_method": "curl"
   },
   "licence": "Open Government Licence (Malaysia)",
   "attribution": "ePerolehan (other)"
