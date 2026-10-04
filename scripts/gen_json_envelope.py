@@ -179,9 +179,34 @@ def infer_json_fields(payload: bytes) -> list[dict[str, str]]:
     ]
 
 
+def infer_geojson_fields(payload: bytes) -> list[dict[str, str]]:
+    value = json.loads(payload.decode("utf-8-sig"))
+    if not isinstance(value, dict) or value.get("type") != "FeatureCollection":
+        return infer_json_fields(payload)
+    features = value.get("features")
+    if not isinstance(features, list):
+        return infer_json_fields(payload)
+    properties = [
+        feature["properties"]
+        for feature in features[:SAMPLE_ROWS]
+        if isinstance(feature, dict)
+        and isinstance(feature.get("properties"), dict)
+        and feature["properties"]
+    ]
+    if not properties:
+        return infer_json_fields(payload)
+    names = list(dict.fromkeys(name for item in properties for name in item))
+    return [
+        {"name": name, "type": merge_types([item.get(name) for item in properties])}
+        for name in names
+    ]
+
+
 def infer_fields(url: str) -> list[dict[str, str]]:
     payload, content_type = fetch_source(url)
     clean_url = url.split("?", 1)[0].lower()
+    if clean_url.endswith(".geojson"):
+        return infer_geojson_fields(payload)
     if clean_url.endswith(".json") or content_type == "application/json":
         return infer_json_fields(payload)
     if clean_url.endswith(".csv") or content_type in {"text/csv", "application/csv"}:

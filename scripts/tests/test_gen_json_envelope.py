@@ -298,3 +298,24 @@ def test_fetch_source_partial_or_unreadable_cache_falls_back_to_live(
     json_path.write_text("{", encoding="utf-8")
     assert envelope.fetch_source(url) == (payload, "text/csv")
     assert len(stub.calls) == 2
+
+
+def test_geojson_infers_union_of_feature_properties_and_types(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = json.dumps(
+        {
+            "type": "FeatureCollection",
+            "features": [
+                {"type": "Feature", "properties": {"code": "P01", "count": 2}},
+                {"type": "Feature", "properties": {"code": "P02", "area": 1.5}},
+            ],
+        }
+    ).encode()
+    monkeypatch.setattr(envelope, "fetch_source", lambda _url: (payload, "text/plain"))
+
+    assert envelope.infer_fields("https://example.test/boundary.GEOJSON?v=1") == [
+        {"name": "code", "type": "string"},
+        {"name": "count", "type": "integer"},
+        {"name": "area", "type": "number"},
+    ]
