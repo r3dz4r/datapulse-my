@@ -1,0 +1,190 @@
+{
+  "schema": "datapulse/v1/scoring-standards",
+  "purpose": "Cite adopted vocabulary for each dataset's existing evidence; never compute an external standard's score or combine the references into a scoring method.",
+  "application": {
+    "manifest": "datapulse.json",
+    "dataset_key": "id",
+    "scope": "Apply this field crosswalk independently to every manifest dataset. Field names identify evidence to consult, not findings about every dataset.",
+    "missing_evidence": "A missing, null, empty or insufficient field remains unknown. Do not substitute a neutral value or infer conformity from a field's presence.",
+    "hierarchy": "DQAF is the primary spine; ODIN is secondary openness context; the 5-star scheme is a descriptor. These references are not blended or weighted.",
+    "attribution_boundary": "Each attribution cites the author of an external element. DataPulse owns the local evidence selection and probe observations; no citation implies an external assessment, endorsement or verdict."
+  },
+  "local_evidence": {
+    "owner": "DataPulse",
+    "boundary": "Manifest declarations and probe references remain local evidence. No local measurement is renamed as a DQAF score, ODIN score or awarded star rating.",
+    "fields": {
+      "verified_at": "Date DataPulse last verified upstream lifecycle state; not a content freshness or upstream publication date.",
+      "real_status": "Local observation of upstream lifecycle state; not an external quality judgement.",
+      "probe_note": "Local explanation of a probe result or limitation.",
+      "health_report": "Reference to DataPulse's report; the reference alone does not establish what the probe measured or validate upstream statistics.",
+      "expected_record_count": "Local declared record-count expectation, possibly null; not an observed count or statistical consistency assessment.",
+      "refresh_frequency": "Declared update cadence; not independently verified periodicity or a freshness measurement.",
+      "freshness_policy": "DataPulse's content-date interpretation and probe policy; not an IMF assessment or an upstream publication date.",
+      "methodology_version": "Version of DataPulse's own methodology; not an adopted authority's score or version.",
+      "attestation_ref": "Reference to local probe provenance; not certification by any adopted authority."
+    }
+  },
+  "standards": [
+    {
+      "standard": "IMF Data Quality Assessment Framework (DQAF)",
+      "hierarchy": "primary",
+      "role": "spine",
+      "attribution": "International Monetary Fund, Data Quality Assessment Framework, Generic Framework (May 2012), Appendix IV of the e-GDDS Guide for Participants and Users.",
+      "source_url": "https://dsbb.imf.org/content/pdfs/eGDDS_Guide_for_Participants_and_Users.pdf",
+      "assessment_boundary": "DQAF requires expert assessment. These citations and partial local signals are not IMF assessments or dataset scores.",
+      "elements": [
+        {
+          "standard": "IMF Data Quality Assessment Framework (DQAF)",
+          "dimension": "3 Accuracy and reliability",
+          "element": "3.5 Revision studies",
+          "definition": "Revisions, as a gauge of reliability, are tracked and mined for the information they may provide.",
+          "attribution": "International Monetary Fund, DQAF Generic Framework (May 2012), element 3.5, e-GDDS Guide Appendix IV.",
+          "source_url": "https://dsbb.imf.org/content/pdfs/eGDDS_Guide_for_Participants_and_Users.pdf",
+          "local_fields": null,
+          "evidence_status": "unknown",
+          "evidence_note": "No manifest field records studies of statistical revisions or their use in compilation. Lifecycle verification, local methodology versions and probe attestations do not evidence revision studies."
+        },
+        {
+          "standard": "IMF Data Quality Assessment Framework (DQAF)",
+          "dimension": "4 Serviceability",
+          "element": "4.1 Periodicity and timeliness",
+          "attribution": "International Monetary Fund, DQAF Generic Framework (May 2012), element 4.1, e-GDDS Guide Appendix IV.",
+          "source_url": "https://dsbb.imf.org/content/pdfs/eGDDS_Guide_for_Participants_and_Users.pdf",
+          "local_fields": ["refresh_frequency", "freshness_policy", "health_report"],
+          "evidence_status": "partial",
+          "evidence_note": "Declared cadence, local content-date policy and a probe report reference provide context to consult per dataset. They do not establish compliance with international dissemination standards. verified_at concerns lifecycle verification, not timeliness; reference data do not acquire freshness dates through this mapping."
+        },
+        {
+          "standard": "IMF Data Quality Assessment Framework (DQAF)",
+          "dimension": "4 Serviceability",
+          "element": "4.2 Consistency",
+          "attribution": "International Monetary Fund, DQAF Generic Framework (May 2012), element 4.2, e-GDDS Guide Appendix IV.",
+          "source_url": "https://dsbb.imf.org/content/pdfs/eGDDS_Guide_for_Participants_and_Users.pdf",
+          "local_fields": null,
+          "evidence_status": "unknown",
+          "evidence_note": "No manifest field establishes statistical consistency within a dataset, over time or with other statistics. An expected record count, schema identifier or health report pointer is insufficient."
+        },
+        {
+          "standard": "IMF Data Quality Assessment Framework (DQAF)",
+          "dimension": "5 Accessibility",
+          "element": "5.2 Metadata accessibility",
+          "attribution": "International Monetary Fund, DQAF Generic Framework (May 2012), element 5.2, e-GDDS Guide Appendix IV.",
+          "source_url": "https://dsbb.imf.org/content/pdfs/eGDDS_Guide_for_Participants_and_Users.pdf",
+          "local_fields": ["name", "source", "steward", "custodian", "geo_coverage", "health_report"],
+          "evidence_status": "partial",
+          "evidence_note": "Catalogue metadata and a local report reference supply limited descriptive context. They do not establish accessible, current upstream documentation of concepts, classifications or statistical techniques."
+        }
+      ]
+    },
+    {
+      "standard": "Open Data Inventory (ODIN)",
+      "hierarchy": "secondary",
+      "role": "context",
+      "attribution": "Open Data Watch, Open Data Inventory (ODIN), 2024/25 Methodology Guide, openness elements.",
+      "source_url": "https://docs.google.com/document/d/1q9QGI5svEY6RRmi7jkgQtX1Sjms3sznH/edit",
+      "assessment_boundary": "ODIN operationalises Open Definition 2.1 and assesses countries. Its 1 / 0.5 / 0 marks belong to ODIN's assessment; DataPulse neither assigns those marks nor produces dataset ODIN scores.",
+      "elements": [
+        {
+          "standard": "Open Data Inventory (ODIN)",
+          "element": "machine readable format",
+          "attribution": "Open Data Watch, ODIN 2024/25 Methodology Guide, machine-readable formats openness element.",
+          "source_url": "https://docs.google.com/document/d/1q9QGI5svEY6RRmi7jkgQtX1Sjms3sznH/edit",
+          "local_fields": null,
+          "evidence_status": "unknown",
+          "evidence_note": "No manifest field declares or verifies the returned data format. An API-looking URL, filename extension or schema identifier alone does not evidence machine readability."
+        },
+        {
+          "standard": "Open Data Inventory (ODIN)",
+          "element": "non-proprietary format",
+          "attribution": "Open Data Watch, ODIN 2024/25 Methodology Guide, non-proprietary formats openness element.",
+          "source_url": "https://docs.google.com/document/d/1q9QGI5svEY6RRmi7jkgQtX1Sjms3sznH/edit",
+          "local_fields": null,
+          "evidence_status": "unknown",
+          "evidence_note": "No manifest field verifies a data format or its non-proprietary status. A declared licence is not evidence of format."
+        },
+        {
+          "standard": "Open Data Inventory (ODIN)",
+          "element": "reference metadata",
+          "attribution": "Open Data Watch, ODIN 2024/25 Methodology Guide, reference metadata openness element.",
+          "source_url": "https://docs.google.com/document/d/1q9QGI5svEY6RRmi7jkgQtX1Sjms3sznH/edit",
+          "local_fields": ["source", "steward", "custodian", "name", "health_report"],
+          "evidence_status": "partial",
+          "evidence_note": "Declared source and responsible agency supply partial metadata context. A name is not an indicator definition, and verified_at is not an upstream upload date. The manifest does not evidence all ODIN metadata requirements."
+        },
+        {
+          "standard": "Open Data Inventory (ODIN)",
+          "element": "download options - bulk downloads, APIs, customisable export",
+          "attribution": "Open Data Watch, ODIN 2024/25 Methodology Guide, download options openness element.",
+          "source_url": "https://docs.google.com/document/d/1q9QGI5svEY6RRmi7jkgQtX1Sjms3sznH/edit",
+          "local_fields": ["url", "record_source_url"],
+          "evidence_status": "partial",
+          "evidence_note": "Declared access addresses identify where to investigate available downloads. record_source_url exists only on some rows. These addresses do not confirm working bulk downloads, APIs, customisable exports or the full set of options."
+        },
+        {
+          "standard": "Open Data Inventory (ODIN)",
+          "element": "open data license or open data terms of use",
+          "attribution": "Open Data Watch, ODIN 2024/25 Methodology Guide, open data license or open terms of use openness element.",
+          "source_url": "https://docs.google.com/document/d/1q9QGI5svEY6RRmi7jkgQtX1Sjms3sznH/edit",
+          "local_fields": ["licence", "attribution"],
+          "evidence_status": "partial",
+          "evidence_note": "Declared licence and upstream attribution are evidence to inspect per dataset, not confirmation of an open licence. Unstated or restrictive terms remain unresolved; DataPulse does not make ODIN's legal or scoring judgement."
+        }
+      ]
+    },
+    {
+      "standard": "Tim Berners-Lee's 5-star scheme",
+      "hierarchy": "descriptor",
+      "role": "descriptor",
+      "attribution": "Tim Berners-Lee, Linked Data, Design Issues, Is your Linked Open Data 5 Star? (added 2010).",
+      "source_url": "https://www.w3.org/DesignIssues/LinkedData.html",
+      "assessment_boundary": "Levels below identify the scheme's vocabulary only. They are cumulative descriptors, not awarded ratings or an authority's verdict on a DataPulse dataset.",
+      "elements": [
+        {
+          "standard": "Tim Berners-Lee's 5-star scheme",
+          "element": "1 = on the web under an open license",
+          "attribution": "Tim Berners-Lee, Linked Data, Design Issues, 5-star scheme, first level (2010).",
+          "source_url": "https://www.w3.org/DesignIssues/LinkedData.html",
+          "local_fields": ["url", "licence", "attribution"],
+          "evidence_status": "partial",
+          "evidence_note": "A declared web address and licence supply context. They do not confirm current accessibility or legal openness, and no star is awarded."
+        },
+        {
+          "standard": "Tim Berners-Lee's 5-star scheme",
+          "element": "2 = structured data",
+          "attribution": "Tim Berners-Lee, Linked Data, Design Issues, 5-star scheme, second level (2010).",
+          "source_url": "https://www.w3.org/DesignIssues/LinkedData.html",
+          "local_fields": null,
+          "evidence_status": "unknown",
+          "evidence_note": "No manifest field verifies that the returned upstream data are structured. The structure of DataPulse's manifest itself is not upstream evidence."
+        },
+        {
+          "standard": "Tim Berners-Lee's 5-star scheme",
+          "element": "3 = non-proprietary open format",
+          "attribution": "Tim Berners-Lee, Linked Data, Design Issues, 5-star scheme, third level (2010).",
+          "source_url": "https://www.w3.org/DesignIssues/LinkedData.html",
+          "local_fields": null,
+          "evidence_status": "unknown",
+          "evidence_note": "No manifest field verifies the upstream data format or its non-proprietary status."
+        },
+        {
+          "standard": "Tim Berners-Lee's 5-star scheme",
+          "element": "4 = URIs to denote things",
+          "attribution": "Tim Berners-Lee, Linked Data, Design Issues, 5-star scheme, fourth level (2010).",
+          "source_url": "https://www.w3.org/DesignIssues/LinkedData.html",
+          "local_fields": null,
+          "evidence_status": "unknown",
+          "evidence_note": "No manifest field records upstream URIs denoting data items with linked-data semantics. A catalogue URL or local dataset identifier does not evidence this level."
+        },
+        {
+          "standard": "Tim Berners-Lee's 5-star scheme",
+          "element": "5 = linked to other data for context",
+          "attribution": "Tim Berners-Lee, Linked Data, Design Issues, 5-star scheme, fifth level (2010).",
+          "source_url": "https://www.w3.org/DesignIssues/LinkedData.html",
+          "local_fields": null,
+          "evidence_status": "unknown",
+          "evidence_note": "No manifest field records semantic links from upstream data items to other data. Source, report and attestation links provide provenance rather than evidence of this level."
+        }
+      ]
+    }
+  ]
+}
