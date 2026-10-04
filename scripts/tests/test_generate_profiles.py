@@ -536,7 +536,7 @@ def test_release_fixture_stages_readme_generator(tmp_path: Path) -> None:
     assert (source / "scripts/templates/README.md.tmpl").is_file()
 
 
-def test_stops_on_first_failure(tmp_path: Path) -> None:
+def test_attempts_remaining_steps_after_failure(tmp_path: Path) -> None:
     source = _stage_source(tmp_path)
     (source / "health/latest.json").write_text('{"checked_at":', encoding="utf-8")
 
@@ -548,7 +548,8 @@ def test_stops_on_first_failure(tmp_path: Path) -> None:
     )
 
     assert result.returncode != 0
-    assert all(output is None for output in result.outputs.values())
+    assert "Step 14/14:" in result.stdout
+    assert "Failures (" in result.stderr
 
 
 def test_does_not_push_or_deploy(tmp_path: Path) -> None:
