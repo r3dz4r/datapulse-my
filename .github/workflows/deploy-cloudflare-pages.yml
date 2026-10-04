@@ -411,12 +411,17 @@ jobs:
           while IFS= read -r reference; do
             fetch_public "$reference" "$preserved_root/$reference"
           done < "$RUNNER_TEMP/proof-refs.txt"
-          index_date="$(jq -er '.date' "$preserved_root/attestations/latest/index.json")"
-          while IFS= read -r reference; do
-            [[ "$reference" =~ ^attestations/${index_date}/(revisions/[0-9a-f]{64}/)?[A-Za-z0-9_-]+\.json$ ]] || fail "served attestation reference is unsafe: $reference"
-            fetch_public "$reference" "$preserved_root/$reference"
-          done < <(jq -r '.attestations | to_entries[] | .value' "$preserved_root/attestations/latest/index.json")
-          if attestation_plane_state="$(python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root" --head-only)"; then
+          # Full verification authenticates dataset membership in every fetched
+          # immutable set, including earlier heads in the accepted lineage.
+          while IFS= read -r metadata_ref; do
+            [[ "$metadata_ref" == */index.json ]] || continue
+            directory="${metadata_ref%/index.json}"
+            while IFS= read -r reference; do
+              [[ "$reference" == "$directory/"* && "$reference" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/(revisions/[0-9a-f]{64}/)?[A-Za-z0-9_-]+\.json$ ]] || fail "served attestation reference is unsafe: $reference"
+              fetch_public "$reference" "$preserved_root/$reference"
+            done < <(jq -r '.attestations | to_entries[] | .value' "$preserved_root/$metadata_ref")
+          done < "$RUNNER_TEMP/immutable-refs.txt"
+          if attestation_plane_state="$(python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root")"; then
             if [[ "$attestation_plane_state" == "signer_down" ]]; then
               echo '::warning title=Signer lane down (P6); attestation failed-closed::Served attestation plane is stale and explicitly reports artifact_signed:false; preserving it unchanged.'
             fi

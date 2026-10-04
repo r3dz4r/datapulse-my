@@ -34,7 +34,7 @@ Local artifact observations:
 | Original binding | Published `2026-10-04T03:20:20Z`, health count 418, observation `2026-10-04T03:05:39Z`, and dated head reference (`attestations/2026-10-04/binding.json:6`, `attestations/2026-10-04/binding.json:10`, `attestations/2026-10-04/binding.json:18`). |
 | Discovery | Latest index points to the first October 4 set; chain index maps its hash to the original dated head (`attestations/latest/index.json:4`, `attestations/chain-index.json:27`). |
 
-The brief's September 7 refusal is historical operator evidence. Its quoted refusal text was not found in this tree; do not attribute it to the current generator. A local historical note records an earlier served/source durability gap, but is not a current live measurement (`notes/2026-09-07-attestation-evidence-gap-investigation.md:26`).
+The brief's September 7 refusal is historical operator evidence. Its quoted refusal text was not found in this tree; do not attribute it to the current generator. An earlier served/source durability gap is historical context, not a current live measurement.
 
 ## Envelope identity and signed ordering
 

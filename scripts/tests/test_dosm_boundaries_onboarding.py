@@ -48,7 +48,7 @@ def test_boundary_contract_and_artifacts_are_source_honest() -> None:
         assert row["canonical_id"] == dataset_id
         assert row["url"] == row["record_source_url"] == url
         assert row["custodian"] == "dosm"
-        assert row["licence"] == "Open Data License"
+        assert row["licence"] == "Department of Statistics Malaysia Open Data License"
         assert row["source"] == "https://github.com/dosm-malaysia/data-open"
         assert row["data_type"] == "reference"
         assert row["refresh_frequency"] == "as-required"
@@ -149,7 +149,7 @@ def test_lookup_contract_and_artifacts_are_source_honest() -> None:
         assert row["canonical_id"] == dataset_id
         assert row["url"] == row["record_source_url"] == url
         assert row["custodian"] == "dosm"
-        assert row["licence"] == "Open Data License"
+        assert row["licence"] == "Department of Statistics Malaysia Open Data License"
         assert row["source"] == "https://github.com/dosm-malaysia/data-open"
         assert row["data_type"] == "reference"
         assert row["refresh_frequency"] == "as-required"
