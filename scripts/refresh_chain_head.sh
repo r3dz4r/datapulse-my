@@ -27,22 +27,13 @@ fi
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
-day="$(date -u +%F)"
-dated="$root/attestations/$day"
-if [[ -d "$dated" && -f "$dated/binding.json" && -f "$dated/chain_head.json" ]]; then
-  printf 'refresh_chain_head.sh: date %s dated attestation dir already exists; refreshing latest/chain-head from committed set (no re-sign)\n' "$day"
-  rm -rf attestations/latest
-  mkdir -p attestations/latest
-  for filename in chain_head.json index.json scores.json binding.json; do
-    cp "$dated/$filename" "attestations/latest/$filename"
-  done
-else
-  generate_args=(--root . --private-key "$private_key")
-  if [[ -n "${DATAPULSE_REKOR_REFERENCE:-}" ]]; then
-    generate_args+=(--rekor-reference "$DATAPULSE_REKOR_REFERENCE")
-  fi
-  python3 scripts/gen_attestations.py "${generate_args[@]}"
+# The generator verifies unchanged input or appends a signed correction. Copying
+# revision zero here would bypass that decision and rewind a corrected head.
+generate_args=(--root . --private-key "$private_key")
+if [[ -n "${DATAPULSE_REKOR_REFERENCE:-}" ]]; then
+  generate_args+=(--rekor-reference "$DATAPULSE_REKOR_REFERENCE")
 fi
+python3 scripts/gen_attestations.py "${generate_args[@]}"
 
 # gen_attestations.generate() copies the fresh head into attestations/latest/
 # but never into the top-level legacy envelope that

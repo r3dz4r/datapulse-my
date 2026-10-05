@@ -64,6 +64,15 @@ def _dated_heads(root: Path) -> list[tuple[date, str]]:
             raise ChainLinearityError(f"dated attestation directory is invalid: {directory.name}") from error
         head_path = directory / "chain_head.json"
         if head_path.is_file():
+            if (directory / "revisions").is_dir():
+                try:
+                    from scripts.verify_attestation_binding import ContractError, verified_day_tip
+                except ModuleNotFoundError:
+                    from verify_attestation_binding import ContractError, verified_day_tip
+                try:
+                    head_path = root / verified_day_tip(root, directory.name)
+                except ContractError as error:
+                    raise ChainLinearityError(f"correction history is invalid: {error}") from error
             dated_heads.append(
                 (day, _load_head(head_path, f"dated chain head for {directory.name}"))
             )

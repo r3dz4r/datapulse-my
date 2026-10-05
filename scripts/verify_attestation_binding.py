@@ -199,9 +199,9 @@ def _verify_legacy_plane(
         index.get("schema") != "datapulse/v1/attestation-index"
         or not isinstance(refs, dict)
         or index.get("date") != payload.get("date")
-        or index.get("chain_head_ref") != f"attestations/{payload.get('date')}/chain_head.json"
     ):
         raise ContractError("latest attestation index is invalid")
+    directory = _set_directory(index)
     link_by_id = {
         row.get("dataset_id"): row.get("chain_link")
         for row in links
@@ -212,7 +212,7 @@ def _verify_legacy_plane(
     if not verify_datasets:
         return
     for dataset_id, reference in refs.items():
-        expected_ref = f"attestations/{payload['date']}/{dataset_id}.json"
+        expected_ref = f"{directory}/{dataset_id}.json"
         if reference != expected_ref:
             raise ContractError("dataset attestation reference is invalid")
         envelope = _load(root / reference, f"dataset attestation {dataset_id}")
@@ -234,6 +234,117 @@ def _verify_legacy_plane(
         expected_link = _digest_bytes(bytes.fromhex(previous) + canonical(dataset_payload))
         if envelope.get("chain_link") != expected_link or link_by_id[dataset_id] != expected_link:
             raise ContractError("dataset attestation chain link is invalid")
+
+
+def _set_directory(index: dict[str, Any]) -> str:
+    """Accept only revision zero or a content-addressed correction directory."""
+    day = index.get("date")
+    if not isinstance(day, str) or re.fullmatch(r"\d{4}-\d{2}-\d{2}", day) is None:
+        raise ContractError("attestation date is invalid")
+    reference = index.get("chain_head_ref")
+    prefix = f"attestations/{day}"
+    if reference == f"{prefix}/chain_head.json":
+        return prefix
+    if isinstance(reference, str) and re.fullmatch(
+        re.escape(prefix) + r"/revisions/[0-9a-f]{64}/chain_head\.json", reference
+    ):
+        return reference.rsplit("/", 1)[0]
+    raise ContractError("duplicate-date attestation reference is invalid")
+
+
+def correction_record(day: str, original: str, previous: str, old_digest: str, digest: str) -> dict[str, Any]:
+    """Define the signed correction identity and deterministic provenance."""
+    revision = _digest_bytes(canonical({"previous_chain_head": previous, "health_sha256": digest}))
+    return {
+        "schema": "datapulse/v1/attestation-correction",
+        "revision_id": revision,
+        "reason": "health artifact bytes changed",
+        "original_chain_head": original,
+        "supersedes_chain_head": previous,
+        "previous_health_sha256": old_digest,
+        "health_sha256": digest,
+        "health_snapshot_ref": f"attestations/{day}/revisions/{revision}/health.json",
+    }
+
+
+def verified_day_tip(root: Path, day: str, *, verify_datasets: bool = True) -> str:
+    """Verify one linear same-day history and return its unique immutable tip."""
+    chain_index = _load(root / "attestations/chain-index.json", "chain index")
+    registry = _load(root / "docs/.well-known/datapulse-probe-keys.json", "probe key registry")
+    if registry.get("schema") != "datapulse/v2/probe-key-registry" or not isinstance(registry.get("keys"), list):
+        raise ContractError("key registry is invalid")
+    heads = chain_index.get("heads")
+    if not isinstance(heads, dict):
+        raise ContractError("chain index heads are invalid")
+    sets: dict[str, tuple[str, dict[str, Any], dict[str, Any]]] = {}
+    for digest, reference in heads.items():
+        if not isinstance(reference, str) or not reference.startswith(f"attestations/{day}/"):
+            continue
+        directory = _set_directory({"date": day, "chain_head_ref": reference})
+        index = _load(root / directory / "index.json", "dated attestation index")
+        head = _load(root / reference, "dated chain head")
+        binding = _load(root / directory / "binding.json", "dated binding")
+        payload = binding.get("payload")
+        if (binding.get("schema") != "datapulse/v1/attestation-binding-envelope"
+                or not isinstance(payload, dict)
+                or payload.get("schema") != "datapulse/v1/attestation-binding"
+                or payload.get("date") != day
+                or not isinstance(payload.get("ed25519"), dict)
+                or index.get("chain_head_ref") != reference
+                or index.get("binding_ref") != f"{directory}/binding.json"
+                or head.get("chain_head") != digest
+                or payload.get("ed25519", {}).get("chain_head") != digest
+                or payload.get("ed25519", {}).get("chain_head_ref") != reference):
+            raise ContractError("dated binding does not match its chain head")
+        keys = [row for row in registry.get("keys", []) if isinstance(row, dict)
+                and row.get("key_id") == payload.get("ed25519", {}).get("key_id")]
+        if len(keys) != 1 or keys[0].get("purpose") != ATTESTATION_KEY_PURPOSE:
+            raise ContractError("dated attestation key is missing or ambiguous")
+        try:
+            public = Ed25519PublicKey.from_public_bytes(base64.b64decode(keys[0]["public_key_base64"], validate=True))
+        except (KeyError, TypeError, ValueError) as error:
+            raise ContractError("dated attestation public key is invalid") from error
+        _verify_signature(public, payload, binding.get("signature_base64"), "dated binding")
+        _verify_legacy_plane(root, index, head, public, keys[0], verify_datasets=verify_datasets)
+        rekor = binding.get("rekor")
+        health = payload.get("health")
+        if not isinstance(health, dict) or not isinstance(health.get("artifact_sha256"), str) or DIGEST.fullmatch(health["artifact_sha256"]) is None:
+            raise ContractError("dated health claim is invalid")
+        if rekor is not None:
+            verify_rekor_evidence(root, rekor, health["artifact_sha256"])
+        if binding.get("claims") != {"artifact_signed": rekor is not None, "rekor_witnessed": rekor is not None, "source_truth_verified": False}:
+            raise ContractError("dated binding claims do not match its evidence")
+        snapshot = root / directory / "health.json"
+        if snapshot.exists() and _digest_bytes(snapshot.read_bytes()) != health["artifact_sha256"]:
+            raise ContractError("dated health snapshot digest is invalid")
+        sets[digest] = (reference, head, payload)
+    originals = [digest for digest, (ref, _, _) in sets.items() if ref == f"attestations/{day}/chain_head.json"]
+    if len(originals) != 1:
+        raise ContractError("duplicate-date attestation ambiguity detected")
+    original = tip = originals[0]
+    visited = {tip}
+    if sets[tip][1]["payload"].get("correction") is not None or sets[tip][2].get("correction") is not None:
+        raise ContractError("original attestation cannot be a correction")
+    while len(visited) < len(sets):
+        children = [digest for digest, (_, head, _) in sets.items()
+                    if digest not in visited and head["payload"]["previous_chain_head"] == tip]
+        if len(children) != 1:
+            raise ContractError("duplicate-date correction history is ambiguous or disconnected")
+        successor = children[0]
+        reference, head, payload = sets[successor]
+        old = sets[tip][2]
+        record = correction_record(day, original, tip, old["health"]["artifact_sha256"], payload["health"]["artifact_sha256"])
+        if (old["health"] == payload["health"]
+                or payload.get("correction") != record or head["payload"].get("correction") != record
+                or reference != record["health_snapshot_ref"].replace("/health.json", "/chain_head.json")
+                or _parse_time(payload.get("published_at"), "correction publication time") < _parse_time(old.get("published_at"), "predecessor publication time")):
+            raise ContractError("signed correction provenance is invalid")
+        snapshot = root / record["health_snapshot_ref"]
+        if not snapshot.is_file() or _digest_bytes(snapshot.read_bytes()) != record["health_sha256"]:
+            raise ContractError("correction health snapshot digest is invalid")
+        visited.add(successor)
+        tip = successor
+    return sets[tip][0]
 
 
 def _verify_merkle_proof(entry: dict[str, Any]) -> None:
@@ -374,15 +485,8 @@ def verify_unbound_legacy_plane(
     _verify_legacy_plane(
         root, index, head, public, registry_row, verify_datasets=verify_datasets
     )
-    chain_index = _load(root / "attestations/chain-index.json", "chain index")
-    date = payload.get("date")
-    refs = [
-        ref
-        for ref in chain_index.get("heads", {}).values()
-        if isinstance(ref, str) and ref.startswith(f"attestations/{date}/")
-    ]
-    if refs != [f"attestations/{date}/chain_head.json"]:
-        raise ContractError("duplicate-date attestation ambiguity detected")
+    if index.get("chain_head_ref") != verified_day_tip(root, payload["date"], verify_datasets=verify_datasets):
+        raise ContractError("latest head does not select the corrected day tip")
 
 
 def verify_contract(
@@ -425,8 +529,7 @@ def verify_contract(
     if (
         ed25519.get("key_status") != "active"
         or ed25519.get("chain_head") != head.get("chain_head")
-        or ed25519.get("chain_head_ref")
-        != f"attestations/{payload.get('date')}/chain_head.json"
+        or ed25519.get("chain_head_ref") != index.get("chain_head_ref")
         or payload.get("date") != index.get("date")
     ):
         raise ContractError("Ed25519 binding does not match the latest daily head")
@@ -434,17 +537,14 @@ def verify_contract(
         root, index, head, public, registry_row, verify_datasets=verify_datasets
     )
 
-    chain_index = _load(root / "attestations/chain-index.json", "chain index")
-    dated_refs = [
-        ref
-        for ref in chain_index.get("heads", {}).values()
-        if isinstance(ref, str) and ref.startswith(f"attestations/{payload['date']}/")
-    ]
-    if dated_refs != [f"attestations/{payload['date']}/chain_head.json"]:
-        raise ContractError("duplicate-date attestation ambiguity detected")
-    dated_binding = root / f"attestations/{payload['date']}/binding.json"
-    if not dated_binding.is_file() or dated_binding.read_bytes() != (root / "attestations/latest/binding.json").read_bytes():
-        raise ContractError("latest binding is stale or not the dated binding")
+    tip_ref = verified_day_tip(root, payload["date"], verify_datasets=verify_datasets)
+    if index.get("chain_head_ref") != tip_ref:
+        raise ContractError("latest head does not select the corrected day tip")
+    directory = (root / tip_ref).parent
+    for filename in ("binding.json", "index.json", "chain_head.json"):
+        dated_file = directory / filename
+        if not dated_file.is_file() or dated_file.read_bytes() != (root / "attestations/latest" / filename).read_bytes():
+            raise ContractError(f"latest {filename.removesuffix('.json')} is stale or not the dated binding")
 
     observed_at = _parse_time(health_binding.get("observed_at"), "health observation time")
     if current < published_at or current < observed_at:
