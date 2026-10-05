@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 29.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "not_evaluated",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-09-05T02:34:56Z",
-    "record_count": 1122,
+    "last_checked": "2026-10-05T06:46:30Z",
+    "record_count": null,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "fresh"
+    "status": "degraded"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-static/prasarana?category=rapid-rail-kl",
@@ -39,7 +39,7 @@
     "geography": "Klang Valley",
     "name": "GTFS Static — Rapid KL Rail Schedule",
     "namespace": "transport",
-    "observed_verified_at": "2026-09-05T02:34:56Z",
+    "observed_verified_at": "2026-10-05T06:46:30Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Prasarana Malaysia Berhad"
   },
@@ -832,9 +832,9 @@
               "A count is an observed or estimated measurement, not a completeness guarantee."
             ],
             "reason_codes": [
-              "record_count_observed"
+              "record_count_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           },
           {
             "check_id": "reproducibility.attestation_reference",
@@ -855,11 +855,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 3,
+          "evaluated": 2,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 3,
-          "unknown": 1
+          "passed": 2,
+          "unknown": 2
         },
         "evidence_refs": [
           {
@@ -902,7 +902,7 @@
         "reason_codes": [
           "shape_fingerprint_missing",
           "last_checked_declared",
-          "record_count_observed",
+          "record_count_missing",
           "attestation_ref_declared"
         ],
         "state": "unknown"
