@@ -159,28 +159,70 @@ def select_cycle(events: list[dict[str, Any]], requested_cycle: str | None) -> t
     return requested_cycle, selected
 
 
+def distinct_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Collapse exact duplicate records while preserving first-seen order."""
+    distinct: list[dict[str, Any]] = []
+    for event in events:
+        if event not in distinct:
+            distinct.append(event)
+    return distinct
+
+
 def build_receipt(
     events: list[dict[str, Any]], cycle: str, mode: str, source_commit: str, health_commit: str
 ) -> dict[str, Any]:
-    """Build one deterministic receipt while rejecting contradictory stage records."""
-    by_stage: dict[str, dict[str, Any]] = {}
+    """Build one deterministic receipt while rejecting contradictory stage records.
+
+    A stage can legitimately be attempted more than once in a cycle: an earlier
+    attempt may be coalesced (``skipped``) and a later attempt may actually
+    perform the work. That sequence is not contradictory -- the later
+    non-skipped record is authoritative, and the coalesced attempt is preserved
+    in the receipt rather than dropped. Two differing non-skipped records for
+    one stage remain a defect and are refused.
+    """
+    grouped: dict[str, list[dict[str, Any]]] = {}
     for event in events:
-        stage = event["stage"]
-        previous = by_stage.get(stage)
-        if previous is not None and previous != event:
+        grouped.setdefault(event["stage"], []).append(event)
+    by_stage: dict[str, dict[str, Any]] = {}
+    coalesced: dict[str, list[dict[str, Any]]] = {}
+    for stage in sorted(grouped):
+        records = grouped[stage]
+        performed = distinct_events([record for record in records if record["status"] != "skipped"])
+        skipped = distinct_events([record for record in records if record["status"] == "skipped"])
+        if len(performed) > 1:
             raise TelemetryError(f"contradictory duplicate record for stage {stage}")
-        by_stage[stage] = event
+        if not performed:
+            if len(skipped) > 1:
+                raise TelemetryError(f"contradictory duplicate record for stage {stage}")
+            by_stage[stage] = skipped[0]
+            continue
+        # A coalesced attempt is only superseded by work that happened after it.
+        if any(attempt["timestamp"] >= performed[0]["timestamp"] for attempt in skipped):
+            raise TelemetryError(f"contradictory duplicate record for stage {stage}")
+        by_stage[stage] = performed[0]
+        if skipped:
+            coalesced[stage] = sorted(skipped, key=lambda attempt: attempt["timestamp"])
     timestamps = [event["timestamp"] for event in events]
     first_timestamp = min(timestamps)
     last_timestamp = max(timestamps)
-    stages = {
-        stage: {
+    stages: dict[str, dict[str, Any]] = {}
+    for stage in sorted(by_stage):
+        entry: dict[str, Any] = {
             "duration_ms": by_stage[stage]["duration_ms"],
             "metadata": by_stage[stage]["metadata"],
             "status": by_stage[stage]["status"],
         }
-        for stage in sorted(by_stage)
-    }
+        if stage in coalesced:
+            entry["coalesced"] = [
+                {
+                    "duration_ms": attempt["duration_ms"],
+                    "metadata": attempt["metadata"],
+                    "status": attempt["status"],
+                    "timestamp": format_timestamp(attempt["timestamp"]),
+                }
+                for attempt in coalesced[stage]
+            ]
+        stages[stage] = entry
     return {
         "cycle": cycle,
         "failed_stages": sorted(stage for stage, entry in stages.items() if entry["status"] == "fail"),
