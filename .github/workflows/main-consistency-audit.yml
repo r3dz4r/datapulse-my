@@ -44,6 +44,16 @@ jobs:
       - name: Install verification dependencies
         run: python3 -m pip install --requirement requirements-dev.txt
 
+      - name: Install Pandoc
+        # The suite's release-build profile renders documentation with pandoc,
+        # and fails closed without it ("Pandoc executable not found"). A local
+        # run passes because the developer box already has pandoc 3.1.3, so the
+        # absence is only observable on the runner. Mirror ci.yml's pin exactly.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc=3.1.3+ds-2
+          pandoc --version | sed -n '1p'
+
       - name: Run repository-contract and MCP tests
         run: python3 -m pytest scripts/tests/ mcp/tests/ -q
 
