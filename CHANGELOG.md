@@ -14,6 +14,17 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.48.1](https://github.com/r3dz4r/datapulse-my/compare/v3.48.0...v3.48.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **dosm:** restore feature counting and MCP catalogue count ([94aaa56](https://github.com/r3dz4r/datapulse-my/commit/94aaa56f0ffbb8281882c466acd739044bd9c31e))
+* **dosm:** restore the four source paths the revert removed ([c1858f7](https://github.com/r3dz4r/datapulse-my/commit/c1858f73dc417f8c891e1e898b35ea7b6b4d2f39))
+* **dosm:** restore the shipped GeoJSON envelope behaviour ([01b6ad6](https://github.com/r3dz4r/datapulse-my/commit/01b6ad67a13137c9d4a9dace4806b7854ea01ee9))
+* infer fields from GeoJSON features ([30a73e9](https://github.com/r3dz4r/datapulse-my/commit/30a73e966c2307a452dc7b6792ba0b6a5d2970c5))
+* **repo-consistency:** refresh MCP source stamps and drop the stale 418-dataset claims ([#585](https://github.com/r3dz4r/datapulse-my/issues/585)) ([98f00a3](https://github.com/r3dz4r/datapulse-my/commit/98f00a35f0d3e9b570830b14595ff30769745e4f))
+
 ## [3.48.0](https://github.com/r3dz4r/datapulse-my/compare/v3.47.4...v3.48.0) (2026-10-03)
 
 
