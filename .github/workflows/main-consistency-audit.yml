@@ -1,0 +1,54 @@
+name: Main consistency audit
+
+# Repository-side drift that main's own CI cannot see because the
+# deterministic-safety-net gate runs on pull requests only. Each check below
+# is self-contained and local: the audit must be able to fail on repository
+# state alone, never on the live origin. scripts/verify_local_public_parity.py
+# is deliberately excluded -- comparing against the live origin is the
+# coupling that made the pull-request path self-locking, and a scheduled audit
+# must not inherit it.
+on:
+  schedule:
+    # Hourly, at :23, so drift is caught within the hour instead of
+    # accumulating until it blocks every pull request at once.
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    # Scheduled runs execute on the default branch (main). Guard manual
+    # dispatches too so the audit can never report on a feature branch.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # Full history so the chain-head monotonicity test can walk the
+          # commits that touched observation-receipts/chain_head.json; a
+          # shallow clone would make that walk vacuous.
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install verification dependencies
+        run: python3 -m pip install --requirement requirements-dev.txt
+
+      - name: Run repository-contract and MCP tests
+        run: python3 -m pytest scripts/tests/ mcp/tests/ -q
+
+      - name: Lint current documentation facts
+        run: python3 scripts/fact_lint.py
+
+      - name: Check MCP reference stamps
+        run: python3 scripts/gen_mcp_reference.py --check
