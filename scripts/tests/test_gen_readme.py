@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
@@ -93,6 +95,40 @@ def test_check_reports_stale_output_and_balanced_markers(tmp_path: Path) -> None
     assert subprocess.run(command, check=False).returncode != 0
     text = readme.read_text(encoding="utf-8")
     assert text.count("<!-- BEGIN readme-") == text.count("<!-- END readme-")
+
+
+def test_readme_regeneration_is_a_no_op(tmp_path: Path) -> None:
+    """`--check` proves README agreement in both directions without ever writing."""
+    root = _fixture_root(tmp_path)
+    assert generate(root)
+    readme = root / "README.md"
+    canonical = readme.read_bytes()
+    command = [sys.executable, str(ROOT / "scripts/gen_readme.py"), "--root", str(root), "--check"]
+
+    # Direction 1: README matches its template -> exits 0 and leaves it untouched.
+    matched = subprocess.run(command, check=False, capture_output=True, text=True)
+    assert matched.returncode == 0, matched.stderr
+    assert readme.read_bytes() == canonical
+
+    # Direction 2: README disagrees with its template -> exits non-zero and still
+    # leaves the drifted bytes in place, so the gate never silently repairs them.
+    drifted = canonical + b"\nappended drift marker\n"
+    readme.write_bytes(drifted)
+    stale = subprocess.run(command, check=False, capture_output=True, text=True)
+    assert stale.returncode != 0, stale.stdout
+    assert "README.md is stale" in stale.stderr
+    assert readme.read_bytes() == drifted
+
+
+def test_required_gate_checks_readme_before_it_regenerates() -> None:
+    """The required job must fail on committed drift before the generator masks it."""
+    workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
+    steps = workflow["jobs"]["deterministic-safety-net"]["steps"]
+    runs = [step.get("run") for step in steps]
+
+    check_index = runs.index("python3 scripts/gen_readme.py --check")
+    generate_index = runs.index("python3 scripts/gen_readme.py")
+    assert check_index < generate_index
 
 
 def test_repository_template_is_the_canonical_public_readme_contract() -> None:

@@ -115,6 +115,9 @@ jobs:
               raise SystemExit("legacy release proof format: missing " + "; ".join(missing))
           PY
 
+      - name: Verify README matches its template before regeneration
+        run: python3 scripts/gen_readme.py --check
+
       - name: Generate README from canonical inputs
         run: python3 scripts/gen_readme.py
 
