@@ -71,6 +71,101 @@ def test_local_gate_accepts_readme_prepared_source_without_binding() -> None:
     assert "Local pre-generation attestation structure: PASS" in completed.stdout
 
 
+def _shadow_checkout(destination: Path) -> Path:
+    """Materialize a mutable copy of the checkout for a release-gate run.
+
+    Read-only trees are symlinked so the copy stays cheap, while every path the
+    release build rewrites is a real copy so the test never mutates ROOT.
+    """
+    shadow = destination / "checkout"
+    shadow.mkdir()
+    mutable = {
+        "datapulse.json",
+        "health",
+        "docs",
+        "scripts",
+        "attestations",
+        "catalog-snapshot.json",
+        "changelog.json",
+        "README.md",
+    }
+    for entry in ROOT.iterdir():
+        if entry.name == ".git" or entry.name in mutable:
+            continue
+        (shadow / entry.name).symlink_to(entry)
+    shutil.copy2(ROOT / "datapulse.json", shadow / "datapulse.json")
+    (shadow / "health").mkdir()
+    for name in (
+        "latest.json",
+        "trends.json",
+        "drift.json",
+        "reconciliation.json",
+        "history.jsonl",
+        "probe_counts.json",
+    ):
+        source = ROOT / "health" / name
+        if source.is_file():
+            shutil.copy2(source, shadow / "health" / name)
+    shutil.copytree(ROOT / "docs", shadow / "docs")
+    shutil.copytree(ROOT / "scripts", shadow / "scripts")
+    (shadow / "attestations").mkdir()
+    for name in ("catalog-snapshot.json", "changelog.json", "README.md"):
+        source = ROOT / name
+        if source.is_file():
+            shutil.copy2(source, shadow / name)
+    return shadow
+
+
+def test_release_invariant_retry_corrected_index(tmp_path: Path) -> None:
+    """A same-day correction must still pass the release contract.
+
+    The worktree case above exercises the committed flat dated set. A corrected
+    day instead publishes its head beneath a content-addressed
+    revisions/<64-hex>/ directory, which is the deliberate form
+    gen_attestations.py produces and verify_attestation_binding.py accepts.
+    """
+    shadow = _shadow_checkout(tmp_path)
+    signing_root, key = fixture_root(tmp_path / "signing")
+    shutil.copy2(
+        signing_root / "docs/.well-known/datapulse-probe-keys.json",
+        shadow / "docs/.well-known/datapulse-probe-keys.json",
+    )
+    now = datetime(2026, 10, 6, 7, tzinfo=timezone.utc)
+    ga.generate(shadow, key, now)
+    health = shadow / "health/latest.json"
+    # Same rows, new bytes: this is what triggers the content-addressed revision.
+    health.write_bytes(health.read_bytes() + b"\n")
+    ga.generate(shadow, key, now + timedelta(hours=1))
+
+    corrected_ref = ga.load(shadow / "attestations/latest/index.json")["chain_head_ref"]
+    assert re.fullmatch(
+        r"attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/revisions/[0-9a-f]{64}/chain_head\.json",
+        corrected_ref,
+    ), corrected_ref
+
+    for generator in ("gen_catalog_snapshot.py", "gen_readme.py"):
+        prepared = subprocess.run(
+            [sys.executable, f"scripts/{generator}"],
+            cwd=shadow,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert prepared.returncode == 0, prepared.stderr
+
+    completed = subprocess.run(
+        ["bash", "scripts/verify_release_invariants.sh", "--local"],
+        cwd=shadow,
+        env={**os.environ, "TMPDIR": str(tmp_path), "PYTHONDONTWRITEBYTECODE": "1"},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "Local pre-generation attestation structure: PASS" in completed.stdout
+
+
 def test_readme_health_parity_still_rejects_an_inconsistent_generated_readme(
     tmp_path: Path,
 ) -> None:
