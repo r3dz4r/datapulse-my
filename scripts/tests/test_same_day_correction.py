@@ -238,7 +238,7 @@ def test_wrapper_appends_correction_with_real_generator(isolated_root: tuple[Pat
     registry["keys"][0]["not_before"] = (now - timedelta(days=1)).isoformat()
     registry["keys"][0]["not_after"] = (now + timedelta(days=2)).isoformat()
     write(registry_path, registry)
-    for name in ("refresh_chain_head.sh", "gen_attestations.py", "verify_attestation_binding.py"):
+    for name in ("refresh_chain_head.sh", "gen_attestations.py", "verify_attestation_binding.py", "attestation_sets.py"):
         destination = root / "scripts" / name
         destination.parent.mkdir(exist_ok=True)
         shutil.copy2(ROOT / "scripts" / name, destination)

@@ -430,6 +430,14 @@ jobs:
             # Main's correction evidence records the raw health input beside the
             # signed set; fetch it so the lineage verifier can check its digest.
             fetch_optional "$directory/health.json" "$preserved_root/$directory/health.json"
+            # A correction also pins its new input in a content-addressed
+            # snapshot named by its signed record; fetch that too so the full
+            # lineage verification can authenticate the record.
+            correction_snapshot="$(jq -r '.payload.correction.health_snapshot_ref // empty' "$preserved_root/$directory/binding.json")"
+            if [[ -n "$correction_snapshot" ]]; then
+              [[ "$correction_snapshot" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/revisions/[0-9a-f]{64}/health\.json$ ]] || fail "unsafe correction snapshot reference: $correction_snapshot"
+              fetch_public "$correction_snapshot" "$preserved_root/$correction_snapshot"
+            fi
             while IFS= read -r reference; do
               [[ "$reference" == "$directory/"* && "$reference" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/(revisions/[0-9a-f]{64}/)?[A-Za-z0-9_-]+\.json$ ]] || fail "served attestation reference is unsafe: $reference"
               fetch_public "$reference" "$preserved_root/$reference"

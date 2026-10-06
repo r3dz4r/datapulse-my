@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.verify_attestation_binding import ContractError
-from scripts.attestation_sets import discovery, verify_set, descriptor, validate_discovery, FILES
+from scripts.attestation_sets import discovery, verify_set, descriptor, validate_discovery, correction_record, set_directory, FILES
 
 ZERO = "0" * 64
 ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
@@ -266,8 +266,20 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
         did=entry["id"]; h=health_by.get(did,{}); observed=h.get("last_checked") or health["checked_at"]; cutoff14=now-timedelta(days=14); cutoff1=now-timedelta(days=1); times=[parse_time(r["observed_at"]) for r in history if r.get("dataset_id")==did and r.get("observed_at")]; probe_counts=probe_counts_for_dataset(probe_artifact,did) if probe_artifact is not None else ((sum(t>=cutoff14 for t in times),sum(t>=cutoff1 for t in times)) if use_history else (None,None)); fp=h.get("first_row_hash"); browser=h.get("access_dependency")=="browser"
         payload={"schema":"datapulse/v1/probe-attestation","date":day,"observed_at":observed,"dataset_id":did,"source_url":entry["url"],"observed_request_url":h.get("request_url"),"access_dependency":h.get("access_dependency","direct"),"probe_count_14d":probe_counts[0],"probe_count_24h":probe_counts[1],"last_status":h.get("status"),"last_staleness_days":h.get("staleness_days"),"content_fingerprint":{"scheme":"shape-v1:sha256","scope":"first-row-or-headers","value":fp} if fp else None,"browser_receipt":{"available":False,"reason":"probe runner emitted no signed receipt" if browser else None},"previous_chain_head":previous,"key_id":key["key_id"],"signer_pubkey_base64":key["public_key_base64"]}
         link=sha(bytes.fromhex(previous)+canonical(payload)); ref=f"attestations/{day}/{did}.json"; envelope={"schema":"datapulse/v1/probe-attestation-envelope","payload":payload,"signature_base64":sign(private,payload),"chain_link":link,"verification_level":"L1-capable"}; Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(envelope["signature_base64"]),canonical(payload)); envelopes[did] = envelope; links.append({"dataset_id":did,"chain_link":link}); refs[did]=ref
-    head_payload={"schema":"datapulse/v1/daily-chain-head","date":day,"previous_chain_head":previous,"dataset_count":len(links),"dataset_links_sha256":sha(canonical(links)),"key_id":key["key_id"]}; chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}
     run = chain_index["days"].get(day, [])
+    correction = None
+    if run:
+        predecessor = run[-1]
+        if predecessor != previous:
+            raise ValueError("same-day correction predecessor disagrees with discovery")
+        prior_binding = load(root / set_directory(chain_index["heads"][predecessor]) / "binding.json")
+        correction = correction_record(day, run[0], predecessor, prior_binding["payload"]["health"]["artifact_sha256"], health_claim["artifact_sha256"])
+        if (root / correction["health_snapshot_ref"]).exists():
+            raise ValueError("correction revision already exists but is not indexed")
+    head_payload={"schema":"datapulse/v1/daily-chain-head","date":day,"previous_chain_head":previous,"dataset_count":len(links),"dataset_links_sha256":sha(canonical(links)),"key_id":key["key_id"]}
+    if correction is not None:
+        head_payload["correction"] = correction
+    chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}
     directory = f"attestations/{day}" + (f"/revisions/{chain_head}" if run else "")
     dated = root / directory
     if dated.exists() and any((dated / name).exists() for name in FILES):
@@ -281,13 +293,20 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     dump(dated / "scores.json", score_rows(manifest,health,trends,drift,recon,generated_at))
     binding = binding_envelope(private,day,generated_at,health_claim,head,key["key_id"],rekor)
     binding["payload"]["ed25519"]["chain_head_ref"] = directory + "/chain_head.json"
+    if correction is not None:
+        binding["payload"]["correction"] = correction
     binding["signature_base64"] = sign(private, binding["payload"])
     dump(dated / "binding.json", binding)
     # Preserve the exact raw health input beside the signed set so a same-day
     # correction can be verified against its recorded bytes, not the mutable
-    # health alias. This keeps main's correction evidence reachable from the
-    # branch's append-only revision discovery.
-    (dated / "health.json").write_bytes((root / "health/latest.json").read_bytes())
+    # health alias. A correction also pins its new input in the content-addressed
+    # snapshot named by its signed record.
+    health_bytes = (root / "health/latest.json").read_bytes()
+    (dated / "health.json").write_bytes(health_bytes)
+    if correction is not None:
+        correction_snapshot = root / correction["health_snapshot_ref"]
+        correction_snapshot.parent.mkdir(parents=True, exist_ok=True)
+        correction_snapshot.write_bytes(health_bytes)
     verify_set(root, directory + "/chain_head.json")
     chain_index["heads"][chain_head] = directory + "/chain_head.json"
     chain_index["envelopes"][chain_head] = descriptor(head, directory + "/chain_head.json", len(run) + 1)
@@ -351,11 +370,20 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
             candidate = load(staging / "attestations/chain-index.json")
             directory = candidate["heads"][candidate["current_head"]].rsplit("/", 1)[0]
             destination = root / directory
+            candidate_correction = load(staging / directory / "binding.json").get("payload", {}).get("correction")
+            snapshot_directory = candidate_correction["health_snapshot_ref"].rsplit("/", 1)[0] if isinstance(candidate_correction, dict) else None
             if not destination.exists():
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 os.rename(staging / directory, destination)
             elif any((destination / name).read_bytes() != (staging / directory / name).read_bytes() for name in FILES):
                 raise ValueError("immutable destination cannot be overwritten")
+            if snapshot_directory is not None:
+                snapshot_destination = root / snapshot_directory
+                if not snapshot_destination.exists():
+                    snapshot_destination.parent.mkdir(parents=True, exist_ok=True)
+                    os.rename(staging / snapshot_directory, snapshot_destination)
+                elif (snapshot_destination / "health.json").read_bytes() != (staging / snapshot_directory / "health.json").read_bytes():
+                    raise ValueError("immutable correction snapshot cannot be overwritten")
             mutable = ["attestations/chain-index.json", "datapulse.json", ".attestations/chain_head.json"] + ["attestations/latest/" + n for n in FILES]
             backup = {p: (root / p).read_bytes() if (root / p).exists() else None for p in mutable}
             try:

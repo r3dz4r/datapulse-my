@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import sys
 import re
@@ -16,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.verify_attestation_binding import (
     ContractError, _digest_bytes, _load, _parse_time, _verify_legacy_plane,
-    _verify_signature, verify_rekor_evidence,
+    _verify_signature, canonical, verify_rekor_evidence,
 )
 
 SET_REF = re.compile(r"attestations/(\d{4}-\d{2}-\d{2})(?:/revisions/([0-9a-f]{64}))?/([A-Za-z0-9_-]+)\.json")
@@ -30,6 +31,28 @@ def set_directory(reference: str, filename: str = "chain_head.json") -> str:
         raise ContractError("unsafe immutable attestation reference")
     date.fromisoformat(match[1])
     return reference.rsplit("/", 1)[0]
+
+
+def correction_record(day: str, original: str, previous: str, old_digest: str, digest: str) -> dict[str, Any]:
+    """Define the signed correction identity and deterministic provenance.
+
+    The revision id is content-addressed on the predecessor head and the new
+    health digest, so the immutable health snapshot it names can be written
+    before the set itself exists.  Naming the revision directory after the
+    chain head (as this branch's discovery does) would make the snapshot
+    reference self-referential.
+    """
+    revision = hashlib.sha256(canonical({"previous_chain_head": previous, "health_sha256": digest})).hexdigest()
+    return {
+        "schema": "datapulse/v1/attestation-correction",
+        "revision_id": revision,
+        "reason": "health artifact bytes changed",
+        "original_chain_head": original,
+        "supersedes_chain_head": previous,
+        "previous_health_sha256": old_digest,
+        "health_sha256": digest,
+        "health_snapshot_ref": f"attestations/{day}/revisions/{revision}/health.json",
+    }
 
 
 def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> dict[str, Any]:
@@ -63,8 +86,6 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
     if match[1] != head["payload"]["date"] or (match[2] and match[2] != head["chain_head"]):
         raise ContractError("immutable head path identity mismatch")
     ids = sorted(index["attestations"])
-    import hashlib
-    from scripts.verify_attestation_binding import canonical
     claim = payload.get("health", {})
     if claim.get("dataset_count") != len(ids) or claim.get("dataset_ids_sha256") != hashlib.sha256(canonical(ids)).hexdigest():
         raise ContractError("immutable binding membership mismatch")
@@ -79,6 +100,25 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
     snapshot = root / directory / "health.json"
     if snapshot.exists() and _digest_bytes(snapshot.read_bytes()) != claim.get("artifact_sha256"):
         raise ContractError("dated health snapshot digest is invalid")
+    record = payload.get("correction")
+    if record is not None:
+        if not isinstance(record, dict):
+            raise ContractError("signed correction provenance is invalid")
+        revision = record.get("revision_id")
+        if (record.get("schema") != "datapulse/v1/attestation-correction"
+                or not isinstance(revision, str) or re.fullmatch(r"[0-9a-f]{64}", revision) is None
+                or record.get("health_snapshot_ref") != f"attestations/{payload.get('date')}/revisions/{revision}/health.json"
+                or record.get("health_sha256") != claim.get("artifact_sha256")
+                or record.get("supersedes_chain_head") != head["payload"].get("previous_chain_head")
+                or head["payload"].get("correction") != record):
+            raise ContractError("signed correction provenance is invalid")
+        # The immutable correction snapshot is only present in a fully fetched
+        # plane; the served head-only check validates the signed record instead.
+        correction_snapshot = root / record["health_snapshot_ref"]
+        if verify_datasets and not correction_snapshot.is_file():
+            raise ContractError("signed correction health snapshot is missing")
+        if correction_snapshot.is_file() and _digest_bytes(correction_snapshot.read_bytes()) != record.get("health_sha256"):
+            raise ContractError("signed correction health snapshot digest is invalid")
     if binding.get("claims") != {"artifact_signed": rekor is not None, "rekor_witnessed": rekor is not None, "source_truth_verified": False}:
         raise ContractError("immutable binding evidence claims disagree")
     return head
@@ -138,6 +178,8 @@ def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = Tr
         date.fromisoformat(day)
         if not isinstance(run, list) or not run:
             raise ContractError("invalid day list")
+        original = run[0]
+        previous_health: str | None = None
         for sequence, digest in enumerate(run, 1):
             if digest in seen or digest not in envelopes or digest not in heads:
                 raise ContractError("repeated or unresolved discovery head")
@@ -147,6 +189,19 @@ def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = Tr
                 raise ContractError("discovery descriptor disagrees with signed set")
             if sequence > 1 and head["payload"]["previous_chain_head"] != run[sequence - 2]:
                 raise ContractError("same-day fork or missing parent")
+            directory = set_directory(heads[digest])
+            payload = _load(root / directory / "binding.json", "immutable binding")["payload"]
+            record = payload.get("correction")
+            if sequence == 1:
+                if record is not None:
+                    raise ContractError("original attestation cannot be a correction")
+            else:
+                if not isinstance(record, dict) or previous_health is None:
+                    raise ContractError("same-day correction is missing its signed provenance")
+                expected = correction_record(day, original, run[sequence - 2], previous_health, payload["health"]["artifact_sha256"])
+                if record != expected or head["payload"].get("correction") != record:
+                    raise ContractError("signed correction provenance disagrees with the append lineage")
+            previous_health = payload["health"]["artifact_sha256"]
     if set(heads) - seen != set(document.get("unresolved_heads", [])):
         raise ContractError("unresolved head mappings changed without reconciliation")
     if seen != set(envelopes):
@@ -187,6 +242,10 @@ def selected_directory(root: Path, *, projections: bool = True, verify_datasets:
             if not projection.is_file() or projection.read_bytes() != (root / directory / filename).read_bytes():
                 raise ContractError("latest projection is stale or mixed")
         mirror = root / ".attestations/chain_head.json"
-        if _load(root / "attestations/chain-index.json", "chain index")["schema"] == "datapulse/v2/chain-index" and mirror.read_bytes() != (root / directory / "chain_head.json").read_bytes():
+        # The legacy mirror is a mutable projection; a historical verification
+        # plane assembled from immutable bytes is not required to carry it.
+        if (mirror.is_file()
+                and _load(root / "attestations/chain-index.json", "chain index")["schema"] == "datapulse/v2/chain-index"
+                and mirror.read_bytes() != (root / directory / "chain_head.json").read_bytes()):
             raise ContractError("legacy mirror disagrees with current head")
     return directory

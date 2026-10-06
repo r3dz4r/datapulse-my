@@ -89,6 +89,109 @@ fetch_optional() {
   fetch "$name" "$path"
 }
 
+fetch_attestation_contract_root() {
+  local contract_root="$1" index_date head_ref head_refs set_dir set_index reference references optional_name
+  index_date="$(jq -er '.date | select(type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$work_dir/attestation-index.json")" || {
+    printf 'Served attestation index date is invalid\n' >&2
+    return 1
+  }
+  fetch "contract-root/attestations/chain-index.json" attestations/chain-index.json
+  fetch "contract-root/attestations/latest/scores.json" attestations/latest/scores.json
+  if [[ -f "$work_dir/attestation-binding.json" ]]; then
+    cp "$work_dir/attestation-binding.json" "$contract_root/attestations/latest/binding.json"
+  fi
+  head_refs="$(jq -er --arg prefix "attestations/${index_date}/" '.heads | to_entries[] | .value | select(startswith($prefix))' "$contract_root/attestations/chain-index.json")" || {
+    printf 'Served attestation chain index has no head for %s\n' "$index_date" >&2
+    return 1
+  }
+
+  while IFS= read -r head_ref; do
+    [[ -z "$head_ref" ]] && continue
+    [[ "$head_ref" =~ ^attestations/${index_date}/(revisions/[0-9a-f]{64}/)?chain_head\.json$ ]] || {
+      printf 'Unsafe attestation chain head reference: %s\n' "$head_ref" >&2
+      return 1
+    }
+    set_dir="${head_ref%/chain_head.json}"
+    fetch "contract-root/$set_dir/chain_head.json" "$set_dir/chain_head.json"
+    fetch "contract-root/$set_dir/binding.json" "$set_dir/binding.json"
+    fetch "contract-root/$set_dir/scores.json" "$set_dir/scores.json"
+    for optional_name in index health; do
+      if ! fetch_optional "contract-root/$set_dir/$optional_name.json" "$set_dir/$optional_name.json"; then
+        rm -f "$contract_root/$set_dir/$optional_name.json"
+      fi
+    done
+    set_index="$contract_root/$set_dir/index.json"
+    if [[ ! -f "$set_index" ]]; then
+      set_index="$contract_root/attestations/latest/index.json"
+    fi
+    references="$(jq -er '.attestations | to_entries[] | .value' "$set_index")" || {
+      printf 'Served attestation set index is invalid: %s\n' "$set_index" >&2
+      return 1
+    }
+    while IFS= read -r reference; do
+      [[ -z "$reference" ]] && continue
+      [[ "$reference" =~ ^${set_dir}/[A-Za-z0-9_.-]+\.json$ ]] || {
+        printf 'Unsafe attestation reference: %s\n' "$reference" >&2
+        return 1
+      }
+      fetch "contract-root/$reference" "$reference"
+    done <<< "$references"
+    while IFS= read -r reference; do
+      [[ -z "$reference" ]] && continue
+      if [[ "$set_dir" == "attestations/${index_date}" ]]; then
+        [[ "$reference" =~ ^attestations/rekor/${index_date}/[A-Za-z0-9_.-]+\.json$ ]] || {
+          printf 'Unsafe Rekor proof reference: %s\n' "$reference" >&2
+          return 1
+        }
+      else
+        [[ "$reference" =~ ^attestations/rekor/${index_date}/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*\.json$ ]] || {
+          printf 'Unsafe Rekor proof reference: %s\n' "$reference" >&2
+          return 1
+        }
+      fi
+      fetch "contract-root/$reference" "$reference"
+    done < <(jq -r '.rekor // {} | [.reference_ref, .bundle_ref] | .[] // empty' "$contract_root/$set_dir/binding.json")
+  done <<< "$head_refs"
+}
+
+# The non-local gate compares a dated attestation with a served plane that is
+# republished on its own, faster cadence.  Exactly two refusal reasons are that
+# churn rather than a defect; every other reason stays fatal.
+attestation_republish_churn_reasons=(
+  'health digest/count/time binding does not match served health'
+  'unsigned attestation plane is not stale'
+)
+
+# A refused served plane is tolerated only when every reason its verifiers
+# printed is one of the republish-churn reasons above.  Both verifiers prefix a
+# reason with their script name; a bare reason is accepted unchanged.
+attestation_failure_is_republish_churn() {
+  local plane_state_error="$1" binding_output="$2" line reason candidate
+  local -a reasons=()
+  local matched
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -n "$line" ]] || continue
+    reasons+=("$line")
+  done < "$plane_state_error"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -n "$line" ]] || continue
+    reasons+=("$line")
+  done <<< "$binding_output"
+  ((${#reasons[@]} > 0)) || return 1
+  for line in "${reasons[@]}"; do
+    reason="${line#verify_attestation_binding.py: }"
+    matched=1
+    for candidate in "${attestation_republish_churn_reasons[@]}"; do
+      if [[ "$reason" == "$candidate" ]]; then
+        matched=0
+        break
+      fi
+    done
+    ((matched == 0)) || return 1
+  done
+  return 0
+}
+
 assert_readme_health_parity() {
   local health_file="$1" readme_file="$2"
   "$python_bin" - "$health_file" "$readme_file" <<'PY'
@@ -156,34 +259,36 @@ if ! $local_mode; then
   cp "$work_dir/attestation-index.json" "$contract_root/attestations/latest/index.json"
   cp "$work_dir/attestation-head.json" "$contract_root/attestations/latest/chain_head.json"
   cp "$work_dir/attestation-keys.json" "$contract_root/docs/.well-known/datapulse-probe-keys.json"
-  fetch "contract-root/attestations/chain-index.json" attestations/chain-index.json
-
-  if [[ -f "$work_dir/attestation-binding.json" ]]; then
-    cp "$work_dir/attestation-binding.json" "$contract_root/attestations/latest/binding.json"
-    cp "$work_dir/attestation-scores.json" "$contract_root/attestations/latest/scores.json"
-    fetch "contract-root/.attestations/chain_head.json" .attestations/chain_head.json
-    "$python_bin" scripts/attestation_fetch_refs.py --root "$contract_root" > "$work_dir/immutable-refs.txt"
-    while IFS= read -r reference; do
-      fetch "contract-root/$reference" "$reference"
-    done < "$work_dir/immutable-refs.txt"
-    "$python_bin" scripts/attestation_fetch_refs.py --root "$contract_root" --proofs > "$work_dir/proof-refs.txt"
-    while IFS= read -r reference; do
-      fetch "contract-root/$reference" "$reference"
-    done < "$work_dir/proof-refs.txt"
-
-  fi
+  fetch_attestation_contract_root "$contract_root"
 
   binding_args=(--root "$contract_root" --head-only)
+  plane_state_error="$work_dir/attestation-plane-state.error"
   if attestation_plane_state="$(
     "$python_bin" scripts/verify_attestation_plane_state.py \
-      --planedir "$contract_root" --head-only
+      --planedir "$contract_root" --head-only 2>"$plane_state_error"
   )"; then
     if [[ "$attestation_plane_state" == "signer_down" ]]; then
       echo '::warning title=Signer lane down (P6); attestation failed-closed::Served attestation plane is stale and explicitly reports artifact_signed:false; preserving it unchanged.'
     fi
   else
-    "$python_bin" scripts/verify_attestation_binding.py "${binding_args[@]}"
-    exit 1
+    # The plane state refused the served plane.  Re-run the strict binding
+    # contract to capture the precise reason, then tolerate only the two
+    # served-plane republish reasons; any other reason remains a hard failure.
+    binding_exit=0
+    binding_output="$("$python_bin" scripts/verify_attestation_binding.py "${binding_args[@]}")" || binding_exit=$?
+    if ((binding_exit == 0)) || ! attestation_failure_is_republish_churn "$plane_state_error" "$binding_output"; then
+      [[ -n "$binding_output" ]] && printf '%s\n' "$binding_output" >&2
+      [[ -s "$plane_state_error" ]] && cat "$plane_state_error" >&2
+      exit 1
+    fi
+    binding_reason="$(printf '%s\n' "$binding_output" | sed -n '1{s/^verify_attestation_binding\.py: //;p;}')"
+    plane_state_reason="$(sed -n '1{s/^verify_attestation_binding\.py: //;p;}' "$plane_state_error")"
+    warning_reason="$binding_reason"
+    if [[ -n "$plane_state_reason" && "$plane_state_reason" != "$binding_reason" ]]; then
+      warning_reason="$warning_reason; $plane_state_reason"
+    fi
+    printf '::warning title=Attestation plane republish churn::%s; dated attestation trails the continuously republished served plane, preserving the served plane unchanged.\n' \
+      "$warning_reason"
   fi
 fi
 
