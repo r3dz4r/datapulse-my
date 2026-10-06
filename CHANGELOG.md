@@ -14,6 +14,16 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.48.6](https://github.com/r3dz4r/datapulse-my/compare/v3.48.5...v3.48.6) (2026-10-06)
+
+
+### Bug Fixes
+
+* **attestation:** accept content-addressed correction refs in both validators ([1db6f8c](https://github.com/r3dz4r/datapulse-my/commit/1db6f8c28557f1d81b101f08a81fa15c671db79b))
+* **attestation:** accept content-addressed correction refs in both validators ([31d785e](https://github.com/r3dz4r/datapulse-my/commit/31d785e4391311f6434861525eae8296fa707e4a))
+* **ci:** check the README against its template instead of only regenerating it ([#662](https://github.com/r3dz4r/datapulse-my/issues/662)) ([87fc01e](https://github.com/r3dz4r/datapulse-my/commit/87fc01e8088a66653f354bb63b8d76cca1bee96e))
+* **release:** accept content-addressed chain-head refs in the release contract ([#668](https://github.com/r3dz4r/datapulse-my/issues/668)) ([f5040e8](https://github.com/r3dz4r/datapulse-my/commit/f5040e85c2aeb8402a1034d7aa514b073c3e727e))
+
 ## [3.48.5](https://github.com/r3dz4r/datapulse-my/compare/v3.48.4...v3.48.5) (2026-10-06)
 
 
