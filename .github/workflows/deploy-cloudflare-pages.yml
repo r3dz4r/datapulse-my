@@ -395,6 +395,17 @@ jobs:
               --connect-timeout 10 --max-time 30 \
               "${website_origin}/${path}" --output "$output" || fail "served attestation file could not be fetched: $path"
           }
+          # A lagging plane may carry no per-set health snapshot; treat its
+          # absence as "not recorded", never as a reason to reject the plane.
+          fetch_optional() {
+            local path="$1" output="$2"
+            [[ "$path" =~ ^[A-Za-z0-9._/-]+$ ]] || fail "unsafe served path: $path"
+            mkdir -p "$(dirname "$output")"
+            curl --fail --location --silent --show-error --proto '=https' \
+              --retry 3 --retry-delay 5 --retry-all-errors \
+              --connect-timeout 10 --max-time 30 \
+              "${website_origin}/${path}" --output "$output" 2>/dev/null || true
+          }
           fetch_public health/latest.json "$preserved_root/health/latest.json"
           fetch_public .well-known/datapulse-probe-keys.json "$preserved_root/docs/.well-known/datapulse-probe-keys.json"
           fetch_public attestations/latest/index.json "$preserved_root/attestations/latest/index.json"
@@ -416,6 +427,9 @@ jobs:
           while IFS= read -r metadata_ref; do
             [[ "$metadata_ref" == */index.json ]] || continue
             directory="${metadata_ref%/index.json}"
+            # Main's correction evidence records the raw health input beside the
+            # signed set; fetch it so the lineage verifier can check its digest.
+            fetch_optional "$directory/health.json" "$preserved_root/$directory/health.json"
             while IFS= read -r reference; do
               [[ "$reference" == "$directory/"* && "$reference" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/(revisions/[0-9a-f]{64}/)?[A-Za-z0-9_-]+\.json$ ]] || fail "served attestation reference is unsafe: $reference"
               fetch_public "$reference" "$preserved_root/$reference"

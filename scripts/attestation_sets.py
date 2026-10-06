@@ -15,8 +15,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.verify_attestation_binding import (
-    ContractError, _load, _parse_time, _verify_legacy_plane, _verify_signature,
-    verify_rekor_evidence,
+    ContractError, _digest_bytes, _load, _parse_time, _verify_legacy_plane,
+    _verify_signature, verify_rekor_evidence,
 )
 
 SET_REF = re.compile(r"attestations/(\d{4}-\d{2}-\d{2})(?:/revisions/([0-9a-f]{64}))?/([A-Za-z0-9_-]+)\.json")
@@ -73,6 +73,12 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
     rekor = binding.get("rekor")
     if rekor is not None:
         verify_rekor_evidence(root, rekor, claim.get("artifact_sha256"))
+    # A recorded health snapshot pins the exact input a correction superseded;
+    # when present it must match the signed claim. Main's same-day correction
+    # evidence lives here, so the branch's lineage verifier must check it too.
+    snapshot = root / directory / "health.json"
+    if snapshot.exists() and _digest_bytes(snapshot.read_bytes()) != claim.get("artifact_sha256"):
+        raise ContractError("dated health snapshot digest is invalid")
     if binding.get("claims") != {"artifact_signed": rekor is not None, "rekor_witnessed": rekor is not None, "source_truth_verified": False}:
         raise ContractError("immutable binding evidence claims disagree")
     return head

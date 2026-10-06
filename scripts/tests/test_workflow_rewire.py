@@ -463,7 +463,12 @@ def _preserve_served_plane(
     checkout = tmp_path / f"checkout-{label}"
     shutil.copytree(served_root, checkout)
     (checkout / "scripts").mkdir()
-    for script in ("verify_attestation_binding.py", "verify_attestation_plane_state.py"):
+    # The merged fast path verifies the whole append-only lineage, so the
+    # checkout needs the branch's discovery helpers alongside the verifier.
+    for script in (
+        "verify_attestation_binding.py", "verify_attestation_plane_state.py",
+        "attestation_fetch_refs.py", "attestation_sets.py",
+    ):
         shutil.copy2(ROOT / "scripts" / script, checkout / "scripts")
     (checkout / "config").mkdir()
     shutil.copy2(ROOT / "config/public-surfaces.json", checkout / "config")

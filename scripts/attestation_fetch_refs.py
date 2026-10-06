@@ -9,7 +9,18 @@ import re
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.attestation_sets import FILES, set_directory
+from scripts.attestation_sets import FILES, SET_REF, set_directory
+
+
+def _proof_pattern(day: str, *, revision: bool) -> re.Pattern[str]:
+    """Mirror main's split: anchors are flat, revisions may nest under the day.
+
+    A revision's Rekor evidence is grouped beneath the binding day (for example
+    ``attestations/rekor/<day>/correction/reference.json``), while the anchor set
+    may only reference a flat object. Both stay inside the binding day.
+    """
+    tail = r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*" if revision else r"[A-Za-z0-9_.-]+"
+    return re.compile(rf"attestations/(?:rekor/)?{re.escape(day)}/{tail}\.json")
 
 
 def fetch_refs(root: Path, proofs: bool = False) -> list[str]:
@@ -29,8 +40,15 @@ def fetch_refs(root: Path, proofs: bool = False) -> list[str]:
             continue
         binding = json.loads((root / directory / "binding.json").read_text())
         day = binding["payload"]["date"]
+        match = SET_REF.fullmatch(directory + "/chain_head.json")
+        revision = match is not None and match[2] is not None
+        pattern = _proof_pattern(day, revision=revision)
         for reference in (binding.get("rekor") or {}).values():
-            if not isinstance(reference, str) or not re.fullmatch(rf"attestations/(?:rekor/)?{re.escape(day)}/[A-Za-z0-9_.-]+\.json", reference):
+            if (
+                not isinstance(reference, str)
+                or not pattern.fullmatch(reference)
+                or any(segment in {".", ".."} for segment in reference.split("/"))
+            ):
                 raise ValueError("unsafe Rekor proof reference")
             references.add(reference)
     return sorted(references)

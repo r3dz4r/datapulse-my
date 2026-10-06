@@ -283,6 +283,11 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     binding["payload"]["ed25519"]["chain_head_ref"] = directory + "/chain_head.json"
     binding["signature_base64"] = sign(private, binding["payload"])
     dump(dated / "binding.json", binding)
+    # Preserve the exact raw health input beside the signed set so a same-day
+    # correction can be verified against its recorded bytes, not the mutable
+    # health alias. This keeps main's correction evidence reachable from the
+    # branch's append-only revision discovery.
+    (dated / "health.json").write_bytes((root / "health/latest.json").read_bytes())
     verify_set(root, directory + "/chain_head.json")
     chain_index["heads"][chain_head] = directory + "/chain_head.json"
     chain_index["envelopes"][chain_head] = descriptor(head, directory + "/chain_head.json", len(run) + 1)
