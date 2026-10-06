@@ -439,6 +439,106 @@ mkdir -p "$(dirname "$output")"; cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
     assert (preserved / "attestations/latest/binding.json").read_bytes() == (served_root / "attestations/latest/binding.json").read_bytes()
 
 
+def _preserve_served_plane(
+    tmp_path: Path, served_root: Path, *, label: str
+) -> tuple[subprocess.CompletedProcess[str], Path]:
+    """Run the extracted health-only fast path against a served-plane fixture."""
+    checkout = tmp_path / f"checkout-{label}"
+    shutil.copytree(served_root, checkout)
+    (checkout / "scripts").mkdir()
+    for script in ("verify_attestation_binding.py", "verify_attestation_plane_state.py"):
+        shutil.copy2(ROOT / "scripts" / script, checkout / "scripts")
+    (checkout / "config").mkdir()
+    shutil.copy2(ROOT / "config/public-surfaces.json", checkout / "config")
+    (checkout / "attestations/latest/binding.json").write_text("{}\n", encoding="utf-8")
+    fake_bin = tmp_path / f"bin-{label}"
+    fake_bin.mkdir()
+    fake_curl = fake_bin / "curl"
+    fake_curl.write_text(
+        """#!/usr/bin/env bash
+set -Eeuo pipefail
+output=""; url=""
+while (( $# > 0 )); do case "$1" in --output) output="$2"; shift 2 ;; *) url="$1"; shift ;; esac; done
+path="${url#https://www.data-pulse.my/}"
+[[ "$path" == .well-known/* ]] && path="docs/$path"
+[[ "$path" != "$url" && -f "${MOCK_SERVED_ROOT:?}/$path" ]] || exit 22
+mkdir -p "$(dirname "$output")"; cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
+""",
+        encoding="utf-8",
+    )
+    fake_curl.chmod(0o755)
+    runner_temp = tmp_path / f"runner-temp-{label}"
+    environment = os.environ.copy()
+    environment.update(
+        PATH=f"{fake_bin}:{environment['PATH']}",
+        MOCK_SERVED_ROOT=str(served_root),
+        RUNNER_TEMP=str(runner_temp),
+    )
+    completed = subprocess.run(
+        ["bash", "-c", _fast_path_preservation_script()],
+        cwd=checkout,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return completed, runner_temp / "preserved-attestations"
+
+
+def test_cloudflare_fast_path_preserves_corrected_plane(tmp_path: Path) -> None:
+    """A health-only artifact preserves a served plane carrying a same-day correction."""
+    served_root, key = fixture_root(tmp_path / "served")
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    day = now.date().isoformat()
+    original_at = now - timedelta(seconds=2)
+    corrected_at = now - timedelta(seconds=1)
+    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
+    health["checked_at"] = original_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+    health["datasets"][0]["last_checked"] = health["checked_at"]
+    write(served_root / "health/latest.json", health)
+    ga.generate(served_root, key, original_at, fixture_rekor_reference(served_root, f"rekor/{day}"))
+
+    # A same-day correction changes the health bytes; the generator appends a
+    # content-addressed revision under attestations/<day>/revisions/<id>/.
+    corrected = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
+    corrected["datasets"][0]["status"] = "stale"
+    write(served_root / "health/latest.json", corrected)
+    ga.generate(
+        served_root,
+        key,
+        corrected_at,
+        fixture_rekor_reference(served_root, f"rekor/{day}/correction"),
+    )
+
+    index = json.loads((served_root / "attestations/latest/index.json").read_text(encoding="utf-8"))
+    assert "/revisions/" in index["chain_head_ref"]
+    assert verify_contract(served_root, now=corrected_at + timedelta(hours=1))["claims"]["artifact_signed"] is True
+    revision = (served_root / index["chain_head_ref"]).parent.relative_to(served_root)
+
+    completed, preserved = _preserve_served_plane(tmp_path, served_root, label="corrected")
+    assert completed.returncode == 0, completed.stderr
+    assert (preserved / "attestations/latest/binding.json").read_bytes() == (
+        served_root / "attestations/latest/binding.json"
+    ).read_bytes()
+    assert (preserved / revision / "chain_head.json").read_bytes() == (
+        served_root / revision / "chain_head.json"
+    ).read_bytes()
+    assert (preserved / revision / "health.json").read_bytes() == (
+        served_root / revision / "health.json"
+    ).read_bytes()
+    assert (preserved / f"attestations/rekor/{day}/reference.json").read_bytes() == (
+        served_root / f"attestations/rekor/{day}/reference.json"
+    ).read_bytes()
+
+    # A genuinely corrupt correction must still fail closed, not be preserved.
+    corrupt_root = tmp_path / "corrupt"
+    shutil.copytree(served_root, corrupt_root)
+    (corrupt_root / revision / "health.json").write_bytes(b"{}\n")
+    corrupt, _ = _preserve_served_plane(tmp_path, corrupt_root, label="corrupt")
+    assert corrupt.returncode != 0
+    assert "refusing to preserve the served plane" in corrupt.stdout
+
+
 def test_cloudflare_fast_path_uses_p6_classifier_and_carries_fail_closed_plane() -> None:
     script = _fast_path_preservation_script()
 
