@@ -1,154 +1,135 @@
 ---
 type: Reference
-title: Dataset Catalogue, Health, and Evidence Contract
-description: Explains the checked-in dataset manifest and health snapshot, the probe-to-snapshot-to-projection flow, status and evidence boundaries, and safe change points for metadata, provenance, and receipts.
+title: Dataset Catalogue, Health, and Evidence
+description: Describes DataPulse dataset identity and publisher metadata, probe health semantics, freshness and scheduling, drift and reconciliation evidence, and the boundary between observed signals and upstream truth.
 tags: [datasets, catalogue, manifest, health, evidence, provenance]
 verified:
   - by: openwiki/0.4.3
-    at: 2026-09-28T16:37:06.116Z
+    at: 2026-10-06T20:25:12.635Z
 sources:
-  - id: openwiki-source-6232827553e57e89cfe01180
-    resource: repo://custodians.json
   - id: openwiki-source-53cc7c2d889d1fead610dba7
     resource: repo://datapulse.json
   - id: openwiki-source-0e17bdbc51bd88531ff18a0f
     resource: repo://datapulse.schema.json
-  - id: openwiki-source-2bab9e695a827aefac9555da
-    resource: repo://health.schema.json
   - id: openwiki-source-1a180b1bc921529852474c20
     resource: repo://health/latest.json
   - id: openwiki-source-83fe3cd6171f4749991ccee9
     resource: repo://mcp.json
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-  - id: openwiki-source-04beb4004d6d3fa272050b53
-    resource: repo://scripts/check_url_drift.py
-  - id: openwiki-source-f9fafda300b014057921ac73
-    resource: repo://scripts/check.sh
-  - id: openwiki-source-d14402895e78cd5f6316eebb
-    resource: repo://scripts/gen_data_reports.sh
-  - id: openwiki-source-720264a7a12751a22d92986f
-    resource: repo://scripts/gen_dataset_passports.py
-  - id: openwiki-source-cec0018dd354b69bbb4bb691
-    resource: repo://scripts/gen_json_envelope.py
-  - id: openwiki-source-786badafc972b032044e4e00
-    resource: repo://scripts/gen_per_dataset_receipt.py
+  - id: openwiki-source-b4db8e05c3938b5ee3d00841
+    resource: repo://scripts/gen_drift.py
+  - id: openwiki-source-27a9ff39e058b66a43d94bee
+    resource: repo://scripts/gen_reconciliation.py
   - id: openwiki-source-15f3e5c6116c64daea874624
     resource: repo://scripts/health_policy.py
-  - id: openwiki-source-bc61d0a96aa54ac457204b12
-    resource: repo://scripts/observation_receipt.py
-  - id: openwiki-source-1295f958967f9f34c00c1e49
-    resource: repo://scripts/observation_verify.py
-  - id: openwiki-source-6e0718a595a707ed7a69aca4
-    resource: repo://scripts/tests/test_observation_receipt.py
-  - id: openwiki-source-41142460028df682d9341dd2
-    resource: repo://scripts/tests/test_observation_verify.py
-  - id: openwiki-source-58c7add76279fc57979be378
-    resource: repo://scripts/tests/test_verify_per_dataset_receipt.py
-  - id: openwiki-source-86de83c93f4607789e448505
-    resource: repo://scripts/verify_per_dataset_receipt.py
-generated: { by: "openwiki/0.4.3", at: "2026-09-28T16:37:06.116Z" }
+  - id: openwiki-source-879f15291681883d90b2d829
+    resource: repo://scripts/observation_normalize.py
+  - id: openwiki-source-e68ab3dd3defa2bb33907daa
+    resource: repo://scripts/tests/test_openwiki.py
+generated: { by: "openwiki/0.4.3", at: "2026-10-06T20:25:12.635Z" }
 ---
 
-# Dataset Catalogue, Health, and Evidence Contract
+# Dataset Catalogue, Health, and Evidence
 
-DataPulse publishes its catalogue at **https://www.data-pulse.my**. The checked-in `datapulse.json` manifest currently contains **425 datasets**, and `mcp.json` advertises **19 read-only tools**. These are current discovery facts, not promises of availability, completeness, semantic correctness, payment capability, prices, tiers, quotas, billing terms, or commercial offers.
+DataPulse publishes its catalogue at **https://www.data-pulse.my**. The checked-in `datapulse.json` manifest currently contains **425 datasets**. These are current discovery facts, not promises of availability, completeness, semantic correctness, certification, authority, payment capability, prices, quotas, billing terms, or commercial offers.
 
-The ownership boundary is explicit: upstream sources remain authoritative for substantive data, definitions, licence terms, and publisher lifecycle. DataPulse observes access, shape, counts, timing, and provenance signals. An observation or receipt proves the condition, timing, and integrity of that observation; it does **not** prove the semantic truth of upstream data.
+The central boundary is simple: DataPulse observes **reachability, freshness, structure, counts, licences, and provenance**. It does not establish semantic correctness, certification, or authority over upstream sources. Upstream publishers remain authoritative for the meaning and substantive truth of their data, their lifecycle, and their licence terms.
 
-## Sources of record and projections
+## Catalogue as the identity contract
 
-`datapulse.json` is the dataset manifest; `health/latest.json` is the complete health snapshot. Their schemas (`datapulse.schema.json` and `health.schema.json`), `custodians.json`, and checked-in policy/configuration files constrain and explain those records. Reports, JSON envelopes, JSON-LD, feeds, badges, catalogues, discovery files, MCP responses, and receipts are projections around those sources of record—not a second registry.
+`datapulse.json` is the authoritative dataset manifest; `health/latest.json` is the complete checked-in health snapshot. `datapulse.schema.json` and `health.schema.json` define their machine contracts. Reports, catalogues, feeds, badges, discovery files, JSON projections, and the MCP consumer surface are derived views, not a second registry.
 
-The manifest is a closed JSON object whose canonical schema is `https://www.data-pulse.my/datapulse.schema.json`. Every row has a stable `id`, display `name` and `steward`, registry-backed `custodian`, official `url`, `licence`, `attribution`, `refresh_frequency`, `expected_record_count`, `geo_coverage`, `health_report`, and an enumerated `namespace`. Optional fields describe canonical or series identity, shared schema, geography, successor relationships, data type, methodology, lifecycle evidence, probe notes, and opt-in record evidence. `expected_record_count` is an expectation, not proof that the upstream records are correct. `custodian` is an agency identifier resolved through `custodians.json`; `steward` is display metadata. The closed schema means new metadata must be added deliberately to `datapulse.schema.json`, not appended ad hoc.
+Each manifest row supplies a stable `id`, display `name` and `steward`, registry-backed `custodian`, official `url`, publisher-declared `licence` and `attribution`, `refresh_frequency`, `expected_record_count`, `geo_coverage`, `health_report`, and an enumerated `namespace`. Optional metadata covers identity/series relationships, shared schemas, geography, successors, data type, methodology, lifecycle evidence, probe notes, and record evidence. `expected_record_count` is an expectation, not proof of the upstream count or correctness. `custodian` is an agency identifier resolved through `custodians.json`; `steward` is display metadata. The closed schema means an extension belongs in the schema and generators, rather than being appended ad hoc.
 
-`real_status` (`live` or `discontinued`) is upstream lifecycle evidence and is separate from probe health. A reachable source can be discontinued, while an unreachable source is not thereby substantively wrong. Official URLs, IDs, cadence vocabulary, report paths, and manifest/health identity joins are contract data: changing one requires regenerating dependent projections.
+`real_status` (`live` or `discontinued`) is upstream lifecycle evidence and is separate from probe health: a reachable source can be discontinued, and an unreachable source is not thereby substantively wrong. IDs, official URLs, cadence vocabulary, report paths, and manifest/health identity joins are contract data; changing them requires regenerating dependent projections.
 
-## Probe, snapshot, and discovery flow
+## From manifest to health snapshot
 
-A full run probes official URLs. `scripts/check.sh --due` selects rows whose cadence has elapsed, optionally restricted by `--tier` or `--cadence-minutes`; waking the scheduler does not mean all 425 datasets were probed. Due mode reads the previous snapshot, probes selected rows, preserves unchanged rows, and writes a complete snapshot in manifest order. If no row is due, it keeps the prior snapshot. Probe failures are recorded as data so the summary remains complete.
+A full health run probes official URLs. `scripts/check.sh --due` selects rows whose cadence has elapsed, with optional tier and cadence filters. Waking the scheduler does not mean all 425 datasets were probed: due mode reads the prior snapshot, updates selected rows, preserves unchanged rows, and writes a complete snapshot in manifest order. If no row is due, the prior snapshot is retained. Probe failures remain represented as rows so a partial success cannot masquerade as a complete success.
 
 ```mermaid
 flowchart TD
-    M["datapulse.json manifest"] --> P["check.sh selects due rows and probes official URLs"]
+    M["datapulse.json manifest"] --> S["check.sh selects due rows"]
+    S --> P["official URL probes"]
     P --> H["health/latest.json complete snapshot"]
     M --> H
-    H --> R["reports and JSON envelopes"]
+    H --> D["drift and reconciliation evidence"]
+    H --> R["reports and discovery projections"]
     M --> R
-    H --> C["catalogue and discovery projections"]
-    M --> C
-    H --> E["per-dataset evidence receipts"]
+    H --> E["evidence and observation receipts"]
     M --> E
-    H --> O["host observation receipt chain"]
 ```
 
-*Caption: The manifest supplies identity and declared policy; probes create observations; the snapshot and receipts bind those observations before read-only projections are generated.*
+*Caption: The manifest supplies identity and declared policy; probes produce observations; the snapshot and derived evidence are generated before read-only projections.*
 
-The live snapshot uses schema `datapulse/v0.4/dataset-health`. At **2026-09-28T14:35:07Z**, its 418-row summary reported 155 `fresh`, 98 `aging`, 141 `stale`, 1 `discontinued`, 2 `degraded`, 1 `browser_dependent`, 1 `unreachable`, 0 `unknown`, 5 `unknown_freshness`, and 14 `reference`. It also records signal-source counts and limitations such as missing `Last-Modified` headers or extracted record counts. These are dated observations and can change on the next run.
+The current snapshot uses schema `datapulse/v0.4/dataset-health` and was checked at **2026-10-06T19:15:15Z**. Its 425-row summary reports: 145 `fresh`, 103 `aging`, 146 `stale`, 1 `discontinued`, 1 `degraded`, 0 `browser_dependent`, 3 `unreachable`, 0 `unknown`, 5 `unknown_freshness`, and 21 `reference`. Freshness signals came from 161 `last_modified_header` observations and 237 `content_date_parse` observations; 27 had neither. The snapshot also reports 425 datasets without a `Last-Modified` header and 14 without an extracted record count. These are dated observations and can change on the next run.
 
-## Status semantics and failure boundaries
+## Cadence, freshness, and the ten statuses
 
-The taxonomy classifies evidence, not upstream truth:
+`scripts/health_policy.py` normalizes the supported cadence vocabulary into realtime, daily, weekly-monthly, and slow scheduling tiers. It accepts bounded publisher aliases such as `yearly`, `one-off`, and `infrequent`; unsupported cadence values fail closed. Due intervals are 15 minutes for realtime, 24 hours for daily, seven days for weekly-monthly, and 30 days for slow, with weekday-daily rows using a one-hour interval. This is scheduling policy, not a claim that a publisher actually delivered new content.
 
-- `fresh`: the applicable freshness signal is within cadence.
-- `aging`: beyond 1.5 times cadence and no more than 3 times cadence.
-- `stale`: beyond 3 times cadence.
-- `degraded`: reachable, but a configured shape, count, or content check fails.
-- `browser-dependent`: assessment needs the Camofox rendered-browser path; it is not proof of unavailability.
-- `unreachable`: no successful HTTP response.
-- `unknown`: no usable classification.
-- `unknown_freshness`: a usable response exists but no defensible freshness signal.
-- `reference`: versioned reference data for which date freshness does not apply.
+Freshness selection validates a configured content date first and uses `Last-Modified` as the configured fallback. Future or invalid signals are not invented into timestamps. For clocked data, age within 1.5 times the cadence is `fresh`, up to three times is `aging`, and beyond three times is `stale`. The classifier gives transport failure precedence (`unreachable`), treats versioned reference data as `reference`, then handles configured probe degradation, missing/invalid checks, browser access, and freshness. The ten public health meanings are:
+
+- `fresh`: the selected freshness signal is within its cadence window.
+- `aging`: it is beyond 1.5 times cadence but no more than three times cadence.
+- `stale`: it is beyond three times cadence.
+- `degraded`: the probe or configured shape/count/content check failed.
+- `browser-dependent`: measurement requires the Camofox rendered-browser path; this is not proof of unavailability.
+- `unreachable`: no successful HTTP response was obtained.
+- `unknown`: no usable classification exists, including a never-probed or review-required row.
+- `unknown-freshness`: a usable response exists but no defensible freshness signal exists.
+- `reference`: versioned reference data for which clock freshness does not apply.
 - `discontinued`: observed upstream lifecycle stop, not merely lateness.
 
-A `Last-Modified` header or parsed content date is evidence, not an invented timestamp. Shape and count checks can detect change or failure, but cannot establish that publisher content is substantively true. Failure statuses are retained in the snapshot rather than hidden by a partial successful run.
+Status is evidence classification, not an upstream truth score. A `Last-Modified` header, parsed content date, shape check, or count check can describe what was observed without proving that the publisher's content is semantically correct.
 
-## Licence, privacy, provenance, and samples
+## Drift and reconciliation are context, not certification
 
-`licence` and `attribution` are copied as publisher-declared metadata. Verify the official source before changing them; repeating them in a report or envelope does not transfer authority or alter the upstream licence. Samples in `samples/` are bounded reproducibility aids. Hand-constructed samples carry the repository `# SAMPLE:` marker and must not be presented as copied source records. Do not commit credentials, cookies, personal data, or copied upstream records.
+`gen_drift.py` reads bounded historical observations (a 30-day window plus a baseline) and emits explainable schema and record-count signals. It requires at least two sample days and one day of span for meaningful record trends, and uses configured thresholds rather than declaring arbitrary changes to be errors. Its verdict vocabulary is `drift_detected`, `record_count_drift`, `stable`, and `insufficient_data`; missing history therefore remains explicit.
 
-`config/privacy-classifications.json` contains dataset-specific review records, not a universal privacy guarantee. `config/observation-policies.json` controls evidence byte limits, retention, raw-byte capture, expiry, and review basis. These controls limit retained evidence; they do not change upstream ownership. `config/series-registry.json` records explicit reviewed identity relationships; it is not fuzzy semantic matching.
+`gen_reconciliation.py` compares deliberately related publications, not every dataset by fuzzy similarity. Seed groups must have at least two unique manifest members, a declared relationship (`equivalent` or `different_granularity`), and a count policy (`strict` or `context_only`). Additional groups may be discovered from exact canonical URLs or a constrained match on custodian, title, cadence, granularity, and endpoint channel. Comparisons use record counts, content dates, and availability where measurable. Results are `agree`, `discrepancy`, `different_granularity`, or `insufficient_data`; only a discrepancy requires human review. Reconciliation exposes publication differences and agreement evidence—it does not merge sources or certify that either source is correct.
 
-## Reports, envelopes, and GTFS
+## Licence, privacy, samples, and provenance
 
-Each manifest row's `health_report` points to `data/<id>.md`. `scripts/gen_data_reports.sh` owns generated report frontmatter and observed values such as status, check time, freshness, counts, and size while preserving human-authored explanatory sections. Reports should explain observed coverage, schema, quirks, reproducibility, licence, and attribution without implying that DataPulse publishes or guarantees the upstream data.
+`licence` and `attribution` are publisher-declared metadata copied into projections. Verify the official source before changing them; repeating them does not transfer authority or alter the upstream licence. `expected_record_count` and extracted counts likewise describe declared or observed values, not semantic validity.
 
-For non-GTFS datasets, `data/json/<id>.json` is generated from the manifest row, health row, and report. It projects observed status/freshness, bounded sample-derived fields where available, checks, quirks, reproducibility, licence, and attribution; it must not silently reclassify health. The deliberate exception is the 30 GTFS datasets, which have Markdown, JSON-LD, and static/realtime GTFS samples but no non-GTFS JSON envelope. The other 425 datasets have envelopes; do not add GTFS placeholders.
+Samples are bounded reproducibility aids. Hand-constructed samples carry the repository `# SAMPLE:` marker and must not be presented as copied source records. Do not commit credentials, cookies, personal data, or copied upstream records. `config/privacy-classifications.json` contains dataset-specific review records, not a universal privacy guarantee; observation policy controls evidence limits, retention, raw-byte capture, expiry, and review basis.
 
-## Receipts and verification
+`observation_normalize.py` makes retained historical projections deterministic by pinning a profile name and version, preserving captured bytes separately, and recording a projection digest. Normalization is a derived projection, never a licence to rewrite captured evidence or fabricate missing source fields.
 
-Per-dataset receipts bind a health row to manifest licence metadata. `scripts/gen_per_dataset_receipt.py` validates the health schema, unique IDs, and exact manifest/health identity equality, then emits `data/<id>.receipt.evidence.json` and an in-toto statement. The canonical evidence row includes dataset ID, check time, status, request/access details, HTTP and size observations, freshness fields, record count, and licence. Its subject is the SHA-256 digest of canonical evidence bytes and its predicate is `https://www.data-pulse.my/predicates/per-dataset-evidence/v1`.
+## Reports, receipts, and verification
 
-`scripts/verify_per_dataset_receipt.py` recomputes the canonical row and statement, rejects missing or mismatched persisted evidence, checks DSSE media and payload types, and can invoke `cosign` with explicit HTTPS certificate identity and OIDC issuer. This proves consistency with selected repository inputs; it does not certify upstream data.
+Each manifest row's `health_report` points to a human-readable report. Generators project observed status, freshness, counts, size, checks, quirks, reproducibility, licence, and attribution while retaining the distinction between observation and publisher truth. The MCP consumer surface currently exposes **19 read-only tools** for catalogue, health, drift, reconciliation, provenance, and evidence discovery; it complements the official source and cannot promote an observation into authority.
 
-Host-side observation receipts are a separate signed chain. `scripts/observation_receipt.py` signs the health artifact observation, freshness summary, signer profile, and monotonic predecessor sequence. It stores append-only per-day containers and a cross-day chain head; observing the same digest again is idempotent. By default signing uses `/run/datapulse-signer/sign.sock`; `--key` is an explicit test/manual alternative, and supplying both is rejected. `scripts/observation_verify.py` checks canonical payload hash, Ed25519 signature, active-key validity window, receipt identity, and optionally the binding to the served health artifact. Without `--health`, artifact claims are not verified. These are integrity and timing controls, not semantic validation of upstream data.
+Per-dataset evidence binds a health row to manifest licence metadata. Receipt generation validates the health schema, unique IDs, and exact manifest/health identity equality before emitting canonical evidence and an in-toto statement. Verification recomputes those inputs and can validate DSSE/cosign material where configured. Host observation receipts separately bind an observed health artifact to a signed, monotonic chain. These mechanisms prove consistency, integrity, and timing of selected repository observations; they do not certify upstream data.
 
-## Safe change points and validation
+## Safe changes and focused validation
 
-1. Edit the authoritative manifest row and, where applicable, `custodians.json`, the human report section, series/privacy/observation policy, or a source-grounded sample.
+1. Change the authoritative manifest row and, where applicable, `custodians.json`, the report, series/privacy/observation policy, or a source-grounded sample.
 2. Validate JSON, the closed schemas, unique IDs, report paths, and exact manifest/health joins.
 3. Run the appropriate probe or due-mode command; do not hand-edit `health/latest.json`.
-4. Regenerate reports, envelopes, JSON-LD, feeds, badges, discovery/catalogue outputs, and receipts from canonical inputs.
-5. Run focused contract tests and audits, including custodian referential integrity, URL drift, schema checks, receipt generation/verification, observation receipt verification, and repository-contract checks.
+4. Regenerate reports, projections, drift/reconciliation outputs, discovery artifacts, and receipts from canonical inputs.
+5. Run focused contract tests and audits, especially cadence/status policy tests, drift and reconciliation tests, receipt verification, observation verification, and `scripts/tests/test_openwiki.py`.
 
 Useful checks include:
 
 ```sh
 python3 -m jsonschema -i datapulse.json datapulse.schema.json
 python3 -m json.tool health/latest.json >/dev/null
-python3 scripts/gen_per_dataset_receipt.py --quick-test
-python3 -m pytest -q scripts/tests/test_observation_receipt.py scripts/tests/test_verify_per_dataset_receipt.py
 bash scripts/check.sh --due
+python3 -m pytest -q scripts/tests/test_openwiki.py scripts/tests/test_reconciliation.py
 ```
 
-When a generated result is stale, fix its source or generator and rerun the relevant focused tests. Safe extensions belong at the manifest/schema, policy, probe, generator, or verification boundary—not in a hand-patched projection.
+Safe extensions belong at the manifest/schema, policy, probe, generator, or verification boundary—not in a hand-patched projection.
 
 ## Current discovery facts
 
 - Canonical origin: **https://www.data-pulse.my**
 - Published manifest: **425 datasets**
-- MCP surface: **19 read-only tools**
-- Primary machine-readable inputs: `datapulse.json`, `health/latest.json`, `datapulse.schema.json`, `health.schema.json`
+- MCP consumer surface: **19 read-only tools**
+- Current health snapshot: **425 rows**, checked **2026-10-06T19:15:15Z**
+- Primary inputs: `datapulse.json`, `health/latest.json`, `datapulse.schema.json`, `health.schema.json`
 
 ## Canonical facts
 

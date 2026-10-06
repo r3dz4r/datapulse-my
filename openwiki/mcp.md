@@ -3,9 +3,6 @@ type: Reference
 title: MCP Server Runtime and Agent Integration
 description: Documents DataPulse’s public read-only MCP request surface, catalogue tools, published-artifact boundaries, verification behavior, deployment relationship, throttling and failure semantics, and focused tests for safe changes.
 tags: [MCP, integrations, verification, read-only]
-verified:
-  - by: openwiki/0.4.3
-    at: 2026-09-28T16:37:06.116Z
 sources:
   - id: openwiki-source-424961965958d8ceef8f1e14
     resource: repo://.github/workflows/publish-mcp.yml
