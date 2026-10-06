@@ -21,7 +21,7 @@ An MCP-capable client (Claude Desktop, Cursor, Cline, or any client that speaks 
 {
   "mcpServers": {
     "datapulse-my": {
-      "transport": "streamable-http",
+      "type": "http",
       "url": "https://mcp.data-pulse.my/mcp"
     }
   }

@@ -133,6 +133,9 @@ jobs:
       - name: Verify public surface has no internal repository references
         run: python3 scripts/verify_public_internal_refs.py
 
+      - name: Verify MCP quickstart region matches the public-surface contract
+        run: python3 scripts/gen_mcp_quickstart.py --check
+
       - name: Verify distribution surfaces match canonical evidence
         run: python3 scripts/verify_distribution_sync.py
 

@@ -209,7 +209,7 @@ API key):
 {
   "mcpServers": {
     "datapulse-my": {
-      "transport": "streamable-http",
+      "type": "http",
       "url": "https://mcp.data-pulse.my/mcp"
     }
   }
