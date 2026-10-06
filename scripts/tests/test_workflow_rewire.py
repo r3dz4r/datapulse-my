@@ -393,7 +393,8 @@ def _fast_path_preservation_script() -> str:
     return match.group(1)
 
 
-def test_cloudflare_fast_path_preserves_valid_served_attestation_plane(tmp_path: Path) -> None:
+@pytest.mark.parametrize("append_revision", [False, True])
+def test_cloudflare_fast_path_preserves_valid_served_attestation_plane(tmp_path: Path, append_revision: bool) -> None:
     """A health-only artifact reads the served P1 plane, not checkout evidence."""
     served_root, key = fixture_root(tmp_path / "served")
     now = datetime.now(timezone.utc).replace(microsecond=0)
@@ -403,12 +404,20 @@ def test_cloudflare_fast_path_preserves_valid_served_attestation_plane(tmp_path:
     health["datasets"][0]["last_checked"] = health["checked_at"]
     write(served_root / "health/latest.json", health)
     ga.generate(served_root, key, now, fixture_rekor_reference(served_root, f"rekor/{day}"))
+    if append_revision:
+        manifest = json.loads((served_root / "datapulse.json").read_text(encoding="utf-8"))
+        manifest["datasets"][0]["url"] = "https://example.test/revised"
+        write(served_root / "datapulse.json", manifest)
+        ga.generate(served_root, key, now, served_root / f"attestations/rekor/{day}/reference.json")
     assert verify_contract(served_root, now=now + timedelta(hours=1))["claims"]["artifact_signed"] is True
 
     checkout = tmp_path / "checkout"
     shutil.copytree(served_root, checkout)
     (checkout / "scripts").mkdir()
-    for script in ("verify_attestation_binding.py", "verify_attestation_plane_state.py"):
+    for script in (
+        "verify_attestation_binding.py", "verify_attestation_plane_state.py",
+        "attestation_fetch_refs.py", "attestation_sets.py",
+    ):
         shutil.copy2(ROOT / "scripts" / script, checkout / "scripts")
     (checkout / "config").mkdir()
     shutil.copy2(ROOT / "config/public-surfaces.json", checkout / "config")
@@ -437,6 +446,14 @@ mkdir -p "$(dirname "$output")"; cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
     assert completed.returncode == 0, completed.stderr
     preserved = tmp_path / "runner-temp/preserved-attestations"
     assert (preserved / "attestations/latest/binding.json").read_bytes() == (served_root / "attestations/latest/binding.json").read_bytes()
+    if append_revision:
+        historical_envelope = served_root / f"attestations/{day}/sample.json"
+        envelope = json.loads(historical_envelope.read_text(encoding="utf-8"))
+        envelope["payload"]["last_status"] = "stale"
+        write(historical_envelope, envelope)
+        refused = subprocess.run(["bash", "-c", _fast_path_preservation_script()], cwd=checkout, env=environment, capture_output=True, text=True, check=False)
+        assert refused.returncode != 0, "preserved a lineage with a corrupt historical dataset envelope"
+        assert "served health/binding plane is inconsistent" in refused.stdout
 
 
 def _preserve_served_plane(
@@ -446,7 +463,12 @@ def _preserve_served_plane(
     checkout = tmp_path / f"checkout-{label}"
     shutil.copytree(served_root, checkout)
     (checkout / "scripts").mkdir()
-    for script in ("verify_attestation_binding.py", "verify_attestation_plane_state.py"):
+    # The merged fast path verifies the whole append-only lineage, so the
+    # checkout needs the branch's discovery helpers alongside the verifier.
+    for script in (
+        "verify_attestation_binding.py", "verify_attestation_plane_state.py",
+        "attestation_fetch_refs.py", "attestation_sets.py",
+    ):
         shutil.copy2(ROOT / "scripts" / script, checkout / "scripts")
     (checkout / "config").mkdir()
     shutil.copy2(ROOT / "config/public-surfaces.json", checkout / "config")

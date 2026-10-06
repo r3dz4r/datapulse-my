@@ -96,6 +96,7 @@ fetch_attestation_contract_root() {
     return 1
   }
   fetch "contract-root/attestations/chain-index.json" attestations/chain-index.json
+  fetch "contract-root/attestations/latest/scores.json" attestations/latest/scores.json
   if [[ -f "$work_dir/attestation-binding.json" ]]; then
     cp "$work_dir/attestation-binding.json" "$contract_root/attestations/latest/binding.json"
   fi
@@ -113,6 +114,7 @@ fetch_attestation_contract_root() {
     set_dir="${head_ref%/chain_head.json}"
     fetch "contract-root/$set_dir/chain_head.json" "$set_dir/chain_head.json"
     fetch "contract-root/$set_dir/binding.json" "$set_dir/binding.json"
+    fetch "contract-root/$set_dir/scores.json" "$set_dir/scores.json"
     for optional_name in index health; do
       if ! fetch_optional "contract-root/$set_dir/$optional_name.json" "$set_dir/$optional_name.json"; then
         rm -f "$contract_root/$set_dir/$optional_name.json"
@@ -204,7 +206,6 @@ summary = health["_trust_summary"]
 summary_statuses = {
     key.replace("_", "-"): value for key, value in summary["by_status"].items()
 }
-
 readme = readme_path.read_text(encoding="utf-8")
 line = next(
     line for line in readme.splitlines()
@@ -391,17 +392,7 @@ head_payload = attestation_head["payload"]
 assert isinstance(head_payload, dict)
 assert head_payload["schema"] == "datapulse/v1/daily-chain-head"
 assert attestation_index["date"] == head_payload["date"]
-# The latest index selects either revision zero or a same-day content-addressed
-# correction, mirroring verify_attestation_binding._set_directory exactly.
-head_prefix = f"attestations/{head_payload['date']}"
-chain_head_ref = attestation_index["chain_head_ref"]
-assert chain_head_ref == f"{head_prefix}/chain_head.json" or (
-    isinstance(chain_head_ref, str)
-    and re.fullmatch(
-        re.escape(head_prefix) + r"/revisions/[0-9a-f]{64}/chain_head\.json",
-        chain_head_ref,
-    )
-), f"unsafe chain-head reference: {chain_head_ref!r}"
+assert attestation_index["chain_head_ref"] in {f"attestations/{head_payload['date']}/chain_head.json", f"attestations/{head_payload['date']}/revisions/{attestation_head['chain_head']}/chain_head.json"}
 assert isinstance(attestation_head["dataset_links"], list)
 assert attestation_head["dataset_links"]
 assert re.fullmatch(r"[0-9a-f]{64}", attestation_head["chain_head"])

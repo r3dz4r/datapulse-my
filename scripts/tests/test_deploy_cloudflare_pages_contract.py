@@ -14,6 +14,7 @@ import pytest
 import yaml
 
 from scripts.classify_change import is_health_only_change
+from scripts.attestation_fetch_refs import fetch_refs
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -577,28 +578,36 @@ def test_health_only_signer_down_path_preserves_only_a_verified_served_plane() -
     assert "rm -f _site/attestations/latest/binding.json" in assemble["run"]
 
 
-def test_served_rekor_references_are_limited_to_the_binding_day_directory() -> None:
+def test_served_rekor_references_are_limited_to_the_binding_day_directory(tmp_path: Path) -> None:
     """Preservation accepts the documented Rekor layout without widening fetches."""
     steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
     preserve = next(
         step for step in steps if step.get("name") == "Preserve served attestation plane (health-only path)"
     )
-    expected = r'^attestations/rekor/${binding_date}/[A-Za-z0-9_.-]+\.json$'
-
-    assert expected in preserve["run"]
-    pattern = re.compile(r"^attestations/rekor/2026-09-15/[A-Za-z0-9_.-]+\.json$")
+    assert 'python3 scripts/attestation_fetch_refs.py --root "$preserved_root" --proofs' in preserve["run"]
+    directory = "attestations/2026-09-15"
+    (tmp_path / "attestations/latest").mkdir(parents=True)
+    (tmp_path / directory).mkdir()
+    (tmp_path / "attestations/latest/index.json").write_text(json.dumps({"chain_head_ref": directory + "/chain_head.json"}))
+    (tmp_path / "attestations/chain-index.json").write_text(json.dumps({"schema": "datapulse/v1/chain-index"}))
+    binding = tmp_path / directory / "binding.json"
     for reference in (
         "attestations/rekor/2026-09-15/reference.json",
         "attestations/rekor/2026-09-15/health.sigstore.bundle.json",
+        "attestations/2026-09-15/reference.json",
     ):
-        assert pattern.fullmatch(reference)
+        binding.write_text(json.dumps({"payload": {"date": "2026-09-15"}, "rekor": {"reference_ref": reference}}))
+        assert fetch_refs(tmp_path, proofs=True) == [reference]
     for reference in (
         "attestations/rekor/2026-09-15/../reference.json",
         "attestations/rekor/not-a-date/reference.json",
         "/attestations/rekor/2026-09-15/reference.json",
         "attestations/rekor/2026-09-15/nested/reference.json",
+        "attestations/rekor/2026-09-16/reference.json",
     ):
-        assert pattern.fullmatch(reference) is None
+        binding.write_text(json.dumps({"payload": {"date": "2026-09-15"}, "rekor": {"reference_ref": reference}}))
+        with pytest.raises(ValueError, match="unsafe Rekor proof reference"):
+            fetch_refs(tmp_path, proofs=True)
 
 
 def test_native_pages_installs_release_dependencies_before_generation() -> None:
@@ -907,7 +916,8 @@ def test_health_only_signed_artifact_carries_and_overlays_the_generated_attestat
     assert 'cp -R .attestations "$publication/.attestations"' in sign_step
     assert upload["with"]["include-hidden-files"] is True
 
-    overlay_condition = '"${{ needs.classify.outputs.health_only }}" == "true" && "${{ needs.sign_health.outputs.signed }}" == "true"'
+    # Full releases also publish the accepted sign-time head and manifest.
+    overlay_condition = 'if [[ "${{ needs.sign_health.outputs.signed }}" == "true" ]]; then'
     assert overlay_condition in assemble
     assert 'test -s "$RUNNER_TEMP/sigstore-publication/datapulse.json"' in assemble
     assert 'test -s "$RUNNER_TEMP/sigstore-publication/attestations/latest/chain_head.json"' in assemble

@@ -272,9 +272,22 @@ def verify_live(base_url: str) -> None:
     if index.get("schema") != "datapulse/v1/attestation-index" or not isinstance(refs, dict) or not refs:
         raise VerificationError("latest attestation index: unexpected schema or empty attestations")
     dataset_id = sorted(refs)[0]
-    reference = safe_attestation_ref(date, dataset_id)
+    legacy_reference = safe_attestation_ref(date, dataset_id)
+    reference = index["attestations"].get(dataset_id)
+    expected_revision = rf"attestations/{date}/revisions/[0-9a-f]{{64}}/{dataset_id}\.json"
+    if reference != legacy_reference and (not isinstance(reference, str) or not re.fullmatch(expected_revision, reference)):
+        raise VerificationError("unsafe revision reference")
     if refs.get(dataset_id) != reference:
         raise VerificationError("latest attestation index: selected reference is not canonical")
+    containing_ref = reference.rsplit("/", 1)[0] + "/chain_head.json"
+    if index.get("chain_head_ref") != containing_ref:
+        raise VerificationError("latest index mixes immutable sets")
+    served_chain_bytes, chain_index = fetch_json(f"{base}/attestations/chain-index.json", "served chain index")
+    raw_chain_bytes, _ = fetch_json(f"{RAW_BASE}/attestations/chain-index.json", "source chain index")
+    if served_chain_bytes != raw_chain_bytes:
+        raise VerificationError("chain discovery differs from authoritative Git")
+    if chain_index.get("schema") not in {"datapulse/v1/chain-index", "datapulse/v2/chain-index"}:
+        raise VerificationError("unknown chain discovery schema")
     served_bytes, envelope = fetch_json(f"{base}/{reference}", "served envelope")
     verified_id = verify_envelope(envelope, key)
     if verified_id != dataset_id:
@@ -284,9 +297,22 @@ def verify_live(base_url: str) -> None:
     raw_bytes, _ = fetch_json(f"{RAW_BASE}/{reference}", "GitHub source envelope")
     if served_bytes != raw_bytes:
         raise VerificationError("source parity: served envelope bytes differ from GitHub main")
-    served_latest, _ = fetch_json(f"{base}/attestations/latest/chain_head.json", "served latest chain head")
+    served_latest, selected_head = fetch_json(f"{base}/attestations/latest/chain_head.json", "served latest chain head")
     raw_latest, _ = fetch_json(f"{RAW_BASE}/attestations/latest/chain_head.json", "GitHub latest chain head")
-    raw_dated, _ = fetch_json(f"{RAW_BASE}/attestations/{date}/chain_head.json", "GitHub dated chain head")
+    raw_dated, _ = fetch_json(f"{RAW_BASE}/{index['chain_head_ref']}", "GitHub dated chain head")
+    selected_hash = selected_head.get("chain_head")
+    if chain_index.get("heads", {}).get(selected_hash) != containing_ref:
+        raise VerificationError("selected head is not discoverable at its immutable path")
+    if chain_index.get("schema") == "datapulse/v2/chain-index":
+        if chain_index.get("current_head") != selected_hash or chain_index.get("days", {}).get(date, [])[-1:] != [selected_hash]:
+            raise VerificationError("selected head is not current")
+    payload = selected_head.get("payload", {})
+    if (hashlib.sha256(canonical_json(selected_head.get("dataset_links", []))).hexdigest() != payload.get("dataset_links_sha256")
+            or hashlib.sha256(bytes.fromhex(payload["previous_chain_head"]) + canonical_json(payload)).hexdigest() != selected_hash):
+        raise VerificationError("selected head or membership digest is invalid")
+    Ed25519PublicKey.from_public_bytes(base64.b64decode(key["public_key_base64"], validate=True)).verify(base64.b64decode(selected_head["signature_base64"], validate=True), canonical_json(payload))
+    if {"dataset_id": dataset_id, "chain_link": envelope["chain_link"]} not in selected_head["dataset_links"]:
+        raise VerificationError("dataset is not a member of the selected head")
     if raw_latest != raw_dated:
         raise VerificationError("source parity: GitHub latest chain head is not the newest dated head")
     if served_latest != raw_latest:

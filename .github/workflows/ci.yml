@@ -130,6 +130,15 @@ jobs:
       - name: Verify repository contract
         run: python3 scripts/verify_repository_contract.py
 
+      - name: Verify licence consistency
+        run: python3 scripts/verify_licence_consistency.py
+
+      - name: Verify immutable attestation append against accepted base
+        if: github.event_name == 'pull_request'
+        env:
+          ACCEPTED_BASE: ${{ github.event.pull_request.base.sha }}
+        run: python3 scripts/verify_attestation_append.py --base "$ACCEPTED_BASE"
+
       - name: Verify attestation workflow contract
         run: python3 scripts/verify_attestation_workflow_contract.py
 

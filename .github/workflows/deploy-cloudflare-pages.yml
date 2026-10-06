@@ -83,6 +83,24 @@ jobs:
           fi
           bash scripts/refresh_chain_head.sh
 
+      - uses: actions/create-github-app-token@v1
+        id: append-token
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Require authoritative acceptance before signing publication
+        env:
+          GH_TOKEN: ${{ steps.append-token.outputs.token }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify_attestation_append.py --base HEAD
+          if ! python3 scripts/verify_attestation_append.py --base HEAD --require-committed; then
+            bash scripts/submit_attestation_append.sh
+            echo 'Append submitted for source acceptance; this release must wait for its merge.' >&2
+            exit 1
+          fi
+
       - name: Generate deterministic health attestation statement
         run: |
           set -Eeuo pipefail
@@ -377,6 +395,17 @@ jobs:
               --connect-timeout 10 --max-time 30 \
               "${website_origin}/${path}" --output "$output" || fail "served attestation file could not be fetched: $path"
           }
+          # A lagging plane may carry no per-set health snapshot; treat its
+          # absence as "not recorded", never as a reason to reject the plane.
+          fetch_optional() {
+            local path="$1" output="$2"
+            [[ "$path" =~ ^[A-Za-z0-9._/-]+$ ]] || fail "unsafe served path: $path"
+            mkdir -p "$(dirname "$output")"
+            curl --fail --location --silent --show-error --proto '=https' \
+              --retry 3 --retry-delay 5 --retry-all-errors \
+              --connect-timeout 10 --max-time 30 \
+              "${website_origin}/${path}" --output "$output" 2>/dev/null || true
+          }
           fetch_public health/latest.json "$preserved_root/health/latest.json"
           fetch_public .well-known/datapulse-probe-keys.json "$preserved_root/docs/.well-known/datapulse-probe-keys.json"
           fetch_public attestations/latest/index.json "$preserved_root/attestations/latest/index.json"
@@ -384,72 +413,36 @@ jobs:
           fetch_public attestations/latest/scores.json "$preserved_root/attestations/latest/scores.json"
           fetch_public attestations/latest/binding.json "$preserved_root/attestations/latest/binding.json"
           fetch_public attestations/chain-index.json "$preserved_root/attestations/chain-index.json"
-          binding_date="$(jq -er '.payload.date | select(type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$preserved_root/attestations/latest/binding.json")" || fail "served binding date is invalid"
-          index_date="$(jq -er '.date | select(type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$preserved_root/attestations/latest/index.json")" || fail "served index is invalid"
-          # The latest index selects either revision zero or a same-day correction
-          # revision; a corrected plane must not be rejected as malformed here.
-          jq -e --arg date "$index_date" '
-            .schema == "datapulse/v1/attestation-index"
-            and .date == $date
-            and (.chain_head_ref | type == "string" and test("^attestations/" + $date + "/(revisions/[0-9a-f]{64}/)?chain_head\\.json$"))
-            and (.attestations | type == "object" and length > 0)
-          ' "$preserved_root/attestations/latest/index.json" >/dev/null || fail "served index is invalid"
-          # The day's canonical Rekor evidence is fetched only from the binding
-          # day's directory: the anchored pattern keeps the fast path's blast
-          # radius bounded to the objects that day's binding may reference.
-          fetch_anchor_rekor() {
-            local reference="$1"
-            [[ "$reference" =~ ^attestations/rekor/${binding_date}/[A-Za-z0-9_.-]+\.json$ ]] || fail "served Rekor reference is unsafe: $reference"
+          fetch_public .attestations/chain_head.json "$preserved_root/.attestations/chain_head.json"
+          python3 scripts/attestation_fetch_refs.py --root "$preserved_root" > "$RUNNER_TEMP/immutable-refs.txt"
+          while IFS= read -r reference; do
             fetch_public "$reference" "$preserved_root/$reference"
-          }
-          # A same-day correction records its own Rekor evidence beneath the same
-          # day directory; fetch that nested evidence without leaving the day.
-          fetch_revision_rekor() {
-            local reference="$1"
-            [[ "$reference" =~ ^attestations/rekor/${binding_date}/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*\.json$ ]] || fail "served Rekor reference is unsafe: $reference"
+          done < "$RUNNER_TEMP/immutable-refs.txt"
+          python3 scripts/attestation_fetch_refs.py --root "$preserved_root" --proofs > "$RUNNER_TEMP/proof-refs.txt"
+          while IFS= read -r reference; do
             fetch_public "$reference" "$preserved_root/$reference"
-          }
-          fetch_optional() {
-            local path="$1" output="$2"
-            mkdir -p "$(dirname "$output")"
-            curl --fail --location --silent --show-error --proto '=https' \
-              --retry 3 --retry-delay 5 --retry-all-errors \
-              --connect-timeout 10 --max-time 30 \
-              "${website_origin}/${path}" --output "$output" 2>/dev/null || true
-          }
-          # A same-day correction appends immutable revision directories under
-          # attestations/<day>/revisions/<id>/. Every head recorded for the day
-          # is part of the served plane, so fetch each set in full: its index,
-          # chain head, binding, optional health snapshot, dataset attestations,
-          # and the Rekor evidence its binding references.
-          while IFS= read -r head_ref; do
-            [[ -z "$head_ref" ]] && continue
-            [[ "$head_ref" =~ ^attestations/${index_date}/(revisions/[0-9a-f]{64}/)?chain_head\.json$ ]] || fail "served chain head reference is unsafe: $head_ref"
-            set_dir="${head_ref%/chain_head.json}"
-            fetch_public "$set_dir/chain_head.json" "$preserved_root/$set_dir/chain_head.json"
-            fetch_public "$set_dir/binding.json" "$preserved_root/$set_dir/binding.json"
-            # A lagging plane may carry no dated index; the verifier falls back
-            # to the latest index, and the dataset refs still need fetching.
-            fetch_optional "$set_dir/index.json" "$preserved_root/$set_dir/index.json"
-            fetch_optional "$set_dir/health.json" "$preserved_root/$set_dir/health.json"
-            set_index="$preserved_root/$set_dir/index.json"
-            if [[ ! -f "$set_index" ]]; then
-              set_index="$preserved_root/attestations/latest/index.json"
+          done < "$RUNNER_TEMP/proof-refs.txt"
+          # Full verification authenticates dataset membership in every fetched
+          # immutable set, including earlier heads in the accepted lineage.
+          while IFS= read -r metadata_ref; do
+            [[ "$metadata_ref" == */index.json ]] || continue
+            directory="${metadata_ref%/index.json}"
+            # Main's correction evidence records the raw health input beside the
+            # signed set; fetch it so the lineage verifier can check its digest.
+            fetch_optional "$directory/health.json" "$preserved_root/$directory/health.json"
+            # A correction also pins its new input in a content-addressed
+            # snapshot named by its signed record; fetch that too so the full
+            # lineage verification can authenticate the record.
+            correction_snapshot="$(jq -r '.payload.correction.health_snapshot_ref // empty' "$preserved_root/$directory/binding.json")"
+            if [[ -n "$correction_snapshot" ]]; then
+              [[ "$correction_snapshot" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/revisions/[0-9a-f]{64}/health\.json$ ]] || fail "unsafe correction snapshot reference: $correction_snapshot"
+              fetch_public "$correction_snapshot" "$preserved_root/$correction_snapshot"
             fi
             while IFS= read -r reference; do
-              [[ -z "$reference" ]] && continue
-              [[ "$reference" =~ ^${set_dir}/[A-Za-z0-9_.-]+\.json$ ]] || fail "served attestation reference is unsafe: $reference"
+              [[ "$reference" == "$directory/"* && "$reference" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/(revisions/[0-9a-f]{64}/)?[A-Za-z0-9_-]+\.json$ ]] || fail "served attestation reference is unsafe: $reference"
               fetch_public "$reference" "$preserved_root/$reference"
-            done < <(jq -r '.attestations | to_entries[] | .value' "$set_index")
-            while IFS= read -r reference; do
-              [[ -z "$reference" ]] && continue
-              if [[ "$set_dir" == "attestations/${binding_date}" ]]; then
-                fetch_anchor_rekor "$reference"
-              else
-                fetch_revision_rekor "$reference"
-              fi
-            done < <(jq -r '.rekor // {} | [.reference_ref, .bundle_ref] | .[] // empty' "$preserved_root/$set_dir/binding.json")
-          done < <(jq -r --arg prefix "attestations/${index_date}/" '.heads | to_entries[] | .value | select(startswith($prefix))' "$preserved_root/attestations/chain-index.json")
+            done < <(jq -r '.attestations | to_entries[] | .value' "$preserved_root/$metadata_ref")
+          done < "$RUNNER_TEMP/immutable-refs.txt"
           if attestation_plane_state="$(python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root")"; then
             if [[ "$attestation_plane_state" == "signer_down" ]]; then
               echo '::warning title=Signer lane down (P6); attestation failed-closed::Served attestation plane is stale and explicitly reports artifact_signed:false; preserving it unchanged.'
@@ -498,7 +491,7 @@ jobs:
             rm -f _site/attestations/latest/binding.json
             cp "$RUNNER_TEMP/preserved-attestations/docs/.well-known/datapulse-probe-keys.json" _site/.well-known/
           fi
-          if [[ "${{ needs.classify.outputs.health_only }}" == "true" && "${{ needs.sign_health.outputs.signed }}" == "true" ]]; then
+          if [[ "${{ needs.sign_health.outputs.signed }}" == "true" ]]; then
             test -s "$RUNNER_TEMP/sigstore-publication/datapulse.json"
             test -s "$RUNNER_TEMP/sigstore-publication/attestations/latest/chain_head.json"
             rm -rf _site/attestations

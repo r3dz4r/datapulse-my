@@ -56,9 +56,9 @@ def test_contract_rejects_synthetic_shared_flow_drift(
 def test_contract_rejects_missing_daily_commit_back_guard(tmp_path: Path) -> None:
     daily, pages = _workflow_pair(tmp_path)
     original = daily.read_text(encoding="utf-8")
-    daily.write_text(original.replace("attestation_commit_back.py", "commit_back.py", 1), encoding="utf-8")
+    daily.write_text(original.replace("submit_attestation_append.sh", "submit_replacement.sh", 1), encoding="utf-8")
 
-    with pytest.raises(ContractError, match="attestation_commit_back.py"):
+    with pytest.raises(ContractError, match="submit_attestation_append.sh"):
         verify_workflows(daily, pages)
 
 
