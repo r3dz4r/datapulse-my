@@ -16,7 +16,7 @@ Connect from Claude Desktop with:
 {
   "mcpServers": {
     "datapulse-my": {
-      "transport": "streamable-http",
+      "type": "http",
       "url": "https://mcp.data-pulse.my/mcp"
     }
   }

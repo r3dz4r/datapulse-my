@@ -419,7 +419,7 @@ def _npra_links(html: str, origins: dict[str, str]) -> str:
           <div class="code-wrap"><pre><code>{
   "mcpServers": {
     "datapulse-my": {
-      "transport": "streamable-http",
+      "type": "http",
       "url": "%s/mcp"
     }
   }
