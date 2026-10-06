@@ -8,6 +8,7 @@
 [![M8ven Verified](https://m8ven.ai/badge/mcp/r3dz4r-datapulse-my-fsfgq3?variant=verified)](https://m8ven.ai/mcp/r3dz4r-datapulse-my-fsfgq3)
 [![mcpgrade](https://img.shields.io/badge/mcpgrade-100%2F100%20(Grade%20A)-success?style=flat&logo=anthropic)](https://www.npmjs.com/package/mcpgrade)
 <!-- m8ven-verify: d1505f0f7e0429963789e95995216ca3 -->
+[![DataPulse on AI Agents Listing](https://aiagentslisting.com/datapulse/badge.svg?claim=f7674e98d6181beb9f1824fe47cd5082)](https://aiagentslisting.com/mcp/datapulse)
 
 > **🤖 AI-agent-ready** — Wire DataPulse into Claude Desktop, Cursor, Cline, or
 > any MCP-compatible client with one config block. Your agent gets
