@@ -2366,7 +2366,7 @@ mcp.add_tool(_trust_verdict_tool)
 
 def _safe_attestation_ref(reference: str, index: dict[str, Any]) -> str:
     ref = index["attestations"].get(reference, reference)
-    if not isinstance(ref, str) or not re.fullmatch(r"attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/[A-Za-z0-9_-]+\.json", ref):
+    if not isinstance(ref, str) or not re.fullmatch(r"attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/(?:revisions/[0-9a-f]{64}/)?[A-Za-z0-9_-]+\.json", ref):
         raise ValueError("Unknown dataset id or unsafe attestation reference")
     return ref
 
