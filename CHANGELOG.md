@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.48.7](https://github.com/r3dz4r/datapulse-my/compare/v3.48.6...v3.48.7) (2026-10-06)
+
+
+### Bug Fixes
+
+* **verify:** make the non-local release-invariant path resolvable and stop it aborting on republish churn ([#684](https://github.com/r3dz4r/datapulse-my/issues/684)) ([9f48e31](https://github.com/r3dz4r/datapulse-my/commit/9f48e31759b598a50edb899488173b35ddd84d5d))
+
 ## [3.48.6](https://github.com/r3dz4r/datapulse-my/compare/v3.48.5...v3.48.6) (2026-10-06)
 
 
