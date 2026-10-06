@@ -39,6 +39,13 @@ make_repo() {
 set -euo pipefail
 printf '%s\n' "$*" >>"$PWD/generator-invocations"
 mkdir -p "$PWD/attestations/latest"
+dated="$PWD/attestations/$(date -u +%F)"
+if [[ -f "$dated/binding.json" ]]; then
+  for filename in chain_head.json index.json scores.json binding.json; do
+    cp "$dated/$filename" "$PWD/attestations/latest/$filename"
+  done
+  exit 0
+fi
 printf '%s\n' '{"payload":{"dataset_count":2},"chain_head":"generated-head"}' >"$PWD/attestations/latest/chain_head.json"
 printf '%s\n' '{"fixture":"generated-index"}' >"$PWD/attestations/latest/index.json"
 printf '%s\n' '{"fixture":"generated-scores"}' >"$PWD/attestations/latest/scores.json"
@@ -51,9 +58,8 @@ same_day="$TEST_ROOT/same-day"
 make_repo "$same_day" true
 same_day_output="$TEST_ROOT/same-day.out"
 DATAPULSE_REKOR_REFERENCE="attestations/$(date -u +%F)/health.sigstore.json" PATH="$same_day/bin:$PATH" bash "$same_day/scripts/refresh_chain_head.sh" fixture-private-key >"$same_day_output"
-[[ ! -e "$same_day/generator-invocations" ]] || fail 'same-day refresh invoked gen_attestations'
-# grep -E keeps \( and \) literal here, preserving the previous ERE-compatible match.
-grep -E -q 'already exists; refreshing latest/chain-head from committed set \(no re-sign\)' "$same_day_output"
+[[ -s "$same_day/generator-invocations" ]] || fail 'same-day refresh bypassed gen_attestations'
+grep -F -q -- "--rekor-reference attestations/$(date -u +%F)/health.sigstore.json" "$same_day/generator-invocations"
 for name in chain_head.json index.json scores.json binding.json; do
   cmp "$same_day/attestations/$(date -u +%F)/$name" "$same_day/attestations/latest/$name"
 done
@@ -64,7 +70,7 @@ make_repo "$mismatch" true 3
 if PATH="$mismatch/bin:$PATH" bash "$mismatch/scripts/refresh_chain_head.sh" fixture-private-key >"$TEST_ROOT/mismatch.out" 2>"$TEST_ROOT/mismatch.err"; then
   fail 'accepted a committed chain head with a mismatched dataset_count'
 fi
-[[ ! -e "$mismatch/generator-invocations" ]] || fail 'mismatched same-day refresh invoked gen_attestations'
+[[ -s "$mismatch/generator-invocations" ]] || fail 'mismatched same-day refresh bypassed gen_attestations'
 # grep -E keeps \( and \) literal here, preserving the previous ERE-compatible match.
 grep -E -q 'dataset_count \(3\) does not match canonical health \(2\)' "$TEST_ROOT/mismatch.err"
 

@@ -146,14 +146,11 @@ def test_same_day_generation_is_byte_idempotent(tmp_path: Path) -> None:
     }
 
 
-def test_same_day_different_health_or_key_reuses_committed_dated_set(tmp_path: Path) -> None:
+def test_same_day_unchanged_health_with_different_key_reuses_committed_dated_set(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
     dated = root / "attestations/2026-08-15"
     committed = {path.name: path.read_bytes() for path in dated.glob("*.json")}
-    health = load(root / "health/latest.json")
-    health["datasets"][0]["status"] = "stale"
-    write(root / "health/latest.json", health)
     other_key = tmp_path / "different-private-key.json"
     write(other_key, {"key_id": "not-the-committed-key"})
     (root / "attestations/latest/binding.json").write_text("{}\n")

@@ -17,7 +17,10 @@ def sha(value: bytes) -> str: return hashlib.sha256(value).hexdigest()
 def parse_time(value: str) -> datetime: return datetime.fromisoformat(value.replace("Z", "+00:00"))
 def load(path: Path) -> dict: return json.loads(path.read_text(encoding="utf-8"))
 def dump(path: Path, value: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True); path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(path)
 def sign(private: Ed25519PrivateKey, payload: dict) -> str: return base64.b64encode(private.sign(canonical(payload))).decode()
 
 def health_binding(root: Path, health: dict) -> dict:
@@ -146,7 +149,7 @@ def score_rows(manifest: dict, health: dict, trends: dict, drift: dict, recon: d
     return {"schema":"datapulse/v1/trust-scores","generated_at":generated_at,"methodology_version":3,"datasets":rows}
 
 def reuse_existing_day(root: Path, day: str) -> bool:
-    """Verify an immutable dated set before refreshing the derived latest view."""
+    """Reuse the verified day tip only when the exact health input is unchanged."""
     dated = root / "attestations" / day
     if not dated.exists():
         return False
@@ -155,58 +158,28 @@ def reuse_existing_day(root: Path, day: str) -> bool:
     required = ("binding.json", "chain_head.json", "index.json", "scores.json")
     present = [name for name in required if (dated / name).is_file()]
     if not present:
-        # Fresh-day Sigstore preparation may already have written its Rekor
-        # inputs below this directory; it has not created a dated set yet.
+        # Sigstore preparation may have created the directory before signing.
         return False
     if len(present) != len(required):
         raise ValueError("same-day attestation is corrupt or inconsistent: dated set is incomplete")
     try:
-        from scripts.verify_attestation_binding import ContractError, _load, _verify_legacy_plane, _verify_signature, verify_rekor_evidence
+        from scripts.verify_attestation_binding import ContractError, _load, verified_day_tip
     except ModuleNotFoundError:
-        from verify_attestation_binding import ContractError, _load, _verify_legacy_plane, _verify_signature, verify_rekor_evidence
+        from verify_attestation_binding import ContractError, _load, verified_day_tip
     try:
-        binding = _load(dated / "binding.json", "same-day binding")
-        index = _load(dated / "index.json", "same-day attestation index")
-        head = _load(dated / "chain_head.json", "same-day chain head")
-        _load(dated / "scores.json", "same-day trust scores")
-        payload = binding.get("payload")
-        if (
-            binding.get("schema") != "datapulse/v1/attestation-binding-envelope"
-            or not isinstance(payload, dict)
-            or payload.get("schema") != "datapulse/v1/attestation-binding"
-            or payload.get("date") != day
-            or payload.get("ed25519", {}).get("chain_head") != head.get("chain_head")
-            or payload.get("ed25519", {}).get("chain_head_ref") != f"attestations/{day}/chain_head.json"
-        ):
-            raise ContractError("same-day binding does not match its dated chain head")
-        registry = _load(root / "docs/.well-known/datapulse-probe-keys.json", "probe key registry")
-        key_id = payload.get("ed25519", {}).get("key_id")
-        matches = [row for row in registry.get("keys", []) if isinstance(row, dict) and row.get("key_id") == key_id]
-        if len(matches) != 1 or matches[0].get("purpose") != ATTESTATION_KEY_PURPOSE:
-            raise ContractError("same-day attestation key is missing or ambiguous")
-        public = Ed25519PublicKey.from_public_bytes(base64.b64decode(matches[0]["public_key_base64"], validate=True))
-        _verify_signature(public, payload, binding.get("signature_base64"), "same-day binding")
-        rekor = binding.get("rekor")
-        claims = {"artifact_signed": rekor is not None, "rekor_witnessed": rekor is not None, "source_truth_verified": False}
-        if binding.get("claims") != claims:
-            raise ContractError("same-day binding claims do not match its evidence")
-        if rekor is not None:
-            health = payload.get("health")
-            if not isinstance(health, dict) or not isinstance(health.get("artifact_sha256"), str):
-                raise ContractError("same-day binding health claim is invalid")
-            verify_rekor_evidence(root, rekor, health["artifact_sha256"])
-        _verify_legacy_plane(root, index, head, public, matches[0])
-        chain_index = _load(root / "attestations/chain-index.json", "chain index")
-        refs = [ref for ref in chain_index.get("heads", {}).values() if isinstance(ref, str) and ref.startswith(f"attestations/{day}/")]
-        if refs != [f"attestations/{day}/chain_head.json"]:
-            raise ContractError("duplicate-date attestation ambiguity detected")
+        tip = root / verified_day_tip(root, day)
+        selected = tip.parent
+        _load(selected / "scores.json", "same-day trust scores")
+        binding = _load(selected / "binding.json", "same-day binding")
+        if binding["payload"]["health"] != health_binding(root, load(root / "health/latest.json")):
+            return False
     except (ContractError, KeyError, TypeError, ValueError) as error:
         raise ValueError(f"same-day attestation is corrupt or inconsistent: {error}") from error
     latest = root / "attestations" / "latest"
     if latest.exists(): shutil.rmtree(latest)
     latest.mkdir(parents=True)
-    for filename in ("chain_head.json", "index.json", "scores.json", "binding.json"):
-        shutil.copy2(dated / filename, latest / filename)
+    for filename in required:
+        shutil.copy2(selected / filename, latest / filename)
     return True
 
 def refresh_manifest_refs(root: Path, day: str) -> None:
@@ -215,7 +188,7 @@ def refresh_manifest_refs(root: Path, day: str) -> None:
     The dated index is the authoritative copy of the ref list, so both the
     build path and the reuse path read it here instead of carrying their own.
     """
-    refs = load(root / "attestations" / day / "index.json")["attestations"]
+    refs = load(root / "attestations/latest/index.json")["attestations"]
     manifest = load(root / "datapulse.json")
     for entry in manifest["datasets"]:
         entry["attestation_ref"] = refs[entry["id"]]
@@ -274,17 +247,51 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
     registry=load(root/"docs/.well-known/datapulse-probe-keys.json"); row=next((r for r in registry["keys"] if r["key_id"]==key["key_id"]),None)
     if row is None or registry.get("schema") != "datapulse/v2/probe-key-registry" or registry.get("current_key_id")!=key["key_id"] or row.get("purpose") != ATTESTATION_KEY_PURPOSE or row.get("status")!="active" or not(parse_time(row["not_before"])<=now<=parse_time(row["not_after"])): raise ValueError("signing key is not active")
     generated_at=now.replace(microsecond=0).isoformat().replace("+00:00","Z"); base=root/"attestations"; dated=base/day; health_claim=health_binding(root,health); rekor=rekor_binding(root,rekor_reference,health_claim["artifact_sha256"])
+    health_bytes = (root / "health/latest.json").read_bytes()
+    if sha(health_bytes) != health_claim["artifact_sha256"]:
+        raise ValueError("health input changed during generation")
     previous=load(latest/"chain_head.json")["chain_head"] if (latest/"chain_head.json").exists() else ZERO
+    correction = None
+    if (dated / "binding.json").exists():
+        try:
+            from scripts.verify_attestation_binding import correction_record, verified_day_tip
+        except ModuleNotFoundError:
+            from verify_attestation_binding import correction_record, verified_day_tip
+        predecessor_ref = verified_day_tip(root, day)
+        predecessor = load(root / predecessor_ref)
+        previous = predecessor["chain_head"]
+        prior_binding = load((root / predecessor_ref).parent / "binding.json")["payload"]
+        if now < parse_time(prior_binding["published_at"]):
+            raise ValueError("correction cannot predate its predecessor")
+        original = load(dated / "chain_head.json")["chain_head"]
+        correction = correction_record(day, original, previous, prior_binding["health"]["artifact_sha256"], health_claim["artifact_sha256"])
+        dated = (root / correction["health_snapshot_ref"]).parent
+        if dated.exists():
+            raise ValueError("correction revision already exists but is not indexed")
+    set_ref = dated.relative_to(root).as_posix()
     pc_path=root/"health/probe_counts.json"; pc_present=pc_path.exists() and pc_path.stat().st_size>0; probe_artifact=load_probe_counts(root,now) if pc_present else None
     hp=root/"health/history.jsonl"; history_available=hp.exists() and hp.stat().st_size>0; use_history=history_available and not pc_present; history=[json.loads(line) for line in hp.read_text(encoding="utf-8").splitlines() if line.strip()] if use_history else []; health_by={r["dataset_id"]:r for r in health["datasets"]}; links=[]; refs={}
     for entry in sorted(manifest["datasets"],key=lambda r:r["id"]):
         did=entry["id"]; h=health_by.get(did,{}); observed=h.get("last_checked") or health["checked_at"]; cutoff14=now-timedelta(days=14); cutoff1=now-timedelta(days=1); times=[parse_time(r["observed_at"]) for r in history if r.get("dataset_id")==did and r.get("observed_at")]; probe_counts=probe_counts_for_dataset(probe_artifact,did) if probe_artifact is not None else ((sum(t>=cutoff14 for t in times),sum(t>=cutoff1 for t in times)) if use_history else (None,None)); fp=h.get("first_row_hash"); browser=h.get("access_dependency")=="browser"
         payload={"schema":"datapulse/v1/probe-attestation","date":day,"observed_at":observed,"dataset_id":did,"source_url":entry["url"],"observed_request_url":h.get("request_url"),"access_dependency":h.get("access_dependency","direct"),"probe_count_14d":probe_counts[0],"probe_count_24h":probe_counts[1],"last_status":h.get("status"),"last_staleness_days":h.get("staleness_days"),"content_fingerprint":{"scheme":"shape-v1:sha256","scope":"first-row-or-headers","value":fp} if fp else None,"browser_receipt":{"available":False,"reason":"probe runner emitted no signed receipt" if browser else None},"previous_chain_head":previous,"key_id":key["key_id"],"signer_pubkey_base64":key["public_key_base64"]}
-        link=sha(bytes.fromhex(previous)+canonical(payload)); ref=f"attestations/{day}/{did}.json"; envelope={"schema":"datapulse/v1/probe-attestation-envelope","payload":payload,"signature_base64":sign(private,payload),"chain_link":link,"verification_level":"L1-capable"}; Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(envelope["signature_base64"]),canonical(payload)); dump(root/ref,envelope); links.append({"dataset_id":did,"chain_link":link}); refs[did]=ref
-    head_payload={"schema":"datapulse/v1/daily-chain-head","date":day,"previous_chain_head":previous,"dataset_count":len(links),"dataset_links_sha256":sha(canonical(links)),"key_id":key["key_id"]}; chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}; dump(dated/"chain_head.json",head)
+        link=sha(bytes.fromhex(previous)+canonical(payload)); ref=f"{set_ref}/{did}.json"; envelope={"schema":"datapulse/v1/probe-attestation-envelope","payload":payload,"signature_base64":sign(private,payload),"chain_link":link,"verification_level":"L1-capable"}; Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(envelope["signature_base64"]),canonical(payload)); dump(root/ref,envelope); links.append({"dataset_id":did,"chain_link":link}); refs[did]=ref
+    head_payload={"schema":"datapulse/v1/daily-chain-head","date":day,"previous_chain_head":previous,"dataset_count":len(links),"dataset_links_sha256":sha(canonical(links)),"key_id":key["key_id"]}
+    if correction is not None: head_payload["correction"] = correction
+    chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}; dump(dated/"chain_head.json",head)
     chain_index=load(base/"chain-index.json") if (base/"chain-index.json").exists() else {"schema":"datapulse/v1/chain-index","heads":{},"anchors":{}}
-    if any(isinstance(ref,str) and ref.startswith(f"attestations/{day}/") for ref in chain_index.get("heads",{}).values()): raise ValueError("duplicate-date attestation already exists in chain index")
-    chain_index["heads"][chain_head]=f"attestations/{day}/chain_head.json"; chain_index["anchors"].update(discover_git_anchors(root)); dump(base/"chain-index.json",chain_index); dump(dated/"index.json",{"schema":"datapulse/v1/attestation-index","date":day,"chain_head_ref":f"attestations/{day}/chain_head.json","binding_ref":f"attestations/{day}/binding.json","attestations":refs}); dump(dated/"scores.json",score_rows(manifest,health,trends,drift,recon,generated_at)); binding=binding_envelope(private,day,generated_at,health_claim,head,key["key_id"],rekor); Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(binding["signature_base64"]),canonical(binding["payload"])); dump(dated/"binding.json",binding)
+    if correction is None and any(isinstance(ref,str) and ref.startswith(f"attestations/{day}/") for ref in chain_index.get("heads",{}).values()): raise ValueError("duplicate-date attestation already exists in chain index")
+    chain_index["heads"][chain_head]=f"{set_ref}/chain_head.json"; chain_index["anchors"].update(discover_git_anchors(root)); dump(dated/"index.json",{"schema":"datapulse/v1/attestation-index","date":day,"chain_head_ref":f"{set_ref}/chain_head.json","binding_ref":f"{set_ref}/binding.json","attestations":refs}); dump(dated/"scores.json",score_rows(manifest,health,trends,drift,recon,generated_at)); binding=binding_envelope(private,day,generated_at,health_claim,head,key["key_id"],rekor)
+    if correction is not None:
+        binding["payload"]["ed25519"]["chain_head_ref"] = f"{set_ref}/chain_head.json"
+        binding["payload"]["correction"] = correction
+        binding["signature_base64"] = sign(private, binding["payload"])
+    Ed25519PublicKey.from_public_bytes(public).verify(base64.b64decode(binding["signature_base64"]),canonical(binding["payload"])); dump(dated/"binding.json",binding)
+    # Keep the exact raw input independently of the mutable health alias.
+    snapshot_temporary = dated / "health.json.tmp"
+    snapshot_temporary.write_bytes(health_bytes)
+    snapshot_temporary.replace(dated / "health.json")
+    # Make a revision discoverable only after all its signed evidence exists.
+    dump(base / "chain-index.json", chain_index)
     if latest.exists(): shutil.rmtree(latest)
     latest.mkdir(parents=True)
     for filename in ("chain_head.json","index.json","scores.json","binding.json"): shutil.copy2(dated/filename,latest/filename)
