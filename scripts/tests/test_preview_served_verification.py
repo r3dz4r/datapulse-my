@@ -196,6 +196,31 @@ def _proof(tool_count: int, dataset_count: int, source_commit: str) -> str:
     )
 
 
+def _stage_attestation_plane(built: Path, served: Path) -> None:
+    day = "2026-10-01"
+    canonical = f"attestations/{day}"
+    revision = f"{canonical}/revisions/{'a' * 64}"
+    latest = f"{revision}/chain_head.json"
+    files = {
+        "attestations/latest/index.json": {"schema": "datapulse/v1/attestation-index", "date": day, "chain_head_ref": latest, "attestations": {"alpha": f"{revision}/alpha.json"}},
+        "attestations/latest/chain_head.json": {"schema": "datapulse/v1/daily-chain-head-envelope"},
+        "attestations/latest/binding.json": {"schema": "datapulse/v1/attestation-binding-envelope"},
+        "attestations/latest/scores.json": {"datasets": []},
+        "attestations/chain-index.json": {"schema": "datapulse/v1/chain-index", "heads": {"0": f"{canonical}/chain_head.json", "1": latest}},
+        ".well-known/datapulse-probe-keys.json": {"schema": "datapulse/v2/probe-key-registry"},
+    }
+    for set_dir in (canonical, revision):
+        files[f"{set_dir}/chain_head.json"] = {"schema": "datapulse/v1/daily-chain-head-envelope"}
+        files[f"{set_dir}/binding.json"] = {"schema": "datapulse/v1/attestation-binding-envelope"}
+        files[f"{set_dir}/index.json"] = {"schema": "datapulse/v1/attestation-index", "date": day, "attestations": {"alpha": f"{set_dir}/alpha.json"}}
+        files[f"{set_dir}/health.json"] = {"checked_at": HEALTH_CHECKED_AT}
+        files[f"{set_dir}/alpha.json"] = {"dataset_id": "alpha"}
+    for path, body in files.items():
+        content = json.dumps(body) + "\n"
+        _write(built / path, content)
+        _write(served / path, content)
+
+
 def _stage_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     """Assemble a built site, a matching served fixture and a verifier root."""
     root = tmp_path / "fixture-root"
@@ -286,6 +311,7 @@ def _stage_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
             target = served / declared.lstrip("/")
         if not target.exists():
             _write(target, "fixture surface\n")
+    _stage_attestation_plane(built, served)
 
     # The verifier reads the script, the public-surface config, mcp.json and the
     # staged proof relative to its working directory.
@@ -373,6 +399,34 @@ def test_unsigned_fixture_site_passes_served_verification(tmp_path: Path) -> Non
     assert (tmp_path / "sleep.log").read_text(encoding="utf-8").strip() == "30"
     assert "served surface=dataset register" in result.stdout
     assert "served surface=health snapshot" in result.stdout
+    assert "served surface=attestation plane attestations/latest/index.json" in result.stdout
+
+
+def test_served_attestation_plane_rejects_a_changed_revision_file(tmp_path: Path) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    revision_health = next((served / "attestations/2026-10-01/revisions").glob("*/health.json"))
+    _write(revision_health, '{"checked_at":"stale"}\n')
+
+    result = _run_verifier(tmp_path, root, built, served)
+
+    assert result.returncode != 0
+    assert "attestation plane attestations/2026-10-01/revisions/" in result.stdout
+    assert "health.json differs from assembled artifact" in result.stdout
+
+
+def test_served_attestation_plane_requires_404_for_absent_binding(tmp_path: Path) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    binding = Path("attestations/latest/binding.json")
+    (built / binding).unlink()
+    (served / binding).unlink()
+
+    absent = _run_verifier(tmp_path, root, built, served)
+    assert absent.returncode == 0, absent.stdout + absent.stderr
+
+    _write(served / binding, '{"schema":"datapulse/v1/attestation-binding-envelope"}\n')
+    stale = _run_verifier(tmp_path, root, built, served)
+    assert stale.returncode != 0
+    assert "attestation plane attestations/latest/binding.json must be absent but served HTTP 200" in stale.stdout
 
 
 def test_signed_verification_still_requires_a_publication_directory(tmp_path: Path) -> None:

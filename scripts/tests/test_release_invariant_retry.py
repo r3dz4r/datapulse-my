@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+import json
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -14,7 +16,7 @@ from pathlib import Path
 import pytest
 
 from scripts import gen_attestations as ga
-from scripts.tests.test_attestations import fixture_root
+from scripts.tests.test_attestations import fixture_rekor_reference, fixture_root, write
 from scripts.verify_attestation_binding import ContractError, verify_contract
 
 
@@ -164,6 +166,122 @@ def test_release_invariant_retry_corrected_index(tmp_path: Path) -> None:
 
     assert completed.returncode == 0, completed.stderr
     assert "Local pre-generation attestation structure: PASS" in completed.stdout
+
+
+@pytest.mark.parametrize("missing_revision_binding", [False, True])
+def test_nonlocal_fetch_resolves_signed_same_day_correction(
+    tmp_path: Path, missing_revision_binding: bool
+) -> None:
+    served, key = fixture_root(tmp_path / "served")
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    day = now.date().isoformat()
+    original_at = now - timedelta(seconds=2)
+    corrected_at = now - timedelta(seconds=1)
+    health = json.loads((served / "health/latest.json").read_text(encoding="utf-8"))
+    health["checked_at"] = original_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+    health["datasets"][0]["last_checked"] = health["checked_at"]
+    write(served / "health/latest.json", health)
+    ga.generate(served, key, original_at, fixture_rekor_reference(served, f"rekor/{day}"))
+    health["datasets"][0]["status"] = "stale"
+    write(served / "health/latest.json", health)
+    ga.generate(
+        served,
+        key,
+        corrected_at,
+        fixture_rekor_reference(served, f"rekor/{day}/correction"),
+    )
+    index = ga.load(served / "attestations/latest/index.json")
+    revision = Path(index["chain_head_ref"]).parent
+    assert "revisions" in revision.parts
+
+    work = tmp_path / "fetched"
+    contract = work / "contract-root"
+    for source, target in (
+        ("attestations/latest/index.json", "attestations/latest/index.json"),
+        ("attestations/latest/chain_head.json", "attestations/latest/chain_head.json"),
+        ("attestations/latest/binding.json", "attestations/latest/binding.json"),
+        ("health/latest.json", "health/latest.json"),
+        ("docs/.well-known/datapulse-probe-keys.json", "docs/.well-known/datapulse-probe-keys.json"),
+    ):
+        destination = contract / target
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(served / source, destination)
+    for name in ("index", "binding"):
+        shutil.copy2(served / f"attestations/latest/{name}.json", work / f"attestation-{name}.json")
+    if missing_revision_binding:
+        (served / revision / "binding.json").unlink()
+
+    stub = tmp_path / "bin"
+    stub.mkdir()
+    curl = stub / "curl"
+    curl.write_text(
+        f"#!{sys.executable}\n"
+        "import os, pathlib, sys\n"
+        "args = sys.argv[1:]\n"
+        "url = next(arg for arg in args if arg.startswith('https://'))\n"
+        "path = url.split('://', 1)[1].split('/', 1)[1]\n"
+        "with open(os.environ['FETCH_LOG'], 'a') as log: log.write(path + '\\n')\n"
+        "source = pathlib.Path(os.environ['SERVED_ROOT']) / path\n"
+        "output = pathlib.Path(args[args.index('--output') + 1])\n"
+        "if not source.is_file():\n"
+        " print('404', end='')\n"
+        " sys.exit(22)\n"
+        "output.write_bytes(source.read_bytes())\n"
+        "print('200', end='')\n",
+        encoding="utf-8",
+    )
+    curl.chmod(0o755)
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+    functions = [
+        re.search(rf"(?ms)^{name}\(\) \{{\n.*?^\}}\n", script).group(0)
+        for name in ("fetch", "fetch_optional", "fetch_attestation_contract_root")
+    ]
+    command = "\n".join(
+        (
+            "set -Eeuo pipefail",
+            "local_mode=false",
+            f"work_dir={shlex.quote(str(work))}",
+            'base_url="https://fixture.example.test"',
+            *functions,
+            f"fetch_attestation_contract_root {shlex.quote(str(contract))}",
+        )
+    )
+    environment = {
+        **os.environ,
+        "PATH": f"{stub}:{os.environ['PATH']}",
+        "SERVED_ROOT": str(served),
+        "FETCH_LOG": str(tmp_path / "fetch.log"),
+    }
+    fetched = subprocess.run(
+        ["bash", "-c", command], cwd=ROOT, env=environment,
+        capture_output=True, text=True, check=False,
+    )
+    binding = subprocess.run(
+        [sys.executable, "scripts/verify_attestation_binding.py", "--root", str(contract), "--head-only"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    if missing_revision_binding:
+        assert fetched.returncode != 0
+        assert str(revision / "binding.json") in fetched.stderr
+        assert binding.returncode != 0
+        return
+
+    assert fetched.returncode == 0, fetched.stderr
+    requested = set((tmp_path / "fetch.log").read_text(encoding="utf-8").splitlines())
+    for set_dir in (Path("attestations") / day, revision):
+        for name in ("chain_head.json", "binding.json", "index.json"):
+            assert str(set_dir / name) in requested
+    assert str(revision / "health.json") in requested
+    for name in (f"attestations/rekor/{day}/reference.json", f"attestations/rekor/{day}/bundle.json",
+                 f"attestations/rekor/{day}/correction/reference.json", f"attestations/rekor/{day}/correction/bundle.json"):
+        assert name in requested
+    assert binding.returncode == 0, binding.stderr
+    plane = subprocess.run(
+        [sys.executable, "scripts/verify_attestation_plane_state.py", "--planedir", str(contract), "--head-only"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert plane.returncode == 0, plane.stderr
+    assert plane.stdout.strip() == "healthy"
 
 
 def test_readme_health_parity_still_rejects_an_inconsistent_generated_readme(

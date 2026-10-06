@@ -89,6 +89,69 @@ fetch_optional() {
   fetch "$name" "$path"
 }
 
+fetch_attestation_contract_root() {
+  local contract_root="$1" index_date head_ref head_refs set_dir set_index reference references optional_name
+  index_date="$(jq -er '.date | select(type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$work_dir/attestation-index.json")" || {
+    printf 'Served attestation index date is invalid\n' >&2
+    return 1
+  }
+  fetch "contract-root/attestations/chain-index.json" attestations/chain-index.json
+  if [[ -f "$work_dir/attestation-binding.json" ]]; then
+    cp "$work_dir/attestation-binding.json" "$contract_root/attestations/latest/binding.json"
+  fi
+  head_refs="$(jq -er --arg prefix "attestations/${index_date}/" '.heads | to_entries[] | .value | select(startswith($prefix))' "$contract_root/attestations/chain-index.json")" || {
+    printf 'Served attestation chain index has no head for %s\n' "$index_date" >&2
+    return 1
+  }
+
+  while IFS= read -r head_ref; do
+    [[ -z "$head_ref" ]] && continue
+    [[ "$head_ref" =~ ^attestations/${index_date}/(revisions/[0-9a-f]{64}/)?chain_head\.json$ ]] || {
+      printf 'Unsafe attestation chain head reference: %s\n' "$head_ref" >&2
+      return 1
+    }
+    set_dir="${head_ref%/chain_head.json}"
+    fetch "contract-root/$set_dir/chain_head.json" "$set_dir/chain_head.json"
+    fetch "contract-root/$set_dir/binding.json" "$set_dir/binding.json"
+    for optional_name in index health; do
+      if ! fetch_optional "contract-root/$set_dir/$optional_name.json" "$set_dir/$optional_name.json"; then
+        rm -f "$contract_root/$set_dir/$optional_name.json"
+      fi
+    done
+    set_index="$contract_root/$set_dir/index.json"
+    if [[ ! -f "$set_index" ]]; then
+      set_index="$contract_root/attestations/latest/index.json"
+    fi
+    references="$(jq -er '.attestations | to_entries[] | .value' "$set_index")" || {
+      printf 'Served attestation set index is invalid: %s\n' "$set_index" >&2
+      return 1
+    }
+    while IFS= read -r reference; do
+      [[ -z "$reference" ]] && continue
+      [[ "$reference" =~ ^${set_dir}/[A-Za-z0-9_.-]+\.json$ ]] || {
+        printf 'Unsafe attestation reference: %s\n' "$reference" >&2
+        return 1
+      }
+      fetch "contract-root/$reference" "$reference"
+    done <<< "$references"
+    while IFS= read -r reference; do
+      [[ -z "$reference" ]] && continue
+      if [[ "$set_dir" == "attestations/${index_date}" ]]; then
+        [[ "$reference" =~ ^attestations/rekor/${index_date}/[A-Za-z0-9_.-]+\.json$ ]] || {
+          printf 'Unsafe Rekor proof reference: %s\n' "$reference" >&2
+          return 1
+        }
+      else
+        [[ "$reference" =~ ^attestations/rekor/${index_date}/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*\.json$ ]] || {
+          printf 'Unsafe Rekor proof reference: %s\n' "$reference" >&2
+          return 1
+        }
+      fi
+      fetch "contract-root/$reference" "$reference"
+    done < <(jq -r '.rekor // {} | [.reference_ref, .bundle_ref] | .[] // empty' "$contract_root/$set_dir/binding.json")
+  done <<< "$head_refs"
+}
+
 assert_readme_health_parity() {
   local health_file="$1" readme_file="$2"
   "$python_bin" - "$health_file" "$readme_file" <<'PY'
@@ -103,6 +166,7 @@ summary = health["_trust_summary"]
 summary_statuses = {
     key.replace("_", "-"): value for key, value in summary["by_status"].items()
 }
+
 readme = readme_path.read_text(encoding="utf-8")
 line = next(
     line for line in readme.splitlines()
@@ -156,20 +220,7 @@ if ! $local_mode; then
   cp "$work_dir/attestation-index.json" "$contract_root/attestations/latest/index.json"
   cp "$work_dir/attestation-head.json" "$contract_root/attestations/latest/chain_head.json"
   cp "$work_dir/attestation-keys.json" "$contract_root/docs/.well-known/datapulse-probe-keys.json"
-  fetch "contract-root/attestations/chain-index.json" attestations/chain-index.json
-
-  if [[ -f "$work_dir/attestation-binding.json" ]]; then
-    cp "$work_dir/attestation-binding.json" "$contract_root/attestations/latest/binding.json"
-    binding_date="$(jq -er '.payload.date | select(test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$work_dir/attestation-binding.json")"
-    fetch "contract-root/attestations/$binding_date/binding.json" "attestations/$binding_date/binding.json"
-    fetch "contract-root/attestations/$binding_date/chain_head.json" "attestations/$binding_date/chain_head.json"
-    while IFS= read -r reference; do
-      [[ -z "$reference" ]] && continue
-      [[ "$reference" =~ ^attestations/${binding_date}/[A-Za-z0-9_.-]+\.json$ ]] \
-        || { printf 'Unsafe Rekor proof reference: %s\n' "$reference" >&2; exit 1; }
-      fetch "contract-root/$reference" "$reference"
-    done < <(jq -r '.rekor // {} | [.reference_ref, .bundle_ref] | .[] // empty' "$work_dir/attestation-binding.json")
-  fi
+  fetch_attestation_contract_root "$contract_root"
 
   binding_args=(--root "$contract_root" --head-only)
   if attestation_plane_state="$(

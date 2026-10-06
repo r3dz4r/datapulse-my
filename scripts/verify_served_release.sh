@@ -126,6 +126,56 @@ verify_declared_surface_content() {
   [[ "$surface" == /observation-receipts/chain_head.json ]] || return 0
   jq -e '.schema == "datapulse/v1/observation-chain-head"' "$body" >/dev/null || fail "declared observation receipt surface $surface does not serve the datapulse/v1/observation-chain-head schema (SPA fallback?)"
 }
+verify_attestation_surface() {
+  local path="$1" schema="${2:-}" body="$smoke_dir/attestation-plane/$1"
+  if [[ -f "$site_dir/$path" ]]; then
+    fetch "attestation plane $path" "$base_url/$path" "$body"
+    cmp -s "$site_dir/$path" "$body" || fail "attestation plane $path differs from assembled artifact"
+    if [[ -n "$schema" ]]; then
+      jq -e --arg schema "$schema" '.schema == $schema' "$body" >/dev/null || fail "attestation plane $path lacks $schema schema"
+    fi
+  else
+    mkdir -p "$(dirname "$body")"
+    retrieve "attestation plane $path (absent)" "$base_url/$path" "$body" "" || fail "transport failure retrieving attestation plane $path: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"
+    [[ "$last_status" == 404 ]] || fail "attestation plane $path must be absent but served HTTP $last_status"
+  fi
+}
+verify_attestation_plane() {
+  local index_date head_ref head_refs set_dir set_index reference references
+  verify_attestation_surface attestations/latest/index.json datapulse/v1/attestation-index
+  verify_attestation_surface attestations/latest/chain_head.json datapulse/v1/daily-chain-head-envelope
+  verify_attestation_surface attestations/latest/binding.json datapulse/v1/attestation-binding-envelope
+  verify_attestation_surface attestations/latest/scores.json
+  verify_attestation_surface attestations/chain-index.json datapulse/v1/chain-index
+  verify_attestation_surface .well-known/datapulse-probe-keys.json datapulse/v2/probe-key-registry
+
+  [[ -f "$site_dir/attestations/latest/index.json" ]] || fail "assembled attestation plane is missing attestations/latest/index.json"
+  [[ -f "$site_dir/attestations/chain-index.json" ]] || fail "assembled attestation plane is missing attestations/chain-index.json"
+  index_date="$(jq -er '.date | select(type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))' "$site_dir/attestations/latest/index.json")" || fail "assembled attestation plane index date is invalid"
+  head_refs="$(jq -er --arg prefix "attestations/${index_date}/" '.heads | to_entries[] | .value | select(startswith($prefix))' "$site_dir/attestations/chain-index.json")" || fail "assembled attestation plane chain index has no head for $index_date"
+  while IFS= read -r head_ref; do
+    [[ -z "$head_ref" ]] && continue
+    [[ "$head_ref" =~ ^attestations/${index_date}/(revisions/[0-9a-f]{64}/)?chain_head\.json$ ]] || fail "attestation plane chain head reference is unsafe: $head_ref"
+    set_dir="${head_ref%/chain_head.json}"
+    [[ -f "$site_dir/$set_dir/chain_head.json" ]] || fail "assembled attestation plane is missing $set_dir/chain_head.json"
+    [[ -f "$site_dir/$set_dir/binding.json" ]] || fail "assembled attestation plane is missing $set_dir/binding.json"
+    verify_attestation_surface "$set_dir/chain_head.json" datapulse/v1/daily-chain-head-envelope
+    verify_attestation_surface "$set_dir/binding.json" datapulse/v1/attestation-binding-envelope
+    verify_attestation_surface "$set_dir/index.json" datapulse/v1/attestation-index
+    verify_attestation_surface "$set_dir/health.json"
+    set_index="$site_dir/$set_dir/index.json"
+    if [[ ! -f "$set_index" ]]; then
+      set_index="$site_dir/attestations/latest/index.json"
+    fi
+    references="$(jq -er '.attestations | to_entries[] | .value' "$set_index")" || fail "assembled attestation plane set index is invalid: $set_index"
+    while IFS= read -r reference; do
+      [[ -z "$reference" ]] && continue
+      [[ "$reference" =~ ^${set_dir}/[A-Za-z0-9_.-]+\.json$ ]] || fail "attestation plane dataset reference is unsafe: $reference"
+      [[ -f "$site_dir/$reference" ]] || fail "assembled attestation plane is missing $reference"
+      verify_attestation_surface "$reference"
+    done <<< "$references"
+  done <<< "$head_refs"
+}
 # Permit Pages propagation at either origin before comparing exact served bytes.
 sleep 30
 expected_dataset_count="$(jq -er '.datasets | select(type == "array" and length > 0) | length' "$site_dir/datapulse.json")" || fail "assembled manifest has no dataset array"
@@ -186,6 +236,7 @@ if missing: raise SystemExit('release proof drift: '+'; '.join(missing))
 PY
 mapfile -t pages < <(jq -er '.pages[]' config/public-surfaces.json); mapfile -t artifacts < <(jq -er '.artifacts[]' config/public-surfaces.json)
 for path in "${pages[@]}" "${artifacts[@]}"; do [[ "$path" == / || "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "unsafe declared public path: $path"; if [[ "$path" == */ ]]; then declared_file="$(find "$site_dir${path}" -type f -print -quit)" || fail "declared collection is missing: $path"; [[ -n "$declared_file" ]] || fail "declared collection is empty: $path"; path="/${declared_file#"$site_dir/"}"; fi; fetch "declared public surface $path" "$base_url$path" "$smoke_dir/surfaces${path%/}/index"; verify_declared_surface_content "$path" "$smoke_dir/surfaces${path%/}/index"; done
+verify_attestation_plane
 if [[ "$kv_surfaces_published_elsewhere" != true ]]; then
 python3 - "$smoke_dir/index.html" "$smoke_dir/health/index.json" "$smoke_dir/health/latest.json" <<'PY'
 import json,sys
