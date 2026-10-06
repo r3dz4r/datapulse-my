@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import socket
 import subprocess
@@ -263,3 +264,62 @@ def test_wrapper_appends_correction_with_real_generator(isolated_root: tuple[Pat
     corrected = evidence_bytes(root)
     refresh()
     assert evidence_bytes(root) == corrected
+
+
+# The correction mechanism publishes content-addressed refs onto the manifest.
+# The validators were flat-only, so nothing asserted those refs were accepted
+# downstream and a corrected day blocked the release build. These cases close
+# that loop by reading both contracts from their committed definitions.
+
+def attestation_ref_pattern() -> str:
+    """Read the manifest contract at test time so the assertion cannot drift."""
+    schema = json.loads((ROOT / "datapulse.schema.json").read_text(encoding="utf-8"))
+    return schema["$defs"]["dataset"]["properties"]["attestation_ref"]["pattern"]
+
+
+def mcp_safe_attestation_ref(reference: str, index: dict) -> str:
+    """Run the MCP server's committed guard, not a restated copy of it."""
+    mcp_dir = str(ROOT / "mcp")
+    if mcp_dir not in sys.path:
+        sys.path.insert(0, mcp_dir)
+    import server
+
+    return server._safe_attestation_ref(reference, index)
+
+
+def test_corrected_reference_is_accepted_by_schema_and_mcp_guard(
+    isolated_root: tuple[Path, Path],
+) -> None:
+    root, key = isolated_root
+    index = corrected_root(root, key)
+    corrected = index["attestations"]["sample"]
+    assert "/revisions/" in corrected
+    assert re.fullmatch(r"[0-9a-f]{64}", corrected.split("/revisions/", 1)[1].split("/", 1)[0])
+    assert re.fullmatch(attestation_ref_pattern(), corrected), corrected
+    assert mcp_safe_attestation_ref("sample", index) == corrected
+    assert mcp_safe_attestation_ref(corrected, index) == corrected
+
+
+def test_flat_dated_reference_is_still_accepted() -> None:
+    flat = f"attestations/{DAY}/sample.json"
+    assert re.fullmatch(attestation_ref_pattern(), flat), flat
+    assert mcp_safe_attestation_ref("sample", {"attestations": {"sample": flat}}) == flat
+    assert mcp_safe_attestation_ref(flat, {"attestations": {}}) == flat
+
+
+@pytest.mark.parametrize(
+    "reference",
+    [
+        f"attestations/{DAY}/revisions/{'a' * 63}/sample.json",
+        f"attestations/{DAY}/revisions/{'a' * 65}/sample.json",
+        f"attestations/{DAY}/revisions/{'A' * 64}/sample.json",
+        f"attestations/{DAY}/revisions/{'g' * 64}/sample.json",
+        f"attestations/{DAY}/revisions/revisions/{'a' * 64}/sample.json",
+        f"attestations/{DAY}/../sample.json",
+        f"/attestations/{DAY}/sample.json",
+    ],
+)
+def test_bounded_widening_still_refuses_unsafe_or_malformed_references(reference: str) -> None:
+    assert re.fullmatch(attestation_ref_pattern(), reference) is None, reference
+    with pytest.raises(ValueError, match="Unknown dataset id or unsafe attestation reference"):
+        mcp_safe_attestation_ref(reference, {"attestations": {}})
