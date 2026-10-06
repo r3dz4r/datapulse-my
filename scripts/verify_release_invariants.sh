@@ -285,7 +285,17 @@ head_payload = attestation_head["payload"]
 assert isinstance(head_payload, dict)
 assert head_payload["schema"] == "datapulse/v1/daily-chain-head"
 assert attestation_index["date"] == head_payload["date"]
-assert attestation_index["chain_head_ref"] == f"attestations/{head_payload['date']}/chain_head.json"
+# The latest index selects either revision zero or a same-day content-addressed
+# correction, mirroring verify_attestation_binding._set_directory exactly.
+head_prefix = f"attestations/{head_payload['date']}"
+chain_head_ref = attestation_index["chain_head_ref"]
+assert chain_head_ref == f"{head_prefix}/chain_head.json" or (
+    isinstance(chain_head_ref, str)
+    and re.fullmatch(
+        re.escape(head_prefix) + r"/revisions/[0-9a-f]{64}/chain_head\.json",
+        chain_head_ref,
+    )
+), f"unsafe chain-head reference: {chain_head_ref!r}"
 assert isinstance(attestation_head["dataset_links"], list)
 assert attestation_head["dataset_links"]
 assert re.fullmatch(r"[0-9a-f]{64}", attestation_head["chain_head"])
