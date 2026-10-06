@@ -3,13 +3,13 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 2,
+        "sample_days": 3,
         "stdev_days": null,
         "threshold_days": 0.125,
         "window_days": 14
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-05T23:40:44Z",
+    "last_checked": "2026-10-06T00:01:06Z",
     "record_count": null,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "fresh"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://www.eperolehan.gov.my/quotation-tender-notice",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "ePerolehan Tender Notices (DIIKLANKAN)",
     "namespace": "other",
-    "observed_verified_at": "2026-10-05T23:40:44Z",
+    "observed_verified_at": "2026-10-06T00:01:06Z",
     "source": "ePerolehan",
     "steward": "Ministry of Finance Malaysia"
   },
