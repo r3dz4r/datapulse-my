@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.48.5](https://github.com/r3dz4r/datapulse-my/compare/v3.48.4...v3.48.5) (2026-10-06)
+
+
+### Bug Fixes
+
+* **docs:** use the documented type key in every MCP client block ([3c98837](https://github.com/r3dz4r/datapulse-my/commit/3c988375c856ac2701ed37c92c42ea42fecd2d74))
+* **docs:** use the documented type key in every MCP client block and generate the learn quickstart region ([7cb2cbc](https://github.com/r3dz4r/datapulse-my/commit/7cb2cbccf46825fed4e83feb1bad7d630d0af195))
+
 ## [3.48.4](https://github.com/r3dz4r/datapulse-my/compare/v3.48.3...v3.48.4) (2026-10-06)
 
 
