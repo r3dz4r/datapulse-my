@@ -2387,6 +2387,13 @@ async def test_dataset_resource_template_returns_full_manifest_entry(
     assert json.loads(result[0].text) == expected
 
 
+# Statuses that assert a dated temporal judgement: a row carrying one of these
+# is only coherent when it also carries a freshness basis (a parsed content date
+# or a Last-Modified header). Shared by the coherence invariant and the
+# MET-weather assertion so the two readings cannot drift apart.
+DATED_TEMPORAL_STATUSES = frozenset({"fresh", "aging", "stale"})
+
+
 def test_health_rows_are_freshness_coherent() -> None:
     """Gate: no dataset row may assert a temporal freshness age (fresh/aging/stale)
     without a freshness basis, and no row may label an undated observation as
@@ -2408,14 +2415,16 @@ def test_health_rows_are_freshness_coherent() -> None:
         has_date = bool(row.get("content_freshness_date"))
         has_lm = bool(row.get("last_modified"))
         basis = has_date or has_lm
-        if status in {"fresh", "aging", "stale"} and not basis:
+        if status in DATED_TEMPORAL_STATUSES and not basis:
             problems.append(
                 f"{row['dataset_id']}: {status} without content date or Last-Modified "
                 f"(signal={signal!r})"
             )
-        if not basis and signal in {"no-header", "none", None, ""} and status in {
-            "fresh", "aging", "stale",
-        }:
+        if (
+            not basis
+            and signal in {"no-header", "none", None, ""}
+            and status in DATED_TEMPORAL_STATUSES
+        ):
             problems.append(
                 f"{row['dataset_id']}: no freshness basis but labelled {status}"
             )
@@ -2424,10 +2433,12 @@ def test_health_rows_are_freshness_coherent() -> None:
 
 def test_met_weather_uses_content_freshness() -> None:
     """MET weather must be observed honestly: when the JSON forecast is
-    reachable it supplies a parsed content date (content_date_parse / fresh); when
-    the api.data.gov.my weather endpoint serves its Cloudflare challenge instead
-    (no JSON body) it is honestly marked unknown-freshness with no content date.
-    Either coherent state is valid - we must not fake a date the source withheld."""
+    reachable it supplies a parsed content date (content_date_parse with a
+    fresh, aging, or stale status, the last when the parsed date has aged past
+    its cadence); when the api.data.gov.my weather endpoint serves its
+    Cloudflare challenge instead (no JSON body) it is honestly marked
+    unknown-freshness with no content date. Either coherent state is valid - we
+    must not fake a date the source withheld."""
     health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
     weather = next(
         item for item in health["datasets"] if item["dataset_id"] == "met_weather"
@@ -2437,7 +2448,7 @@ def test_met_weather_uses_content_freshness() -> None:
     signal = weather["freshness_signal_source"]
     has_content_date = bool(weather["content_freshness_date"])
     ok_fresh = (signal == "content_date_parse" and has_content_date
-                and weather["status"] in {"fresh", "aging"})
+                and weather["status"] in DATED_TEMPORAL_STATUSES)
     ok_unknown = (signal in {"no-header", "none"} and not has_content_date
                   and weather["status"] in {"unknown-freshness", "fresh", "aging"})
     assert ok_fresh or ok_unknown, (
