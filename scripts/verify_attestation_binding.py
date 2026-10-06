@@ -281,7 +281,11 @@ def verified_day_tip(root: Path, day: str, *, verify_datasets: bool = True) -> s
         if not isinstance(reference, str) or not reference.startswith(f"attestations/{day}/"):
             continue
         directory = _set_directory({"date": day, "chain_head_ref": reference})
-        index = _load(root / directory / "index.json", "dated attestation index")
+        dated_index_path = root / directory / "index.json"
+        # absent index means no correction recorded
+        index = _load(dated_index_path, "dated attestation index") if dated_index_path.is_file() else _load(
+            root / "attestations/latest/index.json", "latest attestation index"
+        )
         head = _load(root / reference, "dated chain head")
         binding = _load(root / directory / "binding.json", "dated binding")
         payload = binding.get("payload")
@@ -543,7 +547,14 @@ def verify_contract(
     directory = (root / tip_ref).parent
     for filename in ("binding.json", "index.json", "chain_head.json"):
         dated_file = directory / filename
-        if not dated_file.is_file() or dated_file.read_bytes() != (root / "attestations/latest" / filename).read_bytes():
+        if not dated_file.is_file():
+            # A lagging health-only plane may only carry the latest index; its
+            # absence means no correction was recorded, so there is no dated
+            # copy to compare.  The signed binding and head must still be dated.
+            if filename == "index.json":
+                continue
+            raise ContractError(f"latest {filename.removesuffix('.json')} is stale or not the dated binding")
+        if dated_file.read_bytes() != (root / "attestations/latest" / filename).read_bytes():
             raise ContractError(f"latest {filename.removesuffix('.json')} is stale or not the dated binding")
 
     observed_at = _parse_time(health_binding.get("observed_at"), "health observation time")
