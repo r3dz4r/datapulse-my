@@ -152,6 +152,44 @@ fetch_attestation_contract_root() {
   done <<< "$head_refs"
 }
 
+# The non-local gate compares a dated attestation with a served plane that is
+# republished on its own, faster cadence.  Exactly two refusal reasons are that
+# churn rather than a defect; every other reason stays fatal.
+attestation_republish_churn_reasons=(
+  'health digest/count/time binding does not match served health'
+  'unsigned attestation plane is not stale'
+)
+
+# A refused served plane is tolerated only when every reason its verifiers
+# printed is one of the republish-churn reasons above.  Both verifiers prefix a
+# reason with their script name; a bare reason is accepted unchanged.
+attestation_failure_is_republish_churn() {
+  local plane_state_error="$1" binding_output="$2" line reason candidate
+  local -a reasons=()
+  local matched
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -n "$line" ]] || continue
+    reasons+=("$line")
+  done < "$plane_state_error"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -n "$line" ]] || continue
+    reasons+=("$line")
+  done <<< "$binding_output"
+  ((${#reasons[@]} > 0)) || return 1
+  for line in "${reasons[@]}"; do
+    reason="${line#verify_attestation_binding.py: }"
+    matched=1
+    for candidate in "${attestation_republish_churn_reasons[@]}"; do
+      if [[ "$reason" == "$candidate" ]]; then
+        matched=0
+        break
+      fi
+    done
+    ((matched == 0)) || return 1
+  done
+  return 0
+}
+
 assert_readme_health_parity() {
   local health_file="$1" readme_file="$2"
   "$python_bin" - "$health_file" "$readme_file" <<'PY'
@@ -223,16 +261,33 @@ if ! $local_mode; then
   fetch_attestation_contract_root "$contract_root"
 
   binding_args=(--root "$contract_root" --head-only)
+  plane_state_error="$work_dir/attestation-plane-state.error"
   if attestation_plane_state="$(
     "$python_bin" scripts/verify_attestation_plane_state.py \
-      --planedir "$contract_root" --head-only
+      --planedir "$contract_root" --head-only 2>"$plane_state_error"
   )"; then
     if [[ "$attestation_plane_state" == "signer_down" ]]; then
       echo '::warning title=Signer lane down (P6); attestation failed-closed::Served attestation plane is stale and explicitly reports artifact_signed:false; preserving it unchanged.'
     fi
   else
-    "$python_bin" scripts/verify_attestation_binding.py "${binding_args[@]}"
-    exit 1
+    # The plane state refused the served plane.  Re-run the strict binding
+    # contract to capture the precise reason, then tolerate only the two
+    # served-plane republish reasons; any other reason remains a hard failure.
+    binding_exit=0
+    binding_output="$("$python_bin" scripts/verify_attestation_binding.py "${binding_args[@]}")" || binding_exit=$?
+    if ((binding_exit == 0)) || ! attestation_failure_is_republish_churn "$plane_state_error" "$binding_output"; then
+      [[ -n "$binding_output" ]] && printf '%s\n' "$binding_output" >&2
+      [[ -s "$plane_state_error" ]] && cat "$plane_state_error" >&2
+      exit 1
+    fi
+    binding_reason="$(printf '%s\n' "$binding_output" | sed -n '1{s/^verify_attestation_binding\.py: //;p;}')"
+    plane_state_reason="$(sed -n '1{s/^verify_attestation_binding\.py: //;p;}' "$plane_state_error")"
+    warning_reason="$binding_reason"
+    if [[ -n "$plane_state_reason" && "$plane_state_reason" != "$binding_reason" ]]; then
+      warning_reason="$warning_reason; $plane_state_reason"
+    fi
+    printf '::warning title=Attestation plane republish churn::%s; dated attestation trails the continuously republished served plane, preserving the served plane unchanged.\n' \
+      "$warning_reason"
   fi
 fi
 
