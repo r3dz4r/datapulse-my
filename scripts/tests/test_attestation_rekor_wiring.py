@@ -332,6 +332,14 @@ def test_projection_is_refreshed_from_the_accepted_base_after_alignment(tmp_path
             published / "attestations/2026-08-16" / name
         ).read_bytes(), name
 
+    # The legacy mirror is the mutable projection acceptance compares; it must
+    # carry the refreshed head, not the bytes staged before the refresh.
+    index = ga.load(published / "attestations/chain-index.json")
+    selected = Path(index["heads"][index["current_head"]]).parent
+    assert (published / ".attestations/chain_head.json").read_bytes() == (
+        published / selected / "chain_head.json"
+    ).read_bytes()
+
     verify = subprocess.run(
         [sys.executable, str(published / "scripts/verify_attestation_append.py"), "--base", accepted],
         cwd=published, capture_output=True, text=True,
@@ -345,3 +353,17 @@ def test_projection_regeneration_is_positioned_after_the_accepted_base_merge() -
     refresh_lines = [i for i, line in enumerate(lines) if "refresh_projection" in line]
     assert merge_lines and refresh_lines
     assert min(refresh_lines) > max(merge_lines)
+
+
+def test_legacy_mirror_staging_is_positioned_after_the_projection_refresh() -> None:
+    """promote() rewrites the legacy mirror; its git add must follow the refresh.
+
+    Staging the mirror before the refresh snapshots the pre-refresh bytes, and
+    the acceptance verifier then rejects the append with "legacy mirror
+    disagrees with current head".
+    """
+    lines = (ROOT / "scripts/submit_attestation_append.sh").read_text(encoding="utf-8").splitlines()
+    refresh_lines = [i for i, line in enumerate(lines) if "refresh_projection" in line]
+    mirror_lines = [i for i, line in enumerate(lines) if "chain_head" in line]
+    assert refresh_lines and mirror_lines
+    assert min(mirror_lines) > max(refresh_lines)

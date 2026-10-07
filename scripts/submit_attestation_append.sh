@@ -20,9 +20,10 @@ branch="attestation/append-$head"
 git config user.name github-actions[bot]
 git config user.email 41898282+github-actions[bot]@users.noreply.github.com
 git switch -c "$branch"
-git add -- "attestations/$day" attestations/latest/index.json \
-  attestations/latest/binding.json attestations/latest/chain_head.json \
-  attestations/chain-index.json .attestations/chain_head.json
+# Stage only immutable evidence and the discovery index here. Every mutable
+# projection promote() rewrites (latest/ and the legacy mirror) is staged after
+# the refresh below, so no pre-refresh mirror can enter the commit.
+git add -- "attestations/$day" attestations/chain-index.json
 if [[ -d "attestations/rekor/$day" ]]; then
   git add -- "attestations/rekor/$day"
 fi
@@ -53,12 +54,15 @@ from scripts.gen_attestations import promote
 
 promote(Path.cwd(), sys.argv[1])
 PY
-  git add -- attestations/latest/chain_head.json attestations/latest/index.json \
-    attestations/latest/binding.json attestations/latest/scores.json \
-    .attestations/chain_head.json
-  git commit --amend --no-edit
 }
 refresh_projection_from_accepted_base
+# promote() rewrites these mutable projections, including the legacy chain-head
+# mirror. Stage them only after the refresh: an add before it snapshots the
+# pre-refresh mirror that acceptance then rejects.
+git add -- attestations/latest/chain_head.json attestations/latest/index.json \
+  attestations/latest/binding.json attestations/latest/scores.json \
+  .attestations/chain_head.json
+git commit --amend --no-edit
 # Credentials stay in the runner environment; neither configuration nor logs
 # contain their values. A unique hash branch is never force-updated or rebased.
 git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
