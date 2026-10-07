@@ -1,0 +1,31 @@
+{
+  "schema": "datapulse/v1/probe-attestation-envelope",
+  "payload": {
+    "schema": "datapulse/v1/probe-attestation",
+    "date": "2026-10-07",
+    "observed_at": "2026-10-06T16:13:48Z",
+    "dataset_id": "met_weather",
+    "source_url": "https://api.data.gov.my/weather/forecast",
+    "observed_request_url": "https://api.data.gov.my/weather/forecast",
+    "access_dependency": "direct",
+    "probe_count_14d": 1002,
+    "probe_count_24h": 286,
+    "last_status": "stale",
+    "last_staleness_days": 8,
+    "content_fingerprint": {
+      "scheme": "shape-v1:sha256",
+      "scope": "first-row-or-headers",
+      "value": "shape-v1:645ed633e9cd59951656d6162c9ba466a6687d04af54d5e516c6d484a0989c7a"
+    },
+    "browser_receipt": {
+      "available": false,
+      "reason": null
+    },
+    "previous_chain_head": "c9dfc1e77f10b21ed43b92b4cb851f9f08280f6f0146c01dc40ef47e2c21fd99",
+    "key_id": "ed25519-a829715828ba0f88",
+    "signer_pubkey_base64": "RychwPwzvCMNxT9LvAM7OOTgT47BkgG/OvqE4JcwC+8="
+  },
+  "signature_base64": "NTOcACME8+/WNiDrmXUt/xK0EPQ3Fxp4purZ1zaIk4FXub/hd5TQQzp8dLYB8aHaZWUBnP/c3uR04SLhio5bAw==",
+  "chain_link": "47caa70c6cb89321443feaa883e5ca194512b1ba3bc244fa48df43b408fd3646",
+  "verification_level": "L1-capable"
+}
