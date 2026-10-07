@@ -41,7 +41,9 @@ fi
 # accepted base. That index is authoritative for the current head; a pre-merge
 # directory selection can leave the legacy mirror behind the accepted head.
 resolve_day_directory_after_alignment() {
-  dirname "$(jq -er --arg head "$head" '.heads[$head]' attestations/chain-index.json)"
+  local head_path
+  head_path="$(jq -er --arg head "$head" '.heads[$head]' attestations/chain-index.json)"
+  dirname "$head_path"
 }
 day_directory="$(resolve_day_directory_after_alignment)"
 # Reuse promote() for projection construction and leave dated evidence untouched.
