@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.51.0](https://github.com/r3dz4r/datapulse-my/compare/v3.50.2...v3.51.0) (2026-10-07)
+
+
+### Features
+
+* **health:** derive the trust summary from the manifest so dataset additions pass the release build ([#789](https://github.com/r3dz4r/datapulse-my/issues/789)) ([d00395f](https://github.com/r3dz4r/datapulse-my/commit/d00395f82b3d1c09cbcef48ee071069c9a37dcd2))
+
 ## [3.50.2](https://github.com/r3dz4r/datapulse-my/compare/v3.50.1...v3.50.2) (2026-10-07)
 
 
