@@ -134,6 +134,7 @@ case "$profile" in
   release-build)
     description="$(profile_description "$profile")"
     generators=(
+      "gen_health_trust_summary.py"
       "gen_readme.py"
       "public_surface_preflight"
       "stamp_manifest_origin.py"
@@ -167,6 +168,7 @@ case "$profile" in
       "gen_site_nav.py"
     )
     outputs=(
+      "health/latest.json (manifest-scoped trust totals and unprobed onboarding rows)"
       "README.md (dataset counts and trust-summary block)"
       "validation only (config, schemas, source identity, and all P5A markers)"
       'datapulse.json $schema canonical origin stamp'
