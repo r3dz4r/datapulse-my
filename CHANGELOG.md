@@ -14,6 +14,20 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.49.0](https://github.com/r3dz4r/datapulse-my/compare/v3.48.7...v3.49.0) (2026-10-07)
+
+
+### Features
+
+* **attestation:** same-day append, licence gate, and full licence alignment ([#548](https://github.com/r3dz4r/datapulse-my/issues/548)) ([d72cf35](https://github.com/r3dz4r/datapulse-my/commit/d72cf35959524851e457f62e9f259ba3ece38353))
+
+
+### Bug Fixes
+
+* **attestation:** allow advancing latest scores projection ([fc84f35](https://github.com/r3dz4r/datapulse-my/commit/fc84f355bcf0bf22e795cfa9fca21f1e70e6aa9b))
+* **attestation:** clear both blockers on the required check ([dc9e149](https://github.com/r3dz4r/datapulse-my/commit/dc9e1496da957e81f381182eea29725bde11301d))
+* **provenance:** regenerate the discovery surfaces for the newest mcp/ revision ([9743229](https://github.com/r3dz4r/datapulse-my/commit/97432294aef3658a5d21482e09a19da5c6a28380))
+
 ## [3.48.7](https://github.com/r3dz4r/datapulse-my/compare/v3.48.6...v3.48.7) (2026-10-06)
 
 
