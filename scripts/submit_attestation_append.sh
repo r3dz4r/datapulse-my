@@ -37,16 +37,18 @@ if [[ "$(git rev-parse origin/main)" != "$expected_source" ]]; then
     exit 1
   }
 fi
-# The projection was built against the checkout as it stood when the job began;
-# after merging the freshly-fetched accepted base it can hold a mixture of the
-# append's day and that base. Re-derive it on the aligned tree so acceptance
-# never compares the append against a projection from an older checkout. The
-# repository's generator owns projection construction: reuse promote() instead
-# of copying or rewriting pointers here, and leave dated evidence untouched.
+# Resolve the directory selected by the chain index only after aligning to the
+# accepted base. That index is authoritative for the current head; a pre-merge
+# directory selection can leave the legacy mirror behind the accepted head.
+resolve_day_directory_after_alignment() {
+  local head_path
+  head_path="$(jq -er '.heads[.current_head]' attestations/chain-index.json)"
+  dirname "$head_path"
+}
+day_directory="$(resolve_day_directory_after_alignment)"
+# Reuse promote() for projection construction and leave dated evidence untouched.
 refresh_projection_from_accepted_base() {
-  local directory
-  directory="$(dirname "$(jq -er --arg head "$head" '.heads[$head]' attestations/chain-index.json)")"
-  python3 - "$directory" <<'PY'
+  python3 - "$1" <<'PY'
 import sys
 from pathlib import Path
 
@@ -55,7 +57,7 @@ from scripts.gen_attestations import promote
 promote(Path.cwd(), sys.argv[1])
 PY
 }
-refresh_projection_from_accepted_base
+refresh_projection_from_accepted_base "$day_directory"
 # promote() rewrites these mutable projections, including the legacy chain-head
 # mirror. Stage them only after the refresh: an add before it snapshots the
 # pre-refresh mirror that acceptance then rejects.

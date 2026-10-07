@@ -350,9 +350,10 @@ def test_projection_is_refreshed_from_the_accepted_base_after_alignment(tmp_path
 def test_projection_regeneration_is_positioned_after_the_accepted_base_merge() -> None:
     lines = (ROOT / "scripts/submit_attestation_append.sh").read_text(encoding="utf-8").splitlines()
     merge_lines = [i for i, line in enumerate(lines) if "origin/main" in line]
+    resolve_lines = [i for i, line in enumerate(lines) if "resolve_day_directory_after_alignment" in line]
     refresh_lines = [i for i, line in enumerate(lines) if "refresh_projection" in line]
-    assert merge_lines and refresh_lines
-    assert min(refresh_lines) > max(merge_lines)
+    assert merge_lines and resolve_lines and refresh_lines
+    assert max(merge_lines) < min(resolve_lines) < min(refresh_lines)
 
 
 def test_legacy_mirror_staging_is_positioned_after_the_projection_refresh() -> None:
