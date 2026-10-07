@@ -4,8 +4,8 @@ set -Eeuo pipefail
 expected_source="$(git rev-parse HEAD)"
 python3 scripts/verify_attestation_append.py --base "$expected_source"
 git fetch origin main
-[[ "$(git rev-parse origin/main)" == "$expected_source" ]] || {
-  echo 'Accepted source moved; discard this candidate and prepare from the new parent.' >&2
+git merge-base --is-ancestor "$expected_source" origin/main || {
+  echo 'Discarding candidate: its source is not in origin/main history.' >&2
   exit 1
 }
 head="$(jq -er '.current_head' attestations/chain-index.json)"
@@ -21,6 +21,12 @@ git diff --cached --quiet && exit 0
 message="$(git diff --cached --name-only | python3 scripts/attestation_commit_back.py --date "$day")"
 [[ -n "$message" ]]
 git commit -m "$message"
+if [[ "$(git rev-parse origin/main)" != "$expected_source" ]]; then
+  git merge --no-edit origin/main || {
+    echo 'Discarding candidate: merging origin/main failed; manual reconciliation required.' >&2
+    exit 1
+  }
+fi
 # Credentials stay in the runner environment; neither configuration nor logs
 # contain their values. A unique hash branch is never force-updated or rebased.
 git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
