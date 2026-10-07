@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from scripts import gen_attestations as ga
+from scripts.attestation_sets import selected_directory
 from scripts.tests.test_attestations import fixture_root, fixture_root_with_rekor, write
 from scripts.verify_attestation_binding import (
     ContractError,
@@ -40,6 +41,29 @@ def load(path: Path) -> dict:
 
 def dump(path: Path, value: object) -> None:
     path.write_text(json.dumps(value) + "\n", encoding="utf-8")
+
+
+def test_latest_pipeline_scores_can_advance_but_chain_head_cannot_diverge(tmp_path: Path) -> None:
+    root = generated_root(tmp_path)
+    directory = selected_directory(root)
+    score_path = root / "attestations/latest/scores.json"
+    scores = load(score_path)
+    scores["generated_at"] = "2026-08-15T02:00:00Z"
+    dump(score_path, scores)
+    assert score_path.read_bytes() != (root / directory / "scores.json").read_bytes()
+    assert selected_directory(root) == directory
+
+    scores["generated_at"] = "2026-08-15T00:00:00Z"
+    dump(score_path, scores)
+    with pytest.raises(ContractError, match="latest projection is stale or mixed"):
+        selected_directory(root)
+
+    scores["generated_at"] = "2026-08-15T02:00:00Z"
+    dump(score_path, scores)
+    head_path = root / "attestations/latest/chain_head.json"
+    head_path.write_bytes(head_path.read_bytes() + b" ")
+    with pytest.raises(ContractError, match="latest projection is stale or mixed"):
+        selected_directory(root)
 
 
 def real_bundle_reference(root: Path) -> tuple[dict, str]:
