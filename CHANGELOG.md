@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.51.3](https://github.com/r3dz4r/datapulse-my/compare/v3.51.2...v3.51.3) (2026-10-07)
+
+
+### Bug Fixes
+
+* **attestations:** resolve projection directory after base alignment ([#799](https://github.com/r3dz4r/datapulse-my/issues/799)) ([afd2fa7](https://github.com/r3dz4r/datapulse-my/commit/afd2fa7f5eec6f0bdbbe5cc59870e7352a51ca71))
+
 ## [3.51.2](https://github.com/r3dz4r/datapulse-my/compare/v3.51.1...v3.51.2) (2026-10-07)
 
 
