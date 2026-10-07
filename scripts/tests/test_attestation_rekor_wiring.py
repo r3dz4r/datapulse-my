@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import hashlib
 import os
+import shutil
 import subprocess
 import textwrap
 from datetime import datetime, timezone
@@ -174,3 +175,86 @@ def test_guard_skips_rekor_upload_only_when_today_s_evidence_is_committed(tmp_pa
     assert "needed=false" in outputs
     assert "needed=true" not in outputs
     assert (scratch_root / "attestations/rekor-fixture/reference.json").read_bytes() == before
+
+
+def _git(root: Path, *arguments: str) -> str:
+    return subprocess.run(
+        ["git", *arguments], cwd=root, check=True, capture_output=True, text=True,
+    ).stdout.strip()
+
+
+@pytest.mark.parametrize(
+    ("witnessed", "override", "proceeds"),
+    (
+        pytest.param(True, None, True, id="witness-required-and-present"),
+        pytest.param(False, None, False, id="unwitnessed-refused-by-default"),
+        pytest.param(False, "1", True, id="explicit-override-keeps-false-claim"),
+        pytest.param(False, "0", False, id="zero-is-not-an-override"),
+        pytest.param(False, "true", False, id="true-is-not-an-override"),
+        pytest.param(False, "01", False, id="only-literal-one-overrides"),
+    ),
+)
+def test_submission_requires_witness_or_explicit_operator_override(
+    tmp_path: Path, witnessed: bool, override: str | None, proceeds: bool,
+) -> None:
+    """Exercise real validation, staging and Git publication to a local bare repo."""
+    root, key = fixture_root(tmp_path / "repo")
+    script_dir = root / "scripts"
+    script_dir.mkdir()
+    for name in (
+        "verify_attestation_append.py", "attestation_sets.py",
+        "verify_attestation_binding.py", "attestation_commit_back.py",
+    ):
+        shutil.copyfile(ROOT / "scripts" / name, script_dir / name)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    _git(root, "init", "-b", "main")
+    _git(root, "config", "user.name", "Test")
+    _git(root, "config", "user.email", "test@example.test")
+    _git(root, "add", "attestations", ".attestations", "docs", "scripts", "datapulse.json", "health")
+    _git(root, "commit", "-m", "accepted fixture")
+    source = _git(root, "rev-parse", "HEAD")
+    remote = tmp_path / "origin.git"
+    _git(tmp_path, "clone", "--bare", str(root), str(remote))
+    _git(root, "remote", "add", "origin", str(remote))
+    reference = fixture_rekor_reference(root, "rekor/2026-08-16") if witnessed else None
+    ga.generate(root, key, datetime(2026, 8, 16, 1, tzinfo=timezone.utc), reference)
+    binding = root / "attestations/latest/binding.json"
+    before = binding.read_bytes()
+    head = ga.load(root / "attestations/chain-index.json")["current_head"]
+    branch = "attestation/append-" + head
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    gh = bin_dir / "gh"
+    gh.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$PR_ARGS"\n')
+    gh.chmod(0o755)
+    pr_args = tmp_path / "pr-args"
+    env = {**os.environ, "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"], "PR_ARGS": str(pr_args)}
+    env.pop("DATAPULSE_ALLOW_UNWITNESSED_PUBLICATION", None)
+    env.pop("GH_TOKEN", None)
+    if override is not None:
+        env["DATAPULSE_ALLOW_UNWITNESSED_PUBLICATION"] = override
+
+    result = subprocess.run(
+        ["bash", str(ROOT / "scripts/submit_attestation_append.sh")],
+        cwd=root, env=env, capture_output=True, text=True, check=False,
+    )
+
+    assert binding.read_bytes() == before
+    if proceeds:
+        assert result.returncode == 0, result.stderr
+        published = json.loads(_git(remote, "show", f"{branch}:attestations/latest/binding.json"))
+        assert published["claims"]["rekor_witnessed"] is witnessed
+        if witnessed:
+            assert _git(remote, "show", f"{branch}:attestations/rekor/2026-08-16/reference.json")
+        assert pr_args.read_text().splitlines() == [
+            "pr", "create", "--base", "main", "--head", branch,
+            "--title", "chore(attestations): append signed set 2026-08-16",
+            "--body", f"Append immutable signed evidence from source {source}. Publication must wait for this append to be accepted; existing evidence is preserved.",
+        ]
+    else:
+        assert result.returncode != 0
+        assert "rekor_witnessed: false" in result.stderr
+        assert "DATAPULSE_ALLOW_UNWITNESSED_PUBLICATION=1" in result.stderr
+        assert _git(root, "branch", "--show-current") == "main"
+        assert _git(remote, "for-each-ref", "--format=%(refname)", "refs/heads/") == "refs/heads/main"
+        assert not pr_args.exists()
