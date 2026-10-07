@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.50.1](https://github.com/r3dz4r/datapulse-my/compare/v3.50.0...v3.50.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **provenance:** agent.json records the newest mcp/ revision again ([da94462](https://github.com/r3dz4r/datapulse-my/commit/da94462cddca205ea427db91e9c61bd03811adde))
+
 ## [3.50.0](https://github.com/r3dz4r/datapulse-my/compare/v3.49.1...v3.50.0) (2026-10-07)
 
 
