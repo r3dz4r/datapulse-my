@@ -36,6 +36,29 @@ if [[ "$(git rev-parse origin/main)" != "$expected_source" ]]; then
     exit 1
   }
 fi
+# The projection was built against the checkout as it stood when the job began;
+# after merging the freshly-fetched accepted base it can hold a mixture of the
+# append's day and that base. Re-derive it on the aligned tree so acceptance
+# never compares the append against a projection from an older checkout. The
+# repository's generator owns projection construction: reuse promote() instead
+# of copying or rewriting pointers here, and leave dated evidence untouched.
+refresh_projection_from_accepted_base() {
+  local directory
+  directory="$(dirname "$(jq -er --arg head "$head" '.heads[$head]' attestations/chain-index.json)")"
+  python3 - "$directory" <<'PY'
+import sys
+from pathlib import Path
+
+from scripts.gen_attestations import promote
+
+promote(Path.cwd(), sys.argv[1])
+PY
+  git add -- attestations/latest/chain_head.json attestations/latest/index.json \
+    attestations/latest/binding.json attestations/latest/scores.json \
+    .attestations/chain_head.json
+  git commit --amend --no-edit
+}
+refresh_projection_from_accepted_base
 # Credentials stay in the runner environment; neither configuration nor logs
 # contain their values. A unique hash branch is never force-updated or rebased.
 git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
