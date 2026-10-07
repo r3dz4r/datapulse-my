@@ -42,7 +42,7 @@ fi
 # directory selection can leave the legacy mirror behind the accepted head.
 resolve_day_directory_after_alignment() {
   local head_path
-  head_path="$(jq -er '.heads[.current_head]' attestations/chain-index.json)"
+  head_path="$(jq -er --arg head "$head" '.heads[$head]' attestations/chain-index.json)"
   dirname "$head_path"
 }
 day_directory="$(resolve_day_directory_after_alignment)"
