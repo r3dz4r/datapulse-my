@@ -29,6 +29,7 @@ GENERATORS = (
     "gen_badges.sh",
     "gen_status_legend.sh",
     "gen_readme.py",
+    "gen_health_trust_summary.py",
     "gen_llms_summary.py",
     "gen_public_discovery.py",
     "stamp_manifest_origin.py",
@@ -77,6 +78,7 @@ HEALTH_OUTPUTS = (
     "catalog-graph.json",
 )
 RELEASE_OUTPUTS = HEALTH_OUTPUTS + (
+    "health/latest.json",
     "llms.txt",
     "robots.txt",
     "sitemap.xml",
@@ -112,6 +114,7 @@ PROFILE_INPUTS = (
     "openwiki",
     "config",
     "health.schema.json",
+    "datapulse.schema.json",
     "agent.schema.json",
     "mcp.schema.json",
     "robots.txt",
@@ -130,6 +133,7 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copytree(MINIMAL_FIXTURE, source)
 
     manifest = json.loads((source / "datapulse.json").read_text(encoding="utf-8"))
+    manifest["$schema"] = "https://www.data-pulse.my/datapulse.schema.json"
     for row in manifest["datasets"]:
         dataset_id = row["id"]
         row.update(
@@ -138,7 +142,9 @@ def _stage_source(tmp_path: Path) -> Path:
                 "namespace": "other",
                 "custodian": "fixture-agency",
                 "licence": "CC BY 4.0",
-                "real_status": "active",
+                "real_status": "live",
+                "attribution": "Fixture Agency",
+                "expected_record_count": 1,
                 "steward": "Fixture Agency",
                 "source": "Fixture Portal",
                 "url": f"https://example.invalid/{dataset_id}.csv",
@@ -231,6 +237,7 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(RELEASE_FIXTURE / "agent.schema.json", source / "agent.schema.json")
     shutil.copy2(RELEASE_FIXTURE / "mcp.schema.json", source / "mcp.schema.json")
     shutil.copy2(RELEASE_FIXTURE / "health.schema.json", source / "health.schema.json")
+    shutil.copy2(ROOT / "datapulse.schema.json", source / "datapulse.schema.json")
     shutil.copytree(RELEASE_FIXTURE / "config", source / "config")
     for name in ("register-page.json", "register-page.schema.json"):
         shutil.copy2(ROOT / "config" / name, source / "config" / name)
@@ -310,6 +317,7 @@ def _stage_source(tmp_path: Path) -> Path:
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", scripts)
+    shutil.copy2(ROOT / "scripts/validate_at_runtime.py", scripts)
     shutil.copy2(ROOT / "scripts/verify_distribution_sync.py", scripts)
     shutil.copy2(ROOT / "scripts/verify_mcp_deployment.py", scripts)
     shutil.copy2(ROOT / "scripts/verify_openwiki.py", scripts)
