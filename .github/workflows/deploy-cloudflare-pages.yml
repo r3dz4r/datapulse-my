@@ -67,6 +67,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Deliberately avoid persisting checkout credentials so the push's App-token header is not duplicated.
+          persist-credentials: false
 
       - name: Refresh legacy chain head before signing
         env:
