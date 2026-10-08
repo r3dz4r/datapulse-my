@@ -57,13 +57,16 @@ datapulse-my/
 │   ├── embed_dashboard_data.py  # writes the docs/ index.html
 │   └── check.py               # operator smoke-test entry point
 │
-├── health/                    # generated health artifacts (gitignored)
+├── health/                    # MIXED - mostly TRACKED, partly ignored
+│   │                          # TRACKED (7): latest.json, drift.json, evidence-coverage.json,
+│   │                          #   history_daily.json, probe_counts.json, reconciliation.json,
+│   │                          #   trends.json - and latest.json is what gen_readme.py reads
+│   │                          # IGNORED: history.jsonl, as_of/, staging-signed-health/
 │   ├── latest.json
-│   ├── history.jsonl
+│   ├── history.jsonl          # ignored
 │   ├── trends.json
 │   ├── drift.json
-│   ├── reconciliation.json
-│   └── deltas/                # per-cycle immutable delta files
+│   └── reconciliation.json
 │
 ├── record-evidence/           # per-tool evidence logs (generated)
 │

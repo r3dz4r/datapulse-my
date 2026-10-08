@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import logging
 import sys
 import re
 from datetime import date
@@ -22,6 +23,10 @@ from scripts.verify_attestation_binding import (
 
 SET_REF = re.compile(r"attestations/(\d{4}-\d{2}-\d{2})(?:/revisions/([0-9a-f]{64}))?/([A-Za-z0-9_-]+)\.json")
 FILES = ("chain_head.json", "index.json", "binding.json", "scores.json")
+# Rewritten every health cycle: the latest copy is fresher than the chain head's
+# frozen set, so byte-equality with that set is unsatisfiable.
+PIPELINE_OWNED_PROJECTIONS = ("scores.json",)
+logger = logging.getLogger(__name__)
 
 
 def set_directory(reference: str, filename: str = "chain_head.json") -> str:
@@ -170,6 +175,31 @@ def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
     return document
 
 
+def assert_head_extends_base(document: dict, base_head: str | None) -> set[str]:
+    """Walk verified signed predecessors to the accepted base, or genesis.
+
+    Descriptors must first be checked against their signed envelopes. A mirror
+    belongs to the candidate's current head; the base is an ancestor identity,
+    never the bytes that an appended mirror is expected to retain.
+    """
+    envelopes, days = document["envelopes"], document["days"]
+    cursor, visited = document["current_head"], set()
+    while cursor != base_head:
+        if cursor in visited or cursor not in envelopes:
+            raise ContractError("forward lineage has a cycle or unresolved parent")
+        visited.add(cursor)
+        child = envelopes[cursor]
+        parent = child["parent_head"]
+        if parent == "0" * 64 and base_head is None:
+            break
+        if parent not in envelopes or envelopes[parent]["date"] > child["date"]:
+            raise ContractError("forward lineage parent missing or date moved backwards")
+        if days[envelopes[parent]["date"]][-1] != parent and envelopes[parent]["date"] != child["date"]:
+            raise ContractError("next day extends a superseded head")
+        cursor = parent
+    return visited
+
+
 def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = True) -> None:
     """Check exact descriptors, day runs, and the accepted forward lineage."""
     heads, envelopes, days = (document.get(k, {}) for k in ("heads", "envelopes", "days"))
@@ -212,23 +242,35 @@ def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = Tr
     if current not in seen or current != days[max(days)][-1]:
         raise ContractError("current selector is not the terminal accepted head")
     boundary = document.get("migration_head")
-    cursor, visited = current, set()
-    while cursor != boundary:
-        if cursor in visited or cursor not in envelopes:
-            raise ContractError("forward lineage has a cycle or unresolved parent")
-        visited.add(cursor)
-        child = envelopes[cursor]
-        parent = child["parent_head"]
-        if parent == "0" * 64 and boundary is None:
-            break
-        if parent not in envelopes or envelopes[parent]["date"] > child["date"]:
-            raise ContractError("forward lineage parent missing or date moved backwards")
-        if days[envelopes[parent]["date"]][-1] != parent and envelopes[parent]["date"] != child["date"]:
-            raise ContractError("next day extends a superseded head")
-        cursor = parent
+    visited = assert_head_extends_base(document, boundary)
     forward = {h for h, entry in envelopes.items() if boundary is None or entry["date"] >= envelopes[boundary]["date"]}
     if forward != visited | ({boundary} if boundary else set()):
         raise ContractError("fork or disconnected accepted forward head")
+
+
+def legacy_mirror_expected_schema(root: Path) -> str:
+    """Read the committed chain-index schema that controls legacy mirror checks."""
+    return _load(root / "attestations/chain-index.json", "chain index")["schema"]
+
+
+def verify_legacy_mirror(root: Path, document: dict[str, Any], directory: str) -> None:
+    """Reject a stale legacy head mirror for the resolved current head."""
+    mirror = root / ".attestations/chain_head.json"
+    if (mirror.is_file()
+            and (schema := legacy_mirror_expected_schema(root)) == "datapulse/v2/chain-index"):
+        expected = root / directory / "chain_head.json"
+        mirror_bytes = mirror.read_bytes()
+        expected_bytes = expected.read_bytes()
+        mirror_sha256 = hashlib.sha256(mirror_bytes).hexdigest()
+        expected_sha256 = hashlib.sha256(expected_bytes).hexdigest()
+        operands = (
+            f"mirror={mirror.resolve()} sha256={mirror_sha256} bytes={len(mirror_bytes)}",
+            f"expected={expected.resolve()} sha256={expected_sha256} bytes={len(expected_bytes)}",
+            f"day={directory} schema={schema}",
+        )
+        if mirror_bytes != expected_bytes:
+            raise ContractError("legacy mirror disagrees with current head\n" + "\n".join(operands))
+        logger.warning("legacy mirror agrees with current head: %s", " ".join(operands))
 
 
 def selected_directory(root: Path, *, projections: bool = True, verify_datasets: bool = True) -> str:
@@ -239,13 +281,21 @@ def selected_directory(root: Path, *, projections: bool = True, verify_datasets:
     if projections:
         for filename in FILES:
             projection = root / "attestations/latest" / filename
-            if not projection.is_file() or projection.read_bytes() != (root / directory / filename).read_bytes():
+            if not projection.is_file():
                 raise ContractError("latest projection is stale or mixed")
-        mirror = root / ".attestations/chain_head.json"
+            frozen = root / directory / filename
+            if filename in PIPELINE_OWNED_PROJECTIONS:
+                latest_scores = _load(projection, "latest scores projection")
+                frozen_scores = _load(frozen, "immutable scores")
+                if _parse_time(latest_scores.get("generated_at"), "latest scores generated_at") < _parse_time(
+                    frozen_scores.get("generated_at"), "immutable scores generated_at"
+                ):
+                    raise ContractError("latest projection is stale or mixed")
+            elif projection.read_bytes() != frozen.read_bytes():
+                raise ContractError("latest projection is stale or mixed")
         # The legacy mirror is a mutable projection; a historical verification
         # plane assembled from immutable bytes is not required to carry it.
-        if (mirror.is_file()
-                and _load(root / "attestations/chain-index.json", "chain index")["schema"] == "datapulse/v2/chain-index"
-                and mirror.read_bytes() != (root / directory / "chain_head.json").read_bytes()):
-            raise ContractError("legacy mirror disagrees with current head")
+        # Compare only within this candidate tree. Accepted-base ancestry is
+        # established through signed predecessors, not mirror byte identity.
+        verify_legacy_mirror(root, document, directory)
     return directory

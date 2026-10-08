@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 import pytest
 
@@ -24,6 +25,34 @@ def _workflow_pair(tmp_path: Path) -> tuple[Path, Path]:
 
 def test_repository_workflows_satisfy_shared_attestation_contract() -> None:
     verify_workflows(DAILY, PAGES)
+
+
+def _step(workflow: str, step_id: str) -> str:
+    return next(
+        step for step in re.split(r"(?=^      - )", workflow, flags=re.MULTILINE)
+        if f"        id: {step_id}\n" in step
+    )
+
+
+def test_pages_reuses_daily_witness_mechanism_before_submission() -> None:
+    daily = DAILY.read_text(encoding="utf-8")
+    pages = re.split(r"^  [a-z_]+:\n", PAGES.read_text(encoding="utf-8").split("  sign_health:\n", 1)[1], maxsplit=1, flags=re.MULTILINE)[0]
+    guard = _step(pages, "rekor_guard")
+    producer = _step(pages, "produce_rekor_witness")
+    assert guard.split("        run: |\n", 1)[1] == _step(daily, "rekor_guard").split("        run: |\n", 1)[1]
+    assert producer.split("        run: |\n", 1)[1] == _step(daily, "produce_rekor_witness").split("        run: |\n", 1)[1]
+    assert "continue-on-error:" not in producer
+    assert "deploy-cloudflare-pages.yml@refs/heads/main" in producer
+    assert "id-token: write" in pages
+    installer_id = re.search(r"steps\.([a-z_]+)\.outcome == 'success'", producer)[1]
+    installer = _step(pages, installer_id)
+    assert "continue-on-error:" not in installer
+    assert "cosign-release: v3.1.3" in installer
+    assert pages.index(f"id: {installer_id}") < pages.index("id: produce_rekor_witness")
+    assert pages.index("id: produce_rekor_witness") < pages.index("python3 scripts/bind_candidate_witness.py") < pages.index("bash scripts/submit_attestation_append.sh")
+    assert '--rekor-reference "$DATAPULSE_REKOR_REFERENCE"' in pages
+    assert 'DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=%s\\n' in pages
+    assert "DATAPULSE_ALLOW_UNWITNESSED_PUBLICATION" not in pages
 
 
 @pytest.mark.parametrize(
