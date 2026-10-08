@@ -131,9 +131,40 @@ def test_append_with_stale_legacy_mirror_is_still_refused(tmp_path: Path) -> Non
     ga.generate(root, key, NOW + timedelta(days=1))
     candidate = discovery(root)
     assert attestation_sets.assert_head_extends_base(candidate, base_head) == {candidate["current_head"]}
-    (root / ".attestations/chain_head.json").write_bytes(base_bytes)
-    with pytest.raises(ContractError, match="legacy mirror disagrees with current head"):
+    mirror = root / ".attestations/chain_head.json"
+    directory = accepted_day_directory(root, candidate)
+    expected = root / directory / "chain_head.json"
+    expected_bytes = expected.read_bytes()
+    mirror.write_bytes(base_bytes)
+    with pytest.raises(ContractError, match="legacy mirror disagrees with current head") as error:
         selected_directory(root)
+    message = str(error.value)
+    assert message.startswith("legacy mirror disagrees with current head\n")
+    assert f"mirror={mirror.resolve()} sha256={hashlib.sha256(base_bytes).hexdigest()} bytes={len(base_bytes)}" in message
+    assert f"expected={expected.resolve()} sha256={hashlib.sha256(expected_bytes).hexdigest()} bytes={len(expected_bytes)}" in message
+    assert f"day={directory} schema=datapulse/v2/chain-index" in message
+
+
+def test_legacy_mirror_success_logs_absolute_operands(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
+) -> None:
+    root = generated_root(tmp_path)
+    document = discovery(root)
+    directory = accepted_day_directory(root, document)
+    mirror = root / ".attestations/chain_head.json"
+    expected = root / directory / "chain_head.json"
+    digest = hashlib.sha256(expected.read_bytes()).hexdigest()
+    monkeypatch.chdir(root)
+    caplog.clear()
+
+    attestation_sets.verify_legacy_mirror(Path("."), document, directory)
+
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == "WARNING"
+    line = caplog.records[0].getMessage()
+    assert f"mirror={mirror.resolve()} sha256={digest}" in line
+    assert f"expected={expected.resolve()} sha256={digest}" in line
+    assert "\n" not in line
 
 
 def test_v1_index_keeps_legacy_mirror_guard_dormant_after_discovery_upgrade(
