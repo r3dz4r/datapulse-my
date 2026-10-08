@@ -1,7 +1,7 @@
 ---
 dataset_id: dgm_covid_cases
-last_checked: 2026-10-08T12:36:16Z
-last_checked: 2026-10-08T12:36:16Z
+last_checked: 2026-10-08T14:24:19Z
+last_checked: 2026-10-08T14:24:19Z
 status: stale
 freshness_delta: 495 days
 next_expected_update: daily
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-10-08 at 12:36:16 UTC.
+2026-10-08 at 14:24:19 UTC.
 
 ## File size
 

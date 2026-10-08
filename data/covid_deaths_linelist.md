@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/healthcare/covid_deaths_linelist.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "annual"
-last_checked: 2026-10-08T12:36:16Z
+last_checked: 2026-10-08T14:24:19Z
 last_observed: 2024-05-18
 last_modified: 2025-06-04T03:46:32Z
 record_count: 37351
@@ -34,7 +34,7 @@ HTTP 200
 
 ## Last checked
 
-2026-10-08 at 12:36:16 UTC.
+2026-10-08 at 14:24:19 UTC.
 
 ## File size
 
