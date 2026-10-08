@@ -1,6 +1,6 @@
 ---
 dataset_id: mbpp_weather_stations
-last_checked: 2026-10-04T03:50:43Z
+last_checked: 2026-10-08T12:36:16Z
 status: fresh
 freshness_delta: 0 days
 ---
@@ -17,7 +17,7 @@ ArcGIS FeatureServer bounded read-only probe succeeded
 
 ## Last checked
 
-2026-10-04 at 03:50:43 UTC.
+2026-10-08 at 12:36:16 UTC.
 
 ## File size
 

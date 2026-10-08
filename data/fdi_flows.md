@@ -13,7 +13,7 @@ column_count: 4
 status: stale
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: fdi_flows
-freshness_delta: 460 days
+freshness_delta: 464 days
 next_expected_update: "quarterly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Stale
 
-**Freshness:** 460 days
+**Freshness:** 464 days
 
 HTTP 200
 

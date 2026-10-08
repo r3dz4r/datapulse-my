@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_timber_production
-last_checked: 2026-09-05T02:34:56Z
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-10-05T06:46:30Z
 status: stale
-freshness_delta: 2102 days
+freshness_delta: 1376 days
 next_expected_update: annual
-record_count: 1325
+record_count: 1447
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: National totals may be slightly different to the sum of state values due to rounding."]
@@ -20,17 +20,17 @@ attribution: Forestry Department and Department of Statistics Malaysia via data.
 
 **Status:** Stale
 
-**Freshness:** 2102 days
+**Freshness:** 1376 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-05 at 06:46:30 UTC.
 
 ## File size
 
-The checked resource is 117,026 bytes.
+The checked resource is 127,777 bytes.
 
 ## Provenance
 

@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_static_prasarana_bus_penang
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-05T06:46:30Z
 status: fresh
-freshness_delta: 29 days
-record_count: 308171
+freshness_delta: 3 days
+record_count: 308673
 content_freshness_date: 2026-08-31
 schema_version: GTFS
 schema_drift: none
@@ -19,17 +19,17 @@ attribution: Prasarana Malaysia Berhad via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 29 days
+**Freshness:** 3 days
 
 HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-05 at 06:46:30 UTC.
 
 ## File size
 
-The checked resource is 3,493,956 bytes.
+The checked resource is 3,469,263 bytes.
 
 ## Provenance
 

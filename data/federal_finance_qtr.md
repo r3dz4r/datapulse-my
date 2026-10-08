@@ -2,7 +2,7 @@
 dataset_id: federal_finance_qtr
 last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 1007 days
+freshness_delta: 1011 days
 next_expected_update: quarterly
 schema_version: unknown
 schema_drift: none
@@ -18,7 +18,7 @@ attribution: Accountant General’s Department of Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1007 days
+**Freshness:** 1011 days
 
 HTTP 200
 

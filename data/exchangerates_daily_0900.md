@@ -1,10 +1,10 @@
 ---
 dataset_id: exchangerates_daily_0900
-last_checked: 2026-10-04T03:40:24Z
-status: aging
-freshness_delta: 2 days
+last_checked: 2026-10-08T12:36:16Z
+status: degraded
+freshness_delta: 0 days
 next_expected_update: 2026-08-03
-record_count: 17228
+record_count: 17240
 date_range: 1997-01-02 to 2026-07-31
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Aging
+**Status:** Degraded
 
-**Freshness:** 2 days
+**Freshness:** 0 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-04 at 03:40:24 UTC.
+2026-10-08 at 12:36:16 UTC.
 
 ## File size
 
-The checked resource is 7,991,460 bytes.
+The checked resource is 7,997,197 bytes.
 
 ## Coverage
 

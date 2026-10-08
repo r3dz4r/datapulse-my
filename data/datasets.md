@@ -3,7 +3,7 @@ dataset_id: dgm_datasets
 last_checked: 2026-10-03T10:36:37Z
 last_checked: 2026-10-03T10:36:37Z
 status: aging
-freshness_delta: 65 days
+freshness_delta: 69 days
 next_expected_update: monthly
 record_count: 290
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 65 days
+**Freshness:** 69 days
 
 HTTP 200
 

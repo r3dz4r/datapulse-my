@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_payments_systems
 last_checked: 2026-10-03T10:36:37Z
-status: fresh
-freshness_delta: 45 days
+status: aging
+freshness_delta: 49 days
 next_expected_update: overdue
 record_count: 540
 date_range: 2019-01-01 to 2026-02-01
@@ -18,9 +18,9 @@ attribution: Bank Negara Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Fresh
+**Status:** Aging
 
-**Freshness:** 45 days
+**Freshness:** 49 days
 
 HTTP 200
 

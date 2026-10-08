@@ -2,7 +2,7 @@
 dataset_id: dgm_lfs_qtr_state
 last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 460 days
+freshness_delta: 464 days
 next_expected_update: unknown
 record_count: 560
 date_range: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 460 days
+**Freshness:** 464 days
 
 HTTP 200
 

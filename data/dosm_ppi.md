@@ -2,7 +2,7 @@
 dataset_id: dosm_ppi
 last_checked: 2026-10-03T10:36:37Z
 status: fresh
-freshness_delta: 5 days
+freshness_delta: 10 days
 next_expected_update: monthly
 record_count: 587
 date_range: 2010-01-01 to 2026-06-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 5 days
+**Freshness:** 10 days
 
 HTTP 200
 

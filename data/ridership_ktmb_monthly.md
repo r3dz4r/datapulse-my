@@ -13,7 +13,7 @@ column_count: 3
 status: fresh
 notes: "Tier-1 wave C already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: ridership_ktmb_monthly
-freshness_delta: 33 days
+freshness_delta: 37 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Keretapi Tanah Melayu Berhad via data.gov.my"
 
 **Status:** Fresh
 
-**Freshness:** 33 days
+**Freshness:** 37 days
 
 HTTP 200
 

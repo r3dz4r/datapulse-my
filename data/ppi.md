@@ -2,7 +2,7 @@
 dataset_id: dgm_ppi
 last_checked: 2026-10-03T10:36:37Z
 status: aging
-freshness_delta: 64 days
+freshness_delta: 68 days
 next_expected_update: unknown
 record_count: 587
 date_range: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 64 days
+**Freshness:** 68 days
 
 HTTP 200
 

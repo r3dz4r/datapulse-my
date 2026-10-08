@@ -5,15 +5,15 @@ source_url: "https://storage.data.gov.my/transportation/ktmb/shuttle_tebrau_2026
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "daily"
-last_checked: 2026-10-03T15:47:47Z
-last_observed: 2026-10-02
-last_modified: 2026-10-02T19:31:31Z
-record_count: 7580
+last_checked: 2026-10-08T12:36:16Z
+last_observed: 2026-10-07
+last_modified: 2026-10-07T19:31:24Z
+record_count: 7718
 column_count: 5
-status: aging
+status: fresh
 notes: "Tier-1 wave F newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: ridership_od_shuttle_tebrau
-freshness_delta: 2 days
+freshness_delta: 1 days
 next_expected_update: "daily"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Keretapi Tanah Melayu Berhad via data.gov.my"
 
 ## Status
 
-**Status:** Aging
+**Status:** Fresh
 
-**Freshness:** 2 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 15:47:47 UTC.
+2026-10-08 at 12:36:16 UTC.
 
 ## File size
 
-The checked resource is 348,413 bytes.
+The checked resource is 354,750 bytes.
 
 ## Provenance
 

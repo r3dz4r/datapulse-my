@@ -2,7 +2,7 @@
 dataset_id: dgm_ppi_sop
 last_checked: 2026-10-03T10:36:37Z
 status: fresh
-freshness_delta: 5 days
+freshness_delta: 10 days
 next_expected_update: unknown
 record_count: 12271
 date_range: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 5 days
+**Freshness:** 10 days
 
 HTTP 200
 

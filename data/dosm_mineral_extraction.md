@@ -3,7 +3,7 @@ dataset_id: dosm_mineral_extraction
 last_checked: 2026-10-03T10:36:37Z
 last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 2102 days
+freshness_delta: 2106 days
 next_expected_update: monthly
 record_count: 2112
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Department of Mineral and Geoscience and Department of Statistics M
 
 **Status:** Stale
 
-**Freshness:** 2102 days
+**Freshness:** 2106 days
 
 HTTP 200
 

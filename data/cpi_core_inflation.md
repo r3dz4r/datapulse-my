@@ -13,7 +13,7 @@ column_count: 4
 status: fresh
 notes: "Tier-1 wave B already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: cpi_core_inflation
-freshness_delta: 15 days
+freshness_delta: 20 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Fresh
 
-**Freshness:** 15 days
+**Freshness:** 20 days
 
 HTTP 200
 
