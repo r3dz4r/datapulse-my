@@ -26,7 +26,7 @@ Working agreement for AI agents (Hermes, Codex, Claude Code) operating inside th
 ```
 datapulse-my/
 ├── README.md                  # public-facing; badges, agent-quickstart, value prop
-├── datapulse.json             # 437-dataset manifest (generated)
+├── datapulse.json             # 440-dataset manifest (generated)
 ├── datapulse.schema.json      # manifest JSON Schema (hand-authored)
 ├── health.schema.json         # health JSON Schema (hand-authored)
 ├── agent.json                 # machine-readable agent capability manifest

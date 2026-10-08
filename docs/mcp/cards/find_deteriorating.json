@@ -11,7 +11,7 @@
     "find_deteriorating.min_anomaly_rate"
   ],
   "contract_version": "1.0.0",
-  "dataset_count": 437,
+  "dataset_count": 440,
   "description": "Return datasets whose published freshness trend is deteriorating, ranked by staleness slope. Optionally require a minimum historical anomaly rate; includes pipeline-computed trend and reliability evidence so agents do not recompute it. Use it for worsening freshness trends; do not use it for anomalies, recovery, reliability grades, or structural drift—use find_anomalies, find_recovering, find_unreliable, or find_schema_drift instead. It reads precomputed trend data, so an empty result means no published deteriorating row survives the selected filters; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_deteriorating",
   "endpoint": {
