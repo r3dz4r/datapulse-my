@@ -237,7 +237,6 @@ def _homepage_embedded_payload(
     health: object,
     filters: object,
     sections: object,
-    attestations: object,
     verification: object,
 ) -> dict[str, object]:
     """Keep only the homepage's client-side contract inline.
@@ -249,15 +248,11 @@ def _homepage_embedded_payload(
     first_dataset: list[object] = []
     if isinstance(manifest, dict) and isinstance(manifest.get("datasets"), list):
         first_dataset = manifest["datasets"][:1]
-    attestation_map: object = {}
-    if isinstance(attestations, dict):
-        attestation_map = {"attestations": attestations.get("attestations", {})}
     return {
         "health": {"checked_at": health.get("checked_at")} if isinstance(health, dict) else {},
         "manifest": {"datasets": first_dataset},
         "dashboardFilters": filters,
         "dashboardSections": sections,
-        "attestations": attestation_map,
         "attestationVerification": verification,
     }
 
@@ -553,7 +548,6 @@ def _render_page(
             health,
             _load(filters_path),
             _load(sections_path),
-            _load_optional(attestations_path),
             _attestation_verification(manifest_path.parent),
         )
         data = (
@@ -563,7 +557,6 @@ def _render_page(
             f"manifest: {_dump(payload['manifest'])}, "
             f"dashboardFilters: {_dump(payload['dashboardFilters'])}, "
             f"dashboardSections: {_dump(payload['dashboardSections'])}, "
-            f"attestations: {_dump(payload['attestations'])}, "
             f"attestationVerification: {_dump(payload['attestationVerification'])}"
             "};\n"
             "  </script>"
