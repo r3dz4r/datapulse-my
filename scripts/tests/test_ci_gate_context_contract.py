@@ -136,6 +136,7 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
         "Validate manifest and health schemas",
         "Verify repository contract",
         "Verify distribution surfaces match canonical evidence",
+        "Verify OpenWiki source contract",
     ):
         assert "if" not in steps[name]
     assert steps["Install artifact verification dependencies"]["if"] == (
@@ -157,6 +158,7 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
             "Validate manifest and health schemas",
             "Verify repository contract",
             "Verify distribution surfaces match canonical evidence",
+            "Verify OpenWiki source contract",
             "Verify immutable attestation append against accepted base",
         }:
             continue

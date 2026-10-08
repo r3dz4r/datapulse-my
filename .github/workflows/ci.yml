@@ -35,15 +35,16 @@ jobs:
           echo "health_only=false" >> "$GITHUB_OUTPUT"
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
             git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null || exit 0
-            if git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" | python3 scripts/classify_change.py; then
-              echo "health_only=true" >> "$GITHUB_OUTPUT"
-            fi
+            diff_args=("$BEFORE_SHA" "$AFTER_SHA")
           elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
             git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null || exit 0
             git cat-file -e "${HEAD_SHA}^{commit}" 2>/dev/null || exit 0
-            if git diff --name-only "$BASE_SHA...$HEAD_SHA" | python3 scripts/classify_change.py; then
-              echo "health_only=true" >> "$GITHUB_OUTPUT"
-            fi
+            diff_args=("$BASE_SHA...$HEAD_SHA")
+          else
+            exit 0
+          fi
+          if git diff --name-only "${diff_args[@]}" | python3 scripts/classify_change.py; then
+            echo "health_only=true" >> "$GITHUB_OUTPUT"
           fi
 
   deterministic-safety-net:
@@ -189,7 +190,6 @@ jobs:
         run: python3 scripts/verify_chain_linearity.py
 
       - name: Verify OpenWiki source contract
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
         run: python3 scripts/verify_openwiki.py
 
       - name: Check URL drift and cadence
