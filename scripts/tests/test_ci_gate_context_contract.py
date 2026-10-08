@@ -13,7 +13,7 @@ REQUIRED_JOB = "deterministic-safety-net"
 
 
 def _workflow() -> dict[str, object]:
-    return yaml.safe_load(CI_WORKFLOW.read_text(encoding="utf-8"))
+    return yaml.load(CI_WORKFLOW.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
 
 
 def test_required_context_is_not_produced_by_push_events() -> None:
@@ -22,6 +22,34 @@ def test_required_context_is_not_produced_by_push_events() -> None:
 
     assert "github.event_name == 'push'" not in condition
     assert "health_only" not in condition
+
+
+def test_required_context_is_produced_for_merge_queue_events() -> None:
+    workflow = _workflow()
+    assert set(workflow["on"]) == {
+        "push",
+        "pull_request",
+        "workflow_dispatch",
+        "merge_group",
+    }
+
+    job = workflow["jobs"][REQUIRED_JOB]
+    assert job["if"] == (
+        "github.event_name == 'pull_request' || "
+        "github.event_name == 'workflow_dispatch' || "
+        "github.event_name == 'merge_group'"
+    )
+
+    append_step = next(
+        step for step in job["steps"]
+        if step.get("name") == "Verify immutable attestation append against accepted base"
+    )
+    assert append_step["if"] == (
+        "github.event_name == 'pull_request' || github.event_name == 'merge_group'"
+    )
+    assert append_step["env"]["ACCEPTED_BASE"] == (
+        "${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}"
+    )
 
 
 def test_every_ci_job_declares_a_timeout() -> None:

@@ -14,6 +14,90 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.51.8](https://github.com/r3dz4r/datapulse-my/compare/v3.51.7...v3.51.8) (2026-10-08)
+
+
+### Bug Fixes
+
+* make the onboarding loop stop fighting back (three verified fixes) ([#530](https://github.com/r3dz4r/datapulse-my/issues/530)) ([9de8df7](https://github.com/r3dz4r/datapulse-my/commit/9de8df7820fc4d3ccef0834e28df184f3981efcb))
+
+## [3.51.7](https://github.com/r3dz4r/datapulse-my/compare/v3.51.6...v3.51.7) (2026-10-08)
+
+
+### Bug Fixes
+
+* **attestations:** stop the shadow-checkout fixture writing through to the checkout ([#812](https://github.com/r3dz4r/datapulse-my/issues/812)) ([f2f3238](https://github.com/r3dz4r/datapulse-my/commit/f2f323805fb150a7090df9cb45282499040ab005))
+
+## [3.51.6](https://github.com/r3dz4r/datapulse-my/compare/v3.51.5...v3.51.6) (2026-10-08)
+
+
+### Bug Fixes
+
+* **attestations:** resolve the append day from the candidate's own index ([#809](https://github.com/r3dz4r/datapulse-my/issues/809)) ([83b4967](https://github.com/r3dz4r/datapulse-my/commit/83b4967b991e4a5bca44683ae9850c53eb513598))
+
+## [3.51.5](https://github.com/r3dz4r/datapulse-my/compare/v3.51.4...v3.51.5) (2026-10-08)
+
+
+### Bug Fixes
+
+* **attestations:** verify an append against the base, not against byte identity ([#805](https://github.com/r3dz4r/datapulse-my/issues/805)) ([9afd60f](https://github.com/r3dz4r/datapulse-my/commit/9afd60fd91c805c0cc0414f64b542ba73e107b9a))
+
+## [3.51.4](https://github.com/r3dz4r/datapulse-my/compare/v3.51.3...v3.51.4) (2026-10-07)
+
+
+### Bug Fixes
+
+* **attestations:** resolve the day directory after alignment ([#802](https://github.com/r3dz4r/datapulse-my/issues/802)) ([d4101c8](https://github.com/r3dz4r/datapulse-my/commit/d4101c8b18eaf11e8831c8d24f8a125cd9a20271))
+
+## [3.51.3](https://github.com/r3dz4r/datapulse-my/compare/v3.51.2...v3.51.3) (2026-10-07)
+
+
+### Bug Fixes
+
+* **attestations:** resolve projection directory after base alignment ([#799](https://github.com/r3dz4r/datapulse-my/issues/799)) ([afd2fa7](https://github.com/r3dz4r/datapulse-my/commit/afd2fa7f5eec6f0bdbbe5cc59870e7352a51ca71))
+
+## [3.51.2](https://github.com/r3dz4r/datapulse-my/compare/v3.51.1...v3.51.2) (2026-10-07)
+
+
+### Bug Fixes
+
+* **attestations:** accept the v2 chain index in the served-release verifier ([#795](https://github.com/r3dz4r/datapulse-my/issues/795)) ([15ee193](https://github.com/r3dz4r/datapulse-my/commit/15ee193099bf5e125a319d7988bcfe4b2b5b296b))
+
+## [3.51.1](https://github.com/r3dz4r/datapulse-my/compare/v3.51.0...v3.51.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **attestations:** stage the legacy mirror after the refresh that rewrites it ([#792](https://github.com/r3dz4r/datapulse-my/issues/792)) ([71f4a15](https://github.com/r3dz4r/datapulse-my/commit/71f4a15cce9ac338dc67655878955409e22b0a69))
+
+## [3.51.0](https://github.com/r3dz4r/datapulse-my/compare/v3.50.2...v3.51.0) (2026-10-07)
+
+
+### Features
+
+* **health:** derive the trust summary from the manifest so dataset additions pass the release build ([#789](https://github.com/r3dz4r/datapulse-my/issues/789)) ([d00395f](https://github.com/r3dz4r/datapulse-my/commit/d00395f82b3d1c09cbcef48ee071069c9a37dcd2))
+
+## [3.50.2](https://github.com/r3dz4r/datapulse-my/compare/v3.50.1...v3.50.2) (2026-10-07)
+
+
+### Bug Fixes
+
+* **attestations:** rebuild the projection from the accepted base after aligning to it ([#783](https://github.com/r3dz4r/datapulse-my/issues/783)) ([d5b5f37](https://github.com/r3dz4r/datapulse-my/commit/d5b5f37fd697c588751a25b48393d890c664fdf1))
+
+## [3.50.1](https://github.com/r3dz4r/datapulse-my/compare/v3.50.0...v3.50.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **provenance:** agent.json records the newest mcp/ revision again ([da94462](https://github.com/r3dz4r/datapulse-my/commit/da94462cddca205ea427db91e9c61bd03811adde))
+
+## [3.50.0](https://github.com/r3dz4r/datapulse-my/compare/v3.49.1...v3.50.0) (2026-10-07)
+
+
+### Features
+
+* **attestation:** witness every append on demand and require one ([#766](https://github.com/r3dz4r/datapulse-my/issues/766)) ([e917e18](https://github.com/r3dz4r/datapulse-my/commit/e917e183de06431cbe88e44902f639b8b2e0e14e))
+
 ## [3.49.1](https://github.com/r3dz4r/datapulse-my/compare/v3.49.0...v3.49.1) (2026-10-07)
 
 
