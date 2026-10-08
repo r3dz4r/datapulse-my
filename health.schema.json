@@ -67,7 +67,8 @@
             "minLength": 1
           },
           "last_checked": {
-            "type": "string",
+            "description": "Null only for an explicitly unprobed onboarding row; measured rows retain their probe timestamp.",
+            "type": ["string", "null"],
             "format": "date-time"
           },
           "url": {
@@ -149,6 +150,21 @@
             "additionalProperties": false
           }
         },
+        "allOf": [
+          {
+            "if": {
+              "required": ["last_checked"],
+              "properties": {"last_checked": {"type": "null"}}
+            },
+            "then": {
+              "required": ["message"],
+              "properties": {
+                "status": {"const": "unknown-freshness"},
+                "message": {"const": "Not probed; provisional onboarding status."}
+              }
+            }
+          }
+        ],
         "additionalProperties": true
       }
     }

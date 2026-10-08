@@ -41,6 +41,7 @@ UNSIGNED_MESSAGE = (
 # Every generator the two profiles reference. Stubs keep the test focused on the
 # attestation branch instead of executing the real pipeline.
 PYTHON_GENERATORS = (
+    "gen_health_trust_summary.py",
     "gen_readme.py",
     "stamp_manifest_origin.py",
     "gen_mcp_reference.py",

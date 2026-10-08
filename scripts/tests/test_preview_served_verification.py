@@ -34,6 +34,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 
@@ -219,6 +220,19 @@ def _stage_attestation_plane(built: Path, served: Path) -> None:
         content = json.dumps(body) + "\n"
         _write(built / path, content)
         _write(served / path, content)
+
+
+def _set_chain_index_schema(built: Path, served: Path, schema: str) -> None:
+    """Rewrite the chain-index schema in both the built and served copies.
+
+    The verifier compares the two bodies byte for byte before it looks at the
+    schema, so a schema-only fixture change must touch both sides.
+    """
+    for root in (built, served):
+        path = root / "attestations/chain-index.json"
+        document = json.loads(path.read_text(encoding="utf-8"))
+        document["schema"] = schema
+        _write(path, json.dumps(document) + "\n")
 
 
 def _stage_fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
@@ -427,6 +441,33 @@ def test_served_attestation_plane_requires_404_for_absent_binding(tmp_path: Path
     stale = _run_verifier(tmp_path, root, built, served)
     assert stale.returncode != 0
     assert "attestation plane attestations/latest/binding.json must be absent but served HTTP 200" in stale.stdout
+
+
+@pytest.mark.parametrize(
+    "schema", ["datapulse/v1/chain-index", "datapulse/v2/chain-index"]
+)
+def test_chain_index_accepts_both_published_schemas(tmp_path: Path, schema: str) -> None:
+    """v2 is the producer's current output; v1 stays valid for history."""
+    root, built, served = _stage_fixture(tmp_path)
+    _set_chain_index_schema(built, served, schema)
+
+    result = _run_verifier(tmp_path, root, built, served)
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_chain_index_rejects_an_unknown_schema(tmp_path: Path) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    _set_chain_index_schema(built, served, "datapulse/v3/chain-index")
+
+    result = _run_verifier(tmp_path, root, built, served)
+    combined = result.stdout + result.stderr
+
+    assert result.returncode != 0
+    assert (
+        "attestation plane attestations/chain-index.json lacks "
+        "datapulse/v1/chain-index or datapulse/v2/chain-index schema" in combined
+    )
 
 
 def test_signed_verification_still_requires_a_publication_directory(tmp_path: Path) -> None:

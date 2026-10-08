@@ -134,6 +134,7 @@ case "$profile" in
   release-build)
     description="$(profile_description "$profile")"
     generators=(
+      "gen_health_trust_summary.py"
       "gen_readme.py"
       "public_surface_preflight"
       "stamp_manifest_origin.py"
@@ -167,6 +168,7 @@ case "$profile" in
       "gen_site_nav.py"
     )
     outputs=(
+      "health/latest.json (manifest-scoped trust totals and unprobed onboarding rows)"
       "README.md (dataset counts and trust-summary block)"
       "validation only (config, schemas, source identity, and all P5A markers)"
       'datapulse.json $schema canonical origin stamp'
@@ -272,19 +274,9 @@ if [[ "$list_only" == true ]]; then
   exit 0
 fi
 
-for index in "${!generators[@]}"; do
-  generator="${generators[$index]}"
-  if [[ "$profile" == "release-build" ]]; then
-    step_number="$index"
-    final_step="$((${#generators[@]} - 1))"
-  else
-    step_number="$((index + 1))"
-    final_step="${#generators[@]}"
-  fi
-  printf 'Step %d/%d: ' "$step_number" "$final_step"
-  command_for "$generator"
-  printf '\n'
-
+run_step() (
+  set -e
+  generator="$1"
   case "$generator" in
     public_surface_preflight)
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" python3 scripts/gen_mcp_reference.py --validate-only
@@ -329,14 +321,14 @@ for index in "${!generators[@]}"; do
         # that is present (even if unusable) is never bypassed by the opt-in.
         if [[ "${DATAPULSE_ALLOW_UNSIGNED_BUILD:-}" == "1" ]]; then
           printf 'DATAPULSE_ALLOW_UNSIGNED_BUILD=1: WARNING: attestations were NOT regenerated; this release-build is UNSIGNED\n' >&2
-          continue
+          return 0
         fi
         if [[ -f docs/.well-known/datapulse-probe-keys.json ]]; then
           printf 'set DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE for attestation generation\n' >&2
           exit 1
         fi
         printf 'attestation generation skipped: no published key registry in this fixture\n'
-        continue
+        return 0
       fi
       attestation_args=(--private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE")
       if [[ -n "${DATAPULSE_SIGSTORE_REKOR_REFERENCE:-}" ]]; then
@@ -351,4 +343,42 @@ for index in "${!generators[@]}"; do
         python3 "scripts/$generator"
       ;;
   esac
+)
+
+failed_steps=()
+failed_commands=()
+failed_codes=()
+for index in "${!generators[@]}"; do
+  generator="${generators[$index]}"
+  if [[ "$profile" == "release-build" ]]; then
+    step_number="$index"
+    final_step="$((${#generators[@]} - 1))"
+  else
+    step_number="$((index + 1))"
+    final_step="${#generators[@]}"
+  fi
+  printf 'Step %d/%d: ' "$step_number" "$final_step"
+  command_for "$generator"
+  printf '\n'
+
+  # Keep errexit inside each step while allowing the parent to record its status.
+  set +e
+  run_step "$generator"
+  step_status=$?
+  set -e
+  if (( step_status != 0 )); then
+    failed_steps+=("$step_number")
+    failed_commands+=("$(command_for "$generator")")
+    failed_codes+=("$step_status")
+  fi
 done
+
+if (( ${#failed_steps[@]} > 0 )); then
+  printf '\nFailures (%d):\n' "${#failed_steps[@]}" >&2
+  for index in "${!failed_steps[@]}"; do
+    printf '  Step %s: %s (exit %s)\n' \
+      "${failed_steps[$index]}" "${failed_commands[$index]}" "${failed_codes[$index]}" >&2
+  done
+  printf 'Dependent steps were attempted; their failures may reflect missing or stale outputs from earlier failed steps.\n' >&2
+  exit 1
+fi

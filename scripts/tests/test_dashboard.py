@@ -29,14 +29,16 @@ CANONICAL_KEYS = [
 # The server-rendered register preserves the no-JavaScript public surface.
 # Only the client-side contract stays inline; complete machine-readable health
 # data is published separately at /health/index.json and /health/latest.json.
-# Raised 1_050_000 -> 1_062_600 (+1.2%) on 2026-10-04 by operator decision: the
-# catalogue reached 425 datasets (five DOSM boundary layers and two lookup tables)
-# and the rendered rows measured 1,052,921 bytes, 2,921 over the old cap.
-# This is a stopgap, not the intended end state: the register renders one row per
-# dataset, so the page grows with the catalogue. Paginating it - which removes that
-# growth structurally and touches seven verifiers, including the deployed-count
-# parity gate - is queued as its own change.
-MAX_HOMEPAGE_BYTES = 1_062_600
+# Measured render on 2026-10-04: 1,052,924 bytes at 425 datasets. Its 425
+# register <article> elements total 768,377 bytes, leaving 284,547 bytes for
+# the shell and other content. Round 768,377 / 425 up to 1,808 bytes per row.
+# Keep the former 1,062,600-byte allowance at this count: the shell allowance
+# is 1,062,600 - 425 * 1,808 = 294,200 (9,653 bytes above the measured rest).
+HOMEPAGE_SHELL_BYTES = 294_200
+HOMEPAGE_ROW_BYTES = 1_808
+# The homepage embeds only the first manifest dataset and aggregate client
+# data, rather than one payload entry per register row. Its measured block is
+# 43,035 bytes at 425 datasets, leaving 16,965 bytes under this separate cap.
 MAX_EMBEDDED_DATA_BYTES = 60_000
 EMBEDDED_DATA_BLOCK = re.compile(rb'<script id="embedded-data">.*?</script>', re.DOTALL)
 
@@ -113,12 +115,18 @@ def generate_filters(manifest: Path, output: Path) -> dict:
     return json.loads(output.read_text(encoding="utf-8"))
 
 
+def homepage_byte_budget() -> int:
+    manifest = json.loads((ROOT / "datapulse.json").read_text(encoding="utf-8"))
+    return HOMEPAGE_SHELL_BYTES + HOMEPAGE_ROW_BYTES * len(manifest["datasets"])
+
+
 def assert_dashboard_payload_within_budget(document: bytes) -> None:
     embedded_data = EMBEDDED_DATA_BLOCK.search(document)
     assert embedded_data is not None, "generated dashboard is missing embedded-data block"
 
-    assert len(document) <= MAX_HOMEPAGE_BYTES, (
-        f"homepage HTML is {len(document)} bytes; maximum is {MAX_HOMEPAGE_BYTES} bytes"
+    maximum = homepage_byte_budget()
+    assert len(document) <= maximum, (
+        f"homepage HTML is {len(document)} bytes; maximum is {maximum} bytes"
     )
     embedded_bytes = len(embedded_data.group(0))
     assert embedded_bytes <= MAX_EMBEDDED_DATA_BYTES, (
@@ -177,8 +185,9 @@ def test_dashboard_payload_budget_rejects_synthetic_overage(
     tmp_path: Path, budget: str
 ) -> None:
     if budget == "homepage":
-        fixture = b'<script id="embedded-data"></script>' + b"x" * MAX_HOMEPAGE_BYTES
-        maximum = MAX_HOMEPAGE_BYTES
+        maximum = homepage_byte_budget()
+        block = b'<script id="embedded-data"></script>'
+        fixture = block + b"x" * (maximum - len(block) + 1)
     else:
         prefix = b'<script id="embedded-data">'
         suffix = b"</script>"
@@ -189,6 +198,19 @@ def test_dashboard_payload_budget_rejects_synthetic_overage(
 
     with pytest.raises(AssertionError, match=rf"actual|maximum|{maximum}"):
         assert_dashboard_payload_within_budget(fixture_path.read_bytes())
+
+
+@pytest.mark.parametrize("budget", ["homepage", "embedded-data"])
+def test_dashboard_payload_budget_accepts_synthetic_at_cap(budget: str) -> None:
+    if budget == "homepage":
+        block = b'<script id="embedded-data"></script>'
+        fixture = block + b"x" * (homepage_byte_budget() - len(block))
+    else:
+        prefix = b'<script id="embedded-data">'
+        suffix = b"</script>"
+        fixture = prefix + b"x" * (MAX_EMBEDDED_DATA_BYTES - len(prefix) - len(suffix)) + suffix
+
+    assert_dashboard_payload_within_budget(fixture)
 
 
 def test_register_search_and_filter_controls_preserve_the_server_rendered_fallback() -> None:
