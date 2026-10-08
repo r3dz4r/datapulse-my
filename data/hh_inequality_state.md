@@ -2,7 +2,7 @@
 dataset_id: dgm_hh_inequality_state
 last_checked: 2026-09-26T02:49:53Z
 status: fresh
-freshness_delta: 1007 days
+freshness_delta: 1010 days
 next_expected_update: unknown
 record_count: 289
 date_range: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 1007 days
+**Freshness:** 1010 days
 
 HTTP 200
 

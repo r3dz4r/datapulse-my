@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_static_prasarana_rail_kl
-last_checked: 2026-09-05T02:34:56Z
-status: fresh
-freshness_delta: 29 days
-record_count: 1122
+last_checked: 2026-10-07T10:30:45Z
+status: degraded
+freshness_delta: 0 days
+record_count: null
 content_freshness_date: 2026-12-31
 schema_version: GTFS
 schema_drift: none
@@ -17,15 +17,15 @@ attribution: Prasarana Malaysia Berhad via data.gov.my GTFS API
 
 ## Status
 
-**Status:** Fresh
+**Status:** Degraded
 
-**Freshness:** 29 days
+**Freshness:** 0 days
 
-HTTP 200; valid GTFS static ZIP
+Invalid GTFS ZIP: 'utf-8' codec can't decode byte 0xcd in position 37: invalid continuation byte
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-07 at 10:30:45 UTC.
 
 ## File size
 

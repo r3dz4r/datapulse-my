@@ -2,7 +2,7 @@
 dataset_id: dgm_trade_sitc_1d
 last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 95 days
+freshness_delta: 98 days
 next_expected_update: unknown
 record_count: 3509
 date_range: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 95 days
+**Freshness:** 98 days
 
 HTTP 200
 

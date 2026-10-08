@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_mnha_moh
-last_checked: 2026-09-05T02:34:56Z
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-10-05T06:46:30Z
 status: stale
-freshness_delta: 1737 days
+freshness_delta: 1740 days
 next_expected_update: annual
 record_count: 10
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1737 days
+**Freshness:** 1740 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-05 at 06:46:30 UTC.
 
 ## File size
 

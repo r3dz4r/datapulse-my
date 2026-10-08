@@ -2,7 +2,7 @@
 dataset_id: dosm_lfs_qtr
 last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 460 days
+freshness_delta: 463 days
 next_expected_update: overdue
 record_count: 63
 date_range: 2010-01-01 to 2025-07-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Stale
 
-**Freshness:** 460 days
+**Freshness:** 463 days
 
 HTTP 200
 

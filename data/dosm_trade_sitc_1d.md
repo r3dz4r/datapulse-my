@@ -2,7 +2,7 @@
 dataset_id: dosm_trade_sitc_1d
 last_checked: 2026-10-03T10:36:37Z
 status: fresh
-freshness_delta: 23 days
+freshness_delta: 26 days
 next_expected_update: monthly
 record_count: 3509
 date_range: 2000-01-01 to 2026-06-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 23 days
+**Freshness:** 26 days
 
 HTTP 200
 

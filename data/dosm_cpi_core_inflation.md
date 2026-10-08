@@ -2,7 +2,7 @@
 dataset_id: dosm_cpi_core_inflation
 last_checked: 2026-10-03T10:36:37Z
 status: fresh
-freshness_delta: 15 days
+freshness_delta: 19 days
 next_expected_update: monthly
 record_count: 1442
 date_range: 2018-02-01 to 2026-06-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 15 days
+**Freshness:** 19 days
 
 HTTP 200
 

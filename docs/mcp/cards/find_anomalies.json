@@ -12,7 +12,7 @@
     "find_anomalies.mode"
   ],
   "contract_version": "1.0.0",
-  "dataset_count": 425,
+  "dataset_count": 437,
   "description": "Return datasets flagged by the latest published anomaly detection (anomalies), ranked by how far the observed update interval exceeds its threshold. Optionally require a minimum publish-reliability grade; includes pipeline-computed anomaly and reliability evidence so agents do not recompute it. Use it for unusual update intervals; do not use it for worsening freshness, recovery, reliability grades, or structural drift—use find_deteriorating, find_recovering, find_unreliable, or find_schema_drift instead. It reads precomputed anomaly data, so an empty result means no published row survives the selected filters; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_anomalies",
   "endpoint": {
@@ -72,7 +72,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "1a81df54975485373534fde024770507cde16dd5",
+    "commit_sha": "d72cf35959524851e457f62e9f259ba3ece38353",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

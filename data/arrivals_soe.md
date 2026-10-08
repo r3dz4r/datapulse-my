@@ -3,7 +3,7 @@ dataset_id: dgm_arrivals_soe
 last_checked: 2026-10-03T10:36:37Z
 last_checked: 2026-10-03T10:36:37Z
 status: fresh
-freshness_delta: 4 days
+freshness_delta: 7 days
 next_expected_update: monthly
 record_count: 117236
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Immigration Department of Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 4 days
+**Freshness:** 7 days
 
 HTTP 200
 

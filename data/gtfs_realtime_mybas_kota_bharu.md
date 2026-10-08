@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_mybas_kota_bharu
-last_checked: 2026-10-04T03:50:43Z
+last_checked: 2026-10-07T10:50:43Z
 status: aging
 freshness_delta: 0.0008449074074074074 days
-record_count: 62
+record_count: 47
 content_freshness_date: 2026-08-03
 schema_version: GTFS
 schema_drift: none
@@ -21,15 +21,15 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Freshness:** 0.0008449074074074074 days
 
-HTTP 200; valid GTFS realtime protobuf (62 vehicles)
+HTTP 200; valid GTFS realtime protobuf (47 vehicles)
 
 ## Last checked
 
-2026-10-04 at 03:50:43 UTC.
+2026-10-07 at 10:50:43 UTC.
 
 ## File size
 
-The checked resource is 4,919 bytes.
+The checked resource is 3,592 bytes.
 
 ## Provenance
 

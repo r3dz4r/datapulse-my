@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_mybas_alor_setar
-last_checked: 2026-10-04T03:50:43Z
+last_checked: 2026-10-07T10:50:43Z
 status: aging
-freshness_delta: 0.0008217592592592593 days
-record_count: 43
+freshness_delta: 0.00047453703703703704 days
+record_count: 44
 content_freshness_date: 2026-08-03
 schema_version: GTFS
 schema_drift: none
@@ -19,17 +19,17 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Aging
 
-**Freshness:** 0.0008217592592592593 days
+**Freshness:** 0.00047453703703703704 days
 
-HTTP 200; valid GTFS realtime protobuf (43 vehicles)
+HTTP 200; valid GTFS realtime protobuf (44 vehicles)
 
 ## Last checked
 
-2026-10-04 at 03:50:43 UTC.
+2026-10-07 at 10:50:43 UTC.
 
 ## File size
 
-The checked resource is 3,418 bytes.
+The checked resource is 3,531 bytes.
 
 ## Provenance
 

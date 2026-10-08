@@ -13,7 +13,7 @@ column_count: 4
 status: fresh
 notes: "Tier-1 wave D newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: ppi_3d
-freshness_delta: 5 days
+freshness_delta: 9 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Fresh
 
-**Freshness:** 5 days
+**Freshness:** 9 days
 
 HTTP 200
 

@@ -1,8 +1,8 @@
 ---
 dataset_id: gtfs_static_mybas_alor_setar
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-05T06:46:30Z
 status: fresh
-freshness_delta: 30 days
+freshness_delta: 2 days
 record_count: 35388
 content_freshness_date: 2026-12-31
 schema_version: GTFS
@@ -19,17 +19,17 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 30 days
+**Freshness:** 2 days
 
 HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-05 at 06:46:30 UTC.
 
 ## File size
 
-The checked resource is 208,347 bytes.
+The checked resource is 208,356 bytes.
 
 ## Provenance
 

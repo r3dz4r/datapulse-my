@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_mybas_kangar
-last_checked: 2026-10-04T03:50:43Z
+last_checked: 2026-10-07T10:50:43Z
 status: aging
-freshness_delta: 0.0008333333333333334 days
-record_count: 22
+freshness_delta: 0.0004861111111111111 days
+record_count: 23
 content_freshness_date: 2026-08-03
 schema_version: GTFS
 schema_drift: none
@@ -19,17 +19,17 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Aging
 
-**Freshness:** 0.0008333333333333334 days
+**Freshness:** 0.0004861111111111111 days
 
-HTTP 200; valid GTFS realtime protobuf (22 vehicles)
+HTTP 200; valid GTFS realtime protobuf (23 vehicles)
 
 ## Last checked
 
-2026-10-04 at 03:50:43 UTC.
+2026-10-07 at 10:50:43 UTC.
 
 ## File size
 
-The checked resource is 1,731 bytes.
+The checked resource is 1,804 bytes.
 
 ## Provenance
 

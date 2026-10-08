@@ -10,10 +10,10 @@ last_observed: 2026-06-01
 last_modified: 2026-08-20T09:23:25Z
 record_count: 1944
 column_count: 3
-status: fresh
+status: aging
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: monetary_aggregates
-freshness_delta: 45 days
+freshness_delta: 48 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -26,9 +26,9 @@ attribution: "Bank Negara Malaysia via data.gov.my"
 
 ## Status
 
-**Status:** Fresh
+**Status:** Aging
 
-**Freshness:** 45 days
+**Freshness:** 48 days
 
 HTTP 200
 

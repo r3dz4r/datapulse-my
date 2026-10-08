@@ -13,7 +13,7 @@ column_count: 3
 status: fresh
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: bop_balance
-freshness_delta: 51 days
+freshness_delta: 54 days
 next_expected_update: "quarterly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Fresh
 
-**Freshness:** 51 days
+**Freshness:** 54 days
 
 HTTP 200
 

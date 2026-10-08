@@ -13,7 +13,7 @@ column_count: 5
 status: stale
 notes: "Unprobed Suruhanjaya Tenaga MyEnergyStats HTML dashboard; health remains unknown until the first DataPulse probe."
 dataset_id: st_sales_value_rm_million
-freshness_delta: 2102 days
+freshness_delta: 2105 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Suruhanjaya Tenaga (ST) via meih.st.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 2102 days
+**Freshness:** 2105 days
 
 ST report table returned a valid year
 

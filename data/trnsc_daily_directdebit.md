@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_trnsc_daily_directdebit
-last_checked: 2026-10-03T15:47:47Z
-last_checked: 2026-10-03T15:47:47Z
+last_checked: 2026-10-06T16:13:48Z
+last_checked: 2026-10-06T16:13:48Z
 status: aging
 freshness_delta: 2 days
 next_expected_update: daily
-record_count: 1243
+record_count: 1244
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This dataset is provided with the highest practical timeliness (updated by 2am daily for data up to the previous day) due to its high potential for use in nowcasting and forecasting models. However, there may occasional revisions to ensure eventual consistency with the monthly payment statistics published by the Central Bank of Malaysia (BNM)."]
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-03 at 15:47:47 UTC.
+2026-10-06 at 16:13:48 UTC.
 
 ## File size
 
-The checked resource is 79,650 bytes.
+The checked resource is 79,715 bytes.
 
 ## Provenance
 

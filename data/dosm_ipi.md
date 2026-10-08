@@ -3,7 +3,7 @@ dataset_id: dosm_ipi
 last_checked: 2026-10-03T10:36:37Z
 last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 95 days
+freshness_delta: 98 days
 next_expected_update: monthly
 record_count: 404
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 95 days
+**Freshness:** 98 days
 
 HTTP 200
 

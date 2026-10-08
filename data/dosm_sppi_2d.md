@@ -3,7 +3,7 @@ dataset_id: dosm_sppi_2d
 last_checked: 2026-10-03T10:36:37Z
 last_checked: 2026-10-03T10:36:37Z
 status: aging
-freshness_delta: 186 days
+freshness_delta: 189 days
 next_expected_update: quarterly
 record_count: 1841
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 186 days
+**Freshness:** 189 days
 
 HTTP 200
 

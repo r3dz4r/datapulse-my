@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_schools_district
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-05T06:46:30Z
 status: fresh
-freshness_delta: 61 days
+freshness_delta: 65 days
 next_expected_update: overdue
 record_count: 3977
 date_range: 2017-01-01 to 2022-01-01
@@ -20,13 +20,13 @@ attribution: Ministry of Education Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 61 days
+**Freshness:** 65 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-05 at 06:46:30 UTC.
 
 ## File size
 

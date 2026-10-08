@@ -13,7 +13,7 @@ column_count: 4
 status: fresh
 notes: "Tier-1 wave D newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: ipi_export
-freshness_delta: 23 days
+freshness_delta: 26 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Fresh
 
-**Freshness:** 23 days
+**Freshness:** 26 days
 
 HTTP 200
 

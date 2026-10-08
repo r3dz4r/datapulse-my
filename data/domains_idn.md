@@ -3,7 +3,7 @@ dataset_id: dgm_domains_idn
 last_checked: 2026-10-03T10:36:37Z
 last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 641 days
+freshness_delta: 644 days
 next_expected_update: monthly
 record_count: 3663
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: MYNIC and Ministry of Digital via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 641 days
+**Freshness:** 644 days
 
 HTTP 200
 

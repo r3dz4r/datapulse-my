@@ -2,7 +2,7 @@
 dataset_id: dgm_ktmb_ridership_monthly
 last_checked: 2026-10-03T10:36:37Z
 status: fresh
-freshness_delta: 1 days
+freshness_delta: 4 days
 next_expected_update: monthly
 record_count: 300
 date_range: 2020-11-01 to 2026-07-01
@@ -20,7 +20,7 @@ attribution: KTMB and Ministry of Transport Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 1 days
+**Freshness:** 4 days
 
 HTTP 200
 

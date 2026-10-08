@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_organ_pledges_state
-last_checked: 2026-10-03T15:47:47Z
-last_checked: 2026-10-03T15:47:47Z
+last_checked: 2026-10-06T16:13:48Z
+last_checked: 2026-10-06T16:13:48Z
 status: aging
-freshness_delta: 2 days
+freshness_delta: 3 days
 next_expected_update: daily
-record_count: 103536
+record_count: 103568
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The digital organ donation pledge process allows an individual to pledge their organs, and subsequently withdraw their pledge if they so choose. Therefore, the data shown here is dynamic; the number of pledges for a specific date may reduce (but not increase) in future if pledges are withdrawn."]
@@ -20,17 +20,17 @@ attribution: National Transplant Resource Centre and Ministry of Health Malaysia
 
 **Status:** Aging
 
-**Freshness:** 2 days
+**Freshness:** 3 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 15:47:47 UTC.
+2026-10-06 at 16:13:48 UTC.
 
 ## File size
 
-The checked resource is 6,198,857 bytes.
+The checked resource is 6,200,778 bytes.
 
 ## Provenance
 
