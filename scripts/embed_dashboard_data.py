@@ -451,9 +451,9 @@ def _reproducibility_verification_time() -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
-def _attestation_verification(root: Path) -> dict:
+def _attestation_verification(root: Path, *, now: datetime | None = None) -> dict:
     """Embed only claims verified against the exact health bytes being rendered."""
-    verification_time = _reproducibility_verification_time()
+    verification_time = now if now is not None else _reproducibility_verification_time()
     try:
         if verification_time is None:
             return verify_contract(root)
@@ -501,6 +501,7 @@ def _render_page(
     attestations_path: Path | None = None,
     binding_path: Path | None = None,
     public_surfaces_path: Path | None = None,
+    now: datetime | None = None,
 ) -> str:
     template_path = html_path.parent.parent / HOMEPAGE_TEMPLATE
     if html_path.name == "index.html" and template_path.is_file():
@@ -548,7 +549,7 @@ def _render_page(
             health,
             _load(filters_path),
             _load(sections_path),
-            _attestation_verification(manifest_path.parent),
+            _attestation_verification(manifest_path.parent, now=now),
         )
         data = (
             '<script id="embedded-data">\n'

@@ -3,6 +3,7 @@ import re
 import subprocess
 import sys
 from collections import Counter
+from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -196,7 +197,7 @@ def test_oversized_attestation_index_does_not_grow_homepage(tmp_path: Path) -> N
     )
     assert index_path.stat().st_size > 100_000
 
-    def render() -> bytes:
+    def render(now: datetime) -> bytes:
         return _render_page(
             ROOT / "docs/index.html",
             ROOT / "datapulse.json",
@@ -206,11 +207,27 @@ def test_oversized_attestation_index_does_not_grow_homepage(tmp_path: Path) -> N
             index_path,
             ROOT / "attestations/latest/binding.json",
             ROOT,
+            now=now,
         ).encode("utf-8")
 
-    document = render()
+    first_now = datetime(2026, 10, 8, 17, 0, 0, tzinfo=timezone.utc)
+    later_now = datetime(2026, 10, 8, 17, 0, 1, tzinfo=timezone.utc)
+    document = render(first_now)
     assert_dashboard_payload_within_budget(document)
-    assert render() == document
+    assert render(first_now) == document
+
+    later_document = render(later_now)
+    freshness_age = re.compile(rb'("age_seconds":)\d+')
+    if b'"age_seconds":' in document:
+        print("verified freshness branch: pinned time changes age_seconds only")
+        assert later_document != document
+        assert freshness_age.sub(rb'\g<1><age>', later_document) == freshness_age.sub(
+            rb'\g<1><age>', document
+        )
+    else:
+        # Degraded state occurs when verify_contract refuses the binding, so no clock-derived age is embedded.
+        print("degraded freshness branch: verify_contract refused the binding; no age_seconds is embedded")
+        assert later_document == document
 
 
 @pytest.mark.parametrize("budget", ["homepage", "embedded-data"])
