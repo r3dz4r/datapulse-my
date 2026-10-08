@@ -1,9 +1,13 @@
 import json
 import shutil
+import subprocess
+import sys
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
+from scripts import verify_repository_contract as contract
 from scripts.verify_repository_contract import _verify_runtime_derived_surfaces, verify_repository_contract
 
 
@@ -24,6 +28,32 @@ def write_json(path: Path, value: object) -> None:
 
 def test_valid_fixture_passes(repository: Path) -> None:
     assert verify_repository_contract(repository) == []
+
+
+def test_main_skips_public_parity_by_default(repository: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys, "argv", ["verify_repository_contract.py", "--root", str(repository)])
+    parity_run = Mock(side_effect=AssertionError("public parity must be opt-in"))
+    monkeypatch.setattr(subprocess, "run", parity_run)
+
+    assert contract.main() == 0
+    parity_run.assert_not_called()
+
+
+def test_main_opt_in_propagates_public_parity_failure(
+    repository: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        sys, "argv", ["verify_repository_contract.py", "--root", str(repository), "--with-public-parity"]
+    )
+    command = [sys.executable, str(repository / "scripts/verify_local_public_parity.py"), "--root", str(repository)]
+    parity_run = Mock(side_effect=subprocess.CalledProcessError(17, command))
+    monkeypatch.setattr(subprocess, "run", parity_run)
+
+    with pytest.raises(subprocess.CalledProcessError) as error:
+        contract.main()
+
+    assert error.value.returncode == 17
+    parity_run.assert_called_once_with(command, check=True)
 
 
 def test_unresolved_custodian_reports_the_id(repository: Path) -> None:

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import os
+import hashlib
 import json
+import os
 import re
 import shlex
 import shutil
@@ -87,6 +88,7 @@ def _shadow_checkout(destination: Path) -> Path:
         "docs",
         "scripts",
         "attestations",
+        ".attestations",
         "catalog-snapshot.json",
         "changelog.json",
         "README.md",
@@ -111,11 +113,28 @@ def _shadow_checkout(destination: Path) -> Path:
     shutil.copytree(ROOT / "docs", shadow / "docs")
     shutil.copytree(ROOT / "scripts", shadow / "scripts")
     (shadow / "attestations").mkdir()
+    shutil.copytree(ROOT / ".attestations", shadow / ".attestations")
     for name in ("catalog-snapshot.json", "changelog.json", "README.md"):
         source = ROOT / name
         if source.is_file():
             shutil.copy2(source, shadow / name)
     return shadow
+
+
+def test_shadow_checkout_isolates_attestations(tmp_path: Path) -> None:
+    real_chain_head = ROOT / ".attestations/chain_head.json"
+    before = hashlib.sha256(real_chain_head.read_bytes()).hexdigest()
+
+    shadow = _shadow_checkout(tmp_path)
+    signing_root, key = fixture_root(tmp_path / "signing")
+    shutil.copy2(
+        signing_root / "docs/.well-known/datapulse-probe-keys.json",
+        shadow / "docs/.well-known/datapulse-probe-keys.json",
+    )
+    ga.generate(shadow, key, datetime(2026, 10, 6, 7, tzinfo=timezone.utc))
+
+    after = hashlib.sha256(real_chain_head.read_bytes()).hexdigest()
+    assert after == before
 
 
 def test_release_invariant_retry_corrected_index(tmp_path: Path) -> None:

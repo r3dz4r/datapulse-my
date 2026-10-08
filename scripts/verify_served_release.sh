@@ -127,12 +127,20 @@ verify_declared_surface_content() {
   jq -e '.schema == "datapulse/v1/observation-chain-head"' "$body" >/dev/null || fail "declared observation receipt surface $surface does not serve the datapulse/v1/observation-chain-head schema (SPA fallback?)"
 }
 verify_attestation_surface() {
-  local path="$1" schema="${2:-}" body="$smoke_dir/attestation-plane/$1"
+  local path="$1" body="$smoke_dir/attestation-plane/$1" accepted expected
+  shift
   if [[ -f "$site_dir/$path" ]]; then
     fetch "attestation plane $path" "$base_url/$path" "$body"
     cmp -s "$site_dir/$path" "$body" || fail "attestation plane $path differs from assembled artifact"
-    if [[ -n "$schema" ]]; then
-      jq -e --arg schema "$schema" '.schema == $schema' "$body" >/dev/null || fail "attestation plane $path lacks $schema schema"
+    # Most paths pin exactly one schema. The chain index accepts a set: the
+    # producer now emits v2 while already-published sets remain v1, and history
+    # must stay readable. No other path takes more than one.
+    if (($#)); then
+      accepted="$(jq -cn --args '$ARGS.positional' "$@")"
+      jq -e --argjson accepted "$accepted" '.schema as $schema | ($accepted | index($schema)) != null' "$body" >/dev/null || {
+        expected="$*"; (($# == 1)) || expected="${1} or ${*:2}"
+        fail "attestation plane $path lacks $expected schema"
+      }
     fi
   else
     mkdir -p "$(dirname "$body")"
@@ -146,7 +154,7 @@ verify_attestation_plane() {
   verify_attestation_surface attestations/latest/chain_head.json datapulse/v1/daily-chain-head-envelope
   verify_attestation_surface attestations/latest/binding.json datapulse/v1/attestation-binding-envelope
   verify_attestation_surface attestations/latest/scores.json
-  verify_attestation_surface attestations/chain-index.json datapulse/v1/chain-index
+  verify_attestation_surface attestations/chain-index.json datapulse/v1/chain-index datapulse/v2/chain-index
   verify_attestation_surface .well-known/datapulse-probe-keys.json datapulse/v2/probe-key-registry
 
   [[ -f "$site_dir/attestations/latest/index.json" ]] || fail "assembled attestation plane is missing attestations/latest/index.json"

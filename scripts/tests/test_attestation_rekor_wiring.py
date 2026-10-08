@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import hashlib
 import os
+import shutil
 import subprocess
+import sys
 import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
@@ -174,3 +176,195 @@ def test_guard_skips_rekor_upload_only_when_today_s_evidence_is_committed(tmp_pa
     assert "needed=false" in outputs
     assert "needed=true" not in outputs
     assert (scratch_root / "attestations/rekor-fixture/reference.json").read_bytes() == before
+
+
+def _git(root: Path, *arguments: str) -> str:
+    return subprocess.run(
+        ["git", *arguments], cwd=root, check=True, capture_output=True, text=True,
+    ).stdout.strip()
+
+
+@pytest.mark.parametrize(
+    ("witnessed", "override", "proceeds"),
+    (
+        pytest.param(True, None, True, id="witness-required-and-present"),
+        pytest.param(False, None, False, id="unwitnessed-refused-by-default"),
+        pytest.param(False, "1", True, id="explicit-override-keeps-false-claim"),
+        pytest.param(False, "0", False, id="zero-is-not-an-override"),
+        pytest.param(False, "true", False, id="true-is-not-an-override"),
+        pytest.param(False, "01", False, id="only-literal-one-overrides"),
+    ),
+)
+def test_submission_requires_witness_or_explicit_operator_override(
+    tmp_path: Path, witnessed: bool, override: str | None, proceeds: bool,
+) -> None:
+    """Exercise real validation, staging and Git publication to a local bare repo."""
+    root, key = fixture_root(tmp_path / "repo")
+    script_dir = root / "scripts"
+    script_dir.mkdir()
+    for name in (
+        "verify_attestation_append.py", "attestation_sets.py",
+        "verify_attestation_binding.py", "attestation_commit_back.py",
+        "gen_attestations.py",
+    ):
+        shutil.copyfile(ROOT / "scripts" / name, script_dir / name)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    _git(root, "init", "-b", "main")
+    _git(root, "config", "user.name", "Test")
+    _git(root, "config", "user.email", "test@example.test")
+    _git(root, "add", "attestations", ".attestations", "docs", "scripts", "datapulse.json", "health")
+    _git(root, "commit", "-m", "accepted fixture")
+    source = _git(root, "rev-parse", "HEAD")
+    remote = tmp_path / "origin.git"
+    _git(tmp_path, "clone", "--bare", str(root), str(remote))
+    _git(root, "remote", "add", "origin", str(remote))
+    reference = fixture_rekor_reference(root, "rekor/2026-08-16") if witnessed else None
+    ga.generate(root, key, datetime(2026, 8, 16, 1, tzinfo=timezone.utc), reference)
+    binding = root / "attestations/latest/binding.json"
+    before = binding.read_bytes()
+    head = ga.load(root / "attestations/chain-index.json")["current_head"]
+    branch = "attestation/append-" + head
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    gh = bin_dir / "gh"
+    gh.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$PR_ARGS"\n')
+    gh.chmod(0o755)
+    pr_args = tmp_path / "pr-args"
+    env = {**os.environ, "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"], "PR_ARGS": str(pr_args)}
+    env.pop("DATAPULSE_ALLOW_UNWITNESSED_PUBLICATION", None)
+    env.pop("GH_TOKEN", None)
+    if override is not None:
+        env["DATAPULSE_ALLOW_UNWITNESSED_PUBLICATION"] = override
+
+    result = subprocess.run(
+        ["bash", str(ROOT / "scripts/submit_attestation_append.sh")],
+        cwd=root, env=env, capture_output=True, text=True, check=False,
+    )
+
+    assert binding.read_bytes() == before
+    if proceeds:
+        assert result.returncode == 0, result.stderr
+        published = json.loads(_git(remote, "show", f"{branch}:attestations/latest/binding.json"))
+        assert published["claims"]["rekor_witnessed"] is witnessed
+        if witnessed:
+            assert _git(remote, "show", f"{branch}:attestations/rekor/2026-08-16/reference.json")
+        assert pr_args.read_text().splitlines() == [
+            "pr", "create", "--base", "main", "--head", branch,
+            "--title", "chore(attestations): append signed set 2026-08-16",
+            "--body", f"Append immutable signed evidence from source {source}. Publication must wait for this append to be accepted; existing evidence is preserved.",
+        ]
+    else:
+        assert result.returncode != 0
+        assert "rekor_witnessed: false" in result.stderr
+        assert "DATAPULSE_ALLOW_UNWITNESSED_PUBLICATION=1" in result.stderr
+        assert _git(root, "branch", "--show-current") == "main"
+        assert _git(remote, "for-each-ref", "--format=%(refname)", "refs/heads/") == "refs/heads/main"
+        assert not pr_args.exists()
+
+
+def _projection_submission_root(tmp_path: Path) -> tuple[Path, str, Path]:
+    """Prepare an append whose accepted base moves after the candidate is cut."""
+    root, key = fixture_root(tmp_path / "repo")
+    script_dir = root / "scripts"
+    script_dir.mkdir()
+    for name in (
+        "verify_attestation_append.py", "attestation_sets.py",
+        "verify_attestation_binding.py", "attestation_commit_back.py",
+        "gen_attestations.py",
+    ):
+        shutil.copyfile(ROOT / "scripts" / name, script_dir / name)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    _git(root, "init", "-b", "main")
+    _git(root, "config", "user.name", "Test")
+    _git(root, "config", "user.email", "test@example.test")
+    _git(root, "add", "attestations", ".attestations", "docs", "scripts", "datapulse.json", "health")
+    _git(root, "commit", "-m", "accepted fixture")
+    source = _git(root, "rev-parse", "HEAD")
+    remote = tmp_path / "origin.git"
+    _git(tmp_path, "clone", "--bare", str(root), str(remote))
+    _git(root, "remote", "add", "origin", str(remote))
+    # Main moves after the candidate source was cut: the submission must align
+    # to this freshly-fetched base before it derives the projection.
+    (root / "advance.txt").write_text("main moved\n", encoding="utf-8")
+    _git(root, "add", "advance.txt")
+    _git(root, "commit", "-m", "advance accepted base")
+    accepted = _git(root, "rev-parse", "HEAD")
+    _git(root, "push", "origin", "main")
+    _git(root, "reset", "--hard", source)
+    ga.generate(root, key, datetime(2026, 8, 16, 1, tzinfo=timezone.utc))
+    return root, accepted, remote
+
+
+def test_projection_is_refreshed_from_the_accepted_base_after_alignment(tmp_path: Path) -> None:
+    """A submission that merges a moved base must publish a coherent projection."""
+    root, accepted, remote = _projection_submission_root(tmp_path)
+    head = ga.load(root / "attestations/chain-index.json")["current_head"]
+    branch = "attestation/append-" + head
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    gh = bin_dir / "gh"
+    gh.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$PR_ARGS"\n')
+    gh.chmod(0o755)
+    env = {
+        **os.environ,
+        "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
+        "PR_ARGS": str(tmp_path / "pr-args"),
+        "DATAPULSE_ALLOW_UNWITNESSED_PUBLICATION": "1",
+    }
+    env.pop("GH_TOKEN", None)
+    result = subprocess.run(
+        ["bash", str(ROOT / "scripts/submit_attestation_append.sh")],
+        cwd=root, env=env, capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    published = tmp_path / "published"
+    _git(tmp_path, "clone", str(remote), str(published))
+    _git(published, "config", "user.name", "Test")
+    _git(published, "config", "user.email", "test@example.test")
+    _git(published, "checkout", branch)
+    # The append was aligned to the freshly-fetched base before publication.
+    assert len(_git(published, "rev-list", "--parents", "-n", "1", "HEAD").split()) == 3
+
+    for name in ("chain_head.json", "index.json", "binding.json", "scores.json"):
+        assert (published / "attestations/latest" / name).read_bytes() == (
+            published / "attestations/2026-08-16" / name
+        ).read_bytes(), name
+
+    # The legacy mirror is the mutable projection acceptance compares; it must
+    # carry the refreshed head, not the bytes staged before the refresh.
+    index = ga.load(published / "attestations/chain-index.json")
+    selected = Path(index["heads"][index["current_head"]]).parent
+    assert (published / ".attestations/chain_head.json").read_bytes() == (
+        published / selected / "chain_head.json"
+    ).read_bytes()
+
+    verify = subprocess.run(
+        [sys.executable, str(published / "scripts/verify_attestation_append.py"), "--base", accepted],
+        cwd=published, capture_output=True, text=True,
+    )
+    assert verify.returncode == 0, verify.stdout + verify.stderr
+
+
+def test_projection_regeneration_is_positioned_after_the_accepted_base_merge() -> None:
+    lines = (ROOT / "scripts/submit_attestation_append.sh").read_text(encoding="utf-8").splitlines()
+    merge_lines = [i for i, line in enumerate(lines) if "origin/main" in line]
+    resolve_lines = [i for i, line in enumerate(lines) if "resolve_day_directory_after_alignment" in line]
+    refresh_lines = [i for i, line in enumerate(lines) if "refresh_projection" in line]
+    assert merge_lines and resolve_lines and refresh_lines
+    assert max(merge_lines) < min(resolve_lines) < min(refresh_lines)
+
+
+def test_legacy_mirror_staging_is_positioned_after_the_projection_refresh() -> None:
+    """promote() rewrites the legacy mirror; its git add must follow the refresh.
+
+    Staging the mirror before the refresh snapshots the pre-refresh bytes, and
+    the acceptance verifier then rejects the append with "legacy mirror
+    disagrees with current head".
+    """
+    lines = (ROOT / "scripts/submit_attestation_append.sh").read_text(encoding="utf-8").splitlines()
+    refresh_lines = [i for i, line in enumerate(lines) if "refresh_projection" in line]
+    mirror_lines = [i for i, line in enumerate(lines) if "chain_head" in line]
+    assert refresh_lines and mirror_lines
+    assert min(mirror_lines) > max(refresh_lines)
