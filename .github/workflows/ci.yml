@@ -3,6 +3,7 @@ name: Pull request CI
 on:
   push:
   pull_request:
+  merge_group:
   workflow_dispatch:
 
 permissions:
@@ -38,7 +39,7 @@ jobs:
 
   deterministic-safety-net:
     needs: classify
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -134,9 +135,9 @@ jobs:
         run: python3 scripts/verify_licence_consistency.py
 
       - name: Verify immutable attestation append against accepted base
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
         env:
-          ACCEPTED_BASE: ${{ github.event.pull_request.base.sha }}
+          ACCEPTED_BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: python3 scripts/verify_attestation_append.py --base "$ACCEPTED_BASE"
 
       - name: Verify attestation workflow contract
