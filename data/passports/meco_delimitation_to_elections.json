@@ -3,45 +3,45 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 495.0,
+        "latest_days": null,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "cadence_fallback",
-        "sample_days": 7,
+        "mode": "not_evaluated",
+        "sample_days": 0,
         "stdev_days": null,
-        "threshold_days": 3,
+        "threshold_days": null,
         "window_days": 14
       }
     },
-    "expected_record_count": 10000,
-    "freshness_signal": "content-date-parse",
-    "freshness_signal_source": "content_date_parse",
+    "expected_record_count": 210,
+    "freshness_signal": "no-header",
+    "freshness_signal_source": "none",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-08T14:24:19Z",
-    "record_count": 33218,
+    "last_checked": "2026-10-08T16:26:00Z",
+    "record_count": 210,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
-      "column_count": 16,
+      "column_count": 6,
       "content_shape_changed": false,
-      "first_row_hash": "shape-v1:b969c1024f149bf50d20f605a568c4d7c37744d10b0c6a0e355fc23895280246"
+      "first_row_hash": "shape-v1:e25f45bfea0d2cdd3174467f557e3cf4fc898ef0524f65a91a1b04984c53d3bd"
     },
-    "status": "stale"
+    "status": "reference"
   },
   "identity": {
-    "canonical_url": "https://api.data.gov.my/data-catalogue?id=covid_cases_age",
-    "custodian": "kkm",
-    "dataset_id": "covid_cases_age",
-    "declared_verified_at": "2026-08-09",
+    "canonical_url": "https://raw.githubusercontent.com/Thevesh/paper-meco-maps/main/data/delims_to_elections.csv",
+    "custodian": "thevesh",
+    "dataset_id": "meco_delimitation_to_elections",
+    "declared_verified_at": "2026-10-08",
     "geography": "Malaysia",
-    "name": "Daily COVID-19 Cases by Age Group & State",
-    "namespace": "healthcare",
-    "observed_verified_at": "2026-10-08T14:24:19Z",
-    "source": "data.gov.my (OpenAPI)",
-    "steward": "Ministry of Health Malaysia"
+    "name": "MECo Delimitation-to-Elections Lookup",
+    "namespace": "government_open_data",
+    "observed_verified_at": "2026-10-08T16:26:00Z",
+    "source": "https://github.com/Thevesh/paper-meco-maps",
+    "steward": "Thevesh Theva"
   },
   "intended_use": {
     "declared_coverage": {
@@ -53,9 +53,9 @@
     }
   },
   "licence_and_attribution": {
-    "attribution": "Source: Ministry of Health Malaysia (Kementerian Kesihatan Malaysia)",
-    "declared_licence": "Open Government Licence (Malaysia)",
-    "licence_url": "https://www.data.gov.my/pages/terms-of-use",
+    "attribution": "Thevesh Theva via github.com/Thevesh/paper-meco-maps",
+    "declared_licence": "CC0-1.0",
+    "licence_url": null,
     "limitation": "Declared metadata and evidence only; not legal advice or legal permission."
   },
   "limitations": [
@@ -68,7 +68,7 @@
       "limitation": "Catalogue relationships are literal metadata context, not full transformation lineage.",
       "relationship_edges": [
         {
-          "from": "covid_cases_age",
+          "from": "meco_consol_ballots",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -76,11 +76,11 @@
               "steward"
             ]
           },
-          "to": "covid_deaths_linelist",
+          "to": "meco_delimitation_to_elections",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_consol_stats",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -88,11 +88,11 @@
               "steward"
             ]
           },
-          "to": "healthcare_staff",
+          "to": "meco_delimitation_to_elections",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_delimitation_to_elections",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -100,11 +100,11 @@
               "steward"
             ]
           },
-          "to": "hospital_beds",
+          "to": "meco_lookup_candidate",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_delimitation_to_elections",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -112,11 +112,11 @@
               "steward"
             ]
           },
-          "to": "infant_immunisation",
+          "to": "meco_lookup_coalition",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_delimitation_to_elections",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -124,11 +124,11 @@
               "steward"
             ]
           },
-          "to": "kkmnow_bedutil",
+          "to": "meco_lookup_coalition_succession",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_delimitation_to_elections",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -136,11 +136,11 @@
               "steward"
             ]
           },
-          "to": "kkmnow_blood",
+          "to": "meco_lookup_dates",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_delimitation_to_elections",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -148,11 +148,11 @@
               "steward"
             ]
           },
-          "to": "kkmnow_covidepid",
+          "to": "meco_lookup_dun_parlimen",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_delimitation_to_elections",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -160,11 +160,11 @@
               "steward"
             ]
           },
-          "to": "kkmnow_covidnow",
+          "to": "meco_lookup_party",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_delimitation_to_elections",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -172,11 +172,11 @@
               "steward"
             ]
           },
-          "to": "kkmnow_covidvax",
+          "to": "meco_lookup_party_succession",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_delimitation_to_elections",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -184,11 +184,11 @@
               "steward"
             ]
           },
-          "to": "kkmnow_facilities",
+          "to": "meco_lookup_prk",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_delimitation_to_elections",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -196,11 +196,11 @@
               "steward"
             ]
           },
-          "to": "kkmnow_organ",
+          "to": "meco_raw_ballots",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_delimitation_to_elections",
           "kind": "same_agency",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -208,47 +208,11 @@
               "steward"
             ]
           },
-          "to": "kkmnow_pekab40",
+          "to": "meco_raw_stats",
           "weight": 1
         },
         {
-          "from": "covid_cases_age",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "mnha",
-          "weight": 1
-        },
-        {
-          "from": "covid_cases_age",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "std_state",
-          "weight": 1
-        },
-        {
-          "from": "covid_cases_age",
-          "kind": "same_agency",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "steward"
-            ]
-          },
-          "to": "vaxreg_covid_demog",
-          "weight": 1
-        },
-        {
-          "from": "covid_cases",
+          "from": "meco_cartogram_electorate_k",
           "kind": "same_steward",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -257,11 +221,11 @@
               "steward"
             ]
           },
-          "to": "covid_cases_age",
+          "to": "meco_delimitation_to_elections",
           "weight": 2
         },
         {
-          "from": "covid_cases_age",
+          "from": "meco_cartogram_equal_k",
           "kind": "same_steward",
           "provenance": {
             "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
@@ -270,85 +234,7 @@
               "steward"
             ]
           },
-          "to": "covid_cases_vaxstatus",
-          "weight": 2
-        },
-        {
-          "from": "covid_cases_age",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "mnha_moh",
-          "weight": 2
-        },
-        {
-          "from": "covid_cases_age",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "nutrition_children_sex",
-          "weight": 2
-        },
-        {
-          "from": "covid_cases_age",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "nutrition_children_strata",
-          "weight": 2
-        },
-        {
-          "from": "covid_cases_age",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "sanitation_access",
-          "weight": 2
-        },
-        {
-          "from": "covid_cases_age",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "sdg_03-3-1",
-          "weight": 2
-        },
-        {
-          "from": "covid_cases_age",
-          "kind": "same_steward",
-          "provenance": {
-            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
-            "matched_fields": [
-              "source",
-              "steward"
-            ]
-          },
-          "to": "vaxreg_covid",
+          "to": "meco_delimitation_to_elections",
           "weight": 2
         }
       ]
@@ -366,7 +252,7 @@
             "check_id": "catalogue_readiness.stable_id",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].id",
+                "path": "datasets['meco_delimitation_to_elections'].id",
                 "source": "manifest"
               }
             ],
@@ -382,15 +268,15 @@
             "check_id": "catalogue_readiness.identity_metadata",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].name",
+                "path": "datasets['meco_delimitation_to_elections'].name",
                 "source": "manifest"
               },
               {
-                "path": "datasets['covid_cases_age'].steward",
+                "path": "datasets['meco_delimitation_to_elections'].steward",
                 "source": "manifest"
               },
               {
-                "path": "datasets['covid_cases_age'].source",
+                "path": "datasets['meco_delimitation_to_elections'].source",
                 "source": "manifest"
               }
             ],
@@ -406,7 +292,7 @@
             "check_id": "catalogue_readiness.health_report",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].health_report",
+                "path": "datasets['meco_delimitation_to_elections'].health_report",
                 "source": "manifest"
               }
             ],
@@ -422,11 +308,11 @@
             "check_id": "catalogue_readiness.manifest_health_parity",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].id",
+                "path": "datasets['meco_delimitation_to_elections'].id",
                 "source": "manifest"
               },
               {
-                "path": "datasets['covid_cases_age'].dataset_id",
+                "path": "datasets['meco_delimitation_to_elections'].dataset_id",
                 "source": "health"
               }
             ],
@@ -442,11 +328,11 @@
             "check_id": "catalogue_readiness.schema_valid_envelope",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].id",
+                "path": "datasets['meco_delimitation_to_elections'].id",
                 "source": "manifest"
               },
               {
-                "path": "datasets['covid_cases_age'].dataset_id",
+                "path": "datasets['meco_delimitation_to_elections'].dataset_id",
                 "source": "health"
               }
             ],
@@ -469,39 +355,39 @@
         },
         "evidence_refs": [
           {
-            "path": "datasets['covid_cases_age'].id",
+            "path": "datasets['meco_delimitation_to_elections'].id",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].name",
+            "path": "datasets['meco_delimitation_to_elections'].name",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].steward",
+            "path": "datasets['meco_delimitation_to_elections'].steward",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].source",
+            "path": "datasets['meco_delimitation_to_elections'].source",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].health_report",
+            "path": "datasets['meco_delimitation_to_elections'].health_report",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].id",
+            "path": "datasets['meco_delimitation_to_elections'].id",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].dataset_id",
+            "path": "datasets['meco_delimitation_to_elections'].dataset_id",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].id",
+            "path": "datasets['meco_delimitation_to_elections'].id",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].dataset_id",
+            "path": "datasets['meco_delimitation_to_elections'].dataset_id",
             "source": "health"
           }
         ],
@@ -524,15 +410,15 @@
             "check_id": "fair.catalogue_metadata",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].id",
+                "path": "datasets['meco_delimitation_to_elections'].id",
                 "source": "manifest"
               },
               {
-                "path": "datasets['covid_cases_age'].name",
+                "path": "datasets['meco_delimitation_to_elections'].name",
                 "source": "manifest"
               },
               {
-                "path": "datasets['covid_cases_age'].url",
+                "path": "datasets['meco_delimitation_to_elections'].url",
                 "source": "manifest"
               }
             ],
@@ -548,11 +434,11 @@
             "check_id": "fair.observed_access",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].request_url",
+                "path": "datasets['meco_delimitation_to_elections'].request_url",
                 "source": "health"
               },
               {
-                "path": "datasets['covid_cases_age'].status",
+                "path": "datasets['meco_delimitation_to_elections'].status",
                 "source": "health"
               }
             ],
@@ -568,15 +454,15 @@
             "check_id": "fair.shape_metadata",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].schema_fingerprint",
+                "path": "datasets['meco_delimitation_to_elections'].schema_fingerprint",
                 "source": "health"
               },
               {
-                "path": "datasets['covid_cases_age'].first_row_hash",
+                "path": "datasets['meco_delimitation_to_elections'].first_row_hash",
                 "source": "health"
               },
               {
-                "path": "datasets['covid_cases_age'].column_count",
+                "path": "datasets['meco_delimitation_to_elections'].column_count",
                 "source": "health"
               }
             ],
@@ -592,11 +478,11 @@
             "check_id": "fair.reuse_metadata",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].licence",
+                "path": "datasets['meco_delimitation_to_elections'].licence",
                 "source": "manifest"
               },
               {
-                "path": "datasets['covid_cases_age'].attribution",
+                "path": "datasets['meco_delimitation_to_elections'].attribution",
                 "source": "manifest"
               }
             ],
@@ -619,43 +505,43 @@
         },
         "evidence_refs": [
           {
-            "path": "datasets['covid_cases_age'].id",
+            "path": "datasets['meco_delimitation_to_elections'].id",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].name",
+            "path": "datasets['meco_delimitation_to_elections'].name",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].url",
+            "path": "datasets['meco_delimitation_to_elections'].url",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].request_url",
+            "path": "datasets['meco_delimitation_to_elections'].request_url",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].status",
+            "path": "datasets['meco_delimitation_to_elections'].status",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].schema_fingerprint",
+            "path": "datasets['meco_delimitation_to_elections'].schema_fingerprint",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].first_row_hash",
+            "path": "datasets['meco_delimitation_to_elections'].first_row_hash",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].column_count",
+            "path": "datasets['meco_delimitation_to_elections'].column_count",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].licence",
+            "path": "datasets['meco_delimitation_to_elections'].licence",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].attribution",
+            "path": "datasets['meco_delimitation_to_elections'].attribution",
             "source": "manifest"
           }
         ],
@@ -677,7 +563,7 @@
             "check_id": "governance.methodology_version",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].methodology_version",
+                "path": "datasets['meco_delimitation_to_elections'].methodology_version",
                 "source": "manifest"
               }
             ],
@@ -693,11 +579,11 @@
             "check_id": "governance.status_reason_slot",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].status",
+                "path": "datasets['meco_delimitation_to_elections'].status",
                 "source": "health"
               },
               {
-                "path": "datasets['covid_cases_age'].status_reason",
+                "path": "datasets['meco_delimitation_to_elections'].status_reason",
                 "source": "health"
               }
             ],
@@ -713,11 +599,11 @@
             "check_id": "governance.declared_cadence",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].data_type",
+                "path": "datasets['meco_delimitation_to_elections'].data_type",
                 "source": "manifest"
               },
               {
-                "path": "datasets['covid_cases_age'].refresh_frequency",
+                "path": "datasets['meco_delimitation_to_elections'].refresh_frequency",
                 "source": "manifest"
               }
             ],
@@ -725,38 +611,38 @@
               "Cadence is explicitly not applicable only to manifest-declared reference data; otherwise it is not evidence that the publisher followed it."
             ],
             "reason_codes": [
-              "refresh_frequency_declared"
+              "cadence_not_applicable_reference_dataset"
             ],
-            "state": "pass"
+            "state": "not_applicable"
           }
         ],
         "coverage": {
-          "applicable": 3,
-          "evaluated": 3,
+          "applicable": 2,
+          "evaluated": 2,
           "failed": 0,
-          "not_applicable": 0,
-          "passed": 3,
+          "not_applicable": 1,
+          "passed": 2,
           "unknown": 0
         },
         "evidence_refs": [
           {
-            "path": "datasets['covid_cases_age'].methodology_version",
+            "path": "datasets['meco_delimitation_to_elections'].methodology_version",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].status",
+            "path": "datasets['meco_delimitation_to_elections'].status",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].status_reason",
+            "path": "datasets['meco_delimitation_to_elections'].status_reason",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].data_type",
+            "path": "datasets['meco_delimitation_to_elections'].data_type",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].refresh_frequency",
+            "path": "datasets['meco_delimitation_to_elections'].refresh_frequency",
             "source": "manifest"
           }
         ],
@@ -767,7 +653,7 @@
         "reason_codes": [
           "methodology_version_declared",
           "status_reason_slot_present",
-          "refresh_frequency_declared"
+          "cadence_not_applicable_reference_dataset"
         ],
         "state": "pass"
       },
@@ -777,7 +663,7 @@
             "check_id": "licensing.declared_licence",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].licence",
+                "path": "datasets['meco_delimitation_to_elections'].licence",
                 "source": "manifest"
               }
             ],
@@ -793,7 +679,7 @@
             "check_id": "licensing.declared_attribution",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].attribution",
+                "path": "datasets['meco_delimitation_to_elections'].attribution",
                 "source": "manifest"
               }
             ],
@@ -816,11 +702,11 @@
         },
         "evidence_refs": [
           {
-            "path": "datasets['covid_cases_age'].licence",
+            "path": "datasets['meco_delimitation_to_elections'].licence",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].attribution",
+            "path": "datasets['meco_delimitation_to_elections'].attribution",
             "source": "manifest"
           }
         ],
@@ -840,7 +726,7 @@
             "check_id": "provenance.source_url",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].url",
+                "path": "datasets['meco_delimitation_to_elections'].url",
                 "source": "manifest"
               }
             ],
@@ -856,11 +742,11 @@
             "check_id": "provenance.steward_or_custodian",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].steward",
+                "path": "datasets['meco_delimitation_to_elections'].steward",
                 "source": "manifest"
               },
               {
-                "path": "datasets['covid_cases_age'].custodian",
+                "path": "datasets['meco_delimitation_to_elections'].custodian",
                 "source": "manifest"
               }
             ],
@@ -876,11 +762,11 @@
             "check_id": "provenance.observation",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].last_checked",
+                "path": "datasets['meco_delimitation_to_elections'].last_checked",
                 "source": "health"
               },
               {
-                "path": "datasets['covid_cases_age'].request_url",
+                "path": "datasets['meco_delimitation_to_elections'].request_url",
                 "source": "health"
               }
             ],
@@ -896,11 +782,11 @@
             "check_id": "provenance.source_observed_boundary",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].url",
+                "path": "datasets['meco_delimitation_to_elections'].url",
                 "source": "manifest"
               },
               {
-                "path": "datasets['covid_cases_age'].request_url",
+                "path": "datasets['meco_delimitation_to_elections'].request_url",
                 "source": "health"
               }
             ],
@@ -923,31 +809,31 @@
         },
         "evidence_refs": [
           {
-            "path": "datasets['covid_cases_age'].url",
+            "path": "datasets['meco_delimitation_to_elections'].url",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].steward",
+            "path": "datasets['meco_delimitation_to_elections'].steward",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].custodian",
+            "path": "datasets['meco_delimitation_to_elections'].custodian",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].last_checked",
+            "path": "datasets['meco_delimitation_to_elections'].last_checked",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].request_url",
+            "path": "datasets['meco_delimitation_to_elections'].request_url",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].url",
+            "path": "datasets['meco_delimitation_to_elections'].url",
             "source": "manifest"
           },
           {
-            "path": "datasets['covid_cases_age'].request_url",
+            "path": "datasets['meco_delimitation_to_elections'].request_url",
             "source": "health"
           }
         ],
@@ -969,15 +855,15 @@
             "check_id": "reproducibility.shape_fingerprint",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].schema_fingerprint",
+                "path": "datasets['meco_delimitation_to_elections'].schema_fingerprint",
                 "source": "health"
               },
               {
-                "path": "datasets['covid_cases_age'].first_row_hash",
+                "path": "datasets['meco_delimitation_to_elections'].first_row_hash",
                 "source": "health"
               },
               {
-                "path": "datasets['covid_cases_age'].column_count",
+                "path": "datasets['meco_delimitation_to_elections'].column_count",
                 "source": "health"
               }
             ],
@@ -993,7 +879,7 @@
             "check_id": "reproducibility.retrieval_timestamp",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].last_checked",
+                "path": "datasets['meco_delimitation_to_elections'].last_checked",
                 "source": "health"
               }
             ],
@@ -1009,15 +895,15 @@
             "check_id": "reproducibility.record_count",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].record_count",
+                "path": "datasets['meco_delimitation_to_elections'].record_count",
                 "source": "health"
               },
               {
-                "path": "datasets['covid_cases_age'].record_count_estimated",
+                "path": "datasets['meco_delimitation_to_elections'].record_count_estimated",
                 "source": "health"
               },
               {
-                "path": "datasets['covid_cases_age'].record_count_within_tolerance",
+                "path": "datasets['meco_delimitation_to_elections'].record_count_within_tolerance",
                 "source": "health"
               }
             ],
@@ -1033,7 +919,7 @@
             "check_id": "reproducibility.attestation_reference",
             "evidence_refs": [
               {
-                "path": "datasets['covid_cases_age'].attestation_ref",
+                "path": "datasets['meco_delimitation_to_elections'].attestation_ref",
                 "source": "manifest"
               }
             ],
@@ -1041,50 +927,50 @@
               "A declared reference is not verified here; missing evidence remains unknown."
             ],
             "reason_codes": [
-              "attestation_ref_declared"
+              "attestation_ref_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           }
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 4,
+          "evaluated": 3,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 4,
-          "unknown": 0
+          "passed": 3,
+          "unknown": 1
         },
         "evidence_refs": [
           {
-            "path": "datasets['covid_cases_age'].schema_fingerprint",
+            "path": "datasets['meco_delimitation_to_elections'].schema_fingerprint",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].first_row_hash",
+            "path": "datasets['meco_delimitation_to_elections'].first_row_hash",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].column_count",
+            "path": "datasets['meco_delimitation_to_elections'].column_count",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].last_checked",
+            "path": "datasets['meco_delimitation_to_elections'].last_checked",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].record_count",
+            "path": "datasets['meco_delimitation_to_elections'].record_count",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].record_count_estimated",
+            "path": "datasets['meco_delimitation_to_elections'].record_count_estimated",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].record_count_within_tolerance",
+            "path": "datasets['meco_delimitation_to_elections'].record_count_within_tolerance",
             "source": "health"
           },
           {
-            "path": "datasets['covid_cases_age'].attestation_ref",
+            "path": "datasets['meco_delimitation_to_elections'].attestation_ref",
             "source": "manifest"
           }
         ],
@@ -1096,15 +982,15 @@
           "shape_fingerprint_observed",
           "last_checked_declared",
           "record_count_observed",
-          "attestation_ref_declared"
+          "attestation_ref_missing"
         ],
-        "state": "pass"
+        "state": "unknown"
       }
     },
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "ready",
+    "overall": "indeterminate",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },
@@ -1113,13 +999,19 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-08/covid_cases_age.json",
+    "attestation": {
+      "reason": "attestation_reference_not_available",
+      "state": "not_evaluated"
+    },
     "chain_reference": "attestations/2026-10-08/chain_head.json",
     "source_digest": {
       "reason": "canonical_source_digest_not_available",
       "state": "not_evaluated"
     },
-    "source_envelope": "data/json/covid_cases_age.json",
+    "source_envelope": {
+      "reason": "json_envelope_not_available_for_dataset",
+      "state": "not_evaluated"
+    },
     "verification_method": "deterministic_local_projection_of_current_canonical_inputs",
     "witness_reference": {
       "reason": "witness_reference_not_available",

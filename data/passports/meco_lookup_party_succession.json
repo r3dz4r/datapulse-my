@@ -20,7 +20,7 @@
     "freshness_signal_source": "none",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-08T12:54:36Z",
+    "last_checked": "2026-10-08T14:33:30Z",
     "record_count": 55,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "MECo Party Succession Lookup",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-08T12:54:36Z",
+    "observed_verified_at": "2026-10-08T14:33:30Z",
     "source": "https://github.com/Thevesh/paper-meco-results",
     "steward": "Thevesh Theva"
   },
@@ -67,6 +67,42 @@
       "graph_reference": "catalog-graph.json",
       "limitation": "Catalogue relationships are literal metadata context, not full transformation lineage.",
       "relationship_edges": [
+        {
+          "from": "meco_cartogram_electorate_k",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "meco_lookup_party_succession",
+          "weight": 1
+        },
+        {
+          "from": "meco_cartogram_equal_k",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "meco_lookup_party_succession",
+          "weight": 1
+        },
+        {
+          "from": "meco_delimitation_to_elections",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "meco_lookup_party_succession",
+          "weight": 1
+        },
         {
           "from": "meco_consol_ballots",
           "kind": "same_steward",
@@ -981,10 +1017,7 @@
       "reason": "canonical_source_digest_not_available",
       "state": "not_evaluated"
     },
-    "source_envelope": {
-      "reason": "json_envelope_not_available_for_dataset",
-      "state": "not_evaluated"
-    },
+    "source_envelope": "data/json/meco_lookup_party_succession.json",
     "verification_method": "deterministic_local_projection_of_current_canonical_inputs",
     "witness_reference": {
       "reason": "witness_reference_not_available",

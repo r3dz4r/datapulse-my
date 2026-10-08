@@ -362211,6 +362211,756 @@
         "threshold_days": null,
         "latest_days": null,
         "mode": "not_evaluated"
+      },
+      "quality_profile": {
+        "profile_version": "datapulse-quality-profile/v1",
+        "policy_id": "datapulse-quality-readiness/v1",
+        "dimensions": {
+          "fair": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "fair.catalogue_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "catalogue_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].id"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].name"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].url"
+                  }
+                ],
+                "limitations": [
+                  "Checks declared catalogue fields, not FAIR compliance."
+                ]
+              },
+              {
+                "check_id": "fair.observed_access",
+                "state": "pass",
+                "reason_codes": [
+                  "observed_access_signal_present"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].request_url"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].status"
+                  }
+                ],
+                "limitations": [
+                  "Records one observed access signal; it does not promise continuing access."
+                ]
+              },
+              {
+                "check_id": "fair.shape_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "shape_metadata_observed"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].schema_fingerprint"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].first_row_hash"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].column_count"
+                  }
+                ],
+                "limitations": [
+                  "Shape metadata is not a semantic interoperability assessment."
+                ]
+              },
+              {
+                "check_id": "fair.reuse_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "reuse_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].licence"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].attribution"
+                  }
+                ],
+                "limitations": [
+                  "Declared reuse metadata is not legal or FAIR certification."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 4,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "catalogue_metadata_declared",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
+              "reuse_metadata_declared"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].id"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].name"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].url"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].request_url"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].status"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].schema_fingerprint"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].first_row_hash"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].column_count"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].licence"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].attribution"
+              }
+            ],
+            "limitations": [
+              "FAIR-relevant metadata is recorded without inferring FAIR compliance."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "licensing": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "licensing.declared_licence",
+                "state": "pass",
+                "reason_codes": [
+                  "licence_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].licence"
+                  }
+                ],
+                "limitations": [
+                  "A declared licence is not a legal interpretation or validation."
+                ]
+              },
+              {
+                "check_id": "licensing.declared_attribution",
+                "state": "pass",
+                "reason_codes": [
+                  "attribution_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].attribution"
+                  }
+                ],
+                "limitations": [
+                  "A declared attribution is not a legal interpretation or validation."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 2,
+              "evaluated": 2,
+              "passed": 2,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "licence_declared",
+              "attribution_declared"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].licence"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].attribution"
+              }
+            ],
+            "limitations": [
+              "Missing or ambiguous licensing evidence remains unknown; no legal conclusion is made."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "provenance": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "provenance.source_url",
+                "state": "pass",
+                "reason_codes": [
+                  "url_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].url"
+                  }
+                ],
+                "limitations": [
+                  "A source URL identifies a declared source, not its truth."
+                ]
+              },
+              {
+                "check_id": "provenance.steward_or_custodian",
+                "state": "pass",
+                "reason_codes": [
+                  "publisher_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].steward"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].custodian"
+                  }
+                ],
+                "limitations": [
+                  "Declared publisher metadata is not independent attribution verification."
+                ]
+              },
+              {
+                "check_id": "provenance.observation",
+                "state": "pass",
+                "reason_codes": [
+                  "observation_reference_present"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].last_checked"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].request_url"
+                  }
+                ],
+                "limitations": [
+                  "The observation records a probe boundary, not upstream content truth."
+                ]
+              },
+              {
+                "check_id": "provenance.source_observed_boundary",
+                "state": "pass",
+                "reason_codes": [
+                  "source_observed_boundary_recorded"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].url"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].request_url"
+                  }
+                ],
+                "limitations": [
+                  "Different declared and observed URLs are preserved rather than resolved automatically."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 4,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "url_declared",
+              "publisher_metadata_declared",
+              "observation_reference_present",
+              "source_observed_boundary_recorded"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].url"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].steward"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].custodian"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].last_checked"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].request_url"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].url"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].request_url"
+              }
+            ],
+            "limitations": [
+              "Provenance records declared and observed boundaries; it does not certify source authority or truth."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "governance": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "governance.methodology_version",
+                "state": "pass",
+                "reason_codes": [
+                  "methodology_version_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].methodology_version"
+                  }
+                ],
+                "limitations": [
+                  "Version metadata identifies a declared method, not its adequacy."
+                ]
+              },
+              {
+                "check_id": "governance.status_reason_slot",
+                "state": "pass",
+                "reason_codes": [
+                  "status_reason_slot_present"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].status"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].status_reason"
+                  }
+                ],
+                "limitations": [
+                  "A present reason slot may be null for a given health observation."
+                ]
+              },
+              {
+                "check_id": "governance.declared_cadence",
+                "state": "not_applicable",
+                "reason_codes": [
+                  "cadence_not_applicable_reference_dataset"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].data_type"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].refresh_frequency"
+                  }
+                ],
+                "limitations": [
+                  "Cadence is explicitly not applicable only to manifest-declared reference data; otherwise it is not evidence that the publisher followed it."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 2,
+              "evaluated": 2,
+              "passed": 2,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 1
+            },
+            "reason_codes": [
+              "methodology_version_declared",
+              "status_reason_slot_present",
+              "cadence_not_applicable_reference_dataset"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].methodology_version"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].status"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].status_reason"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].data_type"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].refresh_frequency"
+              }
+            ],
+            "limitations": [
+              "Governance checks declaration and observation fields, not institutional governance compliance."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "reproducibility": {
+            "state": "unknown",
+            "checks": [
+              {
+                "check_id": "reproducibility.shape_fingerprint",
+                "state": "pass",
+                "reason_codes": [
+                  "shape_fingerprint_observed"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].schema_fingerprint"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].first_row_hash"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].column_count"
+                  }
+                ],
+                "limitations": [
+                  "Shape signals are bounded structural observations, not a complete reproducibility proof."
+                ]
+              },
+              {
+                "check_id": "reproducibility.retrieval_timestamp",
+                "state": "pass",
+                "reason_codes": [
+                  "last_checked_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].last_checked"
+                  }
+                ],
+                "limitations": [
+                  "A retrieval timestamp does not reproduce the remote response by itself."
+                ]
+              },
+              {
+                "check_id": "reproducibility.record_count",
+                "state": "pass",
+                "reason_codes": [
+                  "record_count_observed"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].record_count"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].record_count_estimated"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].record_count_within_tolerance"
+                  }
+                ],
+                "limitations": [
+                  "A count is an observed or estimated measurement, not a completeness guarantee."
+                ]
+              },
+              {
+                "check_id": "reproducibility.attestation_reference",
+                "state": "unknown",
+                "reason_codes": [
+                  "attestation_ref_missing"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].attestation_ref"
+                  }
+                ],
+                "limitations": [
+                  "A declared reference is not verified here; missing evidence remains unknown."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 4,
+              "evaluated": 3,
+              "passed": 3,
+              "failed": 0,
+              "unknown": 1,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "shape_fingerprint_observed",
+              "last_checked_declared",
+              "record_count_observed",
+              "attestation_ref_missing"
+            ],
+            "evidence_refs": [
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].schema_fingerprint"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].first_row_hash"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].column_count"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].last_checked"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].record_count"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].record_count_estimated"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].record_count_within_tolerance"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].attestation_ref"
+              }
+            ],
+            "limitations": [
+              "Reproducibility evidence is limited to recorded probe metadata and references; no replay guarantee is made."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "catalogue_readiness": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "catalogue_readiness.stable_id",
+                "state": "pass",
+                "reason_codes": [
+                  "id_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].id"
+                  }
+                ],
+                "limitations": [
+                  "A stable local ID does not establish external catalogue identity."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.identity_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "identity_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].name"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].steward"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].source"
+                  }
+                ],
+                "limitations": [
+                  "Identity metadata is declared catalogue context, not semantic validation."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.health_report",
+                "state": "pass",
+                "reason_codes": [
+                  "health_report_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].health_report"
+                  }
+                ],
+                "limitations": [
+                  "A health-report link is a local reference, not an availability guarantee."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.manifest_health_parity",
+                "state": "pass",
+                "reason_codes": [
+                  "manifest_health_id_match"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].id"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].dataset_id"
+                  }
+                ],
+                "limitations": [
+                  "Parity is limited to this snapshot and manifest pair."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.schema_valid_envelope",
+                "state": "pass",
+                "reason_codes": [
+                  "input_envelopes_schema_valid"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_delimitation_to_elections'].id"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_delimitation_to_elections'].dataset_id"
+                  }
+                ],
+                "limitations": [
+                  "Schema validity checks structure only; it does not validate content semantics."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 5,
+              "evaluated": 5,
+              "passed": 5,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "id_declared",
+              "identity_metadata_declared",
+              "health_report_declared",
+              "manifest_health_id_match",
+              "input_envelopes_schema_valid"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].id"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].name"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].steward"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].source"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].health_report"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].id"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].dataset_id"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_delimitation_to_elections'].id"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_delimitation_to_elections'].dataset_id"
+              }
+            ],
+            "limitations": [
+              "Catalogue readiness means recorded metadata is structurally sufficient for this named policy, not that the dataset is true or safe."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          }
+        },
+        "overall": "indeterminate",
+        "limitations": [
+          "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
+        ]
       }
     },
     {
@@ -362288,6 +363038,756 @@
         "threshold_days": null,
         "latest_days": null,
         "mode": "not_evaluated"
+      },
+      "quality_profile": {
+        "profile_version": "datapulse-quality-profile/v1",
+        "policy_id": "datapulse-quality-readiness/v1",
+        "dimensions": {
+          "fair": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "fair.catalogue_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "catalogue_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].id"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].name"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].url"
+                  }
+                ],
+                "limitations": [
+                  "Checks declared catalogue fields, not FAIR compliance."
+                ]
+              },
+              {
+                "check_id": "fair.observed_access",
+                "state": "pass",
+                "reason_codes": [
+                  "observed_access_signal_present"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].request_url"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].status"
+                  }
+                ],
+                "limitations": [
+                  "Records one observed access signal; it does not promise continuing access."
+                ]
+              },
+              {
+                "check_id": "fair.shape_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "shape_metadata_observed"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].schema_fingerprint"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].first_row_hash"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].column_count"
+                  }
+                ],
+                "limitations": [
+                  "Shape metadata is not a semantic interoperability assessment."
+                ]
+              },
+              {
+                "check_id": "fair.reuse_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "reuse_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].licence"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].attribution"
+                  }
+                ],
+                "limitations": [
+                  "Declared reuse metadata is not legal or FAIR certification."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 4,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "catalogue_metadata_declared",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
+              "reuse_metadata_declared"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].id"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].name"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].url"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].request_url"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].status"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].schema_fingerprint"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].first_row_hash"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].column_count"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].licence"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].attribution"
+              }
+            ],
+            "limitations": [
+              "FAIR-relevant metadata is recorded without inferring FAIR compliance."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "licensing": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "licensing.declared_licence",
+                "state": "pass",
+                "reason_codes": [
+                  "licence_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].licence"
+                  }
+                ],
+                "limitations": [
+                  "A declared licence is not a legal interpretation or validation."
+                ]
+              },
+              {
+                "check_id": "licensing.declared_attribution",
+                "state": "pass",
+                "reason_codes": [
+                  "attribution_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].attribution"
+                  }
+                ],
+                "limitations": [
+                  "A declared attribution is not a legal interpretation or validation."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 2,
+              "evaluated": 2,
+              "passed": 2,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "licence_declared",
+              "attribution_declared"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].licence"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].attribution"
+              }
+            ],
+            "limitations": [
+              "Missing or ambiguous licensing evidence remains unknown; no legal conclusion is made."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "provenance": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "provenance.source_url",
+                "state": "pass",
+                "reason_codes": [
+                  "url_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].url"
+                  }
+                ],
+                "limitations": [
+                  "A source URL identifies a declared source, not its truth."
+                ]
+              },
+              {
+                "check_id": "provenance.steward_or_custodian",
+                "state": "pass",
+                "reason_codes": [
+                  "publisher_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].steward"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].custodian"
+                  }
+                ],
+                "limitations": [
+                  "Declared publisher metadata is not independent attribution verification."
+                ]
+              },
+              {
+                "check_id": "provenance.observation",
+                "state": "pass",
+                "reason_codes": [
+                  "observation_reference_present"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].last_checked"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].request_url"
+                  }
+                ],
+                "limitations": [
+                  "The observation records a probe boundary, not upstream content truth."
+                ]
+              },
+              {
+                "check_id": "provenance.source_observed_boundary",
+                "state": "pass",
+                "reason_codes": [
+                  "source_observed_boundary_recorded"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].url"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].request_url"
+                  }
+                ],
+                "limitations": [
+                  "Different declared and observed URLs are preserved rather than resolved automatically."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 4,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "url_declared",
+              "publisher_metadata_declared",
+              "observation_reference_present",
+              "source_observed_boundary_recorded"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].url"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].steward"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].custodian"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].last_checked"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].request_url"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].url"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].request_url"
+              }
+            ],
+            "limitations": [
+              "Provenance records declared and observed boundaries; it does not certify source authority or truth."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "governance": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "governance.methodology_version",
+                "state": "pass",
+                "reason_codes": [
+                  "methodology_version_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].methodology_version"
+                  }
+                ],
+                "limitations": [
+                  "Version metadata identifies a declared method, not its adequacy."
+                ]
+              },
+              {
+                "check_id": "governance.status_reason_slot",
+                "state": "pass",
+                "reason_codes": [
+                  "status_reason_slot_present"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].status"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].status_reason"
+                  }
+                ],
+                "limitations": [
+                  "A present reason slot may be null for a given health observation."
+                ]
+              },
+              {
+                "check_id": "governance.declared_cadence",
+                "state": "not_applicable",
+                "reason_codes": [
+                  "cadence_not_applicable_reference_dataset"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].data_type"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].refresh_frequency"
+                  }
+                ],
+                "limitations": [
+                  "Cadence is explicitly not applicable only to manifest-declared reference data; otherwise it is not evidence that the publisher followed it."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 2,
+              "evaluated": 2,
+              "passed": 2,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 1
+            },
+            "reason_codes": [
+              "methodology_version_declared",
+              "status_reason_slot_present",
+              "cadence_not_applicable_reference_dataset"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].methodology_version"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].status"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].status_reason"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].data_type"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].refresh_frequency"
+              }
+            ],
+            "limitations": [
+              "Governance checks declaration and observation fields, not institutional governance compliance."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "reproducibility": {
+            "state": "unknown",
+            "checks": [
+              {
+                "check_id": "reproducibility.shape_fingerprint",
+                "state": "pass",
+                "reason_codes": [
+                  "shape_fingerprint_observed"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].schema_fingerprint"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].first_row_hash"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].column_count"
+                  }
+                ],
+                "limitations": [
+                  "Shape signals are bounded structural observations, not a complete reproducibility proof."
+                ]
+              },
+              {
+                "check_id": "reproducibility.retrieval_timestamp",
+                "state": "pass",
+                "reason_codes": [
+                  "last_checked_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].last_checked"
+                  }
+                ],
+                "limitations": [
+                  "A retrieval timestamp does not reproduce the remote response by itself."
+                ]
+              },
+              {
+                "check_id": "reproducibility.record_count",
+                "state": "pass",
+                "reason_codes": [
+                  "record_count_observed"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].record_count"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].record_count_estimated"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].record_count_within_tolerance"
+                  }
+                ],
+                "limitations": [
+                  "A count is an observed or estimated measurement, not a completeness guarantee."
+                ]
+              },
+              {
+                "check_id": "reproducibility.attestation_reference",
+                "state": "unknown",
+                "reason_codes": [
+                  "attestation_ref_missing"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].attestation_ref"
+                  }
+                ],
+                "limitations": [
+                  "A declared reference is not verified here; missing evidence remains unknown."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 4,
+              "evaluated": 3,
+              "passed": 3,
+              "failed": 0,
+              "unknown": 1,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "shape_fingerprint_observed",
+              "last_checked_declared",
+              "record_count_observed",
+              "attestation_ref_missing"
+            ],
+            "evidence_refs": [
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].schema_fingerprint"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].first_row_hash"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].column_count"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].last_checked"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].record_count"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].record_count_estimated"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].record_count_within_tolerance"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].attestation_ref"
+              }
+            ],
+            "limitations": [
+              "Reproducibility evidence is limited to recorded probe metadata and references; no replay guarantee is made."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "catalogue_readiness": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "catalogue_readiness.stable_id",
+                "state": "pass",
+                "reason_codes": [
+                  "id_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].id"
+                  }
+                ],
+                "limitations": [
+                  "A stable local ID does not establish external catalogue identity."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.identity_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "identity_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].name"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].steward"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].source"
+                  }
+                ],
+                "limitations": [
+                  "Identity metadata is declared catalogue context, not semantic validation."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.health_report",
+                "state": "pass",
+                "reason_codes": [
+                  "health_report_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].health_report"
+                  }
+                ],
+                "limitations": [
+                  "A health-report link is a local reference, not an availability guarantee."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.manifest_health_parity",
+                "state": "pass",
+                "reason_codes": [
+                  "manifest_health_id_match"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].id"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].dataset_id"
+                  }
+                ],
+                "limitations": [
+                  "Parity is limited to this snapshot and manifest pair."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.schema_valid_envelope",
+                "state": "pass",
+                "reason_codes": [
+                  "input_envelopes_schema_valid"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_equal_k'].id"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_equal_k'].dataset_id"
+                  }
+                ],
+                "limitations": [
+                  "Schema validity checks structure only; it does not validate content semantics."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 5,
+              "evaluated": 5,
+              "passed": 5,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "id_declared",
+              "identity_metadata_declared",
+              "health_report_declared",
+              "manifest_health_id_match",
+              "input_envelopes_schema_valid"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].id"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].name"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].steward"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].source"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].health_report"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].id"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].dataset_id"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_equal_k'].id"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_equal_k'].dataset_id"
+              }
+            ],
+            "limitations": [
+              "Catalogue readiness means recorded metadata is structurally sufficient for this named policy, not that the dataset is true or safe."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          }
+        },
+        "overall": "indeterminate",
+        "limitations": [
+          "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
+        ]
       }
     },
     {
@@ -362365,6 +363865,756 @@
         "threshold_days": null,
         "latest_days": null,
         "mode": "not_evaluated"
+      },
+      "quality_profile": {
+        "profile_version": "datapulse-quality-profile/v1",
+        "policy_id": "datapulse-quality-readiness/v1",
+        "dimensions": {
+          "fair": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "fair.catalogue_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "catalogue_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].id"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].name"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].url"
+                  }
+                ],
+                "limitations": [
+                  "Checks declared catalogue fields, not FAIR compliance."
+                ]
+              },
+              {
+                "check_id": "fair.observed_access",
+                "state": "pass",
+                "reason_codes": [
+                  "observed_access_signal_present"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].request_url"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].status"
+                  }
+                ],
+                "limitations": [
+                  "Records one observed access signal; it does not promise continuing access."
+                ]
+              },
+              {
+                "check_id": "fair.shape_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "shape_metadata_observed"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].schema_fingerprint"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].first_row_hash"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].column_count"
+                  }
+                ],
+                "limitations": [
+                  "Shape metadata is not a semantic interoperability assessment."
+                ]
+              },
+              {
+                "check_id": "fair.reuse_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "reuse_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].licence"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].attribution"
+                  }
+                ],
+                "limitations": [
+                  "Declared reuse metadata is not legal or FAIR certification."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 4,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "catalogue_metadata_declared",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
+              "reuse_metadata_declared"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].id"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].name"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].url"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].request_url"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].status"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].schema_fingerprint"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].first_row_hash"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].column_count"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].licence"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].attribution"
+              }
+            ],
+            "limitations": [
+              "FAIR-relevant metadata is recorded without inferring FAIR compliance."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "licensing": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "licensing.declared_licence",
+                "state": "pass",
+                "reason_codes": [
+                  "licence_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].licence"
+                  }
+                ],
+                "limitations": [
+                  "A declared licence is not a legal interpretation or validation."
+                ]
+              },
+              {
+                "check_id": "licensing.declared_attribution",
+                "state": "pass",
+                "reason_codes": [
+                  "attribution_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].attribution"
+                  }
+                ],
+                "limitations": [
+                  "A declared attribution is not a legal interpretation or validation."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 2,
+              "evaluated": 2,
+              "passed": 2,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "licence_declared",
+              "attribution_declared"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].licence"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].attribution"
+              }
+            ],
+            "limitations": [
+              "Missing or ambiguous licensing evidence remains unknown; no legal conclusion is made."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "provenance": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "provenance.source_url",
+                "state": "pass",
+                "reason_codes": [
+                  "url_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].url"
+                  }
+                ],
+                "limitations": [
+                  "A source URL identifies a declared source, not its truth."
+                ]
+              },
+              {
+                "check_id": "provenance.steward_or_custodian",
+                "state": "pass",
+                "reason_codes": [
+                  "publisher_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].steward"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].custodian"
+                  }
+                ],
+                "limitations": [
+                  "Declared publisher metadata is not independent attribution verification."
+                ]
+              },
+              {
+                "check_id": "provenance.observation",
+                "state": "pass",
+                "reason_codes": [
+                  "observation_reference_present"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].last_checked"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].request_url"
+                  }
+                ],
+                "limitations": [
+                  "The observation records a probe boundary, not upstream content truth."
+                ]
+              },
+              {
+                "check_id": "provenance.source_observed_boundary",
+                "state": "pass",
+                "reason_codes": [
+                  "source_observed_boundary_recorded"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].url"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].request_url"
+                  }
+                ],
+                "limitations": [
+                  "Different declared and observed URLs are preserved rather than resolved automatically."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 4,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "url_declared",
+              "publisher_metadata_declared",
+              "observation_reference_present",
+              "source_observed_boundary_recorded"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].url"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].steward"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].custodian"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].last_checked"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].request_url"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].url"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].request_url"
+              }
+            ],
+            "limitations": [
+              "Provenance records declared and observed boundaries; it does not certify source authority or truth."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "governance": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "governance.methodology_version",
+                "state": "pass",
+                "reason_codes": [
+                  "methodology_version_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].methodology_version"
+                  }
+                ],
+                "limitations": [
+                  "Version metadata identifies a declared method, not its adequacy."
+                ]
+              },
+              {
+                "check_id": "governance.status_reason_slot",
+                "state": "pass",
+                "reason_codes": [
+                  "status_reason_slot_present"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].status"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].status_reason"
+                  }
+                ],
+                "limitations": [
+                  "A present reason slot may be null for a given health observation."
+                ]
+              },
+              {
+                "check_id": "governance.declared_cadence",
+                "state": "not_applicable",
+                "reason_codes": [
+                  "cadence_not_applicable_reference_dataset"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].data_type"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].refresh_frequency"
+                  }
+                ],
+                "limitations": [
+                  "Cadence is explicitly not applicable only to manifest-declared reference data; otherwise it is not evidence that the publisher followed it."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 2,
+              "evaluated": 2,
+              "passed": 2,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 1
+            },
+            "reason_codes": [
+              "methodology_version_declared",
+              "status_reason_slot_present",
+              "cadence_not_applicable_reference_dataset"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].methodology_version"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].status"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].status_reason"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].data_type"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].refresh_frequency"
+              }
+            ],
+            "limitations": [
+              "Governance checks declaration and observation fields, not institutional governance compliance."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "reproducibility": {
+            "state": "unknown",
+            "checks": [
+              {
+                "check_id": "reproducibility.shape_fingerprint",
+                "state": "pass",
+                "reason_codes": [
+                  "shape_fingerprint_observed"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].schema_fingerprint"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].first_row_hash"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].column_count"
+                  }
+                ],
+                "limitations": [
+                  "Shape signals are bounded structural observations, not a complete reproducibility proof."
+                ]
+              },
+              {
+                "check_id": "reproducibility.retrieval_timestamp",
+                "state": "pass",
+                "reason_codes": [
+                  "last_checked_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].last_checked"
+                  }
+                ],
+                "limitations": [
+                  "A retrieval timestamp does not reproduce the remote response by itself."
+                ]
+              },
+              {
+                "check_id": "reproducibility.record_count",
+                "state": "pass",
+                "reason_codes": [
+                  "record_count_observed"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].record_count"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].record_count_estimated"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].record_count_within_tolerance"
+                  }
+                ],
+                "limitations": [
+                  "A count is an observed or estimated measurement, not a completeness guarantee."
+                ]
+              },
+              {
+                "check_id": "reproducibility.attestation_reference",
+                "state": "unknown",
+                "reason_codes": [
+                  "attestation_ref_missing"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].attestation_ref"
+                  }
+                ],
+                "limitations": [
+                  "A declared reference is not verified here; missing evidence remains unknown."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 4,
+              "evaluated": 3,
+              "passed": 3,
+              "failed": 0,
+              "unknown": 1,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "shape_fingerprint_observed",
+              "last_checked_declared",
+              "record_count_observed",
+              "attestation_ref_missing"
+            ],
+            "evidence_refs": [
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].schema_fingerprint"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].first_row_hash"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].column_count"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].last_checked"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].record_count"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].record_count_estimated"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].record_count_within_tolerance"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].attestation_ref"
+              }
+            ],
+            "limitations": [
+              "Reproducibility evidence is limited to recorded probe metadata and references; no replay guarantee is made."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          },
+          "catalogue_readiness": {
+            "state": "pass",
+            "checks": [
+              {
+                "check_id": "catalogue_readiness.stable_id",
+                "state": "pass",
+                "reason_codes": [
+                  "id_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].id"
+                  }
+                ],
+                "limitations": [
+                  "A stable local ID does not establish external catalogue identity."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.identity_metadata",
+                "state": "pass",
+                "reason_codes": [
+                  "identity_metadata_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].name"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].steward"
+                  },
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].source"
+                  }
+                ],
+                "limitations": [
+                  "Identity metadata is declared catalogue context, not semantic validation."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.health_report",
+                "state": "pass",
+                "reason_codes": [
+                  "health_report_declared"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].health_report"
+                  }
+                ],
+                "limitations": [
+                  "A health-report link is a local reference, not an availability guarantee."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.manifest_health_parity",
+                "state": "pass",
+                "reason_codes": [
+                  "manifest_health_id_match"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].id"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].dataset_id"
+                  }
+                ],
+                "limitations": [
+                  "Parity is limited to this snapshot and manifest pair."
+                ]
+              },
+              {
+                "check_id": "catalogue_readiness.schema_valid_envelope",
+                "state": "pass",
+                "reason_codes": [
+                  "input_envelopes_schema_valid"
+                ],
+                "evidence_refs": [
+                  {
+                    "source": "manifest",
+                    "path": "datasets['meco_cartogram_electorate_k'].id"
+                  },
+                  {
+                    "source": "health",
+                    "path": "datasets['meco_cartogram_electorate_k'].dataset_id"
+                  }
+                ],
+                "limitations": [
+                  "Schema validity checks structure only; it does not validate content semantics."
+                ]
+              }
+            ],
+            "coverage": {
+              "applicable": 5,
+              "evaluated": 5,
+              "passed": 5,
+              "failed": 0,
+              "unknown": 0,
+              "not_applicable": 0
+            },
+            "reason_codes": [
+              "id_declared",
+              "identity_metadata_declared",
+              "health_report_declared",
+              "manifest_health_id_match",
+              "input_envelopes_schema_valid"
+            ],
+            "evidence_refs": [
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].id"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].name"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].steward"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].source"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].health_report"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].id"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].dataset_id"
+              },
+              {
+                "source": "manifest",
+                "path": "datasets['meco_cartogram_electorate_k'].id"
+              },
+              {
+                "source": "health",
+                "path": "datasets['meco_cartogram_electorate_k'].dataset_id"
+              }
+            ],
+            "limitations": [
+              "Catalogue readiness means recorded metadata is structurally sufficient for this named policy, not that the dataset is true or safe."
+            ],
+            "policy_basis": "datapulse-quality-readiness/v1"
+          }
+        },
+        "overall": "indeterminate",
+        "limitations": [
+          "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
+        ]
       }
     }
   ]
