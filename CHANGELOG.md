@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.51.7](https://github.com/r3dz4r/datapulse-my/compare/v3.51.6...v3.51.7) (2026-10-08)
+
+
+### Bug Fixes
+
+* **attestations:** stop the shadow-checkout fixture writing through to the checkout ([#812](https://github.com/r3dz4r/datapulse-my/issues/812)) ([f2f3238](https://github.com/r3dz4r/datapulse-my/commit/f2f323805fb150a7090df9cb45282499040ab005))
+
 ## [3.51.6](https://github.com/r3dz4r/datapulse-my/compare/v3.51.5...v3.51.6) (2026-10-08)
 
 
