@@ -180,6 +180,39 @@ def test_generated_dashboard_payload_stays_within_budget() -> None:
     assert_dashboard_payload_within_budget(document)
 
 
+def test_oversized_attestation_index_does_not_grow_homepage(tmp_path: Path) -> None:
+    index_path = tmp_path / "index.json"
+    index_path.write_text(
+        json.dumps(
+            {
+                "schema": "datapulse/v1/attestation-index",
+                "attestations": {
+                    f"synthetic_{number:04d}": f"attestations/2026-10-08/{'x' * 128}/{number}.json"
+                    for number in range(2_000)
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert index_path.stat().st_size > 100_000
+
+    def render() -> bytes:
+        return _render_page(
+            ROOT / "docs/index.html",
+            ROOT / "datapulse.json",
+            ROOT / "health/latest.json",
+            ROOT / "docs/.dashboard_filters.json",
+            ROOT / "docs/.dashboard_sections.json",
+            index_path,
+            ROOT / "attestations/latest/binding.json",
+            ROOT,
+        ).encode("utf-8")
+
+    document = render()
+    assert_dashboard_payload_within_budget(document)
+    assert render() == document
+
+
 @pytest.mark.parametrize("budget", ["homepage", "embedded-data"])
 def test_dashboard_payload_budget_rejects_synthetic_overage(
     tmp_path: Path, budget: str

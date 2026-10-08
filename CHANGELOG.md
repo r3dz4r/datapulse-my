@@ -14,6 +14,21 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.53.0](https://github.com/r3dz4r/datapulse-my/compare/v3.52.2...v3.53.0) (2026-10-08)
+
+
+### Features
+
+* **data:** onboard the MECo electoral-map tables (3 datasets) ([#827](https://github.com/r3dz4r/datapulse-my/issues/827)) ([d852a4b](https://github.com/r3dz4r/datapulse-my/commit/d852a4bac4595fdd0ed0bb4e0ed28aefb2601473))
+
+## [3.52.2](https://github.com/r3dz4r/datapulse-my/compare/v3.52.1...v3.52.2) (2026-10-08)
+
+
+### Bug Fixes
+
+* **ci:** install health integrity dependencies ([#825](https://github.com/r3dz4r/datapulse-my/issues/825)) ([aabcb73](https://github.com/r3dz4r/datapulse-my/commit/aabcb7391460349ec964c41b73131dd09ecfb220))
+* **data:** guard source observation claims against check dates ([#824](https://github.com/r3dz4r/datapulse-my/issues/824)) ([7a18162](https://github.com/r3dz4r/datapulse-my/commit/7a1816279cf8b60688589c3e9eefae0055f0c349))
+
 ## [3.52.1](https://github.com/r3dz4r/datapulse-my/compare/v3.52.0...v3.52.1) (2026-10-08)
 
 

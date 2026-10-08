@@ -10,7 +10,7 @@
     "trust_verdict.dataset_id"
   ],
   "contract_version": "1.0.0",
-  "dataset_count": 437,
+  "dataset_count": 440,
   "description": "Return published attestation facts, the unsigned methodology-versioned trust score, numeric components, and component_availability reasons, plus existing health/trend/drift/reconciliation evidence for one canonical dataset id, e.g. 'fuelprice'. This tool does not re-probe or verify the signature; call verify_attestation separately. Use it to assemble the published trust view; do not use it for receipt verification, live comparison, or signature verification—use verify_dataset, verify_evidence, or verify_attestation instead. It reads precomputed artifacts, so missing component availability explains omitted evidence rather than a live probe; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "trust_verdict",
   "endpoint": {

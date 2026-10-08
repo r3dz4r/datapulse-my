@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-10-08T14:51:42Z",
-  "node_count": 437,
-  "edge_count": 9324,
+  "generated_at": "2026-10-08T16:26:00Z",
+  "node_count": 440,
+  "edge_count": 9363,
   "edge_kinds": {
-    "same_steward": 4238,
-    "same_agency": 5084,
+    "same_steward": 4241,
+    "same_agency": 5120,
     "same_geography": 0,
     "canonical_series": 1,
     "successor_to": 0,
     "shared_schema": 1
   },
   "coverage": {
-    "datasets_with_at_least_one_edge": 412,
+    "datasets_with_at_least_one_edge": 415,
     "isolated_datasets": [
       "almanak_astronomi",
       "cosmetics_manufacturers",
@@ -2021,6 +2021,18 @@
       "agency": "MBPP ArcGIS FeatureServer"
     },
     {
+      "dataset_id": "meco_cartogram_electorate_k",
+      "title": "MECo Electorate-Weighted Cartogram Scale",
+      "steward": "Thevesh Theva",
+      "agency": "https://github.com/Thevesh/paper-meco-maps"
+    },
+    {
+      "dataset_id": "meco_cartogram_equal_k",
+      "title": "MECo Equal-Seat Cartogram Scale",
+      "steward": "Thevesh Theva",
+      "agency": "https://github.com/Thevesh/paper-meco-maps"
+    },
+    {
       "dataset_id": "meco_consol_ballots",
       "title": "MECo Consolidated Ballots",
       "steward": "Thevesh Theva",
@@ -2031,6 +2043,12 @@
       "title": "MECo Consolidated Contest Statistics",
       "steward": "Thevesh Theva",
       "agency": "https://github.com/Thevesh/paper-meco-results"
+    },
+    {
+      "dataset_id": "meco_delimitation_to_elections",
+      "title": "MECo Delimitation-to-Elections Lookup",
+      "steward": "Thevesh Theva",
+      "agency": "https://github.com/Thevesh/paper-meco-maps"
     },
     {
       "dataset_id": "meco_lookup_candidate",
@@ -62492,6 +62510,438 @@
     },
     {
       "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_consol_ballots",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_consol_stats",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_lookup_candidate",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_lookup_coalition",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_lookup_coalition_succession",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_lookup_dates",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_lookup_dun_parlimen",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_lookup_party",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_lookup_party_succession",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_lookup_prk",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_raw_ballots",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_raw_stats",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_consol_ballots",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_consol_stats",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_lookup_candidate",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_lookup_coalition",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_lookup_coalition_succession",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_lookup_dates",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_lookup_dun_parlimen",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_lookup_party",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_lookup_party_succession",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_lookup_prk",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_raw_ballots",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_raw_stats",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_consol_ballots",
+      "to": "meco_delimitation_to_elections",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_consol_stats",
+      "to": "meco_delimitation_to_elections",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_delimitation_to_elections",
+      "to": "meco_lookup_candidate",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_delimitation_to_elections",
+      "to": "meco_lookup_coalition",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_delimitation_to_elections",
+      "to": "meco_lookup_coalition_succession",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_delimitation_to_elections",
+      "to": "meco_lookup_dates",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_delimitation_to_elections",
+      "to": "meco_lookup_dun_parlimen",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_delimitation_to_elections",
+      "to": "meco_lookup_party",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_delimitation_to_elections",
+      "to": "meco_lookup_party_succession",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_delimitation_to_elections",
+      "to": "meco_lookup_prk",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_delimitation_to_elections",
+      "to": "meco_raw_ballots",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
+      "from": "meco_delimitation_to_elections",
+      "to": "meco_raw_stats",
+      "weight": 1,
+      "provenance": {
+        "matched_fields": [
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_agency",
       "from": "mnha",
       "to": "mnha_moh",
       "weight": 1,
@@ -115941,6 +116391,45 @@
       "kind": "same_steward",
       "from": "marriages_state_age",
       "to": "trade_sitc_1d",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_cartogram_equal_k",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "meco_cartogram_electorate_k",
+      "to": "meco_delimitation_to_elections",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "meco_cartogram_equal_k",
+      "to": "meco_delimitation_to_elections",
       "weight": 2,
       "provenance": {
         "matched_fields": [

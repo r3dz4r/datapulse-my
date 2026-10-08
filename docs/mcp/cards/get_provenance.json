@@ -10,7 +10,7 @@
     "get_provenance.dataset_ids"
   ],
   "contract_version": "1.0.0",
-  "dataset_count": 437,
+  "dataset_count": 440,
   "description": "Use when asked 'can I cite this source?', for licence and attribution, or for citation-ready provenance. Returns source, steward, licence/attribution context, canonical URL, and compact published evidence context: probe time, transport, access dependency, freshness signal, schema drift / record-count drift context, anomaly flag, and status. Bind a citation to dataset identity, source/evidence URL, observed-at or last-checked time, DataPulse status/verdict, licence/attribution, and a receipt/evidence digest when available. You may cite the returned provenance and describe its published evidence; it is not a freshness guarantee and does not itself verify the source is current. For pre-trust use search_datasets → verify_dataset → get_provenance. Use it for citation-ready provenance; do not use it for full evidence or a live comparison—use get_evidence or verify_evidence instead. It reads published evidence context, so absent fields mean the pipeline did not publish that value; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "get_provenance",
   "endpoint": {

@@ -225,7 +225,7 @@ jobs:
           cache-dependency-path: requirements-dev.txt
 
       - name: Install health integrity dependencies
-        run: python3 -m pip install jsonschema
+        run: python3 -m pip install jsonschema cryptography
 
       - name: Validate health snapshot and attestation lineage
         run: |

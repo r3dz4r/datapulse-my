@@ -11,7 +11,7 @@
     "verify_dataset.include_proof_steps"
   ],
   "contract_version": "1.0.0",
-  "dataset_count": 437,
+  "dataset_count": 440,
   "description": "This is the preferred single-call pre-trust check for 'is this dataset current?', stale, unknown-freshness, degraded, or browser-dependent questions, and whenever an agent must verify before relying on data. Returns dataset metadata, published evidence and fail-closed signed receipt verification with artifact references. It verifies published artifacts, not a live source check: you may infer whether their receipt verifies, but must not infer current upstream availability or semantic truth. Use search_datasets → verify_dataset → get_provenance. Use it for one published pre-trust check; do not use it for a live transport comparison or attestation-chain verification—use verify_evidence or verify_attestation instead. It verifies precomputed published artifacts, so a failed check does not identify current upstream availability; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "verify_dataset",
   "endpoint": {
