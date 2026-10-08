@@ -2,7 +2,7 @@
 dataset_id: bnm_interest_volume
 last_checked: 2026-10-04T00:30:57Z
 status: fresh
-freshness_delta: 2 days
+freshness_delta: 6 days
 next_expected_update: monthly
 schema_version: unknown
 schema_drift: none
@@ -18,7 +18,7 @@ attribution: Bank Negara Malaysia via BNM Open API
 
 **Status:** Fresh
 
-**Freshness:** 2 days
+**Freshness:** 6 days
 
 HTTP 200
 

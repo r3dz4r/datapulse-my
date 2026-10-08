@@ -10,7 +10,7 @@
     "get_evidence.dataset_id"
   ],
   "contract_version": "1.0.0",
-  "dataset_count": 425,
+  "dataset_count": 437,
   "description": "Use for a deep evidence audit or to inspect a provenance and evidence receipt. Returns the complete published evidence receipt for one dataset: probe time, transport, access dependency, freshness, schema drift / record-count drift, tolerance, status, anomaly fields, and receipt/evidence references. It reads published pipeline evidence, not a live source fetch: you may report what the pipeline observed, but must not infer the source is currently reachable or semantically true. Use it for a deep audit before or alongside verification. search_datasets → get_evidence → verify_evidence → verify_attestation. Use it for a complete published receipt; do not use it for a live transport check or signature verification—use verify_evidence or verify_attestation instead. It reads precomputed evidence, so evidence_available=false means no published health row; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "get_evidence",
   "endpoint": {
@@ -37,7 +37,7 @@
     "type": "object"
   },
   "source": {
-    "commit_sha": "1a81df54975485373534fde024770507cde16dd5",
+    "commit_sha": "d72cf35959524851e457f62e9f259ba3ece38353",
     "manifest": "mcp.json"
   },
   "specVersion": "1.0",

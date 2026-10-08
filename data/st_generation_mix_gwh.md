@@ -5,7 +5,7 @@ source_url: "https://meih.st.gov.my/statistics?_Eng_Statistic_WAR_STOASPublicPor
 source_name: "meih.st.gov.my (ST)"
 licence: "Open Government Licence (Malaysia)"
 refresh_frequency: "annual"
-last_checked: 2026-09-05T06:36:07Z
+last_checked: 2026-10-05T06:46:30Z
 last_observed: 2021-01-01
 last_modified: null
 record_count: 33
@@ -13,7 +13,7 @@ column_count: 3
 status: stale
 notes: "Unprobed Suruhanjaya Tenaga MyEnergyStats HTML dashboard; health remains unknown until the first DataPulse probe."
 dataset_id: st_generation_mix_gwh
-freshness_delta: 2102 days
+freshness_delta: 2106 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Suruhanjaya Tenaga (ST) via meih.st.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 2102 days
+**Freshness:** 2106 days
 
 ST report table returned a valid year
 
 ## Last checked
 
-2026-09-05 at 06:36:07 UTC.
+2026-10-05 at 06:46:30 UTC.
 
 ## File size
 

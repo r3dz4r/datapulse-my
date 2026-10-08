@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_gdp_district_real_supply
-last_checked: 2026-09-05T02:34:56Z
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-10-05T06:46:30Z
 status: stale
-freshness_delta: 2468 days
+freshness_delta: 2472 days
 next_expected_update: annual
 record_count: 10626
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 2468 days
+**Freshness:** 2472 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-05 at 06:46:30 UTC.
 
 ## File size
 

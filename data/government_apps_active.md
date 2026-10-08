@@ -3,7 +3,7 @@ dataset_id: dgm_government_apps_active
 last_checked: 2026-10-03T10:36:37Z
 last_checked: 2026-10-03T10:36:37Z
 status: stale
-freshness_delta: 186 days
+freshness_delta: 190 days
 next_expected_update: monthly
 record_count: 137
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 186 days
+**Freshness:** 190 days
 
 HTTP 200
 

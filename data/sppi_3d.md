@@ -13,7 +13,7 @@ column_count: 4
 status: stale
 notes: "Tier-1 wave D newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: sppi_3d
-freshness_delta: 186 days
+freshness_delta: 190 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Stale
 
-**Freshness:** 186 days
+**Freshness:** 190 days
 
 HTTP 200
 

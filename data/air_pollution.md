@@ -13,7 +13,7 @@ column_count: 3
 status: stale
 notes: "Tier-1 wave B already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: air_pollution
-freshness_delta: 672 days
+freshness_delta: 676 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Department of Environment Malaysia via data.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 672 days
+**Freshness:** 676 days
 
 HTTP 200
 

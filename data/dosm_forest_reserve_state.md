@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_forest_reserve_state
-last_checked: 2026-09-05T02:34:56Z
-last_checked: 2026-09-05T02:34:56Z
+last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-10-05T06:46:30Z
 status: stale
-freshness_delta: 2102 days
+freshness_delta: 1741 days
 next_expected_update: annual
-record_count: 323
+record_count: 340
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Data prior to 2017 for states in Peninsular Malaysia includes the area of included proposed PRFs which had not yet been gazetted. Data from 2017 is based only on the area of gazetted PRFs. Furthermore, data on PRFs in Sarawak for 2010 and 2011 is not available at present and will be updated at a later date."]
@@ -20,17 +20,17 @@ attribution: Forestry Department and Department of Statistics Malaysia via data.
 
 **Status:** Stale
 
-**Freshness:** 2102 days
+**Freshness:** 1741 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-05 at 02:34:56 UTC.
+2026-10-05 at 06:46:30 UTC.
 
 ## File size
 
-The checked resource is 20,511 bytes.
+The checked resource is 21,591 bytes.
 
 ## Provenance
 

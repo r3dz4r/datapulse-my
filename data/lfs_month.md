@@ -2,7 +2,7 @@
 dataset_id: lfs_month
 last_checked: 2026-10-03T10:36:37Z
 status: fresh
-freshness_delta: 12 days
+freshness_delta: 17 days
 next_expected_update: monthly
 record_count: 199
 date_range: 2010-01-01 to 2026-05-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 12 days
+**Freshness:** 17 days
 
 HTTP 200
 

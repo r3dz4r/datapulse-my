@@ -2,7 +2,7 @@
 dataset_id: gdp_qtr_real
 last_checked: 2026-10-03T10:36:37Z
 status: fresh
-freshness_delta: 51 days
+freshness_delta: 55 days
 next_expected_update: quarterly
 record_count: 133
 date_range: 2015-01-01 to 2026-01-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 51 days
+**Freshness:** 55 days
 
 HTTP 200
 

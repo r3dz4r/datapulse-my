@@ -1,10 +1,10 @@
 ---
 dataset_id: ridership_od_rapidrail_daily
-last_checked: 2026-10-03T15:47:47Z
+last_checked: 2026-10-08T12:36:16Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: daily
-record_count: 4771800
+record_count: 4858840
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Because the size of the complete dataset for each year since 2023 exceeds the row limit of Microsoft Excel (1,048,576), we recommend working with the data programatically, preferably using the parquet files provided.", "The serving filename rotates by UTC year; the health probe resolves it at runtime."]
@@ -25,11 +25,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-03 at 15:47:47 UTC.
+2026-10-08 at 12:36:16 UTC.
 
 ## File size
 
-The checked resource is 282,716,616 bytes.
+The checked resource is 287,875,104 bytes.
 
 ## Provenance
 

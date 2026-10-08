@@ -13,7 +13,7 @@ column_count: 8
 status: fresh
 notes: "Tier-1 wave E newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: pharmaceutical_importers
-freshness_delta: 2 days
+freshness_delta: 6 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
 
 **Status:** Fresh
 
-**Freshness:** 2 days
+**Freshness:** 6 days
 
 HTTP 200
 

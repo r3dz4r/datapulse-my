@@ -2,7 +2,7 @@
 dataset_id: dgm_fertility
 last_checked: 2026-09-26T02:49:53Z
 status: aging
-freshness_delta: 1007 days
+freshness_delta: 1011 days
 next_expected_update: unknown
 record_count: 536
 date_range: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 1007 days
+**Freshness:** 1011 days
 
 HTTP 200
 

@@ -13,7 +13,7 @@ column_count: 4
 status: fresh
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: interestrates
-freshness_delta: 31 days
+freshness_delta: 35 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Bank Negara Malaysia via data.gov.my"
 
 **Status:** Fresh
 
-**Freshness:** 31 days
+**Freshness:** 35 days
 
 HTTP 200
 

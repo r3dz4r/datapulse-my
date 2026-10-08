@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_static_ktmb
-last_checked: 2026-10-03T15:47:47Z
+last_checked: 2026-10-08T12:36:16Z
 status: fresh
-freshness_delta: 1 days
-record_count: 5155
+freshness_delta: 0 days
+record_count: 5157
 content_freshness_date: 2026-08-04
 schema_version: GTFS
 schema_drift: none
@@ -19,17 +19,17 @@ attribution: KTMB via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 1 days
+**Freshness:** 0 days
 
 HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-10-03 at 15:47:47 UTC.
+2026-10-08 at 12:36:16 UTC.
 
 ## File size
 
-The checked resource is 46,125 bytes.
+The checked resource is 46,141 bytes.
 
 ## Provenance
 
