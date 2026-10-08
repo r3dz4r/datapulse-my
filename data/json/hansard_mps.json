@@ -1,12 +1,12 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "hansard_mps",
-  "status": "unreachable",
+  "status": "fresh",
   "last_checked": "2026-09-05T02:34:56Z",
-  "freshness_days": null,
+  "freshness_days": 61,
   "next_expected_update": null,
   "refresh_frequency": "as-required",
-  "record_count": null,
+  "record_count": 2017,
   "date_range": null,
   "fields": [
     {
@@ -21,18 +21,18 @@
   "checks": [
     {
       "name": "file_reachable",
-      "status": "fail",
-      "method": "Hansard probe script failed"
+      "status": "pass",
+      "method": "Probe received HTTP 200 via Hansard probe script"
     },
     {
       "name": "row_count",
-      "status": "warn",
-      "method": "The underlying probe has not produced this measurement."
+      "status": "pass",
+      "method": "Probe measured 2017 record(s)"
     },
     {
       "name": "freshness",
-      "status": "warn",
-      "method": "Health snapshot classifies the dataset as unreachable"
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
     },
     {
       "name": "schema_stable",

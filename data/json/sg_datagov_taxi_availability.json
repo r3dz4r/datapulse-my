@@ -2,11 +2,11 @@
   "schema": "datapulse/v0.1/dataset-health",
   "id": "sg_datagov_taxi_availability",
   "status": "fresh",
-  "last_checked": "2026-10-08T12:36:16Z",
+  "last_checked": "2026-10-03T10:36:37Z",
   "freshness_days": 0,
   "next_expected_update": null,
   "refresh_frequency": "daily",
-  "record_count": 1,
+  "record_count": 3,
   "date_range": null,
   "fields": [
     {
@@ -31,7 +31,7 @@
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Probe measured 1 record(s)"
+      "method": "Probe measured 3 record(s)"
     },
     {
       "name": "freshness",
@@ -40,8 +40,8 @@
     },
     {
       "name": "schema_stable",
-      "status": "pass",
-      "method": "Probe observed 3 column(s) with no content-shape change"
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
     }
   ],
   "known_quirks": [],
