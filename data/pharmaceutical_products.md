@@ -48,7 +48,7 @@ National Pharmaceutical Regulatory Agency publishes this dataset through data.go
 
 ## Coverage
 
-Malaysia. Latest source observation: 2026-12-23.
+Malaysia.
 
 ## Schema
 
