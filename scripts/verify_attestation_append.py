@@ -9,7 +9,13 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.attestation_sets import FILES, PIPELINE_OWNED_PROJECTIONS, discovery, set_directory
+from scripts.attestation_sets import (
+    FILES,
+    PIPELINE_OWNED_PROJECTIONS,
+    discovery,
+    set_directory,
+    verify_legacy_mirror,
+)
 from scripts.verify_attestation_binding import ContractError, _load, _parse_time
 
 PROJECTIONS = {"attestations/chain-index.json", ".attestations/chain_head.json"}
@@ -61,6 +67,7 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
     if set(new["heads"]) - set(old["heads"]) != seen:
         raise ValueError("candidate contains a sibling or unaccepted head")
     directory = accepted_day_directory(root, new)
+    verify_legacy_mirror(root, new, directory)
     for filename in FILES:
         projection = root / "attestations/latest" / filename
         if not projection.is_file():
@@ -75,11 +82,6 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
                 raise ContractError("latest projection is stale or mixed")
         elif projection.read_bytes() != frozen.read_bytes():
             raise ContractError("latest projection is stale or mixed")
-    mirror = root / ".attestations/chain_head.json"
-    if (mirror.is_file()
-            and new["schema"] == "datapulse/v2/chain-index"
-            and mirror.read_bytes() != (root / directory / "chain_head.json").read_bytes()):
-        raise ContractError("legacy mirror disagrees with current head")
     if require_committed:
         for digest in seen:
             raise ValueError(f"candidate head {digest} must be accepted in authoritative Git before publication")
