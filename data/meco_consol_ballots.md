@@ -1,6 +1,6 @@
 ---
 dataset_id: meco_consol_ballots
-last_checked: 2026-10-08T12:54:36Z
+last_checked: 2026-10-08T14:33:30Z
 status: reference
 freshness_delta: unknown
 ---
@@ -17,7 +17,7 @@ HTTP 200
 
 ## Last checked
 
-2026-10-08 at 12:54:36 UTC.
+2026-10-08 at 14:33:30 UTC.
 
 ## File size
 
