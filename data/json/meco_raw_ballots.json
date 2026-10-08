@@ -1,0 +1,95 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "meco_raw_ballots",
+  "status": "reference",
+  "last_checked": "2026-10-08T12:54:36Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "as-required",
+  "record_count": 26965,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "election",
+      "type": "string"
+    },
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "seat",
+      "type": "string"
+    },
+    {
+      "name": "ballot_order",
+      "type": "integer"
+    },
+    {
+      "name": "candidate_rn",
+      "type": "integer"
+    },
+    {
+      "name": "name_on_ballot",
+      "type": "string"
+    },
+    {
+      "name": "party_on_ballot",
+      "type": "string"
+    },
+    {
+      "name": "party_uid",
+      "type": "string"
+    },
+    {
+      "name": "party",
+      "type": "string"
+    },
+    {
+      "name": "coalition_uid",
+      "type": "string"
+    },
+    {
+      "name": "coalition",
+      "type": "string"
+    },
+    {
+      "name": "votes",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 26965 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as reference"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 13 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://raw.githubusercontent.com/Thevesh/paper-meco-results/main/data/raw_ballots.csv",
+    "access_method": "curl"
+  },
+  "licence": "CC0-1.0",
+  "attribution": "https://github.com/Thevesh/paper-meco-results (government_open_data)"
+}

@@ -1,9 +1,9 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "bnm_interbank_swap",
-  "status": "aging",
-  "last_checked": "2026-10-04T03:40:24Z",
-  "freshness_days": 2,
+  "status": "degraded",
+  "last_checked": "2026-10-08T12:36:16Z",
+  "freshness_days": 0,
   "next_expected_update": null,
   "refresh_frequency": "daily (weekdays)",
   "record_count": 2,
@@ -23,12 +23,12 @@
     {
       "name": "freshness",
       "status": "warn",
-      "method": "Health snapshot classifies the dataset as aging"
+      "method": "Health snapshot classifies the dataset as degraded"
     },
     {
       "name": "schema_stable",
-      "status": "warn",
-      "method": "The underlying probe has not produced this measurement."
+      "status": "fail",
+      "method": "Probe detected a content-shape change"
     }
   ],
   "known_quirks": [
