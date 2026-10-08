@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.51.8](https://github.com/r3dz4r/datapulse-my/compare/v3.51.7...v3.51.8) (2026-10-08)
+
+
+### Bug Fixes
+
+* make the onboarding loop stop fighting back (three verified fixes) ([#530](https://github.com/r3dz4r/datapulse-my/issues/530)) ([9de8df7](https://github.com/r3dz4r/datapulse-my/commit/9de8df7820fc4d3ccef0834e28df184f3981efcb))
+
 ## [3.51.7](https://github.com/r3dz4r/datapulse-my/compare/v3.51.6...v3.51.7) (2026-10-08)
 
 
