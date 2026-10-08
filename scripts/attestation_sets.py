@@ -173,6 +173,31 @@ def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
     return document
 
 
+def assert_head_extends_base(document: dict, base_head: str | None) -> set[str]:
+    """Walk verified signed predecessors to the accepted base, or genesis.
+
+    Descriptors must first be checked against their signed envelopes. A mirror
+    belongs to the candidate's current head; the base is an ancestor identity,
+    never the bytes that an appended mirror is expected to retain.
+    """
+    envelopes, days = document["envelopes"], document["days"]
+    cursor, visited = document["current_head"], set()
+    while cursor != base_head:
+        if cursor in visited or cursor not in envelopes:
+            raise ContractError("forward lineage has a cycle or unresolved parent")
+        visited.add(cursor)
+        child = envelopes[cursor]
+        parent = child["parent_head"]
+        if parent == "0" * 64 and base_head is None:
+            break
+        if parent not in envelopes or envelopes[parent]["date"] > child["date"]:
+            raise ContractError("forward lineage parent missing or date moved backwards")
+        if days[envelopes[parent]["date"]][-1] != parent and envelopes[parent]["date"] != child["date"]:
+            raise ContractError("next day extends a superseded head")
+        cursor = parent
+    return visited
+
+
 def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = True) -> None:
     """Check exact descriptors, day runs, and the accepted forward lineage."""
     heads, envelopes, days = (document.get(k, {}) for k in ("heads", "envelopes", "days"))
@@ -215,20 +240,7 @@ def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = Tr
     if current not in seen or current != days[max(days)][-1]:
         raise ContractError("current selector is not the terminal accepted head")
     boundary = document.get("migration_head")
-    cursor, visited = current, set()
-    while cursor != boundary:
-        if cursor in visited or cursor not in envelopes:
-            raise ContractError("forward lineage has a cycle or unresolved parent")
-        visited.add(cursor)
-        child = envelopes[cursor]
-        parent = child["parent_head"]
-        if parent == "0" * 64 and boundary is None:
-            break
-        if parent not in envelopes or envelopes[parent]["date"] > child["date"]:
-            raise ContractError("forward lineage parent missing or date moved backwards")
-        if days[envelopes[parent]["date"]][-1] != parent and envelopes[parent]["date"] != child["date"]:
-            raise ContractError("next day extends a superseded head")
-        cursor = parent
+    visited = assert_head_extends_base(document, boundary)
     forward = {h for h, entry in envelopes.items() if boundary is None or entry["date"] >= envelopes[boundary]["date"]}
     if forward != visited | ({boundary} if boundary else set()):
         raise ContractError("fork or disconnected accepted forward head")
@@ -257,6 +269,8 @@ def selected_directory(root: Path, *, projections: bool = True, verify_datasets:
         mirror = root / ".attestations/chain_head.json"
         # The legacy mirror is a mutable projection; a historical verification
         # plane assembled from immutable bytes is not required to carry it.
+        # Compare only within this candidate tree. Accepted-base ancestry is
+        # established through signed predecessors, not mirror byte identity.
         if (mirror.is_file()
                 and _load(root / "attestations/chain-index.json", "chain index")["schema"] == "datapulse/v2/chain-index"
                 and mirror.read_bytes() != (root / directory / "chain_head.json").read_bytes()):
