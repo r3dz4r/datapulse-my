@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import logging
 import sys
 import re
 from datetime import date
@@ -25,6 +26,7 @@ FILES = ("chain_head.json", "index.json", "binding.json", "scores.json")
 # Rewritten every health cycle: the latest copy is fresher than the chain head's
 # frozen set, so byte-equality with that set is unsatisfiable.
 PIPELINE_OWNED_PROJECTIONS = ("scores.json",)
+logger = logging.getLogger(__name__)
 
 
 def set_directory(reference: str, filename: str = "chain_head.json") -> str:
@@ -255,9 +257,20 @@ def verify_legacy_mirror(root: Path, document: dict[str, Any], directory: str) -
     """Reject a stale legacy head mirror for the resolved current head."""
     mirror = root / ".attestations/chain_head.json"
     if (mirror.is_file()
-            and legacy_mirror_expected_schema(root) == "datapulse/v2/chain-index"
-            and mirror.read_bytes() != (root / directory / "chain_head.json").read_bytes()):
-        raise ContractError("legacy mirror disagrees with current head")
+            and (schema := legacy_mirror_expected_schema(root)) == "datapulse/v2/chain-index"):
+        expected = root / directory / "chain_head.json"
+        mirror_bytes = mirror.read_bytes()
+        expected_bytes = expected.read_bytes()
+        mirror_sha256 = hashlib.sha256(mirror_bytes).hexdigest()
+        expected_sha256 = hashlib.sha256(expected_bytes).hexdigest()
+        operands = (
+            f"mirror={mirror.resolve()} sha256={mirror_sha256} bytes={len(mirror_bytes)}",
+            f"expected={expected.resolve()} sha256={expected_sha256} bytes={len(expected_bytes)}",
+            f"day={directory} schema={schema}",
+        )
+        if mirror_bytes != expected_bytes:
+            raise ContractError("legacy mirror disagrees with current head\n" + "\n".join(operands))
+        logger.warning("legacy mirror agrees with current head: %s", " ".join(operands))
 
 
 def selected_directory(root: Path, *, projections: bool = True, verify_datasets: bool = True) -> str:
