@@ -4,13 +4,14 @@ import base64
 import hashlib
 import json
 import shutil
+import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
-from scripts import gen_attestations as ga
-from scripts.attestation_sets import selected_directory
+from scripts import attestation_sets, gen_attestations as ga
+from scripts.attestation_sets import discovery, selected_directory
 from scripts.tests.test_attestations import fixture_root, fixture_root_with_rekor, write
 from scripts.verify_attestation_binding import (
     ContractError,
@@ -19,6 +20,7 @@ from scripts.verify_attestation_binding import (
     verify_contract,
     verify_unbound_legacy_plane,
 )
+from scripts.verify_attestation_append import verify_append
 
 
 NOW = datetime(2026, 8, 15, 1, tzinfo=timezone.utc)
@@ -63,6 +65,74 @@ def test_latest_pipeline_scores_can_advance_but_chain_head_cannot_diverge(tmp_pa
     head_path = root / "attestations/latest/chain_head.json"
     head_path.write_bytes(head_path.read_bytes() + b" ")
     with pytest.raises(ContractError, match="latest projection is stale or mixed"):
+        selected_directory(root)
+
+
+@pytest.mark.parametrize("append_count", (1, 2))
+def test_append_head_extends_accepted_base_without_byte_identity(
+    tmp_path: Path, append_count: int,
+) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, NOW)
+    base_head = discovery(root)["current_head"]
+    base_bytes = (root / ".attestations/chain_head.json").read_bytes()
+    for arguments in (
+        ("init", "-b", "main"),
+        ("add", "attestations", ".attestations", "docs"),
+        ("-c", "user.name=Test", "-c", "user.email=test@example.test", "commit",
+         "-m", "accepted attestation fixture"),
+    ):
+        subprocess.run(["git", *arguments], cwd=root, check=True, capture_output=True)
+
+    for offset in range(1, append_count + 1):
+        previous_head = discovery(root)["current_head"]
+        ga.generate(root, key, NOW + timedelta(days=offset))
+    candidate = discovery(root)
+    directory = selected_directory(root)
+    head = load(root / directory / "chain_head.json")
+    assert head["chain_head"] != base_head
+    assert head["payload"]["previous_chain_head"] == previous_head
+    assert (root / ".attestations/chain_head.json").read_bytes() != base_bytes
+    assert (root / ".attestations/chain_head.json").read_bytes() == (
+        root / directory / "chain_head.json"
+    ).read_bytes()
+    assert attestation_sets.assert_head_extends_base(candidate, base_head) == set(candidate["heads"]) - {base_head}
+    verify_append(root, "HEAD")
+
+
+@pytest.mark.parametrize("candidate_kind", ("stale", "non-linear"))
+def test_head_that_does_not_extend_accepted_base_is_refused(
+    tmp_path: Path, candidate_kind: str,
+) -> None:
+    root, key = fixture_root(tmp_path / "accepted")
+    ga.generate(root, key, NOW)
+    fork = tmp_path / "candidate"
+    shutil.copytree(root, fork)
+    ga.generate(root, key, NOW + timedelta(days=1))
+    base_head = discovery(root)["current_head"]
+    if candidate_kind == "non-linear":
+        # A correctly signed later head forks from the predecessor of the
+        # accepted base. Its own mirror and discovery are internally coherent.
+        ga.generate(fork, fork / key.name, NOW + timedelta(days=2))
+    candidate = discovery(fork)
+    directory = selected_directory(fork)
+    assert (fork / ".attestations/chain_head.json").read_bytes() == (
+        fork / directory / "chain_head.json"
+    ).read_bytes()
+    with pytest.raises(ContractError, match="forward lineage parent missing or date moved backwards"):
+        attestation_sets.assert_head_extends_base(candidate, base_head)
+
+
+def test_append_with_stale_legacy_mirror_is_still_refused(tmp_path: Path) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, NOW)
+    base_head = discovery(root)["current_head"]
+    base_bytes = (root / ".attestations/chain_head.json").read_bytes()
+    ga.generate(root, key, NOW + timedelta(days=1))
+    candidate = discovery(root)
+    assert attestation_sets.assert_head_extends_base(candidate, base_head) == {candidate["current_head"]}
+    (root / ".attestations/chain_head.json").write_bytes(base_bytes)
+    with pytest.raises(ContractError, match="legacy mirror disagrees with current head"):
         selected_directory(root)
 
 
