@@ -7,7 +7,7 @@
     "version": "4.0.0b3",
     "source_commit_sha": "d72cf35959524851e457f62e9f259ba3ece38353",
     "source_commit_date": "2026-10-06",
-    "description": "DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors. Catalogue: 437 datasets, 10-status health taxonomy, licence/attribution metadata.",
+    "description": "DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors. Catalogue: 440 datasets, 10-status health taxonomy, licence/attribution metadata.",
     "vendor": "DataPulse (open source)",
     "homepage": "https://www.data-pulse.my/",
     "repository": "https://github.com/r3dz4r/datapulse-my"
@@ -33,7 +33,7 @@
   "tools": [
     {
       "name": "search_datasets",
-      "description": "Use for discovery only: find DataPulse's 437 Malaysian public datasets by topic, source, or licence—for example, 'Malaysian public data inflation', licence and attribution, or a government dataset source. Returns ranked matches with id, title, source, licence, published status, and score. This is not trust verification: a status is published pipeline context, not proof that a dataset is current or reliable. For pre-trust use search_datasets → verify_dataset → get_provenance. Use it to discover candidates; do not use it for a trust decision—use verify_dataset instead. It reads published catalogue data, so no match means the published catalogue has no matching entry; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
+      "description": "Use for discovery only: find DataPulse's 440 Malaysian public datasets by topic, source, or licence—for example, 'Malaysian public data inflation', licence and attribution, or a government dataset source. Returns ranked matches with id, title, source, licence, published status, and score. This is not trust verification: a status is published pipeline context, not proof that a dataset is current or reliable. For pre-trust use search_datasets → verify_dataset → get_provenance. Use it to discover candidates; do not use it for a trust decision—use verify_dataset instead. It reads published catalogue data, so no match means the published catalogue has no matching entry; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
