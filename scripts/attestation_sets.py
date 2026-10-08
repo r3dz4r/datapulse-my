@@ -246,6 +246,20 @@ def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = Tr
         raise ContractError("fork or disconnected accepted forward head")
 
 
+def legacy_mirror_expected_schema(root: Path) -> str:
+    """Read the committed chain-index schema that controls legacy mirror checks."""
+    return _load(root / "attestations/chain-index.json", "chain index")["schema"]
+
+
+def verify_legacy_mirror(root: Path, document: dict[str, Any], directory: str) -> None:
+    """Reject a stale legacy head mirror for the resolved current head."""
+    mirror = root / ".attestations/chain_head.json"
+    if (mirror.is_file()
+            and legacy_mirror_expected_schema(root) == "datapulse/v2/chain-index"
+            and mirror.read_bytes() != (root / directory / "chain_head.json").read_bytes()):
+        raise ContractError("legacy mirror disagrees with current head")
+
+
 def selected_directory(root: Path, *, projections: bool = True, verify_datasets: bool = True) -> str:
     """Resolve current identity and reject mixtures of latest and immutable bytes."""
     document = discovery(root, verify_datasets=verify_datasets)
@@ -266,13 +280,9 @@ def selected_directory(root: Path, *, projections: bool = True, verify_datasets:
                     raise ContractError("latest projection is stale or mixed")
             elif projection.read_bytes() != frozen.read_bytes():
                 raise ContractError("latest projection is stale or mixed")
-        mirror = root / ".attestations/chain_head.json"
         # The legacy mirror is a mutable projection; a historical verification
         # plane assembled from immutable bytes is not required to carry it.
         # Compare only within this candidate tree. Accepted-base ancestry is
         # established through signed predecessors, not mirror byte identity.
-        if (mirror.is_file()
-                and _load(root / "attestations/chain-index.json", "chain index")["schema"] == "datapulse/v2/chain-index"
-                and mirror.read_bytes() != (root / directory / "chain_head.json").read_bytes()):
-            raise ContractError("legacy mirror disagrees with current head")
+        verify_legacy_mirror(root, document, directory)
     return directory

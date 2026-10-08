@@ -20,7 +20,7 @@ from scripts.verify_attestation_binding import (
     verify_contract,
     verify_unbound_legacy_plane,
 )
-from scripts.verify_attestation_append import verify_append
+from scripts.verify_attestation_append import accepted_day_directory, verify_append
 
 
 NOW = datetime(2026, 8, 15, 1, tzinfo=timezone.utc)
@@ -134,6 +134,49 @@ def test_append_with_stale_legacy_mirror_is_still_refused(tmp_path: Path) -> Non
     (root / ".attestations/chain_head.json").write_bytes(base_bytes)
     with pytest.raises(ContractError, match="legacy mirror disagrees with current head"):
         selected_directory(root)
+
+
+def test_v1_index_keeps_legacy_mirror_guard_dormant_after_discovery_upgrade(
+    tmp_path: Path,
+) -> None:
+    root = generated_root(tmp_path)
+    index_path = root / "attestations/chain-index.json"
+    index = load(index_path)
+    index["schema"] = "datapulse/v1/chain-index"
+    dump(index_path, index)
+    mirror_path = root / ".attestations/chain_head.json"
+    mirror_path.write_bytes(mirror_path.read_bytes() + b" ")
+
+    assert discovery(root)["schema"] == "datapulse/v2/chain-index"
+    assert selected_directory(root).startswith("attestations/")
+
+
+def test_append_day_comes_from_candidate_index_even_when_later_day_exists(tmp_path: Path) -> None:
+    root = generated_root(tmp_path)
+    document = discovery(root)
+    accepted_day = document["heads"][document["current_head"]].split("/")[1]
+    other_day = "2026-08-16" if accepted_day != "2026-08-16" else "2026-08-17"
+    (root / "attestations" / other_day).mkdir()
+
+    assert accepted_day_directory(root, document) == f"attestations/{accepted_day}"
+
+
+def test_append_verifier_rejects_stale_legacy_mirror(tmp_path: Path) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, NOW)
+    old_mirror = (root / ".attestations/chain_head.json").read_bytes()
+    for arguments in (
+        ("init", "-b", "main"),
+        ("add", "attestations", ".attestations", "docs"),
+        ("-c", "user.name=Test", "-c", "user.email=test@example.test", "commit",
+         "-m", "accepted attestation fixture"),
+    ):
+        subprocess.run(["git", *arguments], cwd=root, check=True, capture_output=True)
+    ga.generate(root, key, NOW + timedelta(days=1))
+    (root / ".attestations/chain_head.json").write_bytes(old_mirror)
+
+    with pytest.raises(ContractError, match="legacy mirror disagrees with current head"):
+        verify_append(root, "HEAD")
 
 
 def real_bundle_reference(root: Path) -> tuple[dict, str]:
