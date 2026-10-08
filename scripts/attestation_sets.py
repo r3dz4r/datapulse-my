@@ -246,11 +246,16 @@ def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = Tr
         raise ContractError("fork or disconnected accepted forward head")
 
 
+def legacy_mirror_expected_schema(root: Path) -> str:
+    """Read the committed chain-index schema that controls legacy mirror checks."""
+    return _load(root / "attestations/chain-index.json", "chain index")["schema"]
+
+
 def verify_legacy_mirror(root: Path, document: dict[str, Any], directory: str) -> None:
     """Reject a stale legacy head mirror for the resolved current head."""
     mirror = root / ".attestations/chain_head.json"
     if (mirror.is_file()
-            and document["schema"] == "datapulse/v2/chain-index"
+            and legacy_mirror_expected_schema(root) == "datapulse/v2/chain-index"
             and mirror.read_bytes() != (root / directory / "chain_head.json").read_bytes()):
         raise ContractError("legacy mirror disagrees with current head")
 

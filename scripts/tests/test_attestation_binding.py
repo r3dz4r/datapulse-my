@@ -136,6 +136,21 @@ def test_append_with_stale_legacy_mirror_is_still_refused(tmp_path: Path) -> Non
         selected_directory(root)
 
 
+def test_v1_index_keeps_legacy_mirror_guard_dormant_after_discovery_upgrade(
+    tmp_path: Path,
+) -> None:
+    root = generated_root(tmp_path)
+    index_path = root / "attestations/chain-index.json"
+    index = load(index_path)
+    index["schema"] = "datapulse/v1/chain-index"
+    dump(index_path, index)
+    mirror_path = root / ".attestations/chain_head.json"
+    mirror_path.write_bytes(mirror_path.read_bytes() + b" ")
+
+    assert discovery(root)["schema"] == "datapulse/v2/chain-index"
+    assert selected_directory(root).startswith("attestations/")
+
+
 def test_append_day_comes_from_candidate_index_even_when_later_day_exists(tmp_path: Path) -> None:
     root = generated_root(tmp_path)
     document = discovery(root)
