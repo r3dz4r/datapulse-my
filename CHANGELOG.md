@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.52.0](https://github.com/r3dz4r/datapulse-my/compare/v3.51.9...v3.52.0) (2026-10-08)
+
+
+### Features
+
+* **data:** onboard the MECo election-results corpus (12 datasets) ([#818](https://github.com/r3dz4r/datapulse-my/issues/818)) ([c64e06f](https://github.com/r3dz4r/datapulse-my/commit/c64e06f76e80337a2b2f286bccb77782e2203d3d))
+
 ## [3.51.9](https://github.com/r3dz4r/datapulse-my/compare/v3.51.8...v3.51.9) (2026-10-08)
 
 
