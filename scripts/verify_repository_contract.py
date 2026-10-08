@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify the checked-in DataPulse repository contract without network access."""
+"""Verify the checked-in DataPulse repository contract; public parity is opt-in."""
 
 from __future__ import annotations
 
@@ -570,6 +570,11 @@ def main() -> int:
         default=Path(__file__).resolve().parents[1],
         help="repository root (defaults to the parent of scripts/)",
     )
+    parser.add_argument(
+        "--with-public-parity",
+        action="store_true",
+        help="also compare the local manifest with the published site (run after publication)",
+    )
     args = parser.parse_args()
     errors = verify_repository_contract(args.root)
     if errors:
@@ -578,10 +583,11 @@ def main() -> int:
             print(f"- {error}")
         return 1
 
-    subprocess.run(
-        [sys.executable, str(args.root / "scripts/verify_local_public_parity.py"), "--root", str(args.root)],
-        check=True,
-    )
+    if args.with_public_parity:
+        subprocess.run(
+            [sys.executable, str(args.root / "scripts/verify_local_public_parity.py"), "--root", str(args.root)],
+            check=True,
+        )
 
     manifest = json.loads((args.root / "datapulse.json").read_text(encoding="utf-8"))
     print(f"Repository contract verification passed ({len(manifest['datasets'])} datasets).")
