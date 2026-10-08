@@ -1,10 +1,10 @@
 ---
 dataset_id: eperolehan-diklankan
-last_checked: 2026-10-08T14:42:52Z
+last_checked: 2026-10-08T16:15:53Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: unknown
-file_size_bytes: 163258
+file_size_bytes: 163262
 file_count: null
 schema_version: unknown
 schema_drift: none
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:42:52 UTC.
+2026-10-08 at 16:15:53 UTC.
 
 ## File size
 
-The checked resource is 163,258 bytes.
+The checked resource is 163,262 bytes.
 
 ## Coverage
 

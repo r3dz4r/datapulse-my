@@ -11,7 +11,7 @@
     "find_unreliable.limit"
   ],
   "contract_version": "1.0.0",
-  "dataset_count": 437,
+  "dataset_count": 440,
   "description": "Return datasets whose evaluated publish-reliability grade is at or below a threshold (the unreliable ones), with the worst grades and lowest on-time percentages first. Reliability measures timeliness of successful freshness observations, not uptime; sample days are included so agents can judge evidence depth. Use it for timeliness reliability grades; do not use it for individual anomalies, trends, or structural drift—use find_anomalies, find_deteriorating, find_recovering, or find_schema_drift instead. It reads precomputed reliability data, so an empty result means no published grade meets the threshold; DataPulse is read-only, requires no API key, and the edge limits clients to roughly one request per second with a small burst, so pace or retry.",
   "displayName": "find_unreliable",
   "endpoint": {

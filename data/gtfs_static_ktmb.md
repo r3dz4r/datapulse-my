@@ -2,7 +2,7 @@
 dataset_id: gtfs_static_ktmb
 last_checked: 2026-10-08T14:24:19Z
 status: fresh
-freshness_delta: 0 days
+freshness_delta: 1 days
 record_count: 5157
 content_freshness_date: 2026-08-04
 schema_version: GTFS
@@ -19,7 +19,7 @@ attribution: KTMB via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 0 days
+**Freshness:** 1 days
 
 HTTP 200; valid GTFS static ZIP
 
