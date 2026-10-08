@@ -9,9 +9,21 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.attestation_sets import discovery, selected_directory
+from scripts.attestation_sets import FILES, PIPELINE_OWNED_PROJECTIONS, discovery, set_directory
+from scripts.verify_attestation_binding import ContractError, _load, _parse_time
 
 PROJECTIONS = {"attestations/chain-index.json", ".attestations/chain_head.json"}
+
+
+def accepted_day_directory(root: Path, document: dict) -> str:
+    """Resolve the candidate's day from its current head mapping."""
+    digest = document.get("current_head")
+    if digest is None:
+        raise ContractError("chain index missing key: current_head")
+    heads = document.get("heads")
+    if not isinstance(heads, dict) or digest not in heads:
+        raise ContractError(f"chain index heads missing key: {digest}")
+    return set_directory(heads[digest])
 
 
 def git_bytes(root: Path, revision: str, path: str) -> bytes:
@@ -48,7 +60,26 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
         cursor = new["envelopes"][cursor]["parent_head"]
     if set(new["heads"]) - set(old["heads"]) != seen:
         raise ValueError("candidate contains a sibling or unaccepted head")
-    selected_directory(root)
+    directory = accepted_day_directory(root, new)
+    for filename in FILES:
+        projection = root / "attestations/latest" / filename
+        if not projection.is_file():
+            raise ContractError("latest projection is stale or mixed")
+        frozen = root / directory / filename
+        if filename in PIPELINE_OWNED_PROJECTIONS:
+            latest_scores = _load(projection, "latest scores projection")
+            frozen_scores = _load(frozen, "immutable scores")
+            if _parse_time(latest_scores.get("generated_at"), "latest scores generated_at") < _parse_time(
+                frozen_scores.get("generated_at"), "immutable scores generated_at"
+            ):
+                raise ContractError("latest projection is stale or mixed")
+        elif projection.read_bytes() != frozen.read_bytes():
+            raise ContractError("latest projection is stale or mixed")
+    mirror = root / ".attestations/chain_head.json"
+    if (mirror.is_file()
+            and new["schema"] == "datapulse/v2/chain-index"
+            and mirror.read_bytes() != (root / directory / "chain_head.json").read_bytes()):
+        raise ContractError("legacy mirror disagrees with current head")
     if require_committed:
         for digest in seen:
             raise ValueError(f"candidate head {digest} must be accepted in authoritative Git before publication")
