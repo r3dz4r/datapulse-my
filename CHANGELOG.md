@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.53.1](https://github.com/r3dz4r/datapulse-my/compare/v3.53.0...v3.53.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* **dashboard:** stop embedding the attestation index in the homepage ([#830](https://github.com/r3dz4r/datapulse-my/issues/830)) ([c5fda84](https://github.com/r3dz4r/datapulse-my/commit/c5fda849630eecd277aca63ddcdf1f9880ad5652))
+
 ## [3.53.0](https://github.com/r3dz4r/datapulse-my/compare/v3.52.2...v3.53.0) (2026-10-08)
 
 
