@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.51.9](https://github.com/r3dz4r/datapulse-my/compare/v3.51.8...v3.51.9) (2026-10-08)
+
+
+### Bug Fixes
+
+* **ci:** run required check for merge queue groups ([#732](https://github.com/r3dz4r/datapulse-my/issues/732)) ([25524df](https://github.com/r3dz4r/datapulse-my/commit/25524df0ede2f1de455c990b2cde7e1f5bf7d012))
+* **provenance:** regenerate the discovery surfaces for the newest mcp/ revision ([#729](https://github.com/r3dz4r/datapulse-my/issues/729)) ([f1e416c](https://github.com/r3dz4r/datapulse-my/commit/f1e416c81f454980177222e332b45ebccc97cd4f))
+
 ## [3.51.8](https://github.com/r3dz4r/datapulse-my/compare/v3.51.7...v3.51.8) (2026-10-08)
 
 
