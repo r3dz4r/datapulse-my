@@ -797,6 +797,21 @@ def test_append_admitted_ref_reaches_protected_job(tmp_path: Path) -> None:
     assert (tmp_path / "output").read_text(encoding="utf-8") == "admitted=true\n"
 
 
+def test_append_siblings_close_only_after_merge_and_preserve_branches() -> None:
+    workflow = yaml.safe_load(_read(ROOT / ".github/workflows/attestation-append-merge.yml"))
+    steps = workflow["jobs"]["merge"]["steps"]
+    arm = next(step for step in steps if step.get("name") == "Enable auto-merge")
+    close = next(step for step in steps if step.get("name") == "Close same-day superseded append pull requests")
+
+    assert steps.index(arm) < steps.index(close)
+    assert close["if"] == "steps.candidate.outputs.number != ''"
+    assert '[[ "$state" == "MERGED" ]]' in close["run"]
+    assert "select_superseded_siblings" in close["run"]
+    assert "gh pr comment" in close["run"] and "gh pr close" in close["run"]
+    assert "The branch is kept as evidence." in close["run"]
+    assert "::warning" in close["run"]
+
+
 @pytest.mark.parametrize(
     "merge_error, recover, expected_exit, expected_attempts",
     [
@@ -809,7 +824,7 @@ def test_append_arm_retries_only_recognized_refusal(
 ) -> None:
     merge = _append_workflow_jobs()["merge"]
     assert merge["timeout-minutes"] == 30
-    script = merge["steps"][-1]["run"]
+    script = next(step for step in merge["steps"] if step.get("name") == "Enable auto-merge")["run"]
     attempts = re.search(r"ARM_MAX_ATTEMPTS:-([0-9]+)", script)
     seconds = re.search(r"ARM_RETRY_SECONDS:-([0-9]+)", script)
     assert attempts is not None and seconds is not None

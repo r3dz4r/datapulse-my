@@ -83,7 +83,7 @@ jobs:
           pull_requests="${RUNNER_TEMP}/append-prs.json"
 
           gh pr list --base main --state open --limit 1000 \
-            --json number,headRefName,createdAt > "$pull_requests"
+            --json number,headRefName,createdAt,title,state > "$pull_requests"
 
           # submit_attestation_append.sh pushes the branch before creating its PR.
           # Wait briefly for that PR on push; scheduled runs select from main.
@@ -96,7 +96,7 @@ jobs:
               if (( attempt < 10 )); then
                 sleep 3
                 gh pr list --base main --state open --limit 1000 \
-                  --json number,headRefName,createdAt > "$pull_requests"
+                  --json number,headRefName,createdAt,title,state > "$pull_requests"
               fi
             done
           fi
@@ -192,3 +192,48 @@ jobs:
 
           echo "::error title=Auto-merge never armed::Gave up after $max_attempts attempts to arm auto-merge on pull request #$number; last error: $last_error"
           exit 1
+
+      - name: Close same-day superseded append pull requests
+        if: steps.candidate.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          merged_number="${{ steps.candidate.outputs.number }}"
+          # Auto-merge being armed is not proof that the merge landed. Wait for
+          # GitHub to report MERGED before closing any sibling evidence branch.
+          for attempt in {1..40}; do
+            state="$(gh pr view "$merged_number" --json state --jq '.state')"
+            if [[ "$state" == "MERGED" ]]; then
+              break
+            fi
+            if (( attempt == 40 )); then
+              echo "::warning title=Append merge pending::PR #$merged_number has not merged; leaving sibling PRs open."
+              exit 0
+            fi
+            sleep 30
+          done
+
+          pull_requests="${RUNNER_TEMP}/append-prs-after-merge.json"
+          gh pr list --base main --state open --limit 1000 \
+            --json number,headRefName,createdAt,title,state > "$pull_requests"
+          gh pr view "$merged_number" --json number,headRefName,createdAt,title,state > "${pull_requests}.merged"
+          jq --slurp '.[0] + [.[1]]' "$pull_requests" "${pull_requests}.merged" > "${pull_requests}.all"
+          siblings="$(python3 - "$pull_requests" "$merged_number" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          from scripts.select_append_candidate import select_superseded_siblings
+
+          rows = json.loads(Path(sys.argv[1] + ".all").read_text(encoding="utf-8"))
+          for number in select_superseded_siblings(rows, int(sys.argv[2])):
+              print(number)
+          PY
+          )"
+          for sibling in $siblings; do
+            if ! gh pr comment "$sibling" --body "Superseded by merged append #$merged_number. The branch is kept as evidence." || \
+               ! gh pr close "$sibling"; then
+              echo "::warning title=Sibling close failed::Could not close superseded PR #$sibling; merge #$merged_number succeeded."
+            fi
+          done

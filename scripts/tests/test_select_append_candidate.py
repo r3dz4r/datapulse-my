@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from scripts.select_append_candidate import select_superseded_siblings
+
 import yaml
 
 
@@ -80,6 +82,16 @@ def test_created_at_tie_selects_higher_number() -> None:
     ]
     result = _select(rows)
     assert (result.returncode, result.stdout, result.stderr) == (0, "42\n", "")
+
+
+def test_superseded_sibling_selection_is_scoped_to_open_same_day_prs() -> None:
+    def row(number: int, day: str, state: str = "OPEN") -> dict[str, object]:
+        result = _pull_request(number, f"attestation/append-{number}", f"2026-10-{number:02d}T00:00:00Z")
+        result.update(title=f"chore(attestations): append signed evidence from source {day}", state=state)
+        return result
+
+    rows = [row(50, "2026-10-09"), row(48, "2026-10-09"), row(47, "2026-10-09"), row(49, "2026-10-09", "CLOSED"), row(51, "2026-10-10")]
+    assert select_superseded_siblings(rows, 50) == [47, 48]
 
 
 def test_append_merge_workflow_push_trigger_and_shape() -> None:
