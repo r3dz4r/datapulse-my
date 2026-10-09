@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Classify newline-separated changed paths for health-only pipeline work.
+"""Classify newline-separated changed paths for narrow CI profiles.
 
-Exit zero only when every path is an exact health-cycle generated output and
-``health/latest.json`` is included.  Unknown paths deliberately select the
-source/release profile.
+The default mode accepts exact health-cycle outputs only when ``health/latest.json``
+is included. ``--append-only`` accepts the immutable append and its verified
+projections. Unknown paths deliberately select the source/release profile.
 """
 
 from __future__ import annotations
 
 import re
 import sys
+from datetime import date
 from collections.abc import Iterable
 
 
@@ -41,6 +42,10 @@ LATEST_ATTESTATION_OUTPUTS = frozenset(
         "attestations/latest/scores.json",
     }
 )
+APPEND_PROJECTIONS = LATEST_ATTESTATION_OUTPUTS | {
+    ".attestations/chain_head.json",
+    "attestations/chain-index.json",
+}
 
 
 def _has_safe_components(path: str) -> bool:
@@ -81,9 +86,45 @@ def is_health_only_change(paths: Iterable[str]) -> bool:
     )
 
 
+def is_append_output(path: str) -> bool:
+    """Return whether a path belongs to an immutable attestation append."""
+    if not _has_safe_components(path):
+        return False
+    if path in APPEND_PROJECTIONS:
+        return True
+    match = re.fullmatch(
+        r"attestations/(\d{4}-\d{2}-\d{2})/(?:revisions/[0-9a-f]{64}/)?[A-Za-z0-9_-]+\.json",
+        path,
+    )
+    if match is None:
+        match = re.fullmatch(
+            r"attestations/rekor/(\d{4}-\d{2}-\d{2})/"
+            r"(?:health\.[0-9a-f]{64}\.(?:statement|sigstore\.bundle)|reference\.[0-9a-f]{64})\.json",
+            path,
+        )
+    if match is None:
+        return False
+    try:
+        date.fromisoformat(match.group(1))
+    except ValueError:
+        return False
+    return "/revisions/" in path or "/rekor/" in path or path.endswith("/chain_head.json")
+
+
+def is_append_only_change(paths: Iterable[str]) -> bool:
+    """Return whether every changed path is an attestation append output."""
+    normalized = tuple(path for path in paths if path)
+    return bool(normalized) and all(is_append_output(path) for path in normalized)
+
+
 def main() -> int:
     """Read newline-separated paths from standard input and return classifier status."""
-    return 0 if is_health_only_change(sys.stdin.read().splitlines()) else 1
+    paths = sys.stdin.read().splitlines()
+    if sys.argv[1:] == ["--append-only"]:
+        return 0 if is_append_only_change(paths) else 1
+    if sys.argv[1:]:
+        raise SystemExit("usage: classify_change.py [--append-only]")
+    return 0 if is_health_only_change(paths) else 1
 
 
 if __name__ == "__main__":
