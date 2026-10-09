@@ -6,11 +6,14 @@ on:
   push:
     branches:
       - attestation/append-*
-  # Append refs fail before any protected job steps under production's branch
-  # policy. Check that policy first; only admitted refs can mint the app token.
-  # Scheduled runs use the default branch, but their arrival is not guaranteed.
+  # Push events target attestation/append-* refs, which production's branch policy
+  # rejects before any protected job step runs - the rejection carries zero steps
+  # and a protection-rule annotation. That policy is therefore checked first, and
+  # only an admitted ref proceeds to mint the app token. The hourly default-branch
+  # schedule is the fallback path to a merge, and its first scheduled run has not
+  # yet been observed.
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "37 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -87,6 +90,8 @@ jobs:
 
           # submit_attestation_append.sh pushes the branch before creating its PR.
           # Wait briefly for that PR on push; scheduled runs select from main.
+          # Whether the hourly schedule can start this production job remains
+          # unverified until its first scheduled run.
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
             for attempt in {1..10}; do
               if jq -e --arg head "$GITHUB_REF_NAME" \

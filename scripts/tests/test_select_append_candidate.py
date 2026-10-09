@@ -99,7 +99,7 @@ def test_append_merge_workflow_push_trigger_and_shape() -> None:
     triggers = workflow.get("on", workflow.get(True, {}))
     assert set(triggers) == {"push", "schedule", "workflow_dispatch"}
     assert triggers["push"] == {"branches": ["attestation/append-*"]}
-    assert triggers["schedule"] == [{"cron": "*/5 * * * *"}]
+    assert triggers["schedule"] == [{"cron": "37 * * * *"}]
     assert triggers["workflow_dispatch"] is None
     assert workflow["permissions"] == {"contents": "write", "pull-requests": "write"}
     assert workflow["concurrency"]["cancel-in-progress"] is False

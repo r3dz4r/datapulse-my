@@ -14,10 +14,11 @@ on:
   push:
     branches:
       - health-automation
-  # Push runs on the non-main ref are held pending with zero jobs by the
-  # platform. Scheduled runs use main, where production jobs start normally.
+  # Push runs on health-automation carry the branch tip to this promotion lane.
+  # The hourly default-branch schedule is a fallback; its first scheduled run
+  # has not yet been verified.
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "42 * * * *"
   workflow_dispatch:
 
 permissions:
