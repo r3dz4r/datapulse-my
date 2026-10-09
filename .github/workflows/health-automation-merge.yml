@@ -45,7 +45,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     environment: production
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout automation branch
         uses: actions/checkout@v4
@@ -143,16 +143,17 @@ jobs:
           # Bounded retry budget, tunable from the step environment without
           # editing the loop. The merge job's timeout-minutes must comfortably
           # exceed max_attempts * retry_seconds.
-          max_attempts="${ARM_MAX_ATTEMPTS:-20}"
+          max_attempts="${ARM_MAX_ATTEMPTS:-40}"
           retry_seconds="${ARM_RETRY_SECONDS:-30}"
 
-          # Retryable: the required check is queued or expected but not yet
-          # reported (the measured refusal was "Repository rule violations
-          # found" with 'Required status check "deterministic-safety-net" is
-          # queued.'), plus transient API failures (HTTP 5xx, secondary rate
-          # limit). Anything else is fatal on the first attempt.
+          # Retryable: the required check is queued or expected, GitHub calls
+          # the PR unstable while that check runs, or the API has a transient
+          # failure (HTTP 5xx, secondary rate limit). Anything else is fatal.
           is_retryable() {
             local output="$1"
+            if grep -qiF 'pull request is in unstable status' <<<"$output"; then
+              return 0
+            fi
             if grep -qiE 'required status check "?deterministic-safety-net"? .*is (queued|expected)' <<<"$output"; then
               return 0
             fi
