@@ -1,0 +1,150 @@
+name: Attestation Append Merge
+
+# The deploy submits immutable witness evidence through an app-authored pull
+# request. The required CI check attaches to that PR before auto-merge can land it.
+on:
+  push:
+    branches:
+      - attestation/append-*
+
+permissions:
+  # contents: write and pull-requests: write enable app-authored PR promotion.
+  # No actions permission is needed: the PR triggers its required CI check.
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: attestation-append-merge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - name: Checkout append branch
+        uses: actions/checkout@v4
+        with:
+          # Read-only checkout; this workflow never writes to any branch.
+          persist-credentials: false
+
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Select newest open append pull request
+        id: candidate
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          pull_requests="${RUNNER_TEMP}/append-prs.json"
+
+          # submit_attestation_append.sh pushes the branch before creating its
+          # PR. Wait briefly for that PR, or a push/PR creation race could leave
+          # the day's witness without another merge trigger.
+          for attempt in {1..10}; do
+            gh pr list --base main --state open --limit 1000 \
+              --json number,headRefName,createdAt > "$pull_requests"
+            if jq -e --arg head "$GITHUB_REF_NAME" \
+              'any(.[]; .headRefName == $head)' "$pull_requests" >/dev/null; then
+              break
+            fi
+            if (( attempt < 10 )); then
+              sleep 3
+            fi
+          done
+
+          if ! jq -e --arg head "$GITHUB_REF_NAME" \
+            'any(.[]; .headRefName == $head)' "$pull_requests" >/dev/null; then
+            echo "::error title=Append PR missing::No open pull request for $GITHUB_REF_NAME after 10 attempts."
+            exit 1
+          fi
+
+          number="$(python3 scripts/select_append_candidate.py "$pull_requests")"
+          if [[ -z "$number" ]]; then
+            echo "::error title=Append PR missing::No open attestation append pull request was selected."
+            exit 1
+          fi
+          selected_head="$(jq -r --argjson number "$number" \
+            '.[] | select(.number == $number) | .headRefName' "$pull_requests")"
+          if [[ "$selected_head" != "$GITHUB_REF_NAME" ]]; then
+            echo "Superseded sibling $GITHUB_REF_NAME; newest append is #$number ($selected_head)."
+            exit 0
+          fi
+          echo "Selected pull request #$number for $selected_head."
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge
+        if: steps.candidate.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          number="${{ steps.candidate.outputs.number }}"
+
+          # The retry budget is bounded; the job timeout exceeds it.
+          max_attempts="${ARM_MAX_ATTEMPTS:-20}"
+          retry_seconds="${ARM_RETRY_SECONDS:-30}"
+
+          # Retry only queued/expected required checks, matching ruleset
+          # refusals, and transient HTTP 5xx responses.
+          is_retryable() {
+            local output="$1"
+            if grep -qiE 'required status check "?deterministic-safety-net"? .*is (queued|expected)' <<<"$output"; then
+              return 0
+            fi
+            if grep -qiE 'repository rule violations found' <<<"$output" && \
+               grep -qiE 'required status check' <<<"$output"; then
+              return 0
+            fi
+            if grep -qiE 'http[^0-9]*5[0-9][0-9]' <<<"$output"; then
+              return 0
+            fi
+            return 1
+          }
+
+          attempt=1
+          last_error=""
+          while (( attempt <= max_attempts )); do
+            if state="$(gh pr view "$number" --json autoMergeRequest --jq '.autoMergeRequest != null' 2>&1)"; then
+              if [[ "$state" == "true" ]]; then
+                echo "Auto-merge already enabled on pull request #$number (attempt $attempt/$max_attempts)."
+                exit 0
+              fi
+            else
+              last_error="$state"
+              if ! is_retryable "$state"; then
+                echo "$state"
+                echo "::error title=Auto-merge state unreadable::Could not read auto-merge state for pull request #$number."
+                exit 1
+              fi
+            fi
+
+            if merge_output="$(gh pr merge "$number" --auto --squash 2>&1)"; then
+              echo "Auto-merge enabled on pull request #$number on attempt $attempt/$max_attempts."
+              exit 0
+            fi
+
+            last_error="$merge_output"
+            if ! is_retryable "$merge_output"; then
+              echo "$merge_output"
+              echo "::error title=Auto-merge refused::gh pr merge refused auto-merge on pull request #$number with a non-retryable error."
+              exit 1
+            fi
+
+            echo "::warning title=Auto-merge retry::Attempt $attempt/$max_attempts to arm auto-merge on #$number was refused as retryable; retrying in ${retry_seconds}s."
+            if (( attempt < max_attempts )); then
+              sleep "$retry_seconds"
+            fi
+            attempt=$(( attempt + 1 ))
+          done
+
+          echo "::error title=Auto-merge never armed::Gave up after $max_attempts attempts to arm auto-merge on pull request #$number; last error: $last_error"
+          exit 1

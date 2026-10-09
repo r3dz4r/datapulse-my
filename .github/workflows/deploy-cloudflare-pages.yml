@@ -9,6 +9,8 @@ on:
       - "mcp/**"
       - "functions/**"
       - "observation-receipts/**"
+      # The accepted witness changes only attestations/, so its merge must re-run Pages.
+      - "attestations/**"
       - "config/public-surfaces.json"
       - ".github/workflows/deploy-cloudflare-pages.yml"
       - "datapulse.json"

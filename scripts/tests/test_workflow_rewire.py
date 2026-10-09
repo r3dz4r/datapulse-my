@@ -77,6 +77,7 @@ def test_cloudflare_push_trigger_is_code_plane_allowlist() -> None:
         "mcp/**",
         "functions/**",
         "observation-receipts/**",
+        "attestations/**",
         "config/public-surfaces.json",
         ".github/workflows/deploy-cloudflare-pages.yml",
         "datapulse.json",
@@ -87,6 +88,7 @@ def test_cloudflare_push_trigger_is_code_plane_allowlist() -> None:
 
 def test_cloudflare_push_trigger_excludes_health_cycles_and_keeps_code_plane() -> None:
     assert not _deploy_trigger_matches(["health/latest.json", "health/trends.json"])
+    assert _deploy_trigger_matches(["attestations/chain-index.json"])
     assert _deploy_trigger_matches(["docs/index.html"])
     assert _deploy_trigger_matches(["scripts/publish_health_index.py"])
     assert _deploy_trigger_matches(["functions/health/[[path]].js"])
