@@ -715,3 +715,143 @@ def test_ci_jsonschema_and_cryptography_installs_use_matching_pins() -> None:
         )
         for line in dependency_installs
     )
+
+
+def _append_workflow_jobs() -> dict:
+    workflow = yaml.safe_load(_read(ROOT / ".github/workflows/attestation-append-merge.yml"))
+    return workflow["jobs"]
+
+
+def _run_append_policy_check(tmp_path: Path, ref: str, *, api_failure: bool = False, policy_drift: bool = False) -> subprocess.CompletedProcess[str]:
+    jobs = _append_workflow_jobs()
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    curl = fake_bin / "curl"
+    curl.write_text(
+        "#!/usr/bin/env bash\n"
+        "if [[ \"${MOCK_API_FAILURE:-false}\" == true ]]; then\n"
+        "  echo 'Resource not accessible by integration' >&2\n"
+        "  exit 1\n"
+        "fi\n"
+        "if [[ \"$*\" == *deployment-branch-policies* ]]; then\n"
+        "  printf '%s\\n' \"$MOCK_POLICIES_JSON\"\n"
+        "else\n"
+        "  printf '%s\\n' \"$MOCK_ENVIRONMENT_JSON\"\n"
+        "fi\n",
+        encoding="utf-8",
+    )
+    curl.chmod(0o755)
+    environment = os.environ.copy()
+    environment.update(
+        PATH=f"{fake_bin}:{environment['PATH']}",
+        GH_REPO="r3dz4r/datapulse-my",
+        GITHUB_REF_NAME=ref,
+        GITHUB_OUTPUT=str(tmp_path / "output"),
+        MOCK_API_FAILURE=str(api_failure).lower(),
+        MOCK_ENVIRONMENT_JSON=json.dumps({
+            "deployment_branch_policy": {"protected_branches": False, "custom_branch_policies": True},
+        }),
+        MOCK_POLICIES_JSON=json.dumps({
+            "total_count": 3 if policy_drift else 2,
+            "branch_policies": [{"name": "health-automation"}, {"name": "main"}],
+        }),
+    )
+    return subprocess.run(
+        ["bash", "-c", jobs["check_production_ref"]["steps"][0]["run"]],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def test_append_branch_policy_refusal_is_a_clean_decision(tmp_path: Path) -> None:
+    jobs = _append_workflow_jobs()
+    merge = jobs["merge"]
+    assert merge["needs"] == "check_production_ref"
+    assert merge["if"] == "needs.check_production_ref.outputs.admitted == 'true'"
+    assert merge["environment"] == "production"
+    assert "continue-on-error" not in _read(ROOT / ".github/workflows/attestation-append-merge.yml")
+
+    result = _run_append_policy_check(tmp_path, "attestation/append-c34eda8c")
+    assert result.returncode == 0, result.stderr
+    assert 'Branch "attestation/append-c34eda8c" is not allowed to deploy to production due to environment protection rules.' in result.stdout
+    assert (tmp_path / "output").read_text(encoding="utf-8") == "admitted=false\n"
+
+
+@pytest.mark.parametrize("api_failure, policy_drift", [(True, False), (False, True)])
+def test_append_policy_check_fails_on_unrelated_refusal_or_drift(tmp_path: Path, api_failure: bool, policy_drift: bool) -> None:
+    result = _run_append_policy_check(tmp_path, "attestation/append-c34eda8c", api_failure=api_failure, policy_drift=policy_drift)
+    assert result.returncode != 0
+    assert not (tmp_path / "output").exists()
+    if api_failure:
+        assert "Resource not accessible by integration" in result.stderr
+    else:
+        assert "Production policy changed" in result.stdout
+
+
+def test_append_admitted_ref_reaches_protected_job(tmp_path: Path) -> None:
+    result = _run_append_policy_check(tmp_path, "main")
+    assert result.returncode == 0, result.stderr
+    assert (tmp_path / "output").read_text(encoding="utf-8") == "admitted=true\n"
+
+
+@pytest.mark.parametrize(
+    "merge_error, recover, expected_exit, expected_attempts",
+    [
+        ("Pull request is in unstable status (enablePullRequestAutoMerge)", True, 0, 2),
+        ("Permission denied (enablePullRequestAutoMerge)", False, 1, 1),
+    ],
+)
+def test_append_arm_retries_only_recognized_refusal(
+    tmp_path: Path, merge_error: str, recover: bool, expected_exit: int, expected_attempts: int,
+) -> None:
+    merge = _append_workflow_jobs()["merge"]
+    assert merge["timeout-minutes"] == 30
+    script = merge["steps"][-1]["run"]
+    attempts = re.search(r"ARM_MAX_ATTEMPTS:-([0-9]+)", script)
+    seconds = re.search(r"ARM_RETRY_SECONDS:-([0-9]+)", script)
+    assert attempts is not None and seconds is not None
+    retry_budget = (int(attempts.group(1)) - 1) * int(seconds.group(1))
+    assert retry_budget > 945
+    assert merge["timeout-minutes"] * 60 - retry_budget >= 300
+    expression = 'number="${{ steps.candidate.outputs.number }}"'
+    assert expression in script
+    script = script.replace(expression, 'number="42"')
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    gh = fake_bin / "gh"
+    gh.write_text(
+        "#!/usr/bin/env bash\n"
+        "if [[ \"$1 $2\" == 'pr view' ]]; then\n"
+        "  echo false\n"
+        "  exit 0\n"
+        "fi\n"
+        "if [[ \"$1 $2\" == 'pr merge' ]]; then\n"
+        "  count=0\n"
+        "  [[ ! -f \"$MOCK_COUNT_FILE\" ]] || count=$(cat \"$MOCK_COUNT_FILE\")\n"
+        "  count=$((count + 1))\n"
+        "  echo \"$count\" > \"$MOCK_COUNT_FILE\"\n"
+        "  if [[ \"$MOCK_RECOVER\" == true && $count -eq 2 ]]; then\n"
+        "    exit 0\n"
+        "  fi\n"
+        "  echo \"$MOCK_MERGE_ERROR\" >&2\n"
+        "  exit 1\n"
+        "fi\n"
+        "exit 99\n",
+        encoding="utf-8",
+    )
+    gh.chmod(0o755)
+    environment = os.environ.copy()
+    environment.update(
+        PATH=f"{fake_bin}:{environment['PATH']}",
+        ARM_MAX_ATTEMPTS="3",
+        ARM_RETRY_SECONDS="0",
+        MOCK_COUNT_FILE=str(tmp_path / "attempts"),
+        MOCK_MERGE_ERROR=merge_error,
+        MOCK_RECOVER=str(recover).lower(),
+    )
+    result = subprocess.run(["bash", "-c", script], cwd=ROOT, env=environment, capture_output=True, text=True, check=False)
+    assert result.returncode == expected_exit, result.stdout + result.stderr
+    assert (tmp_path / "attempts").read_text(encoding="utf-8").strip() == str(expected_attempts)

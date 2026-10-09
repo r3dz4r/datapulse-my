@@ -6,16 +6,16 @@ on:
   push:
     branches:
       - attestation/append-*
-  # Non-main refs stay pending under the production environment branch policy.
-  # Scheduled runs use the default branch, so the lane can start without its
-  # pushed append ref being admitted to that environment.
+  # Append refs fail before any protected job steps under production's branch
+  # policy. Check that policy first; only admitted refs can mint the app token.
+  # Scheduled runs use the default branch, but their arrival is not guaranteed.
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
   # contents: write and pull-requests: write enable app-authored PR promotion.
-  # No actions permission is needed: the PR triggers its required CI check.
+  # The PR triggers its required CI check.
   contents: write
   pull-requests: write
 
@@ -24,10 +24,41 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check_production_ref:
+    runs-on: ubuntu-latest
+    outputs:
+      admitted: ${{ steps.policy.outputs.admitted }}
+    steps:
+      - name: Check production deployment branch policy
+        id: policy
+        env:
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          environment="$(curl --fail-with-body --silent --show-error --max-time 10 "https://api.github.com/repos/${GH_REPO}/environments/production")"
+          policies="$(curl --fail-with-body --silent --show-error --max-time 10 "https://api.github.com/repos/${GH_REPO}/environments/production/deployment-branch-policies?per_page=100")"
+          if ! jq -e '.deployment_branch_policy == {"protected_branches": false, "custom_branch_policies": true}' <<<"$environment" >/dev/null; then
+            echo "::error title=Production policy changed::Cannot determine whether this ref can deploy to production."
+            exit 1
+          fi
+          # The two observed exact rules are the only policy shape this decision handles.
+          if ! jq -e '.total_count == 2 and ([.branch_policies[].name] | sort) == ["health-automation", "main"]' <<<"$policies" >/dev/null; then
+            echo "::error title=Production policy changed::Expected only health-automation and main deployment branch policies."
+            exit 1
+          fi
+          if jq -e --arg ref "$GITHUB_REF_NAME" 'any(.branch_policies[]; .name == $ref)' <<<"$policies" >/dev/null; then
+            echo "admitted=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice title=Production branch policy refusal::Branch \"$GITHUB_REF_NAME\" is not allowed to deploy to production due to environment protection rules."
+            echo "admitted=false" >> "$GITHUB_OUTPUT"
+          fi
+
   merge:
+    needs: check_production_ref
+    if: needs.check_production_ref.outputs.admitted == 'true'
     runs-on: ubuntu-latest
     environment: production
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout append branch
         uses: actions/checkout@v4
@@ -99,14 +130,17 @@ jobs:
           set -euo pipefail
           number="${{ steps.candidate.outputs.number }}"
 
-          # The retry budget is bounded; the job timeout exceeds it.
-          max_attempts="${ARM_MAX_ATTEMPTS:-20}"
+          # 39 sleeps * 30s = 1170s; the 30m timeout leaves 630s of margin.
+          max_attempts="${ARM_MAX_ATTEMPTS:-40}"
           retry_seconds="${ARM_RETRY_SECONDS:-30}"
 
-          # Retry only queued/expected required checks, matching ruleset
+          # Retry only unstable/queued/expected required checks, matching ruleset
           # refusals, and transient HTTP 5xx responses.
           is_retryable() {
             local output="$1"
+            if grep -qiF 'pull request is in unstable status (enablePullRequestAutoMerge)' <<<"$output"; then
+              return 0
+            fi
             if grep -qiE 'required status check "?deterministic-safety-net"? .*is (queued|expected)' <<<"$output"; then
               return 0
             fi
