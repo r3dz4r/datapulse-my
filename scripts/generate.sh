@@ -126,7 +126,7 @@ case "$profile" in
       "health/reconciliation.json"
       "attestations/<date>/{<id>.json,index.json,chain_head.json,binding.json,scores.json} or attestations/<date>/revisions/<head>/*; append-only chain-index entries; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
       "deltas/<cycle>.json"
-      "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in); observation-receipts/chain_head.json; observation-receipts/days/<date>.json (pipeline-owned)"
+      "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "health/evidence-coverage.json"
       "catalog-graph.json"
     )

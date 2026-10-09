@@ -64,10 +64,6 @@ def is_health_cycle_output(path: str) -> bool:
         return True
     if path == ".attestations/chain_head.json":
         return True
-    if path == "observation-receipts/chain_head.json":
-        return True
-    if len(parts) == 3 and parts[:2] == ["observation-receipts", "days"]:
-        return bool(parts[2].removesuffix(".json")) and parts[2].endswith(".json")
     if len(parts) == 2 and parts[0] == "deltas":
         return bool(parts[1].removesuffix(".json")) and parts[1].endswith(".json")
     if len(parts) == 2 and parts[0] == "badges":
