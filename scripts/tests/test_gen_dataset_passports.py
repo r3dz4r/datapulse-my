@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 import shutil
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -46,6 +47,35 @@ def test_passport_projects_complete_metadata_and_existing_quality_profile_exactl
         row["quality_profile"] for row in _inputs()[1]["datasets"] if row["dataset_id"] == "fuelprice"
     )
     assert passport["licence_and_attribution"]["limitation"].startswith("Declared metadata")
+
+
+def test_passport_receipt_matches_mcp_digest_for_same_inputs() -> None:
+    sys.path.insert(0, str(ROOT / "mcp"))
+    try:
+        from server import _published_receipt_digest
+    finally:
+        sys.path.pop(0)
+
+    manifest, snapshot, graph, attestations = _inputs()
+    entry = next(row for row in manifest["datasets"] if row["id"] == "fuelprice")
+    health = next(row for row in snapshot["datasets"] if row["dataset_id"] == "fuelprice")
+    receipt = build_passport(ROOT, entry, health, graph, attestations)["reproducibility_and_evidence"]["receipt"]
+    assert receipt == {
+        "evidence_path": "data/fuelprice.receipt.evidence.json",
+        "statement_path": "data/fuelprice.receipt.statement.json",
+        "sigstore_path": "data/fuelprice.receipt.sigstore.json",
+        "receipt_digest": _published_receipt_digest(health, entry),
+        "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
+    }
+
+
+def test_passport_receipt_fails_closed_without_digest_inputs() -> None:
+    manifest, snapshot, graph, attestations = _inputs()
+    entry = next(row for row in manifest["datasets"] if row["id"] == "fuelprice")
+    health = next(row for row in snapshot["datasets"] if row["dataset_id"] == "fuelprice").copy()
+    del health["request_url"]
+    receipt = build_passport(ROOT, entry, health, graph, attestations)["reproducibility_and_evidence"]["receipt"]
+    assert receipt == {"state": "not_evaluated", "reason": "receipt_digest_cannot_be_computed_from_canonical_inputs"}
 
 
 def test_passport_preserves_missing_expected_count_and_non_ready_profile() -> None:
@@ -116,6 +146,36 @@ def test_classified_passport_validates_against_passport_schema() -> None:
     passport = _passport("fuelprice")
     schema = json.loads((ROOT / "passport.schema.json").read_text(encoding="utf-8"))
     assert not list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(passport))
+
+
+def test_passport_schema_accepts_legacy_and_unavailable_receipt() -> None:
+    passport = _passport("fuelprice")
+    schema = json.loads((ROOT / "passport.schema.json").read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    del passport["reproducibility_and_evidence"]["receipt"]
+    assert not list(validator.iter_errors(passport))
+    passport["reproducibility_and_evidence"]["receipt"] = {
+        "state": "not_evaluated",
+        "reason": "receipt_digest_cannot_be_computed_from_canonical_inputs",
+    }
+    assert not list(validator.iter_errors(passport))
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("evidence_path", "https://www.data-pulse.my/data/fuelprice.receipt.evidence.json"),
+        ("statement_path", "../data/fuelprice.receipt.statement.json"),
+        ("sigstore_path", "data/fuelprice.receipt.statement.json"),
+        ("receipt_digest", "f970c62751451567cccea26c8af3a0ff98ef6dc12c00f68a3ce0b010c9eccd7f"),
+        ("predicateType", "https://example.test/predicate"),
+    ],
+)
+def test_passport_schema_rejects_invalid_receipt(field: str, value: str) -> None:
+    passport = _passport("fuelprice")
+    passport["reproducibility_and_evidence"]["receipt"][field] = value
+    schema = json.loads((ROOT / "passport.schema.json").read_text(encoding="utf-8"))
+    assert list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(passport))
 
 
 def test_privacy_config_declares_exactly_the_approved_pilots_and_validates() -> None:
