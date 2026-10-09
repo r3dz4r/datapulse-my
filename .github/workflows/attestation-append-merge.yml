@@ -6,6 +6,12 @@ on:
   push:
     branches:
       - attestation/append-*
+  # Non-main refs stay pending under the production environment branch policy.
+  # Scheduled runs use the default branch, so the lane can start without its
+  # pushed append ref being admitted to that environment.
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
 
 permissions:
   # contents: write and pull-requests: write enable app-authored PR promotion.
@@ -45,25 +51,29 @@ jobs:
           set -euo pipefail
           pull_requests="${RUNNER_TEMP}/append-prs.json"
 
-          # submit_attestation_append.sh pushes the branch before creating its
-          # PR. Wait briefly for that PR, or a push/PR creation race could leave
-          # the day's witness without another merge trigger.
-          for attempt in {1..10}; do
-            gh pr list --base main --state open --limit 1000 \
-              --json number,headRefName,createdAt > "$pull_requests"
-            if jq -e --arg head "$GITHUB_REF_NAME" \
-              'any(.[]; .headRefName == $head)' "$pull_requests" >/dev/null; then
-              break
-            fi
-            if (( attempt < 10 )); then
-              sleep 3
-            fi
-          done
+          gh pr list --base main --state open --limit 1000 \
+            --json number,headRefName,createdAt > "$pull_requests"
 
-          if ! jq -e --arg head "$GITHUB_REF_NAME" \
-            'any(.[]; .headRefName == $head)' "$pull_requests" >/dev/null; then
-            echo "::error title=Append PR missing::No open pull request for $GITHUB_REF_NAME after 10 attempts."
-            exit 1
+          # submit_attestation_append.sh pushes the branch before creating its PR.
+          # Wait briefly for that PR on push; scheduled runs select from main.
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            for attempt in {1..10}; do
+              if jq -e --arg head "$GITHUB_REF_NAME" \
+                'any(.[]; .headRefName == $head)' "$pull_requests" >/dev/null; then
+                break
+              fi
+              if (( attempt < 10 )); then
+                sleep 3
+                gh pr list --base main --state open --limit 1000 \
+                  --json number,headRefName,createdAt > "$pull_requests"
+              fi
+            done
+          fi
+
+          if ! jq -e 'any(.[]; .headRefName | startswith("attestation/append-"))' \
+            "$pull_requests" >/dev/null; then
+            echo "No open attestation append pull request; nothing to do."
+            exit 0
           fi
 
           number="$(python3 scripts/select_append_candidate.py "$pull_requests")"
@@ -73,7 +83,7 @@ jobs:
           fi
           selected_head="$(jq -r --argjson number "$number" \
             '.[] | select(.number == $number) | .headRefName' "$pull_requests")"
-          if [[ "$selected_head" != "$GITHUB_REF_NAME" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$selected_head" != "$GITHUB_REF_NAME" ]]; then
             echo "Superseded sibling $GITHUB_REF_NAME; newest append is #$number ($selected_head)."
             exit 0
           fi
