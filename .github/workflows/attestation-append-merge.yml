@@ -6,12 +6,16 @@ on:
   push:
     branches:
       - attestation/append-*
+  workflow_run:
+    workflows: ["Pull request CI"]
+    types: [completed]
+    branches:
+      - attestation/append-*
   # Push events target attestation/append-* refs, which production's branch policy
   # rejects before any protected job step runs - the rejection carries zero steps
   # and a protection-rule annotation. That policy is therefore checked first, and
-  # only an admitted ref proceeds to mint the app token. The hourly default-branch
-  # schedule is the fallback path to a merge, and its first scheduled run has not
-  # yet been observed.
+  # only an admitted ref proceeds to mint the app token. Completed CI runs use
+  # the default branch ref; the hourly schedule remains a fallback.
   schedule:
     - cron: "37 * * * *"
   workflow_dispatch:
@@ -58,7 +62,10 @@ jobs:
 
   merge:
     needs: check_production_ref
-    if: needs.check_production_ref.outputs.admitted == 'true'
+    if: >-
+      needs.check_production_ref.outputs.admitted == 'true' &&
+      (github.event_name != 'workflow_run' ||
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 30
