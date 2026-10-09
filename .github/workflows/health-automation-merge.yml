@@ -29,7 +29,16 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: health-automation-merge
+  # Renamed from `health-automation-merge` on 2026-10-09. That group reached a
+  # state where no run ever started: 16 runs in one hour, every one cancelled with
+  # zero jobs, including a workflow_dispatch issued from the default branch - while
+  # an identically shaped lane in its own group started and finished in 18s.
+  # Because nothing in the group ever became *running*, each new arrival cancelled
+  # the pending member and the queue livelocked for 43 hours. Renaming abandons the
+  # jammed group state. cancel-in-progress stays false so an in-flight promotion is
+  # never killed by the 5-minute push flood - safe because a run completes in ~18s
+  # and therefore rarely leaves anything queued to contend for the slot.
+  group: health-automation-merge-v2
   cancel-in-progress: false
 
 jobs:
