@@ -14,6 +14,11 @@ on:
   push:
     branches:
       - health-automation
+  # Push runs on the non-main ref are held pending with zero jobs by the
+  # platform. Scheduled runs use main, where production jobs start normally.
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
 
 permissions:
   # contents: write mirrors openwiki-update.yml; pull-requests: write lets the
@@ -53,9 +58,39 @@ jobs:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
+      - name: Check for health commits to promote
+        id: delta
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          ahead_by="$(gh api "repos/$GH_REPO/compare/main...health-automation" --jq '.ahead_by')"
+          if [[ ! "$ahead_by" =~ ^[0-9]+$ ]]; then
+            echo "::error title=Invalid comparison::Could not read the health-automation commit count ahead of main."
+            exit 1
+          fi
+          if [[ "$ahead_by" == "0" ]]; then
+            echo "No health commits to promote."
+            echo "pending=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # A squash merge leaves the original branch commits ahead in history.
+          # Its merged PR head records whether this exact branch tip was promoted.
+          head_sha="$(git rev-parse HEAD)"
+          last_merged_head="$(gh pr list --head health-automation --base main \
+            --state merged --limit 1 --json headRefOid --jq '.[0].headRefOid // empty')"
+          if [[ -n "$last_merged_head" && "$head_sha" == "$last_merged_head" ]]; then
+            echo "No health commits to promote; branch tip was already merged."
+            echo "pending=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "pending=true" >> "$GITHUB_OUTPUT"
+
       # Reuse the open PR when one already exists so a fresh push updates it
       # instead of opening a duplicate.
       - name: Open or reuse the automation pull request
+        if: steps.delta.outputs.pending == 'true'
         id: pr
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -84,6 +119,7 @@ jobs:
       # silently skips. Guarded so a repeated push while auto-merge is already
       # on stays idempotent.
       - name: Enable auto-merge
+        if: steps.delta.outputs.pending == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
