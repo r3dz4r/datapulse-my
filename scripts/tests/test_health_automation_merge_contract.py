@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -204,3 +205,85 @@ def test_negative_control_retry_loop_removed_fails() -> None:
 
     with pytest.raises(AssertionError, match=r"no retry loop"):
         _assert_retry_contract(mutated, "mutated-health-automation-merge.yml")
+
+
+def test_promotion_triggers_include_default_branch_schedule() -> None:
+    workflow = yaml.safe_load(_workflow_text())
+    triggers = workflow.get(True, workflow.get("on"))
+
+    assert isinstance(triggers, dict)
+    assert {"push", "schedule", "workflow_dispatch"} <= set(triggers)
+    assert triggers["push"]["branches"] == ["health-automation"]
+    assert triggers["schedule"] == [{"cron": "*/5 * * * *"}]
+
+
+@pytest.mark.parametrize(
+    ("ahead_by", "last_merged_head", "expected_output", "expected_exit"),
+    [
+        ("0", "", "pending=false\n", 0),
+        ("2", "", "pending=true\n", 0),
+        ("2", "a" * 40, "pending=false\n", 0),
+        ("invalid", "", "", 1),
+    ],
+)
+def test_promotion_guard_skips_pr_when_no_commits_are_pending(
+    tmp_path: Path,
+    ahead_by: str,
+    last_merged_head: str,
+    expected_output: str,
+    expected_exit: int,
+) -> None:
+    workflow = yaml.safe_load(_workflow_text())
+    steps = _job(workflow, str(_workflow_path()))["steps"]
+    guard_index = next(
+        index for index, step in enumerate(steps) if step.get("id") == "delta"
+    )
+    guard = steps[guard_index]
+    assert guard["name"] == "Check for health commits to promote"
+    assert "compare/main...health-automation" in guard["run"]
+    assert ".ahead_by" in guard["run"]
+
+    pr_step = next(step for step in steps if step.get("id") == "pr")
+    merge_step = next(step for step in steps if step.get("name") == STEP_NAME)
+    assert guard_index < steps.index(pr_step) < steps.index(merge_step)
+    for step in (pr_step, merge_step):
+        assert step["if"] == "steps.delta.outputs.pending == 'true'"
+
+    output_path = tmp_path / "github-output"
+    gh_calls_path = tmp_path / "gh-calls"
+    result = subprocess.run(
+        [
+            "bash",
+            "-c",
+            """gh() {
+  printf '%s\\n' "$*" >> "$MOCK_GH_CALLS"
+  if [[ "$1" == api ]]; then
+    printf '%s\\n' "$MOCK_AHEAD_BY"
+  else
+    printf '%s\\n' "$MOCK_LAST_MERGED_HEAD"
+  fi
+}
+git() { printf '%s\\n' "$MOCK_HEAD_SHA"; }
+""" + guard["run"],
+        ],
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "GH_REPO": "owner/repo",
+            "GITHUB_OUTPUT": str(output_path),
+            "MOCK_AHEAD_BY": ahead_by,
+            "MOCK_GH_CALLS": str(gh_calls_path),
+            "MOCK_HEAD_SHA": "a" * 40,
+            "MOCK_LAST_MERGED_HEAD": last_merged_head,
+        },
+        check=False,
+    )
+    assert result.returncode == expected_exit, result.stderr
+    actual_output = output_path.read_text() if output_path.exists() else ""
+    assert actual_output == expected_output
+    gh_calls = gh_calls_path.read_text().splitlines()
+    assert gh_calls[0].startswith("api repos/owner/repo/compare/main...health-automation")
+    assert len(gh_calls) == (1 if ahead_by in ("0", "invalid") else 2)
+    if ahead_by == "0":
+        assert "No health commits to promote." in result.stdout
