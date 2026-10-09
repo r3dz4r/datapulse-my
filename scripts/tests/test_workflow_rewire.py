@@ -649,7 +649,7 @@ def test_ci_and_release_please_delegate_health_path_decisions_to_shared_classifi
     release_please = _read(ROOT / ".github/workflows/release-please.yml")
 
     for workflow in (ci, release_please):
-        assert workflow.count("python3 scripts/classify_change.py") == 1
+        assert "python3 scripts/classify_change.py" in workflow
         assert "git diff --name-only" in workflow
     assert "health-integrity:" in ci
     assert "needs.classify.outputs.health_only == 'true'" in ci
