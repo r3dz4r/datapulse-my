@@ -8,10 +8,10 @@ sources:
   - {"id": "prasarana","resource": "https://storage.data.gov.my/transportation/bus/brt_2026_daily.csv","title": "Prasarana Malaysia Berhad and Ministry of Transport"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T13:51:35Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-08T14:24:19Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Prasarana Malaysia Berhad and Ministry of Transport via data.gov.my"
+datapulse:attribution: "Prasarana Malaysia, Ministry of Transport"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/ridership_od_brt_daily.md"
 datapulse:methodology_version: 3
@@ -26,7 +26,7 @@ Daily Origin-Destination Ridership: BRT Sunway Line is published by Prasarana Ma
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:f6ebe9551c362a442e16beb8d9cca909ddab62b32a404ec781e71751f7cc1e8e`
-- `record_count`: `16616`
+- `record_count`: `17360`
 
 # Quirks
 

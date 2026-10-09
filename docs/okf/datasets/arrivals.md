@@ -8,31 +8,31 @@ sources:
   - {"id": "immigration","resource": "https://api.data.gov.my/data-catalogue?id=arrivals","title": "Immigration Department of Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Immigration Department of Malaysia via data.gov.my"
-datapulse:real_status: "stale"
+datapulse:attribution: "Immigration Department of Malaysia"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/arrivals.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 10000
-stale_after: "2024-11-16T12:00:00Z"
+stale_after: "2026-09-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Monthly Arrivals by Nationality & Sex is published by Immigration Department of Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Monthly Arrivals by Nationality & Sex is published by Immigration Department of Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `5`
 - `first_row_hash`: `shape-v1:144e6b77ddb17df3f1ebd8a36abaf91ed2add355468b4eb41873bc9e1d743600`
-- `record_count`: `13050`
+- `record_count`: `18240`
 
 # Quirks
 
-publisher-likely-retired
+No probe quirks were recorded.
 
 # Health
 

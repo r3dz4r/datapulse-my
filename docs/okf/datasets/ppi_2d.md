@@ -8,15 +8,15 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/ppi/ppi_2d.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Department of Statistics Malaysia via OpenDOSM"
+datapulse:attribution: "Data source: Department of Statistics Malaysia"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/ppi_2d.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 11228
-stale_after: "2026-08-16T12:00:00Z"
+stale_after: "2026-09-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Monthly Producer Price Index by Division is published by Department of Statistic
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:0719df9fae9eeaab01c0708999bf845c1f37596273160cedfbd30fca5f206b0b`
-- `record_count`: `11312`
+- `record_count`: `11396`
 
 # Quirks
 

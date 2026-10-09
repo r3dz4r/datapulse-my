@@ -8,10 +8,10 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/gdp/gdp_qtr_nominal_supply_sub.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Department of Statistics Malaysia via data.gov.my"
+datapulse:attribution: "Data source: Department of Statistics Malaysia"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/dosm_gdp_qtr_nominal_supply_granular.md"
 datapulse:methodology_version: 3

@@ -8,11 +8,11 @@ sources:
   - {"id": "bnm","resource": "https://storage.data.gov.my/finsector/money_aggregates.csv","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Bank Negara Malaysia via data.gov.my"
-datapulse:real_status: "fresh"
+datapulse:attribution: "Source: Bank Negara Malaysia"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/monetary_aggregates.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 1872
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-Monthly Monetary Aggregates is published by Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Monthly Monetary Aggregates is published by Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 

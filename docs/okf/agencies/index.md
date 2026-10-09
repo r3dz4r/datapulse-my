@@ -43,4 +43,5 @@
 * [protecthealth](./protecthealth/) - Published dataset index.
 * [sg-datagov](./sg-datagov/) - Published dataset index.
 * [span](./span/) - Published dataset index.
+* [thevesh](./thevesh/) - Published dataset index.
 * [tnb](./tnb/) - Published dataset index.

@@ -8,10 +8,10 @@ sources:
   - {"id": "apad","resource": "https://api.data.gov.my/gtfs-static/mybas-johor","title": "Agensi Pengangkutan Awam Darat (APAD)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "BAS.MY via data.gov.my GTFS API"
+datapulse:attribution: "BAS.MY"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/gtfs_static_mybas_johor.md"
 datapulse:methodology_version: 3
@@ -24,6 +24,7 @@ GTFS Static — BAS.MY Johor Bus Schedule is published by Agensi Pengangkutan Aw
 
 # Schema
 
+- `first_row_hash`: `shape-v1:4e050f2656b3a0bacc4043c352d884ca519ecf73f5c0cbb56180c2001b390f13`
 - `record_count`: `76930`
 
 # Quirks

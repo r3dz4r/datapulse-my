@@ -8,31 +8,31 @@ sources:
   - {"id": "immigration","resource": "https://api.data.gov.my/data-catalogue?id=passports","title": "Immigration Department of Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Immigration Department of Malaysia via data.gov.my"
-datapulse:real_status: "stale"
+datapulse:attribution: "Immigration Department of Malaysia"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/passports.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 5684
-stale_after: "2024-11-16T12:00:00Z"
+stale_after: "2026-09-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Monthly Passport Issuances by State and Branch is published by Immigration Department of Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Monthly Passport Issuances by State and Branch is published by Immigration Department of Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:73cea601374018b9e40a37c318581d6f6df68905fc83ac0d229815620d94facc`
-- `record_count`: `5684`
+- `record_count`: `7920`
 
 # Quirks
 
-publisher-likely-retired
+No probe quirks were recorded.
 
 # Health
 

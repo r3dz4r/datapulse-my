@@ -8,10 +8,10 @@ sources:
   - {"id": "kpdn","resource": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-09.parquet","title": "KPDN"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T12:19:47Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "KPDN Malaysia via data.gov.my"
+datapulse:attribution: "Ministry of Domestic Trade, Department of Statistics Malaysia"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/pricecatcher.md"
 datapulse:methodology_version: 3

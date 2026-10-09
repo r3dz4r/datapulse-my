@@ -11,7 +11,7 @@ verified:
   - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Department of Statistics Malaysia via data.gov.my"
+datapulse:attribution: "Data source: Department of Statistics Malaysia"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/hh_income_state.md"
 datapulse:methodology_version: 3

@@ -8,10 +8,10 @@ sources:
   - {"id": "apad","resource": "https://api.data.gov.my/gtfs-static/mybas-kuala-terengganu","title": "Agensi Pengangkutan Awam Darat (APAD)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "BAS.MY via data.gov.my GTFS API"
+datapulse:attribution: "BAS.MY"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/gtfs_static_mybas_kuala_terengganu.md"
 datapulse:methodology_version: 3
@@ -24,7 +24,8 @@ GTFS Static — BAS.MY Kuala Terengganu Bus Schedule is published by Agensi Peng
 
 # Schema
 
-- `record_count`: `20616`
+- `first_row_hash`: `shape-v1:e8d9584fdbdbae055c7b7ea1404e9ae315c85a9521dd4ba136e955701a58d9ad`
+- `record_count`: `20866`
 
 # Quirks
 

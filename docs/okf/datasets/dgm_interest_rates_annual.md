@@ -8,10 +8,10 @@ sources:
   - {"id": "bnm","resource": "https://storage.data.gov.my/finsector/interest_rates_annual.csv","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Bank Negara Malaysia via data.gov.my"
+datapulse:attribution: "Source: Bank Negara Malaysia"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/dgm_interest_rates_annual.md"
 datapulse:methodology_version: 3

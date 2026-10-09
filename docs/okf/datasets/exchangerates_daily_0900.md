@@ -8,27 +8,27 @@ sources:
   - {"id": "bnm","resource": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900","title": "BNM"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-27T11:34:28Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-09T12:20:22Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Bank Negara Malaysia via data.gov.my"
-datapulse:real_status: "aging"
+datapulse:attribution: "Source: Bank Negara Malaysia"
+datapulse:real_status: "fresh"
 datapulse:health_report: "/data/exchangerates_daily_0900.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-09-28T00:00:00Z"
+stale_after: "2026-10-12T00:00:00Z"
 datapulse:stale_after_basis: "weekday_cadence"
 ---
 
 # Summary
 
-BNM Daily Exchange Rates (0900) is published by BNM and tracked by DataPulse. The latest published probe classifies it as `aging`.
+BNM Daily Exchange Rates (0900) is published by BNM and tracked by DataPulse. The latest published probe classifies it as `fresh`.
 
 # Schema
 
 - `column_count`: `29`
-- `first_row_hash`: `shape-v1:169a849fed245fa027e3cb9908ee50b5071b6fbbfb3f32e40532f35072d6cd1b`
-- `record_count`: `17213`
+- `first_row_hash`: `shape-v1:63b2273b90c7472f9b72d1f65bd27e35b3f45563f8205f2fa03df2ab601f75f7`
+- `record_count`: `17243`
 
 # Quirks
 

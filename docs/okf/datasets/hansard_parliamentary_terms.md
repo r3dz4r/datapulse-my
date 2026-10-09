@@ -11,22 +11,20 @@ verified:
   - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Parliament of Malaysia via Malaysian Parliament Digital Hansard"
-datapulse:real_status: "fresh"
+datapulse:attribution: "Data and information are subject to the Malaysian Government Open Data Terms of Use 1.0"
+datapulse:real_status: "unreachable"
 datapulse:health_report: "/data/hansard_parliamentary_terms.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 15
-stale_after: "2026-12-17T00:00:00Z"
-datapulse:stale_after_basis: "default_90d"
 ---
 
 # Summary
 
-Malaysian Parliamentary Terms is published by Parliament of Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Malaysian Parliamentary Terms is published by Parliament of Malaysia and tracked by DataPulse. The latest published probe classifies it as `unreachable`.
 
 # Schema
 
-- `record_count`: `15`
+No structural fingerprint was recorded by the latest probe.
 
 # Quirks
 

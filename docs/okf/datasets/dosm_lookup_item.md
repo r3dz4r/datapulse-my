@@ -8,10 +8,10 @@ sources:
   - {"id": "kpdn","resource": "https://storage.data.gov.my/pricecatcher/lookup_item.csv","title": "Ministry of Domestic Trade and Cost of Living and Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Ministry of Domestic Trade and Cost of Living and Department of Statistics Malaysia via data.gov.my"
+datapulse:attribution: "Ministry of Domestic Trade, Department of Statistics Malaysia"
 datapulse:real_status: "reference"
 datapulse:health_report: "/data/dosm_lookup_item.md"
 datapulse:methodology_version: 3
@@ -26,7 +26,7 @@ PriceCatcher: Item Lookup is published by Ministry of Domestic Trade and Cost of
 
 - `column_count`: `5`
 - `first_row_hash`: `shape-v1:e41455996abbc0723e32311d2cce4eaebf4b7451afee18c939c09f7e46e7532e`
-- `record_count`: `757`
+- `record_count`: `797`
 
 # Quirks
 

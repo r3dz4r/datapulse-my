@@ -8,10 +8,10 @@ sources:
   - {"id": "jbg","resource": "https://api.data.gov.my/data-catalogue?id=legal_advisory_case_type","title": "Legal Aid Department"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-15T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Legal Aid Department via data.gov.my"
+datapulse:attribution: "Legal Aid Department"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/legal_advisory_case_type.md"
 datapulse:methodology_version: 3

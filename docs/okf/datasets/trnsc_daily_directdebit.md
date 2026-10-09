@@ -8,15 +8,15 @@ sources:
   - {"id": "paynet","resource": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_directdebit","title": "Payments Network Malaysia and Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T13:51:35Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-08T14:24:19Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Payments Network Malaysia and Bank Negara Malaysia via data.gov.my"
+datapulse:attribution: "Payments Network Malaysia Sdn Bhd, Central Bank of Malaysia"
 datapulse:real_status: "aging"
 datapulse:health_report: "/data/trnsc_daily_directdebit.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 1203
-stale_after: "2026-09-26T12:00:00Z"
+stale_after: "2026-10-08T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Daily DirectDebit Transactions is published by Payments Network Malaysia and Ban
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:44548003c1b51e35d27dc7f574a6f33a8706abe8d2c5b8558a3250699558a4d6`
-- `record_count`: `1238`
+- `record_count`: `1246`
 
 # Quirks
 

@@ -8,10 +8,10 @@ sources:
   - {"id": "prasarana","resource": "https://api.data.gov.my/gtfs-static/prasarana?category=rapid-bus-mrtfeeder","title": "Prasarana Malaysia Berhad"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Prasarana Malaysia Berhad via data.gov.my GTFS API"
+datapulse:attribution: "Prasarana"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/gtfs_static_prasarana_bus_mrtfeeder.md"
 datapulse:methodology_version: 3
@@ -24,7 +24,8 @@ GTFS Static — MRT Feeder Bus Schedule is published by Prasarana Malaysia Berha
 
 # Schema
 
-- `record_count`: `174759`
+- `first_row_hash`: `shape-v1:7cd77b8dcc5065e912e5150227d15aa0ee3b865f5701950f9bff8ce03a9eed78`
+- `record_count`: `175718`
 
 # Quirks
 

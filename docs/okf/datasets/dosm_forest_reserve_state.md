@@ -8,15 +8,15 @@ sources:
   - {"id": "forestry_department","resource": "https://api.data.gov.my/data-catalogue?id=forest_reserve_state","title": "Forestry Department and Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Forestry Department and Department of Statistics Malaysia via data.gov.my"
+datapulse:attribution: "Forestry Department of Peninsular Malaysia, Department of Statistics Malaysia"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/dosm_forest_reserve_state.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 323
-stale_after: "2022-07-02T12:00:00Z"
+stale_after: "2023-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Area of Permanent Forest Reserves by State is published by Forestry Department a
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:d33e5a78f07f7a27d7fc723c373b7a00f0dd2e3f38f3fab6e852c5031a6adf89`
-- `record_count`: `323`
+- `record_count`: `340`
 
 # Quirks
 
