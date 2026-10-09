@@ -32,6 +32,7 @@ HEALTH_OUTPUTS = frozenset(
         "health/drift.json",
         "health/reconciliation.json",
         "health/evidence-coverage.json",
+        "health/probe_counts.json",
     }
 )
 LATEST_ATTESTATION_OUTPUTS = frozenset(
@@ -63,6 +64,10 @@ def is_health_cycle_output(path: str) -> bool:
         return True
     if path == ".attestations/chain_head.json":
         return True
+    if path == "observation-receipts/chain_head.json":
+        return True
+    if len(parts) == 3 and parts[:2] == ["observation-receipts", "days"]:
+        return bool(parts[2].removesuffix(".json")) and parts[2].endswith(".json")
     if len(parts) == 2 and parts[0] == "deltas":
         return bool(parts[1].removesuffix(".json")) and parts[1].endswith(".json")
     if len(parts) == 2 and parts[0] == "badges":
@@ -72,7 +77,7 @@ def is_health_cycle_output(path: str) -> bool:
     if len(parts) == 3 and parts[:2] == ["docs", "datasets"]:
         return re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*\.html", parts[2]) is not None
     if len(parts) == 3 and parts[0] == "record-evidence":
-        return bool(parts[1]) and parts[2] == "latest.json"
+        return parts[2] == "latest.json" or re.fullmatch(r"\d{4}-\d{2}-\d{2}\.json", parts[2]) is not None
     if len(parts) == 3 and parts[:2] == [".attestations", "latest"]:
         return bool(parts[2].removesuffix(".json")) and parts[2].endswith(".json")
     return False
