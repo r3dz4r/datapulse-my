@@ -8,7 +8,7 @@ sources:
   - {"id": "energy_commission","resource": "https://meih.st.gov.my/statistics","title": "Suruhanjaya Tenaga (Malaysia Energy Commission)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-05T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Suruhanjaya Tenaga (ST) via meih.st.gov.my"

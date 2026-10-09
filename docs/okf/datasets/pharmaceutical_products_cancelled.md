@@ -8,10 +8,10 @@ sources:
   - {"id": "npra","resource": "https://storage.data.gov.my/healthcare/pharmaceutical_products_cancelled.csv","title": "National Pharmaceutical Regulatory Agency"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "National Pharmaceutical Regulatory Agency via data.gov.my"
+datapulse:attribution: "National Pharmaceutical Regulatory Agency, Ministry of Health Malaysia"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/pharmaceutical_products_cancelled.md"
 datapulse:methodology_version: 3

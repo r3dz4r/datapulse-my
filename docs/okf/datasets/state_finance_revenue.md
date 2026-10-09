@@ -8,10 +8,10 @@ sources:
   - {"id": "national_audit","resource": "https://api.data.gov.my/data-catalogue?id=state_finance_revenue","title": "National Audit Department Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "National Audit Department Malaysia via data.gov.my"
+datapulse:attribution: "National Audit Department"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/state_finance_revenue.md"
 datapulse:methodology_version: 3

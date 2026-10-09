@@ -8,10 +8,10 @@ sources:
   - {"id": "kkm","resource": "https://api.data.gov.my/data-catalogue?id=covid_cases_vaxstatus","title": "Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T13:51:35Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-08T14:24:19Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Ministry of Health Malaysia via data.gov.my"
+datapulse:attribution: "Source: Ministry of Health Malaysia (Kementerian Kesihatan Malaysia)"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/covid_cases_vaxstatus.md"
 datapulse:methodology_version: 3

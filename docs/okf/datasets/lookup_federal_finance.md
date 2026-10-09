@@ -8,10 +8,10 @@ sources:
   - {"id": "agc","resource": "https://api.data.gov.my/data-catalogue?id=lookup_federal_finance","title": "Accountant General’s Department of Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Accountant General’s Department of Malaysia via data.gov.my"
+datapulse:attribution: "Accountant-General's Department"
 datapulse:real_status: "reference"
 datapulse:health_report: "/data/lookup_federal_finance.md"
 datapulse:methodology_version: 3

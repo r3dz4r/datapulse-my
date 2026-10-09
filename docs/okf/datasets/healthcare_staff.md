@@ -8,10 +8,10 @@ sources:
   - {"id": "kkm","resource": "https://storage.data.gov.my/healthcare/healthcare_staff.csv","title": "Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Ministry of Health Malaysia via data.gov.my"
+datapulse:attribution: "Source: Ministry of Health Malaysia (Kementerian Kesihatan Malaysia)"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/healthcare_staff.md"
 datapulse:methodology_version: 3

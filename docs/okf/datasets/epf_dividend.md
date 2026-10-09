@@ -8,10 +8,10 @@ sources:
   - {"id": "epf","resource": "https://storage.data.gov.my/welfare/epf_dividend.csv","title": "Employees Provident Fund"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Employees Provident Fund via data.gov.my"
+datapulse:attribution: "Employees Provident Fund"
 datapulse:real_status: "fresh"
 datapulse:health_report: "/data/epf_dividend.md"
 datapulse:methodology_version: 3

@@ -8,10 +8,10 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/demography/death_maternal.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "DOSM via OpenDOSM"
+datapulse:attribution: "Data source: Department of Statistics Malaysia"
 datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_death_maternal.md"
 datapulse:methodology_version: 3

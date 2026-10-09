@@ -8,10 +8,10 @@ sources:
   - {"id": "mof","resource": "https://api.data.gov.my/data-catalogue?id=federal_budget_moh","title": "Ministry of Finance Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Ministry of Finance Malaysia via data.gov.my"
+datapulse:attribution: "Ministry of Finance"
 datapulse:real_status: "aging"
 datapulse:health_report: "/data/federal_budget_moh.md"
 datapulse:methodology_version: 3

@@ -8,10 +8,10 @@ sources:
   - {"id": "mohe","resource": "https://api.data.gov.my/data-catalogue?id=lecturers_uni","title": "Ministry of Higher Education Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
-datapulse:attribution: "Ministry of Higher Education Malaysia via data.gov.my"
+datapulse:attribution: "Ministry of Higher Education"
 datapulse:real_status: "stale"
 datapulse:health_report: "/data/lecturers_uni.md"
 datapulse:methodology_version: 3

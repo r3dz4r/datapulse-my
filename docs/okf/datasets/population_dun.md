@@ -8,10 +8,10 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/population/population_dun.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-05T02:34:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
-datapulse:attribution: "Department of Statistics Malaysia via OpenDOSM"
+datapulse:attribution: "Data source: Department of Statistics Malaysia"
 datapulse:real_status: "aging"
 datapulse:health_report: "/data/population_dun.md"
 datapulse:methodology_version: 3
