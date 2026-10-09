@@ -36,6 +36,28 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def test_merge_lane_schedules_are_hourly_and_repository_has_no_subhourly_crons() -> None:
+    append_path = ROOT / ".github/workflows/attestation-append-merge.yml"
+    append_workflow = yaml.safe_load(_read(append_path))
+    triggers = append_workflow.get(True, append_workflow.get("on"))
+
+    assert isinstance(triggers, dict)
+    assert triggers["schedule"] == [{"cron": "37 * * * *"}]
+
+    subhourly_crons: list[str] = []
+    for workflow_path in (ROOT / ".github/workflows").glob("*.yml"):
+        workflow = yaml.safe_load(_read(workflow_path))
+        workflow_triggers = workflow.get(True, workflow.get("on"))
+        if not isinstance(workflow_triggers, dict):
+            continue
+        for schedule in workflow_triggers.get("schedule", []):
+            cron = schedule.get("cron", "")
+            if re.search(r"(?:^|\s)\*/\d+(?:\s|$)", cron):
+                subhourly_crons.append(f"{workflow_path.name}: {cron}")
+
+    assert subhourly_crons == []
+
+
 def _exec_start(unit: str) -> str:
     return unit.split("ExecStart=", 1)[1].split("\nStandardOutput=", 1)[0]
 

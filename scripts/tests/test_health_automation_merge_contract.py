@@ -246,7 +246,7 @@ def test_promotion_triggers_include_default_branch_schedule() -> None:
     assert isinstance(triggers, dict)
     assert {"push", "schedule", "workflow_dispatch"} <= set(triggers)
     assert triggers["push"]["branches"] == ["health-automation"]
-    assert triggers["schedule"] == [{"cron": "*/5 * * * *"}]
+    assert triggers["schedule"] == [{"cron": "42 * * * *"}]
 
 
 @pytest.mark.parametrize(
