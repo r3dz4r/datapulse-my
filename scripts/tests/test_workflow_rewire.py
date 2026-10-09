@@ -697,3 +697,21 @@ def test_cloudflare_served_fetches_remain_bounded_and_https_only() -> None:
     assert fetch_max_time_default is not None
     # A literal that a future edit can bump arbitrarily is weaker than parsing and bounding the default.
     assert 30 <= int(fetch_max_time_default.group(1)) <= 300
+
+
+def test_ci_jsonschema_and_cryptography_installs_use_matching_pins() -> None:
+    ci = _read(ROOT / ".github/workflows/ci.yml")
+    dependency_installs = [
+        line
+        for line in ci.splitlines()
+        if "pip install" in line and ("jsonschema" in line or "cryptography" in line)
+    ]
+
+    assert len(dependency_installs) == 2
+    assert all(
+        re.search(
+            r"pip install jsonschema==4\.25\.0 cryptography==50\.0\.0(?:\s|$)",
+            line,
+        )
+        for line in dependency_installs
+    )
