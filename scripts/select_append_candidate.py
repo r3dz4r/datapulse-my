@@ -12,7 +12,7 @@ from pathlib import Path
 
 def _append_day(pull_request: dict[str, object]) -> str | None:
     """Read the day encoded in the append PR title."""
-    match = re.search(r"append signed evidence from source (\d{4}-\d{2}-\d{2})$", str(pull_request.get("title", "")))
+    match = re.search(r"(?:append signed set|append signed evidence from source) (\d{4}-\d{2}-\d{2})$", str(pull_request.get("title", "")))
     return match.group(1) if match else None
 
 

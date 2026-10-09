@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
-from scripts.select_append_candidate import select_superseded_siblings
+from scripts.select_append_candidate import _append_day, select_superseded_siblings
 
 import yaml
 
@@ -17,6 +18,21 @@ ROOT = Path(__file__).resolve().parents[2]
 SELECTOR = ROOT / "scripts/select_append_candidate.py"
 WORKFLOW = ROOT / ".github/workflows/attestation-append-merge.yml"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
+APPEND_PRODUCER = ROOT / "scripts/submit_attestation_append.sh"
+
+
+def _produced_title(day: str) -> str:
+    producer = APPEND_PRODUCER.read_text(encoding="utf-8")
+    match = re.search(r'--title "([^"\n]+)"', producer)
+    assert match is not None
+    template = match.group(1)
+    assert "$day" in template
+    return template.replace("$day", day)
+
+
+def test_append_day_matches_producer_title() -> None:
+    day = "2026-10-09"
+    assert _append_day({"title": _produced_title(day)}) == day
 
 
 def _pull_request(number: int, head: str, created_at: str) -> dict[str, object]:
@@ -87,7 +103,7 @@ def test_created_at_tie_selects_higher_number() -> None:
 def test_superseded_sibling_selection_is_scoped_to_open_same_day_prs() -> None:
     def row(number: int, day: str, state: str = "OPEN") -> dict[str, object]:
         result = _pull_request(number, f"attestation/append-{number}", f"2026-10-{number:02d}T00:00:00Z")
-        result.update(title=f"chore(attestations): append signed evidence from source {day}", state=state)
+        result.update(title=_produced_title(day), state=state)
         return result
 
     rows = [row(50, "2026-10-09"), row(48, "2026-10-09"), row(47, "2026-10-09"), row(49, "2026-10-09", "CLOSED"), row(51, "2026-10-10")]
