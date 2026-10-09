@@ -20,10 +20,14 @@ jobs:
     timeout-minutes: 10
     outputs:
       health_only: ${{ steps.classify.outputs.health_only }}
+      append_only: ${{ steps.classify.outputs.append_only }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '2' }}
+          filter: blob:none
+          sparse-checkout: scripts/classify_change.py
+          sparse-checkout-cone-mode: false
       - id: classify
         env:
           BEFORE_SHA: ${{ github.event.before }}
@@ -33,6 +37,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           echo "health_only=false" >> "$GITHUB_OUTPUT"
+          echo "append_only=false" >> "$GITHUB_OUTPUT"
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
             git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null || exit 0
             diff_args=("$BEFORE_SHA" "$AFTER_SHA")
@@ -43,8 +48,12 @@ jobs:
           else
             exit 0
           fi
-          if git diff --name-only "${diff_args[@]}" | python3 scripts/classify_change.py; then
+          changed_paths=$(git diff --name-only "${diff_args[@]}")
+          if printf '%s\n' "$changed_paths" | python3 scripts/classify_change.py; then
             echo "health_only=true" >> "$GITHUB_OUTPUT"
+          fi
+          if printf '%s\n' "$changed_paths" | python3 scripts/classify_change.py --append-only; then
+            echo "append_only=true" >> "$GITHUB_OUTPUT"
           fi
 
   deterministic-safety-net:
@@ -54,6 +63,8 @@ jobs:
     timeout-minutes: 25
     env:
       ARTIFACT_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.health_only == 'true' }}
+      APPEND_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.append_only == 'true' }}
+      FULL_VERIFICATION: ${{ github.event_name != 'pull_request' || (needs.classify.outputs.health_only != 'true' && needs.classify.outputs.append_only != 'true') }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -62,7 +73,7 @@ jobs:
           fetch-tags: true
 
       - name: Check out r3dz4r/dotfiles (contract checks reference dotfiles/system/* and dotfiles/scripts/*)
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         uses: actions/checkout@v4
         with:
           repository: r3dz4r/dotfiles
@@ -82,22 +93,22 @@ jobs:
           cache-dependency-path: requirements-dev.txt
 
       - name: Install Pandoc
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y pandoc=3.1.3+ds-2
           pandoc --version | sed -n '1p'
 
       - name: Install artifact verification dependencies
-        if: env.ARTIFACT_ONLY_FAST_PATH == 'true'
+        if: env.ARTIFACT_ONLY_FAST_PATH == 'true' || env.APPEND_ONLY_FAST_PATH == 'true'
         run: python3 -m pip install jsonschema==4.25.0 cryptography==50.0.0
 
       - name: Install verification dependencies
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 -m pip install --requirement requirements-dev.txt
 
       - name: Check shell syntax
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: find . -type f -name '*.sh' -not -path './.git/*' -print0 | xargs -0 -n1 bash -n
 
       - name: Validate manifest and health schemas
@@ -106,7 +117,7 @@ jobs:
           python3 -m jsonschema -i health/latest.json health.schema.json
 
       - name: Validate tracked release-proof legacy format
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: |
           python3 - docs/release-verification.md <<'PY'
           from __future__ import annotations
@@ -138,26 +149,26 @@ jobs:
           PY
 
       - name: Verify README matches its template before regeneration
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/gen_readme.py --check
 
       - name: Generate README from canonical inputs
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/gen_readme.py
 
       - name: Run repository-contract and MCP tests
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 -m pytest -q scripts/tests/ mcp/tests/
 
       - name: Test local agent-ready verification
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: bash scripts/tests/test_verify_agent_ready.sh
 
       - name: Verify repository contract
         run: python3 scripts/verify_repository_contract.py
 
       - name: Verify licence consistency
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/verify_licence_consistency.py
 
       - name: Verify immutable attestation append against accepted base
@@ -171,41 +182,41 @@ jobs:
         run: python3 scripts/verify_attestation_workflow_contract.py
 
       - name: Verify public surface has no internal repository references
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/verify_public_internal_refs.py
 
       - name: Verify MCP quickstart region matches the public-surface contract
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/gen_mcp_quickstart.py --check
 
       - name: Verify distribution surfaces match canonical evidence
         run: python3 scripts/verify_distribution_sync.py
 
       - name: Verify release identity consistency
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/release_identity.py --check
 
       - name: Verify attestation chain forward-linearity seed
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/verify_chain_linearity.py
 
       - name: Verify OpenWiki source contract
         run: python3 scripts/verify_openwiki.py
 
       - name: Check URL drift and cadence
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/check_url_drift.py
 
       - name: Verify local release invariants
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: bash scripts/verify_release_invariants.sh --local
 
       - name: Lint current documentation facts
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/fact_lint.py
 
       - name: Verify documentation integrity
-        if: env.ARTIFACT_ONLY_FAST_PATH != 'true'
+        if: env.FULL_VERIFICATION == 'true'
         # Promote when a report-only run has no non-REPORT finding on the clean tree.
         run: python3 scripts/verify_documentation.py --report-only
 

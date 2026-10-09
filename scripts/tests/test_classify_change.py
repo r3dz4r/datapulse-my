@@ -8,11 +8,74 @@ from pathlib import Path
 
 import pytest
 
-from scripts.classify_change import is_health_only_change
+from scripts.classify_change import is_append_only_change, is_health_only_change
 
 
 ROOT = Path(__file__).resolve().parents[2]
 CLASSIFIER = ROOT / "scripts/classify_change.py"
+
+
+REVISION = "a" * 64
+APPEND_PATHS = (
+    ".attestations/chain_head.json",
+    "attestations/chain-index.json",
+    "attestations/latest/binding.json",
+    "attestations/latest/chain_head.json",
+    "attestations/latest/index.json",
+    "attestations/latest/scores.json",
+    "attestations/2026-10-09/chain_head.json",
+    f"attestations/2026-10-09/revisions/{REVISION}/chain_head.json",
+    f"attestations/2026-10-09/revisions/{REVISION}/binding.json",
+    f"attestations/rekor/2026-10-09/health.{REVISION}.sigstore.bundle.json",
+    f"attestations/rekor/2026-10-09/health.{REVISION}.statement.json",
+    f"attestations/rekor/2026-10-09/reference.{REVISION}.json",
+)
+
+
+def test_append_only_change_accepts_immutable_revision_and_chain_heads() -> None:
+    assert is_append_only_change(APPEND_PATHS)
+    assert is_append_only_change((APPEND_PATHS[0], APPEND_PATHS[7]))
+    assert not is_health_only_change(APPEND_PATHS)
+
+
+@pytest.mark.parametrize(
+    "outside_path",
+    (
+        "README.md",
+        "health/latest.json",
+        "attestations/2026-10-09/index.json",
+        "attestations/2026-13-09/chain_head.json",
+        f"attestations/2026-10-09/revisions/{REVISION}/nested/binding.json",
+        "attestations/2026-10-09/revisions/not-a-digest/binding.json",
+        "attestations/2026-10-09/revisions/../binding.json",
+        "attestations/rekor/2026-10-09/reference.json",
+        f"attestations/rekor/2026-10-09/arbitrary.{REVISION}.json",
+    ),
+)
+def test_append_only_change_rejects_any_path_outside_append_class(outside_path: str) -> None:
+    assert not is_append_only_change((APPEND_PATHS[0], outside_path))
+
+
+def test_append_only_change_rejects_empty_input() -> None:
+    assert not is_append_only_change(())
+
+
+def test_append_only_cli_preserves_default_health_classifier() -> None:
+    paths = ".attestations/chain_head.json\n" + APPEND_PATHS[2] + "\n"
+    append = subprocess.run(
+        [sys.executable, str(CLASSIFIER), "--append-only"],
+        input=paths,
+        text=True,
+        capture_output=True,
+    )
+    health = subprocess.run(
+        [sys.executable, str(CLASSIFIER)],
+        input=paths,
+        text=True,
+        capture_output=True,
+    )
+    assert append.returncode == 0, append.stderr
+    assert health.returncode == 1
 
 
 def test_exact_health_cycle_outputs_require_latest_snapshot() -> None:

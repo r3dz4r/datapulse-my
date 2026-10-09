@@ -73,17 +73,41 @@ def test_required_context_keeps_its_job_identity_and_dependency() -> None:
 
 
 @pytest.mark.parametrize(
-    ("changed_path", "expected"),
-    [(None, "true"), ("scripts/changed.py", "false")],
+    ("changed_paths", "health_only", "append_only"),
+    [
+        (("health/latest.json",), "true", "false"),
+        (("health/latest.json", "scripts/changed.py"), "false", "false"),
+        (
+            (
+                ".attestations/chain_head.json",
+                "attestations/2026-10-09/revisions/" + "a" * 64 + "/binding.json",
+            ),
+            "false",
+            "true",
+        ),
+        (
+            (
+                ".attestations/chain_head.json",
+                "attestations/2026-10-09/revisions/" + "a" * 64 + "/binding.json",
+                "README.md",
+            ),
+            "false",
+            "false",
+        ),
+    ],
 )
 def test_artifact_only_fast_path_classifies_pr_diff(
-    tmp_path: Path, changed_path: str | None, expected: str
+    tmp_path: Path, changed_paths: tuple[str, ...], health_only: str, append_only: str
 ) -> None:
     classify = _workflow()["jobs"]["classify"]
     checkout = classify["steps"][0]
     assert checkout["with"]["fetch-depth"] == (
         "${{ github.event_name == 'pull_request' && '0' || '2' }}"
     )
+    assert checkout["with"]["filter"] == "blob:none"
+    assert checkout["with"]["sparse-checkout"] == "scripts/classify_change.py"
+    assert checkout["with"]["sparse-checkout-cone-mode"] == "false"
+    assert classify["outputs"]["append_only"] == "${{ steps.classify.outputs.append_only }}"
 
     repository = tmp_path / "repository"
     repository.mkdir()
@@ -96,9 +120,7 @@ def test_artifact_only_fast_path_classifies_pr_diff(
     subprocess.run(["git", "commit", "-qm", "base"], cwd=repository, check=True)
     base = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repository, text=True).strip()
 
-    for path in ("health/latest.json", changed_path):
-        if path is None:
-            continue
+    for path in changed_paths:
         target = repository / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("changed\n", encoding="utf-8")
@@ -123,13 +145,23 @@ def test_artifact_only_fast_path_classifies_pr_diff(
         text=True,
     )
     assert result.returncode == 0, result.stderr
-    assert output.read_text(encoding="utf-8").splitlines()[-1] == f"health_only={expected}"
+    lines = output.read_text(encoding="utf-8").splitlines()
+    assert f"health_only={health_only}" in lines
+    assert f"append_only={append_only}" in lines
 
 
 def test_artifact_only_fast_path_preserves_required_verification() -> None:
     job = _workflow()["jobs"][REQUIRED_JOB]
     assert job["env"]["ARTIFACT_ONLY_FAST_PATH"] == (
         "${{ github.event_name == 'pull_request' && needs.classify.outputs.health_only == 'true' }}"
+    )
+    assert job["env"]["APPEND_ONLY_FAST_PATH"] == (
+        "${{ github.event_name == 'pull_request' && needs.classify.outputs.append_only == 'true' }}"
+    )
+    assert job["env"]["FULL_VERIFICATION"] == (
+        "${{ github.event_name != 'pull_request' || "
+        "(needs.classify.outputs.health_only != 'true' && "
+        "needs.classify.outputs.append_only != 'true') }}"
     )
     steps = {step["name"]: step for step in job["steps"]}
     for name in (
@@ -140,14 +172,17 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
     ):
         assert "if" not in steps[name]
     assert steps["Install artifact verification dependencies"]["if"] == (
-        "env.ARTIFACT_ONLY_FAST_PATH == 'true'"
+        "env.ARTIFACT_ONLY_FAST_PATH == 'true' || env.APPEND_ONLY_FAST_PATH == 'true'"
     )
     assert steps["Install verification dependencies"]["if"] == (
-        "env.ARTIFACT_ONLY_FAST_PATH != 'true'"
+        "env.FULL_VERIFICATION == 'true'"
     )
     assert steps["Verify immutable attestation append against accepted base"]["if"] == (
         "(github.event_name == 'pull_request' || github.event_name == 'merge_group') "
         "&& env.ARTIFACT_ONLY_FAST_PATH != 'true'"
+    )
+    assert steps["Verify attestation workflow contract"]["if"] == (
+        "env.ARTIFACT_ONLY_FAST_PATH != 'true'"
     )
     for name, step in steps.items():
         if name in {
@@ -160,6 +195,7 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
             "Verify distribution surfaces match canonical evidence",
             "Verify OpenWiki source contract",
             "Verify immutable attestation append against accepted base",
+            "Verify attestation workflow contract",
         }:
             continue
-        assert step["if"] == "env.ARTIFACT_ONLY_FAST_PATH != 'true'", name
+        assert step["if"] == "env.FULL_VERIFICATION == 'true'", name
