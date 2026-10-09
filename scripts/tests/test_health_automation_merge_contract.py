@@ -146,15 +146,20 @@ def _assert_retry_contract(workflow_text: str, source: str) -> None:
             f"{source}: the exhaustion path must exit 1, never 0"
         )
 
-    # (d) The merge job timeout comfortably exceeds the loop's maximum wait. Both
-    # numbers come from the workflow defaults, not from this test.
+    # (d) The wait covers the observed check duration, with room in the job
+    # timeout for setup and API calls. Both numbers come from workflow defaults.
     max_wait_seconds = attempts * retry_seconds
     timeout_seconds = _merge_timeout_minutes(workflow, source) * 60
-    if timeout_seconds <= max_wait_seconds:
+    if max_wait_seconds < 20 * 60:
         raise AssertionError(
-            f"{source}: merge timeout-minutes={timeout_seconds // 60} does not "
-            f"exceed the loop's maximum wait of {attempts} * {retry_seconds}s "
-            f"= {max_wait_seconds}s"
+            f"{source}: the arming wait of {max_wait_seconds}s must cover at "
+            "least 20 minutes; a required check was still pending at 16 minutes"
+        )
+    if timeout_seconds - max_wait_seconds < 5 * 60:
+        raise AssertionError(
+            f"{source}: merge timeout-minutes={timeout_seconds // 60} leaves "
+            f"less than five minutes beyond the arming wait of "
+            f"{attempts} * {retry_seconds}s = {max_wait_seconds}s"
         )
 
     # (e) The required-check-queued refusal is named as retryable.
@@ -190,6 +195,33 @@ def _strip_retry_loop(script: str) -> str:
 
 def test_arming_step_has_bounded_retry_loop() -> None:
     _assert_retry_contract(_workflow_text(), str(_workflow_path()))
+
+
+@pytest.mark.parametrize(
+    ("message", "expected_exit"),
+    [
+        ("GraphQL: Pull request is in unstable status (enablePullRequestAutoMerge)", 0),
+        ('Required status check "deterministic-safety-net" is queued.', 0),
+        ("Repository rule violations found: Required status check is pending.", 0),
+        ("HTTP 502 Bad Gateway", 0),
+        ("secondary rate limit", 0),
+        ("GraphQL: Resource not accessible by integration", 1),
+    ],
+)
+def test_arming_retry_classifier_runs_against_refusals(
+    message: str, expected_exit: int
+) -> None:
+    workflow = yaml.safe_load(_workflow_text())
+    script = _step_script(workflow, str(_workflow_path()))
+    function = re.search(r"(?ms)^is_retryable\(\) \{\n.*?^\}", script)
+    assert function is not None
+    result = subprocess.run(
+        ["bash", "-c", f'{function.group(0)}\nis_retryable "$1"', "bash", message],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == expected_exit, result.stderr
 
 
 def test_negative_control_retry_loop_removed_fails() -> None:
