@@ -3,12 +3,14 @@ import re
 import subprocess
 import sys
 from collections import Counter
+from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
 
 from scripts.embed_dashboard_data import EmbedError, _dashboard_facts, _render_page, embed_all
+from scripts.verify_attestation_binding import ContractError, verify_contract
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -196,7 +198,7 @@ def test_oversized_attestation_index_does_not_grow_homepage(tmp_path: Path) -> N
     )
     assert index_path.stat().st_size > 100_000
 
-    def render() -> bytes:
+    def render(now: datetime) -> bytes:
         return _render_page(
             ROOT / "docs/index.html",
             ROOT / "datapulse.json",
@@ -206,11 +208,39 @@ def test_oversized_attestation_index_does_not_grow_homepage(tmp_path: Path) -> N
             index_path,
             ROOT / "attestations/latest/binding.json",
             ROOT,
+            now=now,
         ).encode("utf-8")
 
-    document = render()
+    binding = json.loads((ROOT / "attestations/latest/binding.json").read_text(encoding="utf-8"))
+    health = json.loads((ROOT / "health/latest.json").read_text(encoding="utf-8"))
+    published_at = datetime.fromisoformat(
+        binding["payload"]["published_at"].replace("Z", "+00:00")
+    )
+    checked_at = datetime.fromisoformat(health["checked_at"].replace("Z", "+00:00"))
+    first_now = max(published_at, checked_at) + timedelta(seconds=1)
+    later_now = first_now + timedelta(seconds=1)
+    document = render(first_now)
     assert_dashboard_payload_within_budget(document)
-    assert render() == document
+    assert render(first_now) == document
+
+    later_document = render(later_now)
+    freshness_age = re.compile(rb'("age_seconds":)\d+')
+    try:
+        verification = verify_contract(ROOT, now=first_now)
+    except ContractError as error:
+        print(f"degraded freshness branch: binding was refused: {error}")
+        assert later_document == document
+    else:
+        freshness_status = verification["freshness"]["status"]
+        if freshness_status != "unavailable":
+            assert b'"age_seconds":' in document
+            print("verified freshness branch: pinned time changes age_seconds only")
+            assert later_document != document
+            assert freshness_age.sub(rb'\g<1><age>', later_document) == freshness_age.sub(
+                rb'\g<1><age>', document
+            )
+        else:
+            assert later_document == document
 
 
 @pytest.mark.parametrize("budget", ["homepage", "embedded-data"])
