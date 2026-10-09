@@ -792,7 +792,8 @@ def test_append_branch_policy_refusal_is_a_clean_decision(tmp_path: Path) -> Non
     jobs = _append_workflow_jobs()
     merge = jobs["merge"]
     assert merge["needs"] == "check_production_ref"
-    assert merge["if"] == "needs.check_production_ref.outputs.admitted == 'true'"
+    assert "needs.check_production_ref.outputs.admitted == 'true'" in merge["if"]
+    assert "head_repository.full_name == github.repository" in merge["if"]
     assert merge["environment"] == "production"
     assert "continue-on-error" not in _read(ROOT / ".github/workflows/attestation-append-merge.yml")
 

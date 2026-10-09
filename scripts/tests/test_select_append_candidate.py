@@ -97,7 +97,7 @@ def test_superseded_sibling_selection_is_scoped_to_open_same_day_prs() -> None:
 def test_append_merge_workflow_push_trigger_and_shape() -> None:
     workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     triggers = workflow.get("on", workflow.get(True, {}))
-    assert set(triggers) == {"push", "schedule", "workflow_dispatch"}
+    assert {"push", "schedule", "workflow_dispatch"} <= set(triggers)
     assert triggers["push"] == {"branches": ["attestation/append-*"]}
     assert triggers["schedule"] == [{"cron": "37 * * * *"}]
     assert triggers["workflow_dispatch"] is None
@@ -108,6 +108,27 @@ def test_append_merge_workflow_push_trigger_and_shape() -> None:
     checkout = next(step for step in job["steps"] if step.get("uses") == "actions/checkout@v4")
     assert checkout["with"]["persist-credentials"] is False
     assert any(step.get("uses") == "actions/create-github-app-token@v1" for step in job["steps"])
+
+
+def test_append_merge_workflow_run_trigger_tracks_append_ci() -> None:
+    workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    triggers = workflow.get("on", workflow.get(True, {}))
+    assert triggers["workflow_run"] == {
+        "workflows": ["Pull request CI"],
+        "types": ["completed"],
+        "branches": ["attestation/append-*"],
+    }
+
+
+def test_append_merge_workflow_run_requires_same_repository() -> None:
+    workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    job = workflow["jobs"]["merge"]
+    condition = job["if"]
+    assert "needs.check_production_ref.outputs.admitted == 'true'" in condition
+    assert "github.event_name != 'workflow_run'" in condition
+    assert "github.event.workflow_run.head_repository.full_name == github.repository" in condition
+    assert job["needs"] == "check_production_ref"
+    assert job["environment"] == "production"
 
 
 def test_accepted_append_retriggers_pages_deploy() -> None:
