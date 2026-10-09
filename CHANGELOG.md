@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.53.3](https://github.com/r3dz4r/datapulse-my/compare/v3.53.2...v3.53.3) (2026-10-09)
+
+
+### Bug Fixes
+
+* **ci:** schedule health automation promotion from main ([#840](https://github.com/r3dz4r/datapulse-my/issues/840)) ([90226a2](https://github.com/r3dz4r/datapulse-my/commit/90226a24bb9fd368ffa317f82450facd67902339))
+
 ## [3.53.2](https://github.com/r3dz4r/datapulse-my/compare/v3.53.1...v3.53.2) (2026-10-09)
 
 
