@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 6,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:e31e5a55152ec3f528cedc488ce3207a71b3c095f1f64668ec6ecf7565f604b8"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/transportation/ktmb/ets_2026.csv",
@@ -924,7 +924,7 @@
     "receipt": {
       "evidence_path": "data/ridership_od_ets.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:c00efc5ced14f95a2e0b32777bd8ec36a98dddbb8fd85c637654cf3eaa749d05",
+      "receipt_digest": "sha256:5034e57787c519c27908fe67de38a7c7d00eba6a44c974edaaad25355ffa4f8d",
       "sigstore_path": "data/ridership_od_ets.receipt.sigstore.json",
       "statement_path": "data/ridership_od_ets.receipt.statement.json"
     },
