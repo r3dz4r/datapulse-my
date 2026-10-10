@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.verify_attestation_binding import ContractError
-from scripts.attestation_sets import discovery, verify_set, descriptor, validate_discovery, correction_record, set_directory, FILES, append_content_digest, rekor_content
+from scripts.attestation_sets import discovery, verify_set, descriptor, validate_discovery, correction_record, set_directory, FILES, append_content_digest, rekor_content, external_rekor_paths
 
 ZERO = "0" * 64
 ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
@@ -327,9 +327,9 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
         if rekor["reference_ref"].startswith(f"attestations/rekor/{day}/"):
             binding["rekor"].update({"historical_reference_ref": rekor["reference_ref"],
                                      "historical_bundle_ref": rekor["bundle_ref"]})
-            if not run:
-                binding["rekor"].update({f"dataset_{did}_ref": f"attestations/{day}/{did}.json"
-                                         for did in envelopes})
+        if not run and use_served_rekor:
+            binding["rekor"].update({f"dataset_{did}_ref": f"attestations/{day}/{did}.json"
+                                     for did in envelopes})
     binding["signature_base64"] = sign(private, binding["payload"])
     dump(dated / "binding.json", binding)
     # Preserve the exact raw health input beside the signed set so a same-day
@@ -352,8 +352,14 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
         original_index["binding_ref"] = f"attestations/{day}/binding.json"
         original_index["attestations"] = {did: f"attestations/{day}/{did}.json" for did in envelopes}
         dump(original / "index.json", original_index)
+        original_rekor = rekor
+        if witness is not None and external_rekor_paths(rekor, day) is None:
+            dump(original / "rekor-reference.json", witness["reference"])
+            dump(original / "rekor-bundle.json", witness["bundle"])
+            original_rekor = {"reference_ref": f"attestations/{day}/rekor-reference.json",
+                              "bundle_ref": f"attestations/{day}/rekor-bundle.json"}
         dump(original / "binding.json", binding_envelope(
-            private, day, generated_at, health_claim, head, key["key_id"], rekor))
+            private, day, generated_at, health_claim, head, key["key_id"], original_rekor))
         (original / "health.json").write_bytes(health_bytes)
         chain_head_ref = original_index["chain_head_ref"]
     if correction is not None:
@@ -438,8 +444,10 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
             elif any((destination / name).read_bytes() != (staging / directory / name).read_bytes() for name in FILES):
                 raise ValueError("immutable destination cannot be overwritten")
             if len(candidate["days"][day]) == 1:
-                for name in (*FILES, "health.json"):
+                for name in (*FILES, "health.json", "rekor-reference.json", "rekor-bundle.json"):
                     source_alias = staging / "attestations" / day / name
+                    if name.startswith("rekor-") and not source_alias.is_file():
+                        continue
                     alias = root / "attestations" / day / name
                     if alias.exists():
                         if alias.read_bytes() != source_alias.read_bytes():

@@ -14,6 +14,7 @@ from scripts.attestation_sets import (
     FILES,
     PIPELINE_OWNED_PROJECTIONS,
     discovery,
+    external_rekor_paths,
     set_directory,
     verify_legacy_mirror,
     selected_directory,
@@ -91,6 +92,9 @@ def append_paths(root: Path, base: str) -> list[str]:
             raise ContractError("append submission requires a content-addressed set")
         paths.update(p.relative_to(root).as_posix() for p in (root / directory).iterdir() if p.is_file())
         binding = _load(root / directory / "binding.json", "append binding")
+        external_rekor = external_rekor_paths(binding.get("rekor"), head["payload"]["date"])
+        if external_rekor is not None:
+            paths.update(external_rekor)
         record = binding["payload"].get("correction")
         if record is not None:
             paths.add(record["health_snapshot_ref"])
