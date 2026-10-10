@@ -8,7 +8,7 @@ sources:
   - {"id": "bnm","resource": "https://storage.data.gov.my/finsector/payments/trnsc_daily_fpx.csv","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-09T14:41:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-08T14:24:19Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Source: Bank Negara Malaysia"
@@ -26,7 +26,7 @@ data.gov.my Daily FPX Transactions is published by Bank Negara Malaysia and trac
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:a434dc5f75dbcb949e85278c16502c19f09f75381d4176390546e2ae92fd91d0`
-- `record_count`: `7413`
+- `record_count`: `7410`
 
 # Quirks
 

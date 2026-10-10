@@ -8,7 +8,7 @@ sources:
   - {"id": "doe","resource": "https://eqms.doe.gov.my/RQIMS/conti_river","title": "Department of Environment Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T12:42:11Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-09T12:30:50Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Data and information are subject to the Malaysian Government Open Data Terms of Use 1.0"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/doe_rqims.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-10-11T12:00:00Z"
+stale_after: "2026-10-10T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 

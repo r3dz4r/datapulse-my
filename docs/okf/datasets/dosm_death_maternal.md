@@ -3,7 +3,7 @@ type: "Dataset"
 title: "OpenDOSM Annual Maternal Deaths, Malaysia"
 description: "DataPulse projection of OpenDOSM Annual Maternal Deaths, Malaysia from Department of Statistics Malaysia."
 resource: "https://storage.dosm.gov.my/demography/death_maternal.csv"
-tags: ["OpenDOSM (storage.dosm.gov.my)","vertical","annual"]
+tags: ["OpenDOSM (storage.dosm.gov.my)","non-vertical","annual"]
 sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/demography/death_maternal.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}

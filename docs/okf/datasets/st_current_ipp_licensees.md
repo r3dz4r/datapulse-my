@@ -3,7 +3,7 @@ type: "Dataset"
 title: "Current Independent Power Producer Licensees — Malaysia"
 description: "DataPulse projection of Current Independent Power Producer Licensees — Malaysia from Suruhanjaya Tenaga (Malaysia Energy Commission)."
 resource: "https://myenergystats.st.gov.my/documents/d/guest/csv-senarai-lesen-ipp"
-tags: ["myenergystats.st.gov.my (ST)","vertical","as-required"]
+tags: ["myenergystats.st.gov.my (ST)","non-vertical","as-required"]
 sources:
   - {"id": "energy_commission","resource": "https://myenergystats.st.gov.my/documents/d/guest/csv-senarai-lesen-ipp","title": "Suruhanjaya Tenaga (Malaysia Energy Commission)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-05T00:00:00Z"}

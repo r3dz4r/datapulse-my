@@ -3,7 +3,7 @@ type: "Dataset"
 title: "data.gov.my Drug Addicts by State & Age Group"
 description: "DataPulse projection of data.gov.my Drug Addicts by State & Age Group from National Anti-Drugs Agency."
 resource: "https://storage.data.gov.my/publicsafety/drug_addicts_age.csv"
-tags: ["data.gov.my (storage.data.gov.my)","vertical","annual"]
+tags: ["data.gov.my (storage.data.gov.my)","non-vertical","annual"]
 sources:
   - {"id": "aadk","resource": "https://storage.data.gov.my/publicsafety/drug_addicts_age.csv","title": "National Anti-Drugs Agency"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}

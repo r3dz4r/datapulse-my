@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/iowrt/iowrt_3d.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -26,7 +26,7 @@ Wholesale & Retail Trade by Group (3 digit) is published by Department of Statis
 
 - `column_count`: `5`
 - `first_row_hash`: `shape-v1:6c5487a4ee8832a51e6b81f71afc5ef38d4ad990cacc32420950d15b8962256f`
-- `record_count`: `5980`
+- `record_count`: `5920`
 
 # Quirks
 

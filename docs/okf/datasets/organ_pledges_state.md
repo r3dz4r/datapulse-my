@@ -8,7 +8,7 @@ sources:
   - {"id": "ntrc","resource": "https://api.data.gov.my/data-catalogue?id=organ_pledges_state","title": "National Transplant Resource Centre and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-09T14:41:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-08T14:24:19Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Transplant Resource Centre, Ministry of Health Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/organ_pledges_state.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 10000
-stale_after: "2026-10-09T12:00:00Z"
+stale_after: "2026-10-08T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Daily Organ Donation Pledges by State is published by National Transplant Resour
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:7b4c3dda8317e9336f4f150b9201abeaa8a759ed04d16e7e39fe376585d32ac1`
-- `record_count`: `103632`
+- `record_count`: `103616`
 
 # Quirks
 

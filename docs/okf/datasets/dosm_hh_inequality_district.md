@@ -3,7 +3,7 @@ type: "Dataset"
 title: "OpenDOSM Income Inequality by District"
 description: "DataPulse projection of OpenDOSM Income Inequality by District from Department of Statistics Malaysia."
 resource: "https://storage.dosm.gov.my/hies/hh_inequality_district.csv"
-tags: ["OpenDOSM (storage.dosm.gov.my)","vertical","biennial to triennial (survey years)"]
+tags: ["OpenDOSM (storage.dosm.gov.my)","non-vertical","biennial to triennial (survey years)"]
 sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/hies/hh_inequality_district.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}

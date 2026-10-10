@@ -3,12 +3,12 @@ type: "Dataset"
 title: "Monthly KTMB Ridership"
 description: "DataPulse projection of Monthly KTMB Ridership from Keretapi Tanah Melayu Berhad."
 resource: "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_monthly.csv"
-tags: ["data.gov.my","vertical","monthly"]
+tags: ["data.gov.my","non-vertical","monthly"]
 sources:
   - {"id": "ktmb","resource": "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_monthly.csv","title": "Keretapi Tanah Melayu Berhad"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Malayan Railways Limited, Ministry of Transport"
