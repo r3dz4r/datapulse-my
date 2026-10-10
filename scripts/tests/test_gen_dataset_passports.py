@@ -69,15 +69,28 @@ def test_passport_projects_current_health_status_and_timestamp() -> None:
     assert passport["identity"]["observed_verified_at"] == health["last_checked"]
 
 
-def test_record_evidence_is_pilot_bounded_and_lineage_is_not_transformation_claim() -> None:
+def test_record_evidence_cohort_resolves_and_lineage_is_not_transformation_claim(tmp_path: Path) -> None:
     pilot = _passport("pharmaceutical_products")
-    other = _passport("fuelprice")
+    manifest, snapshot, graph, attestations = _inputs()
+    entry = next(row for row in manifest["datasets"] if row["id"] == "fuelprice")
+    health = next(row for row in snapshot["datasets"] if row["dataset_id"] == "fuelprice")
+    assert entry["vertical"] is True
+    assert entry["record_evidence_schema"] == "record-evidence/v1"
+    assert entry["record_source_url"] == "https://storage.data.gov.my/commodities/fuelprice.csv"
+    evidence_path = tmp_path / "record-evidence" / "fuelprice" / "latest.json"
+    evidence_path.parent.mkdir(parents=True)
+    evidence_path.write_text(json.dumps({"schema": "record-evidence/v1", "dataset_id": "fuelprice"}), encoding="utf-8")
+    other = build_passport(tmp_path, entry, health, graph, attestations)
     assert pilot["record_evidence"] == {
         "schema": "record-evidence/v1",
         "reference": "record-evidence/pharmaceutical_products/latest.json",
         "dataset_id": "pharmaceutical_products",
     }
-    assert other["record_evidence"]["reason"] == "record_evidence_not_enabled_for_dataset"
+    assert other["record_evidence"] == {
+        "schema": "record-evidence/v1",
+        "reference": "record-evidence/fuelprice/latest.json",
+        "dataset_id": "fuelprice",
+    }
     assert other["lineage"]["transformation_lineage"]["state"] == "not_evaluated"
     assert "not full transformation lineage" in other["lineage"]["catalogue_relationships"]["limitation"]
 
