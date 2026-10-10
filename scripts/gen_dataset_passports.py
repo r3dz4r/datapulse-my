@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -13,6 +14,11 @@ from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
+
+if __package__:
+    from scripts.gen_per_dataset_receipt import PREDICATE_TYPE, canonical_evidence_row, statement_bytes
+else:
+    from gen_per_dataset_receipt import PREDICATE_TYPE, canonical_evidence_row, statement_bytes
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -109,6 +115,22 @@ def _record_evidence(root: Path, dataset_id: str) -> dict[str, Any]:
     return {"schema": "record-evidence/v1", "reference": path.relative_to(root).as_posix(), "dataset_id": dataset_id}
 
 
+def _receipt(dataset_id: str, health: dict[str, Any], entry: dict[str, Any]) -> dict[str, str]:
+    try:
+        evidence = canonical_evidence_row(health, entry)
+        digest = f"sha256:{hashlib.sha256(statement_bytes(evidence)).hexdigest()}"
+    except (KeyError, TypeError, ValueError):
+        return _unavailable("receipt_digest_cannot_be_computed_from_canonical_inputs")
+    prefix = f"data/{dataset_id}.receipt"
+    return {
+        "evidence_path": f"{prefix}.evidence.json",
+        "statement_path": f"{prefix}.statement.json",
+        "sigstore_path": f"{prefix}.sigstore.json",
+        "receipt_digest": digest,
+        "predicateType": PREDICATE_TYPE,
+    }
+
+
 def build_passport(root: Path, entry: dict[str, Any], health: dict[str, Any], graph: dict[str, Any], attestations: dict[str, Any]) -> dict[str, Any]:
     """Build one passport using only current local canonical evidence."""
     dataset_id = entry["id"]
@@ -157,6 +179,7 @@ def build_passport(root: Path, entry: dict[str, Any], health: dict[str, Any], gr
             "attestation": attestation_ref if attestation_ref else _unavailable("attestation_reference_not_available"),
             "chain_reference": attestations.get("chain_head_ref") if isinstance(attestations.get("chain_head_ref"), str) else _unavailable("attestation_chain_reference_not_available"),
             "witness_reference": _unavailable("witness_reference_not_available"),
+            "receipt": _receipt(dataset_id, health, entry),
         },
         "lineage": {
             "catalogue_relationships": {"graph_reference": "catalog-graph.json", "relationship_edges": sorted(edges, key=lambda edge: (str(edge.get("kind")), str(edge.get("from")), str(edge.get("to")))), "limitation": "Catalogue relationships are literal metadata context, not full transformation lineage."},
