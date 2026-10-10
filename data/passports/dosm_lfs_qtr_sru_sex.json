@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 466.0,
+        "latest_days": 192.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-03T10:36:37Z",
-    "record_count": 210,
+    "last_checked": "2026-10-10T11:12:07Z",
+    "record_count": 228,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:93bde4a4e3fa746cdf7a652edf153f64099e43e54994cc36eed0c24cc54cccd0"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=lfs_qtr_sru_sex",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Quarterly Skills-Related Underemployment by Sex",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-03T10:36:37Z",
+    "observed_verified_at": "2026-10-10T11:12:07Z",
     "source": "DOSM via data.gov.my",
     "steward": "Department of Statistics Malaysia"
   },
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_lfs_qtr_sru_sex.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:858f7be343b717f15f632b05b45b95dc90d274d161ed77cd799271e8e22b1130",
+      "receipt_digest": "sha256:864282ba6a0268d01834aa7d797a7d1965b25686da4179e80a594ab2a2a1925d",
       "sigstore_path": "data/dosm_lfs_qtr_sru_sex.receipt.sigstore.json",
       "statement_path": "data/dosm_lfs_qtr_sru_sex.receipt.statement.json"
     },

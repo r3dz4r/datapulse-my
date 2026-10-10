@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 466.0,
+        "latest_days": 192.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-03T10:36:37Z",
-    "record_count": 63,
+    "last_checked": "2026-10-10T11:12:07Z",
+    "record_count": 66,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:af7d2905be69979a98e3e54a08a9c1f0e899c3d0c6e9eef396fe5a2b06fb36d2"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.dosm.gov.my/labour/lfs_qtr.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia (national)",
     "name": "OpenDOSM Quarterly Labour Force Statistics",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-03T10:36:37Z",
+    "observed_verified_at": "2026-10-10T11:12:07Z",
     "source": "OpenDOSM (storage.dosm.gov.my)",
     "steward": "DOSM Malaysia"
   },
@@ -1245,7 +1245,7 @@
     "receipt": {
       "evidence_path": "data/dosm_lfs_qtr.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:24f25493b52954979a698cdf67138b1dc1cd90ee442ead458757fb0288a70bca",
+      "receipt_digest": "sha256:e6520c88e416ff2239d406f0652bb9787c256efd4c34d0f746e216bf0c7c4d5a",
       "sigstore_path": "data/dosm_lfs_qtr.receipt.sigstore.json",
       "statement_path": "data/dosm_lfs_qtr.receipt.statement.json"
     },

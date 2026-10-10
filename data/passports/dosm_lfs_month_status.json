@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 101.0,
+        "latest_days": 70.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-03T10:36:37Z",
-    "record_count": 254,
+    "last_checked": "2026-10-10T11:12:07Z",
+    "record_count": 256,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:6fe1380fcb9066837b87a802ec7dbc58c01a1b2ff1b0dc15138ebe52b531b617"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=lfs_month_status",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Monthly Employment by Status in Employment",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-03T10:36:37Z",
+    "observed_verified_at": "2026-10-10T11:12:07Z",
     "source": "DOSM via data.gov.my",
     "steward": "Department of Statistics Malaysia"
   },
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_lfs_month_status.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:b10e36c57a74de565fe8b5700fcf67c7061981fca00b724933d9f3718cb39c39",
+      "receipt_digest": "sha256:d2207a6c34492ff8255171f987607ad8462915900d314d18b1adc9523379581a",
       "sigstore_path": "data/dosm_lfs_month_status.receipt.sigstore.json",
       "statement_path": "data/dosm_lfs_month_status.receipt.statement.json"
     },

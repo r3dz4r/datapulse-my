@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 466.0,
+        "latest_days": 192.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-03T10:36:37Z",
-    "record_count": 350,
+    "last_checked": "2026-10-10T11:12:07Z",
+    "record_count": 380,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:a4c7abe804db35dda42bccfaf70537073136bf4f312ab01a24d2514413fcfc88"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=lfs_qtr_tru_age",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Quarterly Time-Related Underemployment by Age",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-03T10:36:37Z",
+    "observed_verified_at": "2026-10-10T11:12:07Z",
     "source": "DOSM via data.gov.my",
     "steward": "Department of Statistics Malaysia"
   },
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_lfs_qtr_tru_age.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:2eb91f44c38f53388431a31248d335d9d3de65039116c1017abe315a94459359",
+      "receipt_digest": "sha256:f2ab2fb58536a9db0fc185eafcdbdfb255ef7a9b48d1ca779c0a91f629517c84",
       "sigstore_path": "data/dosm_lfs_qtr_tru_age.receipt.sigstore.json",
       "statement_path": "data/dosm_lfs_qtr_tru_age.receipt.statement.json"
     },

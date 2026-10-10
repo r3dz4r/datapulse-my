@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 101.0,
+        "latest_days": 70.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-03T10:36:37Z",
-    "record_count": 404,
+    "last_checked": "2026-10-10T11:12:07Z",
+    "record_count": 407,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:f8b631dd4f333f8e4391ddc7f10c3dc54c8d980bf1f1f8d861285a8eb9190fbf"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=ipi",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Industrial Production Index (IPI)",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-03T10:36:37Z",
+    "observed_verified_at": "2026-10-10T11:12:07Z",
     "source": "DOSM via data.gov.my",
     "steward": "Department of Statistics Malaysia"
   },
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_ipi.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:0954cbc9a31a583d80d20ac455b4f639dac9b0a9155e1965408922326d04d8e9",
+      "receipt_digest": "sha256:9470e12e3bc120a740e4c917df21ee2447f6ef1ef996d971bf2762d146801cc2",
       "sigstore_path": "data/dosm_ipi.receipt.sigstore.json",
       "statement_path": "data/dosm_ipi.receipt.statement.json"
     },
