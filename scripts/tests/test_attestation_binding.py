@@ -389,6 +389,49 @@ def test_health_binding_mismatch_is_rejected(tmp_path: Path, field: str) -> None
         verify_contract(root, now=NOW + timedelta(hours=1))
 
 
+def test_publisher_accepts_newer_health_with_verified_signed_snapshot(tmp_path: Path) -> None:
+    root, key, rekor_reference = fixture_root_with_rekor(tmp_path)
+    ga.generate(root, key, NOW, rekor_reference)
+    signed_digest = load(root / "attestations/latest/binding.json")["payload"]["health"]["artifact_sha256"]
+    health_path = root / "health/latest.json"
+    health = load(health_path)
+    health["checked_at"] = "2026-08-15T02:00:00Z"
+    health["datasets"][0]["last_checked"] = health["checked_at"]
+    dump(health_path, health)
+
+    with pytest.raises(ContractError, match="binding"):
+        verify_contract(root, now=NOW + timedelta(hours=2), require_rekor=True)
+    result = verify_contract(
+        root, now=NOW + timedelta(hours=2), require_rekor=True, allow_newer_health=True
+    )
+    assert result["health"]["artifact_sha256"] == signed_digest
+    assert result["claims"]["rekor_witnessed"] is True
+
+
+@pytest.mark.parametrize("change", ("older_time", "different_dataset", "missing_snapshot"))
+def test_publisher_refuses_health_that_is_not_a_verified_successor(
+    tmp_path: Path, change: str,
+) -> None:
+    root, key, rekor_reference = fixture_root_with_rekor(tmp_path)
+    ga.generate(root, key, NOW, rekor_reference)
+    health_path = root / "health/latest.json"
+    health = load(health_path)
+    health["checked_at"] = (
+        "2026-08-14T00:00:00Z" if change == "older_time" else "2026-08-15T02:00:00Z"
+    )
+    health["datasets"][0]["last_checked"] = health["checked_at"]
+    if change == "different_dataset":
+        health["datasets"][0]["dataset_id"] = "other"
+    dump(health_path, health)
+    if change == "missing_snapshot":
+        (immutable_directory(root) / "health.json").unlink()
+
+    with pytest.raises(ContractError, match="binding|snapshot"):
+        verify_contract(
+            root, now=NOW + timedelta(hours=2), require_rekor=True, allow_newer_health=True
+        )
+
+
 def test_stale_binding_is_rejected(tmp_path: Path) -> None:
     root = generated_root(tmp_path)
     with pytest.raises(ContractError, match="stale"):
