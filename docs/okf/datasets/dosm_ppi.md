@@ -3,12 +3,12 @@ type: "Dataset"
 title: "OpenDOSM Monthly Producer Price Index"
 description: "DataPulse projection of OpenDOSM Monthly Producer Price Index from DOSM Malaysia."
 resource: "https://storage.dosm.gov.my/ppi/ppi.csv"
-tags: ["OpenDOSM (storage.dosm.gov.my)","non-vertical","monthly"]
+tags: ["OpenDOSM (storage.dosm.gov.my)","vertical","monthly"]
 sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/ppi/ppi.csv","title": "DOSM Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"

@@ -3,7 +3,7 @@ type: "Dataset"
 title: "data.gov.my Annual Interest Rates"
 description: "DataPulse projection of data.gov.my Annual Interest Rates from Bank Negara Malaysia."
 resource: "https://storage.data.gov.my/finsector/interest_rates_annual.csv"
-tags: ["data.gov.my (storage.data.gov.my)","non-vertical","annual"]
+tags: ["data.gov.my (storage.data.gov.my)","vertical","annual"]
 sources:
   - {"id": "bnm","resource": "https://storage.data.gov.my/finsector/interest_rates_annual.csv","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}

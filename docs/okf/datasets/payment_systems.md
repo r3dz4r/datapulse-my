@@ -3,12 +3,12 @@ type: "Dataset"
 title: "Monthly Payment Systems"
 description: "DataPulse projection of Monthly Payment Systems from Bank Negara Malaysia."
 resource: "https://storage.data.gov.my/finsector/payments/systems.csv"
-tags: ["data.gov.my","non-vertical","monthly"]
+tags: ["data.gov.my","vertical","monthly"]
 sources:
   - {"id": "bnm","resource": "https://storage.data.gov.my/finsector/payments/systems.csv","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Source: Bank Negara Malaysia"
