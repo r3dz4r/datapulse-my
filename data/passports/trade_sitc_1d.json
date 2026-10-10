@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 100.0,
+        "latest_days": 101.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 6,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 90,
         "window_days": 14
@@ -1182,13 +1182,6 @@
   "reproducibility_and_evidence": {
     "attestation": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/trade_sitc_1d.json",
     "chain_reference": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/chain_head.json",
-    "receipt": {
-      "evidence_path": "data/trade_sitc_1d.receipt.evidence.json",
-      "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:5ace019f6657dd95bba0ed566289cc88ccf6ccce9e41a5eef55e1483ef0e7c31",
-      "sigstore_path": "data/trade_sitc_1d.receipt.sigstore.json",
-      "statement_path": "data/trade_sitc_1d.receipt.statement.json"
-    },
     "source_digest": {
       "reason": "canonical_source_digest_not_available",
       "state": "not_evaluated"

@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 6,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:44548003c1b51e35d27dc7f574a6f33a8706abe8d2c5b8558a3250699558a4d6"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_directdebit",
@@ -870,13 +870,6 @@
   "reproducibility_and_evidence": {
     "attestation": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/trnsc_daily_directdebit.json",
     "chain_reference": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/chain_head.json",
-    "receipt": {
-      "evidence_path": "data/trnsc_daily_directdebit.receipt.evidence.json",
-      "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:740381f0d10be1838cb079eadb958e9757f4e68d9dae6ba06100b92158d8ed0b",
-      "sigstore_path": "data/trnsc_daily_directdebit.receipt.sigstore.json",
-      "statement_path": "data/trnsc_daily_directdebit.receipt.statement.json"
-    },
     "source_digest": {
       "reason": "canonical_source_digest_not_available",
       "state": "not_evaluated"

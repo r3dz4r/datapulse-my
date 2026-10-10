@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 6,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:e31e5a55152ec3f528cedc488ce3207a71b3c095f1f64668ec6ecf7565f604b8"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/transportation/ktmb/shuttle_tebrau_2026.csv",
@@ -921,13 +921,6 @@
   "reproducibility_and_evidence": {
     "attestation": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/ridership_od_shuttle_tebrau.json",
     "chain_reference": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/chain_head.json",
-    "receipt": {
-      "evidence_path": "data/ridership_od_shuttle_tebrau.receipt.evidence.json",
-      "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:af7f693291eda9fcfc182d9b4945b98aa3c483eb5f8826f6415020dc7e62b372",
-      "sigstore_path": "data/ridership_od_shuttle_tebrau.receipt.sigstore.json",
-      "statement_path": "data/ridership_od_shuttle_tebrau.receipt.statement.json"
-    },
     "source_digest": {
       "reason": "canonical_source_digest_not_available",
       "state": "not_evaluated"

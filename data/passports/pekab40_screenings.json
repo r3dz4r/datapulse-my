@@ -3,13 +3,13 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 3.0,
+        "latest_days": 4.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 6,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:5dd3fbce4794ce4cbc3d09f1a4d5a9240b5c9fe0b491944d6e225a949ea644a6"
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=pekab40_screenings",
@@ -843,13 +843,6 @@
   "reproducibility_and_evidence": {
     "attestation": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/pekab40_screenings.json",
     "chain_reference": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/chain_head.json",
-    "receipt": {
-      "evidence_path": "data/pekab40_screenings.receipt.evidence.json",
-      "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:e3fd9d88fb2e087acb803bdaeee216c8bb4009a84d6df2b0b2b2b6c6b1dedd85",
-      "sigstore_path": "data/pekab40_screenings.receipt.sigstore.json",
-      "statement_path": "data/pekab40_screenings.receipt.statement.json"
-    },
     "source_digest": {
       "reason": "canonical_source_digest_not_available",
       "state": "not_evaluated"
