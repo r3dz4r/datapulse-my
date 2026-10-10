@@ -861,12 +861,20 @@
     "profile_version": "datapulse-quality-profile/v1"
   },
   "record_evidence": {
-    "reason": "record_evidence_not_enabled_for_dataset",
-    "state": "not_evaluated"
+    "dataset_id": "schools_district",
+    "reference": "record-evidence/schools_district/latest.json",
+    "schema": "record-evidence/v1"
   },
   "reproducibility_and_evidence": {
     "attestation": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/schools_district.json",
     "chain_reference": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/chain_head.json",
+    "receipt": {
+      "evidence_path": "data/schools_district.receipt.evidence.json",
+      "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
+      "receipt_digest": "sha256:f0b711fcfb89d31269d655a8f7e8cbb3666c1cb4c86ae3e105c90fd8996b1a56",
+      "sigstore_path": "data/schools_district.receipt.sigstore.json",
+      "statement_path": "data/schools_district.receipt.statement.json"
+    },
     "source_digest": {
       "reason": "canonical_source_digest_not_available",
       "state": "not_evaluated"
