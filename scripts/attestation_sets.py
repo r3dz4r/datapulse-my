@@ -31,11 +31,13 @@ logger = logging.getLogger(__name__)
 
 def append_content_digest(head_payload: dict, envelopes: dict, scores: dict,
                           binding_payload: dict, rekor_documents: dict | None) -> str:
-    """Commit finalized content before adding its deterministic self references.
+    """Commit creation-time set content before adding self references.
 
     Signatures and references of the head/binding/index are determined by these
     inputs. Excluding those derived fields avoids a digest/signature fixed point.
-    Dataset signatures are already finalized and are included verbatim.
+    Dataset signatures and any proof copied into the set at creation are included.
+    Binding claims, signature and later external Rekor witnesses are outside the
+    digest; their validity is checked separately by verify_set.
     """
     payload = {k: v for k, v in head_payload.items() if k != "append_content_sha256"}
     binding = {**binding_payload, "ed25519": {
@@ -192,8 +194,15 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
         if not snapshot.is_file():
             raise ContractError("content-addressed health snapshot is missing")
         datasets = {did: _load(root / ref, "immutable dataset") for did, ref in index["attestations"].items()}
+        # Only proof files copied into the immutable set at creation are part of
+        # its digest. bind_candidate_witness may add an external Rekor witness
+        # later without changing the already signed head or binding payload.
+        local_rekor = {"reference_ref": directory + "/rekor-reference.json",
+                       "bundle_ref": directory + "/rekor-bundle.json"}
+        has_local_rekor = any((root / ref).is_file() for ref in local_rekor.values())
+        digested_rekor = rekor_content(root, local_rekor) if has_local_rekor else None
         if head["payload"]["append_content_sha256"] != append_content_digest(
-                head["payload"], datasets, scores, payload, rekor_content(root, rekor)):
+                head["payload"], datasets, scores, payload, digested_rekor):
             raise ContractError("append content digest disagrees with immutable set")
         if any(ref != directory + "/" + did + ".json" for did, ref in index["attestations"].items()):
             raise ContractError("content-addressed dataset reference escapes its set")
