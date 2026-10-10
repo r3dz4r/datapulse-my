@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:a434dc5f75dbcb949e85278c16502c19f09f75381d4176390546e2ae92fd91d0"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/finsector/payments/trnsc_daily_fpx.csv",
@@ -1128,7 +1128,7 @@
     "receipt": {
       "evidence_path": "data/dgm_payments_transactions_fpx.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:1dc5e64bb224c2dac37a98d09a7c3ad842c17bc10370e6c556e465b9e5ec957a",
+      "receipt_digest": "sha256:a831701fcba0368925ddeedcc925f7ac61ab83c01d2fcb87dd60a2cad781f958",
       "sigstore_path": "data/dgm_payments_transactions_fpx.receipt.sigstore.json",
       "statement_path": "data/dgm_payments_transactions_fpx.receipt.statement.json"
     },
