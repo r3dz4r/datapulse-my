@@ -36,8 +36,8 @@ def append_content_digest(head_payload: dict, envelopes: dict, scores: dict,
     Signatures and references of the head/binding/index are determined by these
     inputs. Excluding those derived fields avoids a digest/signature fixed point.
     Dataset signatures and any proof copied into the set at creation are included.
-    Binding claims, signature and later external Rekor witnesses are outside the
-    digest; their validity is checked separately by verify_set.
+    Binding claims, signature and external Rekor witnesses (at creation or later)
+    are outside the digest; their validity is checked separately by verify_set.
     """
     payload = {k: v for k, v in head_payload.items() if k != "append_content_sha256"}
     binding = {**binding_payload, "ed25519": {
@@ -195,8 +195,9 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
             raise ContractError("content-addressed health snapshot is missing")
         datasets = {did: _load(root / ref, "immutable dataset") for did, ref in index["attestations"].items()}
         # Only proof files copied into the immutable set at creation are part of
-        # its digest. bind_candidate_witness may add an external Rekor witness
-        # later without changing the already signed head or binding payload.
+        # its digest. External witnesses supplied by either gen_attestations or
+        # bind_candidate_witness are verified separately above, without changing
+        # the already signed head or binding payload.
         local_rekor = {"reference_ref": directory + "/rekor-reference.json",
                        "bundle_ref": directory + "/rekor-bundle.json"}
         has_local_rekor = any((root / ref).is_file() for ref in local_rekor.values())

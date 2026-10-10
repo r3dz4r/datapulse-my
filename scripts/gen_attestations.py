@@ -291,8 +291,13 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     if correction is not None:
         binding["payload"]["correction"] = correction
     witness = rekor_content(root, rekor)
+    external_witness = external_rekor_paths(rekor, day) is not None
+    # Day-scoped Rekor URLs are independently verified witnesses, whether
+    # supplied now or by bind_candidate_witness later. Only proof bytes copied
+    # into this immutable set contribute to its content-addressed identity.
+    # Hash the binding payload, never its derived signature, claims or rekor.
     head_payload["append_content_sha256"] = append_content_digest(
-        head_payload, envelopes, scores, binding["payload"], witness)
+        head_payload, envelopes, scores, binding["payload"], None if external_witness else witness)
     chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}
     directory = f"attestations/{day}/revisions/{chain_head}"
     dated = root / directory
@@ -317,14 +322,16 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     binding["payload"]["ed25519"]["chain_head"] = chain_head
     binding["payload"]["ed25519"]["chain_head_ref"] = directory + "/chain_head.json"
     if witness is not None:
-        dump(dated / "rekor-reference.json", witness["reference"])
-        dump(dated / "rekor-bundle.json", witness["bundle"])
-        use_served_rekor = rekor["reference_ref"].startswith(f"attestations/rekor/{day}/")
+        if not external_witness:
+            dump(dated / "rekor-reference.json", witness["reference"])
+            dump(dated / "rekor-bundle.json", witness["bundle"])
+        use_served_rekor = external_witness
         binding["rekor"] = {"reference_ref": rekor["reference_ref"] if use_served_rekor else directory + "/rekor-reference.json",
                             "bundle_ref": rekor["bundle_ref"] if use_served_rekor else directory + "/rekor-bundle.json"}
         # The served-plane fetch follows binding proof references. Retain the
-        # producer's dated Rekor URLs alongside the immutable revision copies.
-        if rekor["reference_ref"].startswith(f"attestations/rekor/{day}/"):
+        # producer's dated Rekor URLs without duplicating external witnesses
+        # inside the digested set (including its legacy daily alias).
+        if external_witness:
             binding["rekor"].update({"historical_reference_ref": rekor["reference_ref"],
                                      "historical_bundle_ref": rekor["bundle_ref"]})
         if not run and use_served_rekor:
