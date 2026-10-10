@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.verify_attestation_binding import ContractError
-from scripts.attestation_sets import discovery, verify_set, descriptor, validate_discovery, correction_record, set_directory, FILES
+from scripts.attestation_sets import discovery, verify_set, descriptor, validate_discovery, correction_record, set_directory, FILES, append_content_digest, rekor_content
 
 ZERO = "0" * 64
 ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
@@ -181,7 +181,7 @@ def agrees(root: Path, directory: str, manifest: dict, health_claim: dict, regis
     if (binding["payload"]["health"] != health_claim
             or binding["payload"]["ed25519"]["key_id"] != registry.get("current_key_id")
             or set(index["attestations"]) != {r["id"] for r in manifest["datasets"]}
-            or (rekor is not None and binding.get("rekor") != rekor)):
+            or (rekor is not None and rekor_content(root, binding.get("rekor")) != rekor_content(root, rekor))):
         return False
     return all(load(root / index["attestations"][r["id"]])["payload"]["source_url"] == r["url"] for r in manifest["datasets"])
 
@@ -279,8 +279,15 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     head_payload={"schema":"datapulse/v1/daily-chain-head","date":day,"previous_chain_head":previous,"dataset_count":len(links),"dataset_links_sha256":sha(canonical(links)),"key_id":key["key_id"]}
     if correction is not None:
         head_payload["correction"] = correction
+    scores = score_rows(manifest,health,trends,drift,recon,generated_at)
+    binding = binding_envelope(private,day,generated_at,health_claim,{"chain_head": ZERO},key["key_id"],rekor)
+    if correction is not None:
+        binding["payload"]["correction"] = correction
+    witness = rekor_content(root, rekor)
+    head_payload["append_content_sha256"] = append_content_digest(
+        head_payload, envelopes, scores, binding["payload"], witness)
     chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}
-    directory = f"attestations/{day}" + (f"/revisions/{chain_head}" if run else "")
+    directory = f"attestations/{day}/revisions/{chain_head}"
     dated = root / directory
     if dated.exists() and any((dated / name).exists() for name in FILES):
         raise ValueError("same-day attestation is corrupt or inconsistent: destination already exists")
@@ -290,11 +297,14 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     dump(dated / "chain_head.json", head)
     dump(dated / "index.json", {"schema": "datapulse/v1/attestation-index", "date": day,
         "chain_head_ref": directory + "/chain_head.json", "binding_ref": directory + "/binding.json", "attestations": refs})
-    dump(dated / "scores.json", score_rows(manifest,health,trends,drift,recon,generated_at))
-    binding = binding_envelope(private,day,generated_at,health_claim,head,key["key_id"],rekor)
+    dump(dated / "scores.json", scores)
+    binding["payload"]["ed25519"]["chain_head"] = chain_head
     binding["payload"]["ed25519"]["chain_head_ref"] = directory + "/chain_head.json"
-    if correction is not None:
-        binding["payload"]["correction"] = correction
+    if witness is not None:
+        dump(dated / "rekor-reference.json", witness["reference"])
+        dump(dated / "rekor-bundle.json", witness["bundle"])
+        binding["rekor"] = {"reference_ref": directory + "/rekor-reference.json",
+                            "bundle_ref": directory + "/rekor-bundle.json"}
     binding["signature_base64"] = sign(private, binding["payload"])
     dump(dated / "binding.json", binding)
     # Preserve the exact raw health input beside the signed set so a same-day

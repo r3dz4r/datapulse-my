@@ -57,13 +57,13 @@ def _select(rows: list[dict[str, object]], *, path: Path | None = None) -> subpr
     )
 
 
-def test_newest_append_is_selected_from_file(tmp_path: Path) -> None:
+def test_oldest_append_is_selected_from_file(tmp_path: Path) -> None:
     rows = [
         _pull_request(11, "attestation/append-old", "2026-10-09T00:01:00Z"),
         _pull_request(12, "attestation/append-new", "2026-10-09T00:02:00Z"),
     ]
     result = _select(rows, path=tmp_path / "prs.json")
-    assert (result.returncode, result.stdout, result.stderr) == (0, "12\n", "")
+    assert (result.returncode, result.stdout, result.stderr) == (0, "11\n", "")
 
 
 def test_non_append_heads_are_ignored() -> None:
@@ -81,33 +81,43 @@ def test_empty_list_has_empty_output_and_succeeds() -> None:
     assert (result.returncode, result.stdout, result.stderr) == (0, "", "")
 
 
-def test_older_open_sibling_is_not_selected() -> None:
+def test_older_open_append_is_retained() -> None:
     rows = [
         _pull_request(30, "attestation/append-older-sibling", "2026-10-09T00:01:00Z"),
         _pull_request(31, "attestation/append-newer-sibling", "2026-10-09T00:02:00Z"),
     ]
     result = _select(rows)
-    assert (result.returncode, result.stdout, result.stderr) == (0, "31\n", "")
-    assert result.stdout != "30\n"
+    assert (result.returncode, result.stdout, result.stderr) == (0, "30\n", "")
+    assert result.stdout != "31\n"
 
 
-def test_created_at_tie_selects_higher_number() -> None:
+def test_created_at_tie_selects_lower_number() -> None:
     rows = [
         _pull_request(42, "attestation/append-higher", "2026-10-09T00:01:00Z"),
         _pull_request(41, "attestation/append-lower", "2026-10-09T00:01:00Z"),
     ]
     result = _select(rows)
-    assert (result.returncode, result.stdout, result.stderr) == (0, "42\n", "")
+    assert (result.returncode, result.stdout, result.stderr) == (0, "41\n", "")
 
 
-def test_superseded_sibling_selection_is_scoped_to_open_same_day_prs() -> None:
+def test_same_day_does_not_prove_supersession() -> None:
     def row(number: int, day: str, state: str = "OPEN") -> dict[str, object]:
         result = _pull_request(number, f"attestation/append-{number}", f"2026-10-{number:02d}T00:00:00Z")
         result.update(title=_produced_title(day), state=state)
         return result
 
     rows = [row(50, "2026-10-09"), row(48, "2026-10-09"), row(47, "2026-10-09"), row(49, "2026-10-09", "CLOSED"), row(51, "2026-10-10")]
-    assert select_superseded_siblings(rows, 50) == [47, 48]
+    assert select_superseded_siblings(rows, 50) == []
+
+
+def test_conflicting_or_failed_append_does_not_starve_compatible_evidence() -> None:
+    rows = [
+        {**_pull_request(1, "attestation/append-conflicting", "2026-10-09T00:01:00Z"), "mergeable": "CONFLICTING"},
+        {**_pull_request(2, "attestation/append-fork", "2026-10-09T00:02:00Z"),
+         "statusCheckRollup": [{"conclusion": "FAILURE"}]},
+        _pull_request(3, "attestation/append-compatible", "2026-10-09T00:03:00Z"),
+    ]
+    assert _select(rows).stdout == "3\n"
 
 
 def test_append_merge_workflow_push_trigger_and_shape() -> None:
@@ -196,28 +206,28 @@ def test_scheduled_append_merge_exits_early_without_open_append(tmp_path: Path) 
     assert not output.exists()
 
 
-def test_scheduled_append_merge_selects_newest_from_main(tmp_path: Path) -> None:
+def test_scheduled_append_merge_selects_oldest_from_main(tmp_path: Path) -> None:
     rows = [
         _pull_request(30, "attestation/append-older", "2026-10-09T00:01:00Z"),
         _pull_request(31, "attestation/append-newer", "2026-10-09T00:02:00Z"),
     ]
     result, output = _run_candidate_step(tmp_path, rows, event="schedule", ref="main")
     assert result.returncode == 0, result.stderr
-    assert result.stdout == "Selected pull request #31 for attestation/append-newer.\n"
-    assert output.read_text(encoding="utf-8") == "number=31\n"
+    assert result.stdout == "Selected pull request #30 for attestation/append-older.\n"
+    assert output.read_text(encoding="utf-8") == "number=30\n"
 
 
-def test_push_for_superseded_sibling_exits_without_arming(tmp_path: Path) -> None:
+def test_push_for_later_append_waits_without_arming(tmp_path: Path) -> None:
     rows = [
         _pull_request(30, "attestation/append-older", "2026-10-09T00:01:00Z"),
         _pull_request(31, "attestation/append-newer", "2026-10-09T00:02:00Z"),
     ]
     result, output = _run_candidate_step(
-        tmp_path, rows, event="push", ref="attestation/append-older"
+        tmp_path, rows, event="push", ref="attestation/append-newer"
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout == (
-        "Superseded sibling attestation/append-older; "
-        "newest append is #31 (attestation/append-newer).\n"
+        "Waiting append attestation/append-newer; "
+        "oldest append is #30 (attestation/append-older).\n"
     )
     assert not output.exists()

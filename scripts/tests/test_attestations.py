@@ -39,6 +39,11 @@ def fixture_root(tmp_path: Path) -> tuple[Path, Path]:
     return tmp_path, key
 
 
+def immutable_directory(root: Path, day: str = "2026-08-15") -> Path:
+    """Locate the first accepted set for a day without assuming a date alias."""
+    index = ga.load(root / "attestations/chain-index.json")
+    return root / Path(index["heads"][index["days"][day][0]]).parent
+
 def fixture_rekor_reference(root: Path, name: str) -> Path:
     """Write deterministic Rekor evidence bound to the fixture health bytes."""
     digest = hashlib.sha256((root / "health/latest.json").read_bytes()).hexdigest()
@@ -108,7 +113,7 @@ def fixture_root_with_rekor(tmp_path: Path) -> tuple[Path, Path, Path]:
 def test_generator_signs_daily_digest_and_chain(tmp_path: Path):
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
-    env = json.loads((root / "attestations/2026-08-15/sample.json").read_text())
+    env = json.loads((immutable_directory(root) / "sample.json").read_text())
     payload = env["payload"]
     Ed25519PublicKey.from_public_bytes(base64.b64decode(payload["signer_pubkey_base64"])).verify(base64.b64decode(env["signature_base64"]), ga.canonical(payload))
     assert env["chain_link"] == ga.sha(bytes.fromhex(payload["previous_chain_head"])+ga.canonical(payload))
@@ -124,7 +129,7 @@ def test_missing_probe_history_publishes_null_counts(tmp_path: Path, shape: str)
     else:
         history.write_bytes(b"")
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
-    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    payload = json.loads((immutable_directory(root) / "sample.json").read_text())["payload"]
     assert "probe_count_14d" in payload and "probe_count_24h" in payload
     assert payload["probe_count_14d"] is None
     assert payload["probe_count_24h"] is None
@@ -136,7 +141,7 @@ def test_present_history_without_window_rows_publishes_real_zero(tmp_path: Path)
         json.dumps({"dataset_id": "sample", "observed_at": "2026-07-01T00:00:00Z"}) + "\n"
     )
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
-    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    payload = json.loads((immutable_directory(root) / "sample.json").read_text())["payload"]
     assert isinstance(payload["probe_count_14d"], int)
     assert isinstance(payload["probe_count_24h"], int)
     assert payload["probe_count_14d"] == 0
@@ -169,7 +174,7 @@ def test_probe_counts_artifact_fresh_publishes_artifact_counts(tmp_path: Path):
 
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
 
-    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    payload = json.loads((immutable_directory(root) / "sample.json").read_text())["payload"]
     assert payload["probe_count_14d"] == 88
     assert payload["probe_count_24h"] == 7
 
@@ -182,7 +187,7 @@ def test_probe_counts_artifact_absent_publishes_null(tmp_path: Path):
 
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
 
-    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    payload = json.loads((immutable_directory(root) / "sample.json").read_text())["payload"]
     assert "probe_count_14d" in payload and "probe_count_24h" in payload
     assert payload["probe_count_14d"] is None
     assert payload["probe_count_24h"] is None
@@ -194,7 +199,7 @@ def test_probe_counts_artifact_stale_publishes_null(tmp_path: Path):
 
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
 
-    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    payload = json.loads((immutable_directory(root) / "sample.json").read_text())["payload"]
     assert payload["probe_count_14d"] is None
     assert payload["probe_count_24h"] is None
 
@@ -214,8 +219,8 @@ def test_probe_counts_artifact_invalid_publishes_null(tmp_path: Path, kind: str)
 
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
 
-    assert (root / "attestations/2026-08-15/sample.json").is_file()
-    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    assert (immutable_directory(root) / "sample.json").is_file()
+    payload = json.loads((immutable_directory(root) / "sample.json").read_text())["payload"]
     assert payload["probe_count_14d"] is None
     assert payload["probe_count_24h"] is None
 
@@ -226,7 +231,7 @@ def test_probe_counts_artifact_missing_dataset_publishes_null(tmp_path: Path):
 
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
 
-    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    payload = json.loads((immutable_directory(root) / "sample.json").read_text())["payload"]
     assert payload["probe_count_14d"] is None
     assert payload["probe_count_24h"] is None
     assert (root / "attestations/latest/scores.json").is_file()
@@ -234,7 +239,7 @@ def test_probe_counts_artifact_missing_dataset_publishes_null(tmp_path: Path):
 
 def test_signed_manifest_url_tamper_invalidates_signature(tmp_path: Path):
     root, key = fixture_root(tmp_path); ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
-    env = json.loads((root / "attestations/2026-08-15/sample.json").read_text()); env["payload"]["source_url"] = "https://attacker.test/data"
+    env = json.loads((immutable_directory(root) / "sample.json").read_text()); env["payload"]["source_url"] = "https://attacker.test/data"
     with pytest.raises(InvalidSignature):
         Ed25519PublicKey.from_public_bytes(base64.b64decode(env["payload"]["signer_pubkey_base64"])).verify(base64.b64decode(env["signature_base64"]), ga.canonical(env["payload"]))
 
@@ -265,12 +270,12 @@ def test_reuse_path_refreshes_manifest(tmp_path: Path):
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
     refreshed = json.loads((root / "datapulse.json").read_text())
     assert refreshed["datasets"]
-    assert all(entry["attestation_ref"] == f"attestations/{day}/{entry['id']}.json" for entry in refreshed["datasets"])
+    assert all(entry["attestation_ref"] == immutable_directory(root, day).relative_to(root).as_posix() + f"/{entry['id']}.json" for entry in refreshed["datasets"])
     assert json.loads((root / "attestations/latest/index.json").read_text())["date"] == day
 
 
 def _break_dated_set(root: Path, kind: str) -> None:
-    dated = root / "attestations" / "2026-08-15"
+    dated = immutable_directory(root)
     if kind == "incomplete":
         (dated / "scores.json").unlink()
     elif kind == "mismatched":
@@ -303,15 +308,15 @@ def test_build_path_writes_manifest_refs_without_preexisting_set(tmp_path: Path)
     assert not (root / "attestations/2026-08-15").exists()
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
     manifest = json.loads((root / "datapulse.json").read_text())
-    assert all(entry["attestation_ref"] == f"attestations/2026-08-15/{entry['id']}.json" for entry in manifest["datasets"])
-    assert (root / "attestations/2026-08-15/binding.json").is_file()
-    dated = json.loads((root / "attestations/2026-08-15/index.json").read_text())
+    assert all(entry["attestation_ref"] == immutable_directory(root).relative_to(root).as_posix() + f"/{entry['id']}.json" for entry in manifest["datasets"])
+    assert (immutable_directory(root) / "binding.json").is_file()
+    dated = json.loads((immutable_directory(root) / "index.json").read_text())
     assert dated["attestations"] == {entry["id"]: entry["attestation_ref"] for entry in manifest["datasets"]}
 
 
 def test_browser_digest_does_not_invent_receipt(tmp_path: Path):
     root, key = fixture_root(tmp_path); health = json.loads((root / "health/latest.json").read_text()); health["datasets"][0].update(access_dependency="browser", first_row_hash=None); write(root / "health/latest.json", health)
-    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc)); payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc)); payload = json.loads((immutable_directory(root) / "sample.json").read_text())["payload"]
     assert payload["content_fingerprint"] is None and payload["browser_receipt"]["available"] is False
 
 
@@ -425,7 +430,7 @@ def test_missing_shape_fingerprint_is_null(tmp_path: Path):
     health = json.loads((root / "health/latest.json").read_text()); health["datasets"][0].pop("first_row_hash")
     write(root / "health/latest.json", health)
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
-    payload = json.loads((root / "attestations/2026-08-15/sample.json").read_text())["payload"]
+    payload = json.loads((immutable_directory(root) / "sample.json").read_text())["payload"]
     assert payload["content_fingerprint"] is None
 
 
@@ -545,5 +550,13 @@ def test_revision_discovery_rejects_tampering(tmp_path: Path, corruption: str) -
     else:
         write(root / "attestations/latest/scores.json", {})
     write(root / "attestations/chain-index.json", discovery)
-    with pytest.raises(ChainLinearityError):
-        verify_chain_linearity(root)
+    if corruption == "projection":
+        # Linearity resolves signed sets; publication still rejects stale outputs.
+        from scripts.attestation_sets import selected_directory
+        from scripts.verify_attestation_binding import ContractError
+        assert verify_chain_linearity(root).chain_head == current
+        with pytest.raises(ContractError):
+            selected_directory(root)
+    else:
+        with pytest.raises(ChainLinearityError):
+            verify_chain_linearity(root)

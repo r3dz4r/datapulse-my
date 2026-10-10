@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from scripts import gen_attestations as ga
-from scripts.tests.test_attestations import fixture_rekor_reference, fixture_root
+from scripts.tests.test_attestations import fixture_rekor_reference, fixture_root, immutable_directory
 from scripts.verify_attestation_binding import ContractError
 from scripts.verify_sigstore_bundle import verify_bundle
 
@@ -35,7 +35,7 @@ def test_daily_rekor_evidence_is_committable_and_staged_with_its_binding() -> No
     assert "attestations/rekor/" not in gitignore
     assert 'bash scripts/submit_attestation_append.sh' in daily
     commit_step = (ROOT / "scripts/submit_attestation_append.sh").read_text()
-    assert '"attestations/rekor/$day"' in commit_step
+    assert 'git add -- "${paths[@]}"' in commit_step
 
 
 def test_matching_rekor_reference_marks_new_binding_as_witnessed(tmp_path: Path) -> None:
@@ -44,11 +44,11 @@ def test_matching_rekor_reference_marks_new_binding_as_witnessed(tmp_path: Path)
 
     ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc), reference)
 
-    binding = json.loads((root / "attestations/2026-08-15/binding.json").read_text())
+    binding = json.loads((immutable_directory(root) / "binding.json").read_text())
     assert binding["claims"]["rekor_witnessed"] is True
     assert binding["rekor"] == {
-        "reference_ref": "attestations/rekor-fixture/reference.json",
-        "bundle_ref": "attestations/rekor-fixture/bundle.json",
+        "reference_ref": immutable_directory(root).relative_to(root).as_posix() + "/rekor-reference.json",
+        "bundle_ref": immutable_directory(root).relative_to(root).as_posix() + "/rekor-bundle.json",
     }
 
 
@@ -80,7 +80,7 @@ def test_mismatched_rekor_reference_is_rejected_before_binding(tmp_path: Path) -
     with pytest.raises(ContractError, match="does not bind the health digest"):
         ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc), reference)
 
-    assert not (root / "attestations/2026-08-15/binding.json").exists()
+    assert not list((root / "attestations").glob("*/revisions/*/binding.json"))
 
 
 def _guard_step_text() -> str:
@@ -244,10 +244,11 @@ def test_submission_requires_witness_or_explicit_operator_override(
     assert binding.read_bytes() == before
     if proceeds:
         assert result.returncode == 0, result.stderr
-        published = json.loads(_git(remote, "show", f"{branch}:attestations/latest/binding.json"))
+        directory = Path(ga.load(root / "attestations/latest/index.json")["chain_head_ref"]).parent.as_posix()
+        published = json.loads(_git(remote, "show", f"{branch}:{directory}/binding.json"))
         assert published["claims"]["rekor_witnessed"] is witnessed
         if witnessed:
-            assert _git(remote, "show", f"{branch}:attestations/rekor/2026-08-16/reference.json")
+            assert _git(remote, "show", f"{branch}:{published['rekor']['reference_ref']}")
         assert pr_args.read_text().splitlines() == [
             "pr", "create", "--base", "main", "--head", branch,
             "--title", "chore(attestations): append signed set 2026-08-16",
@@ -295,8 +296,8 @@ def _projection_submission_root(tmp_path: Path) -> tuple[Path, str, Path]:
     return root, accepted, remote
 
 
-def test_projection_is_refreshed_from_the_accepted_base_after_alignment(tmp_path: Path) -> None:
-    """A submission that merges a moved base must publish a coherent projection."""
+def test_submission_checks_moved_base_without_staging_projections(tmp_path: Path) -> None:
+    """A moved code-only base leaves the signed candidate independently mergeable."""
     root, accepted, remote = _projection_submission_root(tmp_path)
     head = ga.load(root / "attestations/chain-index.json")["current_head"]
     branch = "attestation/append-" + head
@@ -324,19 +325,15 @@ def test_projection_is_refreshed_from_the_accepted_base_after_alignment(tmp_path
     _git(published, "config", "user.name", "Test")
     _git(published, "config", "user.email", "test@example.test")
     _git(published, "checkout", branch)
-    # The append was aligned to the freshly-fetched base before publication.
-    assert len(_git(published, "rev-list", "--parents", "-n", "1", "HEAD").split()) == 3
-
-    for name in ("chain_head.json", "index.json", "binding.json", "scores.json"):
-        assert (published / "attestations/latest" / name).read_bytes() == (
-            published / "attestations/2026-08-16" / name
-        ).read_bytes(), name
-
-    # The legacy mirror is the mutable projection acceptance compares; it must
-    # carry the refreshed head, not the bytes staged before the refresh.
-    index = ga.load(published / "attestations/chain-index.json")
-    selected = Path(index["heads"][index["current_head"]]).parent
-    assert (published / ".attestations/chain_head.json").read_bytes() == (
+    # The append does not merge/rebase the source or write shared projections.
+    assert len(_git(published, "rev-list", "--parents", "-n", "1", "HEAD").split()) == 2
+    changed = _git(published, "diff", "--name-only", "HEAD~1", "HEAD").splitlines()
+    assert changed and all("/revisions/" in path for path in changed)
+    from scripts.attestation_sets import discovery, selected_directory
+    index = discovery(published)
+    assert index["current_head"] == head
+    selected = selected_directory(published, projections=False)
+    assert (published / ".attestations/chain_head.json").read_bytes() != (
         published / selected / "chain_head.json"
     ).read_bytes()
 
@@ -347,24 +344,17 @@ def test_projection_is_refreshed_from_the_accepted_base_after_alignment(tmp_path
     assert verify.returncode == 0, verify.stdout + verify.stderr
 
 
-def test_projection_regeneration_is_positioned_after_the_accepted_base_merge() -> None:
+def test_submission_checks_accepted_parent_before_staging() -> None:
     lines = (ROOT / "scripts/submit_attestation_append.sh").read_text(encoding="utf-8").splitlines()
-    merge_lines = [i for i, line in enumerate(lines) if "origin/main" in line]
-    resolve_lines = [i for i, line in enumerate(lines) if "resolve_day_directory_after_alignment" in line]
-    refresh_lines = [i for i, line in enumerate(lines) if "refresh_projection" in line]
-    assert merge_lines and resolve_lines and refresh_lines
-    assert max(merge_lines) < min(resolve_lines) < min(refresh_lines)
+    verify = next(i for i, line in enumerate(lines) if '--base origin/main' in line)
+    stage = next(i for i, line in enumerate(lines) if 'git add --' in line)
+    assert verify < stage
 
 
-def test_legacy_mirror_staging_is_positioned_after_the_projection_refresh() -> None:
-    """promote() rewrites the legacy mirror; its git add must follow the refresh.
-
-    Staging the mirror before the refresh snapshots the pre-refresh bytes, and
-    the acceptance verifier then rejects the append with "legacy mirror
-    disagrees with current head".
-    """
-    lines = (ROOT / "scripts/submit_attestation_append.sh").read_text(encoding="utf-8").splitlines()
-    refresh_lines = [i for i, line in enumerate(lines) if "refresh_projection" in line]
-    mirror_lines = [i for i, line in enumerate(lines) if "chain_head" in line]
-    assert refresh_lines and mirror_lines
-    assert min(mirror_lines) > max(refresh_lines)
+def test_submission_stages_the_immutable_path_enumerator_only() -> None:
+    script = (ROOT / "scripts/submit_attestation_append.sh").read_text(encoding="utf-8")
+    assert '--print-paths' in script
+    assert 'git add -- "${paths[@]}"' in script
+    assert 'promote(' not in script
+    assert 'git commit --amend' not in script
+    assert 'git merge --no-edit' not in script

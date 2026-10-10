@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select the newest open attestation append pull request."""
+"""Select the oldest open attestation append pull request."""
 
 from __future__ import annotations
 
@@ -19,43 +19,37 @@ def _append_day(pull_request: dict[str, object]) -> str | None:
 def select_superseded_siblings(
     pull_requests: list[dict[str, object]], merged_number: int
 ) -> list[int]:
-    """Return open append PRs for the merged candidate's day, in number order."""
-    merged = next((pr for pr in pull_requests if int(pr["number"]) == merged_number), None)
-    if merged is None:
-        return []
-    day = _append_day(merged)
-    if day is None:
-        return []
-    return sorted(
-        int(pr["number"])
-        for pr in pull_requests
-        if int(pr["number"]) != merged_number
-        and str(pr.get("state", "OPEN")).upper() == "OPEN"
-        and str(pr["headRefName"]).startswith("attestation/append-")
-        and _append_day(pr) == day
-    )
+    """Dates cannot establish signed-parent incompatibility; retain all evidence."""
+    return []
 
 
 def select_append_candidate(pull_requests: list[dict[str, object]]) -> int | None:
-    """Return the newest append PR number, breaking timestamp ties by number."""
+    """Return the oldest append PR number, breaking timestamp ties by number."""
     candidates = [
         pull_request
         for pull_request in pull_requests
         if str(pull_request["headRefName"]).startswith("attestation/append-")
+        and str(pull_request.get("state", "OPEN")).upper() == "OPEN"
+        and pull_request.get("mergeable") != "CONFLICTING"
+        and not any(
+            str(check.get("conclusion") or check.get("state")) in {
+                "FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE"}
+            for check in (pull_request.get("statusCheckRollup") or [])
+        )
     ]
     if not candidates:
         return None
 
-    # Same-day appends can be sibling revisions of one parent head. Accepting
-    # both would make later candidates fail the chain's accepted-parent check.
-    newest = max(
+    # Preserve creation order; a later hash-addressed append does not supersede
+    # an earlier one by sharing its day. Required CI checks signed-parent CAS.
+    oldest = min(
         candidates,
         key=lambda pull_request: (
             str(pull_request["createdAt"]),
             int(pull_request["number"]),
         ),
     )
-    return int(newest["number"])
+    return int(oldest["number"])
 
 
 def main() -> None:

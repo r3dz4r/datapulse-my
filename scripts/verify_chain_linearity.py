@@ -2,7 +2,7 @@
 """:"
 exec python3 "$0" "$@"
 ":"""
-# Fail closed unless the latest chain head mirrors the newest dated head.
+# Fail closed unless verified accepted sets resolve to one terminal head.
 # 
 # This verifies the forward-linearity seed only.  It intentionally does not
 # retroactively require the historical dated envelopes to form one chain.
@@ -84,16 +84,19 @@ def _dated_heads(root: Path) -> list[tuple[date, str]]:
 
 
 def verify_chain_linearity(root: Path) -> ChainLinearityReport:
-    """Require latest/chain_head.json to equal the newest dated chain head."""
+    """Resolve signed append lineage, retaining mirror checks for legacy sets."""
     index_path = root / "attestations/chain-index.json"
-    if index_path.exists() and json.loads(index_path.read_text()).get("schema") == "datapulse/v2/chain-index":
+    if ((index_path.exists() and json.loads(index_path.read_text()).get("schema") == "datapulse/v2/chain-index")
+            or any((root / "attestations").glob("*/revisions/*/chain_head.json"))):
         try:
             import sys
             sys.path.insert(0, str(ROOT))
             from scripts.attestation_sets import discovery, selected_directory
             document = discovery(root)
-            selected_directory(root)
             newest_head = document["current_head"]
+            head = json.loads((root / document["heads"][newest_head]).read_text())
+            if "append_content_sha256" not in head["payload"]:
+                selected_directory(root)
             return ChainLinearityReport(document["envelopes"][newest_head]["date"], newest_head)
         except (ValueError, OSError, KeyError, TypeError) as error:
             raise ChainLinearityError(str(error)) from error

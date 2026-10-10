@@ -29,6 +29,31 @@ PIPELINE_OWNED_PROJECTIONS = ("scores.json",)
 logger = logging.getLogger(__name__)
 
 
+def append_content_digest(head_payload: dict, envelopes: dict, scores: dict,
+                          binding_payload: dict, rekor_documents: dict | None) -> str:
+    """Commit finalized content before adding its deterministic self references.
+
+    Signatures and references of the head/binding/index are determined by these
+    inputs. Excluding those derived fields avoids a digest/signature fixed point.
+    Dataset signatures are already finalized and are included verbatim.
+    """
+    payload = {k: v for k, v in head_payload.items() if k != "append_content_sha256"}
+    binding = {**binding_payload, "ed25519": {
+        k: v for k, v in binding_payload["ed25519"].items()
+        if k not in {"chain_head", "chain_head_ref"}}}
+    return hashlib.sha256(canonical({"head": payload, "datasets": envelopes,
+        "scores": scores, "binding": binding, "rekor": rekor_documents})).hexdigest()
+
+
+def rekor_content(root: Path, rekor: dict | None) -> dict | None:
+    """Hash witness content independently of the producer's temporary paths."""
+    if rekor is None:
+        return None
+    reference = _load(root / rekor["reference_ref"], "Rekor reference")
+    return {"reference": {**reference, "bundle": "rekor-bundle.json"},
+            "bundle": _load(root / rekor["bundle_ref"], "Rekor bundle")}
+
+
 def set_directory(reference: str, filename: str = "chain_head.json") -> str:
     """Accept only legacy or hash-addressed immutable set paths."""
     match = SET_REF.fullmatch(reference) if isinstance(reference, str) else None
@@ -126,6 +151,23 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
             raise ContractError("signed correction health snapshot digest is invalid")
     if binding.get("claims") != {"artifact_signed": rekor is not None, "rekor_witnessed": rekor is not None, "source_truth_verified": False}:
         raise ContractError("immutable binding evidence claims disagree")
+    if "append_content_sha256" in head["payload"] and verify_datasets:
+        if not snapshot.is_file():
+            raise ContractError("content-addressed health snapshot is missing")
+        datasets = {did: _load(root / ref, "immutable dataset") for did, ref in index["attestations"].items()}
+        if head["payload"]["append_content_sha256"] != append_content_digest(
+                head["payload"], datasets, scores, payload, rekor_content(root, rekor)):
+            raise ContractError("append content digest disagrees with immutable set")
+        if any(ref != directory + "/" + did + ".json" for did, ref in index["attestations"].items()):
+            raise ContractError("content-addressed dataset reference escapes its set")
+        if rekor is not None and rekor != {"reference_ref": directory + "/rekor-reference.json",
+                                         "bundle_ref": directory + "/rekor-bundle.json"}:
+            raise ContractError("content-addressed witness reference escapes its set")
+        expected_files = set(FILES) | {"health.json"} | {did + ".json" for did in datasets}
+        if rekor is not None:
+            expected_files |= {"rekor-reference.json", "rekor-bundle.json"}
+        if {p.name for p in (root / directory).iterdir()} != expected_files:
+            raise ContractError("content-addressed set contains unexpected files")
     return head
 
 
@@ -142,8 +184,9 @@ def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
     """Validate v2, or derive v2 from verified v1 entries without rewriting evidence."""
     path = root / "attestations/chain-index.json"
     if not path.exists():
-        return {"schema": "datapulse/v2/chain-index", "heads": {}, "anchors": {}, "envelopes": {}, "days": {}, "current_head": None}
-    document = _load(path, "chain index")
+        document = {"schema": "datapulse/v2/chain-index", "heads": {}, "anchors": {}, "envelopes": {}, "days": {}, "current_head": None}
+    else:
+        document = _load(path, "chain index")
     if document.get("schema") not in {"datapulse/v1/chain-index", "datapulse/v2/chain-index"}:
         raise ContractError("unknown chain index schema")
     heads = document.get("heads")
@@ -171,6 +214,36 @@ def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
         result["migration_head"] = current
         result["unresolved_heads"] = sorted(set(heads) - set(result["envelopes"]))
         document = result
+    validate_discovery(root, document, verify_datasets=verify_datasets)
+    # The committed index is the legacy checkpoint. New append sets discover
+    # themselves; no appender has to rewrite a shared selector or map.
+    pending = {}
+    for candidate in sorted((root / "attestations").glob("*/revisions/*/chain_head.json")):
+        raw = _load(candidate, "append head")
+        if "append_content_sha256" not in raw.get("payload", {}):
+            continue
+        reference = candidate.relative_to(root).as_posix()
+        head = verify_set(root, reference, verify_datasets=verify_datasets)
+        digest = head["chain_head"]
+        if digest in heads:
+            if heads[digest] != reference:
+                raise ContractError("duplicate append head identity")
+        else:
+            pending[digest] = (reference, head)
+    while pending:
+        parent = document["current_head"] or "0" * 64
+        children = [(digest, reference, head) for digest, (reference, head) in pending.items()
+                    if head["payload"]["previous_chain_head"] == parent]
+        if len(children) != 1:
+            raise ContractError("fork or disconnected accepted forward head: candidate does not append to accepted parent")
+        digest, reference, head = children[0]
+        day = head["payload"]["date"]
+        run = document["days"].setdefault(day, [])
+        document["heads"][digest] = reference
+        document["envelopes"][digest] = descriptor(head, reference, len(run) + 1)
+        run.append(digest)
+        document["current_head"] = digest
+        del pending[digest]
     validate_discovery(root, document, verify_datasets=verify_datasets)
     return document
 
@@ -250,7 +323,8 @@ def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = Tr
 
 def legacy_mirror_expected_schema(root: Path) -> str:
     """Read the committed chain-index schema that controls legacy mirror checks."""
-    return _load(root / "attestations/chain-index.json", "chain index")["schema"]
+    path = root / "attestations/chain-index.json"
+    return _load(path, "chain index")["schema"] if path.exists() else "datapulse/v2/chain-index"
 
 
 def verify_legacy_mirror(root: Path, document: dict[str, Any], directory: str) -> None:
