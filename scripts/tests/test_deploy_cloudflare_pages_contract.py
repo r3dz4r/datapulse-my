@@ -26,6 +26,89 @@ def _workflow() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
 
 
+def _deploy_step(name: str) -> dict:
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    return next(step for step in steps if step.get("name") == name)
+
+
+def _write_site_json(site: Path, reference: str, value: dict) -> None:
+    path = site / reference
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value), encoding="utf-8")
+
+
+def test_pages_attestation_selection_keeps_chain_and_citations(tmp_path: Path) -> None:
+    site = tmp_path / "_site"
+    old = "attestations/2026-10-03"
+    recent = "attestations/2026-10-04"
+    cited = "attestations/2026-10-09/revisions/" + "a" * 64
+    current = "attestations/2026-10-10"
+    directories = (old, recent, cited, current)
+    heads = {str(index): f"{directory}/chain_head.json" for index, directory in enumerate(directories)}
+    _write_site_json(site, "attestations/chain-index.json", {
+        "heads": heads, "envelopes": {key: {} for key in heads},
+    })
+    _write_site_json(site, "attestations/latest/index.json", {
+        "date": "2026-10-10", "attestations": {"example": f"{current}/example.json"},
+    })
+    _write_site_json(site, "attestations/latest/binding.json", {})
+    for directory in directories:
+        for name in ("chain_head", "index", "scores", "example", "uncited"):
+            _write_site_json(site, f"{directory}/{name}.json", {})
+        _write_site_json(site, f"{directory}/binding.json", {"payload": {}})
+    proof = "attestations/rekor/2026-10-03/reference.json"
+    _write_site_json(site, proof, {})
+    _write_site_json(site, f"{old}/binding.json", {"payload": {}, "rekor": {"reference_ref": proof}})
+    (site / "data").mkdir()
+    (site / "data/example.md").write_text(f"Verify {old}/example.json and {cited}/chain_head.json")
+
+    step = _deploy_step("Keep verifier-reachable attestation history")
+    result = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert (site / "attestations/chain-index.json").is_file()
+    assert (site / "attestations/latest/binding.json").is_file()
+    assert (site / f"{current}/example.json").is_file()
+    assert (site / f"{recent}/uncited.json").is_file()
+    assert (site / f"{cited}/uncited.json").is_file()
+    assert (site / f"{old}/chain_head.json").is_file()
+    assert (site / f"{old}/binding.json").is_file()
+    assert (site / proof).is_file()
+    assert (site / f"{old}/example.json").is_file()
+    assert not (site / f"{old}/uncited.json").exists()
+
+
+def test_pages_attestation_selection_fails_on_missing_published_reference(tmp_path: Path) -> None:
+    site = tmp_path / "_site"
+    _write_site_json(site, "attestations/chain-index.json", {"heads": {}, "envelopes": {}})
+    _write_site_json(site, "attestations/latest/index.json", {
+        "date": "2026-10-10", "attestations": {"example": "attestations/2026-10-10/missing.json"},
+    })
+    step = _deploy_step("Keep verifier-reachable attestation history")
+    result = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "published attestation reference is missing" in result.stderr
+
+
+def test_pages_file_count_guard_reports_count_and_largest_directory(tmp_path: Path) -> None:
+    site = tmp_path / "_site"
+    (site / "attestations").mkdir(parents=True)
+    for index in range(5):
+        (site / "attestations" / f"{index}.json").write_text("{}")
+    (site / "index.html").write_text("ok")
+    step = _deploy_step("Guard Cloudflare Pages file ceiling")
+    assert "18000" in step["run"] and "20000" in step["run"]
+    passing = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, capture_output=True, text=True)
+    assert passing.returncode == 0, passing.stderr
+    assert "6 files; largest directory attestations: 5 files" in passing.stdout
+    failing = subprocess.run(
+        ["bash", "-c", step["run"].replace("18000", "4")],
+        cwd=tmp_path, capture_output=True, text=True,
+    )
+    assert failing.returncode != 0
+    assert "artifact has 6 files" in failing.stderr
+    assert "largest directory attestations: 5 files" in failing.stderr
+
+
 def _append_acceptance_step() -> dict:
     steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
     return next(
@@ -895,11 +978,21 @@ def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manife
         if step.get("name") == "Deploy canonical Cloudflare Pages artifact"
     )
 
-    assert asset_guard_index == next(
+    selection_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Keep verifier-reachable attestation history"
+    )
+    ceiling_guard_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Guard Cloudflare Pages file ceiling"
+    )
+    assert selection_index == next(
         index for index, step in enumerate(steps)
         if step.get("name") == "Assemble canonical Pages artifact"
     ) + 1
-    assert manifest_create_index == asset_guard_index + 1
+    assert asset_guard_index == selection_index + 1
+    assert ceiling_guard_index == asset_guard_index + 1
+    assert manifest_create_index == ceiling_guard_index + 1
     assert "set -Eeuo pipefail" in steps[asset_guard_index]["run"]
     assert "python3 scripts/check_pages_asset_sizes.py _site" in steps[asset_guard_index]["run"]
     assert preview_verify_index < next(

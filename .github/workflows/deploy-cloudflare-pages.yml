@@ -668,10 +668,99 @@ jobs:
           grep -qxF '/okf /okf/index.md 301' _site/_redirects
           test -s _site/health/latest.json
 
+      - name: Keep verifier-reachable attestation history
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import json
+          import re
+          from datetime import date, timedelta
+          from pathlib import Path
+
+          site = Path('_site')
+          plane = site / 'attestations'
+          chain = json.loads((plane / 'chain-index.json').read_text())
+          latest = json.loads((plane / 'latest/index.json').read_text())
+          # Keep complete recent sets for historic per-dataset verification;
+          # older direct citations and the signed chain remain reachable.
+          cutoff = date.fromisoformat(latest['date']) - timedelta(days=6)
+          dated_ref = re.compile(r'attestations/\d{4}-\d{2}-\d{2}/(?:revisions/[0-9a-f]{64}/)?[A-Za-z0-9_.-]+\.json\Z')
+          head_ref = re.compile(r'attestations/\d{4}-\d{2}-\d{2}/(?:revisions/[0-9a-f]{64}/)?chain_head\.json\Z')
+          public_ref = re.compile(rb'attestations/\d{4}-\d{2}-\d{2}/(?:revisions/[0-9a-f]{64}/)?[A-Za-z0-9_.-]+\.json')
+          keep = {plane / 'chain-index.json'}
+          keep.update(path for path in (plane / 'latest').iterdir() if path.is_file())
+
+          def require(reference):
+              if not isinstance(reference, str) or not reference.startswith('attestations/') or '..' in Path(reference).parts or not re.fullmatch(r'attestations/[A-Za-z0-9_./-]+\.json', reference):
+                  raise ValueError(f'unsafe attestation reference: {reference!r}')
+              path = site / reference
+              if not path.is_file():
+                  raise FileNotFoundError(f'published attestation reference is missing: {reference}')
+              keep.add(path)
+              return path
+
+          # The chain index advertises every head, including unresolved legacy
+          # heads. Accepted sets also retain their signed metadata and proofs.
+          accepted = set(chain.get('envelopes', chain['heads']))
+          for digest, reference in chain['heads'].items():
+              if not head_ref.fullmatch(reference):
+                  raise ValueError(f'unsafe chain head reference: {reference!r}')
+              directory = require(reference).parent
+              for name in ('index.json', 'binding.json', 'scores.json', 'health.json'):
+                  path = directory / name
+                  if path.is_file():
+                      keep.add(path)
+                  elif digest in accepted and name != 'health.json':
+                      raise FileNotFoundError(f'accepted attestation metadata is missing: {path}')
+              if digest not in accepted:
+                  continue
+              binding = json.loads((directory / 'binding.json').read_text())
+              for reference in (binding.get('rekor') or {}).values():
+                  require(reference)
+              snapshot = binding.get('payload', {}).get('correction', {}).get('health_snapshot_ref')
+              if snapshot:
+                  require(snapshot)
+              if date.fromisoformat(directory.parts[2]) >= cutoff:
+                  keep.update(path for path in directory.iterdir() if path.is_file())
+
+          # The MCP resolves a dataset slug through latest/index.json. Pages
+          # and dataset pages may also cite older immutable digest URLs.
+          for reference in latest['attestations'].values():
+              if not dated_ref.fullmatch(reference):
+                  raise ValueError(f'unsafe current attestation reference: {reference!r}')
+              require(reference)
+          for path in site.rglob('*'):
+              if path.is_file() and plane not in path.parents:
+                  for match in public_ref.findall(path.read_bytes()):
+                      require(match.decode('ascii'))
+
+          all_files = {path for path in plane.rglob('*') if path.is_file()}
+          for path in all_files - keep:
+              path.unlink()
+          print(f'Pages attestation selection: {len(all_files)} before, {len(keep)} retained, cutoff {cutoff}')
+          PY
+
       - name: Exclude oversized Pages assets before upload
         run: |
           set -Eeuo pipefail
           python3 scripts/check_pages_asset_sizes.py _site
+
+      - name: Guard Cloudflare Pages file ceiling
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from collections import Counter
+          from pathlib import Path
+
+          files = [path for path in Path('_site').rglob('*') if path.is_file()]
+          groups = Counter(path.relative_to('_site').parts[0] for path in files)
+          largest, largest_count = groups.most_common(1)[0]
+          count = len(files)
+          print(f'Cloudflare Pages artifact: {count} files; largest directory {largest}: {largest_count} files')
+          # Two thousand slots leave room for more than four 448-file appends.
+          if count > 18000:
+              raise SystemExit(f'::error title=Cloudflare Pages file ceiling::artifact has {count} files (guard 18000, platform limit 20000); largest directory {largest}: {largest_count} files')
+          PY
 
       - name: Record deterministic release artifact manifest
         run: |
