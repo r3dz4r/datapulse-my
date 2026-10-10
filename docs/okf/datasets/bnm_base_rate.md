@@ -8,7 +8,7 @@ sources:
   - {"id": "bnm","resource": "https://api.bnm.gov.my/public/base-rate","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Bank Negara Malaysia"

@@ -8,7 +8,7 @@ sources:
   - {"id": "jdn","resource": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi","title": "National Digital Department and Ministry of Digital"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-09T14:41:21Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-08T14:24:19Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Jabatan Digital Negara, Ministry of Digital"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/usage_metrics_openapi.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 10000
-stale_after: "2026-10-09T12:00:00Z"
+stale_after: "2026-10-08T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Daily OpenAPI Hits by Endpoint is published by National Digital Department and M
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:d5df8abf7e9c872c8d891c1e3db178f5de0c461a175c3b6f080405b8176543e5`
-- `record_count`: `19562`
+- `record_count`: `19531`
 
 # Quirks
 

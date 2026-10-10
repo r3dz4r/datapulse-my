@@ -3,12 +3,12 @@ type: "Dataset"
 title: "OpenDOSM Monthly Trade Headline"
 description: "DataPulse projection of OpenDOSM Monthly Trade Headline from DOSM Malaysia."
 resource: "https://storage.dosm.gov.my/trade/trade_headline.csv"
-tags: ["OpenDOSM (storage.dosm.gov.my)","vertical","monthly"]
+tags: ["OpenDOSM (storage.dosm.gov.my)","non-vertical","monthly"]
 sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/trade/trade_headline.csv","title": "DOSM Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"

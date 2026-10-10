@@ -3,7 +3,7 @@ type: "Dataset"
 title: "OpenDOSM Annual Deaths by State"
 description: "DataPulse projection of OpenDOSM Annual Deaths by State from DOSM Malaysia."
 resource: "https://storage.dosm.gov.my/demography/death_state.csv"
-tags: ["OpenDOSM (storage.dosm.gov.my)","vertical","annual"]
+tags: ["OpenDOSM (storage.dosm.gov.my)","non-vertical","annual"]
 sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/demography/death_state.csv","title": "DOSM Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}

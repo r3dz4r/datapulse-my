@@ -3,12 +3,12 @@ type: "Dataset"
 title: "Balance of Payments by Account"
 description: "DataPulse projection of Balance of Payments by Account from Department of Statistics Malaysia."
 resource: "https://storage.dosm.gov.my/bop/bop_balance.csv"
-tags: ["OpenDOSM (also indexed by data.gov.my)","vertical","quarterly"]
+tags: ["OpenDOSM (also indexed by data.gov.my)","non-vertical","quarterly"]
 sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/bop/bop_balance.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"

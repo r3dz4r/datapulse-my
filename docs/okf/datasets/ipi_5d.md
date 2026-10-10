@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/ipi/ipi_5d.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/ipi_5d.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 52536
-stale_after: "2026-09-16T12:00:00Z"
+stale_after: "2026-08-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Monthly Industrial Production Index by Item is published by Department of Statis
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:0074028a5cff458f1be94b1d3850d38887e7b12851a144d9d447534f174d56b1`
-- `record_count`: `53724`
+- `record_count`: `53328`
 
 # Quirks
 
