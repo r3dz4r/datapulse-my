@@ -88,6 +88,78 @@ def test_artifact_still_over_kv_limit_fails_before_network(monkeypatch, tmp_path
     assert "health/history_daily.json exceeds KV value limit" in capsys.readouterr().err
 
 
+def test_daily_history_keeps_newest_complete_days_within_target(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+    dates = ["2026-09-01", "2026-09-02", "2026-09-03"]
+    history = {
+        "schema": "datapulse/v1/health-history-daily",
+        "retention_days": 7,
+        "compacted_cycles": [f"{day}T12:00" for day in dates],
+        "aggregates": [
+            {"dataset_id": dataset, "date": day, "evidence": "x" * 400}
+            for dataset in ("alpha", "beta") for day in dates
+        ],
+    }
+    source = tmp_path / "history_daily.json"
+    source.write_text(json.dumps(history, indent=2), encoding="utf-8")
+    monkeypatch.setattr(module, "TARGET_KV_VALUE_BYTES", 1200)
+
+    payloads = module.health_payloads(health)
+    published = json.loads(payloads["health/history_daily.json"])
+
+    assert len(payloads["health/history_daily.json"]) <= 1200
+    assert published["retention_days"] == 7
+    assert published["compacted_cycles"] == ["2026-09-03T12:00"]
+    assert published["aggregates"] == [row for row in history["aggregates"] if row["date"] == dates[-1]]
+    assert json.loads(source.read_text(encoding="utf-8")) == history
+    assert json.loads(payloads[module.KEY])[module.ARTIFACTS_FIELD]["health/history_daily.json"] == {
+        "sha256": hashlib.sha256(payloads["health/history_daily.json"]).hexdigest(),
+        "bytes": len(payloads["health/history_daily.json"]),
+    }
+
+
+def test_target_guard_reports_key_size_and_margin_before_hard_limit(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+    oversized = json.dumps({"evidence": "x" * 2000}).encode()
+    compact_size = len(json.dumps(json.loads(oversized), separators=(",", ":")).encode())
+    (tmp_path / "drift.json").write_bytes(oversized)
+    monkeypatch.setattr(module, "TARGET_KV_VALUE_BYTES", 1500)
+    monkeypatch.setattr(module, "MAX_KV_VALUE_BYTES", 4000)
+
+    with pytest.raises(module.PublishError, match=r"health/drift.json is \d+ bytes, exceeds 1500-byte KV target"):
+        module.health_payloads(health)
+    output = capsys.readouterr().err
+    assert f"KV payload health/drift.json: {compact_size} bytes" in output
+    assert f"target margin {1500 - compact_size} bytes" in output
+    assert f"KV ceiling margin {4000 - compact_size} bytes" in output
+
+
+def test_single_daily_group_over_target_fails_instead_of_dropping_newest_day(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+    (tmp_path / "history_daily.json").write_text(json.dumps({
+        "schema": "datapulse/v1/health-history-daily",
+        "retention_days": 7,
+        "compacted_cycles": ["2026-09-03T12:00"],
+        "aggregates": [{"date": "2026-09-03", "evidence": "x" * 2000}],
+    }))
+    monkeypatch.setattr(module, "TARGET_KV_VALUE_BYTES", 1500)
+
+    with pytest.raises(module.PublishError, match="health/history_daily.json is .* exceeds 1500-byte KV target"):
+        module.health_payloads(health)
+
+
 def _module() -> ModuleType:
     spec = importlib.util.spec_from_file_location("publish_health_index_test", SCRIPT)
     assert spec is not None and spec.loader is not None

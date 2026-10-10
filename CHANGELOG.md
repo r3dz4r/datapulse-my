@@ -14,6 +14,34 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.0](https://github.com/r3dz4r/datapulse-my/compare/v3.54.3...v3.55.0) (2026-10-10)
+
+
+### Features
+
+* **attestations:** content-addressed append sets ([#1003](https://github.com/r3dz4r/datapulse-my/issues/1003)) ([bc1361b](https://github.com/r3dz4r/datapulse-my/commit/bc1361b56091e6e01d2ef1c0a5377e36bf405918))
+
+## [3.54.3](https://github.com/r3dz4r/datapulse-my/compare/v3.54.2...v3.54.3) (2026-10-10)
+
+
+### Bug Fixes
+
+* **health:** bound published daily history below KV ceiling ([#1004](https://github.com/r3dz4r/datapulse-my/issues/1004)) ([c99b821](https://github.com/r3dz4r/datapulse-my/commit/c99b82124c94fc6cb0e1cdba9d56988fffa86d16))
+
+## [3.54.2](https://github.com/r3dz4r/datapulse-my/compare/v3.54.1...v3.54.2) (2026-10-10)
+
+
+### Bug Fixes
+
+* **pages:** bound attestation upload and guard file count ([#1001](https://github.com/r3dz4r/datapulse-my/issues/1001)) ([2eeefb9](https://github.com/r3dz4r/datapulse-my/commit/2eeefb9c3bfe9a64afefdd2006a7ee6a4f9a5699))
+
+## [3.54.1](https://github.com/r3dz4r/datapulse-my/compare/v3.54.0...v3.54.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deploy:** avoid duplicate open attestation appends ([#999](https://github.com/r3dz4r/datapulse-my/issues/999)) ([032dbd0](https://github.com/r3dz4r/datapulse-my/commit/032dbd0d95d9de91c8c460f21525dfb01819ccd0))
+
 ## [3.54.0](https://github.com/r3dz4r/datapulse-my/compare/v3.53.8...v3.54.0) (2026-10-10)
 
 
