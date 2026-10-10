@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
-from scripts.classify_change import is_append_only_change, is_health_only_change
+from scripts.classify_change import is_append_only_change, is_health_cycle_output, is_health_only_change
 
 
 ROOT = Path(__file__).resolve().parents[2]
 CLASSIFIER = ROOT / "scripts/classify_change.py"
+GENERATOR = ROOT / "scripts/generate.sh"
 
 
 REVISION = "a" * 64
@@ -200,6 +202,50 @@ def test_actual_health_cycle_commit_d4cae64e6_is_health_only() -> None:
     )
 
 
+def _declared_health_cycle_outputs() -> tuple[list[str], list[str]]:
+    script = GENERATOR.read_text(encoding="utf-8")
+    health_cycle = script.split('case "$profile" in', 1)[1].split("  release-build)", 1)[0]
+    match = re.search(r"(?ms)^\s*outputs=\(\s*\n(.*?)^\s*\)", health_cycle)
+    assert match is not None, "health-cycle outputs declaration missing"
+
+    paths: list[str] = []
+    excluded: list[str] = []
+    placeholder_values = {
+        "id": "sample",
+        "cycle": "cycle",
+        "vertical-id": "sample",
+        "run-date": "2026-10-10",
+        "date": "2026-10-10",
+    }
+    for line in match.group(1).splitlines():
+        declaration = re.fullmatch(r'\s*"([^"]+)"\s*', line)
+        assert declaration is not None, f"unparsed health-cycle output: {line}"
+        for item in declaration.group(1).split("; "):
+            item = re.sub(r" \([^)]*\)$", "", item)
+            # These are release-profile paths, append-only artifacts, or a broad wildcard.
+            if (
+                item in {"data/<id>.md", "README.md", "attestations/latest/*"}
+                or item.startswith("attestations/<date>/")
+                or item.startswith("append-only chain-index entries")
+                or item.startswith("datapulse.json ")
+            ):
+                excluded.append(item)
+                continue
+            path = re.sub(
+                r"<([^>]+)>", lambda match: placeholder_values[match.group(1)], item
+            ).replace("*", "sample")
+            paths.append(path)
+
+    return paths, excluded
+
+
+def test_declared_health_cycle_outputs_are_classified() -> None:
+    paths, _ = _declared_health_cycle_outputs()
+    assert paths, "health-cycle outputs declaration is empty"
+    rejected = [path for path in paths if not is_health_cycle_output(path)]
+    assert rejected == [], f"declared health-cycle outputs rejected: {rejected}"
+
+
 @pytest.mark.parametrize(
     "path",
     (
@@ -229,6 +275,12 @@ def test_actual_health_cycle_commit_d4cae64e6_is_health_only() -> None:
         "record-evidence/pharmaceutical_products/archive.json",
         "record-evidence/pharmaceutical_products/dated.json",
         "record-evidence/pharmaceutical_products/arbitrary.json",
+        "record-evidence/pharmaceutical_products/2026-10-10.json.bak",
+        "record-evidence/pharmaceutical_products/nested/2026-10-10.json",
+        "observation-receipts/days/.json",
+        "observation-receipts/days/2026-10-10.json.bak",
+        "observation-receipts/days/nested/2026-10-10.json",
+        "observation-receipts/other.json",
         "attestations/latest/unrecognized.txt",
         ".attestations/latest/unrecognized.txt",
         ".attestations/latest/.json",
