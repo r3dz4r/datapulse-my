@@ -399,8 +399,9 @@ def verify_contract(
     now: datetime | None = None,
     require_rekor: bool = False,
     verify_datasets: bool = True,
+    allow_newer_health: bool = False,
 ) -> dict[str, Any]:
-    """Verify all served attestation planes against the current health bytes."""
+    """Verify the signed plane; optionally permit a newer unpublished health snapshot."""
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     health_path = root / "health/latest.json"
     health = _load(health_path, "health snapshot")
@@ -442,7 +443,7 @@ def verify_contract(
         root, index, head, public, registry_row, verify_datasets=verify_datasets
     )
 
-    _selected_directory(root, verify_datasets=verify_datasets)
+    selected_directory = _selected_directory(root, verify_datasets=verify_datasets)
 
     observed_at = _parse_time(health_binding.get("observed_at"), "health observation time")
     if current < published_at or current < observed_at:
@@ -454,23 +455,41 @@ def verify_contract(
     if age_seconds > max_age:
         raise ContractError("served attestation is stale")
 
-    datasets = health.get("datasets")
-    if not isinstance(datasets, list) or not datasets:
-        raise ContractError("health dataset array is invalid")
-    dataset_ids = [row.get("dataset_id") for row in datasets if isinstance(row, dict)]
-    if len(dataset_ids) != len(datasets) or any(not isinstance(item, str) or not item for item in dataset_ids):
-        raise ContractError("health dataset identifiers are invalid")
-    if len(dataset_ids) != len(set(dataset_ids)):
-        raise ContractError("health dataset identifiers are ambiguous")
-    expected_health = {
-        "artifact_ref": "health/latest.json",
-        "artifact_sha256": _digest_bytes(health_path.read_bytes()),
-        "dataset_count": len(dataset_ids),
-        "dataset_ids_sha256": _digest_bytes(canonical(sorted(dataset_ids))),
-        "observed_at": health.get("checked_at"),
-    }
+    def health_claim(snapshot: dict[str, Any], path: Path) -> dict[str, Any]:
+        datasets = snapshot.get("datasets")
+        if not isinstance(datasets, list) or not datasets:
+            raise ContractError("health dataset array is invalid")
+        dataset_ids = [row.get("dataset_id") for row in datasets if isinstance(row, dict)]
+        if len(dataset_ids) != len(datasets) or any(not isinstance(item, str) or not item for item in dataset_ids):
+            raise ContractError("health dataset identifiers are invalid")
+        if len(dataset_ids) != len(set(dataset_ids)):
+            raise ContractError("health dataset identifiers are ambiguous")
+        return {
+            "artifact_ref": "health/latest.json",
+            "artifact_sha256": _digest_bytes(path.read_bytes()),
+            "dataset_count": len(dataset_ids),
+            "dataset_ids_sha256": _digest_bytes(canonical(sorted(dataset_ids))),
+            "observed_at": snapshot.get("checked_at"),
+        }
+
+    expected_health = health_claim(health, health_path)
     if health_binding != expected_health:
-        raise ContractError("health digest/count/time binding does not match served health")
+        mismatch = "health digest/count/time binding does not match served health"
+        if not allow_newer_health:
+            raise ContractError(mismatch)
+        signed_path = root / selected_directory / "health.json"
+        if not signed_path.is_file():
+            raise ContractError(mismatch)
+        signed_health = health_claim(_load(signed_path, "signed health snapshot"), signed_path)
+        if (
+            health_binding != signed_health
+            or expected_health["dataset_count"] != signed_health["dataset_count"]
+            or expected_health["dataset_ids_sha256"] != signed_health["dataset_ids_sha256"]
+            or _parse_time(expected_health["observed_at"], "health observation time")
+            <= observed_at
+        ):
+            raise ContractError(mismatch)
+        expected_health = signed_health
 
     rekor = _verify_rekor(root, binding.get("rekor"), expected_health["artifact_sha256"])
     if require_rekor and rekor is None:
@@ -511,6 +530,7 @@ def main() -> int:
             now=now,
             require_rekor=args.require_rekor,
             verify_datasets=not args.head_only,
+            allow_newer_health=args.require_rekor,
         )
     except ContractError as error:
         allowed_reasons = {
