@@ -83,7 +83,7 @@ jobs:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
-      - name: Select newest open append pull request
+      - name: Select oldest open append pull request
         id: candidate
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -93,7 +93,7 @@ jobs:
           pull_requests="${RUNNER_TEMP}/append-prs.json"
 
           gh pr list --base main --state open --limit 1000 \
-            --json number,headRefName,createdAt,title,state > "$pull_requests"
+            --json number,headRefName,createdAt,title,state,mergeable,statusCheckRollup > "$pull_requests"
 
           # submit_attestation_append.sh pushes the branch before creating its PR.
           # Wait briefly for that PR on push; scheduled runs select from main.
@@ -108,7 +108,7 @@ jobs:
               if (( attempt < 10 )); then
                 sleep 3
                 gh pr list --base main --state open --limit 1000 \
-                  --json number,headRefName,createdAt,title,state > "$pull_requests"
+                  --json number,headRefName,createdAt,title,state,mergeable,statusCheckRollup > "$pull_requests"
               fi
             done
           fi
@@ -121,13 +121,13 @@ jobs:
 
           number="$(python3 scripts/select_append_candidate.py "$pull_requests")"
           if [[ -z "$number" ]]; then
-            echo "::error title=Append PR missing::No open attestation append pull request was selected."
-            exit 1
+            echo "No eligible attestation append pull request; waiting for compatible evidence and checks."
+            exit 0
           fi
           selected_head="$(jq -r --argjson number "$number" \
             '.[] | select(.number == $number) | .headRefName' "$pull_requests")"
           if [[ "$GITHUB_EVENT_NAME" == "push" && "$selected_head" != "$GITHUB_REF_NAME" ]]; then
-            echo "Superseded sibling $GITHUB_REF_NAME; newest append is #$number ($selected_head)."
+            echo "Waiting append $GITHUB_REF_NAME; oldest append is #$number ($selected_head)."
             exit 0
           fi
           echo "Selected pull request #$number for $selected_head."
@@ -234,11 +234,26 @@ jobs:
           jq --slurp '.[0] + [.[1]]' "$pull_requests" "${pull_requests}.merged" > "${pull_requests}.all"
           siblings="$(python3 - "$pull_requests" "$merged_number" <<'PY'
           import json
+          import os
+          import subprocess
           import sys
           from pathlib import Path
           from scripts.select_append_candidate import select_superseded_siblings
 
           rows = json.loads(Path(sys.argv[1] + ".all").read_text(encoding="utf-8"))
+          # `gh pr list --json files` stops at 100 files. A signed set has many
+          # more, so fetch every page before comparing exact Git blob identities.
+          for row in rows:
+              if not row["headRefName"].startswith("attestation/append-"):
+                  continue
+              response = subprocess.check_output([
+                  "gh", "api", "--paginate", "--slurp",
+                  f"repos/{os.environ['GH_REPO']}/pulls/{row['number']}/files?per_page=100",
+              ], text=True)
+              row["files"] = [
+                  {key: item[key] for key in ("filename", "sha", "status")}
+                  for page in json.loads(response) for item in page
+              ]
           for number in select_superseded_siblings(rows, int(sys.argv[2])):
               print(number)
           PY

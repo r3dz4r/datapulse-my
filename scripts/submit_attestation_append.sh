@@ -14,57 +14,35 @@ git merge-base --is-ancestor "$expected_source" origin/main || {
   echo 'Discarding candidate: its source is not in origin/main history.' >&2
   exit 1
 }
-head="$(jq -er '.current_head' attestations/chain-index.json)"
-day="$(jq -er '.date' attestations/latest/index.json)"
+# Identity and discovery come from verified signed content, never a date alias.
+readarray -t identity < <(python3 - <<'IDENTITY'
+from pathlib import Path
+from scripts.attestation_sets import discovery
+value = discovery(Path.cwd())
+head = value["current_head"]
+print(head)
+print(value["envelopes"][head]["date"])
+IDENTITY
+)
+head="${identity[0]}"
+day="${identity[1]}"
 branch="attestation/append-$head"
+# Check the freshly fetched accepted parent without rewriting a signed candidate.
+python3 scripts/verify_attestation_append.py --base origin/main
+path_output="$(python3 scripts/verify_attestation_append.py --base origin/main --print-paths)"
+[[ -n "$path_output" ]] || exit 0
+readarray -t paths <<<"$path_output"
+(( ${#paths[@]} )) || exit 0
 git config user.name github-actions[bot]
 git config user.email 41898282+github-actions[bot]@users.noreply.github.com
 git switch -c "$branch"
-# Stage only immutable evidence and the discovery index here. Every mutable
-# projection promote() rewrites (latest/ and the legacy mirror) is staged after
-# the refresh below, so no pre-refresh mirror can enter the commit.
-git add -- "attestations/$day" attestations/chain-index.json
-if [[ -d "attestations/rekor/$day" ]]; then
-  git add -- "attestations/rekor/$day"
-fi
+# Only this finalized append's evidence enters Git. Discovery and publication
+# projections are derived after acceptance, so concurrent commits share no writes.
+git add -- "${paths[@]}"
 git diff --cached --quiet && exit 0
 message="$(git diff --cached --name-only | python3 scripts/attestation_commit_back.py --date "$day")"
 [[ -n "$message" ]]
 git commit -m "$message"
-if [[ "$(git rev-parse origin/main)" != "$expected_source" ]]; then
-  git merge --no-edit origin/main || {
-    echo 'Discarding candidate: merging origin/main failed; manual reconciliation required.' >&2
-    exit 1
-  }
-fi
-# Resolve the directory selected by the chain index only after aligning to the
-# accepted base. That index is authoritative for the current head; a pre-merge
-# directory selection can leave the legacy mirror behind the accepted head.
-resolve_day_directory_after_alignment() {
-  local head_path
-  head_path="$(jq -er --arg head "$head" '.heads[$head]' attestations/chain-index.json)"
-  dirname "$head_path"
-}
-day_directory="$(resolve_day_directory_after_alignment)"
-# Reuse promote() for projection construction and leave dated evidence untouched.
-refresh_projection_from_accepted_base() {
-  python3 - "$1" <<'PY'
-import sys
-from pathlib import Path
-
-from scripts.gen_attestations import promote
-
-promote(Path.cwd(), sys.argv[1])
-PY
-}
-refresh_projection_from_accepted_base "$day_directory"
-# promote() rewrites these mutable projections, including the legacy chain-head
-# mirror. Stage them only after the refresh: an add before it snapshots the
-# pre-refresh mirror that acceptance then rejects.
-git add -- attestations/latest/chain_head.json attestations/latest/index.json \
-  attestations/latest/binding.json attestations/latest/scores.json \
-  .attestations/chain_head.json
-git commit --amend --no-edit
 # Credentials stay in the runner environment; neither configuration nor logs
 # contain their values. A unique hash branch is never force-updated or rebased.
 git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \

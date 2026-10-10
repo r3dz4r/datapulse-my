@@ -3,7 +3,9 @@
 # Refresh the legacy attestation chain head ahead of Sigstore signing.
 #
 # gen_attestations.py owns validated reuse, immutable same-day append, and the
-# latest/legacy projections. A head describes its set's recorded observation;
+# hash-addressed append sets and latest/legacy projections. Discovery derives
+# the accepted tip from verified sets even when Git's legacy index is unchanged.
+# A head describes its set's recorded observation;
 # later catalogue changes must never reinterpret an earlier signed receipt.
 # Sigstore signing separately checks the candidate against current health.
 #

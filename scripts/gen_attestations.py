@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.verify_attestation_binding import ContractError
-from scripts.attestation_sets import discovery, verify_set, descriptor, validate_discovery, correction_record, set_directory, FILES
+from scripts.attestation_sets import discovery, verify_set, descriptor, validate_discovery, correction_record, set_directory, FILES, append_content_digest, rekor_content, external_rekor_paths
 
 ZERO = "0" * 64
 ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
@@ -154,7 +154,13 @@ def score_rows(manifest: dict, health: dict, trends: dict, drift: dict, recon: d
 
 def refresh_manifest_refs(root: Path, directory: str) -> None:
     """Derive mutable manifest references from the selected immutable index."""
-    refs = load(root / directory / "index.json")["attestations"]
+    index = load(root / directory / "index.json")
+    original_index = root / "attestations" / index["date"] / "index.json"
+    if original_index.is_file():
+        original = load(original_index)
+        if load(root / original["chain_head_ref"])["chain_head"] == load(root / index["chain_head_ref"])["chain_head"]:
+            index = original
+    refs = index["attestations"]
     manifest = load(root / "datapulse.json")
     for entry in manifest["datasets"]:
         entry["attestation_ref"] = refs[entry["id"]]
@@ -181,7 +187,7 @@ def agrees(root: Path, directory: str, manifest: dict, health_claim: dict, regis
     if (binding["payload"]["health"] != health_claim
             or binding["payload"]["ed25519"]["key_id"] != registry.get("current_key_id")
             or set(index["attestations"]) != {r["id"] for r in manifest["datasets"]}
-            or (rekor is not None and binding.get("rekor") != rekor)):
+            or (rekor is not None and rekor_content(root, binding.get("rekor")) != rekor_content(root, rekor))):
         return False
     return all(load(root / index["attestations"][r["id"]])["payload"]["source_url"] == r["url"] for r in manifest["datasets"])
 
@@ -250,7 +256,8 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
             published = parse_time(load(root / directory / "binding.json")["payload"]["published_at"])
             if now < observed or now < published or max((now-observed).total_seconds(), (now-published).total_seconds()) > ATTESTATION_MAX_AGE_SECONDS:
                 raise ValueError("served attestation is stale or in the future")
-            promote(root, directory)
+            revision = root / directory / "revisions" / previous
+            promote(root, revision.relative_to(root).as_posix() if revision.is_dir() else directory)
             dump(root / "attestations/chain-index.json", chain_index)
             return
     key=load(key_path)
@@ -279,22 +286,50 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     head_payload={"schema":"datapulse/v1/daily-chain-head","date":day,"previous_chain_head":previous,"dataset_count":len(links),"dataset_links_sha256":sha(canonical(links)),"key_id":key["key_id"]}
     if correction is not None:
         head_payload["correction"] = correction
+    scores = score_rows(manifest,health,trends,drift,recon,generated_at)
+    binding = binding_envelope(private,day,generated_at,health_claim,{"chain_head": ZERO},key["key_id"],rekor)
+    if correction is not None:
+        binding["payload"]["correction"] = correction
+    witness = rekor_content(root, rekor)
+    head_payload["append_content_sha256"] = append_content_digest(
+        head_payload, envelopes, scores, binding["payload"], witness)
     chain_head=sha(bytes.fromhex(previous)+canonical(head_payload)); head={"schema":"datapulse/v1/daily-chain-head-envelope","payload":head_payload,"signature_base64":sign(private,head_payload),"chain_head":chain_head,"dataset_links":links,"anchor":{"tag":None,"commit":None,"anchored":False}}
-    directory = f"attestations/{day}" + (f"/revisions/{chain_head}" if run else "")
+    directory = f"attestations/{day}/revisions/{chain_head}"
     dated = root / directory
     if dated.exists() and any((dated / name).exists() for name in FILES):
         raise ValueError("same-day attestation is corrupt or inconsistent: destination already exists")
     refs = {did: f"{directory}/{did}.json" for did in envelopes}
     for did, envelope in envelopes.items():
         dump(root / refs[did], envelope)
+        # The first daily envelope remains a served legacy URL. Corrections
+        # only append revision paths and must never replace that day's alias.
+        if not run:
+            legacy = base / day / f"{did}.json"
+            if legacy.exists():
+                if load(legacy) != envelope:
+                    raise ValueError("legacy dataset attestation cannot be overwritten")
+            else:
+                dump(legacy, envelope)
     dump(dated / "chain_head.json", head)
     dump(dated / "index.json", {"schema": "datapulse/v1/attestation-index", "date": day,
         "chain_head_ref": directory + "/chain_head.json", "binding_ref": directory + "/binding.json", "attestations": refs})
-    dump(dated / "scores.json", score_rows(manifest,health,trends,drift,recon,generated_at))
-    binding = binding_envelope(private,day,generated_at,health_claim,head,key["key_id"],rekor)
+    dump(dated / "scores.json", scores)
+    binding["payload"]["ed25519"]["chain_head"] = chain_head
     binding["payload"]["ed25519"]["chain_head_ref"] = directory + "/chain_head.json"
-    if correction is not None:
-        binding["payload"]["correction"] = correction
+    if witness is not None:
+        dump(dated / "rekor-reference.json", witness["reference"])
+        dump(dated / "rekor-bundle.json", witness["bundle"])
+        use_served_rekor = rekor["reference_ref"].startswith(f"attestations/rekor/{day}/")
+        binding["rekor"] = {"reference_ref": rekor["reference_ref"] if use_served_rekor else directory + "/rekor-reference.json",
+                            "bundle_ref": rekor["bundle_ref"] if use_served_rekor else directory + "/rekor-bundle.json"}
+        # The served-plane fetch follows binding proof references. Retain the
+        # producer's dated Rekor URLs alongside the immutable revision copies.
+        if rekor["reference_ref"].startswith(f"attestations/rekor/{day}/"):
+            binding["rekor"].update({"historical_reference_ref": rekor["reference_ref"],
+                                     "historical_bundle_ref": rekor["bundle_ref"]})
+        if not run and use_served_rekor:
+            binding["rekor"].update({f"dataset_{did}_ref": f"attestations/{day}/{did}.json"
+                                     for did in envelopes})
     binding["signature_base64"] = sign(private, binding["payload"])
     dump(dated / "binding.json", binding)
     # Preserve the exact raw health input beside the signed set so a same-day
@@ -303,13 +338,39 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     # snapshot named by its signed record.
     health_bytes = (root / "health/latest.json").read_bytes()
     (dated / "health.json").write_bytes(health_bytes)
+    chain_head_ref = directory + "/chain_head.json"
+    if not run:
+        # Keep the original day's historical verification plane while the
+        # append set itself remains isolated by its content-addressed path.
+        original = base / day
+        if any((original / name).exists() for name in FILES):
+            raise ValueError("original daily attestation already exists but is not indexed")
+        for name in ("chain_head.json", "scores.json"):
+            shutil.copy2(dated / name, original / name)
+        original_index = load(dated / "index.json")
+        original_index["chain_head_ref"] = f"attestations/{day}/chain_head.json"
+        original_index["binding_ref"] = f"attestations/{day}/binding.json"
+        original_index["attestations"] = {did: f"attestations/{day}/{did}.json" for did in envelopes}
+        dump(original / "index.json", original_index)
+        original_rekor = rekor
+        if witness is not None and external_rekor_paths(rekor, day) is None:
+            dump(original / "rekor-reference.json", witness["reference"])
+            dump(original / "rekor-bundle.json", witness["bundle"])
+            original_rekor = {"reference_ref": f"attestations/{day}/rekor-reference.json",
+                              "bundle_ref": f"attestations/{day}/rekor-bundle.json"}
+        dump(original / "binding.json", binding_envelope(
+            private, day, generated_at, health_claim, head, key["key_id"], original_rekor))
+        (original / "health.json").write_bytes(health_bytes)
+        chain_head_ref = original_index["chain_head_ref"]
     if correction is not None:
         correction_snapshot = root / correction["health_snapshot_ref"]
         correction_snapshot.parent.mkdir(parents=True, exist_ok=True)
         correction_snapshot.write_bytes(health_bytes)
     verify_set(root, directory + "/chain_head.json")
-    chain_index["heads"][chain_head] = directory + "/chain_head.json"
-    chain_index["envelopes"][chain_head] = descriptor(head, directory + "/chain_head.json", len(run) + 1)
+    if not run:
+        verify_set(root, chain_head_ref)
+    chain_index["heads"][chain_head] = chain_head_ref
+    chain_index["envelopes"][chain_head] = descriptor(head, chain_head_ref, len(run) + 1)
     chain_index["days"].setdefault(day, []).append(chain_head)
     chain_index["current_head"] = chain_head
     for digest, anchor in discover_git_anchors(root).items():
@@ -369,7 +430,12 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
             # Frozen --now fixtures need no wall-clock check; live callers check midnight.
             candidate = load(staging / "attestations/chain-index.json")
             directory = candidate["heads"][candidate["current_head"]].rsplit("/", 1)[0]
+            revision = staging / directory / "revisions" / candidate["current_head"]
+            if revision.is_dir():
+                directory = revision.relative_to(staging).as_posix()
             destination = root / directory
+            immutable_index = load(staging / directory / "index.json")
+            day = immutable_index["date"]
             candidate_correction = load(staging / directory / "binding.json").get("payload", {}).get("correction")
             snapshot_directory = candidate_correction["health_snapshot_ref"].rsplit("/", 1)[0] if isinstance(candidate_correction, dict) else None
             if not destination.exists():
@@ -377,6 +443,27 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
                 os.rename(staging / directory, destination)
             elif any((destination / name).read_bytes() != (staging / directory / name).read_bytes() for name in FILES):
                 raise ValueError("immutable destination cannot be overwritten")
+            if len(candidate["days"][day]) == 1:
+                for name in (*FILES, "health.json", "rekor-reference.json", "rekor-bundle.json"):
+                    source_alias = staging / "attestations" / day / name
+                    if name.startswith("rekor-") and not source_alias.is_file():
+                        continue
+                    alias = root / "attestations" / day / name
+                    if alias.exists():
+                        if alias.read_bytes() != source_alias.read_bytes():
+                            raise ValueError("original daily attestation cannot be overwritten")
+                    else:
+                        os.rename(source_alias, alias)
+                for reference in immutable_index["attestations"].values():
+                    name = Path(reference).name
+                    source_alias = staging / "attestations" / day / name
+                    alias = root / "attestations" / day / name
+                    if alias.exists():
+                        if alias.read_bytes() != source_alias.read_bytes():
+                            raise ValueError("legacy dataset attestation cannot be overwritten")
+                    else:
+                        alias.parent.mkdir(parents=True, exist_ok=True)
+                        os.rename(source_alias, alias)
             if snapshot_directory is not None:
                 snapshot_destination = root / snapshot_directory
                 if not snapshot_destination.exists():

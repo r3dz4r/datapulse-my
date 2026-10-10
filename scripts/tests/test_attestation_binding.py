@@ -12,7 +12,7 @@ import pytest
 
 from scripts import attestation_sets, gen_attestations as ga
 from scripts.attestation_sets import discovery, selected_directory
-from scripts.tests.test_attestations import fixture_root, fixture_root_with_rekor, write
+from scripts.tests.test_attestations import fixture_root, fixture_root_with_rekor, immutable_directory, write
 from scripts.verify_attestation_binding import (
     ContractError,
     _verify_merkle_proof,
@@ -189,7 +189,7 @@ def test_append_day_comes_from_candidate_index_even_when_later_day_exists(tmp_pa
     other_day = "2026-08-16" if accepted_day != "2026-08-16" else "2026-08-17"
     (root / "attestations" / other_day).mkdir()
 
-    assert accepted_day_directory(root, document) == f"attestations/{accepted_day}"
+    assert accepted_day_directory(root, document) == immutable_directory(root, accepted_day).relative_to(root).as_posix()
 
 
 def test_append_verifier_rejects_stale_legacy_mirror(tmp_path: Path) -> None:
@@ -277,10 +277,10 @@ def test_clean_fixture_binds_health_chain_dataset_set_time_and_active_key(tmp_pa
     assert result["freshness"]["status"] == "current"
 
 
-def test_additive_binding_does_not_change_legacy_signed_payload_shapes(tmp_path: Path) -> None:
+def test_probe_payload_is_preserved_and_head_commits_append_content(tmp_path: Path) -> None:
     root = generated_root(tmp_path)
-    dataset_payload = load(root / "attestations/2026-08-15/sample.json")["payload"]
-    head_payload = load(root / "attestations/2026-08-15/chain_head.json")["payload"]
+    dataset_payload = load(immutable_directory(root) / "sample.json")["payload"]
+    head_payload = load(immutable_directory(root) / "chain_head.json")["payload"]
 
     assert set(dataset_payload) == {
         "schema", "date", "observed_at", "dataset_id", "source_url",
@@ -291,7 +291,7 @@ def test_additive_binding_does_not_change_legacy_signed_payload_shapes(tmp_path:
     }
     assert set(head_payload) == {
         "schema", "date", "previous_chain_head", "dataset_count",
-        "dataset_links_sha256", "key_id",
+        "dataset_links_sha256", "key_id", "append_content_sha256",
     }
     assert ga.canonical(dataset_payload) == json.dumps(
         dataset_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
@@ -303,21 +303,21 @@ def test_same_day_generation_is_byte_idempotent(tmp_path: Path) -> None:
     ga.generate(root, key, NOW)
     before = {
         path.relative_to(root): path.read_bytes()
-        for path in (root / "attestations/2026-08-15").glob("*.json")
+        for path in (root / "attestations/2026-08-15").rglob("*.json")
     }
 
     ga.generate(root, key, NOW + timedelta(hours=1))
 
     assert before == {
         path.relative_to(root): path.read_bytes()
-        for path in (root / "attestations/2026-08-15").glob("*.json")
+        for path in (root / "attestations/2026-08-15").rglob("*.json")
     }
 
 
 def test_same_day_changed_health_with_invalid_key_refuses_reuse(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
-    dated = root / "attestations/2026-08-15"
+    dated = immutable_directory(root)
     committed = {path.name: path.read_bytes() for path in dated.glob("*.json")}
     health = load(root / "health/latest.json")
     health["datasets"][0]["status"] = "stale"
@@ -338,9 +338,9 @@ def test_same_day_corrupt_dated_set_fails_closed_without_mutating_latest(tmp_pat
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
     latest_before = (root / "attestations/latest/binding.json").read_bytes()
-    binding = load(root / "attestations/2026-08-15/binding.json")
+    binding = load(immutable_directory(root) / "binding.json")
     binding["payload"]["health"]["artifact_sha256"] = "0" * 64
-    write(root / "attestations/2026-08-15/binding.json", binding)
+    write(immutable_directory(root) / "binding.json", binding)
 
     with pytest.raises(ValueError, match="corrupt or inconsistent"):
         ga.generate(root, key, NOW + timedelta(hours=1))
@@ -352,7 +352,7 @@ def test_same_day_invalid_scores_fail_closed_without_mutating_latest(tmp_path: P
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
     latest_before = (root / "attestations/latest/scores.json").read_bytes()
-    (root / "attestations/2026-08-15/scores.json").write_text("[]\n", encoding="utf-8")
+    (immutable_directory(root) / "scores.json").write_text("[]\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="corrupt or inconsistent"):
         ga.generate(root, key, NOW + timedelta(hours=1))
@@ -511,7 +511,7 @@ def install_rekor_fixture(root: Path, *, missing_proof: bool = False, attach: bo
         binding["claims"]["rekor_witnessed"] = True
         # Rekor metadata is additive evidence, not part of the legacy Ed25519 payload.
         dump(binding_path, binding)
-        dump(root / "attestations/2026-08-15/binding.json", binding)
+        dump(immutable_directory(root) / "binding.json", binding)
         shutil.copy2(reference_path, root / "attestations/latest/health.sigstore.json")
         shutil.copy2(bundle_path, root / "attestations/latest/health.sigstore.bundle.json")
     return reference_path
@@ -534,15 +534,15 @@ def test_complete_rekor_reference_binds_the_same_health_digest(tmp_path: Path) -
 def test_same_day_rekor_reference_does_not_mutate_committed_binding(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
-    legacy_before = (root / "attestations/2026-08-15/sample.json").read_bytes()
+    legacy_before = (immutable_directory(root) / "sample.json").read_bytes()
     reference = install_rekor_fixture(root, attach=False)
 
-    dated_binding = (root / "attestations/2026-08-15/binding.json").read_bytes()
+    dated_binding = (immutable_directory(root) / "binding.json").read_bytes()
     ga.generate(root, key, NOW + timedelta(hours=1), reference)
     ga.generate(root, key, NOW + timedelta(hours=2), reference)
 
-    assert (root / "attestations/2026-08-15/sample.json").read_bytes() == legacy_before
-    assert (root / "attestations/2026-08-15/binding.json").read_bytes() == dated_binding
+    assert (immutable_directory(root) / "sample.json").read_bytes() == legacy_before
+    assert (immutable_directory(root) / "binding.json").read_bytes() == dated_binding
     assert (root / "attestations/latest/binding.json").read_bytes() != dated_binding
     assert verify_contract(root, now=NOW + timedelta(hours=2))["claims"]["rekor_witnessed"] is True
     assert len(load(root / "attestations/chain-index.json")["days"]["2026-08-15"]) == 2

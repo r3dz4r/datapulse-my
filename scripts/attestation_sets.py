@@ -29,6 +29,44 @@ PIPELINE_OWNED_PROJECTIONS = ("scores.json",)
 logger = logging.getLogger(__name__)
 
 
+def append_content_digest(head_payload: dict, envelopes: dict, scores: dict,
+                          binding_payload: dict, rekor_documents: dict | None) -> str:
+    """Commit finalized content before adding its deterministic self references.
+
+    Signatures and references of the head/binding/index are determined by these
+    inputs. Excluding those derived fields avoids a digest/signature fixed point.
+    Dataset signatures are already finalized and are included verbatim.
+    """
+    payload = {k: v for k, v in head_payload.items() if k != "append_content_sha256"}
+    binding = {**binding_payload, "ed25519": {
+        k: v for k, v in binding_payload["ed25519"].items()
+        if k not in {"chain_head", "chain_head_ref"}}}
+    return hashlib.sha256(canonical({"head": payload, "datasets": envelopes,
+        "scores": scores, "binding": binding, "rekor": rekor_documents})).hexdigest()
+
+
+def rekor_content(root: Path, rekor: dict | None) -> dict | None:
+    """Hash witness content independently of the producer's temporary paths."""
+    if rekor is None:
+        return None
+    reference = _load(root / rekor["reference_ref"], "Rekor reference")
+    return {"reference": {**reference, "bundle": "rekor-bundle.json"},
+            "bundle": _load(root / rekor["bundle_ref"], "Rekor bundle")}
+
+
+def external_rekor_paths(rekor: dict | None, day: str) -> tuple[str, str] | None:
+    """Identify day-scoped proof files that an append branch must carry."""
+    if rekor is None:
+        return None
+    refs = (rekor.get("reference_ref"), rekor.get("bundle_ref"))
+    pattern = re.compile(
+        rf"attestations/rekor/{re.escape(day)}/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.json"
+    )
+    if all(isinstance(ref, str) and pattern.fullmatch(ref) for ref in refs):
+        return refs
+    return None
+
+
 def set_directory(reference: str, filename: str = "chain_head.json") -> str:
     """Accept only legacy or hash-addressed immutable set paths."""
     match = SET_REF.fullmatch(reference) if isinstance(reference, str) else None
@@ -80,6 +118,10 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
     public = Ed25519PublicKey.from_public_bytes(base64.b64decode(row["public_key_base64"], validate=True))
     _verify_signature(public, payload, binding.get("signature_base64"), "immutable binding")
     _verify_legacy_plane(root, index, head, public, row, verify_datasets=verify_datasets)
+    claim = payload.get("health", {})
+    rekor = binding.get("rekor")
+    if rekor is not None:
+        verify_rekor_evidence(root, rekor, claim.get("artifact_sha256"))
     if (binding.get("schema") != "datapulse/v1/attestation-binding-envelope"
             or payload.get("schema") != "datapulse/v1/attestation-binding"
             or payload.get("date") != head["payload"]["date"]
@@ -91,14 +133,34 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
     if match[1] != head["payload"]["date"] or (match[2] and match[2] != head["chain_head"]):
         raise ContractError("immutable head path identity mismatch")
     ids = sorted(index["attestations"])
-    claim = payload.get("health", {})
     if claim.get("dataset_count") != len(ids) or claim.get("dataset_ids_sha256") != hashlib.sha256(canonical(ids)).hexdigest():
         raise ContractError("immutable binding membership mismatch")
     if scores.get("schema") != "datapulse/v1/trust-scores" or sorted(r["dataset_id"] for r in scores.get("datasets", [])) != ids:
         raise ContractError("immutable scores membership mismatch")
-    rekor = binding.get("rekor")
     if rekor is not None:
-        verify_rekor_evidence(root, rekor, claim.get("artifact_sha256"))
+        historical = {key: rekor[key] for key in ("historical_reference_ref", "historical_bundle_ref") if key in rekor}
+        if historical and verify_datasets:
+            day = payload["date"]
+            pattern = re.compile(rf"attestations/rekor/{re.escape(day)}/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.json")
+            if (len(historical) != 2 or any(not isinstance(ref, str) or pattern.fullmatch(ref) is None
+                                            for ref in historical.values())):
+                raise ContractError("historical Rekor reference is unsafe")
+            historical_rekor = {"reference_ref": historical["historical_reference_ref"],
+                                "bundle_ref": historical["historical_bundle_ref"]}
+            verify_rekor_evidence(root, historical_rekor, claim.get("artifact_sha256"))
+            if rekor_content(root, historical_rekor) != rekor_content(root, rekor):
+                raise ContractError("historical Rekor proof disagrees with immutable set")
+        dataset_keys = {key for key in rekor if key.startswith("dataset_") and key.endswith("_ref")}
+        if dataset_keys and verify_datasets:
+            if (not historical or payload.get("correction") is not None
+                    or dataset_keys != {f"dataset_{did}_ref" for did in index["attestations"]}):
+                raise ContractError("historical dataset references disagree with immutable set")
+            for did, reference in index["attestations"].items():
+                alias_ref = rekor[f"dataset_{did}_ref"]
+                if alias_ref != f"attestations/{payload['date']}/{did}.json":
+                    raise ContractError("historical dataset reference is unsafe")
+                if (root / alias_ref).read_bytes() != (root / reference).read_bytes():
+                    raise ContractError("historical dataset envelope disagrees with immutable set")
     # A recorded health snapshot pins the exact input a correction superseded;
     # when present it must match the signed claim. Main's same-day correction
     # evidence lives here, so the branch's lineage verifier must check it too.
@@ -126,6 +188,47 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
             raise ContractError("signed correction health snapshot digest is invalid")
     if binding.get("claims") != {"artifact_signed": rekor is not None, "rekor_witnessed": rekor is not None, "source_truth_verified": False}:
         raise ContractError("immutable binding evidence claims disagree")
+    if "append_content_sha256" in head["payload"] and verify_datasets:
+        if not snapshot.is_file():
+            raise ContractError("content-addressed health snapshot is missing")
+        datasets = {did: _load(root / ref, "immutable dataset") for did, ref in index["attestations"].items()}
+        if head["payload"]["append_content_sha256"] != append_content_digest(
+                head["payload"], datasets, scores, payload, rekor_content(root, rekor)):
+            raise ContractError("append content digest disagrees with immutable set")
+        if any(ref != directory + "/" + did + ".json" for did, ref in index["attestations"].items()):
+            raise ContractError("content-addressed dataset reference escapes its set")
+        external_rekor = external_rekor_paths(rekor, payload["date"]) is not None
+        legacy_rekor = match[2] is None and rekor is not None
+        if rekor is not None and set(rekor) - {"reference_ref", "bundle_ref", "historical_reference_ref", "historical_bundle_ref"} - dataset_keys:
+            raise ContractError("content-addressed witness metadata has unexpected keys")
+        if (rekor is not None and not legacy_rekor and not external_rekor
+                and (rekor.get("reference_ref") != directory + "/rekor-reference.json"
+                     or rekor.get("bundle_ref") != directory + "/rekor-bundle.json")):
+            raise ContractError("content-addressed witness reference escapes its set")
+        local_rekor_present = (root / directory / "rekor-reference.json").is_file()
+        if external_rekor and match[2] is not None and local_rekor_present:
+            local_rekor = {"reference_ref": directory + "/rekor-reference.json",
+                           "bundle_ref": directory + "/rekor-bundle.json"}
+            verify_rekor_evidence(root, local_rekor, claim.get("artifact_sha256"))
+            if rekor_content(root, local_rekor) != rekor_content(root, rekor):
+                raise ContractError("content-addressed witness differs from its signed proof")
+        expected_files = set(FILES) | {"health.json"} | {did + ".json" for did in datasets}
+        if rekor is not None and not legacy_rekor and (not external_rekor or local_rekor_present):
+            expected_files |= {"rekor-reference.json", "rekor-bundle.json"}
+        if match[2] is None and (root / directory / "revisions").is_dir():
+            expected_files.add("revisions")
+        if match[2] is None:
+            # Legacy dated proof inputs can arrive after the day's first set.
+            # They are verified when referenced by a binding, while revision
+            # directories remain closed to unrelated files.
+            expected_files.update(name for name in (
+                "health.sigstore.json", "health.sigstore.bundle.json")
+                if (root / directory / name).is_file())
+            if rekor is not None and (rekor.get("reference_ref") == directory + "/rekor-reference.json"
+                                      and rekor.get("bundle_ref") == directory + "/rekor-bundle.json"):
+                expected_files.update(("rekor-reference.json", "rekor-bundle.json"))
+        if {p.name for p in (root / directory).iterdir()} != expected_files:
+            raise ContractError("content-addressed set contains unexpected files")
     return head
 
 
@@ -142,8 +245,9 @@ def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
     """Validate v2, or derive v2 from verified v1 entries without rewriting evidence."""
     path = root / "attestations/chain-index.json"
     if not path.exists():
-        return {"schema": "datapulse/v2/chain-index", "heads": {}, "anchors": {}, "envelopes": {}, "days": {}, "current_head": None}
-    document = _load(path, "chain index")
+        document = {"schema": "datapulse/v2/chain-index", "heads": {}, "anchors": {}, "envelopes": {}, "days": {}, "current_head": None}
+    else:
+        document = _load(path, "chain index")
     if document.get("schema") not in {"datapulse/v1/chain-index", "datapulse/v2/chain-index"}:
         raise ContractError("unknown chain index schema")
     heads = document.get("heads")
@@ -171,6 +275,38 @@ def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
         result["migration_head"] = current
         result["unresolved_heads"] = sorted(set(heads) - set(result["envelopes"]))
         document = result
+    validate_discovery(root, document, verify_datasets=verify_datasets)
+    # The committed index is the legacy checkpoint. New append sets discover
+    # themselves; no appender has to rewrite a shared selector or map.
+    pending = {}
+    for candidate in sorted((root / "attestations").glob("*/revisions/*/chain_head.json")):
+        raw = _load(candidate, "append head")
+        if "append_content_sha256" not in raw.get("payload", {}):
+            continue
+        reference = candidate.relative_to(root).as_posix()
+        head = verify_set(root, reference, verify_datasets=verify_datasets)
+        digest = head["chain_head"]
+        if digest in heads:
+            if heads[digest] != reference:
+                day = head["payload"]["date"]
+                if heads[digest] != f"attestations/{day}/chain_head.json":
+                    raise ContractError("duplicate append head identity")
+        else:
+            pending[digest] = (reference, head)
+    while pending:
+        parent = document["current_head"] or "0" * 64
+        children = [(digest, reference, head) for digest, (reference, head) in pending.items()
+                    if head["payload"]["previous_chain_head"] == parent]
+        if len(children) != 1:
+            raise ContractError("fork or disconnected accepted forward head: candidate does not append to accepted parent")
+        digest, reference, head = children[0]
+        day = head["payload"]["date"]
+        run = document["days"].setdefault(day, [])
+        document["heads"][digest] = reference
+        document["envelopes"][digest] = descriptor(head, reference, len(run) + 1)
+        run.append(digest)
+        document["current_head"] = digest
+        del pending[digest]
     validate_discovery(root, document, verify_datasets=verify_datasets)
     return document
 
@@ -250,7 +386,8 @@ def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = Tr
 
 def legacy_mirror_expected_schema(root: Path) -> str:
     """Read the committed chain-index schema that controls legacy mirror checks."""
-    return _load(root / "attestations/chain-index.json", "chain index")["schema"]
+    path = root / "attestations/chain-index.json"
+    return _load(path, "chain index")["schema"] if path.exists() else "datapulse/v2/chain-index"
 
 
 def verify_legacy_mirror(root: Path, document: dict[str, Any], directory: str) -> None:
@@ -259,6 +396,9 @@ def verify_legacy_mirror(root: Path, document: dict[str, Any], directory: str) -
     if (mirror.is_file()
             and (schema := legacy_mirror_expected_schema(root)) == "datapulse/v2/chain-index"):
         expected = root / directory / "chain_head.json"
+        dated = root / "attestations" / Path(directory).parts[1] / "chain_head.json"
+        if dated.is_file() and dated.read_bytes() == expected.read_bytes():
+            expected = dated
         mirror_bytes = mirror.read_bytes()
         expected_bytes = expected.read_bytes()
         mirror_sha256 = hashlib.sha256(mirror_bytes).hexdigest()
@@ -266,7 +406,7 @@ def verify_legacy_mirror(root: Path, document: dict[str, Any], directory: str) -
         operands = (
             f"mirror={mirror.resolve()} sha256={mirror_sha256} bytes={len(mirror_bytes)}",
             f"expected={expected.resolve()} sha256={expected_sha256} bytes={len(expected_bytes)}",
-            f"day={directory} schema={schema}",
+            f"day={expected.parent.relative_to(root)} schema={schema}",
         )
         if mirror_bytes != expected_bytes:
             raise ContractError("legacy mirror disagrees with current head\n" + "\n".join(operands))
@@ -278,6 +418,9 @@ def selected_directory(root: Path, *, projections: bool = True, verify_datasets:
     document = discovery(root, verify_datasets=verify_datasets)
     digest = document["current_head"]
     directory = set_directory(document["heads"][digest])
+    revision = root / directory / "revisions" / digest / "chain_head.json"
+    if revision.is_file():
+        directory = revision.parent.relative_to(root).as_posix()
     if projections:
         for filename in FILES:
             projection = root / "attestations/latest" / filename
