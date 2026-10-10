@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-09T14:41:21Z",
-    "record_count": 6477,
+    "last_checked": "2026-10-10T16:34:45Z",
+    "record_count": 6478,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:001e72ae81dbb3c79a071c2a38fbf7fdcdf4311f46d4248620a8d4b2053d497d"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=organ_pledges",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily Organ Donation Pledges",
     "namespace": "healthcare",
-    "observed_verified_at": "2026-10-09T14:41:21Z",
+    "observed_verified_at": "2026-10-10T16:34:45Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "National Transplant Resource Centre and Ministry of Health Malaysia"
   },
@@ -847,7 +847,7 @@
     "receipt": {
       "evidence_path": "data/organ_pledges.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:ee29725f60fdeb179a257d98998d3399c0c40f6e1cff8e10638eac06fba1bc63",
+      "receipt_digest": "sha256:5a04c3e878bae1678a91a468f7cb5a2ca2cbe35433726ab0169898cfd6e5bc58",
       "sigstore_path": "data/organ_pledges.receipt.sigstore.json",
       "statement_path": "data/organ_pledges.receipt.statement.json"
     },
