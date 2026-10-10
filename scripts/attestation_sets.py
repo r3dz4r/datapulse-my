@@ -183,13 +183,28 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
             raise ContractError("append content digest disagrees with immutable set")
         if any(ref != directory + "/" + did + ".json" for did, ref in index["attestations"].items()):
             raise ContractError("content-addressed dataset reference escapes its set")
-        if rekor is not None and (rekor.get("reference_ref") != directory + "/rekor-reference.json"
-                                  or rekor.get("bundle_ref") != directory + "/rekor-bundle.json"
-                                  or set(rekor) - {"reference_ref", "bundle_ref", "historical_reference_ref", "historical_bundle_ref"} - dataset_keys):
+        external_rekor = (rekor is not None and all(isinstance(rekor.get(key), str) and re.fullmatch(
+            rf"attestations/rekor/{re.escape(payload['date'])}/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.json",
+            rekor[key]) for key in ("reference_ref", "bundle_ref")))
+        legacy_rekor = match[2] is None and rekor is not None
+        if rekor is not None and set(rekor) - {"reference_ref", "bundle_ref", "historical_reference_ref", "historical_bundle_ref"} - dataset_keys:
+            raise ContractError("content-addressed witness metadata has unexpected keys")
+        if (rekor is not None and not legacy_rekor and not external_rekor
+                and (rekor.get("reference_ref") != directory + "/rekor-reference.json"
+                     or rekor.get("bundle_ref") != directory + "/rekor-bundle.json")):
             raise ContractError("content-addressed witness reference escapes its set")
+        local_rekor_present = (root / directory / "rekor-reference.json").is_file()
+        if external_rekor and match[2] is not None and local_rekor_present:
+            local_rekor = {"reference_ref": directory + "/rekor-reference.json",
+                           "bundle_ref": directory + "/rekor-bundle.json"}
+            verify_rekor_evidence(root, local_rekor, claim.get("artifact_sha256"))
+            if rekor_content(root, local_rekor) != rekor_content(root, rekor):
+                raise ContractError("content-addressed witness differs from its signed proof")
         expected_files = set(FILES) | {"health.json"} | {did + ".json" for did in datasets}
-        if rekor is not None:
+        if rekor is not None and not legacy_rekor and (not external_rekor or local_rekor_present):
             expected_files |= {"rekor-reference.json", "rekor-bundle.json"}
+        if match[2] is None and (root / directory / "revisions").is_dir():
+            expected_files.add("revisions")
         if {p.name for p in (root / directory).iterdir()} != expected_files:
             raise ContractError("content-addressed set contains unexpected files")
     return head
@@ -251,7 +266,9 @@ def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
         digest = head["chain_head"]
         if digest in heads:
             if heads[digest] != reference:
-                raise ContractError("duplicate append head identity")
+                day = head["payload"]["date"]
+                if heads[digest] != f"attestations/{day}/chain_head.json":
+                    raise ContractError("duplicate append head identity")
         else:
             pending[digest] = (reference, head)
     while pending:
@@ -376,6 +393,9 @@ def selected_directory(root: Path, *, projections: bool = True, verify_datasets:
     document = discovery(root, verify_datasets=verify_datasets)
     digest = document["current_head"]
     directory = set_directory(document["heads"][digest])
+    revision = root / directory / "revisions" / digest / "chain_head.json"
+    if revision.is_file():
+        directory = revision.parent.relative_to(root).as_posix()
     if projections:
         for filename in FILES:
             projection = root / "attestations/latest" / filename

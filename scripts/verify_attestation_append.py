@@ -83,6 +83,9 @@ def append_paths(root: Path, base: str) -> list[str]:
     paths = set()
     for digest in set(new["heads"]) - set(old["heads"]):
         directory = set_directory(new["heads"][digest])
+        revision = root / directory / "revisions" / digest / "chain_head.json"
+        if revision.is_file():
+            directory = revision.parent.relative_to(root).as_posix()
         head = _load(root / new["heads"][digest], "append head")
         if "append_content_sha256" not in head["payload"]:
             raise ContractError("append submission requires a content-addressed set")
@@ -139,6 +142,9 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
             if projected not in new["envelopes"]:
                 raise ContractError("latest projection is stale or mixed")
             projected_directory = set_directory(new["heads"][projected])
+            projected_revision = root / projected_directory / "revisions" / projected
+            if projected_revision.is_dir():
+                projected_directory = projected_revision.relative_to(root).as_posix()
             projected_document = {**new, "current_head": projected}
             verify_legacy_mirror(root, projected_document, projected_directory)
             for filename in FILES:

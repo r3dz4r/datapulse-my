@@ -94,6 +94,10 @@ def verify_chain_linearity(root: Path) -> ChainLinearityReport:
             from scripts.attestation_sets import discovery, selected_directory
             document = discovery(root)
             newest_head = document["current_head"]
+            latest_head = _load_head(root / "attestations/latest/chain_head.json", "latest chain head")
+            indexed_head = json.loads(index_path.read_text()).get("current_head") if index_path.exists() else None
+            if indexed_head == newest_head and latest_head != newest_head:
+                raise ChainLinearityError("latest chain head does not match newest accepted head")
             head = json.loads((root / document["heads"][newest_head]).read_text())
             if "append_content_sha256" not in head["payload"]:
                 selected_directory(root)
