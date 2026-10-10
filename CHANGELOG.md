@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.54.2](https://github.com/r3dz4r/datapulse-my/compare/v3.54.1...v3.54.2) (2026-10-10)
+
+
+### Bug Fixes
+
+* **pages:** bound attestation upload and guard file count ([#1001](https://github.com/r3dz4r/datapulse-my/issues/1001)) ([2eeefb9](https://github.com/r3dz4r/datapulse-my/commit/2eeefb9c3bfe9a64afefdd2006a7ee6a4f9a5699))
+
 ## [3.54.1](https://github.com/r3dz4r/datapulse-my/compare/v3.54.0...v3.54.1) (2026-10-10)
 
 
