@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 466.0,
+        "latest_days": 192.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-03T10:36:37Z",
-    "record_count": 350,
+    "last_checked": "2026-10-10T11:12:07Z",
+    "record_count": 380,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:765771a3790ddccc78b5513f09e216c6b4c64836ea0e5a2a7286e1f5eb62bd4f"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=lfs_qtr_sru_age",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Quarterly Skills-Related Underemployment by Age",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-03T10:36:37Z",
+    "observed_verified_at": "2026-10-10T11:12:07Z",
     "source": "DOSM via data.gov.my",
     "steward": "Department of Statistics Malaysia"
   },
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_lfs_qtr_sru_age.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:c97344e3aeb5ecef8abcab12d920731af3e51db0565669891263e7d3c0c2528e",
+      "receipt_digest": "sha256:d347259d173372bfd57a80561f61a293338e4d896c2a3d04e666b29a917583b3",
       "sigstore_path": "data/dosm_lfs_qtr_sru_age.receipt.sigstore.json",
       "statement_path": "data/dosm_lfs_qtr_sru_age.receipt.statement.json"
     },

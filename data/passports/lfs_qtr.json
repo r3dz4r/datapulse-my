@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 466.0,
+        "latest_days": 192.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-03T10:36:37Z",
-    "record_count": 63,
+    "last_checked": "2026-10-10T11:12:07Z",
+    "record_count": 66,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:d2f09a833b28049ca34ddf2560c37894522a8b1dac18008c64c953769b3188b1"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=lfs_qtr",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Quarterly Principal Labour Force Statistics",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-03T10:36:37Z",
+    "observed_verified_at": "2026-10-10T11:12:07Z",
     "source": "data.gov.my",
     "steward": "dosm"
   },
@@ -1185,7 +1185,7 @@
     "receipt": {
       "evidence_path": "data/lfs_qtr.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:3414f52dee147be62b0c3947a660ace8a9a580f9df20a5fa6f474d2b5cee6144",
+      "receipt_digest": "sha256:10c1dc8c2692b82ed700c6bc4c60913611235452cc02e38a0267b31aa2c3e016",
       "sigstore_path": "data/lfs_qtr.receipt.sigstore.json",
       "statement_path": "data/lfs_qtr.receipt.statement.json"
     },
