@@ -8,7 +8,7 @@ sources:
   - {"id": "bnm","resource": "https://api.bnm.gov.my/public/kijang-emas","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-08T14:24:19Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-09T14:41:21Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Bank Negara Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/bnm_kijang_emas.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2
-stale_after: "2026-10-09T12:00:00Z"
+stale_after: "2026-10-10T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 

@@ -3,12 +3,12 @@ type: "Dataset"
 title: "Quarterly Nominal GDP by Expenditure Subtype"
 description: "DataPulse projection of Quarterly Nominal GDP by Expenditure Subtype from Department of Statistics Malaysia."
 resource: "https://storage.dosm.gov.my/gdp/gdp_qtr_nominal_demand_sub.csv"
-tags: ["data.gov.my (storage)","non-vertical","quarterly"]
+tags: ["data.gov.my (storage)","vertical","quarterly"]
 sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/gdp/gdp_qtr_nominal_demand_sub.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
