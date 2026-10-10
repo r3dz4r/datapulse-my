@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.00869212962962963,
+        "latest_days": 0.0005902777777777778,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-10T22:46:18Z",
-    "record_count": 59,
+    "last_checked": "2026-10-10T23:04:17Z",
+    "record_count": 79,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-kl",
@@ -39,7 +39,7 @@
     "geography": "Klang Valley",
     "name": "GTFS Realtime — Rapid KL Bus Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-10T22:46:18Z",
+    "observed_verified_at": "2026-10-10T23:04:17Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Prasarana Malaysia Berhad"
   },
@@ -925,7 +925,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_prasarana_bus_kl.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:9d2e6c6bcfe33f8f06eee5597969cf87b9d7b032f0e215b23bc0f03a1f68cbba",
+      "receipt_digest": "sha256:14a45aad0057a2cbc73db182fd96738c7b89b44f2c55075f2772c76cc8b54d5c",
       "sigstore_path": "data/gtfs_realtime_prasarana_bus_kl.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_prasarana_bus_kl.receipt.statement.json"
     },

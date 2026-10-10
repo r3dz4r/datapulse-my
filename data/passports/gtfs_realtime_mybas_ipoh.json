@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.00875,
+        "latest_days": 0.0005787037037037037,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-10T22:46:18Z",
-    "record_count": 13,
+    "last_checked": "2026-10-10T23:04:17Z",
+    "record_count": 21,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-ipoh",
@@ -39,7 +39,7 @@
     "geography": "Ipoh, Perak",
     "name": "GTFS Realtime — BAS.MY Ipoh Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-10T22:46:18Z",
+    "observed_verified_at": "2026-10-10T23:04:17Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_ipoh.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:a516c2261a05b55e6a6216df47590f748078d605184baaf4875c0b7fe2b0a990",
+      "receipt_digest": "sha256:4638ee4c6d22f5ad6200adaadde55150c8241558a0f8f018921764f54dd2b818",
       "sigstore_path": "data/gtfs_realtime_mybas_ipoh.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_ipoh.receipt.statement.json"
     },
