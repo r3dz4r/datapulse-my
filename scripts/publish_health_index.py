@@ -35,6 +35,9 @@ NAMESPACE_ID = "043b3f20337f4744a21de947f35c67f0"
 DEFAULT_API_BASE = "https://api.cloudflare.com/client/v4"
 KEY = "health-index.json"
 MAX_KV_VALUE_BYTES = 25 * 1024 * 1024
+# A 20 MiB publication target leaves 5 MiB before KV's ceiling, about five
+# days at the observed 1 MiB/day growth rate of the daily archive.
+TARGET_KV_VALUE_BYTES = 20 * 1024 * 1024
 VERIFY_KEY = "health-index.test.json"
 HEALTH_ARTIFACTS = (
     "latest.json",
@@ -337,24 +340,97 @@ def publish(api_base: str, token: str, key: str, payload: bytes) -> int:
     return publish_value(api_base, account_id, token, key, payload)
 
 
+def _compact_json(value: Any) -> bytes:
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
+
+def _published_daily_history(payload: bytes) -> bytes:
+    """Keep the newest complete days that fit the KV target, including their cycles."""
+    if len(payload) <= TARGET_KV_VALUE_BYTES:
+        return payload
+    history = json.loads(payload)
+    if not isinstance(history, dict) or history.get("schema") != "datapulse/v1/health-history-daily":
+        return payload
+    aggregates = history.get("aggregates")
+    cycles = history.get("compacted_cycles")
+    if not isinstance(aggregates, list) or not isinstance(cycles, list):
+        raise PublishError("health/history_daily.json has invalid daily history lists")
+
+    # Count each day before building the published value. This keeps complete
+    # days and avoids repeatedly serializing a large, shrinking archive.
+    day_sizes: dict[str, list[int]] = {}
+    for row in aggregates:
+        if not isinstance(row, dict) or not isinstance(row.get("date"), str):
+            raise PublishError("health/history_daily.json has an invalid aggregate date")
+        sizes = day_sizes.setdefault(row["date"], [0, 0, 0, 0])
+        sizes[0] += len(_compact_json(row))
+        sizes[1] += 1
+    for cycle in cycles:
+        if not isinstance(cycle, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}T.*", cycle):
+            raise PublishError("health/history_daily.json has an invalid compacted cycle")
+        sizes = day_sizes.setdefault(cycle[:10], [0, 0, 0, 0])
+        sizes[2] += len(_compact_json(cycle))
+        sizes[3] += 1
+
+    empty = {**history, "aggregates": [], "compacted_cycles": []}
+    size = len(_compact_json(empty))
+    aggregate_count = cycle_count = 0
+    retained: set[str] = set()
+    for day in sorted(day_sizes, reverse=True):
+        aggregate_bytes, new_aggregates, cycle_bytes, new_cycles = day_sizes[day]
+        added = aggregate_bytes + cycle_bytes
+        if new_aggregates:
+            added += new_aggregates - 1 + bool(aggregate_count)
+        if new_cycles:
+            added += new_cycles - 1 + bool(cycle_count)
+        if size + added > TARGET_KV_VALUE_BYTES:
+            if not retained:
+                raise PublishError(
+                    f"health/history_daily.json is {size + added} bytes for its newest day, "
+                    f"exceeds {TARGET_KV_VALUE_BYTES}-byte KV target "
+                    f"(target margin {TARGET_KV_VALUE_BYTES - size - added} bytes)"
+                )
+            break
+        retained.add(day)
+        size += added
+        aggregate_count += new_aggregates
+        cycle_count += new_cycles
+
+    published = {
+        **history,
+        "aggregates": [row for row in aggregates if row["date"] in retained],
+        "compacted_cycles": [cycle for cycle in cycles if cycle[:10] in retained],
+    }
+    return _compact_json(published)
+
+
 def _bounded_kv_payload(key: str, payload: bytes) -> bytes:
-    """Compact oversized JSON without dropping data; reject values KV cannot hold."""
-    if len(payload) > MAX_KV_VALUE_BYTES:
-        payload = json.dumps(
-            json.loads(payload), ensure_ascii=False, separators=(",", ":")
-        ).encode("utf-8")
-    if len(payload) > MAX_KV_VALUE_BYTES:
-        raise PublishError(f"{key} exceeds KV value limit after JSON compaction")
+    """Compact JSON as needed and report both publication margins."""
+    target = min(TARGET_KV_VALUE_BYTES, MAX_KV_VALUE_BYTES)
+    if len(payload) > target:
+        payload = _compact_json(json.loads(payload))
+    size = len(payload)
+    print(
+        f"KV payload {key}: {size} bytes; target margin {TARGET_KV_VALUE_BYTES - size} bytes; "
+        f"KV ceiling margin {MAX_KV_VALUE_BYTES - size} bytes",
+        file=sys.stderr,
+    )
+    if size > target and target < MAX_KV_VALUE_BYTES:
+        raise PublishError(f"{key} is {size} bytes, exceeds {TARGET_KV_VALUE_BYTES}-byte KV target")
+    if size > MAX_KV_VALUE_BYTES:
+        raise PublishError(f"{key} exceeds KV value limit after JSON compaction ({size} bytes)")
     return payload
 
 
 def health_payloads(health_path: Path) -> dict[str, bytes]:
     """Return the dashboard projection and every health artifact keyed by URL path."""
     health_dir = health_path.parent
-    artifacts = {
-        f"health/{name}": _bounded_kv_payload(f"health/{name}", (health_dir / name).read_bytes())
-        for name in HEALTH_ARTIFACTS
-    }
+    artifacts = {}
+    for name in HEALTH_ARTIFACTS:
+        payload = (health_dir / name).read_bytes()
+        if name == "history_daily.json":
+            payload = _published_daily_history(payload)
+        artifacts[f"health/{name}"] = _bounded_kv_payload(f"health/{name}", payload)
     payloads = {KEY: _bounded_kv_payload(KEY, build_projection(health_path, artifacts)), **artifacts}
     return payloads
 
