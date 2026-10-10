@@ -294,6 +294,15 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     refs = {did: f"{directory}/{did}.json" for did in envelopes}
     for did, envelope in envelopes.items():
         dump(root / refs[did], envelope)
+        # The first daily envelope remains a served legacy URL. Corrections
+        # only append revision paths and must never replace that day's alias.
+        if not run:
+            legacy = base / day / f"{did}.json"
+            if legacy.exists():
+                if load(legacy) != envelope:
+                    raise ValueError("legacy dataset attestation cannot be overwritten")
+            else:
+                dump(legacy, envelope)
     dump(dated / "chain_head.json", head)
     dump(dated / "index.json", {"schema": "datapulse/v1/attestation-index", "date": day,
         "chain_head_ref": directory + "/chain_head.json", "binding_ref": directory + "/binding.json", "attestations": refs})
@@ -305,6 +314,14 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
         dump(dated / "rekor-bundle.json", witness["bundle"])
         binding["rekor"] = {"reference_ref": directory + "/rekor-reference.json",
                             "bundle_ref": directory + "/rekor-bundle.json"}
+        # The served-plane fetch follows binding proof references. Retain the
+        # producer's dated Rekor URLs alongside the immutable revision copies.
+        if rekor["reference_ref"].startswith(f"attestations/rekor/{day}/"):
+            binding["rekor"].update({"historical_reference_ref": rekor["reference_ref"],
+                                     "historical_bundle_ref": rekor["bundle_ref"]})
+            if not run:
+                binding["rekor"].update({f"dataset_{did}_ref": f"attestations/{day}/{did}.json"
+                                         for did in envelopes})
     binding["signature_base64"] = sign(private, binding["payload"])
     dump(dated / "binding.json", binding)
     # Preserve the exact raw health input beside the signed set so a same-day
@@ -380,6 +397,8 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
             candidate = load(staging / "attestations/chain-index.json")
             directory = candidate["heads"][candidate["current_head"]].rsplit("/", 1)[0]
             destination = root / directory
+            immutable_index = load(staging / directory / "index.json")
+            day = immutable_index["date"]
             candidate_correction = load(staging / directory / "binding.json").get("payload", {}).get("correction")
             snapshot_directory = candidate_correction["health_snapshot_ref"].rsplit("/", 1)[0] if isinstance(candidate_correction, dict) else None
             if not destination.exists():
@@ -387,6 +406,17 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
                 os.rename(staging / directory, destination)
             elif any((destination / name).read_bytes() != (staging / directory / name).read_bytes() for name in FILES):
                 raise ValueError("immutable destination cannot be overwritten")
+            if len(candidate["days"][day]) == 1:
+                for reference in immutable_index["attestations"].values():
+                    name = Path(reference).name
+                    source_alias = staging / "attestations" / day / name
+                    alias = root / "attestations" / day / name
+                    if alias.exists():
+                        if alias.read_bytes() != source_alias.read_bytes():
+                            raise ValueError("legacy dataset attestation cannot be overwritten")
+                    else:
+                        alias.parent.mkdir(parents=True, exist_ok=True)
+                        os.rename(source_alias, alias)
             if snapshot_directory is not None:
                 snapshot_destination = root / snapshot_directory
                 if not snapshot_destination.exists():

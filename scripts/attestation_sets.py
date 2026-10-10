@@ -124,6 +124,29 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
     rekor = binding.get("rekor")
     if rekor is not None:
         verify_rekor_evidence(root, rekor, claim.get("artifact_sha256"))
+        historical = {key: rekor[key] for key in ("historical_reference_ref", "historical_bundle_ref") if key in rekor}
+        if historical and verify_datasets:
+            day = payload["date"]
+            pattern = re.compile(rf"attestations/rekor/{re.escape(day)}/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.json")
+            if (len(historical) != 2 or any(not isinstance(ref, str) or pattern.fullmatch(ref) is None
+                                            for ref in historical.values())):
+                raise ContractError("historical Rekor reference is unsafe")
+            historical_rekor = {"reference_ref": historical["historical_reference_ref"],
+                                "bundle_ref": historical["historical_bundle_ref"]}
+            verify_rekor_evidence(root, historical_rekor, claim.get("artifact_sha256"))
+            if rekor_content(root, historical_rekor) != rekor_content(root, rekor):
+                raise ContractError("historical Rekor proof disagrees with immutable set")
+        dataset_keys = {key for key in rekor if key.startswith("dataset_") and key.endswith("_ref")}
+        if dataset_keys and verify_datasets:
+            if (not historical or payload.get("correction") is not None
+                    or dataset_keys != {f"dataset_{did}_ref" for did in index["attestations"]}):
+                raise ContractError("historical dataset references disagree with immutable set")
+            for did, reference in index["attestations"].items():
+                alias_ref = rekor[f"dataset_{did}_ref"]
+                if alias_ref != f"attestations/{payload['date']}/{did}.json":
+                    raise ContractError("historical dataset reference is unsafe")
+                if (root / alias_ref).read_bytes() != (root / reference).read_bytes():
+                    raise ContractError("historical dataset envelope disagrees with immutable set")
     # A recorded health snapshot pins the exact input a correction superseded;
     # when present it must match the signed claim. Main's same-day correction
     # evidence lives here, so the branch's lineage verifier must check it too.
@@ -160,8 +183,9 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
             raise ContractError("append content digest disagrees with immutable set")
         if any(ref != directory + "/" + did + ".json" for did, ref in index["attestations"].items()):
             raise ContractError("content-addressed dataset reference escapes its set")
-        if rekor is not None and rekor != {"reference_ref": directory + "/rekor-reference.json",
-                                         "bundle_ref": directory + "/rekor-bundle.json"}:
+        if rekor is not None and (rekor.get("reference_ref") != directory + "/rekor-reference.json"
+                                  or rekor.get("bundle_ref") != directory + "/rekor-bundle.json"
+                                  or set(rekor) - {"reference_ref", "bundle_ref", "historical_reference_ref", "historical_bundle_ref"} - dataset_keys):
             raise ContractError("content-addressed witness reference escapes its set")
         expected_files = set(FILES) | {"health.json"} | {did + ".json" for did in datasets}
         if rekor is not None:
