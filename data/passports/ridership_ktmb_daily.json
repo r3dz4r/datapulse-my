@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-09T14:41:21Z",
-    "record_count": 9253,
+    "last_checked": "2026-10-10T16:34:45Z",
+    "record_count": 9258,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:9bdf663418ba68a63bd74b54c21c2783db259036ff7eb9f651ac70d1c3601f92"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_daily.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily KTMB Ridership",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-09T14:41:21Z",
+    "observed_verified_at": "2026-10-10T16:34:45Z",
     "source": "data.gov.my",
     "steward": "Keretapi Tanah Melayu Berhad"
   },
@@ -924,7 +924,7 @@
     "receipt": {
       "evidence_path": "data/ridership_ktmb_daily.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:03ab2ac8d88cc31d532e60e1bdd12a35dec60e5b25f22f74656a5bd1016559f1",
+      "receipt_digest": "sha256:13783ca4c382428d4393ab898f9513fcb4bdc7edb369cd0fd4861172342c09b5",
       "sigstore_path": "data/ridership_ktmb_daily.receipt.sigstore.json",
       "statement_path": "data/ridership_ktmb_daily.receipt.statement.json"
     },
