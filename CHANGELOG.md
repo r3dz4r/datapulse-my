@@ -14,6 +14,20 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.54.0](https://github.com/r3dz4r/datapulse-my/compare/v3.53.8...v3.54.0) (2026-10-10)
+
+
+### Features
+
+* **evidence:** widen the bounded record-evidence cohort from 1 dataset to 65 ([#960](https://github.com/r3dz4r/datapulse-my/issues/960)) ([5576031](https://github.com/r3dz4r/datapulse-my/commit/55760318d24132a7f1bd69a6ad1ab774a268aea9))
+* **passports:** cite the per-dataset receipt, digest-bound to the MCP ([#994](https://github.com/r3dz4r/datapulse-my/issues/994)) ([3631c9f](https://github.com/r3dz4r/datapulse-my/commit/3631c9f220ce05c6bd4f02932efdbc6a42fd5277))
+
+
+### Bug Fixes
+
+* **attestations:** parse produced append pull request day ([#992](https://github.com/r3dz4r/datapulse-my/issues/992)) ([9929528](https://github.com/r3dz4r/datapulse-my/commit/99295289d9a0ffccbe4bd54cfcb31504cef8b1e3))
+* **ci:** keep observation receipts on the release path ([#993](https://github.com/r3dz4r/datapulse-my/issues/993)) ([01304c3](https://github.com/r3dz4r/datapulse-my/commit/01304c38ad69eef6c6dc6f50f4c8b629757fa645))
+
 ## [3.53.8](https://github.com/r3dz4r/datapulse-my/compare/v3.53.7...v3.53.8) (2026-10-09)
 
 
