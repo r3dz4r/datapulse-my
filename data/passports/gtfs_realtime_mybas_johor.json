@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.00931712962962963,
+        "latest_days": 0.0006828703703703704,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-10T12:42:11Z",
-    "record_count": 87,
+    "last_checked": "2026-10-10T13:01:08Z",
+    "record_count": 84,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-johor",
@@ -39,7 +39,7 @@
     "geography": "Johor",
     "name": "GTFS Realtime — BAS.MY Johor Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-10T12:42:11Z",
+    "observed_verified_at": "2026-10-10T13:01:08Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_johor.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:4b82f6a71f1e3ed5f5b80f72b13ab0d429637aa89a9045543f3b67b46c71d329",
+      "receipt_digest": "sha256:65da3aaef3e358599ec3c1eef0e96f24aca31a4a978fd1f4e972014b00790a26",
       "sigstore_path": "data/gtfs_realtime_mybas_johor.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_johor.receipt.statement.json"
     },
