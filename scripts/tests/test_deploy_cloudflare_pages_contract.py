@@ -26,6 +26,97 @@ def _workflow() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
 
 
+def _append_acceptance_step() -> dict:
+    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+    return next(
+        step for step in steps
+        if step.get("name") == "Require authoritative acceptance before signing publication"
+    )
+
+
+@pytest.mark.parametrize(
+    ("committed", "pulls", "gh_status", "expected_submit", "expected_append"),
+    [
+        (True, [], 0, False, None),
+        (False, [], 0, True, None),
+        (False, [{"number": 12, "headRefName": "feature/other"}], 0, True, None),
+        (False, [{"number": 998, "headRefName": "attestation/append-abc123"}], 0, False, "#998 (attestation/append-abc123)"),
+        (False, [
+            {"number": 12, "headRefName": "feature/other"},
+            {"number": 996, "headRefName": "attestation/append-def456"},
+        ], 0, False, "#996 (attestation/append-def456)"),
+        (False, [
+            {"number": number, "headRefName": f"feature/{number}"}
+            for number in range(1000)
+        ], 0, False, None),
+        (False, [], 2, False, None),
+    ],
+)
+def test_append_acceptance_guard_is_fail_closed_and_deterministic(
+    tmp_path: Path,
+    committed: bool,
+    pulls: list[dict],
+    gh_status: int,
+    expected_submit: bool,
+    expected_append: str | None,
+) -> None:
+    step = _append_acceptance_step()
+    assert step["env"]["GH_TOKEN"] == "${{ steps.append-token.outputs.token }}"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (tmp_path / "scripts").mkdir()
+    (bin_dir / "python3").write_text(
+        '#!/bin/bash\nprintf "verify %s\\n" "$*" >> "$CALL_LOG"\n'
+        '[[ "$*" != *--require-committed* ]] || [[ "$COMMITTED" == 1 ]]\n'
+    )
+    (bin_dir / "gh").write_text(
+        '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\n'
+        'printf "%s\\n" "$OPEN_PRS"\nexit "$GH_STATUS"\n'
+    )
+    (tmp_path / "scripts/submit_attestation_append.sh").write_text(
+        'printf "submit\\n" >> "$CALL_LOG"\n'
+    )
+    for stub in (bin_dir / "python3", bin_dir / "gh"):
+        stub.chmod(0o755)
+    log = tmp_path / "calls.log"
+    env = {
+        **os.environ,
+        "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        "GITHUB_REPOSITORY": "example/data-pulse",
+        "GH_TOKEN": "test-token",
+        "CALL_LOG": str(log),
+        "COMMITTED": "1" if committed else "0",
+        "OPEN_PRS": json.dumps(pulls),
+        "GH_STATUS": str(gh_status),
+    }
+    outputs = []
+    for _ in range(2):
+        log.write_text("")
+        result = subprocess.run(
+            ["/bin/bash", "-c", step["run"]],
+            cwd=tmp_path, env=env, capture_output=True, text=True, check=False,
+        )
+        calls = log.read_text().splitlines()
+        outputs.append((result.returncode, result.stdout, result.stderr, calls))
+        assert ("submit" in calls) is expected_submit
+        assert "verify scripts/verify_attestation_append.py --base HEAD" in calls
+        assert "verify scripts/verify_attestation_append.py --base HEAD --require-committed" in calls
+        if not committed:
+            assert "gh pr list --repo example/data-pulse --state open --limit 1000 --json number,headRefName" in calls
+        else:
+            assert not any(call.startswith("gh ") for call in calls)
+        if expected_append:
+            assert expected_append in result.stderr
+            assert "already open" in result.stderr
+        if len(pulls) == 1000:
+            assert "list reached 1000" in result.stderr
+        if committed:
+            assert result.returncode == 0
+        else:
+            assert result.returncode != 0
+    assert outputs[0] == outputs[1]
+
+
 def _served_verifier() -> str:
     return SERVED_VERIFIER.read_text(encoding="utf-8")
 
