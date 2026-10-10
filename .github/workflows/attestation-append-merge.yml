@@ -234,11 +234,26 @@ jobs:
           jq --slurp '.[0] + [.[1]]' "$pull_requests" "${pull_requests}.merged" > "${pull_requests}.all"
           siblings="$(python3 - "$pull_requests" "$merged_number" <<'PY'
           import json
+          import os
+          import subprocess
           import sys
           from pathlib import Path
           from scripts.select_append_candidate import select_superseded_siblings
 
           rows = json.loads(Path(sys.argv[1] + ".all").read_text(encoding="utf-8"))
+          # `gh pr list --json files` stops at 100 files. A signed set has many
+          # more, so fetch every page before comparing exact Git blob identities.
+          for row in rows:
+              if not row["headRefName"].startswith("attestation/append-"):
+                  continue
+              response = subprocess.check_output([
+                  "gh", "api", "--paginate", "--slurp",
+                  f"repos/{os.environ['GH_REPO']}/pulls/{row['number']}/files?per_page=100",
+              ], text=True)
+              row["files"] = [
+                  {key: item[key] for key in ("filename", "sha", "status")}
+                  for page in json.loads(response) for item in page
+              ]
           for number in select_superseded_siblings(rows, int(sys.argv[2])):
               print(number)
           PY

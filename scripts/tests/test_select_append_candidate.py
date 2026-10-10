@@ -110,6 +110,32 @@ def test_same_day_does_not_prove_supersession() -> None:
     assert select_superseded_siblings(rows, 50) == []
 
 
+def test_close_only_same_day_exact_blob_subset_after_merge() -> None:
+    first = "attestations/2026-10-09/revisions/" + "a" * 64 + "/chain_head.json"
+    second = "attestations/2026-10-09/revisions/" + "b" * 64 + "/chain_head.json"
+
+    def file(path: str, sha: str = "1" * 40) -> dict[str, str]:
+        return {"filename": path, "sha": sha, "status": "added"}
+
+    def row(number: int, state: str, day: str, files: list[dict[str, str]]) -> dict[str, object]:
+        return {
+            "number": number, "state": state, "title": _produced_title(day),
+            "headRefName": f"attestation/append-{number}", "files": files,
+        }
+
+    merged = row(50, "MERGED", "2026-10-09", [file(first), file(second)])
+    rows = [
+        merged,
+        row(48, "OPEN", "2026-10-09", [file(first)]),
+        row(47, "OPEN", "2026-10-09", [file(first, "2" * 40)]),
+        row(46, "OPEN", "2026-10-09", [file("attestations/2026-10-09/revisions/" + "c" * 64 + "/chain_head.json")]),
+        row(45, "OPEN", "2026-10-10", [file(first)]),
+        row(44, "OPEN", "2026-10-09", []),
+    ]
+    assert select_superseded_siblings(rows, 50) == [48]
+    assert select_superseded_siblings([{**merged, "state": "OPEN"}, *rows[1:]], 50) == []
+
+
 def test_conflicting_or_failed_append_does_not_starve_compatible_evidence() -> None:
     rows = [
         {**_pull_request(1, "attestation/append-conflicting", "2026-10-09T00:01:00Z"), "mergeable": "CONFLICTING"},
