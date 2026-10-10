@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0008564814814814815,
+        "latest_days": 0.008877314814814815,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-10T00:19:46Z",
+    "last_checked": "2026-10-10T03:54:33Z",
     "record_count": 27,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuala-terengganu",
@@ -39,7 +39,7 @@
     "geography": "Kuala Terengganu, Terengganu",
     "name": "GTFS Realtime — BAS.MY Kuala Terengganu Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-10T00:19:46Z",
+    "observed_verified_at": "2026-10-10T03:54:33Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1076,12 +1076,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/gtfs_realtime_mybas_kuala_terengganu.json",
-    "chain_reference": "attestations/2026-10-09/revisions/73449f27785521d2a4f0b72d7d7365c67036bf16ce204dfbc7be09ce924e38e6/chain_head.json",
+    "attestation": "attestations/2026-10-10/gtfs_realtime_mybas_kuala_terengganu.json",
+    "chain_reference": "attestations/2026-10-10/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_kuala_terengganu.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:ca72098e89000657bc4ad5ef2637ff8a7afca120c41fedf28159b27c95e823ff",
+      "receipt_digest": "sha256:86ff6956bb8245dc1c097e30c7f5a79e8e8708b6fd322c00f180c873f3f7f17a",
       "sigstore_path": "data/gtfs_realtime_mybas_kuala_terengganu.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_kuala_terengganu.receipt.statement.json"
     },
