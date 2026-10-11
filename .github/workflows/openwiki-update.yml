@@ -96,6 +96,9 @@ jobs:
           printf 'OPENAI_CHATGPT_PLAN=%s\n' "$OPENAI_CHATGPT_PLAN" >> ~/.openwiki/.env
           chmod 600 ~/.openwiki/.env
 
+      - name: Validate the ChatGPT credential with a real request
+        run: python3 scripts/openwiki_credential_preflight.py --env-file "$HOME/.openwiki/.env"
+
       - name: Generate derivative OpenWiki documentation
         env:
           OPENWIKI_PROVIDER: openai-chatgpt
@@ -133,6 +136,13 @@ jobs:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
+      - name: Resolve OpenWiki output paths
+        id: openwiki-paths
+        run: |
+          echo "paths<<EOF" >> "$GITHUB_OUTPUT"
+          python3 scripts/openwiki_output_paths.py >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
       - name: Create or update OpenWiki pull request
         id: cpr
         uses: peter-evans/create-pull-request@v7
@@ -149,12 +159,7 @@ jobs:
           # generator-owned, but publishing doctrine from an unattended job
           # skips review, so those files are deliberately updated by hand.
           # Only the five openwiki/ artefacts are published.
-          add-paths: |
-            openwiki/quickstart.md
-            openwiki/datasets.md
-            openwiki/mcp.md
-            openwiki/operations.md
-            openwiki/.last-update.json
+          add-paths: ${{ steps.openwiki-paths.outputs.paths }}
 
       # No dispatch step any more. An app-authored PR triggers its own
       # pull_request run of ci.yml, so the required deterministic-safety-net
