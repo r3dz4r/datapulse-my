@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0007291666666666667,
+        "latest_days": 0.004571759259259259,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-11T08:28:42Z",
-    "record_count": 32,
+    "last_checked": "2026-10-11T08:52:25Z",
+    "record_count": 26,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-melaka",
@@ -39,7 +39,7 @@
     "geography": "Melaka",
     "name": "GTFS Realtime — BAS.MY Melaka Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-11T08:28:42Z",
+    "observed_verified_at": "2026-10-11T08:52:25Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_melaka.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:199d4156fa42c792452faaf7cc231ae3781068acf485f73e5001bad6d7a7d68e",
+      "receipt_digest": "sha256:db4757ef9dc74b3ce2d27268e45f16fd04fd74071ea34de333fdb06fb4b3033d",
       "sigstore_path": "data/gtfs_realtime_mybas_melaka.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_melaka.receipt.statement.json"
     },
