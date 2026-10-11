@@ -3,13 +3,13 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0007754629629629629,
+        "latest_days": 0.004814814814814815,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 6,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuching",
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_kuching.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:c73e10bf4de0b66f96e6ebfbbddf4bfc021546750909d6240d3f13292ac1f82a",
+      "receipt_digest": "sha256:0b4b3d0467d25689cde13d6619882221dc7b8a62b7f26b7699624dfd8c16a7d0",
       "sigstore_path": "data/gtfs_realtime_mybas_kuching.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_kuching.receipt.statement.json"
     },

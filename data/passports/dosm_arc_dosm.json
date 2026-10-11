@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 6,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:5b98f9bb4a145f161b27303642090c11e5116c32581f5b2c3b6a8c2490e57864"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=arc_dosm",
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_arc_dosm.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:b717b8cb07afea3cbe827a887e63d6410840058858bb108e1eec498b99377782",
+      "receipt_digest": "sha256:179a6cd7c1e21f1ff8a6d82f9f044dfd325da8b1433cd69d98c058c8168690c3",
       "sigstore_path": "data/dosm_arc_dosm.receipt.sigstore.json",
       "statement_path": "data/dosm_arc_dosm.receipt.statement.json"
     },
