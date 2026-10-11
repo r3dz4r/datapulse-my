@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 3.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 6,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-10T16:34:45Z",
-    "record_count": 7408,
+    "last_checked": "2026-10-11T16:55:05Z",
+    "record_count": 7411,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:eeadf31f118e6d5638bdb7130033424044985406a4f786af0cd0716de1f25301"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_san",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily Shared ATM Network (SAN) Transactions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-10T16:34:45Z",
+    "observed_verified_at": "2026-10-11T16:55:05Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "Payments Network Malaysia and Bank Negara Malaysia"
   },
@@ -873,7 +873,7 @@
     "receipt": {
       "evidence_path": "data/trnsc_daily_san.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:281367b73ffe711616edbaf6dd7e47652ac4cfda69710e015d9e8f25bb4e6827",
+      "receipt_digest": "sha256:bde8b40f81a4fceda2abc086f003451ce78b1dd872df599846cbc6f4ca149a46",
       "sigstore_path": "data/trnsc_daily_san.receipt.sigstore.json",
       "statement_path": "data/trnsc_daily_san.receipt.statement.json"
     },

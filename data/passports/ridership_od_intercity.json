@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 6,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-10T16:34:45Z",
-    "record_count": 155232,
+    "last_checked": "2026-10-11T16:55:05Z",
+    "record_count": 155784,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:e31e5a55152ec3f528cedc488ce3207a71b3c095f1f64668ec6ecf7565f604b8"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/transportation/ktmb/intercity_2026.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "KTMB Intercity Origin-Destination Ridership",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-10T16:34:45Z",
+    "observed_verified_at": "2026-10-11T16:55:05Z",
     "source": "data.gov.my",
     "steward": "Keretapi Tanah Melayu Berhad"
   },
@@ -924,7 +924,7 @@
     "receipt": {
       "evidence_path": "data/ridership_od_intercity.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:b7de4e604b5e9d523e9b38149a21fc192534420818823c37f2d812a83128d73a",
+      "receipt_digest": "sha256:6489edca1b7f3e194f976bd790f2646a3ca74fb068e64e60fd4e228b5dca6694",
       "sigstore_path": "data/ridership_od_intercity.receipt.sigstore.json",
       "statement_path": "data/ridership_od_intercity.receipt.statement.json"
     },
