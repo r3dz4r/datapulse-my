@@ -96,6 +96,9 @@ jobs:
           printf 'OPENAI_CHATGPT_PLAN=%s\n' "$OPENAI_CHATGPT_PLAN" >> ~/.openwiki/.env
           chmod 600 ~/.openwiki/.env
 
+      - name: Validate the ChatGPT credential with a real request
+        run: python3 scripts/openwiki_credential_preflight.py --env-file "$HOME/.openwiki/.env"
+
       - name: Generate derivative OpenWiki documentation
         env:
           OPENWIKI_PROVIDER: openai-chatgpt
