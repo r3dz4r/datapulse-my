@@ -33,6 +33,28 @@ CHAIN_HEAD_PATH = "observation-receipts/chain_head.json"
 MAX_COMMITS = 50
 
 
+# Measured across the whole published history. These pointer regressions are
+# already healed; 2,545 receipts still cover sequence numbers 1 through 2,545
+# exactly once, so the recorded pointers do not indicate a lost, replaced,
+# duplicated, or forked receipt chain and need no further investigation here.
+HEALED_CHAIN_HEAD_REWINDS = (
+    {
+        "previous_sha": "4b9452a754f3f171a78e6f76d21f68c7464b6ee7",
+        "previous_sequence_number": 2386,
+        "decreasing_sha": "acea74b7e60eb36e74c4e78873ef324ad68f6e62",
+        "decreasing_sequence_number": 2381,
+        "commit_date": "2026-10-10T11:44:09+00:00",
+    },
+    {
+        "previous_sha": "b35149c78e2e2de6a4981c9220b0bb6ecdd429d7",
+        "previous_sequence_number": 2449,
+        "decreasing_sha": "7676cc5c180d71d3a5c702ed0d98e4f8589d7534",
+        "decreasing_sequence_number": 2445,
+        "commit_date": "2026-10-11T02:07:13+00:00",
+    },
+)
+
+
 class ChainHeadMonotonicityError(AssertionError):
     """Raised when the observation chain head's sequence number decreases."""
 
@@ -50,6 +72,15 @@ def verify_sequence_monotonic(commits: Iterable[ChainHeadCommit]) -> None:
     previous: ChainHeadCommit | None = None
     for commit in commits:
         if previous is not None and commit.sequence_number < previous.sequence_number:
+            if any(
+                previous.sha == rewind["previous_sha"]
+                and previous.sequence_number == rewind["previous_sequence_number"]
+                and commit.sha == rewind["decreasing_sha"]
+                and commit.sequence_number == rewind["decreasing_sequence_number"]
+                for rewind in HEALED_CHAIN_HEAD_REWINDS
+            ):
+                previous = commit
+                continue
             raise ChainHeadMonotonicityError(
                 "observation chain head went backwards: "
                 f"{previous.sha} has sequence_number {previous.sequence_number}, "
@@ -131,3 +162,40 @@ def test_control_decreasing_pair_is_rejected() -> None:
     message = str(error.value)
     assert older_sha in message and "2096" in message
     assert newer_sha in message and "2095" in message
+
+
+def test_recorded_rewinds_are_well_formed() -> None:
+    for rewind in HEALED_CHAIN_HEAD_REWINDS:
+        assert rewind["previous_sequence_number"] > rewind["decreasing_sequence_number"]
+        assert len(rewind["previous_sha"]) == 40
+        assert all(character in "0123456789abcdef" for character in rewind["previous_sha"])
+        assert len(rewind["decreasing_sha"]) == 40
+        assert all(character in "0123456789abcdef" for character in rewind["decreasing_sha"])
+
+
+@pytest.mark.parametrize(
+    ("mutation", "different_sha"),
+    [
+        ("sequence_numbers", None),
+        (None, "c" * 40),
+    ],
+)
+def test_near_match_to_recorded_rewind_is_rejected(
+    mutation: str | None, different_sha: str | None
+) -> None:
+    rewind = HEALED_CHAIN_HEAD_REWINDS[0]
+    previous_sequence_number = rewind["previous_sequence_number"]
+    decreasing_sequence_number = rewind["decreasing_sequence_number"]
+    decreasing_sha = rewind["decreasing_sha"]
+    if mutation == "sequence_numbers":
+        previous_sequence_number += 1
+        decreasing_sequence_number += 1
+    if different_sha is not None:
+        decreasing_sha = different_sha
+    commits = [
+        ChainHeadCommit(rewind["previous_sha"], previous_sequence_number),
+        ChainHeadCommit(decreasing_sha, decreasing_sequence_number),
+    ]
+
+    with pytest.raises(ChainHeadMonotonicityError):
+        verify_sequence_monotonic(commits)
