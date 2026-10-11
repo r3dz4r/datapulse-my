@@ -8,27 +8,27 @@ sources:
   - {"id": "jpj","resource": "https://api.data.gov.my/data-catalogue?id=registrations_type_fuel","title": "Road Transport Department Malaysia and Ministry of Transport"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Road Transport Department, Ministry of Transport"
-datapulse:real_status: "aging"
+datapulse:real_status: "fresh"
 datapulse:health_report: "/data/registrations_type_fuel.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 10000
-stale_after: "2026-09-16T12:00:00Z"
+stale_after: "2026-10-17T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Monthly Vehicle Registrations by Vehicle and Fuel Type is published by Road Transport Department Malaysia and Ministry of Transport and tracked by DataPulse. The latest published probe classifies it as `aging`.
+Monthly Vehicle Registrations by Vehicle and Fuel Type is published by Road Transport Department Malaysia and Ministry of Transport and tracked by DataPulse. The latest published probe classifies it as `fresh`.
 
 # Schema
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:6fa57a8cbb22571d9f1f4c2a53ffb91a9bd8dc18e0692d19da7c0725d04db097`
-- `record_count`: `10838`
+- `record_count`: `10873`
 
 # Quirks
 

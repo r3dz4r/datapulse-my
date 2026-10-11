@@ -8,7 +8,7 @@ sources:
   - {"id": "tnb","resource": "https://api.data.gov.my/data-catalogue?id=electricity_consumption","title": "Tenaga Nasional Berhad"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Tenaga Nasional Berhad, Sabah Electricity Sdn. Bhd., Sarawak Energy Berhad, Energy Commission of Malaysia, Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "stale"
 datapulse:health_report: "/data/electricity_consumption.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 468
-stale_after: "2024-07-17T12:00:00Z"
+stale_after: "2026-07-17T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,11 +28,11 @@ Monthly Electricity Consumption is published by Tenaga Nasional Berhad and track
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:53c70037b1df258ba178457b69d82f02c8ae261957a260b7603415e81a591ec3`
-- `record_count`: `468`
+- `record_count`: `612`
 
 # Quirks
 
-publisher-likely-retired
+No probe quirks were recorded.
 
 # Health
 

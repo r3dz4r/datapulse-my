@@ -3,12 +3,12 @@ type: "Dataset"
 title: "OpenDOSM Quarterly Nominal GDP"
 description: "DataPulse projection of OpenDOSM Quarterly Nominal GDP from DOSM Malaysia."
 resource: "https://storage.dosm.gov.my/gdp/gdp_qtr_nominal.csv"
-tags: ["OpenDOSM (storage.dosm.gov.my) (also indexed by data.gov.my)","non-vertical","quarterly"]
+tags: ["OpenDOSM (storage.dosm.gov.my) (also indexed by data.gov.my)","vertical","quarterly"]
 sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/gdp/gdp_qtr_nominal.csv","title": "DOSM Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
