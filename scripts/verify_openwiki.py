@@ -17,17 +17,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.public_surface_generation import GenerationError, load_public_surfaces
+from scripts.openwiki_output_paths import load_generated_paths
 
 
-GENERATED_PATHS = frozenset(
-    {
-        "openwiki/quickstart.md",
-        "openwiki/datasets.md",
-        "openwiki/mcp.md",
-        "openwiki/operations.md",
-        "openwiki/.last-update.json",
-    }
-)
+GENERATED_PATHS = frozenset(load_generated_paths())
 MANAGED_INSTRUCTION_PATHS = frozenset({"AGENTS.md", "CLAUDE.md"})
 REQUIRED_PAGES = GENERATED_PATHS - {"openwiki/.last-update.json"}
 FORBIDDEN_CLAIMS = (
