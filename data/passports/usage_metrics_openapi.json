@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-10T16:34:45Z",
-    "record_count": 19593,
+    "last_checked": "2026-10-11T16:45:04Z",
+    "record_count": 19624,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:d5df8abf7e9c872c8d891c1e3db178f5de0c461a175c3b6f080405b8176543e5"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily OpenAPI Hits by Endpoint",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-10T16:34:45Z",
+    "observed_verified_at": "2026-10-11T16:45:04Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "National Digital Department and Ministry of Digital"
   },
@@ -951,7 +951,7 @@
     "receipt": {
       "evidence_path": "data/usage_metrics_openapi.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:f06a79f5d8d1915013786b6f60c74c37c9394f390ed5d12fc082c228ca4eacb3",
+      "receipt_digest": "sha256:d67b5a77db0075d8214c1b0381fad9d8c42087cb3887ae75ecf0dcf68eea285b",
       "sigstore_path": "data/usage_metrics_openapi.receipt.sigstore.json",
       "statement_path": "data/usage_metrics_openapi.receipt.statement.json"
     },
