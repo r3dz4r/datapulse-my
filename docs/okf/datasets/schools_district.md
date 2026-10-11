@@ -3,7 +3,7 @@ type: "Dataset"
 title: "data.gov.my Public Education Institutions by District"
 description: "DataPulse projection of data.gov.my Public Education Institutions by District from Ministry of Education Malaysia."
 resource: "https://storage.data.gov.my/education/schools_district.csv"
-tags: ["data.gov.my (storage.data.gov.my)","non-vertical","annual"]
+tags: ["data.gov.my (storage.data.gov.my)","vertical","annual"]
 sources:
   - {"id": "moe","resource": "https://storage.data.gov.my/education/schools_district.csv","title": "Ministry of Education Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}

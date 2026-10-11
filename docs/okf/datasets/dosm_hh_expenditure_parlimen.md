@@ -3,7 +3,7 @@ type: "Dataset"
 title: "OpenDOSM Household Expenditure by Parliamentary Constituency"
 description: "DataPulse projection of OpenDOSM Household Expenditure by Parliamentary Constituency from Department of Statistics Malaysia."
 resource: "https://storage.dosm.gov.my/hies/hh_expenditure_parlimen.csv"
-tags: ["OpenDOSM (storage.dosm.gov.my)","non-vertical","biennial to triennial (survey years)"]
+tags: ["OpenDOSM (storage.dosm.gov.my)","vertical","biennial to triennial (survey years)"]
 sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/hies/hh_expenditure_parlimen.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}

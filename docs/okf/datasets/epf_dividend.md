@@ -3,7 +3,7 @@ type: "Dataset"
 title: "data.gov.my Annual EPF Dividend Rates"
 description: "DataPulse projection of data.gov.my Annual EPF Dividend Rates from Employees Provident Fund."
 resource: "https://storage.data.gov.my/welfare/epf_dividend.csv"
-tags: ["data.gov.my (storage.data.gov.my)","non-vertical","annual"]
+tags: ["data.gov.my (storage.data.gov.my)","vertical","annual"]
 sources:
   - {"id": "epf","resource": "https://storage.data.gov.my/welfare/epf_dividend.csv","title": "Employees Provident Fund"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}

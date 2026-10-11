@@ -8,7 +8,7 @@ sources:
   - {"id": "mynic","resource": "https://api.data.gov.my/data-catalogue?id=domains_ipv6","title": "MYNIC and Ministry of Digital"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-03T10:36:37Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Malaysian Network Information Centre Berhad, Ministry of Digital"
