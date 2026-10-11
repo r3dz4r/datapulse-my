@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import ast
 import re
 import shutil
 import subprocess
@@ -128,6 +129,28 @@ def _write_json(path: Path, document: dict) -> None:
     path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
 
 
+def _assert_script_imports_copied(scripts: Path) -> None:
+    """Ensure copied scripts include every locally imported scripts.X module."""
+    copied = {path.stem for path in scripts.glob("*.py")}
+    for importer in sorted(scripts.glob("*.py")):
+        tree = ast.parse(importer.read_text(encoding="utf-8"), filename=str(importer))
+        imported_modules: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported_modules.update(
+                    alias.name.removeprefix("scripts.").split(".", 1)[0]
+                    for alias in node.names
+                    if alias.name.startswith("scripts.")
+                )
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                if node.module.startswith("scripts."):
+                    imported_modules.add(node.module.removeprefix("scripts.").split(".", 1)[0])
+        for module in sorted(imported_modules - copied):
+            raise AssertionError(
+                f"isolated scripts are missing scripts.{module}.py, imported by {importer.name}"
+            )
+
+
 def _stage_source(tmp_path: Path) -> Path:
     source = tmp_path / "source"
     shutil.copytree(MINIMAL_FIXTURE, source)
@@ -242,6 +265,7 @@ def _stage_source(tmp_path: Path) -> Path:
     for name in ("register-page.json", "register-page.schema.json"):
         shutil.copy2(ROOT / "config" / name, source / "config" / name)
     shutil.copy2(ROOT / "config/landing-page.json", source / "config/landing-page.json")
+    shutil.copy2(ROOT / "config/openwiki-outputs.json", source / "config/openwiki-outputs.json")
     landing_config = json.loads(
         (source / "config/landing-page.json").read_text(encoding="utf-8")
     )
@@ -317,11 +341,14 @@ def _stage_source(tmp_path: Path) -> Path:
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", scripts)
+    shutil.copy2(ROOT / "scripts/attestation_sets.py", scripts)
     shutil.copy2(ROOT / "scripts/validate_at_runtime.py", scripts)
     shutil.copy2(ROOT / "scripts/verify_distribution_sync.py", scripts)
     shutil.copy2(ROOT / "scripts/verify_mcp_deployment.py", scripts)
     shutil.copy2(ROOT / "scripts/verify_openwiki.py", scripts)
+    shutil.copy2(ROOT / "scripts/openwiki_output_paths.py", scripts)
     shutil.copy2(ROOT / "scripts/gen_anomaly.py", scripts / "gen_anomaly.py")
+    _assert_script_imports_copied(scripts)
     subprocess.run(
         [sys.executable, "scripts/gen_readme.py", "--root", str(source)],
         cwd=source,
@@ -455,6 +482,15 @@ def test_clean_fixture_stages_attestation_binding_helper(tmp_path: Path) -> None
     source = _stage_source(tmp_path)
 
     assert (source / "scripts/verify_attestation_binding.py").is_file()
+    assert (source / "config/openwiki-outputs.json").is_file()
+    (source / "scripts/openwiki_output_paths.py").unlink()
+    try:
+        _assert_script_imports_copied(source / "scripts")
+    except AssertionError as exc:
+        assert "scripts.openwiki_output_paths.py" in str(exc)
+        assert "verify_openwiki.py" in str(exc)
+    else:
+        raise AssertionError("missing copied scripts import must fail the isolated build check")
 
 
 def test_evidence_coverage_runs_after_record_evidence(tmp_path: Path) -> None:
