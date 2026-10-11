@@ -33,9 +33,9 @@ HEAD_REF = re.compile(
 )
 PUBLIC_REF = re.compile(
     rb"attestations/\d{4}-\d{2}-\d{2}/"
-    rb"(?:revisions/[0-9a-f]{64}/)?[A-Za-z0-9_.-]+\.json"
+    rb"(?:revisions/[0-9a-f]{64}/)?[A-Za-z0-9_.-]+\.json(?:\.gz)?"
 )
-SAFE_REF = re.compile(r"attestations/[A-Za-z0-9_./-]+\.json\Z")
+SAFE_REF = re.compile(r"attestations/[A-Za-z0-9_./-]+\.json(?:\.gz)?\Z")
 
 
 def projected_site_files(root: Path) -> dict[Path, Path]:
@@ -86,11 +86,11 @@ def select_attestations(plane: Path, public_files: Iterable[Path]) -> set[Path]:
         if not HEAD_REF.fullmatch(reference):
             raise ValueError(f"unsafe chain head reference: {reference!r}")
         directory = require(reference).parent
-        for name in ("index.json", "binding.json", "scores.json", "health.json"):
+        for name in ("index.json", "binding.json", "scores.json", "health.json", "health.json.gz"):
             path = directory / name
             if path.is_file():
                 keep.add(path)
-            elif digest in accepted and name != "health.json":
+            elif digest in accepted and name not in ("health.json", "health.json.gz"):
                 raise FileNotFoundError(f"accepted attestation metadata is missing: {path}")
         binding_path = directory / "binding.json"
         if digest in accepted:

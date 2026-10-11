@@ -69,7 +69,7 @@ def test_wait_rejects_inexact_authoritative_evidence(
 ) -> None:
     root, source, authority, origin, paths = candidate
     name = {"head": "chain_head.json", "binding": "binding.json",
-            "health": "health.json", "missing": "binding.json"}[changed_file]
+            "health": "health.json.gz", "missing": "binding.json"}[changed_file]
     path = authority / next(path for path in paths if path.endswith("/" + name))
     if changed_file == "missing":
         path.unlink()

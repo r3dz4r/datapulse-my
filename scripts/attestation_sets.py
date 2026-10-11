@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import base64
+import gzip
 import hashlib
 import json
 import logging
 import sys
 import re
+import zlib
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -78,6 +80,15 @@ def set_directory(reference: str, filename: str = "chain_head.json") -> str:
     return reference.rsplit("/", 1)[0]
 
 
+def snapshot_content(path: Path) -> bytes:
+    """Return exact signed health bytes from a current or legacy snapshot."""
+    try:
+        data = path.read_bytes()
+        return gzip.decompress(data) if path.name.endswith(".json.gz") else data
+    except (OSError, EOFError, gzip.BadGzipFile, zlib.error) as error:
+        raise ContractError("health snapshot is unreadable") from error
+
+
 def correction_record(day: str, original: str, previous: str, old_digest: str, digest: str) -> dict[str, Any]:
     """Define the signed correction identity and deterministic provenance.
 
@@ -96,7 +107,7 @@ def correction_record(day: str, original: str, previous: str, old_digest: str, d
         "supersedes_chain_head": previous,
         "previous_health_sha256": old_digest,
         "health_sha256": digest,
-        "health_snapshot_ref": f"attestations/{day}/revisions/{revision}/health.json",
+        "health_snapshot_ref": f"attestations/{day}/revisions/{revision}/health.json.gz",
     }
 
 
@@ -166,8 +177,12 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
     # A recorded health snapshot pins the exact input a correction superseded;
     # when present it must match the signed claim. Main's same-day correction
     # evidence lives here, so the branch's lineage verifier must check it too.
-    snapshot = root / directory / "health.json"
-    if snapshot.exists() and _digest_bytes(snapshot.read_bytes()) != claim.get("artifact_sha256"):
+    raw_snapshot = root / directory / "health.json"
+    compressed_snapshot = root / directory / "health.json.gz"
+    if raw_snapshot.exists() and compressed_snapshot.exists():
+        raise ContractError("dated health snapshot has two encodings")
+    snapshot = compressed_snapshot if compressed_snapshot.exists() else raw_snapshot
+    if snapshot.exists() and _digest_bytes(snapshot_content(snapshot)) != claim.get("artifact_sha256"):
         raise ContractError("dated health snapshot digest is invalid")
     record = payload.get("correction")
     if record is not None:
@@ -176,7 +191,10 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
         revision = record.get("revision_id")
         if (record.get("schema") != "datapulse/v1/attestation-correction"
                 or not isinstance(revision, str) or re.fullmatch(r"[0-9a-f]{64}", revision) is None
-                or record.get("health_snapshot_ref") != f"attestations/{payload.get('date')}/revisions/{revision}/health.json"
+                or record.get("health_snapshot_ref") not in {
+                    f"attestations/{payload.get('date')}/revisions/{revision}/health.json",
+                    f"attestations/{payload.get('date')}/revisions/{revision}/health.json.gz",
+                }
                 or record.get("health_sha256") != claim.get("artifact_sha256")
                 or record.get("supersedes_chain_head") != head["payload"].get("previous_chain_head")
                 or head["payload"].get("correction") != record):
@@ -186,7 +204,7 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
         correction_snapshot = root / record["health_snapshot_ref"]
         if verify_datasets and not correction_snapshot.is_file():
             raise ContractError("signed correction health snapshot is missing")
-        if correction_snapshot.is_file() and _digest_bytes(correction_snapshot.read_bytes()) != record.get("health_sha256"):
+        if correction_snapshot.is_file() and _digest_bytes(snapshot_content(correction_snapshot)) != record.get("health_sha256"):
             raise ContractError("signed correction health snapshot digest is invalid")
     if binding.get("claims") != {"artifact_signed": rekor is not None, "rekor_witnessed": rekor is not None, "source_truth_verified": False}:
         raise ContractError("immutable binding evidence claims disagree")
@@ -222,7 +240,7 @@ def verify_set(root: Path, reference: str, *, verify_datasets: bool = True) -> d
             verify_rekor_evidence(root, local_rekor, claim.get("artifact_sha256"))
             if rekor_content(root, local_rekor) != rekor_content(root, rekor):
                 raise ContractError("content-addressed witness differs from its signed proof")
-        expected_files = set(FILES) | {"health.json"} | {did + ".json" for did in datasets}
+        expected_files = set(FILES) | {snapshot.name} | {did + ".json" for did in datasets}
         if rekor is not None and not legacy_rekor and (not external_rekor or local_rekor_present):
             expected_files |= {"rekor-reference.json", "rekor-bundle.json"}
         if match[2] is None and (root / directory / "revisions").is_dir():
@@ -375,6 +393,8 @@ def validate_discovery(root: Path, document: dict, *, verify_datasets: bool = Tr
                 if not isinstance(record, dict) or previous_health is None:
                     raise ContractError("same-day correction is missing its signed provenance")
                 expected = correction_record(day, original, run[sequence - 2], previous_health, payload["health"]["artifact_sha256"])
+                if record.get("health_snapshot_ref") == expected["health_snapshot_ref"].removesuffix(".gz"):
+                    expected["health_snapshot_ref"] = expected["health_snapshot_ref"].removesuffix(".gz")
                 if record != expected or head["payload"].get("correction") != record:
                     raise ContractError("signed correction provenance disagrees with the append lineage")
             previous_health = payload["health"]["artifact_sha256"]

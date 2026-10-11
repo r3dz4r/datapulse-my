@@ -20,6 +20,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from scripts import gen_attestations as ga
 from scripts.attestation_commit_back import commit_message_for_changed_paths
+from scripts.attestation_sets import snapshot_content
 from scripts.tests.test_attestations import fixture_root, write
 from scripts.verify_attestation_binding import ContractError, verify_contract
 from scripts.verify_chain_linearity import ChainLinearityError, verify_chain_linearity
@@ -45,7 +46,7 @@ def isolated_root(monkeypatch: pytest.MonkeyPatch) -> Iterator[tuple[Path, Path]
 
 def evidence_bytes(root: Path) -> dict[str, bytes]:
     return {path.relative_to(root).as_posix(): path.read_bytes()
-            for path in (root / "attestations").rglob("*.json")}
+            for path in (root / "attestations").rglob("*") if path.is_file()}
 
 
 def verify_binding(root: Path, moment: datetime = NOW) -> dict:
@@ -109,17 +110,18 @@ def test_same_day_correction_preserves_independently_verified_original(
     assert record["original_chain_head"] == original_head
     assert record["supersedes_chain_head"] == original_head
     assert record["previous_health_sha256"] == ga.sha(original_health)
-    assert (root / record["health_snapshot_ref"]).read_bytes() == (root / "health/latest.json").read_bytes()
-    assert (root / f"attestations/{DAY}/health.json").read_bytes() == original_health
+    assert snapshot_content(root / record["health_snapshot_ref"]) == (root / "health/latest.json").read_bytes()
+    assert snapshot_content(root / f"attestations/{DAY}/health.json.gz") == original_health
     assert verify_chain_linearity(root).chain_head == head["chain_head"]
     assert ga.load(root / "datapulse.json")["datasets"][0]["attestation_ref"] == index["attestations"]["sample"]
 
     for reference, body in original.items():
         if reference.startswith(f"attestations/{DAY}/"):
             assert (root / reference).read_bytes() == body
-            envelope = json.loads(body)
-            if "signature_base64" in envelope:
-                public.verify(base64.b64decode(envelope["signature_base64"]), ga.canonical(envelope["payload"]))
+            if reference.endswith(".json"):
+                envelope = json.loads(body)
+                if "signature_base64" in envelope:
+                    public.verify(base64.b64decode(envelope["signature_base64"]), ga.canonical(envelope["payload"]))
     assert ga.load(root / "attestations/chain-index.json")["heads"][original_head] == f"attestations/{DAY}/chain_head.json"
     added = set(evidence_bytes(root)) - set(original)
     assert commit_message_for_changed_paths(added, DAY) is not None
@@ -160,7 +162,7 @@ def test_multiple_corrections_and_restoring_original_input_append_in_order(
     root, key = isolated_root
     first = corrected_root(root, key)
     prior = ga.load(root / first["chain_head_ref"])["chain_head"]
-    original_health = (root / f"attestations/{DAY}/health.json").read_bytes()
+    original_health = snapshot_content(root / f"attestations/{DAY}/health.json.gz")
     for hour, status in ((3, "unreachable"), (4, "fresh")):
         health = ga.load(root / "health/latest.json")
         health["datasets"][0]["status"] = status
@@ -200,7 +202,8 @@ def test_invalid_correction_fails_closed(isolated_root: tuple[Path, Path], kind:
     root, key = isolated_root
     index = corrected_root(root, key)
     if kind == "snapshot":
-        (root / index["binding_ref"]).parent.joinpath("health.json").write_bytes(b"{}\n")
+        binding = ga.load(root / index["binding_ref"])
+        (root / binding["payload"]["correction"]["health_snapshot_ref"]).write_bytes(b"{}\n")
     elif kind == "metadata":
         head = ga.load(root / index["chain_head_ref"])
         head["payload"]["correction"]["original_chain_head"] = "0" * 64
