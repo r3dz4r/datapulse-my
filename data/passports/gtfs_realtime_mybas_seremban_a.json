@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.008981481481481481,
+        "latest_days": 0.0007986111111111112,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-11T00:40:55Z",
-    "record_count": 17,
+    "last_checked": "2026-10-11T00:59:32Z",
+    "record_count": 23,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-seremban-a",
@@ -39,7 +39,7 @@
     "geography": "Seremban, Negeri Sembilan",
     "name": "GTFS Realtime — BAS.MY Seremban A Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-11T00:40:55Z",
+    "observed_verified_at": "2026-10-11T00:59:32Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_seremban_a.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:28e43bcaa4ab31dfd442192740c098159a79e35d1a00ed83d4e635f72ed92a08",
+      "receipt_digest": "sha256:51cab8965d63d07d50537dab1a6ef128a26e1c18cdb9b6cbe5176640378f53c2",
       "sigstore_path": "data/gtfs_realtime_mybas_seremban_a.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_seremban_a.receipt.statement.json"
     },
