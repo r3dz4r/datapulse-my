@@ -1,0 +1,67 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "fishing_vessels",
+  "status": "unknown-freshness",
+  "last_checked": null,
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": null,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "coast",
+      "type": "string"
+    },
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "engine",
+      "type": "string"
+    },
+    {
+      "name": "horsepower",
+      "type": "string"
+    },
+    {
+      "name": "vessels",
+      "type": "integer"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Not probed; provisional onboarding status."
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/agriculture/fishing_vessels.csv",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "data.gov.my (government_open_data)"
+}
