@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0006944444444444445,
+        "latest_days": 0.005,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-johor",
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_johor.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:76a3a18c6e47aad473f30fd91d340e73e13e79dcb6230ead91d22eb0f5a086ef",
+      "receipt_digest": "sha256:b5234a7071b5555bcd954f450eeac62e62b2d9f8cc49a5494439d2c6f143ec24",
       "sigstore_path": "data/gtfs_realtime_mybas_johor.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_johor.receipt.statement.json"
     },
