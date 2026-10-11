@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 6,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:ae037e077b4a2042bcd6c23f51572ffc68f4d4269db02aff5c1e51e649a8e5bc"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
@@ -873,7 +873,7 @@
     "receipt": {
       "evidence_path": "data/exchangerates_daily_1700.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:cbaee332d121200f64d8336f808e87f2ba94add5da67c7c7002d1e8b93cbda0b",
+      "receipt_digest": "sha256:ba7ad3f3420770221d6a3c01520b18357d9935fe1fdc9fe16c7ec2e7ea0ceacb",
       "sigstore_path": "data/exchangerates_daily_1700.receipt.sigstore.json",
       "statement_path": "data/exchangerates_daily_1700.receipt.statement.json"
     },

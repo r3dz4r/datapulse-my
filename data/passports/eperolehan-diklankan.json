@@ -3,13 +3,13 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 6,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 0.125,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "fresh"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://www.eperolehan.gov.my/quotation-tender-notice",
@@ -894,7 +894,7 @@
     "receipt": {
       "evidence_path": "data/eperolehan-diklankan.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:26d2184f917fe781fb5c0dfb32f51505f6dcf9034542c000028b03ebb7621793",
+      "receipt_digest": "sha256:9fe257335b1b1fa1597b1b02fd34265ecd65dfc725babdd0a229b98cb6ebef99",
       "sigstore_path": "data/eperolehan-diklankan.receipt.sigstore.json",
       "statement_path": "data/eperolehan-diklankan.receipt.statement.json"
     },
