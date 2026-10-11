@@ -1,0 +1,63 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "icths_internet_device",
+  "status": "unknown-freshness",
+  "last_checked": null,
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": null,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "strata",
+      "type": "string"
+    },
+    {
+      "name": "device",
+      "type": "string"
+    },
+    {
+      "name": "proportion",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Not probed; provisional onboarding status."
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/icths/icths_internet_device.csv",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "data.gov.my (other)"
+}
