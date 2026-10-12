@@ -20,7 +20,7 @@ def _stage(root: Path) -> None:
             "api": "https://api.data-pulse.my",
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
-        "pages": ["/", "/npra.html", "/health-methodology.html"],
+        "pages": ["/", "/health-methodology.html"],
         "dataset_pages": {"path_template": "/datasets/{id}"},
         "compatibility_aliases": [{"path": "/landing.html", "target": "/"}],
         "artifacts": [
@@ -70,7 +70,6 @@ def test_generation_is_deterministic_and_preserves_unowned_prose(tmp_path: Path)
     locations = [node.text for node in root.findall("{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc")]
     assert locations == [
         "https://www.data-pulse.my/",
-        "https://www.data-pulse.my/npra.html",
         "https://www.data-pulse.my/health-methodology.html",
         "https://www.data-pulse.my/llms.txt",
         "https://www.data-pulse.my/agent.json",
@@ -82,6 +81,7 @@ def test_generation_is_deterministic_and_preserves_unowned_prose(tmp_path: Path)
     ]
 
     assert "https://www.data-pulse.my/.well-known/ai-catalog.json" not in first["sitemap.xml"].decode()
+    assert "npra.html" not in first["sitemap.xml"].decode()
 
 
 def test_marker_failure_changes_no_output(tmp_path: Path) -> None:
@@ -102,16 +102,16 @@ def _stage_stale_links(root: Path) -> None:
     (root / "README.md").write_text(
         "readme-before\n"
         "See [`llms.txt`](https://r3dz4r.github.io/datapulse-my/llms.txt) and\n"
-        "the [NPRA engine page](https://data-pulse.my/npra.html) plus the\n"
+        "the [health methodology page](https://data-pulse.my/health-methodology.html) plus the\n"
         "[bare apex](https://data-pulse.my) origin; MCP stays\n"
         "`https://mcp.data-pulse.my/mcp` and plain text\n"
-        "https://data-pulse.my/npra.html is not a markdown link target.\n"
+        "https://data-pulse.my/health-methodology.html is not a markdown link target.\n"
         "<!-- BEGIN public-discovery -->\nold\n<!-- END public-discovery -->\n"
         "readme-after\n"
     )
     (root / "llms.txt").write_text(
         "llms-before\n"
-        "The [NPRA engine page](https://data-pulse.my/npra.html) and\n"
+        "The [health methodology page](https://data-pulse.my/health-methodology.html) and\n"
         "[`mcp-deploy.md`](https://data-pulse.my/mcp-deploy.md) are public.\n"
         "The MCP endpoint `https://mcp.data-pulse.my/mcp` is unchanged.\n"
         "<!-- BEGIN public-discovery -->\nold\n<!-- END public-discovery -->\n"
@@ -119,7 +119,7 @@ def _stage_stale_links(root: Path) -> None:
     )
     (root / "robots.txt").write_text(
         "robots-before\n"
-        "Stale [link](https://data-pulse.my/npra.html) outside canonicalization scope.\n"
+        "Stale [link](https://data-pulse.my/health-methodology.html) outside canonicalization scope.\n"
         "<!-- BEGIN public-discovery -->\nold\n<!-- END public-discovery -->\n"
         "robots-after\n"
     )
@@ -133,23 +133,23 @@ def test_stale_origin_links_in_markdown_targets_are_rewritten(tmp_path: Path) ->
 
     readme = (tmp_path / "README.md").read_text(encoding="utf-8")
     assert f"]({website}/llms.txt)" in readme
-    assert f"]({website}/npra.html)" in readme
+    assert f"]({website}/health-methodology.html)" in readme
     assert f"](https://www.data-pulse.my)" in readme or f"]({website})" in readme
     assert "r3dz4r.github.io/datapulse-my" not in readme
     assert "https://mcp.data-pulse.my/mcp" in readme
-    assert "https://data-pulse.my/npra.html is not a markdown link target" in readme
+    assert "https://data-pulse.my/health-methodology.html is not a markdown link target" in readme
     assert readme.startswith("readme-before\n")
     assert readme.endswith("readme-after\n")
 
     llms = (tmp_path / "llms.txt").read_text(encoding="utf-8")
-    assert f"]({website}/npra.html)" in llms
+    assert f"]({website}/health-methodology.html)" in llms
     assert f"]({website}/mcp-deploy.md)" in llms
     assert "https://mcp.data-pulse.my/mcp" in llms
     assert llms.startswith("llms-before\n")
     assert llms.endswith("llms-after\n")
 
     robots = (tmp_path / "robots.txt").read_text(encoding="utf-8")
-    assert "](https://data-pulse.my/npra.html)" in robots
+    assert "](https://data-pulse.my/health-methodology.html)" in robots
 
 
 def test_origin_canonicalization_is_idempotent(tmp_path: Path) -> None:
@@ -168,8 +168,8 @@ def test_check_mode_reports_stale_origin_links(tmp_path: Path) -> None:
     current = (tmp_path / "README.md").read_text(encoding="utf-8")
     (tmp_path / "README.md").write_text(
         current.replace(
-            "](https://www.data-pulse.my/npra.html)",
-            "](https://data-pulse.my/npra.html)",
+            "](https://www.data-pulse.my/health-methodology.html)",
+            "](https://data-pulse.my/health-methodology.html)",
             1,
         ),
         encoding="utf-8",

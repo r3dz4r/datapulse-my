@@ -49,7 +49,7 @@ If you read one page: [DataPulse in one page](one-pager.md) is the product descr
 
 ## Public surfaces
 
-Canonical human pages: the dataset register at the root route, the [NPRA page](https://www.data-pulse.my/npra.html), the [health methodology](health-methodology.html), [data collection and privacy](privacy.html), and [Learn](https://www.data-pulse.my/learn.html).
+Canonical human pages: the dataset register at the root route, the [health methodology](health-methodology.html), [data collection and privacy](privacy.html), and [Learn](https://www.data-pulse.my/learn.html).
 
 The authoritative inventory of public surfaces, including every machine artifact, is the served [sitemap.xml](https://www.data-pulse.my/sitemap.xml) with labels in [llms.txt](https://www.data-pulse.my/llms.txt), and the authority boundaries are in [Source-of-truth map](source-of-truth-map.md). This map does not maintain a second list. Three machine surfaces matter to verification specifically: the dataset manifest, the health snapshot, and the probe key registry at `/.well-known/datapulse-probe-keys.json`.
 

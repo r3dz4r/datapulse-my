@@ -46,7 +46,6 @@ OWNED_CATEGORIES = (
     "docs/index.html",
     "docs/landing.html",
     "docs/dashboard.html",
-    "docs/npra.html",
     "P5B public markers",
 )
 
@@ -488,3 +487,21 @@ def test_does_not_touch_tracked_workspace(
 ) -> None:
     assert verification_run.result.returncode == 0, verification_run.result.stderr
     assert verification_run.status_after == verification_run.status_before
+
+
+def test_undeclared_npra_page_fails_capture_preflight(tmp_path: Path) -> None:
+    config = tmp_path / "config/public-surfaces.json"
+    config.parent.mkdir()
+    config.write_text(json.dumps({"pages": ["/"]}), encoding="utf-8")
+    page = tmp_path / "docs/npra.html"
+    page.parent.mkdir()
+    page.write_text("orphaned page", encoding="utf-8")
+
+    with pytest.raises(verifier.VerificationFailure, match="undeclared public page"):
+        verifier._verify_undeclared_npra_absent(tmp_path)
+
+    page.unlink()
+    verifier._verify_undeclared_npra_absent(tmp_path)
+    config.write_text(json.dumps({"pages": ["/", "/npra.html"]}), encoding="utf-8")
+    page.write_text("restored page", encoding="utf-8")
+    verifier._verify_undeclared_npra_absent(tmp_path)

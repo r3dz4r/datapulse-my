@@ -31,7 +31,7 @@ def _stage(root: Path, manifest: str = STALE_MANIFEST) -> None:
             "api": "https://api.data-pulse.my",
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
-        "pages": ["/", "/npra.html"],
+        "pages": ["/"],
         "artifacts": ["/datapulse.json", "/datapulse.schema.json"],
         "featured_dataset_ids": ["alpha"],
     }

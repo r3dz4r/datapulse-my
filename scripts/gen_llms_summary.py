@@ -66,7 +66,7 @@ def generate(root: Path, *, check: bool = False, validate_only: bool = False) ->
     if missing:
         raise GenerationError(f"featured dataset id(s) missing from manifest: {', '.join(missing)}")
     configured_paths = set(config["pages"]) | set(config["artifacts"])
-    missing_paths = (set(PUBLIC_SURFACE_LINKS) - configured_paths) - {"/okf/"}
+    missing_paths = (set(PUBLIC_SURFACE_LINKS) - configured_paths) - {"/okf/", "/npra.html"}
     if missing_paths:
         raise GenerationError(
             "required llms public surface path(s) absent from public-surfaces.json: "

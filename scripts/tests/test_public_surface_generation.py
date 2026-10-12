@@ -25,7 +25,7 @@ def _config() -> dict:
             "api": "https://api.data-pulse.my",
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
-        "pages": ["/", "/npra.html", "/health-methodology.html"],
+        "pages": ["/", "/health-methodology.html"],
         "artifacts": [
             "/llms.txt",
             "/agent.json",

@@ -416,9 +416,10 @@ def test_release_build_generates_and_embeds_dashboard_data_before_deploy() -> No
     assert "Inject embedded data" not in workflow
 
 
-def test_dashboard_and_npra_facts_are_explicit_marker_owned() -> None:
+def test_dashboard_markers_and_retained_npra_template_are_owned() -> None:
     index = (ROOT / "docs/index.html").read_text(encoding="utf-8")
-    npra = (ROOT / "docs/npra.html").read_text(encoding="utf-8")
+    npra = (ROOT / "scripts/templates/npra-page.html.tmpl").read_text(encoding="utf-8")
+    assert not (ROOT / "docs/npra.html").exists()
 
     for marker in ("dashboard-summary", "dashboard-trust-facts", "changelog-strip"):
         assert f"<!-- BEGIN {marker} -->" in index
