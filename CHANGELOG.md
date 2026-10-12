@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.3](https://github.com/r3dz4r/datapulse-my/compare/v3.55.2...v3.55.3) (2026-10-12)
+
+
+### Bug Fixes
+
+* **pages:** restore six-day attestation window ([2886148](https://github.com/r3dz4r/datapulse-my/commit/28861480c3e0c706d8183e6a1da3f0f8ba4f6ce1))
+* **pages:** select served attestations for both deploy paths ([68690ab](https://github.com/r3dz4r/datapulse-my/commit/68690ab16a025be2f01e6695c4144d7392542c81))
+* **pages:** select served attestations for both deploy paths ([37cbad7](https://github.com/r3dz4r/datapulse-my/commit/37cbad79856eef97f98557885d0761352c0f4aa8))
+
 ## [3.55.2](https://github.com/r3dz4r/datapulse-my/compare/v3.55.1...v3.55.2) (2026-10-10)
 
 
