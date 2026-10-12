@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:d829d656a8eff3d7cc890b7172484e93b0f60cf571175dfede5b38ce1f89c124"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/healthcare/blood_donations_state.csv",
@@ -846,7 +846,7 @@
     "receipt": {
       "evidence_path": "data/blood_donations_state.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:15f306678a3d93a95429675cf25356a508dea6a33bdf447605fd6bb096399780",
+      "receipt_digest": "sha256:63f532a2ba4ecf93383e5f14c663d0a60138a68a71ef893282e3e345cd3ee522",
       "sigstore_path": "data/blood_donations_state.receipt.sigstore.json",
       "statement_path": "data/blood_donations_state.receipt.statement.json"
     },
