@@ -91,3 +91,20 @@ def test_attestation_day_byte_ceiling_refuses_prepared_day(
     assert match is not None
     assert int(match[1]) > 1
     assert not (root / "attestations" / DAY).exists()
+
+
+def test_default_day_ceiling_accepts_legacy_day_and_still_refuses_oversize(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("ATTESTATION_DAY_MAX_BYTES", raising=False)
+    day = tmp_path / "attestations" / "2026-10-12"
+    day.mkdir(parents=True)
+    evidence = day / "legacy-health.json"
+    with evidence.open("wb") as stream:
+        stream.truncate(414_174_413)
+    ga.check_day_size(day)
+
+    with evidence.open("r+b") as stream:
+        stream.truncate(ga.ATTESTATION_DAY_MAX_BYTES + 1)
+    with pytest.raises(ga.AttestationDaySizeError, match="ATTESTATION_DAY_MAX_BYTES limit"):
+        ga.check_day_size(day)
