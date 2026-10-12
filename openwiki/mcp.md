@@ -1,51 +1,42 @@
 ---
 type: Reference
-title: MCP Server Runtime and Agent Integration
-description: Documents DataPulse’s public read-only MCP request surface, catalogue tools, published-artifact boundaries, verification behavior, deployment relationship, throttling and failure semantics, and focused tests for safe changes.
+title: Read-only MCP server and agent request flows
+description: Documents DataPulse’s public read-only MCP endpoint, its 19 read-only tools, published-artifact loading path, citation and verification contracts, failure behavior, and safe client and operations boundaries.
 tags: [MCP, integrations, verification, read-only]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-10-12T17:36:22.354Z
 sources:
-  - id: openwiki-source-424961965958d8ceef8f1e14
-    resource: repo://.github/workflows/publish-mcp.yml
-  - id: openwiki-source-53cc7c2d889d1fead610dba7
-    resource: repo://datapulse.json
+  - id: openwiki-source-910861586532d062f16e5be7
+    resource: repo://docs/mcp-deploy.md
   - id: openwiki-source-83fe3cd6171f4749991ccee9
     resource: repo://mcp.json
-  - id: openwiki-source-70a16c09a9eb6e620cf00513
-    resource: repo://mcp/README.md
   - id: openwiki-source-a142396a7263c3e58ad95b67
     resource: repo://mcp/server.py
+  - id: openwiki-source-ee7d554b48a2910562dfb1cb
+    resource: repo://mcp/tests/test_error_contract.py
   - id: openwiki-source-26abbd65cb35158602acd5d5
     resource: repo://mcp/tests/test_mcp_citation_resource.py
-  - id: openwiki-source-17caf8502f74f2c4e78e837d
-    resource: repo://mcp/tests/test_mcp_latency_budget.py
-  - id: openwiki-source-6a9c0c443e71d64046d9ce47
-    resource: repo://mcp/tests/test_mcp_three_call_path.py
   - id: openwiki-source-07da1e924880bb3282f3ae20
     resource: repo://mcp/tests/test_mcp_verify_dataset.py
   - id: openwiki-source-73db7b1811c4b31152a67a0b
     resource: repo://mcp/tests/test_server.py
-  - id: openwiki-source-d36032c20e0b3e0282bf966f
-    resource: repo://scripts/sync_mcp_deployment.sh
-  - id: openwiki-source-c497d4cb0975a9d5d866792f
-    resource: repo://scripts/verify_mcp_deployment.py
-generated: { by: "openwiki/0.4.3", at: "2026-09-28T16:37:06.116Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-10-12T17:36:22.354Z" }
 ---
 
-# MCP Server Runtime and Agent Integration
+# Read-only MCP server and agent request flows
 
-DataPulse publishes a **public, unauthenticated, read-only** MCP surface at **https://mcp.data-pulse.my/mcp**. The canonical website origin for catalogue and published artifacts is **https://www.data-pulse.my**. The live `datapulse.json` catalogue contains **425 datasets**, while the canonical `mcp.json` advertisement defines **19 read-only tools**. These are published-surface counts, not guarantees of availability, semantic truth, or upstream freshness.
+DataPulse exposes a public, unauthenticated, read-only MCP server at **https://mcp.data-pulse.my/mcp**. The canonical website origin for catalogue and published artifacts is **https://www.data-pulse.my**. The checked-in `mcp.json` currently contains **19 read-only tools**; resources and resource templates are advertised separately. These are published-surface facts, not promises of availability, upstream freshness, or semantic correctness.
 
-## Public contract and session lifecycle
+## Public protocol and lifecycle
 
-`mcp.json` is the canonical public catalogue: it defines the server identity, endpoint, transport, authentication declaration, taxonomy, tools, schemas, annotations, resources, and templates. `mcp/server.py` is the implementation; deployment and publication checks are separate concerns. The endpoint uses MCP **streamable HTTP** with `POST` and requires no API key. A client should initialize, acknowledge initialization, then discover tools or resources. The initialize metadata carries a source commit and date so an operator can compare the running service with repository source; a successful handshake does not establish artifact freshness.
-
-All advertised tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`, and `openWorldHint: true`. FastMCP also advertises a five-minute cache hint for discovery and cacheable resources. Hints describe intended behavior and caching, not a freshness or availability promise.
+The public MCP contract is `mcp.json`: it declares the server, `streamable-http` transport, `POST` endpoint, no required authentication, tool schemas and annotations, resources, and templates. Clients should send `initialize`, wait for the session metadata, send `notifications/initialized`, then call `tools/list`, `resources/list`, or a tool. The initialize response includes source commit markers for deployment comparison; a successful handshake does not establish artifact freshness. The 19 read-only tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`, and `openWorldHint: true`.
 
 ```mermaid
 sequenceDiagram
     participant Agent
     participant Edge as MCP Endpoint
-    participant Server as MCP Server
+    participant Server as Read-only Server
     participant Artifacts as Published Artifacts
     Agent->>Edge: initialize
     Edge->>Server: Forward session request
@@ -57,54 +48,66 @@ sequenceDiagram
     Server->>Artifacts: Read catalogue snapshot
     Artifacts-->>Server: Ranked candidates
     Server-->>Agent: Stable dataset ids
-    Agent->>Edge: get_dataset or verify_dataset
-    Server->>Artifacts: Join detail or verify receipt
-    Artifacts-->>Server: Published result
-    Server-->>Agent: Detail or fail-closed outcome
-    Agent->>Edge: get_provenance or verify_evidence
-    Server->>Artifacts: Read citation or constrained receipt
-    Artifacts-->>Server: Evidence context
-    Server-->>Agent: Citation or transport verdict
+    Agent->>Edge: verify_dataset or get_dataset
+    Server->>Artifacts: Read published evidence
+    Artifacts-->>Server: Verification or detail
+    Server-->>Agent: Result or bounded failure
+    Agent->>Edge: get_provenance or citation resource
+    Server->>Artifacts: Read citation context
+    Artifacts-->>Server: Evidence-bound citation
+    Server-->>Agent: Citation or abstention context
 ```
 
-*Figure 1. The recommended discovery, dataset-detail, verification, and provenance call flow.*
+*Figure 1. Request lifecycle for the 19 read-only tools: initialize, discover, read published artifacts, and return qualified results.*
 
-## Tool taxonomy
+## Tool taxonomy and safe call choices
 
-Use the stable dataset ID returned by discovery, not a display name. The 19 tools fall into these operational groups:
+The 19 read-only tools are grouped by responsibility:
 
-| Group | Tools | Boundary |
+| Group | Tools | Safe interpretation |
 | --- | --- | --- |
-| Discovery and detail | `search_datasets`, `get_dataset`, `get_data_passport` | Search ranks catalogue candidates; detail joins manifest and published health; Passport returns a bounded artifact. None alone proves current reachability or semantic truth. |
-| Freshness and trend analysis | `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable` | Reads published health, anomaly, trend, and reliability observations. Reliability describes timeliness of successful freshness observations, not uptime. |
-| Structure and cross-source analysis | `find_schema_drift`, `check_reconciliation` | Reports published structural/record-count drift or cross-source discrepancies. A discrepancy requires review and does not identify which source is wrong. |
-| Evidence and trust | `get_provenance`, `get_evidence`, `verify_dataset`, `verify_evidence`, `trust_verdict`, `verify_attestation` | Separates citation context, complete receipt, signed published-evidence verification, constrained live transport comparison, joined trust facts, and Ed25519 attestation checks. These operations do not mutate health. |
-| Catalogue and telemetry | `get_freshness_summary`, `find_by_licence`, `usage_summary` | Returns aggregate published counts, licence-filtered summaries, or bounded anonymous usage aggregates; it is not an identity, billing, or mutation system. |
+| Discovery and detail | `search_datasets`, `get_dataset`, `get_data_passport` | Search ranks catalogue candidates; detail joins manifest and published health; Passport returns a bounded artifact. None proves current reachability or semantic truth. |
+| Freshness and trends | `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable` | Reads precomputed freshness, anomaly, trend, and reliability observations. Reliability concerns timeliness of successful observations, not uptime. |
+| Structure and comparison | `find_schema_drift`, `check_reconciliation` | Reports published structural, record-count, or cross-source discrepancies. A discrepancy requires review and does not identify which source is wrong. |
+| Evidence and trust | `get_provenance`, `get_evidence`, `verify_dataset`, `verify_evidence`, `trust_verdict`, `verify_attestation` | Separates citation context, complete receipt, signed published-receipt verification, constrained live transport comparison, joined trust facts, and attestation checks. These operations do not mutate health. |
+| Catalogue and telemetry | `get_freshness_summary`, `find_by_licence`, `usage_summary` | Returns aggregate published counts, licence-filtered summaries, or bounded anonymous usage aggregates; it is not an identity or mutation system. |
 
-The catalogue also advertises fixed JSON resources such as `datapulse://index`, `datapulse://anomalies`, `datapulse://trends`, `datapulse://reliability`, `datapulse://drift`, `datapulse://reconciliation`, `datapulse://attestations`, and `datapulse://licences`, plus dataset-specific resource templates. These are cached published observations, not live source validation.
+The advertised fixed resources include `datapulse://index`, `datapulse://anomalies`, `datapulse://trends`, `datapulse://reliability`, `datapulse://drift`, `datapulse://reconciliation`, `datapulse://attestations`, and `datapulse://licences`. Resource templates provide `datapulse://citation/{dataset_id}` and `datapulse://{dataset_id}`. These are cached published observations, not live source validation. The 19 read-only tools and these resources should be treated as separate discovery surfaces.
 
-## Runtime boundaries and data flow
+Use a stable dataset ID returned by `search_datasets`, not a display name. A conservative client sequence is:
 
-The server reads published JSON such as `datapulse.json`, `health/latest.json`, and precomputed trend, drift, reconciliation, licence, attestation, and evidence artifacts. It joins catalogue identity to health for detail responses and exposes pipeline-produced observations rather than recomputing health in the request path. Local published artifacts can be used before a remote fallback; the latency tests explicitly protect this colocated-artifact fast path. MCP does not own health generation and does not write the DataPulse data layer. Upstream sources remain authoritative for substantive data.
+```text
+search_datasets → verify_dataset → get_provenance
+```
 
-`get_dataset` reports a missing health row as `unknown`, rather than inferring health. `verify_dataset` validates the published receipt and signed evidence references fail-closed. A valid Ed25519 signature establishes integrity and scope of an attestation, not completeness, certification, semantic truth, or currentness. `trust_verdict` joins existing attestation, score, health, trend, drift, and reconciliation facts; it neither re-probes nor verifies signatures itself.
+For a deeper audit:
 
-`verify_evidence` is narrower than health generation: it performs an ephemeral `GET` without downloading the body, uses bounded timeouts, follows at most five redirects, and caches results for 600 seconds under an in-process lock. It compares request/final URL, HTTP status, `Last-Modified`, and content length where available. It does not verify content dates, record counts, first-row hashes, or shape, and never updates health. Browser-dependent sources remain unsupported for this operation.
+```text
+search_datasets → get_evidence → verify_evidence → verify_attestation
+```
+
+`get_dataset` is useful for current published detail. Preserve `unknown`, `unknown-freshness`, `stale`, `degraded`, `discontinued`, `unreachable`, and `not_verifiable` as outcomes requiring abstention or qualification. Search ranking, a healthy snapshot row, `trust_verdict`, or a signature alone is not proof of current reachability or semantic truth. This abstention boundary applies to all 19 read-only tools.
+
+## Catalogue and health loading path
+
+The server reads published JSON rather than generating health in the request path. It resolves local colocated artifacts first, including `datapulse.json`, `health/latest.json`, and precomputed trend, drift, reconciliation, licence, attestation, and evidence artifacts. If a local artifact is absent or unreadable, it falls back to a bounded fetch from `DATA_BASE`, whose default is **https://www.data-pulse.my**. `DATAPULSE_ARTIFACT_ROOT` can override local roots; `DATAPULSE_DISABLE_LOCAL_ARTIFACTS=1` forces the network path. The MCP process does not write the DataPulse data layer. Upstream sources remain authoritative for substantive data, regardless of the 19 read-only tools’ result.
+
+`get_dataset` joins a manifest entry to a health row and reports a missing health row as `unknown`; it does not infer health by probing the source. Trend and other optional artifacts can be unavailable while the server remains able to serve other published surfaces. A catalogue read failure is surfaced as a bounded unavailable/upstream error rather than silently converted into an empty successful result.
 
 ```mermaid
 flowchart TD
     Start[Tool request] --> Validate[Validate schema and dataset id]
-    Validate -->|invalid| ValidationError[Return validation error]
-    Validate --> Local[Read local published artifact if available]
-    Local -->|available| Join[Join catalogue and published evidence]
+    Validate -->|invalid| ValidationError[Return structured validation error]
+    Validate --> Local[Read local published artifact]
+    Local -->|available| Join[Join manifest and published evidence]
     Local -->|missing or unreadable| Remote[Fetch canonical published JSON]
-    Remote -->|read failure| ReadError[Return bounded upstream read error]
+    Remote -->|read failure| ReadError[Return bounded unavailable error]
     Remote --> Join
     Join --> Operation{Requested operation}
-    Operation -->|catalogue or analysis| Snapshot[Return published snapshot result]
-    Operation -->|verify_dataset| Receipt[Verify receipt and signature references]
-    Operation -->|verify_evidence| Gate[Apply HTTPS host and redirect safety gates]
-    Gate -->|blocked or browser-dependent| NotVerifiable[Return not_verifiable]
+    Operation -->|catalogue or analysis| Snapshot[Return published snapshot]
+    Operation -->|verify_dataset| Receipt[Verify published receipt]
+    Operation -->|verify_evidence| Gate[Apply URL and redirect safety gates]
+    Gate -->|blocked| NotVerifiable[Return not_verifiable]
     Gate -->|allowed| Probe[Constrained live transport probe]
     Probe -->|timeout or failure| Unreachable[Return unreachable]
     Probe -->|transport differs| Mismatch[Return mismatch]
@@ -113,33 +116,27 @@ flowchart TD
     Receipt -->|valid| Verified[Return published verification result]
 ```
 
-*Figure 2. Published-artifact reads and the fail-closed verification branches.*
+*Figure 2. The 19 read-only tools share schema validation and published-artifact loading, while verification branches fail closed or return qualified transport outcomes.*
 
-## Safety gates, errors, and throttling
+## Citation and verification behavior
 
-Live transport verification rejects browser-dependent/Camofox sources, non-HTTPS URLs, credentials, non-default HTTPS ports, and hosts outside the reviewed allowlist: `api.bnm.gov.my`, `api.data.gov.my`, `eqms.doe.gov.my`, `hansard.parlimen.gov.my`, `idengue.mysa.gov.my`, `storage.data.gov.my`, `storage.dosm.gov.my`, and `www.eperolehan.gov.my`. Unsafe redirects are rejected. Outcomes are explicit: `match`, `mismatch`, `unreachable`, and `not_verifiable`; none proves the upstream values are semantically correct.
+`get_provenance` returns citation-ready context: dataset identity, source and evidence URLs, steward, licence or attribution, observed/last-checked time, status, compact evidence fields, and a receipt digest when available. The citation resource binds the exact dataset ID to source/evidence URLs, observed time, status or verdict, licence, fingerprint, and receipt digest. A citation describes what the published pipeline observed; it is not a freshness guarantee. The 19 read-only tools do not make upstream sources authoritative by repetition—the upstream source remains authoritative for substantive values.
 
-Each tool handler has a five-second total upstream budget. Individual upstream timeouts are two seconds for connect, three seconds for read/write, and one second for pool acquisition; chained operations therefore return an explicit “unverified within budget” result instead of allowing a sequence of calls to hold the client indefinitely. The edge applies roughly one request per second with a small burst, as stated in the public tool descriptions. Agents should pace requests and retry transient failures without turning an error or missing result into an inference.
+`get_evidence` returns the complete published receipt and does not fetch the live source. `verify_dataset` checks the published receipt and signed evidence references, failing closed when the receipt or signature cannot be established. A valid Ed25519 or attestation signature supports integrity and scope of the signed observation; it does not prove completeness, certification, semantic truth, or currentness. `trust_verdict` joins existing attestation, score, health, trend, drift, and reconciliation facts; it does not re-probe or verify signatures itself.
 
-Usage middleware records bounded approved dimensions, truncates values, redacts credential-shaped keys, and stores only query presence rather than free-text query content. Daily JSONL defaults to `/var/lib/datapulse/usage` and can be changed with `DATAPULSE_USAGE_DIR`. Telemetry sink failure is logged and does not reject an otherwise valid tool call. Error records use `validation_error`, `upstream_read_error`, or `internal_error` rather than persisting exception text.
+`verify_evidence` is a narrower, ephemeral live transport comparison. It performs a bounded `GET` without downloading the body, follows at most five redirects, and caches results for 600 seconds under an in-process lock. It compares request/final URL, HTTP status, `Last-Modified`, and content length where available. It does not verify content dates, record counts, first-row hashes, or shape, and never updates health. Its outcomes are `match`, `mismatch`, `unreachable`, and `not_verifiable`; none proves semantic correctness. Browser-dependent sources are unsupported for this operation.
 
-## Agent-safe sequences
+## Errors, safety gates, and budgets
 
-For ordinary discovery, verification, and citation:
+Malformed calls use a structured error object with `code`, `argument`, `tool`, `message`, and `hint`. The focused error-contract tests cover `missing_argument`, `unknown_argument`, `invalid_argument`, `unknown_dataset`, `unavailable`, and `internal`; diagnostics such as tracebacks, validation-library internals, and private upstream messages are not exposed. Unknown dataset IDs retain the ID and point clients back to `search_datasets`. The 19 read-only tools do not turn malformed input or unavailable data into a plausible answer.
 
-```text
-search_datasets → verify_dataset → get_provenance
-```
+Live verification rejects browser-dependent or non-HTTPS sources, credentials, non-default HTTPS ports, hosts outside the reviewed allowlist, and unsafe redirects. The reviewed hosts are `api.bnm.gov.my`, `api.data.gov.my`, `eqms.doe.gov.my`, `hansard.parlimen.gov.my`, `idengue.mysa.gov.my`, `storage.data.gov.my`, `storage.dosm.gov.my`, and `www.eperolehan.gov.my`.
 
-For a deeper evidence audit:
+Each tool handler has a five-second total upstream budget. Individual upstream timeouts are two seconds for connect, three seconds for read/write, and one second for pool acquisition. Chained operations therefore return an explicit unverified-within-budget result rather than holding the client indefinitely. The edge applies roughly one request per second with a small burst; clients should pace requests and retry transient errors without treating an error or missing result as evidence. The 19 read-only tools remain read-only even when a retry or verification cache is used.
 
-```text
-search_datasets → get_evidence → verify_evidence → verify_attestation
-```
+Usage middleware records bounded approved dimensions, truncates values, redacts credential-shaped keys, and stores query presence rather than free-text query content. The default daily JSONL directory is `/var/lib/datapulse/usage` and can be changed with `DATAPULSE_USAGE_DIR`. A telemetry sink failure is logged and does not reject an otherwise valid tool call. Usage records classify failures as `validation_error`, `upstream_read_error`, or `internal_error` rather than persisting exception text.
 
-`get_dataset` is useful when the agent needs current published detail before citation. Preserve `unknown`, `unknown-freshness`, `stale`, `degraded`, `discontinued`, `unreachable`, and `not_verifiable` as outcomes requiring abstention or qualification. Do not treat search ranking, a healthy snapshot row, `trust_verdict`, or a signature alone as proof of current reachability or semantic truth.
-
-## Deployment, publication, and operations
+## Deployment and client boundary
 
 The documented production route is:
 
@@ -147,17 +144,17 @@ The documented production route is:
 Cloudflare edge → cloudflared tunnel → nginx at 127.0.0.1:8443 → MCP at 127.0.0.1:8788
 ```
 
-The nginx boundary exposes only `/mcp`, applies origin and request-rate controls, caps request bodies, disables proxy buffering/cache, and permits long-lived sessions. Local defaults are `DATA_BASE=https://www.data-pulse.my`, `MCP_HOST=127.0.0.1`, and `MCP_PORT=8788`. Run the implementation locally with:
+The public client endpoint remains **https://mcp.data-pulse.my/mcp** and the server is read-only. nginx exposes only `/mcp`, applies origin and request-rate controls, caps request bodies, disables proxy buffering/cache, and permits long-lived sessions. Local defaults are `DATA_BASE=https://www.data-pulse.my`, `MCP_HOST=127.0.0.1`, and `MCP_PORT=8788`. Run locally with:
 
 ```sh
 uv run --with fastmcp,httpx python mcp/server.py
 ```
 
-The publication workflow authenticates to the MCP Registry through GitHub OIDC, stamps release identity, compares the registry distribution with canonical surfaces, refuses unverifiable publication, and serializes duplicate-trigger runs. Duplicate-version publication is treated as a no-op only for the known concurrent case; other publication failures remain failures. This registry lifecycle is distinct from the public `mcp.json` catalogue and from runtime artifact freshness.
+A safe client must initialize before discovery, use returned dataset IDs, distinguish tool errors from data outcomes, retain abstention states, and cite the evidence context it actually received. It must not write through the server, assume that `tools/list` proves artifact freshness, or treat the 19 read-only tools as a substitute for the upstream publisher.
 
-`scripts/verify_mcp_deployment.py` performs the protocol-valid `initialize` / `notifications/initialized` / `tools/list` sequence and compares advertised source identity with `git rev-parse HEAD`. It reports `UNREACHABLE` when the endpoint cannot be inspected and `MISMATCH` when deployment and source differ; discovery success is not an artifact-freshness guarantee.
+Deployment verification performs the protocol-valid `initialize` / `notifications/initialized` / `tools/list` sequence and compares advertised source identity with `git rev-parse HEAD`. It reports `UNREACHABLE` when the endpoint cannot be inspected and `MISMATCH` when deployment and source differ. Discovery success is not an artifact-freshness guarantee.
 
-## Focused tests before changing the server
+## Focused tests and safe changes
 
 Run the focused suite:
 
@@ -165,25 +162,22 @@ Run the focused suite:
 uv run --with fastmcp,httpx pytest mcp/tests/ -v
 ```
 
-Prioritize these tests when changing the corresponding boundary:
+Prioritize:
 
-- `test_server.py` and `test_mcp_accept_header.py`: protocol handling, inventory, schemas, annotations, and accepted request headers.
-- `test_mcp_three_call_path.py`: the search-to-verification workflow, stable IDs, signed result shape, and bounded three-call expectation.
-- `test_mcp_verify_dataset.py`: receipt construction, signature verification, tamper rejection, and fail-closed dataset conclusions.
-- `test_mcp_citation_resource.py`: provenance and citation resource contracts.
-- `test_mcp_latency_budget.py`: tight timeout constants, local-artifact reads, slow-upstream behavior, and “unverified within budget” outcomes.
+- `mcp/tests/test_server.py`: protocol handling, tool inventory, schemas, annotations, and request headers.
+- `mcp/tests/test_error_contract.py`: named malformed-input errors, diagnostic redaction, unavailable/internal failures, and dataset-ID aliases.
+- `mcp/tests/test_mcp_citation_resource.py`: citation template discovery, canonical evidence fields, receipt digest binding, and fingerprint fallback.
+- `mcp/tests/test_mcp_verify_dataset.py`: receipt construction, signature verification, tamper rejection, and fail-closed conclusions.
 
-Also run `scripts/verify_mcp_deployment.py` against the intended endpoint after deployment-related changes, and inspect `mcp.json` whenever adding or changing a public tool: implementation changes do not become public contract changes until the canonical advertisement and its tests agree.
+When changing the public surface, update and test `mcp.json`; implementation changes do not become contract changes until the advertisement and its tests agree. The current contract is exactly **19 read-only tools**, so inventory tests and deployment checks must reject drift in that count.
 
 ## Scope boundary
 
-This page documents the public MCP integration only. It does not claim universal trust, certification, guaranteed availability, prices, tiers, quotas, billing terms, or commercial offers. Verification tools are read-only and do not mutate health; upstream sources remain authoritative for substantive data. For catalogue semantics see `/openwiki/datasets.md`; for health-generation operations see `/openwiki/operations.md`; for a concise client sequence see `/openwiki/quickstart.md`.
-
-**Canonical facts:** https://www.data-pulse.my · **425 datasets** · **19 read-only tools**
+This page documents the public MCP integration and the 19 read-only tools. It does not promise availability, semantic correctness, certification, or upstream freshness, and it does not document commercial terms. Verification is read-only and does not mutate health. For catalogue semantics see `/openwiki/datasets.md`; for health-generation operations see `/openwiki/operations.md`; for a concise client sequence see `/openwiki/quickstart.md`.
 
 ## Canonical facts
 
 - Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 425 datasets
+- Datasets: 440 datasets
 - MCP server: 19 read-only tools
