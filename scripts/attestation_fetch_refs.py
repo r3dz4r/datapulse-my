@@ -11,6 +11,11 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.attestation_sets import FILES, SET_REF, set_directory
 
+# This branch stores each set's health snapshot compressed and keeps the
+# uncompressed name only as a legacy alias. Enumerate whichever encoding the
+# served plane actually carries so its preserved copy is not skipped.
+SNAPSHOT_FILES = ("health.json", "health.json.gz")
+
 
 def _proof_pattern(day: str, *, revision: bool) -> re.Pattern[str]:
     """Mirror main's split: anchors are flat, revisions may nest under the day.
@@ -37,6 +42,8 @@ def fetch_refs(root: Path, proofs: bool = False) -> list[str]:
     for directory in directories:
         if not proofs:
             references.update(directory + "/" + filename for filename in FILES)
+            references.update(directory + "/" + filename for filename in SNAPSHOT_FILES
+                              if (root / directory / filename).is_file())
             continue
         binding = json.loads((root / directory / "binding.json").read_text())
         day = binding["payload"]["date"]

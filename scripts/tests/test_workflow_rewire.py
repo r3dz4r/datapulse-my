@@ -569,8 +569,8 @@ def test_cloudflare_fast_path_preserves_corrected_plane(tmp_path: Path) -> None:
     assert (preserved / revision / "chain_head.json").read_bytes() == (
         served_root / revision / "chain_head.json"
     ).read_bytes()
-    assert (preserved / revision / "health.json").read_bytes() == (
-        served_root / revision / "health.json"
+    assert (preserved / revision / "health.json.gz").read_bytes() == (
+        served_root / revision / "health.json.gz"
     ).read_bytes()
     assert (preserved / f"attestations/rekor/{day}/reference.json").read_bytes() == (
         served_root / f"attestations/rekor/{day}/reference.json"
@@ -579,7 +579,7 @@ def test_cloudflare_fast_path_preserves_corrected_plane(tmp_path: Path) -> None:
     # A genuinely corrupt correction must still fail closed, not be preserved.
     corrupt_root = tmp_path / "corrupt"
     shutil.copytree(served_root, corrupt_root)
-    (corrupt_root / revision / "health.json").write_bytes(b"{}\n")
+    (corrupt_root / revision / "health.json.gz").write_bytes(b"{}\n")
     corrupt, _ = _preserve_served_plane(tmp_path, corrupt_root, label="corrupt")
     assert corrupt.returncode != 0
     assert "refusing to preserve the served plane" in corrupt.stdout

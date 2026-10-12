@@ -203,7 +203,7 @@ def test_submission_requires_witness_or_explicit_operator_override(
     script_dir = root / "scripts"
     script_dir.mkdir()
     for name in (
-        "verify_attestation_append.py", "attestation_sets.py",
+        "verify_attestation_append.py", "attestation_fetch_refs.py", "attestation_sets.py",
         "verify_attestation_binding.py", "attestation_commit_back.py",
         "gen_attestations.py",
     ):
@@ -269,7 +269,7 @@ def _projection_submission_root(tmp_path: Path) -> tuple[Path, str, Path]:
     script_dir = root / "scripts"
     script_dir.mkdir()
     for name in (
-        "verify_attestation_append.py", "attestation_sets.py",
+        "verify_attestation_append.py", "attestation_fetch_refs.py", "attestation_sets.py",
         "verify_attestation_binding.py", "attestation_commit_back.py",
         "gen_attestations.py",
     ):

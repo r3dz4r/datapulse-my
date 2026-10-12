@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate signed daily probe attestations and unsigned trust scores."""
 from __future__ import annotations
-import argparse, base64, hashlib, json, shutil, subprocess, tempfile, os, fcntl, sys
+import argparse, base64, fcntl, gzip, hashlib, json, os, shutil, subprocess, sys, tempfile
 from datetime import datetime, timedelta, timezone
 from contextlib import contextmanager
 from pathlib import Path
@@ -17,6 +17,31 @@ ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
 ATTESTATION_KEY_PURPOSE = "attestation-chain-signing"
 PROBE_COUNTS_SCHEMA = "datapulse/v1/probe-counts"
 PROBE_COUNTS_MAX_AGE_SECONDS = 48 * 60 * 60
+# A healthy pre-snapshot day was about 1 MB. Allow 16 times that amount for
+# dataset growth and corrections, while refusing the former 700 MB/day cost.
+ATTESTATION_DAY_MAX_BYTES = 16_000_000
+
+
+class AttestationDaySizeError(ValueError):
+    """The prepared immutable attestation day exceeds its storage budget."""
+
+
+def check_day_size(day_directory: Path) -> None:
+    limit = int(os.environ.get("ATTESTATION_DAY_MAX_BYTES", str(ATTESTATION_DAY_MAX_BYTES)))
+    if limit <= 0:
+        raise ValueError("ATTESTATION_DAY_MAX_BYTES must be positive")
+    measured = sum(path.stat().st_size for path in day_directory.rglob("*") if path.is_file())
+    if measured > limit:
+        raise AttestationDaySizeError(
+            f"attestation day {day_directory.name} is {measured} bytes; "
+            f"ATTESTATION_DAY_MAX_BYTES limit is {limit} bytes"
+        )
+
+
+def snapshot_bytes(health_bytes: bytes) -> bytes:
+    return gzip.compress(health_bytes, compresslevel=9, mtime=0)
+
+
 def canonical(value: object) -> bytes: return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
 def sha(value: bytes) -> str: return hashlib.sha256(value).hexdigest()
 def parse_time(value: str) -> datetime: return datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -344,7 +369,7 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     # health alias. A correction also pins its new input in the content-addressed
     # snapshot named by its signed record.
     health_bytes = (root / "health/latest.json").read_bytes()
-    (dated / "health.json").write_bytes(health_bytes)
+    (dated / "health.json.gz").write_bytes(snapshot_bytes(health_bytes))
     chain_head_ref = directory + "/chain_head.json"
     if not run:
         # Keep the original day's historical verification plane while the
@@ -367,12 +392,12 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
                               "bundle_ref": f"attestations/{day}/rekor-bundle.json"}
         dump(original / "binding.json", binding_envelope(
             private, day, generated_at, health_claim, head, key["key_id"], original_rekor))
-        (original / "health.json").write_bytes(health_bytes)
+        (original / "health.json.gz").write_bytes(snapshot_bytes(health_bytes))
         chain_head_ref = original_index["chain_head_ref"]
     if correction is not None:
         correction_snapshot = root / correction["health_snapshot_ref"]
         correction_snapshot.parent.mkdir(parents=True, exist_ok=True)
-        correction_snapshot.write_bytes(health_bytes)
+        correction_snapshot.write_bytes(snapshot_bytes(health_bytes))
     verify_set(root, directory + "/chain_head.json")
     if not run:
         verify_set(root, chain_head_ref)
@@ -430,12 +455,14 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
             except (ValueError, KeyError, TypeError, OSError) as error:
                 error_type = ContractError if isinstance(error, ContractError) else ValueError
                 raise error_type(f"same-day attestation is corrupt or inconsistent: {error}") from error
+            prepared = load(staging / "attestations/chain-index.json")
+            check_day_size(staging / "attestations" / now.date().isoformat())
             if (source != subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True).stdout
                     or original_index != (index_path.read_bytes() if index_path.exists() else None)
                     or any((root / p).read_bytes() != data for p, data in snapshots.items())):
                 raise ValueError("accepted source/head or canonical inputs changed during preparation")
             # Frozen --now fixtures need no wall-clock check; live callers check midnight.
-            candidate = load(staging / "attestations/chain-index.json")
+            candidate = prepared
             directory = candidate["heads"][candidate["current_head"]].rsplit("/", 1)[0]
             revision = staging / directory / "revisions" / candidate["current_head"]
             if revision.is_dir():
@@ -451,7 +478,7 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
             elif any((destination / name).read_bytes() != (staging / directory / name).read_bytes() for name in FILES):
                 raise ValueError("immutable destination cannot be overwritten")
             if len(candidate["days"][day]) == 1:
-                for name in (*FILES, "health.json", "rekor-reference.json", "rekor-bundle.json"):
+                for name in (*FILES, "health.json.gz", "rekor-reference.json", "rekor-bundle.json"):
                     source_alias = staging / "attestations" / day / name
                     if name.startswith("rekor-") and not source_alias.is_file():
                         continue
@@ -476,7 +503,8 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
                 if not snapshot_destination.exists():
                     snapshot_destination.parent.mkdir(parents=True, exist_ok=True)
                     os.rename(staging / snapshot_directory, snapshot_destination)
-                elif (snapshot_destination / "health.json").read_bytes() != (staging / snapshot_directory / "health.json").read_bytes():
+                elif any((snapshot_destination / name).read_bytes() != (staging / snapshot_directory / name).read_bytes()
+                         for name in ("health.json.gz",)):
                     raise ValueError("immutable correction snapshot cannot be overwritten")
             mutable = ["attestations/chain-index.json", "datapulse.json", ".attestations/chain_head.json"] + ["attestations/latest/" + n for n in FILES]
             backup = {p: (root / p).read_bytes() if (root / p).exists() else None for p in mutable}

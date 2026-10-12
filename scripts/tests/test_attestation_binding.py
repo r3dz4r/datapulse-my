@@ -424,7 +424,7 @@ def test_publisher_refuses_health_that_is_not_a_verified_successor(
         health["datasets"][0]["dataset_id"] = "other"
     dump(health_path, health)
     if change == "missing_snapshot":
-        (immutable_directory(root) / "health.json").unlink()
+        (immutable_directory(root) / "health.json.gz").unlink()
 
     with pytest.raises(ContractError, match="binding|snapshot"):
         verify_contract(

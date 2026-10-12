@@ -455,7 +455,7 @@ def verify_contract(
     if age_seconds > max_age:
         raise ContractError("served attestation is stale")
 
-    def health_claim(snapshot: dict[str, Any], path: Path) -> dict[str, Any]:
+    def health_claim(snapshot: dict[str, Any], content: bytes) -> dict[str, Any]:
         datasets = snapshot.get("datasets")
         if not isinstance(datasets, list) or not datasets:
             raise ContractError("health dataset array is invalid")
@@ -466,21 +466,31 @@ def verify_contract(
             raise ContractError("health dataset identifiers are ambiguous")
         return {
             "artifact_ref": "health/latest.json",
-            "artifact_sha256": _digest_bytes(path.read_bytes()),
+            "artifact_sha256": _digest_bytes(content),
             "dataset_count": len(dataset_ids),
             "dataset_ids_sha256": _digest_bytes(canonical(sorted(dataset_ids))),
             "observed_at": snapshot.get("checked_at"),
         }
 
-    expected_health = health_claim(health, health_path)
+    expected_health = health_claim(health, health_path.read_bytes())
     if health_binding != expected_health:
         mismatch = "health digest/count/time binding does not match served health"
         if not allow_newer_health:
             raise ContractError(mismatch)
-        signed_path = root / selected_directory / "health.json"
-        if not signed_path.is_file():
+        raw_path = root / selected_directory / "health.json"
+        compressed_path = root / selected_directory / "health.json.gz"
+        if raw_path.is_file() == compressed_path.is_file():
             raise ContractError(mismatch)
-        signed_health = health_claim(_load(signed_path, "signed health snapshot"), signed_path)
+        from scripts.attestation_sets import snapshot_content
+
+        signed_bytes = snapshot_content(compressed_path if compressed_path.is_file() else raw_path)
+        try:
+            signed_document = json.loads(signed_bytes)
+        except (UnicodeError, json.JSONDecodeError) as error:
+            raise ContractError("signed health snapshot is invalid") from error
+        if not isinstance(signed_document, dict):
+            raise ContractError("signed health snapshot must be an object")
+        signed_health = health_claim(signed_document, signed_bytes)
         if (
             health_binding != signed_health
             or expected_health["dataset_count"] != signed_health["dataset_count"]

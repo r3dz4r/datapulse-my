@@ -11,6 +11,7 @@ import tempfile
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.attestation_fetch_refs import SNAPSHOT_FILES
 from scripts.attestation_sets import (
     FILES,
     PIPELINE_OWNED_PROJECTIONS,
@@ -133,6 +134,11 @@ def append_paths(root: Path, base: str) -> list[str]:
         if "append_content_sha256" not in head["payload"]:
             raise ContractError("append submission requires a content-addressed set")
         paths.update(p.relative_to(root).as_posix() for p in (root / directory).iterdir() if p.is_file())
+        # This branch stores the snapshot compressed and keeps the plain name
+        # only as a legacy alias. Enumerate whichever encoding this set carries
+        # so the preserved copy is submitted, mirroring the served-plane refs.
+        paths.update(directory + "/" + name for name in SNAPSHOT_FILES
+                     if (root / directory / name).is_file())
         binding = _load(root / directory / "binding.json", "append binding")
         external_rekor = external_rekor_paths(binding.get("rekor"), head["payload"]["date"])
         if external_rekor is not None:
