@@ -14,6 +14,17 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.4](https://github.com/r3dz4r/datapulse-my/compare/v3.55.3...v3.55.4) (2026-10-12)
+
+
+### Bug Fixes
+
+* **discovery:** refresh MCP provenance artifacts ([4dea438](https://github.com/r3dz4r/datapulse-my/commit/4dea4380422ee6f8f29c91ee51af656abc1414be))
+* **discovery:** refresh the MCP provenance artifacts ([267507d](https://github.com/r3dz4r/datapulse-my/commit/267507d2fde970b3cd8099037440b225957164a0))
+* **mcp:** return actionable tool error envelopes ([e324227](https://github.com/r3dz4r/datapulse-my/commit/e324227ee4f82c060964ff96e40d2acc9a0d401b))
+* **public:** unsurface NPRA companion page ([63f4730](https://github.com/r3dz4r/datapulse-my/commit/63f47308b36ff856a5650d56f92fa74ebffeeab3))
+* **public:** unsurface the NPRA companion page ([85e5c66](https://github.com/r3dz4r/datapulse-my/commit/85e5c66ab7212b145250feab4dd7d29643d6e13f))
+
 ## [3.55.3](https://github.com/r3dz4r/datapulse-my/compare/v3.55.2...v3.55.3) (2026-10-12)
 
 
