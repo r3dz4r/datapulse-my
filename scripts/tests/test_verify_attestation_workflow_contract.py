@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import timedelta
+import os
 import re
+import subprocess
+import sys
 
 import pytest
 
 from scripts.verify_attestation_workflow_contract import ContractError, verify_workflows
+from scripts import gen_attestations as ga
+from scripts.tests.test_append_set_isolation import NOW, accept, git
+from scripts.tests.test_attestations import fixture_root
+from scripts.verify_attestation_append import append_paths, verify_append
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -101,3 +109,73 @@ def test_contract_rejects_missing_pages_full_release_gate(tmp_path: Path) -> Non
 
     with pytest.raises(ContractError, match="Require signed attestation for full release"):
         verify_workflows(daily, pages)
+
+
+@pytest.mark.parametrize("accepted", [True, False])
+def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
+    tmp_path: Path, accepted: bool,
+) -> None:
+    """Execute the real guard across an immutable-only merge and health drift."""
+    root, key = fixture_root(tmp_path / "candidate")
+    ga.generate(root, key, NOW)
+    source = accept(root)
+    origin = tmp_path / "origin.git"
+    git(root, "clone", "--bare", str(root), str(origin))
+    git(root, "remote", "add", "origin", str(origin))
+    authority = tmp_path / "authority"
+    git(root, "clone", str(origin), str(authority))
+    git(authority, "config", "user.name", "Test")
+    git(authority, "config", "user.email", "test@example.test")
+    ga.generate(root, key, NOW + timedelta(hours=1), force_append=True)
+    paths = append_paths(root, source)
+    frozen = {path: (root / path).read_bytes() for path in paths}
+    health = (root / "health/latest.json").read_bytes()
+    head = (root / ".attestations/chain_head.json").read_bytes()
+    scripts = root / "scripts"
+    scripts.mkdir()
+    # Submission commits locally in both cases. That commit is never acceptance.
+    submission = 'set -Eeuo pipefail\ngit switch -c attestation/append-contract\n'
+    submission += 'git add -- ' + ' '.join(paths) + '\ngit commit -m "append contract"\n'
+    if accepted:
+        for path, data in frozen.items():
+            target = authority / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        submission += f'git -C "{authority}" add attestations\n'
+        submission += f'git -C "{authority}" commit -m "accept immutable append"\n'
+        # A newer health push must not replace the bytes this run witnessed.
+        submission += f'printf "\\n" >> "{authority}/health/latest.json"\n'
+        submission += f'git -C "{authority}" commit -am "new health observation"\n'
+        submission += f'git --git-dir="{origin}" fetch "{authority}" main:main\n'
+    (scripts / "submit_attestation_append.sh").write_text(submission)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    verifier = ROOT / "scripts/verify_attestation_append.py"
+    (bin_dir / "python3").write_text(
+        '#!/bin/bash\nset -Eeuo pipefail\nshift\nargs=("$@")\n'
+        # Bound a non-acceptance test to one real remote probe, without sleeping.
+        'for i in "${!args[@]}"; do [[ "${args[$i]}" != 600 ]] || args[$i]=0; done\n'
+        f'exec "{sys.executable}" "{verifier}" --root "{root}" "${{args[@]}}"\n'
+    )
+    (bin_dir / "gh").write_text('#!/bin/bash\nprintf "[]\\n"\n')
+    for path in bin_dir.iterdir():
+        path.chmod(0o755)
+    pages = PAGES.read_text(encoding="utf-8")
+    guard = next(step for step in re.split(r"(?=^      - )", pages, flags=re.MULTILINE)
+                 if "- name: Require authoritative acceptance before signing publication\n" in step)
+    result = subprocess.run(
+        ["bash", "-c", guard.split("        run: |\n", 1)[1]], cwd=root,
+        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+             "GITHUB_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse"},
+        text=True, capture_output=True,
+    )
+    assert (result.returncode == 0) is accepted, result.stdout + result.stderr
+    assert git(root, "branch", "--show-current") == "attestation/append-contract"
+    assert (root / "health/latest.json").read_bytes() == health
+    assert (root / ".attestations/chain_head.json").read_bytes() == head
+    assert {path: (root / path).read_bytes() for path in paths} == frozen
+    if accepted:
+        verify_append(root, "origin/main", require_committed=True)
+        assert git(root, "rev-parse", "origin/main") != source
+    else:
+        assert "must be accepted" in result.stderr

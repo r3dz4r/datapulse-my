@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.attestation_sets import (
@@ -22,6 +23,47 @@ from scripts.attestation_sets import (
 from scripts.verify_attestation_binding import ContractError, _load, _parse_time
 
 PROJECTIONS = {"attestations/chain-index.json", ".attestations/chain_head.json"}
+
+
+def wait_for_acceptance(root: Path, source: str, timeout: int, poll_seconds: int = 15) -> None:
+    """Keep the sign-time tree frozen until its exact evidence is accepted on main.
+
+    Submission creates a local commit, so HEAD is no longer an acceptance
+    authority. Only a freshly fetched main containing the original source can
+    accept this candidate. Never check out newer health or regenerate its head.
+    """
+    if timeout < 0 or poll_seconds <= 0:
+        raise ValueError("acceptance timeout must be nonnegative and poll interval positive")
+    source = subprocess.run(["git", "rev-parse", "--verify", f"{source}^{{commit}}"],
+                            cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+    verify_append(root, source)
+    directory = selected_directory(root)
+    candidate_path = directory + "/chain_head.json"
+    candidate_bytes = (root / candidate_path).read_bytes()
+    deadline = time.monotonic() + timeout
+    while True:
+        subprocess.run(["git", "fetch", "origin", "refs/heads/main:refs/remotes/origin/main"],
+                       cwd=root, check=True, capture_output=True, timeout=30)
+        accepted = subprocess.run(["git", "rev-parse", "refs/remotes/origin/main"],
+                                  cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+        subprocess.run(["git", "merge-base", "--is-ancestor", source, accepted],
+                       cwd=root, check=True, capture_output=True)
+        # Avoid re-verifying the full historical ledger on every pending probe.
+        probe = subprocess.run(["git", "cat-file", "-e", f"{accepted}:{candidate_path}"],
+                               cwd=root, capture_output=True)
+        if probe.returncode == 0:
+            if git_bytes(root, accepted, candidate_path) != candidate_bytes:
+                raise ValueError("authoritative candidate head bytes disagree")
+            # Presence, PR state and a local submission commit are insufficient:
+            # verify all accepted immutable bytes, lineage and current projections.
+            verify_append(root, accepted, require_committed=True)
+            return
+        if probe.returncode not in {1, 128}:
+            probe.check_returncode()
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError("candidate must be accepted in authoritative Git before publication; acceptance wait timed out")
+        time.sleep(min(poll_seconds, remaining))
 
 
 def accepted_day_directory(root: Path, document: dict) -> str:
@@ -172,13 +214,20 @@ def main() -> int:
     parser.add_argument("--base", default="HEAD")
     parser.add_argument("--require-committed", action="store_true")
     parser.add_argument("--print-paths", action="store_true")
+    parser.add_argument("--wait-for-acceptance", type=int, metavar="SECONDS",
+                        help="wait for fetched main to accept the frozen candidate; --base is its source commit")
     args = parser.parse_args()
     try:
-        verify_append(args.root, args.base, args.require_committed)
+        if args.wait_for_acceptance is not None:
+            if args.print_paths:
+                raise ValueError("acceptance waiting cannot print submission paths")
+            wait_for_acceptance(args.root, args.base, args.wait_for_acceptance)
+        else:
+            verify_append(args.root, args.base, args.require_committed)
         if args.print_paths:
             for path in append_paths(args.root, args.base):
                 print(path)
-    except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as error:
+    except (ValueError, OSError, KeyError, subprocess.SubprocessError) as error:
         raise SystemExit(f"attestation append: {error}") from error
     return 0
 
