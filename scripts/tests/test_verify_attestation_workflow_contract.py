@@ -154,10 +154,22 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
     (bin_dir / "python3").write_text(
         '#!/bin/bash\nset -Eeuo pipefail\nshift\nargs=("$@")\n'
         # Bound a non-acceptance test to one real remote probe, without sleeping.
-        'for i in "${!args[@]}"; do [[ "${args[$i]}" != 600 ]] || args[$i]=0; done\n'
+        'for i in "${!args[@]}"; do [[ "${args[$i]}" != 1500 ]] || args[$i]=0; done\n'
         f'exec "{sys.executable}" "{verifier}" --root "{root}" "${{args[@]}}"\n'
     )
-    (bin_dir / "gh").write_text('#!/bin/bash\nprintf "[]\\n"\n')
+    (bin_dir / "gh").write_text(
+        '#!/bin/bash\n'
+        'case "$1 $2" in\n'
+        '  "pr list") printf "[]\\n" ;;\n'
+        '  "pr view")\n'
+        '    if [[ "$*" == *statusCheckRollup* ]]; then printf "IN_PROGRESS/\\n";\n'
+        '    else printf "{\\"number\\":99,\\"headRefName\\":\\"%s\\",'
+        '\\"headRefOid\\":\\"%s\\",\\"baseRefName\\":\\"main\\",\\"state\\":\\"OPEN\\"}\\n" '
+        '"$(git branch --show-current)" "$(git rev-parse HEAD)"; fi ;;\n'
+        '  "pr merge") : ;;\n'
+        '  *) exit 2 ;;\n'
+        'esac\n'
+    )
     for path in bin_dir.iterdir():
         path.chmod(0o755)
     pages = PAGES.read_text(encoding="utf-8")

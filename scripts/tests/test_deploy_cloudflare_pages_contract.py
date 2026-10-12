@@ -146,6 +146,7 @@ def _append_acceptance_step() -> dict:
     ],
 )
 @pytest.mark.parametrize("wait_accepted", [True, False])
+@pytest.mark.parametrize("arm_status", [0, 1])
 def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     tmp_path: Path,
     committed: bool,
@@ -154,6 +155,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     expected_submit: bool,
     expected_append: str | None,
     wait_accepted: bool,
+    arm_status: int,
 ) -> None:
     step = _append_acceptance_step()
     assert step["env"]["GH_TOKEN"] == "${{ steps.append-token.outputs.token }}"
@@ -165,14 +167,30 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         'if [[ "$*" == *--wait-for-acceptance* ]]; then exit "$ACCEPTANCE_STATUS"; fi\n'
         '[[ "$*" != *--require-committed* ]] || [[ "$COMMITTED" == 1 ]]\n'
     )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\n'
+        'case "$*" in\n'
+        '  "branch --show-current") printf "attestation/append-contract\\n" ;;\n'
+        '  "rev-parse HEAD") printf "%s\\n" "$APPEND_SHA" ;;\n'
+        '  *) exit 2 ;;\n'
+        'esac\n'
+    )
     (bin_dir / "gh").write_text(
         '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\n'
-        'printf "%s\\n" "$OPEN_PRS"\nexit "$GH_STATUS"\n'
+        'case "$1 $2" in\n'
+        '  "pr list") printf "%s\\n" "$OPEN_PRS"; exit "$GH_STATUS" ;;\n'
+        '  "pr view")\n'
+        '    if [[ "$*" == *statusCheckRollup* ]]; then printf "COMPLETED/SUCCESS\\n";\n'
+        '    else printf "{\\"number\\":99,\\"headRefName\\":\\"attestation/append-contract\\",'
+        '\\"headRefOid\\":\\"%s\\",\\"baseRefName\\":\\"main\\",\\"state\\":\\"OPEN\\"}\\n" "$APPEND_SHA"; fi ;;\n'
+        '  "pr merge") exit "$ARM_STATUS" ;;\n'
+        '  *) exit 2 ;;\n'
+        'esac\n'
     )
     (tmp_path / "scripts/submit_attestation_append.sh").write_text(
         'printf "submit\\n" >> "$CALL_LOG"\n'
     )
-    for stub in (bin_dir / "python3", bin_dir / "gh"):
+    for stub in (bin_dir / "python3", bin_dir / "git", bin_dir / "gh"):
         stub.chmod(0o755)
     log = tmp_path / "calls.log"
     env = {
@@ -185,6 +203,8 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         "COMMITTED": "1" if committed else "0",
         "OPEN_PRS": json.dumps(pulls),
         "GH_STATUS": str(gh_status),
+        "ARM_STATUS": str(arm_status),
+        "APPEND_SHA": "d" * 40,
         "ACCEPTANCE_STATUS": "0" if wait_accepted else "1",
     }
     outputs = []
@@ -209,8 +229,16 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         if len(pulls) == 1000:
             assert "list reached 1000" in result.stderr
         if expected_submit:
-            assert f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 600" in calls
-        if committed or (expected_submit and wait_accepted):
+            assert "gh pr view attestation/append-contract --repo example/data-pulse --json number,headRefName,headRefOid,baseRefName,state" in calls
+            assert f"gh pr merge --auto --merge 99 --repo example/data-pulse --match-head-commit {'d' * 40}" in calls
+            wait_call = f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 1500"
+            assert (wait_call in calls) is (arm_status == 0)
+            if arm_status:
+                assert "Could not arm merge-on-green for PR #99" in result.stderr
+            elif not wait_accepted:
+                assert "PR #99" in result.stderr
+                assert "COMPLETED/SUCCESS" in result.stderr
+        if committed or (expected_submit and wait_accepted and arm_status == 0):
             assert result.returncode == 0
         else:
             assert result.returncode != 0
