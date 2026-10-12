@@ -106,3 +106,26 @@ def test_plan_exits_nonzero_over_file_limit(root: Path) -> None:
     counts = json.loads(result.stdout)
     assert counts["site_total"] > counts["max_files"]
     assert "Pages artifact has" in result.stderr
+
+
+def test_six_day_window_is_inclusive_and_seven_day_window_is_exclusive(root: Path) -> None:
+    chain_path = root / "attestations/chain-index.json"
+    chain = json.loads(chain_path.read_text())
+    chain["heads"].update({
+        "six-days": "attestations/2026-10-04/chain_head.json",
+        "seven-days": "attestations/2026-10-03/chain_head.json",
+    })
+    chain["envelopes"].update({"six-days": {}, "seven-days": {}})
+    chain_path.write_text(json.dumps(chain))
+    for day in ("2026-10-04", "2026-10-03"):
+        for name in ("chain_head", "index", "binding", "scores", "uncited"):
+            write_json(root / f"attestations/{day}/{name}.json", {})
+
+    site = root / "_site"
+    site.mkdir()
+    shutil.copytree(root / "attestations", site / "attestations")
+    result = run_selector(root, "--apply", "--site", str(site))
+
+    assert result.returncode == 0, result.stderr
+    assert (site / "attestations/2026-10-04/uncited.json").is_file()
+    assert not (site / "attestations/2026-10-03/uncited.json").exists()

@@ -58,9 +58,8 @@ def select_attestations(plane: Path, public_files: Iterable[Path]) -> set[Path]:
     """Return source paths required by signed heads, current refs, and pages."""
     chain = json.loads((plane / "chain-index.json").read_text())
     latest = json.loads((plane / "latest/index.json").read_text())
-    # A full current and previous day allow date-based dataset verification.
-    # Older sets remain available wherever a signed or public reference needs them.
-    cutoff = date.fromisoformat(latest["date"]) - timedelta(days=1)
+    # Workflow parity is the published-window contract; the artifact guard keeps it under the ceiling.
+    cutoff = date.fromisoformat(latest["date"]) - timedelta(days=6)
     keep = {plane / "chain-index.json"}
     keep.update(path for path in (plane / "latest").iterdir() if path.is_file())
 
