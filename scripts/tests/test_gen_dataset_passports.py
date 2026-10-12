@@ -85,8 +85,28 @@ def test_passport_preserves_missing_expected_count_and_non_ready_profile() -> No
     passport = build_passport(ROOT, entry, health, graph, attestations)
     assert passport["health_evidence"]["expected_record_count"] is None
     assert passport["health_evidence"]["record_count_within_tolerance"] is None
-    states = {row["quality_profile"]["overall"] for row in snapshot["datasets"]}
+    states = {row["quality_profile"]["overall"] for row in snapshot["datasets"] if "quality_profile" in row}
     assert {"ready", "indeterminate", "not_ready"} <= states
+
+
+def test_provisional_onboarding_passport_keeps_quality_unassessed() -> None:
+    passport = _passport("aquaculture_production")
+    assert passport["health_evidence"]["last_checked"] is None
+    assert passport["quality_profile"] == {
+        "state": "not_evaluated",
+        "reason": "quality_profile_not_evaluated_for_unprobed_dataset",
+    }
+    schema = json.loads((ROOT / "passport.schema.json").read_text(encoding="utf-8"))
+    assert not list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(passport))
+
+
+def test_observed_health_without_quality_profile_still_fails_closed() -> None:
+    manifest, snapshot, graph, attestations = _inputs()
+    entry = next(row for row in manifest["datasets"] if row["id"] == "fuelprice")
+    health = next(row for row in snapshot["datasets"] if row["dataset_id"] == "fuelprice").copy()
+    del health["quality_profile"]
+    with pytest.raises(PassportError, match="missing quality_profile"):
+        build_passport(ROOT, entry, health, graph, attestations)
 
 
 def test_passport_projects_current_health_status_and_timestamp() -> None:

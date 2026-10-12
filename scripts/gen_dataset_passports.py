@@ -136,7 +136,17 @@ def build_passport(root: Path, entry: dict[str, Any], health: dict[str, Any], gr
     dataset_id = entry["id"]
     profile = health.get("quality_profile")
     if not isinstance(profile, dict):
-        raise PassportError(f"{dataset_id}: health row is missing quality_profile")
+        provisional = {
+            "dataset_id": dataset_id,
+            "url": entry["url"],
+            "last_checked": None,
+            "status": "unknown-freshness",
+            "message": "Not probed; provisional onboarding status.",
+        }
+        if "quality_profile" not in health and health == provisional:
+            profile = _unavailable("quality_profile_not_evaluated_for_unprobed_dataset")
+        else:
+            raise PassportError(f"{dataset_id}: health row is missing quality_profile")
     envelope = root / "data" / "json" / f"{dataset_id}.json"
     edges = [edge for edge in graph.get("edges", []) if isinstance(edge, dict) and dataset_id in {edge.get("from"), edge.get("to")}]
     attestation_ref = attestations.get("attestations", {}).get(dataset_id)

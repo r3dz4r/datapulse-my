@@ -10,7 +10,7 @@
     "intended_use": {"$ref": "#/$defs/intendedUse"},
     "licence_and_attribution": {"$ref": "#/$defs/licence"},
     "health_evidence": {"$ref": "#/$defs/health"},
-    "quality_profile": {"$ref": "#/$defs/qualityProfile"},
+    "quality_profile": {"oneOf": [{"$ref": "#/$defs/qualityProfile"}, {"$ref": "#/$defs/unavailable"}]},
     "reproducibility_and_evidence": {"$ref": "#/$defs/reproducibility"},
     "lineage": {"$ref": "#/$defs/lineage"},
     "record_evidence": {"$ref": "#/$defs/recordEvidence"},
