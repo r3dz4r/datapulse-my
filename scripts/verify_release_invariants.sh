@@ -38,7 +38,7 @@ fetch() {
   mkdir -p "$(dirname "$work_dir/$name")"
   if $local_mode; then
     case "$path" in
-      index.html|landing.html|dashboard.html|register.html|npra.html|health-methodology.html|privacy.html|.well-known/*)
+      index.html|landing.html|dashboard.html|register.html|health-methodology.html|privacy.html|.well-known/*)
         path="docs/$path"
         ;;
     esac
@@ -74,6 +74,18 @@ fetch() {
     curl_detail="${curl_detail//$'\r'/\\r}"
     printf 'PAGES_FETCH_FAILURE surface=%s final=HTTP_%s url=%s curl_detail=%s\n' \
       "$name" "$code" "$url" "${curl_detail:-none}" >&2
+    return 1
+  fi
+}
+
+assert_not_served() {
+  local path="$1" code curl_rc=0
+  code="$(curl --location --silent --show-error --proto '=https' \
+    --connect-timeout 10 --max-time 30 --output /dev/null \
+    --write-out '%{http_code}' "$base_url/$path")" || curl_rc=$?
+  if [[ "$curl_rc" -ne 0 || ( "$code" != "404" && "$code" != "410" ) ]]; then
+    printf 'PAGES_UNSURFACE_FAILURE surface=%s final=HTTP_%s url=%s\n' \
+      "$path" "${code:-curl_exit_${curl_rc}}" "$base_url/$path" >&2
     return 1
   fi
 }
@@ -220,6 +232,11 @@ assert readme_statuses == {
 PY
 }
 
+if ! $local_mode; then
+  assert_not_served npra
+  assert_not_served npra.html
+fi
+
 fetch manifest.json datapulse.json
 fetch health.json health/latest.json
 fetch trends.json health/trends.json
@@ -235,7 +252,6 @@ if ! $local_mode; then
   fetch release-verification.md release-verification.md
   fetch index.html dashboard
   fetch landing.html landing.html
-  fetch npra.html npra.html
 fi
 if $local_mode; then
   fetch dashboard.html dashboard.html
@@ -371,7 +387,7 @@ catalog_snapshot = json.loads((work / "catalog-snapshot.json").read_text())
 catalog_graph = json.loads((work / "catalog-graph.json").read_text())
 surfaces = load_public_surfaces(Path.cwd())
 
-assert surfaces["pages"] == ["/", "/npra.html", "/health-methodology.html", "/privacy.html", "/learn.html", "/okf/"]
+assert surfaces["pages"] == ["/", "/health-methodology.html", "/privacy.html", "/learn.html", "/okf/"]
 website, mcp_origin, api_origin = (surfaces["origins"][key] for key in ("website", "mcp", "api"))
 
 manifest_ids = [row["id"] for row in manifest["datasets"]]
@@ -626,18 +642,8 @@ dashboard_trust = owned(work / "index.html", "dashboard-trust-facts")
 assert f'{len(manifest["datasets"])} public datasets' in dashboard_summary
 assert f'{website}/health/latest.json' in dashboard_trust
 assert f'{len(manifest["datasets"])} datasets verified' in dashboard_trust
-npra_freshness = owned(work / "npra.html", "npra-freshness")
-npra_records = [row for row in health["datasets"] if row["dataset_id"] in {
-    "pharmaceutical_products", "pharmaceutical_importers", "pharmaceutical_manufacturers",
-    "pharmaceutical_wholesalers", "pharmaceutical_products_cancelled",
-    "cosmetic_notifications", "cosmetic_notifications_cancelled", "cosmetics_manufacturers",
-}]
-assert health["checked_at"] in npra_freshness
-assert f'{len(npra_records)} datasets' in npra_freshness
-assert f'{sum(row["status"] == "fresh" for row in npra_records)} fresh' in npra_freshness
-assert f'{sum(row["status"] == "stale" for row in npra_records)} stale' in npra_freshness
-assert f'{mcp_origin}/mcp' in owned(work / "npra.html", "npra-connect")
-assert website in owned(work / "npra.html", "npra-surfaces")
+assert not (Path.cwd() / "docs/npra.html").exists()
+assert not (work / "npra.html").exists()
 landing = (work / "landing.html").read_text(encoding="utf-8")
 assert landing.startswith("<!doctype html>\n<!-- generated: scripts/gen_landing_page.py;")
 assert '<link rel="canonical" href="/">' in landing

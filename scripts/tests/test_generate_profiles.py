@@ -290,7 +290,6 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(RELEASE_FIXTURE / "docs/mcp-deploy.md", source / "docs/mcp-deploy.md")
     shutil.copy2(ROOT / "docs/landing.html", source / "docs/landing.html")
     shutil.copy2(ROOT / "docs/learn.html", source / "docs/learn.html")
-    shutil.copy2(ROOT / "docs/npra.html", source / "docs/npra.html")
     shutil.copy2(ROOT / "docs/health-methodology.html", source / "docs/health-methodology.html")
     for relative, replacements in {
         "README.md": (

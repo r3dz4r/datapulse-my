@@ -28,7 +28,7 @@ def _stage_current_surfaces(root: Path, dataset_count: int = 2) -> None:
     )
     _write_json(
         root / "config/public-surfaces.json",
-        {"pages": ["/", "/npra.html"], "artifacts": ["/llms.txt", "/agent.json", "/mcp.json"]},
+        {"pages": ["/"], "artifacts": ["/llms.txt", "/agent.json", "/mcp.json"]},
     )
     (root / "README.md").write_text(f"DataPulse has {dataset_count} datasets and 2 tools.\n", encoding="utf-8")
     (root / "llms.txt").write_text(f"DataPulse has {dataset_count} datasets and 2 tools.\n", encoding="utf-8")
@@ -68,7 +68,7 @@ def test_stale_claims_fail_without_scanning_historical_artifacts(tmp_path: Path)
     assert "docs/AUDIT-2026-01-01.md" in report.excluded_historical_paths
 
 
-def test_registered_npra_surface_allows_its_canonical_vertical_count(tmp_path: Path) -> None:
+def test_unregistered_npra_page_is_not_a_current_surface(tmp_path: Path) -> None:
     _stage_current_surfaces(tmp_path, dataset_count=10)
     manifest = json.loads((tmp_path / "datapulse.json").read_text(encoding="utf-8"))
     manifest["datasets"] = [{"id": dataset_id} for dataset_id in NPRA_DATASET_IDS] + [
@@ -81,8 +81,8 @@ def test_registered_npra_surface_allows_its_canonical_vertical_count(tmp_path: P
     report = verify_distribution_sync(tmp_path)
 
     assert report.dataset_count == 10
-    assert "docs/npra.html" in report.checked_surfaces
-    assert report.failures == []
+    assert "docs/npra.html" not in report.checked_surfaces
+    assert report.failures == ["docs/npra.html: undeclared public page is still served"]
 
 
 def test_full_catalogue_surface_cannot_use_npra_vertical_count(tmp_path: Path) -> None:

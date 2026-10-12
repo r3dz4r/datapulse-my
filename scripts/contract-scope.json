@@ -537,11 +537,6 @@
         "dashboard-summary",
         "dashboard-trust-facts",
         "changelog-strip"
-      ],
-      "docs/npra.html": [
-        "npra-freshness",
-        "npra-connect",
-        "npra-surfaces"
       ]
     },
     "prohibited_unowned_patterns": [
@@ -778,28 +773,6 @@
       "ownership": "full-output-and-markers",
       "fixture": "scripts/tests/test_embed_dashboard_data.py",
       "invariant": "source-owned register homepage with marker facts and embedded canonical data parity"
-    },
-    {
-      "surface": "docs/npra.html",
-      "markers": [
-        "npra-freshness",
-        "npra-connect",
-        "npra-surfaces"
-      ],
-      "canonical_inputs": [
-        "datapulse.json",
-        "health/latest.json",
-        "docs/.dashboard_filters.json",
-        "docs/.dashboard_sections.json",
-        "config/public-surfaces.json"
-      ],
-      "generator": "scripts/embed_dashboard_data.py",
-      "profiles": [
-        "release-build"
-      ],
-      "ownership": "marker-owned",
-      "fixture": "scripts/tests/test_dashboard.py::test_dashboard_and_npra_facts_are_explicit_marker_owned",
-      "invariant": "NPRA marker facts and canonical public-origin parity"
     },
     {
       "surface": "docs/landing.html",

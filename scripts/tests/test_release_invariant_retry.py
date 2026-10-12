@@ -396,7 +396,7 @@ def test_local_gate_skips_only_generated_p5b_surface_parity() -> None:
     assert generated_fetches is not None
     assert 'fetch index.html dashboard' in generated_fetches.group(0)
     assert 'fetch landing.html landing.html' in generated_fetches.group(0)
-    assert 'fetch npra.html npra.html' in generated_fetches.group(0)
+    assert 'fetch npra.html npra.html' not in generated_fetches.group(0)
     assert not re.search(r'^\s*fetch\s+\S+\s+/?docs/', generated_fetches.group(0), re.MULTILINE)
 
     p5b_validation = re.search(
@@ -529,7 +529,7 @@ def test_served_fetch_rejects_docs_prefix_and_reports_persistent_failure(tmp_pat
 def test_local_mode_maps_canonical_pages_to_docs_sources() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
 
-    assert 'index.html|landing.html|dashboard.html|register.html|npra.html|health-methodology.html|privacy.html|.well-known/*)' in script
+    assert 'index.html|landing.html|dashboard.html|register.html|health-methodology.html|privacy.html|.well-known/*)' in script
     assert 'path="docs/$path"' in script
 
 
@@ -666,3 +666,24 @@ def test_release_build_generates_readme_before_public_surface_preflight() -> Non
     assert release_profile.index('"gen_readme.py"') < release_profile.index('"public_surface_preflight"')
     assert release_profile.count('"gen_readme.py"') == 1
     assert "python3 scripts/gen_readme.py --validate-only" in generate_sh
+
+
+def test_unsurface_gate_rejects_successful_served_routes() -> None:
+    script = VERIFY_SCRIPT.read_text(encoding="utf-8")
+    function = re.search(r"(?ms)^assert_not_served\(\) \{\n.*?^\}\n", script)
+    assert function is not None
+    shell = (
+        'base_url=https://example.test\n'
+        'curl() { printf "%s" "$MOCK_CODE"; }\n'
+        + function.group(0)
+        + '\nassert_not_served npra\n'
+    )
+    for code, allowed in (("200", False), ("301", False), ("404", True), ("410", True)):
+        result = subprocess.run(
+            ["bash", "-c", shell],
+            env={**os.environ, "MOCK_CODE": code},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert (result.returncode == 0) is allowed, (code, result.stderr)

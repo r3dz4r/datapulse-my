@@ -46,12 +46,10 @@ CATEGORY_ORDER = (
     "docs/index.html",
     "docs/landing.html",
     "docs/dashboard.html",
-    "docs/npra.html",
     "P5B public markers",
 )
 P5B_MARKERS = {
     "docs/index.html": ("dashboard-summary", "dashboard-trust-facts"),
-    "docs/npra.html": ("npra-freshness", "npra-connect", "npra-surfaces"),
 }
 
 
@@ -229,6 +227,13 @@ def _regular_files(directory: Path) -> tuple[Path, ...]:
     return tuple(sorted(path for path in directory.rglob("*") if path.is_file()))
 
 
+def _verify_undeclared_npra_absent(root: Path) -> None:
+    """A removed declaration must not leave a publishable HTML file behind."""
+    declared_pages = json.loads((root / "config/public-surfaces.json").read_text(encoding="utf-8"))["pages"]
+    if "/npra.html" not in declared_pages and (root / "docs/npra.html").is_file():
+        raise VerificationFailure("undeclared public page remains: docs/npra.html")
+
+
 def _capture(root: Path, source: Path) -> BuildCapture:
     identifiers = _canonical_ids(root)
     non_gtfs = tuple(identifier for identifier in identifiers if "gtfs" not in identifier.lower())
@@ -250,7 +255,6 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/index.html": root / "docs/index.html",
         "docs/landing.html": root / "docs/landing.html",
         "docs/dashboard.html": root / "docs/dashboard.html",
-        "docs/npra.html": root / "docs/npra.html",
     }
 
     required = [
@@ -264,6 +268,7 @@ def _capture(root: Path, source: Path) -> BuildCapture:
     missing = [path.relative_to(root).as_posix() for path in required if not path.is_file()]
     if missing:
         raise VerificationFailure("missing required output(s): " + ", ".join(missing))
+    _verify_undeclared_npra_absent(root)
 
     expected_counts = {
         "data/<id>.md": len(identifiers),
@@ -291,7 +296,6 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/index.html": 1,
         "docs/landing.html": 1,
         "docs/dashboard.html": 1,
-        "docs/npra.html": 1,
         "P5B public markers": sum(len(markers) for markers in P5B_MARKERS.values()),
     }
 
@@ -316,7 +320,6 @@ def _capture(root: Path, source: Path) -> BuildCapture:
         "docs/index.html": (singleton_paths["docs/index.html"],),
         "docs/landing.html": (singleton_paths["docs/landing.html"],),
         "docs/dashboard.html": (singleton_paths["docs/dashboard.html"],),
-        "docs/npra.html": (singleton_paths["docs/npra.html"],),
     }
     actual_counts = {
         category: len(paths) for category, paths in category_paths.items()

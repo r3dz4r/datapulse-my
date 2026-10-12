@@ -60,6 +60,7 @@ NPRA_DATASET_IDS = {
     "cosmetics_manufacturers",
 }
 HOMEPAGE_TEMPLATE = Path("scripts/templates/register-home.html.tmpl")
+NPRA_TEMPLATE = Path("scripts/templates/npra-page.html.tmpl")
 NPRA_RUNTIME_START = "  <script>\n    (() => {\n      const ids = "
 NPRA_RUNTIME_MANAGED_START = '  <script data-npra-runtime>'
 NPRA_RUNTIME_END = "\n    })();\n  </script>"
@@ -510,8 +511,13 @@ def _render_page(
         except (OSError, UnicodeError) as error:
             raise EmbedError(f"cannot read {HOMEPAGE_TEMPLATE}: {error}") from error
     else:
+        source_path = html_path
+        if html_path.name == "npra.html" and not html_path.is_file():
+            template_path = html_path.parent.parent / NPRA_TEMPLATE
+            if template_path.is_file():
+                source_path = template_path
         try:
-            html = html_path.read_text(encoding="utf-8")
+            html = source_path.read_text(encoding="utf-8")
         except (OSError, UnicodeError) as error:
             raise EmbedError(f"cannot read {html_path}: {error}") from error
 
@@ -665,12 +671,14 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
+        surfaces = load_public_surfaces(args.public_surfaces.parent)
+        targets = (args.html, args.npra) if "/npra.html" in surfaces["pages"] else (args.html,)
         embed_all(
-            (args.html, args.npra), args.manifest, args.health, args.filters,
+            targets, args.manifest, args.health, args.filters,
             args.sections, args.attestations, args.attestation_binding,
             args.public_surfaces.parent,
         )
-    except EmbedError as error:
+    except (EmbedError, GenerationError) as error:
         print(f"embed_dashboard_data.py: {error}", file=sys.stderr)
         return 1
     return 0

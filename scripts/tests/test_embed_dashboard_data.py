@@ -434,10 +434,17 @@ def test_production_npra_has_a_visible_health_projection_failure_state() -> None
 def _run_npra_embedder(output_dir: Path) -> Path:
     """Run the CLI against isolated page copies without touching repo outputs."""
     output_dir.mkdir()
+    config_dir = output_dir / "config"
+    config_dir.mkdir()
+    config = json.loads((ROOT / "config/public-surfaces.json").read_text(encoding="utf-8"))
+    config["pages"].append("/npra.html")
+    (config_dir / "public-surfaces.json").write_text(json.dumps(config), encoding="utf-8")
+    shutil.copyfile(ROOT / "config/public-surfaces.schema.json", config_dir / "public-surfaces.schema.json")
     paths = {}
     for name in ("index.html", "npra.html"):
         target = output_dir / name
-        shutil.copyfile(ROOT / "docs" / name, target)
+        source = ROOT / ("scripts/templates/npra-page.html.tmpl" if name == "npra.html" else "docs/index.html")
+        shutil.copyfile(source, target)
         paths[name] = target
     subprocess.run(
         [
@@ -451,7 +458,7 @@ def _run_npra_embedder(output_dir: Path) -> Path:
             "--sections", str(ROOT / "docs/.dashboard_sections.json"),
             "--attestations", str(ROOT / "attestations/latest/index.json"),
             "--attestation-binding", str(ROOT / "attestations/latest/binding.json"),
-            "--public-surfaces", str(ROOT / "config"),
+            "--public-surfaces", str(config_dir),
         ],
         cwd=ROOT,
         check=True,
@@ -485,7 +492,7 @@ def test_production_npra_is_cross_process_deterministic_and_idempotent(
             "--sections", str(ROOT / "docs/.dashboard_sections.json"),
             "--attestations", str(ROOT / "attestations/latest/index.json"),
             "--attestation-binding", str(ROOT / "attestations/latest/binding.json"),
-            "--public-surfaces", str(ROOT / "config"),
+            "--public-surfaces", str(first.parent / "config"),
         ],
         cwd=ROOT,
         check=True,

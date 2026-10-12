@@ -38,7 +38,7 @@ def _write_public_surface_fixture(
                 "api": "https://api.data-pulse.my",
                 "repository": "https://github.com/r3dz4r/datapulse-my",
             },
-            "pages": ["/", "/npra.html", "/health-methodology.html", "/privacy.html", "/learn.html"],
+            "pages": ["/", "/health-methodology.html", "/privacy.html", "/learn.html"],
             "compatibility_aliases": [{"path": "/landing.html", "target": "/"}],
             "artifacts": [
                 *DISCOVERY_ARTIFACTS,
@@ -300,3 +300,18 @@ def test_rejects_invalid_root(tmp_path: Path) -> None:
     result = _run(tmp_path / "does-not-exist")
 
     assert result.returncode != 0
+
+
+def test_npra_page_is_listed_only_when_declared(tmp_path: Path) -> None:
+    _write_fixture(tmp_path)
+    first = _run(tmp_path)
+    assert first.returncode == 0, first.stderr
+    assert "/npra.html" not in (tmp_path / "llms.txt").read_text(encoding="utf-8")
+
+    config_path = tmp_path / "config/public-surfaces.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["pages"].insert(1, "/npra.html")
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    second = _run(tmp_path)
+    assert second.returncode == 0, second.stderr
+    assert "https://www.data-pulse.my/npra.html" in (tmp_path / "llms.txt").read_text(encoding="utf-8")

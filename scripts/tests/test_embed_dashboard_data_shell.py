@@ -27,9 +27,7 @@ def _embedded_block(document: bytes) -> bytes:
 
 def test_cli_regeneration_uses_source_owned_register_homepage(tmp_path: Path) -> None:
     html_path = tmp_path / "index.html"
-    npra_path = tmp_path / "npra.html"
     shutil.copyfile(REPOSITORY_ROOT / "docs/index.html", html_path)
-    shutil.copyfile(REPOSITORY_ROOT / "docs/npra.html", npra_path)
 
     input_paths: dict[str, Path] = {}
     documents = {
@@ -55,8 +53,6 @@ def test_cli_regeneration_uses_source_owned_register_homepage(tmp_path: Path) ->
             str(EMBEDDER),
                 "--html",
                 str(html_path),
-                "--npra",
-                str(npra_path),
             "--manifest",
             str(input_paths["manifest"]),
             "--health",
@@ -70,6 +66,7 @@ def test_cli_regeneration_uses_source_owned_register_homepage(tmp_path: Path) ->
         check=True,
     )
     after = html_path.read_bytes()
+    assert not (tmp_path / "npra.html").exists()
 
     after_head = _inclusive_head(after)
     assert hashlib.sha256(_embedded_block(before)).digest() != hashlib.sha256(

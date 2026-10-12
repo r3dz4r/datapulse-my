@@ -23,8 +23,8 @@ from scripts.public_surface_generation import (
 ROOT = Path(__file__).resolve().parents[1]
 MARKER_NAME = "MCP-QUICKSTART"
 OWNED_PAGE = Path("docs/learn.html")
-# The connect block appends the same endpoint path segment as the generated
-# npra-connect region; the origin itself is read from the contract.
+# The connect block appends the endpoint path segment; the origin itself is
+# read from the contract.
 MCP_PATH = "/mcp"
 BLOCK_TEMPLATE = """\
         <div class="mcp-layout">

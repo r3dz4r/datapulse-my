@@ -10,12 +10,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
 
-try:
-    from scripts.embed_dashboard_data import NPRA_DATASET_IDS
-except ModuleNotFoundError:  # Direct script execution puts scripts/ on sys.path.
-    from embed_dashboard_data import NPRA_DATASET_IDS
-
-
 ROOT = Path(__file__).resolve().parents[1]
 ROOT_SURFACES = (
     "README.md",
@@ -28,9 +22,6 @@ ROOT_SURFACES = (
     "docs/ai-directory-listings.md",
 )
 CANONICAL_EVIDENCE = frozenset({"datapulse.json", "health/latest.json"})
-VERTICAL_DATASET_IDS_BY_SURFACE = {
-    "docs/npra.html": NPRA_DATASET_IDS,
-}
 HISTORICAL_PATH_PATTERNS = (
     "docs/AUDIT-*.md",
     "docs/DESIGN-AUDIT-*.md",
@@ -198,12 +189,6 @@ def _prose_count_failures(text: str, dataset_count: int, tool_count: int) -> lis
     return failures
 
 
-def _dataset_count_for_surface(relative_path: str, catalogue_count: int) -> int:
-    """Return the catalogue or explicitly registered vertical dataset count."""
-    vertical_dataset_ids = VERTICAL_DATASET_IDS_BY_SURFACE.get(relative_path)
-    return len(vertical_dataset_ids) if vertical_dataset_ids is not None else catalogue_count
-
-
 def _surface_failures(path: Path, root: Path, dataset_count: int, tool_count: int) -> list[str]:
     """Validate one current surface's structured fields and human-readable claims."""
     relative = path.relative_to(root).as_posix()
@@ -211,7 +196,7 @@ def _surface_failures(path: Path, root: Path, dataset_count: int, tool_count: in
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as exc:
         return [f"{relative}: cannot read current surface: {exc}"]
-    surface_dataset_count = _dataset_count_for_surface(relative, dataset_count)
+    surface_dataset_count = dataset_count
     failures = [
         f"{relative}: {message}"
         for message in _prose_count_failures(text, surface_dataset_count, tool_count)
@@ -237,6 +222,10 @@ def verify_distribution_sync(root: Path) -> DistributionSyncReport:
     dataset_count, tool_count = _canonical_counts(root)
     paths, excluded = current_surface_paths(root)
     failures = [failure for path in paths for failure in _surface_failures(path, root, dataset_count, tool_count)]
+    config_path = root / "config/public-surfaces.json"
+    if config_path.is_file() and "/npra.html" not in _load_object(config_path).get("pages", []):
+        if (root / "docs/npra.html").is_file():
+            failures.append("docs/npra.html: undeclared public page is still served")
     return DistributionSyncReport(
         dataset_count=dataset_count,
         tool_count=tool_count,
@@ -254,7 +243,7 @@ def _remediation(path: str) -> str:
         return "python3 scripts/gen_mcp_reference.py"
     if path in {"README.md", "llms.txt"}:
         return "python3 scripts/gen_mcp_reference.py && python3 scripts/gen_llms_summary.py"
-    if path in {"docs/index.html", "docs/npra.html"}:
+    if path == "docs/index.html":
         return "python3 scripts/embed_dashboard_data.py"
     return "update this hand-authored current surface to remove or derive the stale claim"
 
