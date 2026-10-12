@@ -57,7 +57,8 @@ jobs:
     name: Sign current health with public Sigstore
     runs-on: ubuntu-latest
     environment: production
-    timeout-minutes: 20
+    # Retain this candidate through append CI/merge, then sign its publication.
+    timeout-minutes: 40
     permissions:
       contents: read
       id-token: write
@@ -245,8 +246,9 @@ jobs:
               exit 1
             fi
             bash scripts/submit_attestation_append.sh
-            echo 'Append submitted for source acceptance; this release must wait for its merge.' >&2
-            exit 1
+            # Submission changes local HEAD. It cannot prove acceptance. Keep
+            # the witnessed inputs, and wait on main without checking it out.
+            python3 scripts/verify_attestation_append.py --base "$GITHUB_SHA" --wait-for-acceptance 600
           fi
 
       - name: Generate deterministic health attestation statement

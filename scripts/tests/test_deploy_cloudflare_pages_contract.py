@@ -145,6 +145,7 @@ def _append_acceptance_step() -> dict:
         (False, [], 2, False, None),
     ],
 )
+@pytest.mark.parametrize("wait_accepted", [True, False])
 def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     tmp_path: Path,
     committed: bool,
@@ -152,6 +153,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     gh_status: int,
     expected_submit: bool,
     expected_append: str | None,
+    wait_accepted: bool,
 ) -> None:
     step = _append_acceptance_step()
     assert step["env"]["GH_TOKEN"] == "${{ steps.append-token.outputs.token }}"
@@ -160,6 +162,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     (tmp_path / "scripts").mkdir()
     (bin_dir / "python3").write_text(
         '#!/bin/bash\nprintf "verify %s\\n" "$*" >> "$CALL_LOG"\n'
+        'if [[ "$*" == *--wait-for-acceptance* ]]; then exit "$ACCEPTANCE_STATUS"; fi\n'
         '[[ "$*" != *--require-committed* ]] || [[ "$COMMITTED" == 1 ]]\n'
     )
     (bin_dir / "gh").write_text(
@@ -176,11 +179,13 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         **os.environ,
         "PATH": f"{bin_dir}:{os.environ['PATH']}",
         "GITHUB_REPOSITORY": "example/data-pulse",
+        "GITHUB_SHA": "c" * 40,
         "GH_TOKEN": "test-token",
         "CALL_LOG": str(log),
         "COMMITTED": "1" if committed else "0",
         "OPEN_PRS": json.dumps(pulls),
         "GH_STATUS": str(gh_status),
+        "ACCEPTANCE_STATUS": "0" if wait_accepted else "1",
     }
     outputs = []
     for _ in range(2):
@@ -203,7 +208,9 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
             assert "already open" in result.stderr
         if len(pulls) == 1000:
             assert "list reached 1000" in result.stderr
-        if committed:
+        if expected_submit:
+            assert f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 600" in calls
+        if committed or (expected_submit and wait_accepted):
             assert result.returncode == 0
         else:
             assert result.returncode != 0
