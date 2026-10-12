@@ -36,6 +36,7 @@ from fastmcp.exceptions import ValidationError as FastMCPValidationError
 from fastmcp.server.middleware import Middleware
 from mcp.types import Icon, Implementation as MCPImplementation, ToolAnnotations
 from pydantic import Field
+from pydantic import ValidationError as PydanticValidationError
 from starlette.middleware import Middleware as StarletteMiddleware
 from fastmcp.tools import FunctionTool
 from typing_extensions import Annotated
@@ -251,13 +252,14 @@ SINGULAR_DATASET_ARGUMENT_ALIAS = "dataset_id"
 def _apply_dataset_argument_aliases(
     tool_name: str, arguments: dict[str, Any] | None
 ) -> None:
-    """Rewrite the singular `dataset_id` alias onto a declared plural in place.
+    """Rewrite supported `dataset_id` aliases to declared argument names.
 
-    A string becomes a one-element list; a list of strings is accepted as-is.
-    When the declared plural is already supplied, or the alias value is not a
-    string or list of strings, arguments are left untouched so schema
-    validation rejects them exactly as it would today.
+    Invalid alias values and calls that also supply the declared name reach
+    schema validation unchanged.
     """
+    if tool_name == "check_reconciliation" and arguments is not None:
+        if "dataset_name" not in arguments and isinstance(arguments.get("dataset_id"), str):
+            arguments["dataset_name"] = arguments.pop("dataset_id")
     plural_name = PLURAL_DATASET_ARGUMENT_TOOLS.get(tool_name)
     if plural_name is None or arguments is None or plural_name in arguments:
         return
@@ -332,6 +334,93 @@ def _error_record(error: BaseException) -> dict[str, str]:
     else:
         classification = "internal_error"
     return {"classification": classification, "message": "tool call failed"}
+
+
+def _tool_error_envelope(tool: str, error: BaseException) -> str:
+    """Describe a failed call without exposing framework or upstream details."""
+    resolved = _resolve_error(error)
+    code = "internal"
+    argument: str | None = None
+    message = f"Tool {tool} could not complete the call."
+    hint = "Try the call again later."
+
+    if isinstance(resolved, FastMCPValidationError):
+        code = "invalid_argument"
+        message = f"Tool {tool} received an invalid argument."
+        hint = "Check the tool's declared input schema and correct the argument."
+        cause = resolved.__cause__
+        if isinstance(cause, PydanticValidationError):
+            issues = cause.errors(include_url=False, include_input=False)
+            issue = next((item for item in issues if item["type"] == "missing_argument"), None)
+            if issue is None:
+                issue = next((item for item in issues if item["type"] == "unexpected_keyword_argument"), None)
+            if issue is None and issues:
+                issue = issues[0]
+            if issue is not None:
+                location = issue.get("loc", ())
+                if location and isinstance(location[0], str):
+                    argument = location[0]
+                if issue["type"] == "missing_argument":
+                    code = "missing_argument"
+                    message = f"Tool {tool} requires the {argument} argument."
+                    hint = f"Call {tool} with {argument}."
+                    if tool == "verify_attestation" and argument == "reference":
+                        hint = "Pass reference using the attestation_ref returned by get_dataset."
+                elif issue["type"] == "unexpected_keyword_argument":
+                    code = "unknown_argument"
+                    message = f"Tool {tool} does not accept the {argument} argument."
+                    hint = "Check the tool's declared input schema for accepted argument names."
+                else:
+                    message = f"Tool {tool} received an invalid {argument} argument."
+                    hint = f"Correct {argument} using the tool's declared input schema."
+    elif isinstance(resolved, ValueError):
+        detail = str(resolved)
+        if detail.startswith(("Unknown dataset id:", "Unknown dataset id(s):", "Unknown dataset name or id:")):
+            code = "unknown_dataset"
+            argument = {
+                "check_reconciliation": "dataset_name",
+                "get_provenance": "dataset_ids",
+            }.get(tool, "dataset_id")
+            message = detail.rstrip(".") + "."
+            hint = "Use search_datasets to find a valid dataset id."
+        elif tool == "check_reconciliation" and detail.startswith("Ambiguous dataset name"):
+            code, argument = "invalid_argument", "dataset_name"
+            message = "The dataset_name matches more than one dataset."
+            hint = "Use search_datasets and pass an exact dataset id as dataset_name."
+        elif tool == "verify_attestation" and detail == "Unknown dataset id or unsafe attestation reference":
+            code, argument = "invalid_argument", "reference"
+            message = "The reference does not identify a published attestation."
+            hint = "Pass reference using the attestation_ref returned by get_dataset."
+        elif tool == "usage_summary" and detail.startswith(("since and until", "since must")):
+            code, argument = "invalid_argument", "since"
+            message = "The since and until arguments do not form a valid date range."
+            hint = "Pass ISO dates in YYYY-MM-DD format with since on or before until."
+        elif tool in {"find_anomalies", "find_unreliable"} and detail.startswith("Unknown"):
+            code = "invalid_argument"
+            if detail.startswith("Unknown anomaly mode"):
+                argument = "mode"
+            elif detail.startswith("Unknown minimum reliability"):
+                argument = "min_reliability"
+            else:
+                argument = "at_or_below_grade"
+            message = f"Tool {tool} received an invalid {argument} argument."
+            hint = f"Correct {argument} using the tool's declared input schema."
+        elif detail.startswith("Dataset has no published health row:"):
+            code = "unavailable"
+            message = f"Tool {tool} could not read published health data."
+            hint = "Try the call again after the health snapshot is published."
+    elif isinstance(resolved, (httpx.HTTPError, OSError, asyncio.TimeoutError)) or (
+        isinstance(resolved, RuntimeError) and "unavailable" in str(resolved).lower()
+    ):
+        code = "unavailable"
+        message = f"Tool {tool} could not read published data."
+        hint = "Try the call again after the published data is available."
+    elif isinstance(resolved, (FastMCPNotFoundError, FastMCPDisabledError)):
+        code = "invalid_argument"
+        message = f"Tool {tool} is not available."
+        hint = "List the available tools and call one of their names."
+
+    return json.dumps({"error": {"code": code, "argument": argument, "tool": tool, "message": message, "hint": hint}})
 
 
 def _usage_dir() -> Path:
@@ -496,6 +585,16 @@ HTTP_MIDDLEWARE = [
     StarletteMiddleware(MCPAcceptHeaderNormalisationMiddleware),
     StarletteMiddleware(HTTPRequestCorrelationMiddleware),
 ]
+
+
+class ToolErrorContractMiddleware(Middleware):
+    """Return one JSON error envelope for each failed tool call."""
+
+    async def on_call_tool(self, context: Any, call_next: Any) -> Any:
+        try:
+            return await call_next(context)
+        except Exception as error:
+            raise FastMCPToolError(_tool_error_envelope(context.message.name, error)) from None
 
 
 class ToolUsageLoggingMiddleware(Middleware):
@@ -762,7 +861,7 @@ mcp = FastMCP(
         "currentness claim; unknown-freshness requires abstention or an explicitly qualified answer. "
         "DataPulse verifies observations about a source, not semantic truth of every upstream value."
     ),
-    middleware=[ToolUsageLoggingMiddleware()],
+    middleware=[ToolErrorContractMiddleware(), ToolUsageLoggingMiddleware()],
     # The catalogue is identical for unauthenticated callers. FastMCP 4 applies
     # these documented cache hints to modern cacheable discovery/resource results.
     cache_ttl=300,
