@@ -2,7 +2,7 @@
 dataset_id: dosm_hh_inequality_state
 last_checked: 2026-10-05T06:46:30Z
 status: fresh
-freshness_delta: 1011 days
+freshness_delta: 1015 days
 next_expected_update: biennial to triennial (survey years)
 record_count: 289
 date_range: 1974-01-01 to 2024-01-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 1011 days
+**Freshness:** 1015 days
 
 HTTP 200
 

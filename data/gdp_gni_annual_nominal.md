@@ -2,7 +2,7 @@
 dataset_id: dgm_gdp_gni_annual_nominal
 last_checked: 2026-10-05T06:46:30Z
 status: aging
-freshness_delta: 645 days
+freshness_delta: 649 days
 next_expected_update: unknown
 record_count: 157
 date_range: unknown
@@ -20,7 +20,7 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 645 days
+**Freshness:** 649 days
 
 HTTP 200
 

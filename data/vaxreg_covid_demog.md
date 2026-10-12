@@ -13,7 +13,7 @@ column_count: 5
 status: stale
 notes: "Tier-1 wave G newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: vaxreg_covid_demog
-freshness_delta: 1689 days
+freshness_delta: 1693 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,7 +28,7 @@ attribution: "Ministry of Health Malaysia via data.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 1689 days
+**Freshness:** 1693 days
 
 HTTP 200
 

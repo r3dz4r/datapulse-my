@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/finsector/payments/instruments.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-10T11:37:57Z
 last_observed: 2026-06-01
 last_modified: 2026-08-20T09:32:23Z
 record_count: 720
@@ -13,7 +13,7 @@ column_count: 4
 status: aging
 notes: "Tier-1 wave B already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: payment_instruments
-freshness_delta: 49 days
+freshness_delta: 53 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Bank Negara Malaysia via data.gov.my"
 
 **Status:** Aging
 
-**Freshness:** 49 days
+**Freshness:** 53 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-10 at 11:37:57 UTC.
 
 ## File size
 

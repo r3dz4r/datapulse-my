@@ -5,15 +5,15 @@ source_url: "https://storage.data.gov.my/transportation/ktmb/intercity_2026.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "daily"
-last_checked: 2026-10-08T14:24:19Z
-last_observed: 2026-10-07
-last_modified: 2026-10-07T19:31:23Z
-record_count: 154131
+last_checked: 2026-10-11T16:55:05Z
+last_observed: 2026-10-10
+last_modified: 2026-10-10T19:31:31Z
+record_count: 155784
 column_count: 5
-status: fresh
+status: aging
 notes: "Tier-1 wave F newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: ridership_od_intercity
-freshness_delta: 1 days
+freshness_delta: 2 days
 next_expected_update: "daily"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Keretapi Tanah Melayu Berhad via data.gov.my"
 
 ## Status
 
-**Status:** Fresh
+**Status:** Aging
 
-**Freshness:** 1 days
+**Freshness:** 2 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-10-11 at 16:55:05 UTC.
 
 ## File size
 
-The checked resource is 5,863,136 bytes.
+The checked resource is 5,926,189 bytes.
 
 ## Provenance
 

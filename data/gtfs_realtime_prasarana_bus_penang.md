@@ -1,8 +1,8 @@
 ---
 dataset_id: gtfs_realtime_prasarana_bus_penang
-last_checked: 2026-10-08T16:15:53Z
-status: stale
-freshness_delta: 0.000925925925925926 days
+last_checked: 2026-10-12T16:10:33Z
+status: aging
+freshness_delta: 0.0008449074074074074 days
 record_count: 10
 content_freshness_date: 2026-08-03
 schema_version: GTFS
@@ -17,19 +17,19 @@ attribution: Prasarana Malaysia Berhad via data.gov.my GTFS API
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 0.000925925925925926 days
+**Freshness:** 0.0008449074074074074 days
 
 HTTP 200; valid GTFS realtime protobuf (10 vehicles)
 
 ## Last checked
 
-2026-10-08 at 16:15:53 UTC.
+2026-10-12 at 16:10:33 UTC.
 
 ## File size
 
-The checked resource is 797 bytes.
+The checked resource is 798 bytes.
 
 ## Provenance
 

@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_lfs_qtr
-last_checked: 2026-10-03T10:36:37Z
-status: stale
-freshness_delta: 464 days
+last_checked: 2026-10-10T11:37:57Z
+status: aging
+freshness_delta: 194 days
 next_expected_update: overdue
-record_count: 63
+record_count: 66
 date_range: 2010-01-01 to 2025-07-01
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 464 days
+**Freshness:** 194 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-10 at 11:37:57 UTC.
 
 ## File size
 
-The checked resource is 3,470 bytes.
+The checked resource is 3,632 bytes.
 
 ## Provenance
 

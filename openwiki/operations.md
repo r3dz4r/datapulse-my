@@ -51,7 +51,7 @@ generated: { by: "openwiki/0.4.3", at: "2026-10-06T20:25:12.635Z" }
 # Observation, Attestation, Publication, and Operations
 
 DataPulse publishes its canonical website at **https://www.data-pulse.my**. The
-current checked-in discovery surfaces contain **425 datasets** and advertise **19
+current checked-in discovery surfaces contain **457 datasets** and advertise **19
 read-only tools**. These are repository facts, not uptime, freshness, trust,
 certification, or availability guarantees. Upstream custodians remain
 authoritative for substantive data; observations, signatures, and deployment
@@ -332,5 +332,5 @@ not claim a current signed binding or served-state parity.
 
 - Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 425 datasets
+- Datasets: 457 datasets
 - MCP server: 19 read-only tools

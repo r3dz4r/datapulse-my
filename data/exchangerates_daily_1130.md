@@ -1,10 +1,10 @@
 ---
 dataset_id: exchangerates_daily_1130
-last_checked: 2026-10-08T15:55:54Z
+last_checked: 2026-10-12T15:24:17Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: 2026-08-03
-record_count: 11470
+record_count: 11474
 date_range: 1997-01-02 to 2026-07-31
 schema_version: 1.0
 schema_drift: none
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-08 at 15:55:54 UTC.
+2026-10-12 at 15:24:17 UTC.
 
 ## File size
 
-The checked resource is 1,725,002 bytes.
+The checked resource is 1,725,618 bytes.
 
 ## Coverage
 

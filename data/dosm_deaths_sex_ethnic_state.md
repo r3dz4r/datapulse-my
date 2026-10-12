@@ -2,7 +2,7 @@
 dataset_id: dosm_deaths_sex_ethnic_state
 last_checked: 2026-10-05T06:46:30Z
 status: aging
-freshness_delta: 1011 days
+freshness_delta: 1015 days
 next_expected_update: annual
 record_count: 8190
 schema_version: unknown
@@ -19,7 +19,7 @@ attribution: National Registration Department and Department of Statistics Malay
 
 **Status:** Aging
 
-**Freshness:** 1011 days
+**Freshness:** 1015 days
 
 HTTP 200
 

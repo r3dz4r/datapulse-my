@@ -1,6 +1,6 @@
 ---
 dataset_id: kkm_idengue
-last_checked: 2026-10-08T14:24:19Z
+last_checked: 2026-10-11T16:55:05Z
 status: unknown-freshness
 freshness_delta: unknown
 next_expected_update: 2026-08-02
@@ -26,7 +26,7 @@ Browser check succeeded
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-10-11 at 16:55:05 UTC.
 
 ## File size
 

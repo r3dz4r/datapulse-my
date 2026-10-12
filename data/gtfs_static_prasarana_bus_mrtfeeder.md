@@ -2,7 +2,7 @@
 dataset_id: gtfs_static_prasarana_bus_mrtfeeder
 last_checked: 2026-10-05T06:46:30Z
 status: fresh
-freshness_delta: 3 days
+freshness_delta: 7 days
 record_count: 175718
 content_freshness_date: 2026-08-31
 schema_version: GTFS
@@ -19,7 +19,7 @@ attribution: Prasarana Malaysia Berhad via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 3 days
+**Freshness:** 7 days
 
 HTTP 200; valid GTFS static ZIP
 

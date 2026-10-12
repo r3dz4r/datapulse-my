@@ -1,0 +1,406 @@
+{
+  "health_evidence": {
+    "access_dependency": null,
+    "access_method": null,
+    "anomaly_reliability": {
+      "anomaly_detected": null,
+      "anomaly_detection": null
+    },
+    "expected_record_count": 1620,
+    "freshness_signal": null,
+    "freshness_signal_source": null,
+    "http_status": null,
+    "incomplete": null,
+    "last_checked": null,
+    "record_count": null,
+    "record_count_estimated": null,
+    "record_count_within_tolerance": null,
+    "schema_shape": {
+      "column_count": null,
+      "content_shape_changed": null,
+      "first_row_hash": null
+    },
+    "status": "unknown-freshness"
+  },
+  "identity": {
+    "canonical_url": "https://storage.data.gov.my/healthcare/organ_pledge_demog.csv",
+    "custodian": "kkm",
+    "dataset_id": "organ_pledge_demog",
+    "declared_verified_at": "2026-10-11",
+    "geography": "Malaysia",
+    "name": "Organ Donation Pledges by Sex, Ethnicity and Age Group",
+    "namespace": "healthcare",
+    "observed_verified_at": null,
+    "source": "data.gov.my",
+    "steward": "Ministry of Health Malaysia"
+  },
+  "intended_use": {
+    "declared_coverage": {
+      "geography": "Malaysia"
+    },
+    "declared_purpose": {
+      "reason": "declared_purpose_not_present_in_canonical_manifest",
+      "state": "not_evaluated"
+    }
+  },
+  "licence_and_attribution": {
+    "attribution": "National Transplant Resource Centre, Ministry of Health Malaysia",
+    "declared_licence": "Creative Commons Attribution 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "limitation": "Declared metadata and evidence only; not legal advice or legal permission."
+  },
+  "limitations": [
+    "This passport is evidence about observed metadata and state, not semantic truth, completeness, certification, legal permission, safety, or AI admission.",
+    "Unavailable evidence is explicit and must not be read as a neutral or favourable result."
+  ],
+  "lineage": {
+    "catalogue_relationships": {
+      "graph_reference": "catalog-graph.json",
+      "limitation": "Catalogue relationships are literal metadata context, not full transformation lineage.",
+      "relationship_edges": [
+        {
+          "from": "covid_cases",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "covid_cases_age",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "covid_cases_vaxstatus",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "healthcare_staff",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "infant_immunisation",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "kkmnow_bedutil",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "kkmnow_blood",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "kkmnow_covidepid",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "kkmnow_covidnow",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "kkmnow_covidvax",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "kkmnow_facilities",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "kkmnow_organ",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "kkmnow_pekab40",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "mnha",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "mnha_moh",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "nutrition_children_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "nutrition_children_strata",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 1
+        },
+        {
+          "from": "organ_pledge_demog",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "sanitation_access",
+          "weight": 1
+        },
+        {
+          "from": "organ_pledge_demog",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "sdg_03-3-1",
+          "weight": 1
+        },
+        {
+          "from": "organ_pledge_demog",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "std_state",
+          "weight": 1
+        },
+        {
+          "from": "organ_pledge_demog",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "vaxreg_covid",
+          "weight": 1
+        },
+        {
+          "from": "covid_deaths_linelist",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 2
+        },
+        {
+          "from": "hospital_beds",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog",
+          "weight": 2
+        },
+        {
+          "from": "organ_pledge_demog",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog_state",
+          "weight": 2
+        },
+        {
+          "from": "organ_pledge_demog",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "vaxreg_covid_demog",
+          "weight": 2
+        }
+      ]
+    },
+    "transformation_lineage": {
+      "reason": "full_transformation_lineage_not_published",
+      "state": "not_evaluated"
+    }
+  },
+  "quality_profile": {
+    "reason": "quality_profile_not_evaluated_for_unprobed_dataset",
+    "state": "not_evaluated"
+  },
+  "record_evidence": {
+    "reason": "record_evidence_not_enabled_for_dataset",
+    "state": "not_evaluated"
+  },
+  "reproducibility_and_evidence": {
+    "attestation": {
+      "reason": "attestation_reference_not_available",
+      "state": "not_evaluated"
+    },
+    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "receipt": {
+      "reason": "receipt_digest_cannot_be_computed_from_canonical_inputs",
+      "state": "not_evaluated"
+    },
+    "source_digest": {
+      "reason": "canonical_source_digest_not_available",
+      "state": "not_evaluated"
+    },
+    "source_envelope": "data/json/organ_pledge_demog.json",
+    "verification_method": "deterministic_local_projection_of_current_canonical_inputs",
+    "witness_reference": {
+      "reason": "witness_reference_not_available",
+      "state": "not_evaluated"
+    }
+  },
+  "schema": "datapulse/v1/dataset-passport",
+  "sensitivity_and_pii": {
+    "reason": "sensitivity_or_pii_classification_not_evaluated",
+    "state": "not_evaluated"
+  }
+}

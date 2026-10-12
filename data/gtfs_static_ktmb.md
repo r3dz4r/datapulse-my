@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_static_ktmb
-last_checked: 2026-10-08T14:24:19Z
+last_checked: 2026-10-11T16:55:05Z
 status: fresh
 freshness_delta: 1 days
-record_count: 5157
+record_count: 5173
 content_freshness_date: 2026-08-04
 schema_version: GTFS
 schema_drift: none
@@ -25,11 +25,11 @@ HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-10-11 at 16:55:05 UTC.
 
 ## File size
 
-The checked resource is 46,141 bytes.
+The checked resource is 46,033 bytes.
 
 ## Provenance
 

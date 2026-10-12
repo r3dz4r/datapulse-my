@@ -1,7 +1,7 @@
 ---
 dataset_id: sg_datagov_weather_readings
-last_checked: 2026-10-08T14:24:19Z
-status: degraded
+last_checked: 2026-10-12T05:57:06Z
+status: fresh
 freshness_delta: 0 days
 ---
 
@@ -9,7 +9,7 @@ freshness_delta: 0 days
 
 ## Status
 
-**Status:** Degraded
+**Status:** Fresh
 
 **Freshness:** 0 days
 
@@ -17,7 +17,7 @@ HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-10-12 at 05:57:06 UTC.
 
 ## File size
 

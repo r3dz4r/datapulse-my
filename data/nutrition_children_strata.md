@@ -3,7 +3,7 @@ dataset_id: dgm_nutrition_children_strata
 last_checked: 2026-10-05T06:46:30Z
 last_checked: 2026-10-05T06:46:30Z
 status: stale
-freshness_delta: 2837 days
+freshness_delta: 2841 days
 next_expected_update: annual
 record_count: 30
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 2837 days
+**Freshness:** 2841 days
 
 HTTP 200
 

@@ -2,7 +2,7 @@
 dataset_id: dosm_population_state
 last_checked: 2026-10-05T06:46:30Z
 status: fresh
-freshness_delta: 280 days
+freshness_delta: 284 days
 next_expected_update: annual
 record_count: 270063
 date_range: 1970-01-01 to 2026-01-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 280 days
+**Freshness:** 284 days
 
 HTTP 200
 

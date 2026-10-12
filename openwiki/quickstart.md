@@ -31,7 +31,7 @@ publisher. Upstream sources remain authoritative for substantive data, content,
 licensing, and attribution.
 
 The canonical website origin is **https://www.data-pulse.my**. The live manifest
-contains **425 datasets**, and the advertised MCP catalogue contains **19
+contains **457 datasets**, and the advertised MCP catalogue contains **19
 read-only tools**. These values are derived from the checked-in sources of record,
 not from a hand-maintained count.
 
@@ -177,5 +177,5 @@ derived JSON.
 
 - Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 425 datasets
+- Datasets: 457 datasets
 - MCP server: 19 read-only tools

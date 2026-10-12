@@ -1,8 +1,8 @@
 ---
 dataset_id: dosm_cpi_state_inflation
-last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-10T11:37:57Z
 status: fresh
-freshness_delta: 20 days
+freshness_delta: 24 days
 next_expected_update: monthly
 record_count: 44576
 date_range: 2010-02-01 to 2026-06-01
@@ -20,13 +20,13 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 20 days
+**Freshness:** 24 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-10 at 11:37:57 UTC.
 
 ## File size
 

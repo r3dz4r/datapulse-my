@@ -2,7 +2,7 @@
 dataset_id: federal_budget_moe
 last_checked: 2026-10-05T06:46:30Z
 status: aging
-freshness_delta: 1011 days
+freshness_delta: 1015 days
 next_expected_update: annual
 schema_version: unknown
 schema_drift: none
@@ -18,7 +18,7 @@ attribution: Ministry of Finance Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 1011 days
+**Freshness:** 1015 days
 
 HTTP 200
 

@@ -2,7 +2,7 @@
 dataset_id: dosm_crime_district
 last_checked: 2026-10-05T06:46:30Z
 status: stale
-freshness_delta: 1376 days
+freshness_delta: 1380 days
 next_expected_update: overdue
 record_count: 19152
 date_range: 2016-01-01 to 2023-01-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM, data from PDRM
 
 **Status:** Stale
 
-**Freshness:** 1376 days
+**Freshness:** 1380 days
 
 HTTP 200
 

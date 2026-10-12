@@ -2,7 +2,7 @@
 dataset_id: dosm_lfs_year
 last_checked: 2026-10-05T06:46:30Z
 status: stale
-freshness_delta: 1376 days
+freshness_delta: 1380 days
 next_expected_update: overdue
 record_count: 40
 date_range: 1982-01-01 to 2023-01-01
@@ -20,7 +20,7 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Stale
 
-**Freshness:** 1376 days
+**Freshness:** 1380 days
 
 HTTP 200
 

@@ -32,7 +32,7 @@ generated: { by: "openwiki/0.4.3", at: "2026-10-06T20:25:12.635Z" }
 
 # Dataset Catalogue, Health, and Evidence
 
-DataPulse publishes its catalogue at **https://www.data-pulse.my**. The checked-in `datapulse.json` manifest currently contains **425 datasets**. These are current discovery facts, not promises of availability, completeness, semantic correctness, certification, authority, payment capability, prices, quotas, billing terms, or commercial offers.
+DataPulse publishes its catalogue at **https://www.data-pulse.my**. The checked-in `datapulse.json` manifest currently contains **457 datasets**. These are current discovery facts, not promises of availability, completeness, semantic correctness, certification, authority, payment capability, prices, quotas, billing terms, or commercial offers.
 
 The central boundary is simple: DataPulse observes **reachability, freshness, structure, counts, licences, and provenance**. It does not establish semantic correctness, certification, or authority over upstream sources. Upstream publishers remain authoritative for the meaning and substantive truth of their data, their lifecycle, and their licence terms.
 
@@ -46,7 +46,7 @@ Each manifest row supplies a stable `id`, display `name` and `steward`, registry
 
 ## From manifest to health snapshot
 
-A full health run probes official URLs. `scripts/check.sh --due` selects rows whose cadence has elapsed, with optional tier and cadence filters. Waking the scheduler does not mean all 425 datasets were probed: due mode reads the prior snapshot, updates selected rows, preserves unchanged rows, and writes a complete snapshot in manifest order. If no row is due, the prior snapshot is retained. Probe failures remain represented as rows so a partial success cannot masquerade as a complete success.
+A full health run probes official URLs. `scripts/check.sh --due` selects rows whose cadence has elapsed, with optional tier and cadence filters. Waking the scheduler does not mean all 457 datasets were probed: due mode reads the prior snapshot, updates selected rows, preserves unchanged rows, and writes a complete snapshot in manifest order. If no row is due, the prior snapshot is retained. Probe failures remain represented as rows so a partial success cannot masquerade as a complete success.
 
 ```mermaid
 flowchart TD
@@ -63,7 +63,7 @@ flowchart TD
 
 *Caption: The manifest supplies identity and declared policy; probes produce observations; the snapshot and derived evidence are generated before read-only projections.*
 
-The current snapshot uses schema `datapulse/v0.4/dataset-health` and was checked at **2026-10-06T19:15:15Z**. Its 425-row summary reports: 145 `fresh`, 103 `aging`, 146 `stale`, 1 `discontinued`, 1 `degraded`, 0 `browser_dependent`, 3 `unreachable`, 0 `unknown`, 5 `unknown_freshness`, and 21 `reference`. Freshness signals came from 161 `last_modified_header` observations and 237 `content_date_parse` observations; 27 had neither. The snapshot also reports 425 datasets without a `Last-Modified` header and 14 without an extracted record count. These are dated observations and can change on the next run.
+The current snapshot uses schema `datapulse/v0.4/dataset-health` and was checked at **2026-10-06T19:15:15Z**. Its 425-row summary reports: 145 `fresh`, 103 `aging`, 146 `stale`, 1 `discontinued`, 1 `degraded`, 0 `browser_dependent`, 3 `unreachable`, 0 `unknown`, 5 `unknown_freshness`, and 21 `reference`. Freshness signals came from 161 `last_modified_header` observations and 237 `content_date_parse` observations; 27 had neither. The snapshot also reports 457 datasets without a `Last-Modified` header and 14 without an extracted record count. These are dated observations and can change on the next run.
 
 ## Cadence, freshness, and the ten statuses
 
@@ -126,7 +126,7 @@ Safe extensions belong at the manifest/schema, policy, probe, generator, or veri
 ## Current discovery facts
 
 - Canonical origin: **https://www.data-pulse.my**
-- Published manifest: **425 datasets**
+- Published manifest: **457 datasets**
 - MCP consumer surface: **19 read-only tools**
 - Current health snapshot: **425 rows**, checked **2026-10-06T19:15:15Z**
 - Primary inputs: `datapulse.json`, `health/latest.json`, `datapulse.schema.json`, `health.schema.json`
@@ -135,5 +135,5 @@ Safe extensions belong at the manifest/schema, policy, probe, generator, or veri
 
 - Product: DataPulse
 - Canonical website: https://www.data-pulse.my
-- Datasets: 425 datasets
+- Datasets: 457 datasets
 - MCP server: 19 read-only tools

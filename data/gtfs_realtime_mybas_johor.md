@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_mybas_johor
-last_checked: 2026-10-08T16:15:53Z
+last_checked: 2026-10-12T16:10:33Z
 status: aging
-freshness_delta: 0.0008680555555555555 days
-record_count: 24
+freshness_delta: 0.000625 days
+record_count: 19
 content_freshness_date: 2026-08-03
 schema_version: GTFS
 schema_drift: none
@@ -19,17 +19,17 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Aging
 
-**Freshness:** 0.0008680555555555555 days
+**Freshness:** 0.000625 days
 
-HTTP 200; valid GTFS realtime protobuf (24 vehicles)
+HTTP 200; valid GTFS realtime protobuf (19 vehicles)
 
 ## Last checked
 
-2026-10-08 at 16:15:53 UTC.
+2026-10-12 at 16:10:33 UTC.
 
 ## File size
 
-The checked resource is 3,799 bytes.
+The checked resource is 3,014 bytes.
 
 ## Provenance
 

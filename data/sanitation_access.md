@@ -3,7 +3,7 @@ dataset_id: dgm_sanitation_access
 last_checked: 2026-10-05T06:46:30Z
 last_checked: 2026-10-05T06:46:30Z
 status: stale
-freshness_delta: 1741 days
+freshness_delta: 1745 days
 next_expected_update: annual
 record_count: 308
 schema_version: unknown
@@ -20,7 +20,7 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1741 days
+**Freshness:** 1745 days
 
 HTTP 200
 

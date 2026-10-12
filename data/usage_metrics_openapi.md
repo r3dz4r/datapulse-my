@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_usage_metrics_openapi
-last_checked: 2026-10-08T14:24:19Z
-last_checked: 2026-10-08T14:24:19Z
+last_checked: 2026-10-11T16:55:05Z
+last_checked: 2026-10-11T16:55:05Z
 status: fresh
 freshness_delta: 1 days
 next_expected_update: daily
-record_count: 19531
+record_count: 19655
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Although the OpenAPI was live from 13 Sep 2023, disaggregated usage data is only available from 15 Dec 2023."]
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-10-11 at 16:55:05 UTC.
 
 ## File size
 
-The checked resource is 1,363,056 bytes.
+The checked resource is 1,371,968 bytes.
 
 ## Provenance
 

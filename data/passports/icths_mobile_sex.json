@@ -1,0 +1,1594 @@
+{
+  "health_evidence": {
+    "access_dependency": null,
+    "access_method": null,
+    "anomaly_reliability": {
+      "anomaly_detected": null,
+      "anomaly_detection": null
+    },
+    "expected_record_count": 219,
+    "freshness_signal": null,
+    "freshness_signal_source": null,
+    "http_status": null,
+    "incomplete": null,
+    "last_checked": null,
+    "record_count": null,
+    "record_count_estimated": null,
+    "record_count_within_tolerance": null,
+    "schema_shape": {
+      "column_count": null,
+      "content_shape_changed": null,
+      "first_row_hash": null
+    },
+    "status": "unknown-freshness"
+  },
+  "identity": {
+    "canonical_url": "https://storage.dosm.gov.my/icths/icths_mobile_sex.csv",
+    "custodian": "dosm",
+    "dataset_id": "icths_mobile_sex",
+    "declared_verified_at": "2026-10-11",
+    "geography": "Malaysia",
+    "name": "Mobile Phone Ownership by State & Sex",
+    "namespace": "other",
+    "observed_verified_at": null,
+    "source": "data.gov.my",
+    "steward": "Department of Statistics Malaysia"
+  },
+  "intended_use": {
+    "declared_coverage": {
+      "geography": "Malaysia"
+    },
+    "declared_purpose": {
+      "reason": "declared_purpose_not_present_in_canonical_manifest",
+      "state": "not_evaluated"
+    }
+  },
+  "licence_and_attribution": {
+    "attribution": "Department of Statistics Malaysia",
+    "declared_licence": "Creative Commons Attribution 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "limitation": "Declared metadata and evidence only; not legal advice or legal permission."
+  },
+  "limitations": [
+    "This passport is evidence about observed metadata and state, not semantic truth, completeness, certification, legal permission, safety, or AI admission.",
+    "Unavailable evidence is explicit and must not be read as a neutral or favourable result."
+  ],
+  "lineage": {
+    "catalogue_relationships": {
+      "graph_reference": "catalog-graph.json",
+      "limitation": "Catalogue relationships are literal metadata context, not full transformation lineage.",
+      "relationship_edges": [
+        {
+          "from": "bop_balance",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "cpi_3d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "cpi_4d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "cpi_5d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "cpi_core",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "cpi_core_inflation",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "cpi_headline",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_arc_dosm",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_bec",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_district_lookup",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_dun",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_malaysia",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_parlimen",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_parlimen_dun_lookup",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_boundary_state",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_cpi_annual",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_cpi_annual_inflation",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_cpi_headline_inflation",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_cpi_lowincome",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_cpi_strata",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_death_district_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_death_maternal",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_fertility",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_fertility_state",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_annual_nominal_demand",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_annual_nominal_demand_granular",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_annual_nominal_income",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_annual_nominal_supply_granular",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_annual_real_demand",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_annual_real_demand_granular",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_annual_real_supply_granular",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_district_real_supply",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_gni_annual_real",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_lookup",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_qtr_nominal_demand",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_qtr_nominal_demand_granular",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_qtr_nominal_supply",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_qtr_nominal_supply_granular",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_qtr_real_demand",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_qtr_real_demand_granular",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_qtr_real_sa_demand",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_qtr_real_sa_supply",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_qtr_real_supply",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_gdp_qtr_real_supply_granular",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_access_amenities",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_expenditure_dun",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_expenditure_parlimen",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_income",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_income_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_income_dun",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_income_parlimen",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_income_state",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_inequality",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_inequality_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_inequality_dun",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_inequality_parlimen",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_inequality_state",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_poverty",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_poverty_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_poverty_dun",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_poverty_parlimen",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_poverty_state",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_profile",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hh_profile_state",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hies_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hies_malaysia_percentile",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hies_state",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_hies_state_percentile",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_iowrt",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_iowrt_2d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_iowrt_3d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_ipi",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_ipi_1d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_district",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_dun",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_month_duration",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_month_sa",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_month_status",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_month_youth",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_parlimen",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_qtr_sru_age",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_qtr_sru_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_qtr_tru_age",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_qtr_tru_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_state_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_lfs_year_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_marriages",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_marriages_age",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_marriages_state_age",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_mcoicop",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_msic",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_population_malaysia",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_population_parlimen",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_ppi_1d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_ppi_sitc",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_productivity_annual",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_productivity_annual_priority",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_productivity_lookup",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_productivity_qtr",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_sitc",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_sitc_sop",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_sppi",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_sppi_1d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "dosm_sppi_2d",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "economic_indicators",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "fdi_flows",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ipi_2d",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ipi_3d",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ipi_5d",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ipi_domestic",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ipi_export",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "population_dun",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "population_malaysia",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "population_parlimen",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ppi_2d",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "ppi_3d",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "sdg_04-6-1",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "sdg_10-c-1",
+          "weight": 1
+        },
+        {
+          "from": "icths_mobile_sex",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "sppi_3d",
+          "weight": 1
+        },
+        {
+          "from": "hh_access_internet",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 2
+        },
+        {
+          "from": "icths_internet_device",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 2
+        },
+        {
+          "from": "icths_internet_sex",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 2
+        },
+        {
+          "from": "icths_internet_strata",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "icths_mobile_sex",
+          "weight": 2
+        }
+      ]
+    },
+    "transformation_lineage": {
+      "reason": "full_transformation_lineage_not_published",
+      "state": "not_evaluated"
+    }
+  },
+  "quality_profile": {
+    "reason": "quality_profile_not_evaluated_for_unprobed_dataset",
+    "state": "not_evaluated"
+  },
+  "record_evidence": {
+    "reason": "record_evidence_not_enabled_for_dataset",
+    "state": "not_evaluated"
+  },
+  "reproducibility_and_evidence": {
+    "attestation": {
+      "reason": "attestation_reference_not_available",
+      "state": "not_evaluated"
+    },
+    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "receipt": {
+      "reason": "receipt_digest_cannot_be_computed_from_canonical_inputs",
+      "state": "not_evaluated"
+    },
+    "source_digest": {
+      "reason": "canonical_source_digest_not_available",
+      "state": "not_evaluated"
+    },
+    "source_envelope": "data/json/icths_mobile_sex.json",
+    "verification_method": "deterministic_local_projection_of_current_canonical_inputs",
+    "witness_reference": {
+      "reason": "witness_reference_not_available",
+      "state": "not_evaluated"
+    }
+  },
+  "schema": "datapulse/v1/dataset-passport",
+  "sensitivity_and_pii": {
+    "reason": "sensitivity_or_pii_classification_not_evaluated",
+    "state": "not_evaluated"
+  }
+}

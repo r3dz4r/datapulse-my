@@ -1,10 +1,10 @@
 ---
 dataset_id: lfs_month
-last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-10T11:37:57Z
 status: fresh
-freshness_delta: 17 days
+freshness_delta: 3 days
 next_expected_update: monthly
-record_count: 199
+record_count: 200
 date_range: 2010-01-01 to 2026-05-01
 schema_version: 1.0
 schema_drift: none
@@ -20,17 +20,17 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 17 days
+**Freshness:** 3 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-10 at 11:37:57 UTC.
 
 ## File size
 
-The checked resource is 10,814 bytes.
+The checked resource is 10,868 bytes.
 
 ## Provenance
 

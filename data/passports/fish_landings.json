@@ -66,7 +66,128 @@
     "catalogue_relationships": {
       "graph_reference": "catalog-graph.json",
       "limitation": "Catalogue relationships are literal metadata context, not full transformation lineage.",
-      "relationship_edges": []
+      "relationship_edges": [
+        {
+          "from": "aquaculture_production",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "fish_landings",
+          "weight": 1
+        },
+        {
+          "from": "aquaculture_production_species",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "fish_landings",
+          "weight": 1
+        },
+        {
+          "from": "fish_landings",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "fish_landings_gear",
+          "weight": 1
+        },
+        {
+          "from": "fish_landings",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "fish_landings_inland",
+          "weight": 1
+        },
+        {
+          "from": "fish_landings",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "fish_landings_species",
+          "weight": 1
+        },
+        {
+          "from": "fish_landings",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "fish_landings_value",
+          "weight": 1
+        },
+        {
+          "from": "fish_landings",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "fish_prices",
+          "weight": 1
+        },
+        {
+          "from": "fish_landings",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "fishers",
+          "weight": 1
+        },
+        {
+          "from": "fish_landings",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "fishing_vessels",
+          "weight": 1
+        },
+        {
+          "from": "fish_landings",
+          "kind": "same_agency",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "steward"
+            ]
+          },
+          "to": "seaweed_production",
+          "weight": 1
+        }
+      ]
     },
     "transformation_lineage": {
       "reason": "full_transformation_lineage_not_published",

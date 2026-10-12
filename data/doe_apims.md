@@ -1,6 +1,6 @@
 ---
 dataset_id: doe_apims
-last_checked: 2026-10-08T16:15:53Z
+last_checked: 2026-10-12T16:10:33Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: 2026-08-02T15:00:00Z
@@ -26,7 +26,7 @@ Browser check succeeded
 
 ## Last checked
 
-2026-10-08 at 16:15:53 UTC.
+2026-10-12 at 16:10:33 UTC.
 
 ## File size
 

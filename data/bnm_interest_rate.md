@@ -1,8 +1,8 @@
 ---
 dataset_id: bnm_interest_rate
-last_checked: 2026-10-03T18:05:09Z
+last_checked: 2026-10-10T22:46:18Z
 status: fresh
-freshness_delta: 6 days
+freshness_delta: 3 days
 next_expected_update: monthly
 schema_version: unknown
 schema_drift: none
@@ -18,14 +18,14 @@ attribution: Bank Negara Malaysia via BNM Open API
 
 **Status:** Fresh
 
-**Freshness:** 6 days
+**Freshness:** 3 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 18:05:09 UTC.
+2026-10-10 at 22:46:18 UTC.
 
 ## File size
 
-The checked resource is 557 bytes.
+The checked resource is 529 bytes.

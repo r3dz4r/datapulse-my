@@ -2,7 +2,7 @@
 dataset_id: gtfs_static_mybas_seremban_b
 last_checked: 2026-10-05T06:46:30Z
 status: fresh
-freshness_delta: 3 days
+freshness_delta: 7 days
 record_count: 24467
 content_freshness_date: 2026-08-03
 schema_version: GTFS
@@ -19,7 +19,7 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 3 days
+**Freshness:** 7 days
 
 HTTP 200; valid GTFS static ZIP
 

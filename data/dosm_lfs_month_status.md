@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_lfs_month_status
-last_checked: 2026-10-03T10:36:37Z
-last_checked: 2026-10-03T10:36:37Z
-status: stale
-freshness_delta: 99 days
+last_checked: 2026-10-10T11:37:57Z
+last_checked: 2026-10-10T11:37:57Z
+status: aging
+freshness_delta: 72 days
 next_expected_update: monthly
-record_count: 254
+record_count: 256
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Data prior to 2025 is compiled in concordance with population data from the 2010 Census. Data from 2025 onwards is compiled in concordance with population data from the 2020 Census. As such, you may observe a trend break in the series due to the different references used. Furthermore, sums of each category may not always equal to the totals shown in related tables because of independent rounding to one decimal place. However, the differences are not obvious."]
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 99 days
+**Freshness:** 72 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-10 at 11:37:57 UTC.
 
 ## File size
 
-The checked resource is 47,321 bytes.
+The checked resource is 47,692 bytes.
 
 ## Provenance
 

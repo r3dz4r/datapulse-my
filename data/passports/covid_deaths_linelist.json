@@ -342,6 +342,32 @@
               "steward"
             ]
           },
+          "to": "organ_pledge_demog",
+          "weight": 2
+        },
+        {
+          "from": "covid_deaths_linelist",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
+          "to": "organ_pledge_demog_state",
+          "weight": 2
+        },
+        {
+          "from": "covid_deaths_linelist",
+          "kind": "same_steward",
+          "provenance": {
+            "manifest_version": "https://www.data-pulse.my/datapulse.schema.json",
+            "matched_fields": [
+              "source",
+              "steward"
+            ]
+          },
           "to": "vaxreg_covid_demog",
           "weight": 2
         }

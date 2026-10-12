@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/environment/air_pollution.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-10T11:37:57Z
 last_observed: 2024-12-01
 last_modified: 2026-09-30T07:14:47Z
 record_count: 576
@@ -13,7 +13,7 @@ column_count: 3
 status: stale
 notes: "Tier-1 wave B already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: air_pollution
-freshness_delta: 676 days
+freshness_delta: 680 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Department of Environment Malaysia via data.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 676 days
+**Freshness:** 680 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-10 at 11:37:57 UTC.
 
 ## File size
 

@@ -1,6 +1,6 @@
 ---
 dataset_id: bnm_kl_usd_myr
-last_checked: 2026-10-08T15:55:54Z
+last_checked: 2026-10-12T15:24:17Z
 status: fresh
 freshness_delta: 0 days
 next_expected_update: daily (weekdays)
@@ -24,8 +24,8 @@ HTTP 200
 
 ## Last checked
 
-2026-10-08 at 15:55:54 UTC.
+2026-10-12 at 15:24:17 UTC.
 
 ## File size
 
-The checked resource is 88 bytes.
+The checked resource is 100 bytes.

@@ -1,12 +1,12 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "trnsc_daily_directdebit",
-  "status": "aging",
-  "last_checked": "2026-10-03T15:47:47Z",
-  "freshness_days": 2,
+  "status": "stale",
+  "last_checked": "2026-10-11T16:55:05Z",
+  "freshness_days": 4,
   "next_expected_update": null,
   "refresh_frequency": "daily",
-  "record_count": 1243,
+  "record_count": 1247,
   "date_range": null,
   "fields": [
     {
@@ -31,12 +31,12 @@
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Probe measured 1243 record(s)"
+      "method": "Probe measured 1247 record(s)"
     },
     {
       "name": "freshness",
-      "status": "warn",
-      "method": "Health snapshot classifies the dataset as aging"
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
     },
     {
       "name": "schema_stable",

@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_pekab40_screenings_state
-last_checked: 2026-10-08T14:24:19Z
-status: fresh
-freshness_delta: 1 days
+last_checked: 2026-10-11T16:55:05Z
+status: aging
+freshness_delta: 2 days
 next_expected_update: daily
-record_count: 43712
+record_count: 43744
 date_range: 2019-04-15 to 2026-07-31
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: ProtectHealth Corporation and Ministry of Health Malaysia via data.
 
 ## Status
 
-**Status:** Fresh
+**Status:** Aging
 
-**Freshness:** 1 days
+**Freshness:** 2 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-10-11 at 16:55:05 UTC.
 
 ## File size
 
-The checked resource is 1,031,052 bytes.
+The checked resource is 1,031,813 bytes.
 
 ## Provenance
 
