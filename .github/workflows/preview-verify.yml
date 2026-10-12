@@ -60,9 +60,8 @@ jobs:
           cp llms.txt robots.txt sitemap.xml feed.xml datapulse.json datapulse_summary.json custodians.json datapulse.schema.json health.schema.json agent.schema.json mcp.schema.json record-evidence.schema.json agent.json mcp.json catalog-snapshot.json catalog-graph.json changelog.json _site/
           cp -R health deltas record-evidence badges samples data _site/
           if [ -d observation-receipts ]; then cp -R observation-receipts _site/; fi
-          cp -R attestations _site/
-          cp -R .attestations _site/
           cp docs/.well-known/datapulse-probe-keys.json _site/.well-known/
+          python3 scripts/select_served_attestations.py --apply --root . --site _site --max-files 18000
           test -s _site/index.html
           test -s _site/404.html
           test "$(grep -c '[^[:space:]]' _site/_redirects)" -ge 4
@@ -74,6 +73,22 @@ jobs:
 
       - name: Check Pages asset sizes
         run: python3 scripts/check_pages_asset_sizes.py _site
+
+      - name: Guard Cloudflare Pages file ceiling
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from collections import Counter
+          from pathlib import Path
+
+          files = [path for path in Path('_site').rglob('*') if path.is_file()]
+          groups = Counter(path.relative_to('_site').parts[0] for path in files)
+          largest, largest_count = groups.most_common(1)[0]
+          count = len(files)
+          print(f'Cloudflare Pages artifact: {count} files; largest directory {largest}: {largest_count} files')
+          if count > 18000:
+              raise SystemExit(f'::error title=Cloudflare Pages file ceiling::artifact has {count} files (guard 18000, platform limit 20000); largest directory {largest}: {largest_count} files')
+          PY
 
       - name: Record and verify release artifact manifest
         run: |

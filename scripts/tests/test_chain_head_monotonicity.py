@@ -34,9 +34,12 @@ MAX_COMMITS = 50
 
 
 # Measured across the whole published history. These pointer regressions are
-# already healed; 2,545 receipts still cover sequence numbers 1 through 2,545
+# already healed; 2,601 receipts cover sequence numbers 1 through 2,601
 # exactly once, so the recorded pointers do not indicate a lost, replaced,
 # duplicated, or forked receipt chain and need no further investigation here.
+# The third rewind replaced an observation from 00:11:38Z with 23:10:51Z,
+# showing an older head published after a newer one (a lost-update signature).
+# The producer-side fix is being handled separately; no fourth record should be needed.
 HEALED_CHAIN_HEAD_REWINDS = (
     {
         "previous_sha": "4b9452a754f3f171a78e6f76d21f68c7464b6ee7",
@@ -51,6 +54,13 @@ HEALED_CHAIN_HEAD_REWINDS = (
         "decreasing_sha": "7676cc5c180d71d3a5c702ed0d98e4f8589d7534",
         "decreasing_sequence_number": 2445,
         "commit_date": "2026-10-11T02:07:13+00:00",
+    },
+    {
+        "previous_sha": "02a55782c0f772723bf545d8c200b0cf67e7ff5a",
+        "previous_sequence_number": 2590,
+        "decreasing_sha": "7d53bbc405b17a0995f03d82bb02b64aeabf2325",
+        "decreasing_sequence_number": 2587,
+        "commit_date": "2026-10-12T00:30:46+00:00",
     },
 )
 

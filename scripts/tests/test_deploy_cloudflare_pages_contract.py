@@ -37,7 +37,16 @@ def _write_site_json(site: Path, reference: str, value: dict) -> None:
     path.write_text(json.dumps(value), encoding="utf-8")
 
 
+def _stage_attestation_selector(fixture_root: Path) -> None:
+    scripts = fixture_root / "scripts"
+    scripts.mkdir()
+    (scripts / "select_served_attestations.py").write_bytes(
+        (ROOT / "scripts/select_served_attestations.py").read_bytes()
+    )
+
+
 def test_pages_attestation_selection_keeps_chain_and_citations(tmp_path: Path) -> None:
+    _stage_attestation_selector(tmp_path)
     site = tmp_path / "_site"
     old = "attestations/2026-10-03"
     recent = "attestations/2026-10-04"
@@ -78,6 +87,7 @@ def test_pages_attestation_selection_keeps_chain_and_citations(tmp_path: Path) -
 
 
 def test_pages_attestation_selection_fails_on_missing_published_reference(tmp_path: Path) -> None:
+    _stage_attestation_selector(tmp_path)
     site = tmp_path / "_site"
     _write_site_json(site, "attestations/chain-index.json", {"heads": {}, "envelopes": {}})
     _write_site_json(site, "attestations/latest/index.json", {
