@@ -326,7 +326,7 @@ def test_readme_health_parity_still_rejects_an_inconsistent_generated_readme(
         [
             "bash",
             "-c",
-            f"set -Eeuo pipefail\npython_bin=python3\n"
+            f"set -Eeuo pipefail\npython_bin=python3\nlocal_mode=true\n"
             f"assert_readme_health_parity() {{\n{parity_function}\n"
             f"assert_readme_health_parity {health_file!s} {readme_file!s}",
         ],
@@ -353,7 +353,7 @@ def test_local_gate_does_not_require_current_release_proof() -> None:
     script = VERIFY_SCRIPT.read_text(encoding="utf-8")
 
     proof_fetch = re.search(
-        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n  fetch index\.html dashboard\n  fetch landing\.html landing\.html\n  fetch npra\.html npra\.html\n^fi\n",
+        r"(?ms)^if ! \$local_mode; then\n  fetch release-verification\.md release-verification\.md\n  fetch index\.html dashboard\n  fetch landing\.html landing\.html\n^fi\n",
         script,
     )
 
