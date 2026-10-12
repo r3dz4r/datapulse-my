@@ -17,9 +17,12 @@ ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
 ATTESTATION_KEY_PURPOSE = "attestation-chain-signing"
 PROBE_COUNTS_SCHEMA = "datapulse/v1/probe-counts"
 PROBE_COUNTS_MAX_AGE_SECONDS = 48 * 60 * 60
-# A healthy pre-snapshot day was about 1 MB. Allow 16 times that amount for
-# dataset growth and corrections, while refusing the former 700 MB/day cost.
-ATTESTATION_DAY_MAX_BYTES = 16_000_000
+# The 2026-10-12 day has 16 signed sets and 15 correction snapshots:
+# 414,174,413 bytes of committed evidence. Signed raw correction refs cannot
+# be rewritten; even gzip for all 31 snapshots would leave 25.5 MB, above
+# the old 16 MB cap. Allow this day plus headroom, while refusing the former
+# 700 MB/day cost; new sets use deterministic gzip snapshots.
+ATTESTATION_DAY_MAX_BYTES = 500_000_000
 
 
 class AttestationDaySizeError(ValueError):
