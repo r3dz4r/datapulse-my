@@ -127,6 +127,62 @@ def _append_acceptance_step() -> dict:
     )
 
 
+def test_append_acceptance_inner_wait_fits_hard_wrapper() -> None:
+    run = _append_acceptance_step()["run"]
+    wait = re.search(
+        r"timeout (?:-k \d+s )?(\d+)s python3 scripts/verify_attestation_append.py "
+        r'--base "\$GITHUB_SHA" --wait-for-acceptance (\d+)',
+        run,
+    )
+    assert wait is not None
+    outer, inner = map(int, wait.groups())
+    assert 0 < inner < outer
+
+
+def test_append_acceptance_bounds_every_external_call_and_total_budget() -> None:
+    step = _append_acceptance_step()
+    run = step["run"]
+    commands = "\n".join(line for line in run.splitlines() if not line.lstrip().startswith("#"))
+    calls = list(re.finditer(r"(?<![\w-])(?:python3|bash|git|jq|gh)\b", commands))
+    assert calls
+    bounds = []
+    for call in calls:
+        bound = re.search(r"timeout -k (\d+)s (\d+)s $", commands[:call.start()])
+        assert bound is not None, f"unbounded call: {commands[call.start():].splitlines()[0]}"
+        kill_after, duration = map(int, bound.groups())
+        assert kill_after > 0 and duration > 0
+        bounds.append(duration + kill_after)
+    # A process-group watchdog also caps shell overhead and any future calls.
+    whole_step = bounds.pop(0)
+    assert "bash -Eeuo pipefail <<'ACCEPTANCE'" in run
+    assert run.rstrip().endswith("ACCEPTANCE")
+    job = yaml.safe_load(_workflow())["jobs"]["sign_health"]
+    assert sum(bounds) < whole_step < step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
+    assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
+
+
+def test_append_acceptance_wrapper_kills_term_resistant_children(tmp_path: Path) -> None:
+    run = _append_acceptance_step()["run"]
+    wait = next(line.strip().removeprefix("if ! ").removesuffix("; then")
+                for line in run.splitlines() if "--wait-for-acceptance 780; then" in line)
+    # Exercise the actual wrapper without waiting for its production budget.
+    wait = re.sub(r"-k \d+s \d+s", "-k 0.1s 1s", wait)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    verifier = bin_dir / "python3"
+    verifier.write_text('#!/bin/bash\ntrap "" TERM\nsleep 30 &\nwait\n')
+    verifier.chmod(0o755)
+    result = subprocess.run(
+        ["bash", "-c", wait + '\nstatus=$?\nexit "$status"'],
+        cwd=tmp_path,
+        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "GITHUB_SHA": "c" * 40},
+        capture_output=True, text=True, timeout=5,
+    )
+    # Captured pipes must close too: killing only the verifier would leave its
+    # TERM-resistant child holding them open and exhaust the five-second bound.
+    assert result.returncode == 137, result.stdout + result.stderr
+
+
 @pytest.mark.parametrize(
     ("committed", "pulls", "gh_status", "expected_submit", "expected_append"),
     [
@@ -145,7 +201,16 @@ def _append_acceptance_step() -> dict:
         (False, [], 2, False, None),
     ],
 )
-@pytest.mark.parametrize("wait_accepted", [True, False])
+@pytest.mark.parametrize(
+    ("wait_accepted", "wait_status", "recheck_status", "check_status"),
+    [
+        (True, 0, 0, 0),
+        (False, 1, 1, 0),
+        (False, 124, 1, 0),
+        (False, 137, 137, 124),
+        (True, 124, 0, 0),  # The exact candidate merged at the deadline.
+    ],
+)
 @pytest.mark.parametrize("arm_status", [0, 1])
 def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     tmp_path: Path,
@@ -155,6 +220,9 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     expected_submit: bool,
     expected_append: str | None,
     wait_accepted: bool,
+    wait_status: int,
+    recheck_status: int,
+    check_status: int,
     arm_status: int,
 ) -> None:
     step = _append_acceptance_step()
@@ -164,6 +232,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     (tmp_path / "scripts").mkdir()
     (bin_dir / "python3").write_text(
         '#!/bin/bash\nprintf "verify %s\\n" "$*" >> "$CALL_LOG"\n'
+        'if [[ "$*" == *"--wait-for-acceptance 0" ]]; then exit "$RECHECK_STATUS"; fi\n'
         'if [[ "$*" == *--wait-for-acceptance* ]]; then exit "$ACCEPTANCE_STATUS"; fi\n'
         '[[ "$*" != *--require-committed* ]] || [[ "$COMMITTED" == 1 ]]\n'
     )
@@ -180,7 +249,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         'case "$1 $2" in\n'
         '  "pr list") printf "%s\\n" "$OPEN_PRS"; exit "$GH_STATUS" ;;\n'
         '  "pr view")\n'
-        '    if [[ "$*" == *statusCheckRollup* ]]; then printf "COMPLETED/SUCCESS\\n";\n'
+        '    if [[ "$*" == *statusCheckRollup* ]]; then printf "COMPLETED/SUCCESS\\n"; exit "$CHECK_STATUS";\n'
         '    else printf "{\\"number\\":99,\\"headRefName\\":\\"attestation/append-contract\\",'
         '\\"headRefOid\\":\\"%s\\",\\"baseRefName\\":\\"main\\",\\"state\\":\\"OPEN\\"}\\n" "$APPEND_SHA"; fi ;;\n'
         '  "pr merge") exit "$ARM_STATUS" ;;\n'
@@ -205,7 +274,9 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         "GH_STATUS": str(gh_status),
         "ARM_STATUS": str(arm_status),
         "APPEND_SHA": "d" * 40,
-        "ACCEPTANCE_STATUS": "0" if wait_accepted else "1",
+        "ACCEPTANCE_STATUS": str(wait_status),
+        "RECHECK_STATUS": str(recheck_status),
+        "CHECK_STATUS": str(check_status),
     }
     outputs = []
     for _ in range(2):
@@ -231,13 +302,17 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         if expected_submit:
             assert "gh pr view attestation/append-contract --repo example/data-pulse --json number,headRefName,headRefOid,baseRefName,state" in calls
             assert f"gh pr merge --auto --merge 99 --repo example/data-pulse --match-head-commit {'d' * 40}" in calls
-            wait_call = f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 1500"
+            wait_call = f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 780"
             assert (wait_call in calls) is (arm_status == 0)
             if arm_status:
                 assert "Could not arm merge-on-green for PR #99" in result.stderr
             elif not wait_accepted:
+                assert "::error title=Append acceptance wait failed::" in result.stderr
                 assert "PR #99" in result.stderr
-                assert "COMPLETED/SUCCESS" in result.stderr
+                assert "deterministic-safety-net:" in result.stderr
+                assert ("unavailable" if check_status else "COMPLETED/SUCCESS") in result.stderr
+            if arm_status == 0 and wait_status:
+                assert f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 0" in calls
         if committed or (expected_submit and wait_accepted and arm_status == 0):
             assert result.returncode == 0
         else:

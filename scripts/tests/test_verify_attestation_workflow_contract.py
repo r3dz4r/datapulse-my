@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+import textwrap
 
 import pytest
 
@@ -154,7 +155,9 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
     (bin_dir / "python3").write_text(
         '#!/bin/bash\nset -Eeuo pipefail\nshift\nargs=("$@")\n'
         # Bound a non-acceptance test to one real remote probe, without sleeping.
-        'for i in "${!args[@]}"; do [[ "${args[$i]}" != 1500 ]] || args[$i]=0; done\n'
+        'for i in "${!args[@]}"; do\n'
+        '  [[ "${args[$i]}" != --wait-for-acceptance ]] || args[$((i + 1))]=0\n'
+        'done\n'
         f'exec "{sys.executable}" "{verifier}" --root "{root}" "${{args[@]}}"\n'
     )
     (bin_dir / "gh").write_text(
@@ -176,7 +179,7 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
     guard = next(step for step in re.split(r"(?=^      - )", pages, flags=re.MULTILINE)
                  if "- name: Require authoritative acceptance before signing publication\n" in step)
     result = subprocess.run(
-        ["bash", "-c", guard.split("        run: |\n", 1)[1]], cwd=root,
+        ["bash", "-c", textwrap.dedent(guard.split("        run: |\n", 1)[1])], cwd=root,
         env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
              "GITHUB_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse"},
         text=True, capture_output=True,
