@@ -21,6 +21,10 @@ on:
 permissions:
   contents: read
 
+env:
+  PROMOTION_SETTLED_QUIET_SECONDS: 300
+  PROMOTION_SETTLED_MAX_WAIT_SECONDS: 900
+
 concurrency:
   # Every production candidate, including health-only candidates, shares one
   # non-cancelable promotion lane. This prevents a stale health run from
@@ -32,17 +36,104 @@ jobs:
   classify:
     name: Classify native Pages input
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Settlement owns its budget; it must not consume the signer's 40 minutes.
+    timeout-minutes: 20
     outputs:
       health_only: ${{ steps.classify.outputs.health_only }}
+      settled_sha: ${{ steps.settled_main.outputs.settled_sha }}
+      settlement_reason: ${{ steps.settled_main.outputs.settlement_reason }}
     steps:
+      - name: Wait for settled main before promoting
+        id: settled_main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          timeout -k 5s "$((PROMOTION_SETTLED_MAX_WAIT_SECONDS + 5))s" python3 - <<'PY'
+          from __future__ import annotations
+
+          from datetime import datetime, timezone
+          import json
+          import os
+          import re
+          import subprocess
+          import time
+
+          quiet = int(os.environ["PROMOTION_SETTLED_QUIET_SECONDS"])
+          ceiling = int(os.environ["PROMOTION_SETTLED_MAX_WAIT_SECONDS"])
+          if not 0 < quiet < ceiling:
+              raise SystemExit("Settlement requires 0 < quiet period < hard ceiling")
+          started = time.monotonic()
+          deadline = started + ceiling
+          previous_sha = None
+          quiet_since = started
+          confirmed = False
+          while True:
+              # Both the complete poll and each head read have a kill deadline.
+              call_budget = min(30, deadline - time.monotonic())
+              if call_budget <= 0:
+                  reason = "ceiling"
+                  break
+              response = subprocess.run(
+                  ["timeout", "-k", "5s", f"{call_budget}s", "gh", "api",
+                   f"repos/{os.environ['GITHUB_REPOSITORY']}/commits/refs/heads/main",
+                   "--header", "Cache-Control: no-cache"],
+                  # Let GNU timeout kill its child group before the Python
+                  # fallback kills the timeout supervisor itself.
+                  check=True, capture_output=True, text=True, timeout=call_budget + 6,
+              )
+              head = json.loads(response.stdout)
+              sha = head["sha"]
+              if re.fullmatch(r"[0-9a-f]{40}", sha) is None:
+                  raise SystemExit("Main head lookup returned an invalid SHA")
+              commit = head["commit"]
+              committed_at = datetime.fromisoformat(commit["committer"]["date"].replace("Z", "+00:00"))
+              age = (datetime.now(timezone.utc) - committed_at).total_seconds()
+              now = time.monotonic()
+              if sha != previous_sha:
+                  # An old/backdated commit observed landing during this wait
+                  # still restarts quiet; the timestamp alone is insufficient.
+                  quiet_since = now - max(0, age) if previous_sha is None else now
+                  previous_sha = sha
+                  confirmed = False
+                  print(f"Observed main {sha}; commit age {age:.0f}s", flush=True)
+              if now >= deadline:
+                  reason = "ceiling"
+                  break
+              if age >= quiet and now - quiet_since >= quiet:
+                  if confirmed:
+                      reason = "quiet"
+                      break
+                  # Re-read main immediately before declaring it settled.
+                  confirmed = True
+                  continue
+              # Reserve a final bounded head read, then reach the ceiling
+              # without starting a call with a vanishing timeout budget.
+              remaining = deadline - now
+              if remaining <= 1:
+                  time.sleep(max(0, remaining))
+                  reason = "ceiling"
+                  break
+              time.sleep(min(15, remaining - 1))
+          if previous_sha is None:
+              raise SystemExit("No identified main revision; refusing promotion")
+          sha = previous_sha
+          if reason == "ceiling":
+              print(f"::warning title=Main settlement ceiling reached::Proceeding with newest observed main {sha} after {ceiling}s without quiet", flush=True)
+          else:
+              print(f"Main settled by quiet: {sha} ({quiet}s quiet)", flush=True)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"settled_sha={sha}\nsettlement_reason={reason}\n")
+          PY
+
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          ref: ${{ steps.settled_main.outputs.settled_sha }}
+          fetch-depth: 0
       - id: classify
         env:
           BEFORE_SHA: ${{ github.event.before }}
-          AFTER_SHA: ${{ github.sha }}
+          AFTER_SHA: ${{ steps.settled_main.outputs.settled_sha }}
         run: |
           set -Eeuo pipefail
           echo "health_only=false" >> "$GITHUB_OUTPUT"
@@ -62,6 +153,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}
     outputs:
       attestation_state: ${{ steps.attestation_result.outputs.state }}
       signed: ${{ steps.sigstore_result.outputs.signed }}
@@ -69,6 +162,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.classify.outputs.settled_sha }}
           fetch-depth: 0
           # Deliberately avoid persisting checkout credentials so the push's App-token header is not duplicated.
           persist-credentials: false
@@ -151,10 +245,22 @@ jobs:
             fi
           done
           git fetch origin refs/heads/main:refs/remotes/origin/main
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          git merge-base --is-ancestor "$PROMOTION_SOURCE_SHA" origin/main
           # Import accepted evidence while keeping the source checkout at
-          # GITHUB_SHA, which both signing and deployment use for health.
+          # PROMOTION_SOURCE_SHA, shared by signing and deployment for health.
           git restore --source origin/main --worktree -- attestations .attestations/chain_head.json
+
+      - name: Require settled main before signing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          current_sha="$(timeout -k 5s 30s gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" \
+            --header 'Cache-Control: no-cache' --jq '.object.sha')"
+          if [[ "$current_sha" != "$PROMOTION_SOURCE_SHA" ]]; then
+            echo "::error title=Settled main moved before signing::Selected $PROMOTION_SOURCE_SHA, current main $current_sha; refusing to sign a different revision." >&2
+            exit 1
+          fi
 
       - name: Refresh legacy chain head before signing
         env:
@@ -220,7 +326,7 @@ jobs:
             --health health/latest.json \
             --manifest datapulse.json \
             --legacy-chain-head .attestations/chain_head.json \
-            --source-commit "$GITHUB_SHA" \
+            --source-commit "$PROMOTION_SOURCE_SHA" \
             --out "$statement"
           statement_digest="$(sha256sum "$statement" | awk '{print $1}')"
           immutable_statement="$REKOR_DIR/health.$statement_digest.statement.json"
@@ -241,7 +347,7 @@ jobs:
             --health health/latest.json \
             --manifest datapulse.json \
             --legacy-chain-head .attestations/chain_head.json \
-            --source-commit "$GITHUB_SHA" \
+            --source-commit "$PROMOTION_SOURCE_SHA" \
             --bundle "$bundle" \
             --certificate-identity "$SIGSTORE_IDENTITY" \
             --certificate-oidc-issuer "$SIGSTORE_ISSUER" \
@@ -353,9 +459,9 @@ jobs:
             echo "Armed merge-on-green for PR #$pr_number ($branch)."
             # Submission changes local HEAD. It cannot prove acceptance. Keep
             # the witnessed inputs, and wait on main without checking it out.
-            if ! timeout -k 5s 1020s python3 scripts/verify_attestation_append.py --base "$GITHUB_SHA" --wait-for-acceptance 780; then
+            if ! timeout -k 5s 1020s python3 scripts/verify_attestation_append.py --base "$PROMOTION_SOURCE_SHA" --wait-for-acceptance 780; then
               # A merge at the deadline still needs the same byte-equality check.
-              if timeout -k 5s 240s python3 scripts/verify_attestation_append.py --base "$GITHUB_SHA" --wait-for-acceptance 0; then
+              if timeout -k 5s 240s python3 scripts/verify_attestation_append.py --base "$PROMOTION_SOURCE_SHA" --wait-for-acceptance 0; then
                 exit 0
               fi
               if check_state="$(timeout -k 5s 20s gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
@@ -378,7 +484,7 @@ jobs:
             --health health/latest.json \
             --manifest datapulse.json \
             --legacy-chain-head .attestations/chain_head.json \
-            --source-commit "$GITHUB_SHA" \
+            --source-commit "$PROMOTION_SOURCE_SHA" \
             --out "$RUNNER_TEMP/health.latest.statement.json"
 
       - name: Attempt pinned Cosign signer installation for health-only degradation
@@ -413,7 +519,7 @@ jobs:
             --health health/latest.json \
             --manifest datapulse.json \
             --legacy-chain-head .attestations/chain_head.json \
-            --source-commit "$GITHUB_SHA" \
+            --source-commit "$PROMOTION_SOURCE_SHA" \
             --bundle "$bundle_tmp" \
             --certificate-identity "$SIGSTORE_IDENTITY" \
             --certificate-oidc-issuer "$SIGSTORE_ISSUER" \
@@ -529,9 +635,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 30
+    env:
+      PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.classify.outputs.settled_sha }}
           fetch-depth: 0
 
       - name: Validate canonical health snapshot
@@ -571,8 +680,8 @@ jobs:
           DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
         run: |
           set -Eeuo pipefail
-          export DATAPULSE_SOURCE_COMMIT_SHA="$GITHUB_SHA"
-          export DATAPULSE_SOURCE_COMMIT_DATE="$(git show -s --format=%cs "$GITHUB_SHA")"
+          export DATAPULSE_SOURCE_COMMIT_SHA="$PROMOTION_SOURCE_SHA"
+          export DATAPULSE_SOURCE_COMMIT_DATE="$(git show -s --format=%cs "$PROMOTION_SOURCE_SHA")"
           if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then
             echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json
             chmod 600 /tmp/datapulse-attestation-key.json
@@ -822,7 +931,7 @@ jobs:
           python3 scripts/verify_release_artifact.py create \
             --site _site \
             --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
-            --source-commit "$GITHUB_SHA"
+            --source-commit "$PROMOTION_SOURCE_SHA"
 
       - name: Install preview release invariant dependencies
         run: python -m pip install jsonschema --requirement mcp/requirements.txt
@@ -833,7 +942,7 @@ jobs:
           python3 scripts/verify_release_artifact.py verify \
             --site _site \
             --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
-            --source-commit "$GITHUB_SHA"
+            --source-commit "$PROMOTION_SOURCE_SHA"
 
       - name: Publish health artifacts to isolated preview KV
         env:
@@ -919,7 +1028,7 @@ jobs:
             --sigstore-signed "${{ needs.sign_health.outputs.signed }}" \
             --health-only "${{ needs.classify.outputs.health_only }}" \
             --sigstore-publication "$RUNNER_TEMP/sigstore-publication" \
-            --source-commit "$GITHUB_SHA" \
+            --source-commit "$PROMOTION_SOURCE_SHA" \
             --cosign "$(command -v cosign || true)"
 
       - name: Verify release artifact after preview served verification
@@ -928,7 +1037,7 @@ jobs:
           python3 scripts/verify_release_artifact.py verify \
             --site _site \
             --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
-            --source-commit "$GITHUB_SHA"
+            --source-commit "$PROMOTION_SOURCE_SHA"
 
       - name: Verify release artifact before canonical production deployment
         run: |
@@ -936,7 +1045,7 @@ jobs:
           python3 scripts/verify_release_artifact.py verify \
             --site _site \
             --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
-            --source-commit "$GITHUB_SHA"
+            --source-commit "$PROMOTION_SOURCE_SHA"
 
       - name: Deploy canonical Cloudflare Pages artifact
         id: deploy
@@ -989,7 +1098,7 @@ jobs:
             --sigstore-signed "${{ needs.sign_health.outputs.signed }}" \
             --health-only "${{ needs.classify.outputs.health_only }}" \
             --sigstore-publication "$RUNNER_TEMP/sigstore-publication" \
-            --source-commit "$GITHUB_SHA" \
+            --source-commit "$PROMOTION_SOURCE_SHA" \
             --cosign "$(command -v cosign || true)"
 
       - name: Verify local versus served parity after publication

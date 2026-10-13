@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import json
+import ast
+import builtins
+from datetime import datetime, timezone
 import re
 import os
 from pathlib import Path
 import subprocess
 import tempfile
 import textwrap
+from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -131,7 +135,7 @@ def test_append_acceptance_inner_wait_fits_hard_wrapper() -> None:
     run = _append_acceptance_step()["run"]
     wait = re.search(
         r"timeout (?:-k \d+s )?(\d+)s python3 scripts/verify_attestation_append.py "
-        r'--base "\$GITHUB_SHA" --wait-for-acceptance (\d+)',
+        r'--base "\$PROMOTION_SOURCE_SHA" --wait-for-acceptance (\d+)',
         run,
     )
     assert wait is not None
@@ -175,7 +179,7 @@ def test_append_acceptance_wrapper_kills_term_resistant_children(tmp_path: Path)
     result = subprocess.run(
         ["bash", "-c", wait + '\nstatus=$?\nexit "$status"'],
         cwd=tmp_path,
-        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "GITHUB_SHA": "c" * 40},
+        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "PROMOTION_SOURCE_SHA": "c" * 40},
         capture_output=True, text=True, timeout=5,
     )
     # Captured pipes must close too: killing only the verifier would leave its
@@ -266,7 +270,8 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         **os.environ,
         "PATH": f"{bin_dir}:{os.environ['PATH']}",
         "GITHUB_REPOSITORY": "example/data-pulse",
-        "GITHUB_SHA": "c" * 40,
+        "GITHUB_SHA": "b" * 40,
+        "PROMOTION_SOURCE_SHA": "c" * 40,
         "GH_TOKEN": "test-token",
         "CALL_LOG": str(log),
         "COMMITTED": "1" if committed else "0",
@@ -629,6 +634,167 @@ def test_pages_concurrency_serializes_all_production_candidates() -> None:
     }
     assert "concurrency" not in workflow["jobs"]["sign_health"]
     assert "concurrency" not in workflow["jobs"]["deploy"]
+
+
+def test_pages_settlement_is_bounded_and_pins_the_promoted_revision() -> None:
+    workflow = yaml.safe_load(_workflow())
+    jobs = workflow["jobs"]
+    steps = jobs["classify"]["steps"]
+    settlement = next(
+        (step for step in steps if step.get("name") == "Wait for settled main before promoting"),
+        None,
+    )
+    assert settlement is not None, "Pages has no settlement step before signing"
+    quiet = workflow["env"]["PROMOTION_SETTLED_QUIET_SECONDS"]
+    ceiling = workflow["env"]["PROMOTION_SETTLED_MAX_WAIT_SECONDS"]
+    assert str(quiet).isdigit() and str(ceiling).isdigit()
+    assert int(quiet) == 300 and int(ceiling) == 900
+    assert 0 < int(quiet) < int(ceiling)
+    assert int(quiet) + int(ceiling) < jobs["sign_health"]["timeout-minutes"] * 60
+    assert int(ceiling) + 10 < jobs["classify"]["timeout-minutes"] * 60
+    assert jobs["sign_health"]["needs"] == "classify"
+    assert steps.index(settlement) < next(i for i, step in enumerate(steps) if step.get("id") == "classify")
+    run = settlement["run"]
+    assert 'timeout -k 5s "$((PROMOTION_SETTLED_MAX_WAIT_SECONDS + 5))s" python3' in run
+    assert '["timeout", "-k", "5s",' in run
+    assert "timeout=call_budget" in run
+    assert "time.monotonic()" in run
+    assert 'commit["committer"]["date"]' in run
+    assert "sha != previous_sha" in run
+    assert 'reason = "ceiling"' in run and 'reason = "quiet"' in run
+    assert 'settled_sha={sha}' in run and 'settlement_reason={reason}' in run
+    assert "::warning title=Main settlement ceiling reached::" in run
+    # There is one shell command and one subprocess call in the poll. Both
+    # must keep their timeout wrappers; parsing catches additional bare calls.
+    shell, source = run.split("<<'PY'\n", 1)
+    assert len(shell.strip().splitlines()) == 2
+    calls = [node for node in ast.walk(ast.parse(source.rsplit("\nPY", 1)[0]))
+             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+             and isinstance(node.func.value, ast.Name) and node.func.value.id == "subprocess"]
+    assert len(calls) == 1 and calls[0].func.attr == "run"
+    assert isinstance(calls[0].args[0], ast.List)
+    assert [ast.literal_eval(item) for item in calls[0].args[0].elts[:3]] == ["timeout", "-k", "5s"]
+    assert any(keyword.arg == "timeout" for keyword in calls[0].keywords)
+    selected = "${{ needs.classify.outputs.settled_sha }}"
+    for job_name in ("sign_health", "deploy"):
+        job = jobs[job_name]
+        checkout = next(step for step in job["steps"] if step.get("uses") == "actions/checkout@v4")
+        assert checkout["with"]["ref"] == selected
+        assert job["env"]["PROMOTION_SOURCE_SHA"] == selected
+        assert all("$GITHUB_SHA" not in step.get("run", "") for step in job["steps"])
+    assert jobs["classify"]["outputs"]["settled_sha"] == "${{ steps.settled_main.outputs.settled_sha }}"
+    classifier = next(step for step in steps if step.get("id") == "classify")
+    assert classifier["env"]["AFTER_SHA"] == "${{ steps.settled_main.outputs.settled_sha }}"
+    guard = next(step for step in jobs["sign_health"]["steps"]
+                 if step.get("name") == "Require settled main before signing")
+    assert 'timeout -k 5s 30s gh api' in guard["run"]
+    assert '"$current_sha" != "$PROMOTION_SOURCE_SHA"' in guard["run"]
+    assert jobs["sign_health"]["steps"].index(guard) < next(
+        i for i, step in enumerate(jobs["sign_health"]["steps"])
+        if step.get("name") == "Refresh legacy chain head before signing"
+    )
+
+
+@pytest.mark.parametrize("scenario", ["already_quiet", "recent", "backdated_move", "confirmation_move", "busy", "lookup_failure"])
+def test_pages_settlement_poll_exercises_quiet_ceiling_and_head_changes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], scenario: str,
+) -> None:
+    step = next(step for step in yaml.safe_load(_workflow())["jobs"]["classify"]["steps"]
+                if step.get("id") == "settled_main")
+    source = step["run"].split("<<'PY'\n", 1)[1].rsplit("\nPY", 1)[0]
+    clock = [0.0]
+    calls = []
+    epoch = 1_800_000_000
+    output = tmp_path / "output"
+
+    class ClockDateTime(datetime):
+        @classmethod
+        def now(cls, tz: timezone | None = None) -> datetime:
+            return datetime.fromtimestamp(epoch + clock[0], tz)
+
+    def sleep(seconds: float) -> None:
+        assert 0 <= seconds <= 15
+        clock[0] += seconds
+        assert clock[0] <= 900
+
+    def read_head(command: list[str], **kwargs: object) -> SimpleNamespace:
+        assert command[:3] == ["timeout", "-k", "5s"]
+        assert command[4:6] == ["gh", "api"]
+        assert command[6].endswith("/commits/refs/heads/main")
+        call_budget = float(command[3].removesuffix("s"))
+        assert 0 < call_budget <= min(30, 900 - clock[0])
+        assert kwargs["timeout"] == call_budget + 6
+        assert kwargs["check"] is True
+        if scenario == "lookup_failure":
+            raise subprocess.CalledProcessError(1, command, stderr="lookup unavailable")
+        clock[0] += 0.25
+        moved = ((scenario == "backdated_move" and clock[0] >= 60)
+                 or (scenario == "confirmation_move" and bool(calls)))
+        sha = ("b" if moved else "a") * 40
+        timestamp = epoch if scenario == "recent" or (scenario == "backdated_move" and not moved) else epoch - 1000
+        if scenario == "busy":
+            revision = int(clock[0] // 31)
+            sha = f"{revision:040x}"
+            timestamp = epoch + revision * 31
+        calls.append((clock[0], sha))
+        date = datetime.fromtimestamp(timestamp, timezone.utc).isoformat()
+        return SimpleNamespace(stdout=json.dumps({"sha": sha, "commit": {"committer": {"date": date}}}))
+
+    modules = {
+        "time": SimpleNamespace(monotonic=lambda: clock[0], sleep=sleep),
+        "datetime": SimpleNamespace(datetime=ClockDateTime, timezone=timezone),
+        "subprocess": SimpleNamespace(run=read_head),
+        "os": SimpleNamespace(environ={
+            "PROMOTION_SETTLED_QUIET_SECONDS": "300", "PROMOTION_SETTLED_MAX_WAIT_SECONDS": "900",
+            "GITHUB_REPOSITORY": "fixture/datapulse", "GITHUB_OUTPUT": str(output),
+        }),
+    }
+
+    def import_module(name: str, *args: object, **kwargs: object) -> object:
+        return modules[name] if name in modules else builtins.__import__(name, *args, **kwargs)
+
+    namespace = {"__builtins__": {**vars(builtins), "__import__": import_module}}
+    if scenario == "lookup_failure":
+        with pytest.raises(subprocess.CalledProcessError):
+            exec(compile(source, str(WORKFLOW), "exec"), namespace)
+        assert not output.exists()
+        return
+    exec(compile(source, str(WORKFLOW), "exec"), namespace)
+    outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
+    assert outputs["settled_sha"] == calls[-1][1]
+    if scenario == "busy":
+        assert clock[0] == 900
+        assert outputs["settled_sha"] == f"{int(clock[0] // 31):040x}"
+        assert outputs["settlement_reason"] == "ceiling"
+        assert "::warning title=Main settlement ceiling reached::" in capsys.readouterr().out
+    else:
+        assert outputs["settlement_reason"] == "quiet"
+        assert clock[0] < 900
+        if scenario == "already_quiet":
+            assert len(calls) == 2 and clock[0] < 1
+        elif scenario == "recent":
+            assert clock[0] >= 300
+        elif scenario == "backdated_move":
+            assert clock[0] >= 360 and outputs["settled_sha"] == "b" * 40
+        elif scenario == "confirmation_move":
+            assert clock[0] >= 300 and outputs["settled_sha"] == "b" * 40
+
+
+@pytest.mark.parametrize("head", ["a" * 40, "b" * 40, "unavailable"])
+def test_pages_rejects_head_moving_after_settlement_before_signing(tmp_path: Path, head: str) -> None:
+    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+    guard = next(step for step in steps if step.get("name") == "Require settled main before signing")
+    gh = tmp_path / "gh"
+    gh.write_text("#!/bin/bash\n" + ("exit 1\n" if head == "unavailable" else f"printf '%s\\n' '{head}'\n"))
+    gh.chmod(0o755)
+    result = subprocess.run(
+        ["bash", "-c", guard["run"]], capture_output=True, text=True, timeout=40,
+        env={**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}",
+             "GITHUB_REPOSITORY": "fixture/datapulse", "PROMOTION_SOURCE_SHA": "a" * 40},
+    )
+    assert (result.returncode == 0) is (head == "a" * 40)
+    if head == "b" * 40:
+        assert "Settled main moved before signing" in result.stderr
 
 
 def test_attestation_state_machine_fails_closed_outside_health_only_signer_degradation() -> None:
@@ -1134,7 +1300,7 @@ def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manife
         run = steps[index]["run"]
         assert "python3 scripts/verify_release_artifact.py" in run
         assert manifest_path in run
-        assert '--source-commit "$GITHUB_SHA"' in run
+        assert '--source-commit "$PROMOTION_SOURCE_SHA"' in run
     assert " create " in steps[manifest_create_index]["run"]
     assert all(" verify " in steps[index]["run"] for index in lifecycle_indices[1:])
 

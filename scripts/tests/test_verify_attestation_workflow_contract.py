@@ -49,7 +49,10 @@ def test_pages_reuses_daily_witness_mechanism_before_submission() -> None:
     guard = _step(pages, "rekor_guard")
     producer = _step(pages, "produce_rekor_witness")
     assert guard.split("        run: |\n", 1)[1] == _step(daily, "rekor_guard").split("        run: |\n", 1)[1]
-    assert producer.split("        run: |\n", 1)[1] == _step(daily, "produce_rekor_witness").split("        run: |\n", 1)[1]
+    # Pages promotes its settled main revision; daily signs its triggering revision.
+    assert producer.split("        run: |\n", 1)[1].replace(
+        '"$PROMOTION_SOURCE_SHA"', '"$GITHUB_SHA"'
+    ) == _step(daily, "produce_rekor_witness").split("        run: |\n", 1)[1]
     assert "continue-on-error:" not in producer
     assert "deploy-cloudflare-pages.yml@refs/heads/main" in producer
     assert "id-token: write" in pages
@@ -70,6 +73,8 @@ def test_pages_reuses_daily_witness_mechanism_before_submission() -> None:
         ("daily", "--statement \"$statement\"", "--predicate \"$statement\"", "--statement"),
         ("pages", "--manifest datapulse.json", "--manifest altered.json", "--manifest datapulse.json"),
         ("pages", "cosign attest-blob", "cosign sign-blob", "must not use cosign sign-blob"),
+        ("pages", '--source-commit "$PROMOTION_SOURCE_SHA"', '--source-commit "$GITHUB_SHA"', "PROMOTION_SOURCE_SHA"),
+        ("pages", "PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}", "PROMOTION_SOURCE_SHA: ${{ github.sha }}", "PROMOTION_SOURCE_SHA"),
         (
             "daily",
             "https://token.actions.githubusercontent.com",
@@ -181,7 +186,7 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
     result = subprocess.run(
         ["bash", "-c", textwrap.dedent(guard.split("        run: |\n", 1)[1])], cwd=root,
         env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
-             "GITHUB_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse"},
+             "GITHUB_SHA": "b" * 40, "PROMOTION_SOURCE_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse"},
         text=True, capture_output=True,
     )
     assert (result.returncode == 0) is accepted, result.stdout + result.stderr
