@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0005208333333333333,
+        "latest_days": 0.003460648148148148,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-13T16:50:19Z",
-    "record_count": 0,
+    "last_checked": "2026-10-13T22:00:39Z",
+    "record_count": 5,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/ktmb",
@@ -39,7 +39,7 @@
     "geography": "national",
     "name": "GTFS Realtime — KTMB Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-13T16:50:19Z",
+    "observed_verified_at": "2026-10-13T22:00:39Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Keretapi Tanah Melayu Berhad (KTMB)"
   },
@@ -847,7 +847,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_ktmb.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:c0856616562e3b9b50d704824895b6d685cf932511ab030c0f8ba281dd66e536",
+      "receipt_digest": "sha256:f46f2b858e52290cfb99ce4cb5153618dd9d93970e255dd8a73596730663b229",
       "sigstore_path": "data/gtfs_realtime_ktmb.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_ktmb.receipt.statement.json"
     },
