@@ -11,6 +11,7 @@ import sys
 import textwrap
 
 import pytest
+import yaml
 
 from scripts.verify_attestation_workflow_contract import ContractError, verify_workflows
 from scripts import gen_attestations as ga
@@ -174,7 +175,8 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
         'case "$1 $2" in\n'
         '  "pr list") printf "[]\\n" ;;\n'
         '  "pr view")\n'
-        '    if [[ "$*" == *statusCheckRollup* ]]; then printf "IN_PROGRESS/\\n";\n'
+        '    if [[ "$*" == *statusCheckRollup* ]]; then printf "{\\"headRefOid\\":\\"%s\\",\\"state\\":\\"MERGED\\",'
+        '\\"statusCheckRollup\\":[{\\"name\\":\\"deterministic-safety-net\\",\\"status\\":\\"COMPLETED\\",\\"conclusion\\":\\"SUCCESS\\"}]}\\n" "$(git rev-parse HEAD)";\n'
         '    else printf "{\\"number\\":99,\\"headRefName\\":\\"%s\\",'
         '\\"headRefOid\\":\\"%s\\",\\"baseRefName\\":\\"main\\",\\"state\\":\\"OPEN\\"}\\n" '
         '"$(git branch --show-current)" "$(git rev-parse HEAD)"; fi ;;\n'
@@ -190,6 +192,7 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
     result = subprocess.run(
         ["bash", "-c", textwrap.dedent(guard.split("        run: |\n", 1)[1])], cwd=root,
         env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+             **{key: str(value) for key, value in yaml.safe_load(pages)["env"].items()},
              "GITHUB_SHA": "b" * 40, "PROMOTION_SOURCE_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse"},
         text=True, capture_output=True,
     )
