@@ -121,11 +121,21 @@ def _require_pages_boundaries(workflow: str) -> None:
         match = re.search(rf"^  {job}:\n(.*?)(?=^  [a-z_]+:|\Z)", workflow, re.MULTILINE | re.DOTALL)
         if match is None:
             raise ContractError(f"Pages workflow: missing {job} job")
+        source_job = "classify" if job == "sign_health" else "sign_health"
         for fragment in (
-            "PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}",
-            "ref: ${{ needs.classify.outputs.settled_sha }}",
+            f"PROMOTION_SOURCE_SHA: ${{{{ needs.{source_job}.outputs.settled_sha }}}}",
+            f"ref: ${{{{ needs.{source_job}.outputs.settled_sha }}}}",
         ):
             _require(match.group(1), f"Pages workflow {job}", fragment)
+        if job == "sign_health":
+            for fragment in (
+                "settled_sha: ${{ steps.settled_main.outputs.settled_sha }}",
+                "main moved; re-settling",
+                'export PROMOTION_SOURCE_SHA="$settled_sha"',
+                'echo "PROMOTION_SOURCE_SHA=$PROMOTION_SOURCE_SHA" >> "$GITHUB_ENV"',
+                'echo "settled_sha=$PROMOTION_SOURCE_SHA" >> "$GITHUB_OUTPUT"',
+            ):
+                _require(match.group(1), "Pages workflow sign_health", fragment)
 
 
 def verify_workflows(daily_path: Path, pages_path: Path) -> None:
