@@ -8,7 +8,7 @@ sources:
   - {"id": "protecthealth","resource": "https://storage.data.gov.my/healthcare/pekab40_screenings_state.csv","title": "ProtectHealth Corporation and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T16:34:45Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-12T18:33:27Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "ProtectHealth Corporation, Ministry of Health Malaysia"
@@ -26,7 +26,7 @@ data.gov.my Daily PeKaB40 Health Screenings by State is published by ProtectHeal
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:0729d7fe69db87c03f3de8115043309de3d614c914bd15080fb8d1b44232c43a`
-- `record_count`: `43744`
+- `record_count`: `43776`
 
 # Quirks
 
