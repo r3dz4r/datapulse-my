@@ -618,8 +618,8 @@ def test_health_only_path_is_selected_only_by_the_generated_output_classifier() 
     assert "skip deploy" not in classify.lower()
     assert "head_commit.message" not in workflow
     assert "Embed canonical health dashboard (health-only path)" in workflow
-    assert "if: needs.classify.outputs.health_only == 'true'" in workflow
-    assert "if: needs.classify.outputs.health_only != 'true'" in workflow
+    assert "if: needs.sign_health.outputs.health_only == 'true'" in workflow
+    assert "if: needs.sign_health.outputs.health_only != 'true'" in workflow
     deploy_job = workflow.split("  deploy:\n", 1)[1].split("    steps:\n", 1)[0]
     assert "if:" not in deploy_job
     assert "Deploy canonical Cloudflare Pages artifact" in workflow
@@ -634,6 +634,31 @@ def test_pages_concurrency_serializes_all_production_candidates() -> None:
     }
     assert "concurrency" not in workflow["jobs"]["sign_health"]
     assert "concurrency" not in workflow["jobs"]["deploy"]
+
+
+def test_pages_resettlement_reuses_wait_and_exports_one_downstream_revision() -> None:
+    workflow = yaml.safe_load(_workflow())
+    jobs = workflow["jobs"]
+    settlement = next(step for step in jobs["classify"]["steps"] if step.get("id") == "settled_main")
+    guard = next(step for step in jobs["sign_health"]["steps"]
+                 if step.get("name") == "Require settled main before signing")
+    assert "main moved; re-settling" in guard["run"]
+    assert guard["env"]["PROMOTION_SETTLE_RUN"] == settlement["run"]
+    assert "max_attempts=2" in guard["run"]
+    assert '"$attempts" -ge "$max_attempts"' in guard["run"]
+    assert "attempts exhausted after $attempts attempts" in guard["run"]
+    assert 'export PROMOTION_SOURCE_SHA="$settled_sha"' in guard["run"]
+    assert 'git checkout --detach "$settled_sha"' in guard["run"]
+    assert '"$GITHUB_ENV"' in guard["run"] and '"$GITHUB_OUTPUT"' in guard["run"]
+    # Two complete waits, all three head reads, two verified checkouts, and
+    # classification fit inside the watchdog, including each kill grace.
+    ceiling = workflow["env"]["PROMOTION_SETTLED_MAX_WAIT_SECONDS"]
+    assert 2 * (ceiling + 10 + 65 + 15 + 15 + 15 + 35 + 15) + 3 * 35 + 35 < guard["timeout-minutes"] * 60
+    selected = "${{ needs.sign_health.outputs.settled_sha }}"
+    assert jobs["sign_health"]["outputs"]["settled_sha"] == "${{ steps.settled_main.outputs.settled_sha }}"
+    assert jobs["deploy"]["env"]["PROMOTION_SOURCE_SHA"] == selected
+    checkout = next(step for step in jobs["deploy"]["steps"] if step.get("uses") == "actions/checkout@v4")
+    assert checkout["with"]["ref"] == selected
 
 
 def test_pages_settlement_is_bounded_and_pins_the_promoted_revision() -> None:
@@ -675,9 +700,10 @@ def test_pages_settlement_is_bounded_and_pins_the_promoted_revision() -> None:
     assert isinstance(calls[0].args[0], ast.List)
     assert [ast.literal_eval(item) for item in calls[0].args[0].elts[:3]] == ["timeout", "-k", "5s"]
     assert any(keyword.arg == "timeout" for keyword in calls[0].keywords)
-    selected = "${{ needs.classify.outputs.settled_sha }}"
     for job_name in ("sign_health", "deploy"):
         job = jobs[job_name]
+        source_job = "classify" if job_name == "sign_health" else "sign_health"
+        selected = "${{ needs." + source_job + ".outputs.settled_sha }}"
         checkout = next(step for step in job["steps"] if step.get("uses") == "actions/checkout@v4")
         assert checkout["with"]["ref"] == selected
         assert job["env"]["PROMOTION_SOURCE_SHA"] == selected
@@ -780,21 +806,125 @@ def test_pages_settlement_poll_exercises_quiet_ceiling_and_head_changes(
             assert clock[0] >= 300 and outputs["settled_sha"] == "b" * 40
 
 
-@pytest.mark.parametrize("head", ["a" * 40, "b" * 40, "unavailable"])
-def test_pages_rejects_head_moving_after_settlement_before_signing(tmp_path: Path, head: str) -> None:
-    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
-    guard = next(step for step in steps if step.get("name") == "Require settled main before signing")
-    gh = tmp_path / "gh"
-    gh.write_text("#!/bin/bash\n" + ("exit 1\n" if head == "unavailable" else f"printf '%s\\n' '{head}'\n"))
+@pytest.mark.parametrize("scenario", [
+    "stable", "once_health", "once_code", "repeated", "ceiling",
+    "unreadable", "empty", "malformed", "settle_failure", "unidentified_settle", "missing_commit",
+    "selected_empty", "selected_malformed", "history_rewrite",
+])
+def test_pages_resettlement_guard_exercises_recovery_and_fail_closed(
+    tmp_path: Path, scenario: str,
+) -> None:
+    workflow = yaml.safe_load(_workflow())
+    guard = next(step for step in workflow["jobs"]["sign_health"]["steps"]
+                 if step.get("name") == "Require settled main before signing")
+    remote = tmp_path / "remote"
+    remote.mkdir()
+
+    def git(*args: str, cwd: Path = remote) -> str:
+        return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
+
+    git("init", "-q", "-b", "fixture")
+    git("config", "user.name", "Fixture")
+    git("config", "user.email", "fixture@example.invalid")
+    for path in ("attestations/index.json", ".attestations/chain_head.json", "health/latest.json"):
+        target = remote / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("{}")
+    (remote / "scripts").mkdir()
+    (remote / "scripts/classify_change.py").write_bytes((ROOT / "scripts/classify_change.py").read_bytes())
+    shas = []
+    for index in range(4):
+        if index == 1 and scenario == "history_rewrite":
+            git("checkout", "-q", "--orphan", "rewritten")
+        (remote / "health/latest.json").write_text(json.dumps({"revision": index}))
+        if index == 1 and scenario == "once_code":
+            (remote / "source.py").write_text("# source change\n")
+        git("add", ".")
+        git("commit", "-qm", f"fixture {index}")
+        shas.append(git("rev-parse", "HEAD"))
+    checkout = tmp_path / "checkout"
+    git("clone", "-q", str(remote), str(checkout))
+    git("checkout", "-q", "--detach", shas[0], cwd=checkout)
+    # Exercise replacing the earlier step's accepted-evidence overlay too.
+    (checkout / "attestations/index.json").write_text('{"imported": true}')
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    gh = bin_dir / "gh"
+    gh.write_text(textwrap.dedent("""\
+        #!/usr/bin/env python3
+        import json, os, pathlib, sys
+        scenario = os.environ['GUARD_SCENARIO']
+        heads = json.loads(os.environ['GUARD_HEADS'])
+        counter = pathlib.Path(os.environ['GUARD_COUNTER'])
+        reads = int(counter.read_text()) if counter.exists() else 0
+        endpoint = sys.argv[2]
+        if '/git/ref/' in endpoint:
+            if scenario == 'unreadable':
+                sys.exit(1)
+            head = heads[min(reads, len(heads) - 1)]
+            counter.write_text(str(reads + 1))
+            print(head)
+        else:
+            if scenario == 'settle_failure':
+                sys.exit(1)
+            head = heads[min(max(0, reads - 1), len(heads) - 1)]
+            print(json.dumps({'sha': head, 'commit': {'committer': {'date': '2000-01-01T00:00:00Z'}}}))
+        """))
     gh.chmod(0o755)
+    heads = [shas[0]] if scenario == "stable" else [shas[1]]
+    if scenario == "repeated":
+        heads = shas[1:]
+    elif scenario in ("empty", "malformed", "missing_commit"):
+        heads = [{"empty": "", "malformed": "not-a-sha", "missing_commit": "f" * 40}[scenario]]
+    wait = guard["env"]["PROMOTION_SETTLE_RUN"]
+    if scenario in ("ceiling", "unidentified_settle"):
+        sha = shas[1] if scenario == "ceiling" else "invalid"
+        reason = "ceiling" if scenario == "ceiling" else "quiet"
+        wait = f'printf "settled_sha={sha}\\nsettlement_reason={reason}\\n" >> "$GITHUB_OUTPUT"'
+    output, environment = tmp_path / "output", tmp_path / "environment"
+    selected = {"selected_empty": "", "selected_malformed": "invalid"}.get(scenario, shas[0])
     result = subprocess.run(
-        ["bash", "-c", guard["run"]], capture_output=True, text=True, timeout=40,
-        env={**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}",
-             "GITHUB_REPOSITORY": "fixture/datapulse", "PROMOTION_SOURCE_SHA": "a" * 40},
+        ["bash", "-c", guard["run"]], cwd=checkout, capture_output=True, text=True, timeout=15,
+        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+             "GITHUB_REPOSITORY": "fixture/datapulse", "PROMOTION_SOURCE_SHA": selected,
+             "PROMOTION_HEALTH_ONLY": "true", "PROMOTION_SETTLE_RUN": wait,
+             "PROMOTION_SETTLED_QUIET_SECONDS": "1", "PROMOTION_SETTLED_MAX_WAIT_SECONDS": "3",
+             "GITHUB_OUTPUT": str(output), "GITHUB_ENV": str(environment), "RUNNER_TEMP": str(tmp_path),
+             "GUARD_SCENARIO": scenario, "GUARD_HEADS": json.dumps(heads),
+             "GUARD_COUNTER": str(tmp_path / "reads")},
     )
-    assert (result.returncode == 0) is (head == "a" * 40)
-    if head == "b" * 40:
-        assert "Settled main moved before signing" in result.stderr
+    if scenario in ("stable", "once_health", "once_code"):
+        assert result.returncode == 0, result.stdout + result.stderr
+        expected = shas[0] if scenario == "stable" else shas[1]
+        outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
+        assert outputs == {"settled_sha": expected, "health_only": "false" if scenario == "once_code" else "true"}
+        assert environment.read_text() == f"PROMOTION_SOURCE_SHA={expected}\n"
+        assert git("rev-parse", "HEAD", cwd=checkout) == expected
+        if scenario == "stable":
+            assert "re-settling" not in result.stdout
+            assert "after 0 re-settle attempts" in result.stdout
+        else:
+            assert f"main moved; re-settling {shas[0]} -> {shas[1]}" in result.stdout
+            assert f"Re-settled promotion revision: {shas[0]} -> {shas[1]}" in result.stdout
+            assert "after 1 re-settle attempts" in result.stdout
+            assert json.loads((checkout / "health/latest.json").read_text()) == {"revision": 1}
+            assert (checkout / "attestations/index.json").read_text() == "{}"
+    else:
+        assert result.returncode != 0, result.stdout + result.stderr
+        assert not output.exists() and not environment.exists()
+        if scenario in ("repeated", "ceiling"):
+            assert "attempts exhausted after 2 attempts" in result.stderr
+            assert result.stdout.count("main moved; re-settling") == 2
+        elif scenario in ("unreadable", "empty", "malformed"):
+            assert "Unidentified main revision" in result.stderr
+        elif scenario == "settle_failure":
+            assert "Main re-settlement failed" in result.stderr
+        elif scenario == "unidentified_settle":
+            assert "Unidentified re-settled revision" in result.stderr
+        elif scenario in ("selected_empty", "selected_malformed"):
+            assert "Unidentified promotion revision" in result.stderr
+        elif scenario in ("missing_commit", "history_rewrite"):
+            assert "Unverified main revision" in result.stderr
 
 
 def test_attestation_state_machine_fails_closed_outside_health_only_signer_degradation() -> None:
@@ -814,7 +944,7 @@ def test_attestation_state_machine_fails_closed_outside_health_only_signer_degra
         step for step in deploy_steps if step.get("name") == "Require signed attestation for full release"
     )
     assert full_release_gate["if"] == (
-        "needs.classify.outputs.health_only != 'true' && "
+        "needs.sign_health.outputs.health_only != 'true' && "
         "needs.sign_health.outputs.attestation_state != 'signed'"
     )
     assert "signer_down" in full_release_gate["run"]
@@ -822,7 +952,7 @@ def test_attestation_state_machine_fails_closed_outside_health_only_signer_degra
         step for step in deploy_steps if step.get("name") == "Preserve served attestation plane (health-only path)"
     )
     assert preserve["if"] == (
-        "needs.classify.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.health_only == 'true' && "
         "needs.sign_health.outputs.attestation_state == 'signer_down'"
     )
 
@@ -1008,7 +1138,7 @@ def test_health_only_signed_sigstore_bundle_skips_legacy_plane_preservation() ->
     assemble = next(step for step in steps if step.get("name") == "Assemble canonical Pages artifact")
 
     assert preserve["if"] == (
-        "needs.classify.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.health_only == 'true' && "
         "needs.sign_health.outputs.attestation_state == 'signer_down'"
     )
     assert download["if"] == (
@@ -1082,7 +1212,7 @@ def test_native_pages_installs_release_dependencies_before_generation() -> None:
     install_step = steps[install_index]
 
     assert install_index < release_build_index
-    assert install_step["if"] == "needs.classify.outputs.health_only != 'true'"
+    assert install_step["if"] == "needs.sign_health.outputs.health_only != 'true'"
     assert install_step["run"] == (
         "python -m pip install jsonschema --requirement mcp/requirements.txt "
         "'datacontract-cli[duckdb]==0.12.5'"
@@ -1094,7 +1224,7 @@ def test_native_pages_runs_contract_validation_only_for_full_releases() -> None:
     steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
     validation = next(step for step in steps if step.get("name") == "Validate DataPulse contract (non-health path)")
 
-    assert validation["if"] == "needs.classify.outputs.health_only != 'true'"
+    assert validation["if"] == "needs.sign_health.outputs.health_only != 'true'"
     assert validation["run"] == "bash scripts/run_datacontract_validation.sh"
 
 
@@ -1112,7 +1242,7 @@ def test_native_pages_installs_pinned_pandoc_before_non_health_release_build() -
     pandoc_step = steps[pandoc_index]
 
     assert pandoc_index < release_build_index
-    assert pandoc_step["if"] == "needs.classify.outputs.health_only != 'true'"
+    assert pandoc_step["if"] == "needs.sign_health.outputs.health_only != 'true'"
     assert pandoc_step["run"].splitlines() == [
         "sudo apt-get update",
         "sudo apt-get install -y pandoc=3.1.3+ds-2",
@@ -1136,8 +1266,8 @@ def test_native_pages_scopes_attestation_key_setup_to_non_health_release_build()
     secret_expression = "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}"
     release_run = release_step["run"]
     verify_run = verify_step["run"]
-    assert release_step["if"] == "needs.classify.outputs.health_only != 'true'"
-    assert verify_step["if"] == "needs.classify.outputs.health_only != 'true'"
+    assert release_step["if"] == "needs.sign_health.outputs.health_only != 'true'"
+    assert verify_step["if"] == "needs.sign_health.outputs.health_only != 'true'"
     assert release_step["env"] == {
         "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT": secret_expression,
     }
@@ -1355,7 +1485,7 @@ def test_sign_health_refreshes_chain_head_before_signing() -> None:
         "      - name: Refresh legacy chain head before signing\n", 1
     )[1].split("      - name: Generate deterministic health attestation statement\n", 1)[0]
 
-    assert "if: needs.classify.outputs.health_only != 'true'" not in refresh_step
+    assert "if: needs.sign_health.outputs.health_only != 'true'" not in refresh_step
     assert "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}" in refresh_step
     assert "bash scripts/refresh_chain_head.sh" in refresh_step
 

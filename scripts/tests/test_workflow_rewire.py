@@ -348,13 +348,13 @@ def test_attestation_state_fails_closed_for_full_releases_and_preserves_valid_se
     )
 
     assert full_release_gate["if"] == (
-        "needs.classify.outputs.health_only != 'true' && "
+        "needs.sign_health.outputs.health_only != 'true' && "
         "needs.sign_health.outputs.attestation_state != 'signed'"
     )
     assert "Full releases require attestation_state=signed" in full_release_gate["run"]
     assert "exit 1" in full_release_gate["run"]
     assert preservation["if"] == (
-        "needs.classify.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.health_only == 'true' && "
         "needs.sign_health.outputs.attestation_state == 'signer_down'"
     )
     assert steps.index(preservation) < assemble_index

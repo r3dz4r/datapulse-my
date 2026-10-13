@@ -75,6 +75,10 @@ def test_pages_reuses_daily_witness_mechanism_before_submission() -> None:
         ("pages", "cosign attest-blob", "cosign sign-blob", "must not use cosign sign-blob"),
         ("pages", '--source-commit "$PROMOTION_SOURCE_SHA"', '--source-commit "$GITHUB_SHA"', "PROMOTION_SOURCE_SHA"),
         ("pages", "PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}", "PROMOTION_SOURCE_SHA: ${{ github.sha }}", "PROMOTION_SOURCE_SHA"),
+        ("pages", "PROMOTION_SOURCE_SHA: ${{ needs.sign_health.outputs.settled_sha }}", "PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}", "PROMOTION_SOURCE_SHA"),
+        ("pages", "ref: ${{ needs.sign_health.outputs.settled_sha }}", "ref: ${{ needs.classify.outputs.settled_sha }}", "ref:"),
+        ("pages", 'export PROMOTION_SOURCE_SHA="$settled_sha"', 'export PROMOTION_SOURCE_SHA="$initial_sha"', "PROMOTION_SOURCE_SHA"),
+        ("pages", 'echo "settled_sha=$PROMOTION_SOURCE_SHA" >> "$GITHUB_OUTPUT"', 'echo "settled_sha=$initial_sha" >> "$GITHUB_OUTPUT"', "settled_sha="),
         (
             "daily",
             "https://token.actions.githubusercontent.com",
