@@ -52,13 +52,13 @@ def _require_command_arguments(block: str, label: str, command: str, arguments: 
             raise ContractError(f"{label}: {command} missing required {argument!r}")
 
 
-def _require_dsse_flow(workflow: str, label: str, identity: str) -> None:
+def _require_dsse_flow(workflow: str, label: str, identity: str, source_variable: str) -> None:
     for fragment in (
         "python3 scripts/gen_sigstore_bundle.py",
         CANONICAL_HEALTH,
         CANONICAL_MANIFEST,
         CANONICAL_CHAIN_HEAD,
-        '--source-commit "$GITHUB_SHA"',
+        f'--source-commit "${source_variable}"',
         "python3 scripts/verify_sigstore_bundle.py",
         "--certificate-identity \"$SIGSTORE_IDENTITY\"",
         "--certificate-oidc-issuer \"$SIGSTORE_ISSUER\"",
@@ -80,7 +80,7 @@ def _require_dsse_flow(workflow: str, label: str, identity: str) -> None:
         CANONICAL_HEALTH,
         CANONICAL_MANIFEST,
         CANONICAL_CHAIN_HEAD,
-        '--source-commit "$GITHUB_SHA"',
+        f'--source-commit "${source_variable}"',
     )
     _require_command_arguments(
         _command_block(workflow, "python3 scripts/gen_sigstore_bundle.py", "--out", label),
@@ -117,6 +117,15 @@ def _require_pages_boundaries(workflow: str) -> None:
         "python3 scripts/verify_sigstore_bundle.py",
     ):
         _require(workflow, "Pages workflow", fragment)
+    for job in ("sign_health", "deploy"):
+        match = re.search(rf"^  {job}:\n(.*?)(?=^  [a-z_]+:|\Z)", workflow, re.MULTILINE | re.DOTALL)
+        if match is None:
+            raise ContractError(f"Pages workflow: missing {job} job")
+        for fragment in (
+            "PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}",
+            "ref: ${{ needs.classify.outputs.settled_sha }}",
+        ):
+            _require(match.group(1), f"Pages workflow {job}", fragment)
 
 
 def verify_workflows(daily_path: Path, pages_path: Path) -> None:
@@ -128,11 +137,13 @@ def verify_workflows(daily_path: Path, pages_path: Path) -> None:
         daily,
         "daily workflow",
         "https://github.com/r3dz4r/datapulse-my/.github/workflows/datapulse-attest-daily.yml@refs/heads/main",
+        "GITHUB_SHA",
     )
     _require_dsse_flow(
         pages,
         "Pages workflow",
         "https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main",
+        "PROMOTION_SOURCE_SHA",
     )
     _require_daily_guards(daily)
     _require_pages_boundaries(pages)
