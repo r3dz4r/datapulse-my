@@ -131,6 +131,73 @@ def _append_acceptance_step() -> dict:
     )
 
 
+def _append_existing_step() -> dict:
+    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+    return next(step for step in steps
+                if step.get("name") == "Wait for an existing append before generating a candidate")
+
+
+def _assert_append_time_bounds(workflow: dict) -> None:
+    worst = int(workflow["env"]["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"])
+    patience = int(workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    job = workflow["jobs"]["sign_health"]
+    steps = {step.get("name"): step for step in job["steps"]}
+    waits = [steps[name] for name in (
+        "Wait for an existing append before generating a candidate",
+        "Require authoritative acceptance before signing publication",
+    )]
+    assert 0 < worst < patience
+    assert patience - worst >= 300, "keep at least five minutes of measured-check margin"
+    for step in waits:
+        wrapper = re.search(r"timeout -k (\d+)s (\d+)s bash", step["run"])
+        assert wrapper is not None
+        kill_after, duration = map(int, wrapper.groups())
+        assert patience < duration < duration + kill_after < step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
+        assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in step["run"]
+    acceptance = waits[1]
+    tokens = [step for step in job["steps"] if step.get("uses") == "actions/create-github-app-token@v1"]
+    assert len(tokens) == 2
+    assert tokens[1]["with"] == tokens[0]["with"]
+    assert job["steps"].index(tokens[1]) + 1 == job["steps"].index(acceptance)
+    assert acceptance["env"]["GH_TOKEN"] == "${{ steps.acceptance-append-token.outputs.token }}"
+    assert acceptance["timeout-minutes"] < 60, "fresh App token must outlive acceptance"
+    # Jobs time all their sequential steps, not just the longest step. Reserve
+    # nine minutes for checkout, candidate preparation, witnessing and signing.
+    bounded_minutes = sum(step.get("timeout-minutes", 0) for step in job["steps"])
+    assert bounded_minutes + 9 <= job["timeout-minutes"] <= 132
+    # deploy starts after sign_health; its independent bound excludes that wait.
+    deploy = workflow["jobs"]["deploy"]
+    assert "sign_health" in deploy["needs"]
+    assert 0 < deploy["timeout-minutes"] <= 30
+
+
+def test_publication_append_time_bounds_contract() -> None:
+    _assert_append_time_bounds(yaml.safe_load(_workflow()))
+
+
+@pytest.mark.parametrize("moved", ["worst", "patience", "wrapper", "step", "job"])
+def test_publication_append_time_bounds_reject_isolated_ordering_drift(moved: str) -> None:
+    workflow = yaml.safe_load(_workflow())
+    _assert_append_time_bounds(workflow)
+    job = workflow["jobs"]["sign_health"]
+    step = next(step for step in job["steps"]
+                if step.get("name") == "Require authoritative acceptance before signing publication")
+    patience = int(workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    if moved == "worst":
+        workflow["env"]["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"] = patience
+    elif moved == "patience":
+        workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"] = step["timeout-minutes"] * 60
+    elif moved == "wrapper":
+        step["run"] = re.sub(r"(timeout -k \d+s )\d+s bash",
+                             rf"\g<1>{step['timeout-minutes'] * 60}s bash", step["run"], count=1)
+    elif moved == "step":
+        step["timeout-minutes"] = job["timeout-minutes"]
+    else:
+        job["timeout-minutes"] = step["timeout-minutes"]
+    with pytest.raises(AssertionError):
+        _assert_append_time_bounds(workflow)
+
+
 def test_append_acceptance_inner_wait_fits_hard_wrapper() -> None:
     run = _append_acceptance_step()["run"]
     wait = re.search(
@@ -140,7 +207,10 @@ def test_append_acceptance_inner_wait_fits_hard_wrapper() -> None:
     )
     assert wait is not None
     outer, inner = map(int, wait.groups())
-    assert 0 < inner < outer
+    # The shell now owns the pending-PR wait. The verifier gets one bounded
+    # fetched-main probe after merge or at the patience deadline.
+    assert inner == 0 < outer
+    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in run
 
 
 def test_append_acceptance_bounds_every_external_call_and_total_budget() -> None:
@@ -161,15 +231,143 @@ def test_append_acceptance_bounds_every_external_call_and_total_budget() -> None
     assert "bash -Eeuo pipefail <<'ACCEPTANCE'" in run
     assert run.rstrip().endswith("ACCEPTANCE")
     job = yaml.safe_load(_workflow())["jobs"]["sign_health"]
-    assert sum(bounds) < whole_step < step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
+    patience = int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    # Loop calls before the last deadline observation are charged to patience;
+    # counting each call once also reserves the last observation and byte proof.
+    assert patience + sum(bounds) < whole_step < step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
     assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
+
+
+def test_existing_append_bounds_every_call_and_total_budget() -> None:
+    step = _append_existing_step()
+    commands = "\n".join(line for line in step["run"].splitlines()
+                         if not line.lstrip().startswith("#"))
+    bounds = []
+    for call in re.finditer(r"(?<![\w-])(?:python3|bash|git|jq|gh)\b", commands):
+        bound = re.search(r"timeout -k (\d+)s (\d+)s $", commands[:call.start()])
+        assert bound is not None, f"unbounded call: {commands[call.start():].splitlines()[0]}"
+        kill_after, duration = map(int, bound.groups())
+        assert kill_after > 0 and duration > 0
+        bounds.append(duration + kill_after)
+    whole_step = bounds.pop(0)
+    patience = int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    assert patience + sum(bounds) < whole_step < step["timeout-minutes"] * 60
+    assert "bash -Eeuo pipefail <<'EXISTING_APPEND'" in step["run"]
+    assert step["run"].rstrip().endswith("EXISTING_APPEND")
+    assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
+
+
+@pytest.mark.parametrize("existing", [False, True], ids=["submitted", "already-open"])
+@pytest.mark.parametrize("scenario", [
+    "closed", "failure", "cancelled", "timed_out", "force_push", "merged_force_push",
+    "lookup_failed", "pending_merge", "exhausted", "not_reported", "legacy_failure", "proof_failed",
+])
+def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scenario: str) -> None:
+    """Exercise both real shell loops with bounded API stubs and a virtual clock."""
+    step = _append_existing_step() if existing else _append_acceptance_step()
+    head = "d" * 40
+    initial = {"number": 99, "headRefName": "attestation/append-contract", "headRefOid": head,
+               "baseRefName": "main", "state": "OPEN", "isCrossRepository": False,
+               "autoMergeRequest": None, "statusCheckRollup": []}
+    required = {"name": "deterministic-safety-net", "status": "IN_PROGRESS", "conclusion": ""}
+    polled = {**initial, "statusCheckRollup": [required]}
+    if scenario == "closed":
+        polled["state"] = "CLOSED"
+    elif scenario in {"failure", "cancelled", "timed_out"}:
+        required.update(status="COMPLETED", conclusion=scenario.upper())
+    elif scenario == "legacy_failure":
+        polled["statusCheckRollup"] = [{"context": "deterministic-safety-net", "state": "FAILURE"}]
+    elif scenario in {"force_push", "merged_force_push"}:
+        polled["headRefOid"] = "e" * 40
+        if scenario == "merged_force_push":
+            polled["state"] = "MERGED"
+    elif scenario == "not_reported":
+        polled["statusCheckRollup"] = []
+    elif scenario == "proof_failed":
+        polled["state"] = "MERGED"
+        required.update(status="COMPLETED", conclusion="SUCCESS")
+    # An unrelated failing check must not abort the pending required check.
+    if scenario == "pending_merge":
+        polled["statusCheckRollup"].append({"name": "other", "status": "COMPLETED", "conclusion": "FAILURE"})
+    merged = {**initial, "state": "MERGED", "statusCheckRollup": [
+        {"name": "deterministic-safety-net", "status": "COMPLETED", "conclusion": "SUCCESS"},
+    ]}
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts/submit_attestation_append.sh").write_text('echo submit >> "$CALL_LOG"\n')
+    (bin_dir / "gh").write_text(
+        '#!/bin/bash\necho "gh $*" >> "$CALL_LOG"\n'
+        'case "$1 $2" in\n'
+        ' "pr list") if [[ "$EXISTING" == 1 && ! -f "$MERGED_MARKER" ]]; then echo "$OPEN_PRS"; else echo "[]"; fi ;;\n'
+        ' "pr merge") : ;;\n'
+        ' "pr view")\n'
+        '   if [[ "$*" != *statusCheckRollup* || "$*" == *autoMergeRequest* ]]; then echo "$INITIAL_PR";\n'
+        '   elif [[ "$SCENARIO" == lookup_failed ]]; then exit 124;\n'
+        '   elif [[ "$SCENARIO" == pending_merge && -f "$POLL_MARKER" ]]; then echo "$MERGED_PR"; touch "$MERGED_MARKER";\n'
+        '   else echo "$POLLED_PR"; touch "$POLL_MARKER"; fi ;;\n'
+        ' *) exit 2 ;;\nesac\n'
+    )
+    (bin_dir / "python3").write_text(
+        '#!/bin/bash\necho "verify $*" >> "$CALL_LOG"\n'
+        'if [[ "$*" == *--require-committed* ]]; then exit 1; fi\n'
+        'if [[ "$*" == *--wait-for-acceptance* && "$SCENARIO" != pending_merge ]]; then exit 1; fi\n'
+    )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\necho "git $*" >> "$CALL_LOG"\n'
+        'case "$*" in\n'
+        ' "branch --show-current") echo attestation/append-contract ;;\n'
+        ' "rev-parse HEAD") echo "$APPEND_SHA" ;;\n'
+        ' "merge-base "*) [[ "$SCENARIO" != proof_failed ]] ;;\n'
+        ' "fetch "*|"restore "*) : ;;\n'
+        ' *) exit 2 ;;\nesac\n'
+    )
+    for stub in bin_dir.iterdir():
+        stub.chmod(0o755)
+    log = tmp_path / "calls.log"
+    workflow_env = yaml.safe_load(_workflow())["env"]
+    patience = int(workflow_env["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    worst_observed = int(workflow_env["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"])
+    env = {**os.environ, **{key: str(value) for key, value in workflow_env.items()},
+           "PATH": f"{bin_dir}:{os.environ['PATH']}", "GITHUB_REPOSITORY": "fixture/datapulse",
+           "PROMOTION_SOURCE_SHA": "c" * 40, "APPEND_SHA": head, "EXISTING": str(int(existing)),
+           "SCENARIO": scenario, "CALL_LOG": str(log), "INITIAL_PR": json.dumps(initial),
+           "OPEN_PRS": json.dumps([initial]), "POLLED_PR": json.dumps(polled), "MERGED_PR": json.dumps(merged),
+           "POLL_MARKER": str(tmp_path / "polled"), "MERGED_MARKER": str(tmp_path / "merged")}
+    # Skip real sleeping. A successful check takes the measured worst-observed duration, while
+    # undecided cases advance to the configured patience without accepting.
+    advance = f"started + {worst_observed}" if scenario == "pending_merge" else "deadline"
+    run = re.sub(r'^\s*sleep .*$', f'echo slept >> "$CALL_LOG"; SECONDS=$(({advance}))',
+                 step["run"], flags=re.MULTILINE)
+    result = subprocess.run(["bash", "-c", run], cwd=tmp_path, env=env,
+                            capture_output=True, text=True, timeout=10)
+    calls = log.read_text().splitlines()
+    assert (result.returncode == 0) is (scenario == "pending_merge"), result.stdout + result.stderr
+    assert ("slept" in calls) is (scenario in {"pending_merge", "exhausted", "not_reported"})
+    if scenario != "pending_merge":
+        assert "PR #99" in result.stderr
+        assert "(attestation/append-contract)" in result.stderr
+        assert "deterministic-safety-net:" in result.stderr
+    if scenario in {"exhausted", "not_reported"}:
+        elapsed_match = re.search(r"elapsed (\d+)s", result.stderr)
+        assert elapsed_match is not None, result.stderr
+        assert patience <= int(elapsed_match.group(1)) <= patience + 1, result.stderr
+        assert f"patience {patience}s" in result.stderr
+        assert ("not reported" if scenario == "not_reported" else "IN_PROGRESS/") in result.stderr
+    if scenario in {"failure", "cancelled", "timed_out", "legacy_failure"}:
+        assert "Append required check failed" in result.stderr
+    if scenario in {"force_push", "merged_force_push"}:
+        assert "Append head changed" in result.stderr
+    if not existing and scenario not in {"pending_merge", "exhausted", "not_reported", "proof_failed"}:
+        assert not any("--wait-for-acceptance" in call for call in calls)
 
 
 def test_append_acceptance_wrapper_kills_term_resistant_children(tmp_path: Path) -> None:
     run = _append_acceptance_step()["run"]
     wait = next(line.strip().removeprefix("if ! ").removesuffix("; then")
-                for line in run.splitlines() if "--wait-for-acceptance 780; then" in line)
+                for line in run.splitlines() if "--wait-for-acceptance 0; then" in line)
     # Exercise the actual wrapper without waiting for its production budget.
+    wait = wait.removeprefix("if ")
     wait = re.sub(r"-k \d+s \d+s", "-k 0.1s 1s", wait)
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -206,13 +404,13 @@ def test_append_acceptance_wrapper_kills_term_resistant_children(tmp_path: Path)
     ],
 )
 @pytest.mark.parametrize(
-    ("wait_accepted", "wait_status", "recheck_status", "check_status"),
+    ("wait_accepted", "pr_state", "recheck_status", "check_status"),
     [
-        (True, 0, 0, 0),
-        (False, 1, 1, 0),
-        (False, 124, 1, 0),
-        (False, 137, 137, 124),
-        (True, 124, 0, 0),  # The exact candidate merged at the deadline.
+        (True, "MERGED", 0, 0),
+        (False, "MERGED", 1, 0),
+        (False, "OPEN", 1, 0),
+        (False, "OPEN", 137, 124),
+        (True, "OPEN", 0, 0),  # The exact candidate merged at the deadline.
     ],
 )
 @pytest.mark.parametrize("arm_status", [0, 1])
@@ -224,20 +422,19 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     expected_submit: bool,
     expected_append: str | None,
     wait_accepted: bool,
-    wait_status: int,
+    pr_state: str,
     recheck_status: int,
     check_status: int,
     arm_status: int,
 ) -> None:
     step = _append_acceptance_step()
-    assert step["env"]["GH_TOKEN"] == "${{ steps.append-token.outputs.token }}"
+    assert step["env"]["GH_TOKEN"] == "${{ steps.acceptance-append-token.outputs.token }}"
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     (tmp_path / "scripts").mkdir()
     (bin_dir / "python3").write_text(
         '#!/bin/bash\nprintf "verify %s\\n" "$*" >> "$CALL_LOG"\n'
         'if [[ "$*" == *"--wait-for-acceptance 0" ]]; then exit "$RECHECK_STATUS"; fi\n'
-        'if [[ "$*" == *--wait-for-acceptance* ]]; then exit "$ACCEPTANCE_STATUS"; fi\n'
         '[[ "$*" != *--require-committed* ]] || [[ "$COMMITTED" == 1 ]]\n'
     )
     (bin_dir / "git").write_text(
@@ -253,7 +450,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         'case "$1 $2" in\n'
         '  "pr list") printf "%s\\n" "$OPEN_PRS"; exit "$GH_STATUS" ;;\n'
         '  "pr view")\n'
-        '    if [[ "$*" == *statusCheckRollup* ]]; then printf "COMPLETED/SUCCESS\\n"; exit "$CHECK_STATUS";\n'
+        '    if [[ "$*" == *statusCheckRollup* ]]; then printf "%s\\n" "$POLLED_PR"; exit "$CHECK_STATUS";\n'
         '    else printf "{\\"number\\":99,\\"headRefName\\":\\"attestation/append-contract\\",'
         '\\"headRefOid\\":\\"%s\\",\\"baseRefName\\":\\"main\\",\\"state\\":\\"OPEN\\"}\\n" "$APPEND_SHA"; fi ;;\n'
         '  "pr merge") exit "$ARM_STATUS" ;;\n'
@@ -268,6 +465,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     log = tmp_path / "calls.log"
     env = {
         **os.environ,
+        **{key: str(value) for key, value in yaml.safe_load(_workflow())["env"].items()},
         "PATH": f"{bin_dir}:{os.environ['PATH']}",
         "GITHUB_REPOSITORY": "example/data-pulse",
         "GITHUB_SHA": "b" * 40,
@@ -279,19 +477,26 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         "GH_STATUS": str(gh_status),
         "ARM_STATUS": str(arm_status),
         "APPEND_SHA": "d" * 40,
-        "ACCEPTANCE_STATUS": str(wait_status),
         "RECHECK_STATUS": str(recheck_status),
         "CHECK_STATUS": str(check_status),
+        "POLLED_PR": json.dumps({
+            "headRefOid": "d" * 40,
+            "state": pr_state,
+            "statusCheckRollup": [{"name": "deterministic-safety-net", "status": "COMPLETED", "conclusion": "SUCCESS"}],
+        }),
     }
     outputs = []
     for _ in range(2):
         log.write_text("")
         result = subprocess.run(
-            ["/bin/bash", "-c", step["run"]],
+            ["/bin/bash", "-c", re.sub(r'^\s*sleep .*$', '              SECONDS=$deadline', step["run"], flags=re.MULTILINE)],
             cwd=tmp_path, env=env, capture_output=True, text=True, check=False,
         )
         calls = log.read_text().splitlines()
-        outputs.append((result.returncode, result.stdout, result.stderr, calls))
+        # Elapsed wall time is deliberately reported, so normalize only that
+        # measurement when comparing two otherwise identical executions.
+        outputs.append((result.returncode, result.stdout,
+                        re.sub(r"elapsed \d+s", "elapsed <measured>s", result.stderr), calls))
         assert ("submit" in calls) is expected_submit
         assert "verify scripts/verify_attestation_append.py --base HEAD" in calls
         assert "verify scripts/verify_attestation_append.py --base HEAD --require-committed" in calls
@@ -307,16 +512,17 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         if expected_submit:
             assert "gh pr view attestation/append-contract --repo example/data-pulse --json number,headRefName,headRefOid,baseRefName,state" in calls
             assert f"gh pr merge --auto --merge 99 --repo example/data-pulse --match-head-commit {'d' * 40}" in calls
-            wait_call = f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 780"
-            assert (wait_call in calls) is (arm_status == 0)
+            wait_call = f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 0"
+            assert (wait_call in calls) is (arm_status == 0 and check_status == 0)
             if arm_status:
                 assert "Could not arm merge-on-green for PR #99" in result.stderr
             elif not wait_accepted:
-                assert "::error title=Append acceptance wait failed::" in result.stderr
+                assert ("::error title=Append PR lookup failed::" if check_status else "::error title=Append acceptance wait failed::") in result.stderr
                 assert "PR #99" in result.stderr
                 assert "deterministic-safety-net:" in result.stderr
                 assert ("unavailable" if check_status else "COMPLETED/SUCCESS") in result.stderr
-            if arm_status == 0 and wait_status:
+                assert "elapsed " in result.stderr
+            if arm_status == 0 and not check_status:
                 assert f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 0" in calls
         if committed or (expected_submit and wait_accepted and arm_status == 0):
             assert result.returncode == 0

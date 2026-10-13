@@ -24,6 +24,12 @@ permissions:
 env:
   PROMOTION_SETTLED_QUIET_SECONDS: 300
   PROMOTION_SETTLED_MAX_WAIT_SECONDS: 900
+  # Required check measurements: 16m13s, 18m03s, 19m45s (1185s).
+  # Both append waits get the worst observation + 300s for queue/merge margin.
+  # Ordering (including 5s kill grace): 1185 < 1485 < 3005 < 3060 < 7920.
+  # Existing-append ordering: 1185 < 1485 < 1905 < 1920 < 7920.
+  APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS: 1185
+  APPEND_ACCEPTANCE_PATIENCE_SECONDS: 1485
 
 concurrency:
   # Every production candidate, including health-only candidates, shares one
@@ -148,8 +154,10 @@ jobs:
     name: Sign current health with public Sigstore
     runs-on: ubuntu-latest
     environment: production
-    # Include two bounded re-settles without consuming the acceptance step's budget.
-    timeout-minutes: 100
+    # Sequential budgets: existing append 32m + re-settle 40m + acceptance 51m
+    # + 9m for checkout, candidate preparation, witnessing and signing = 132m.
+    # Terminal append failures refuse on observation rather than using this cap.
+    timeout-minutes: 132
     permissions:
       contents: read
       id-token: write
@@ -176,44 +184,54 @@ jobs:
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       - name: Wait for an existing append before generating a candidate
+        timeout-minutes: 32
         env:
           GH_TOKEN: ${{ steps.append-token.outputs.token }}
+          GIT_TERMINAL_PROMPT: "0"
         run: |
           set -Eeuo pipefail
-          deadline=$((SECONDS + 900))
+          # One shared patience for all already-open appends, not per PR.
+          # 415s beyond patience covers bounded lookups and accepted-tree import.
+          timeout -k 5s 1900s bash -Eeuo pipefail <<'EXISTING_APPEND'
+          started=$SECONDS
+          deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))
           while :; do
-            open_prs="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
+            open_prs="$(timeout -k 5s 20s gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
               --json number,headRefName,headRefOid,baseRefName)"
-            if [[ "$(jq 'length' <<< "$open_prs")" -ge 1000 ]]; then
+            if [[ "$(timeout -k 5s 10s jq 'length' <<< "$open_prs")" -ge 1000 ]]; then
               echo 'Open pull request list reached 1000; append state is unknown, so publication must wait.' >&2
               exit 1
             fi
-            open_append="$(jq -c \
+            open_append="$(timeout -k 5s 10s jq -c \
               '[.[] | select(.baseRefName == "main" and (.headRefName | startswith("attestation/append-")))] | first // empty' \
               <<< "$open_prs")"
             [[ -n "$open_append" ]] || break
-            pr_number="$(jq -er '.number' <<< "$open_append")"
-            branch="$(jq -er '.headRefName' <<< "$open_append")"
-            head_sha="$(jq -er '.headRefOid' <<< "$open_append")"
-            if ! pr_json="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
+            pr_number="$(timeout -k 5s 10s jq -er '.number' <<< "$open_append")"
+            branch="$(timeout -k 5s 10s jq -er '.headRefName' <<< "$open_append")"
+            head_sha="$(timeout -k 5s 10s jq -er '.headRefOid' <<< "$open_append")"
+            if ! pr_json="$(timeout -k 5s 20s gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
               --json number,headRefName,headRefOid,baseRefName,isCrossRepository,state,autoMergeRequest,statusCheckRollup)"; then
-              echo "::error title=Append PR lookup failed::PR #$pr_number ($branch); deterministic-safety-net: unavailable" >&2
+              echo "::error title=Append PR lookup failed::PR #$pr_number ($branch); deterministic-safety-net: unavailable; elapsed $((SECONDS - started))s" >&2
               exit 1
             fi
-            if ! jq -e --arg branch "$branch" --arg head "$head_sha" \
+            if ! timeout -k 5s 10s jq -e --arg branch "$branch" --arg head "$head_sha" \
               '.headRefName == $branch and .headRefOid == $head and .baseRefName == "main" and .isCrossRepository == false and .state == "OPEN"' \
               <<< "$pr_json" >/dev/null; then
               echo "::error title=Append PR mismatch::PR #$pr_number ($branch) changed while checking its head" >&2
               exit 1
             fi
-            check_state="$(jq -r '[.statusCheckRollup[]? | select(.name == "deterministic-safety-net") | "\(.status)/\(.conclusion)"] | join(", ")' <<< "$pr_json")"
+            check_state="$(timeout -k 5s 10s jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
             [[ -n "$check_state" ]] || check_state='not reported'
-            if [[ "$SECONDS" -ge "$deadline" ]]; then
-              echo "::error title=Append acceptance wait failed::PR #$pr_number ($branch) is OPEN; deterministic-safety-net: $check_state" >&2
+            if [[ "$check_state" =~ (FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE) ]]; then
+              echo "::error title=Append required check failed::PR #$pr_number ($branch); deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
               exit 1
             fi
-            if [[ "$(jq -r '.autoMergeRequest == null' <<< "$pr_json")" == true ]]; then
-              if ! gh pr merge --auto --merge "$pr_number" --repo "$GITHUB_REPOSITORY" \
+            if [[ "$SECONDS" -ge "$deadline" ]]; then
+              echo "::error title=Append acceptance wait failed::PR #$pr_number ($branch) is OPEN; deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+              exit 1
+            fi
+            if [[ "$(timeout -k 5s 10s jq -r '.autoMergeRequest == null' <<< "$pr_json")" == true ]]; then
+              if ! timeout -k 5s 20s gh pr merge --auto --merge "$pr_number" --repo "$GITHUB_REPOSITORY" \
                 --match-head-commit "$head_sha"; then
                 echo "::error title=Append auto-merge failed::Could not arm merge-on-green for PR #$pr_number ($branch); deterministic-safety-net: $check_state" >&2
                 exit 1
@@ -221,36 +239,42 @@ jobs:
             fi
             echo "Waiting for already-open append PR #$pr_number ($branch) to merge."
             while :; do
-              if ! pr_json="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
+              if ! pr_json="$(timeout -k 5s 20s gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
                 --json headRefOid,state,statusCheckRollup)"; then
-                echo "::error title=Append PR lookup failed::PR #$pr_number ($branch); deterministic-safety-net: unavailable" >&2
+                echo "::error title=Append PR lookup failed::PR #$pr_number ($branch); deterministic-safety-net: unavailable; elapsed $((SECONDS - started))s" >&2
                 exit 1
               fi
-              check_state="$(jq -r '[.statusCheckRollup[]? | select(.name == "deterministic-safety-net") | "\(.status)/\(.conclusion)"] | join(", ")' <<< "$pr_json")"
+              check_state="$(timeout -k 5s 10s jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
               [[ -n "$check_state" ]] || check_state='not reported'
-              state="$(jq -r '.state' <<< "$pr_json")"
-              if [[ "$state" == OPEN && "$(jq -r '.headRefOid' <<< "$pr_json")" != "$head_sha" ]]; then
-                echo "::error title=Append head changed::PR #$pr_number ($branch); deterministic-safety-net: $check_state" >&2
+              state="$(timeout -k 5s 10s jq -r '.state' <<< "$pr_json")"
+              if [[ "$(timeout -k 5s 10s jq -r '.headRefOid' <<< "$pr_json")" != "$head_sha" ]]; then
+                echo "::error title=Append head changed::PR #$pr_number ($branch); deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
+                exit 1
+              fi
+              if [[ "$check_state" =~ (FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE) ]]; then
+                echo "::error title=Append required check failed::PR #$pr_number ($branch); deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
                 exit 1
               fi
               [[ "$state" != MERGED ]] || break
               if [[ "$state" != OPEN || "$SECONDS" -ge "$deadline" ]]; then
-                echo "::error title=Append acceptance wait failed::PR #$pr_number ($branch) is $state; deterministic-safety-net: $check_state" >&2
+                echo "::error title=Append acceptance wait failed::PR #$pr_number ($branch) is $state; deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
                 exit 1
               fi
-              sleep 15
+              remaining=$((deadline - SECONDS))
+              sleep "$((remaining > 0 ? (remaining < 15 ? remaining : 15) : 0))"
             done
-            git fetch origin refs/heads/main:refs/remotes/origin/main
-            if ! git merge-base --is-ancestor "$head_sha" origin/main; then
+            timeout -k 5s 30s git fetch origin refs/heads/main:refs/remotes/origin/main
+            if ! timeout -k 5s 10s git merge-base --is-ancestor "$head_sha" origin/main; then
               echo "::error title=Append merge missing::PR #$pr_number ($branch) is merged but its head is absent from main; deterministic-safety-net: $check_state" >&2
               exit 1
             fi
           done
-          git fetch origin refs/heads/main:refs/remotes/origin/main
-          git merge-base --is-ancestor "$PROMOTION_SOURCE_SHA" origin/main
+          timeout -k 5s 30s git fetch origin refs/heads/main:refs/remotes/origin/main
+          timeout -k 5s 10s git merge-base --is-ancestor "$PROMOTION_SOURCE_SHA" origin/main
           # Import accepted evidence while keeping the source checkout at
           # PROMOTION_SOURCE_SHA, shared by signing and deployment for health.
-          git restore --source origin/main --worktree -- attestations .attestations/chain_head.json
+          timeout -k 5s 10s git restore --source origin/main --worktree -- attestations .attestations/chain_head.json
+          EXISTING_APPEND
 
       - name: Require settled main before signing
         id: settled_main
@@ -485,17 +509,29 @@ jobs:
             --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" \
             --rekor-reference "$DATAPULSE_REKOR_REFERENCE"
 
+      # App installation tokens expire after 60m. Waiting for an existing append
+      # and re-settling can consume that lifetime; issue the same App a fresh
+      # token here so the entire 51m acceptance step fits its credential budget.
+      - name: Refresh append token before the acceptance budget
+        uses: actions/create-github-app-token@v1
+        id: acceptance-append-token
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: Require authoritative acceptance before signing publication
-        timeout-minutes: 39
+        timeout-minutes: 51
         env:
-          GH_TOKEN: ${{ steps.append-token.outputs.token }}
+          GH_TOKEN: ${{ steps.acceptance-append-token.outputs.token }}
           GIT_TERMINAL_PROMPT: "0"
         run: |
           set -Eeuo pipefail
           # Bound the process group independently of runner cancellation. Each
-          # call escalates TERM to KILL; all call budgets total 2315s < 2325s
-          # for this watchdog < the 39-minute step < the 40-minute signing job.
-          timeout -k 5s 2320s bash -Eeuo pipefail <<'ACCEPTANCE'
+          # call escalates TERM to KILL. Patience plus fixed calls and one final
+          # acceptance proof fit 3000s + 5s kill grace < 51m step < 132m job.
+          # The extra 1515s covers preflight/submission, lookups and byte proof;
+          # it is not additional patience for an undecided required check.
+          timeout -k 5s 3000s bash -Eeuo pipefail <<'ACCEPTANCE'
           timeout -k 5s 240s python3 scripts/verify_attestation_append.py --base HEAD
           if ! timeout -k 5s 240s python3 scripts/verify_attestation_append.py --base HEAD --require-committed; then
             open_prs="$(timeout -k 5s 20s gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
@@ -533,23 +569,43 @@ jobs:
               exit 1
             fi
             echo "Armed merge-on-green for PR #$pr_number ($branch)."
-            # Submission changes local HEAD. It cannot prove acceptance. Keep
-            # the witnessed inputs, and wait on main without checking it out.
-            if ! timeout -k 5s 1020s python3 scripts/verify_attestation_append.py --base "$PROMOTION_SOURCE_SHA" --wait-for-acceptance 780; then
-              # A merge at the deadline still needs the same byte-equality check.
-              if timeout -k 5s 240s python3 scripts/verify_attestation_append.py --base "$PROMOTION_SOURCE_SHA" --wait-for-acceptance 0; then
-                exit 0
+            # Poll only while undecided so a terminal failure refuses promptly.
+            # Submission's local HEAD and PR state cannot prove acceptance:
+            # only the unchanged verifier's fetched-main byte proof can do so.
+            started=$SECONDS
+            deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))
+            while :; do
+              if ! pr_json="$(timeout -k 5s 20s gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
+                --json headRefOid,state,statusCheckRollup)"; then
+                echo "::error title=Append PR lookup failed::PR #$pr_number ($branch); deterministic-safety-net: unavailable; elapsed $((SECONDS - started))s" >&2
+                exit 1
               fi
-              if check_state="$(timeout -k 5s 20s gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
-                --json statusCheckRollup \
-                --jq '[.statusCheckRollup[] | select(.name == "deterministic-safety-net") | "\(.status)/\(.conclusion)"] | join(", ")')"; then
-                [[ -n "$check_state" ]] || check_state="not reported"
-              else
-                check_state="unavailable (PR check lookup failed)"
+              check_state="$(timeout -k 5s 10s jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
+              [[ -n "$check_state" ]] || check_state='not reported'
+              state="$(timeout -k 5s 10s jq -r '.state' <<< "$pr_json")"
+              if [[ "$(timeout -k 5s 10s jq -r '.headRefOid' <<< "$pr_json")" != "$head_sha" ]]; then
+                echo "::error title=Append head changed::PR #$pr_number ($branch); deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
+                exit 1
               fi
-              echo "::error title=Append acceptance wait failed::PR #$pr_number ($branch); deterministic-safety-net: $check_state" >&2
-              exit 1
-            fi
+              if [[ "$state" != OPEN && "$state" != MERGED ]]; then
+                echo "::error title=Append PR closed::PR #$pr_number ($branch) is $state; deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
+                exit 1
+              fi
+              if [[ "$check_state" =~ (FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE) ]]; then
+                echo "::error title=Append required check failed::PR #$pr_number ($branch); deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
+                exit 1
+              fi
+              if [[ "$state" == MERGED || "$SECONDS" -ge "$deadline" ]]; then
+                # A merge at the deadline still needs the same byte-equality proof.
+                if timeout -k 5s 240s python3 scripts/verify_attestation_append.py --base "$PROMOTION_SOURCE_SHA" --wait-for-acceptance 0; then
+                  exit 0
+                fi
+                echo "::error title=Append acceptance wait failed::PR #$pr_number ($branch) is $state; deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+                exit 1
+              fi
+              remaining=$((deadline - SECONDS))
+              sleep "$((remaining > 0 ? (remaining < 15 ? remaining : 15) : 0))"
+            done
           fi
           ACCEPTANCE
 
@@ -710,6 +766,7 @@ jobs:
     needs: [classify, sign_health]
     runs-on: ubuntu-latest
     environment: production
+    # Starts after sign_health succeeds; its 30m budget excludes append waiting.
     timeout-minutes: 30
     env:
       PROMOTION_SOURCE_SHA: ${{ needs.sign_health.outputs.settled_sha }}
