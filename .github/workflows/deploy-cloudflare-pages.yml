@@ -73,6 +73,89 @@ jobs:
           # Deliberately avoid persisting checkout credentials so the push's App-token header is not duplicated.
           persist-credentials: false
 
+      - uses: actions/create-github-app-token@v1
+        id: append-token
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Wait for an existing append before generating a candidate
+        env:
+          GH_TOKEN: ${{ steps.append-token.outputs.token }}
+        run: |
+          set -Eeuo pipefail
+          deadline=$((SECONDS + 900))
+          while :; do
+            open_prs="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
+              --json number,headRefName,headRefOid,baseRefName)"
+            if [[ "$(jq 'length' <<< "$open_prs")" -ge 1000 ]]; then
+              echo 'Open pull request list reached 1000; append state is unknown, so publication must wait.' >&2
+              exit 1
+            fi
+            open_append="$(jq -c \
+              '[.[] | select(.baseRefName == "main" and (.headRefName | startswith("attestation/append-")))] | first // empty' \
+              <<< "$open_prs")"
+            [[ -n "$open_append" ]] || break
+            pr_number="$(jq -er '.number' <<< "$open_append")"
+            branch="$(jq -er '.headRefName' <<< "$open_append")"
+            head_sha="$(jq -er '.headRefOid' <<< "$open_append")"
+            if ! pr_json="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
+              --json number,headRefName,headRefOid,baseRefName,isCrossRepository,state,autoMergeRequest,statusCheckRollup)"; then
+              echo "::error title=Append PR lookup failed::PR #$pr_number ($branch); deterministic-safety-net: unavailable" >&2
+              exit 1
+            fi
+            if ! jq -e --arg branch "$branch" --arg head "$head_sha" \
+              '.headRefName == $branch and .headRefOid == $head and .baseRefName == "main" and .isCrossRepository == false and .state == "OPEN"' \
+              <<< "$pr_json" >/dev/null; then
+              echo "::error title=Append PR mismatch::PR #$pr_number ($branch) changed while checking its head" >&2
+              exit 1
+            fi
+            check_state="$(jq -r '[.statusCheckRollup[]? | select(.name == "deterministic-safety-net") | "\(.status)/\(.conclusion)"] | join(", ")' <<< "$pr_json")"
+            [[ -n "$check_state" ]] || check_state='not reported'
+            if [[ "$SECONDS" -ge "$deadline" ]]; then
+              echo "::error title=Append acceptance wait failed::PR #$pr_number ($branch) is OPEN; deterministic-safety-net: $check_state" >&2
+              exit 1
+            fi
+            if [[ "$(jq -r '.autoMergeRequest == null' <<< "$pr_json")" == true ]]; then
+              if ! gh pr merge --auto --merge "$pr_number" --repo "$GITHUB_REPOSITORY" \
+                --match-head-commit "$head_sha"; then
+                echo "::error title=Append auto-merge failed::Could not arm merge-on-green for PR #$pr_number ($branch); deterministic-safety-net: $check_state" >&2
+                exit 1
+              fi
+            fi
+            echo "Waiting for already-open append PR #$pr_number ($branch) to merge."
+            while :; do
+              if ! pr_json="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
+                --json headRefOid,state,statusCheckRollup)"; then
+                echo "::error title=Append PR lookup failed::PR #$pr_number ($branch); deterministic-safety-net: unavailable" >&2
+                exit 1
+              fi
+              check_state="$(jq -r '[.statusCheckRollup[]? | select(.name == "deterministic-safety-net") | "\(.status)/\(.conclusion)"] | join(", ")' <<< "$pr_json")"
+              [[ -n "$check_state" ]] || check_state='not reported'
+              state="$(jq -r '.state' <<< "$pr_json")"
+              if [[ "$state" == OPEN && "$(jq -r '.headRefOid' <<< "$pr_json")" != "$head_sha" ]]; then
+                echo "::error title=Append head changed::PR #$pr_number ($branch); deterministic-safety-net: $check_state" >&2
+                exit 1
+              fi
+              [[ "$state" != MERGED ]] || break
+              if [[ "$state" != OPEN || "$SECONDS" -ge "$deadline" ]]; then
+                echo "::error title=Append acceptance wait failed::PR #$pr_number ($branch) is $state; deterministic-safety-net: $check_state" >&2
+                exit 1
+              fi
+              sleep 15
+            done
+            git fetch origin refs/heads/main:refs/remotes/origin/main
+            if ! git merge-base --is-ancestor "$head_sha" origin/main; then
+              echo "::error title=Append merge missing::PR #$pr_number ($branch) is merged but its head is absent from main; deterministic-safety-net: $check_state" >&2
+              exit 1
+            fi
+          done
+          git fetch origin refs/heads/main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          # Import accepted evidence while keeping the source checkout at
+          # GITHUB_SHA, which both signing and deployment use for health.
+          git restore --source origin/main --worktree -- attestations .attestations/chain_head.json
+
       - name: Refresh legacy chain head before signing
         env:
           DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
@@ -220,12 +303,6 @@ jobs:
             --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" \
             --rekor-reference "$DATAPULSE_REKOR_REFERENCE"
 
-      - uses: actions/create-github-app-token@v1
-        id: append-token
-        with:
-          app-id: ${{ secrets.RELEASE_APP_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-
       - name: Require authoritative acceptance before signing publication
         env:
           GH_TOKEN: ${{ steps.append-token.outputs.token }}
@@ -269,7 +346,11 @@ jobs:
             echo "Armed merge-on-green for PR #$pr_number ($branch)."
             # Submission changes local HEAD. It cannot prove acceptance. Keep
             # the witnessed inputs, and wait on main without checking it out.
-            if ! python3 scripts/verify_attestation_append.py --base "$GITHUB_SHA" --wait-for-acceptance 1500; then
+            if ! timeout 1200s python3 scripts/verify_attestation_append.py --base "$GITHUB_SHA" --wait-for-acceptance 1500; then
+              # A merge at the deadline still needs the same byte-equality check.
+              if python3 scripts/verify_attestation_append.py --base "$GITHUB_SHA" --wait-for-acceptance 0; then
+                exit 0
+              fi
               if check_state="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
                 --json statusCheckRollup \
                 --jq '[.statusCheckRollup[] | select(.name == "deterministic-safety-net") | "\(.status)/\(.conclusion)"] | join(", ")')"; then
