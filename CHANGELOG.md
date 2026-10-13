@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.13](https://github.com/r3dz4r/datapulse-my/compare/v3.55.12...v3.55.13) (2026-10-13)
+
+
+### Bug Fixes
+
+* **ci:** give append acceptance coherent ordered time bounds ([dca76cc](https://github.com/r3dz4r/datapulse-my/commit/dca76cc1e31437f4e67098df8ac22b5aab17b444))
+* **ci:** give append acceptance coherent ordered time bounds ([2a79326](https://github.com/r3dz4r/datapulse-my/commit/2a79326bcbf85a130c006339081852fa88c1c7d8))
+
 ## [3.55.12](https://github.com/r3dz4r/datapulse-my/compare/v3.55.11...v3.55.12) (2026-10-13)
 
 
