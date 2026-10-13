@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.9](https://github.com/r3dz4r/datapulse-my/compare/v3.55.8...v3.55.9) (2026-10-13)
+
+
+### Bug Fixes
+
+* **deploy:** wait for accepted append before signing candidate ([4a0ecf4](https://github.com/r3dz4r/datapulse-my/commit/4a0ecf4267e7b6b54dfdaf1b956b292dd1d65c97))
+* **deploy:** wait for an accepted append before generating the run's candidate ([868a80f](https://github.com/r3dz4r/datapulse-my/commit/868a80ff32e085ccd6bff29546d7519747e452e8))
+
 ## [3.55.8](https://github.com/r3dz4r/datapulse-my/compare/v3.55.7...v3.55.8) (2026-10-13)
 
 
