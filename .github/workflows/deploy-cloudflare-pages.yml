@@ -246,9 +246,40 @@ jobs:
               exit 1
             fi
             bash scripts/submit_attestation_append.sh
+            branch="$(git branch --show-current)"
+            if [[ "$branch" != attestation/append-* ]]; then
+              echo "::error title=Append submission failed::Expected an attestation append branch, got $branch" >&2
+              exit 1
+            fi
+            head_sha="$(git rev-parse HEAD)"
+            pr_json="$(gh pr view "$branch" --repo "$GITHUB_REPOSITORY" \
+              --json number,headRefName,headRefOid,baseRefName,state)"
+            if ! jq -e --arg branch "$branch" --arg head "$head_sha" \
+              '.headRefName == $branch and .headRefOid == $head and .baseRefName == "main" and .state == "OPEN"' \
+              <<< "$pr_json" >/dev/null; then
+              echo "::error title=Append PR mismatch::Submitted branch $branch at $head_sha has no matching open PR targeting main" >&2
+              exit 1
+            fi
+            pr_number="$(jq -er '.number' <<< "$pr_json")"
+            if ! gh pr merge --auto --merge "$pr_number" --repo "$GITHUB_REPOSITORY" \
+              --match-head-commit "$head_sha"; then
+              echo "::error title=Append auto-merge failed::Could not arm merge-on-green for PR #$pr_number ($branch)" >&2
+              exit 1
+            fi
+            echo "Armed merge-on-green for PR #$pr_number ($branch)."
             # Submission changes local HEAD. It cannot prove acceptance. Keep
             # the witnessed inputs, and wait on main without checking it out.
-            python3 scripts/verify_attestation_append.py --base "$GITHUB_SHA" --wait-for-acceptance 600
+            if ! python3 scripts/verify_attestation_append.py --base "$GITHUB_SHA" --wait-for-acceptance 1500; then
+              if check_state="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
+                --json statusCheckRollup \
+                --jq '[.statusCheckRollup[] | select(.name == "deterministic-safety-net") | "\(.status)/\(.conclusion)"] | join(", ")')"; then
+                [[ -n "$check_state" ]] || check_state="not reported"
+              else
+                check_state="unavailable (PR check lookup failed)"
+              fi
+              echo "::error title=Append acceptance wait failed::PR #$pr_number ($branch); deterministic-safety-net: $check_state" >&2
+              exit 1
+            fi
           fi
 
       - name: Generate deterministic health attestation statement
