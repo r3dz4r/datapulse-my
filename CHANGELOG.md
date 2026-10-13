@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.10](https://github.com/r3dz4r/datapulse-my/compare/v3.55.9...v3.55.10) (2026-10-13)
+
+
+### Bug Fixes
+
+* **deploy:** hard-bound authoritative append acceptance ([4abd4fa](https://github.com/r3dz4r/datapulse-my/commit/4abd4fa984f62e602e55b4f72a333d329938bd8a))
+* **deploy:** hard-bound the authoritative append acceptance step ([a94db87](https://github.com/r3dz4r/datapulse-my/commit/a94db872aeceb5b8d8940e3559c5f3ff572a9701))
+
 ## [3.55.9](https://github.com/r3dz4r/datapulse-my/compare/v3.55.8...v3.55.9) (2026-10-13)
 
 
