@@ -5,22 +5,22 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": null,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "not_evaluated",
+        "mode": "cadence_fallback",
         "sample_days": 0,
         "stdev_days": null,
-        "threshold_days": null,
+        "threshold_days": 0.125,
         "window_days": 14
       }
     },
     "expected_record_count": null,
-    "freshness_signal": "browser-only",
-    "freshness_signal_source": "none",
+    "freshness_signal": "content-date-parse",
+    "freshness_signal_source": "content_date_parse",
     "http_status": null,
     "incomplete": false,
-    "last_checked": "2026-10-13T03:54:19Z",
+    "last_checked": "2026-10-13T04:15:04Z",
     "record_count": null,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "unknown-freshness"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://eqms.doe.gov.my/RQIMS/conti_river",
@@ -39,7 +39,7 @@
     "geography": "Malaysia (30 continuous river monitoring stations)",
     "name": "DOE RQIMS River Water Quality (Continuous)",
     "namespace": "environment",
-    "observed_verified_at": "2026-10-13T03:54:19Z",
+    "observed_verified_at": "2026-10-13T04:15:04Z",
     "source": "DOE MyEQMS portal (Camofox-rendered)",
     "steward": "Department of Environment Malaysia"
   },
@@ -884,7 +884,7 @@
     "receipt": {
       "evidence_path": "data/doe_rqims.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:3788a72a8e8024a4301b03dda7aacf1225e8bb01587c1bd22893657e570b91aa",
+      "receipt_digest": "sha256:18d5f86d93fc517441000ec5166e9242a42424c2886616b4b055b836af2dfc80",
       "sigstore_path": "data/doe_rqims.receipt.sigstore.json",
       "statement_path": "data/doe_rqims.receipt.statement.json"
     },
