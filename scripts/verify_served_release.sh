@@ -148,6 +148,27 @@ verify_attestation_surface() {
     [[ "$last_status" == 404 ]] || fail "attestation plane $path must be absent but served HTTP $last_status"
   fi
 }
+verify_dataset_attestation() {
+  local reference="$1" omissions omitted
+  if [[ ! -f "$site_dir/$reference" ]]; then
+    # The selector records intentional dataset omissions in the assembled artifact.
+    # Absence alone cannot waive a required file or an unexpected remote 404.
+    if [[ "${retention_loaded:-false}" != true ]]; then
+      declare -gA not_served_attestations=()
+      omissions="$(jq -r 'if .schema == "datapulse/v1/served-attestation-retention" then .not_served[] else error("invalid retention inventory") end' "$site_dir/attestations/served-retention.json")" || fail "assembled attestation plane retention inventory is invalid"
+      while IFS= read -r omitted; do
+        [[ -z "$omitted" ]] || not_served_attestations["$omitted"]=1
+      done <<< "$omissions"
+      retention_loaded=true
+    fi
+    [[ "${not_served_attestations[$reference]:-}" == 1 ]] || fail "assembled attestation plane is missing required evidence: $reference"
+    # Its inventory is fetched and byte-compared once. Do not dereference thousands
+    # of intentionally pruned historical URLs just to rediscover their absence.
+    echo "attestation plane $reference: not served (retention policy)"
+  else
+    verify_attestation_surface "$reference"
+  fi
+}
 verify_attestation_plane() {
   local index_date head_ref head_refs set_dir set_index reference references
   verify_attestation_surface attestations/latest/index.json datapulse/v1/attestation-index
@@ -155,6 +176,7 @@ verify_attestation_plane() {
   verify_attestation_surface attestations/latest/binding.json datapulse/v1/attestation-binding-envelope
   verify_attestation_surface attestations/latest/scores.json
   verify_attestation_surface attestations/chain-index.json datapulse/v1/chain-index datapulse/v2/chain-index
+  verify_attestation_surface attestations/served-retention.json datapulse/v1/served-attestation-retention
   verify_attestation_surface .well-known/datapulse-probe-keys.json datapulse/v2/probe-key-registry
 
   [[ -f "$site_dir/attestations/latest/index.json" ]] || fail "assembled attestation plane is missing attestations/latest/index.json"
@@ -179,8 +201,7 @@ verify_attestation_plane() {
     while IFS= read -r reference; do
       [[ -z "$reference" ]] && continue
       [[ "$reference" =~ ^${set_dir}/[A-Za-z0-9_.-]+\.json$ ]] || fail "attestation plane dataset reference is unsafe: $reference"
-      [[ -f "$site_dir/$reference" ]] || fail "assembled attestation plane is missing $reference"
-      verify_attestation_surface "$reference"
+      verify_dataset_attestation "$reference"
     done <<< "$references"
   done <<< "$head_refs"
 }

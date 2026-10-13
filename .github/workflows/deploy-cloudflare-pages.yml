@@ -1034,7 +1034,7 @@ jobs:
           test -s _site/health/latest.json
 
       - name: Keep verifier-reachable attestation history
-        run: python3 scripts/select_served_attestations.py --apply --root . --site _site --max-files 18000
+        run: python3 scripts/select_served_attestations.py --apply --root . --site _site --full-revisions-per-day 1 --max-files 18000
 
       - name: Exclude oversized Pages assets before upload
         run: |
