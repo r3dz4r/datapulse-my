@@ -325,15 +325,18 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
     for stub in bin_dir.iterdir():
         stub.chmod(0o755)
     log = tmp_path / "calls.log"
-    env = {**os.environ, **{key: str(value) for key, value in yaml.safe_load(_workflow())["env"].items()},
+    workflow_env = yaml.safe_load(_workflow())["env"]
+    patience = int(workflow_env["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    worst_observed = int(workflow_env["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"])
+    env = {**os.environ, **{key: str(value) for key, value in workflow_env.items()},
            "PATH": f"{bin_dir}:{os.environ['PATH']}", "GITHUB_REPOSITORY": "fixture/datapulse",
            "PROMOTION_SOURCE_SHA": "c" * 40, "APPEND_SHA": head, "EXISTING": str(int(existing)),
            "SCENARIO": scenario, "CALL_LOG": str(log), "INITIAL_PR": json.dumps(initial),
            "OPEN_PRS": json.dumps([initial]), "POLLED_PR": json.dumps(polled), "MERGED_PR": json.dumps(merged),
            "POLL_MARKER": str(tmp_path / "polled"), "MERGED_MARKER": str(tmp_path / "merged")}
-    # Skip real sleeping. A successful check takes the measured 1185s, while
+    # Skip real sleeping. A successful check takes the measured worst-observed duration, while
     # undecided cases advance to the configured patience without accepting.
-    advance = "started + 1185" if scenario == "pending_merge" else "deadline"
+    advance = f"started + {worst_observed}" if scenario == "pending_merge" else "deadline"
     run = re.sub(r'^\s*sleep .*$', f'echo slept >> "$CALL_LOG"; SECONDS=$(({advance}))',
                  step["run"], flags=re.MULTILINE)
     result = subprocess.run(["bash", "-c", run], cwd=tmp_path, env=env,
@@ -343,9 +346,13 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
     assert ("slept" in calls) is (scenario in {"pending_merge", "exhausted", "not_reported"})
     if scenario != "pending_merge":
         assert "PR #99" in result.stderr
+        assert "(attestation/append-contract)" in result.stderr
         assert "deterministic-safety-net:" in result.stderr
     if scenario in {"exhausted", "not_reported"}:
-        assert "elapsed 1485s" in result.stderr
+        elapsed_match = re.search(r"elapsed (\d+)s", result.stderr)
+        assert elapsed_match is not None, result.stderr
+        assert patience <= int(elapsed_match.group(1)) <= patience + 1, result.stderr
+        assert f"patience {patience}s" in result.stderr
         assert ("not reported" if scenario == "not_reported" else "IN_PROGRESS/") in result.stderr
     if scenario in {"failure", "cancelled", "timed_out", "legacy_failure"}:
         assert "Append required check failed" in result.stderr
