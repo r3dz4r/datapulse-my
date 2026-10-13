@@ -49,6 +49,54 @@ def _stage_attestation_selector(fixture_root: Path) -> None:
     )
 
 
+def test_pages_passes_explicit_full_revision_depth_without_raising_guard() -> None:
+    run = _deploy_step("Keep verifier-reachable attestation history")["run"]
+    assert "--full-revisions-per-day 1" in run
+    assert "--max-files 18000" in run
+
+
+@pytest.mark.parametrize(("omitted", "present", "status", "expected"), [
+    (True, False, "404", 0),
+    (False, False, "404", 1),
+    (True, False, "200", 0),
+    (True, False, "503", 0),
+    (False, True, "404", 1),
+    (False, True, "200", 0),
+])
+def test_served_evidence_distinguishes_retention_from_broken_files(
+    tmp_path: Path, omitted: bool, present: bool, status: str, expected: int,
+) -> None:
+    site = tmp_path / "site"
+    reference = "attestations/2026-10-13/revisions/" + "a" * 64 + "/dataset.json"
+    _write_site_json(site, "attestations/served-retention.json", {
+        "schema": "datapulse/v1/served-attestation-retention",
+        "not_served": [reference] if omitted else [],
+    })
+    if present:
+        _write_site_json(site, reference, {})
+    source = SERVED_VERIFIER.read_text()
+    helpers = source.split("verify_attestation_surface() {", 1)[1].split("# Permit Pages propagation", 1)[0]
+    shell = '''set -Eeuo pipefail
+site_dir="$1"; smoke_dir="$2"; base_url=https://example.test; status="$3"
+fail() { echo "$1" >&2; exit 1; }
+retrieve() { echo "retrieved $2"; last_status="$status"; printf '{}' > "$3"; }
+fetch() { mkdir -p "$(dirname "$3")"; retrieve "$@"; [[ "$last_status" == 200 ]] || fail "missing or stale served surface (HTTP $last_status)"; }
+'''
+    result = subprocess.run(
+        ["bash", "-c", shell + "verify_attestation_surface() {" + helpers
+         + '\nverify_dataset_attestation "$4"', "verify", str(site), str(tmp_path / "smoke"), status, reference],
+        text=True, capture_output=True, check=False,
+    )
+    assert result.returncode == expected, result.stdout + result.stderr
+    if expected == 0 and omitted:
+        assert "not served (retention policy)" in result.stdout
+        assert "retrieved" not in result.stdout
+    if not present and not omitted:
+        assert "missing required evidence" in result.stderr
+    if present and status == "404":
+        assert "missing or stale served surface (HTTP 404)" in result.stderr
+
+
 def test_pages_attestation_selection_keeps_chain_and_citations(tmp_path: Path) -> None:
     _stage_attestation_selector(tmp_path)
     site = tmp_path / "_site"
