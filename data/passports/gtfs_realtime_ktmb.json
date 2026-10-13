@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0005555555555555556,
+        "latest_days": 0.005347222222222222,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/ktmb",
@@ -847,7 +847,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_ktmb.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:2cf2293a0ed58af16427db5224e9e1f358ecbb4ea2aeb8625d583a0b0dcf7a9a",
+      "receipt_digest": "sha256:d0f48da65fde3162f18b3eaebdfaf22f410d5d886f768f65d74c561604ae65c7",
       "sigstore_path": "data/gtfs_realtime_ktmb.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_ktmb.receipt.statement.json"
     },
