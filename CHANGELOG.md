@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.16](https://github.com/r3dz4r/datapulse-my/compare/v3.55.15...v3.55.16) (2026-10-14)
+
+
+### Bug Fixes
+
+* verify live documentation counts against canonical sources ([#1506](https://github.com/r3dz4r/datapulse-my/issues/1506)) ([cc4db97](https://github.com/r3dz4r/datapulse-my/commit/cc4db976ed6fed64bc29016c7b1cdc261bfab1f3))
+
 ## [3.55.15](https://github.com/r3dz4r/datapulse-my/compare/v3.55.14...v3.55.15) (2026-10-13)
 
 
