@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SELECTOR = ROOT / "scripts/select_append_candidate.py"
 WORKFLOW = ROOT / ".github/workflows/attestation-append-merge.yml"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
+BUILD_WORKFLOW = ROOT / ".github/workflows/publish-publication.yml"
 APPEND_PRODUCER = ROOT / "scripts/submit_attestation_append.sh"
 
 
@@ -184,9 +185,18 @@ def test_append_merge_workflow_run_requires_same_repository() -> None:
 
 
 def test_accepted_append_retriggers_pages_deploy() -> None:
-    workflow = yaml.safe_load(DEPLOY_WORKFLOW.read_text(encoding="utf-8"))
-    triggers = workflow.get("on", workflow.get(True, {}))
-    assert "attestations/**" in triggers["push"]["paths"]
+    build = yaml.safe_load(BUILD_WORKFLOW.read_text(encoding="utf-8"))
+    build_triggers = build.get("on", build.get(True, {}))
+    deploy = yaml.safe_load(DEPLOY_WORKFLOW.read_text(encoding="utf-8"))
+    deploy_triggers = deploy.get("on", deploy.get(True, {}))
+
+    assert build_triggers["push"]["branches"] == ["main"]
+    assert "attestations/**" in build_triggers["push"]["paths"]
+    assert deploy_triggers["workflow_run"] == {
+        "workflows": [build["name"]],
+        "types": ["completed"],
+        "branches": ["main"],
+    }
 
 
 def _run_candidate_step(
