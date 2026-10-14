@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.17](https://github.com/r3dz4r/datapulse-my/compare/v3.55.16...v3.55.17) (2026-10-14)
+
+
+### Bug Fixes
+
+* **deploy:** diagnose append acceptance timeouts and refusals ([#1529](https://github.com/r3dz4r/datapulse-my/issues/1529)) ([4553bdf](https://github.com/r3dz4r/datapulse-my/commit/4553bdf5d04ebd64aa811dbb01cb895d072e382b))
+* **deploy:** keep the required-check rollup when PR identity needs a second lookup ([#1540](https://github.com/r3dz4r/datapulse-my/issues/1540)) ([6c4b334](https://github.com/r3dz4r/datapulse-my/commit/6c4b334c2ae1d53b6f8f0aa1c6f21d04a17a8bf3))
+
 ## [3.55.16](https://github.com/r3dz4r/datapulse-my/compare/v3.55.15...v3.55.16) (2026-10-14)
 
 
