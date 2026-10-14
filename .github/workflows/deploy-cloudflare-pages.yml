@@ -541,41 +541,115 @@ jobs:
           # The extra 1515s covers preflight/submission, lookups and byte proof;
           # it is not additional patience for an undecided required check.
           timeout -k 5s 3000s bash -Eeuo pipefail <<'ACCEPTANCE'
-          timeout -k 5s 240s python3 scripts/verify_attestation_append.py --base HEAD
-          if ! timeout -k 5s 240s python3 scripts/verify_attestation_append.py --base HEAD --require-committed; then
-            open_prs="$(timeout -k 5s 20s gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
+          # Safe calls may be repeated after a cap hit; decisions and the
+          # mutating submission must preserve failure instead of being retried.
+          call_deadline=$((SECONDS + 3000))
+          named_timeout() {
+            local cap="$1" status
+            shift
+            if timeout -k 5s "${cap}s" "$@"; then
+              return 0
+            else
+              status=$?
+            fi
+            if [[ "$status" == 124 || "$status" == 137 ]]; then
+              printf '::warning title=Append call timed out::' >&2
+              printf '%q ' "$@" >&2
+              printf 'exceeded %ss (exit %s)\n' "$cap" "$status" >&2
+            fi
+            return "$status"
+          }
+          retry_timeout() {
+            local cap="$1" status retry_until remaining output stdin_buffer
+            shift
+            if [[ "$1" == jq ]]; then
+              # A capped parser may have consumed stdin; replay the same JSON.
+              IFS= read -r -d '' stdin_buffer || :
+            fi
+            while :; do
+              # Discard a timed-out call's partial stdout before retrying JSON.
+              if output="$(
+                if [[ "$1" == jq ]]; then
+                  named_timeout "$cap" "$@" <<< "$stdin_buffer"
+                else
+                  named_timeout "$cap" "$@"
+                fi
+              )"; then
+                printf '%s\n' "$output"
+                return 0
+              else
+                status=$?
+              fi
+              if [[ "$status" != 124 && "$status" != 137 ]]; then
+                printf '%s\n' "$output"
+                return "$status"
+              fi
+              retry_until=${deadline:-$call_deadline}
+              remaining=$((retry_until - SECONDS))
+              if (( remaining <= 0 )); then
+                echo "::error title=Append call retry exhausted::No time remains for a safe retry; elapsed $((SECONDS - ${started:-0}))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+                return "$status"
+              fi
+              echo "Retrying capped safe call within the existing deadline (${remaining}s remaining)." >&2
+              sleep "$((remaining < 15 ? remaining : 15))"
+              if (( SECONDS >= retry_until )); then
+                echo "::error title=Append call retry exhausted::Existing deadline reached (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+                return "$status"
+              fi
+            done
+          }
+          refusal_started=$SECONDS
+          refuse_acceptance() {
+            local reason="$1"
+            echo "::error title=$reason::PR #${pr_number:-none} (${branch:-candidate}) is ${state:-unavailable}; deterministic-safety-net: ${check_state:-unavailable}; elapsed $((SECONDS - ${started:-$refusal_started}))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+            exit 1
+          }
+          retry_timeout 240 python3 scripts/verify_attestation_append.py --base HEAD
+          if retry_timeout 240 python3 scripts/verify_attestation_append.py --base HEAD --require-committed; then
+            :
+          else
+            status=$?
+            # An exhausted cap is not evidence that the candidate needs submission.
+            [[ "$status" != 124 && "$status" != 137 ]] || exit "$status"
+            open_prs="$(retry_timeout 20 gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
               --json number,headRefName)"
-            open_append="$(timeout -k 5s 10s jq -r \
+            open_append="$(retry_timeout 10 jq -r \
               '[.[] | select(.headRefName | startswith("attestation/append-")) | "#\(.number) (\(.headRefName))"] | first // empty' <<< "$open_prs")"
             if [[ -n "$open_append" ]]; then
               echo "Append already open: $open_append; waiting for its merge before publication." >&2
               exit 1
             fi
-            open_pr_count="$(timeout -k 5s 10s jq 'length' <<< "$open_prs")"
+            open_pr_count="$(retry_timeout 10 jq 'length' <<< "$open_prs")"
             if [[ "$open_pr_count" -ge 1000 ]]; then
               echo 'Open pull request list reached 1000; append state is unknown, so publication must wait.' >&2
               exit 1
             fi
-            timeout -k 5s 360s bash scripts/submit_attestation_append.sh
-            branch="$(timeout -k 5s 10s git branch --show-current)"
+            named_timeout 360 bash scripts/submit_attestation_append.sh
+            branch="$(retry_timeout 10 git branch --show-current)"
             if [[ "$branch" != attestation/append-* ]]; then
-              echo "::error title=Append submission failed::Expected an attestation append branch, got $branch" >&2
-              exit 1
+              state='no append PR'
+              refuse_acceptance "Append submission failed: expected an attestation append branch, got $branch"
             fi
-            head_sha="$(timeout -k 5s 10s git rev-parse HEAD)"
-            pr_json="$(timeout -k 5s 20s gh pr view "$branch" --repo "$GITHUB_REPOSITORY" \
-              --json number,headRefName,headRefOid,baseRefName,state)"
-            if ! timeout -k 5s 10s jq -e --arg branch "$branch" --arg head "$head_sha" \
+            head_sha="$(retry_timeout 10 git rev-parse HEAD)"
+            if ! pr_json="$(retry_timeout 20 gh pr view "$branch" --repo "$GITHUB_REPOSITORY" \
+              --json number,headRefName,headRefOid,baseRefName,state,statusCheckRollup)"; then
+              refuse_acceptance 'Append PR lookup failed: no matching open PR could be confirmed'
+            fi
+            pr_number="$(retry_timeout 10 jq -er '.number' <<< "$pr_json")"
+            state="$(retry_timeout 10 jq -r '.state' <<< "$pr_json")"
+            check_state="$(retry_timeout 10 jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
+            [[ -n "$check_state" ]] || check_state='not reported'
+            if ! retry_timeout 10 jq -e --arg branch "$branch" --arg head "$head_sha" \
               '.headRefName == $branch and .headRefOid == $head and .baseRefName == "main" and .state == "OPEN"' \
               <<< "$pr_json" >/dev/null; then
-              echo "::error title=Append PR mismatch::Submitted branch $branch at $head_sha has no matching open PR targeting main" >&2
-              exit 1
+              refuse_acceptance "Append PR mismatch: submitted branch $branch at $head_sha has no matching open PR targeting main"
             fi
-            pr_number="$(timeout -k 5s 10s jq -er '.number' <<< "$pr_json")"
-            if ! timeout -k 5s 20s gh pr merge --auto --merge "$pr_number" --repo "$GITHUB_REPOSITORY" \
+            if [[ "$check_state" =~ (FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE) ]]; then
+              refuse_acceptance 'Append required check failed'
+            fi
+            if ! retry_timeout 20 gh pr merge --auto --merge "$pr_number" --repo "$GITHUB_REPOSITORY" \
               --match-head-commit "$head_sha"; then
-              echo "::error title=Append auto-merge failed::Could not arm merge-on-green for PR #$pr_number ($branch)" >&2
-              exit 1
+              refuse_acceptance "Append auto-merge failed: Could not arm merge-on-green for PR #$pr_number ($branch)"
             fi
             echo "Armed merge-on-green for PR #$pr_number ($branch)."
             # Poll only while undecided so a terminal failure refuses promptly.
@@ -584,33 +658,29 @@ jobs:
             started=$SECONDS
             deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))
             while :; do
-              if ! pr_json="$(timeout -k 5s 20s gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
+              if ! pr_json="$(retry_timeout 20 gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
                 --json headRefOid,state,statusCheckRollup)"; then
-                echo "::error title=Append PR lookup failed::PR #$pr_number ($branch); deterministic-safety-net: unavailable; elapsed $((SECONDS - started))s" >&2
-                exit 1
+                check_state=unavailable
+                refuse_acceptance 'Append PR lookup failed'
               fi
-              check_state="$(timeout -k 5s 10s jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
+              check_state="$(retry_timeout 10 jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
               [[ -n "$check_state" ]] || check_state='not reported'
-              state="$(timeout -k 5s 10s jq -r '.state' <<< "$pr_json")"
-              if [[ "$(timeout -k 5s 10s jq -r '.headRefOid' <<< "$pr_json")" != "$head_sha" ]]; then
-                echo "::error title=Append head changed::PR #$pr_number ($branch); deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
-                exit 1
+              state="$(retry_timeout 10 jq -r '.state' <<< "$pr_json")"
+              if [[ "$(retry_timeout 10 jq -r '.headRefOid' <<< "$pr_json")" != "$head_sha" ]]; then
+                refuse_acceptance 'Append head changed'
               fi
               if [[ "$state" != OPEN && "$state" != MERGED ]]; then
-                echo "::error title=Append PR closed::PR #$pr_number ($branch) is $state; deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
-                exit 1
+                refuse_acceptance 'Append PR closed'
               fi
               if [[ "$check_state" =~ (FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE) ]]; then
-                echo "::error title=Append required check failed::PR #$pr_number ($branch); deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
-                exit 1
+                refuse_acceptance 'Append required check failed'
               fi
               if [[ "$state" == MERGED || "$SECONDS" -ge "$deadline" ]]; then
                 # A merge at the deadline still needs the same byte-equality proof.
-                if timeout -k 5s 240s python3 scripts/verify_attestation_append.py --base "$PROMOTION_SOURCE_SHA" --wait-for-acceptance 0; then
+                if named_timeout 240 python3 scripts/verify_attestation_append.py --base "$PROMOTION_SOURCE_SHA" --wait-for-acceptance 0; then
                   exit 0
                 fi
-                echo "::error title=Append acceptance wait failed::PR #$pr_number ($branch) is $state; deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
-                exit 1
+                refuse_acceptance 'Append acceptance wait failed'
               fi
               remaining=$((deadline - SECONDS))
               sleep "$((remaining > 0 ? (remaining < 15 ? remaining : 15) : 0))"
