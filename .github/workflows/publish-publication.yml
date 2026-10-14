@@ -103,11 +103,16 @@ jobs:
             --manifest "$build/manifest.json" \
             --source-commit "$PROMOTION_SOURCE_SHA"
 
+      - name: Pack verified per-commit release build
+        run: |
+          set -Eeuo pipefail
+          tar -C "$RUNNER_TEMP/pages-build" -cf "$RUNNER_TEMP/pages-build.tar" .
+
       - name: Upload verified per-commit release build
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pages-build-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/pages-build
+          path: ${{ runner.temp }}/pages-build.tar
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
