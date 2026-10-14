@@ -172,7 +172,13 @@ jobs:
           name: pages-build-${{ steps.build.outputs.run_id }}-${{ steps.build.outputs.attempt }}
           run-id: ${{ steps.build.outputs.run_id }}
           github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/pages-build
+          path: ${{ runner.temp }}
+
+      - name: Extract build handoff before preparing any append
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/pages-build"
+          tar -xf "$RUNNER_TEMP/pages-build.tar" -C "$RUNNER_TEMP/pages-build"
 
       - name: Verify build handoff before preparing any append
         env:
@@ -945,7 +951,14 @@ jobs:
           name: pages-build-${{ needs.classify.outputs.build_run_id }}-${{ needs.classify.outputs.build_attempt }}
           run-id: ${{ needs.classify.outputs.build_run_id }}
           github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/pages-build
+          path: ${{ runner.temp }}
+
+      - name: Extract verified per-commit release build
+        if: needs.sign_health.outputs.health_only != 'true'
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/pages-build"
+          tar -xf "$RUNNER_TEMP/pages-build.tar" -C "$RUNNER_TEMP/pages-build"
 
       - name: Verify per-commit build identity and bytes
         if: needs.sign_health.outputs.health_only != 'true'
