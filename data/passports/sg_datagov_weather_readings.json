@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-13T06:00:23Z",
+    "last_checked": "2026-10-14T06:05:03Z",
     "record_count": 1,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
       "column_count": 2,
-      "content_shape_changed": false,
-      "first_row_hash": "shape-v1:f0a5d8e8806c818fa057d025c7f656d4e159e9607a8128856c444455f5dba781"
+      "content_shape_changed": true,
+      "first_row_hash": "shape-v1:1018fb0dd961720fd44d7d44e65bdebfaf2828d85207ff7298c2609bb2c64e9f"
     },
-    "status": "fresh"
+    "status": "degraded"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.sg/v1/environment/air-temperature",
@@ -39,7 +39,7 @@
     "geography": "Singapore",
     "name": "Weather Readings real-time (SG)",
     "namespace": "weather",
-    "observed_verified_at": "2026-10-13T06:00:23Z",
+    "observed_verified_at": "2026-10-14T06:05:03Z",
     "source": "data.gov.sg",
     "steward": "Singapore Government"
   },
@@ -886,7 +886,7 @@
     "receipt": {
       "evidence_path": "data/sg_datagov_weather_readings.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:925aaf77274de6495cda6f213db915aa1b8e96437f3585819f18574eb3cf4be8",
+      "receipt_digest": "sha256:68378b30a9980374a1c3c042255168badb87a52039d15606fc91c1adfcbf8ebb",
       "sigstore_path": "data/sg_datagov_weather_readings.receipt.sigstore.json",
       "statement_path": "data/sg_datagov_weather_readings.receipt.statement.json"
     },
