@@ -915,6 +915,26 @@ def test_pages_resettlement_reuses_wait_and_exports_one_downstream_revision() ->
     assert checkout["with"]["ref"] == selected
 
 
+@pytest.mark.parametrize(("sha", "reason"), [("a" * 40, "quiet"), ("b" * 40, "ceiling"), ("", "")])
+def test_pages_logs_classify_promotion_source_before_consumption(sha: str, reason: str) -> None:
+    steps = yaml.safe_load(_workflow())["jobs"]["classify"]["steps"]
+    settlement = next(step for step in steps if step.get("id") == "settled_main")
+    diagnostic = next(step for step in steps if step.get("name") == "Log promotion source resolution")
+    checkout = next(step for step in steps if step.get("uses") == "actions/checkout@v4")
+    assert steps.index(settlement) < steps.index(diagnostic) < steps.index(checkout)
+    assert diagnostic["env"] == {
+        "SETTLED_SHA": "${{ steps.settled_main.outputs.settled_sha }}",
+        "SETTLEMENT_REASON": "${{ steps.settled_main.outputs.settlement_reason }}",
+    }
+    result = subprocess.run(
+        ["bash", "-c", diagnostic["run"]], capture_output=True, text=True, check=True,
+        env={**os.environ, "SETTLED_SHA": sha, "SETTLEMENT_REASON": reason},
+    )
+    assert result.stdout.splitlines() == [
+        f"settled_sha={sha or '<empty>'}", f"settlement_reason={reason or '<empty>'}",
+    ]
+
+
 def test_pages_settlement_is_bounded_and_pins_the_promoted_revision() -> None:
     workflow = yaml.safe_load(_workflow())
     jobs = workflow["jobs"]
@@ -1042,6 +1062,23 @@ def test_pages_settlement_poll_exercises_quiet_ceiling_and_head_changes(
     exec(compile(source, str(WORKFLOW), "exec"), namespace)
     outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
     assert outputs["settled_sha"] == calls[-1][1]
+    # Exercise the actual producer output through both YAML references into
+    # the guard's shell, rather than injecting an unrelated fixture SHA.
+    jobs = yaml.safe_load(_workflow())["jobs"]
+    sha_reference = "${{ steps.settled_main.outputs.settled_sha }}"
+    job_reference = "${{ needs.classify.outputs.settled_sha }}"
+    references = {sha_reference: outputs["settled_sha"]}
+    references[job_reference] = references[jobs["classify"]["outputs"]["settled_sha"]]
+    guard = next(step for step in jobs["sign_health"]["steps"] if step.get("id") == "settled_main")
+    selected_reference = guard["env"].get(
+        "PROMOTION_SOURCE_SHA", jobs["sign_health"]["env"]["PROMOTION_SOURCE_SHA"],
+    )
+    result = subprocess.run(
+        ["bash", "-c", guard["run"].split('initial_sha="$PROMOTION_SOURCE_SHA"', 1)[0]],
+        capture_output=True, text=True,
+        env={**os.environ, "PROMOTION_SOURCE_SHA": references[selected_reference]},
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
     if scenario == "busy":
         assert clock[0] == 900
         assert outputs["settled_sha"] == f"{int(clock[0] // 31):040x}"

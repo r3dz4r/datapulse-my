@@ -132,6 +132,15 @@ jobs:
               output.write(f"settled_sha={sha}\nsettlement_reason={reason}\n")
           PY
 
+      - name: Log promotion source resolution
+        env:
+          SETTLED_SHA: ${{ steps.settled_main.outputs.settled_sha }}
+          SETTLEMENT_REASON: ${{ steps.settled_main.outputs.settlement_reason }}
+        run: |
+          set -Eeuo pipefail
+          printf 'settled_sha=%s\n' "${SETTLED_SHA:-<empty>}"
+          printf 'settlement_reason=%s\n' "${SETTLEMENT_REASON:-<empty>}"
+
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.settled_main.outputs.settled_sha }}
