@@ -1,6 +1,6 @@
 # AGENTS.md — `scripts/` (DataPulse MY pipeline)
 
-Working agreement for AI agents editing the 42 Python scripts that drive the datapulse-my pipeline.
+Working agreement for AI agents editing the 127 Python scripts that drive the datapulse-my pipeline.
 
 ## What this is
 
@@ -18,7 +18,7 @@ Scripts are **read-and-execute**: every commit triggers the deterministic-safety
 1. **One script = one job.** If a script does two unrelated things, split it. `gen_health_history.py` regenerates `health/history.jsonl`; it does not also regenerate `changelog.json`. (That's `gen_changelog.py`'s job.)
 2. **Pipeline outputs are gitignored, hand-authored inputs are committed.** `health/`, `record-evidence/`, `.attestations/latest/`, `data/<id>.md` (after first gen), `docs/index.html` are generated. `datapulse.json`, `health.schema.json`, `datapulse.schema.json`, `.attestations/chain_head.json`, source templates under `templates/` are hand-authored.
 3. **Never bypass `--quick-test`.** `gen_health_history.py` and similar long-running scripts have a `--quick-test` flag for fast iteration. The flag is mandatory during dispatch — a 60-min full run wastes Codex quota.
-4. **The 10-status taxonomy is hard-coded across 6+ files.** If you change it, you MUST update: `embed_dashboard_data.py` (status display), `gen_changelog.py` (status sections), `gen_dashboard_filters.py`, `gen_dashboard_sections.py`, `health.schema.json`, and `mcp/server.py` (status enums). Use a shared constant — don't repeat the tuple.
+4. **The 10-status taxonomy is hard-coded across multiple files.** If you change it, you MUST update: `embed_dashboard_data.py` (status display), `gen_changelog.py` (status sections), `gen_dashboard_filters.py`, `gen_dashboard_sections.py`, `health.schema.json`, and `mcp/server.py` (status enums). Use a shared constant — don't repeat the tuple.
 5. **Attestation chain integrity is non-negotiable.** `gen_attestations.py` is the only writer to `.attestations/chain_head.json`. Re-running with different inputs produces a different chain head — that's expected, but **never edit chain_head.json directly**. The release pipeline (`.github/workflows/release-please.yml`) asserts the chain head is stamped on each release; manual edits will break release attestation.
 6. **`git add` order matters for the safety-net gate.** The gate compares pre/post SHAs to determine diff scope. If you regenerate artifacts and then commit them in the same dispatch, the diff scope includes your source change + regenerated artifacts. This is fine for the timer; for operator commits, separate the source change from the regen into two commits.
 7. **Determinism is load-bearing.** Two runs of any `gen_*.py` on the same inputs must produce byte-identical output. If your script introduces non-determinism (random IDs, timestamps, sort instability), the deterministic-safety-net fails and the release is blocked.

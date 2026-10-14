@@ -1,0 +1,67 @@
+{
+  "live_documents": [
+    "AGENTS.md",
+    "README.md",
+    "llms.txt",
+    "mcp/*.md",
+    "scripts/AGENTS.md",
+    "docs/*.md"
+  ],
+  "dated_exemptions": [
+    "docs/*20??-??-??*.md",
+    "docs/contract-inventory.md",
+    "docs/myaisafe-contract-inventory.md",
+    "docs/release-verification.md"
+  ],
+  "claims": [
+    {
+      "name": "datasets",
+      "derive": "jq '.datasets | length' datapulse.json",
+      "source": "datapulse.json",
+      "pattern": "(?<![\\w])(?P<count>\\d[\\d,]*)\\s*(?:-\\s*|\\s+)(?:official\\s+)?datasets?\\b"
+    },
+    {
+      "name": "tools",
+      "derive": "jq '.tools | length' mcp.json",
+      "source": "mcp.json",
+      "pattern": "(?<![\\w])(?P<count>\\d[\\d,]*)\\s+(?:read-only\\s+|MCP\\s+)?tools\\b"
+    },
+    {
+      "name": "statuses",
+      "derive": "jq -r '.properties._trust_summary.properties.by_status.required[]' health.schema.json",
+      "source": "health.schema.json",
+      "pattern": "(?<![\\w])(?P<count>\\d+)-status\\b",
+      "list_pattern": "\\d+-status taxonomy \\(`(?P<items>[^`]+)`\\)"
+    },
+    {
+      "name": "Python files",
+      "derive": "find scripts -maxdepth 1 -type f -name '*.py' | wc -l",
+      "source": "scripts/*.py",
+      "pattern": "(?<![\\w])(?P<count>\\d+) Python (?:files|scripts)\\b"
+    },
+    {
+      "name": "publishers",
+      "derive": "jq '[.datasets[].custodian] | unique | length' datapulse.json",
+      "source": "datapulse.json",
+      "pattern": "(?<![\\w])(?P<count>\\d+) publishers?\\b"
+    },
+    {
+      "name": "GTFS transit feeds",
+      "derive": "jq '[.datasets[] | select(.id | startswith(\"gtfs_\"))] | length' datapulse.json",
+      "source": "datapulse.json",
+      "pattern": "(?<![\\w])(?P<count>\\d+) GTFS transit feeds?\\b"
+    },
+    {
+      "name": "concrete resources",
+      "derive": "jq '.resources | length' mcp.json",
+      "source": "mcp.json",
+      "pattern": "(?<![\\w])(?P<count>\\d+) concrete resources?\\b"
+    },
+    {
+      "name": "resource templates",
+      "derive": "jq '.resource_templates | length' mcp.json",
+      "source": "mcp.json",
+      "pattern": "(?<![\\w])(?P<count>\\d+) resource templates?\\b"
+    }
+  ]
+}
