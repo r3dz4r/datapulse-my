@@ -249,7 +249,7 @@ def test_publication_append_time_bounds_reject_isolated_ordering_drift(moved: st
 def test_append_acceptance_inner_wait_fits_hard_wrapper() -> None:
     run = _append_acceptance_step()["run"]
     wait = re.search(
-        r"timeout (?:-k \d+s )?(\d+)s python3 scripts/verify_attestation_append.py "
+        r"named_timeout (\d+) python3 scripts/verify_attestation_append.py "
         r'--base "\$PROMOTION_SOURCE_SHA" --wait-for-acceptance (\d+)',
         run,
     )
@@ -265,13 +265,16 @@ def test_append_acceptance_bounds_every_external_call_and_total_budget() -> None
     step = _append_acceptance_step()
     run = step["run"]
     commands = "\n".join(line for line in run.splitlines() if not line.lstrip().startswith("#"))
+    # The retry helper's parser discriminator is a shell comparison, not a call.
+    commands = commands.replace('[[ "$1" == jq ]]', '[[ parser_call ]]')
     calls = list(re.finditer(r"(?<![\w-])(?:python3|bash|git|jq|gh)\b", commands))
     assert calls
     bounds = []
     for call in calls:
         bound = re.search(r"timeout -k (\d+)s (\d+)s $", commands[:call.start()])
-        assert bound is not None, f"unbounded call: {commands[call.start():].splitlines()[0]}"
-        kill_after, duration = map(int, bound.groups())
+        helper = re.search(r"(?:named_timeout|retry_timeout) (\d+) $", commands[:call.start()])
+        assert bound is not None or helper is not None, f"unbounded call: {commands[call.start():].splitlines()[0]}"
+        kill_after, duration = map(int, bound.groups()) if bound else (5, int(helper.group(1)))
         assert kill_after > 0 and duration > 0
         bounds.append(duration + kill_after)
     # A process-group watchdog also caps shell overhead and any future calls.
@@ -350,7 +353,7 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
         ' "pr list") if [[ "$EXISTING" == 1 && ! -f "$MERGED_MARKER" ]]; then echo "$OPEN_PRS"; else echo "[]"; fi ;;\n'
         ' "pr merge") : ;;\n'
         ' "pr view")\n'
-        '   if [[ "$*" != *statusCheckRollup* || "$*" == *autoMergeRequest* ]]; then echo "$INITIAL_PR";\n'
+        '   if [[ "$*" != *statusCheckRollup* || "$*" == *autoMergeRequest* || "$*" == *headRefName* ]]; then echo "$INITIAL_PR";\n'
         '   elif [[ "$SCENARIO" == lookup_failed ]]; then exit 124;\n'
         '   elif [[ "$SCENARIO" == pending_merge && -f "$POLL_MARKER" ]]; then echo "$MERGED_PR"; touch "$MERGED_MARKER";\n'
         '   else echo "$POLLED_PR"; touch "$POLL_MARKER"; fi ;;\n'
@@ -391,7 +394,8 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
                             capture_output=True, text=True, timeout=10)
     calls = log.read_text().splitlines()
     assert (result.returncode == 0) is (scenario == "pending_merge"), result.stdout + result.stderr
-    assert ("slept" in calls) is (scenario in {"pending_merge", "exhausted", "not_reported"})
+    assert ("slept" in calls) is (scenario in {"pending_merge", "exhausted", "not_reported"}
+                                  or (scenario == "lookup_failed" and not existing))
     if scenario != "pending_merge":
         assert "PR #99" in result.stderr
         assert "(attestation/append-contract)" in result.stderr
@@ -416,7 +420,10 @@ def test_append_acceptance_wrapper_kills_term_resistant_children(tmp_path: Path)
                 for line in run.splitlines() if "--wait-for-acceptance 0; then" in line)
     # Exercise the actual wrapper without waiting for its production budget.
     wait = wait.removeprefix("if ")
-    wait = re.sub(r"-k \d+s \d+s", "-k 0.1s 1s", wait)
+    helpers = run.split("named_timeout()", 1)
+    wrapper = "named_timeout()" + helpers[1].split("retry_timeout()", 1)[0]
+    wrapper = wrapper.replace('timeout -k 5s "${cap}s"', 'timeout -k 0.1s "${cap}s"')
+    wait = wrapper + "\n" + wait.replace("named_timeout 240 ", "named_timeout 1 ")
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     verifier = bin_dir / "python3"
@@ -498,7 +505,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         'case "$1 $2" in\n'
         '  "pr list") printf "%s\\n" "$OPEN_PRS"; exit "$GH_STATUS" ;;\n'
         '  "pr view")\n'
-        '    if [[ "$*" == *statusCheckRollup* ]]; then printf "%s\\n" "$POLLED_PR"; exit "$CHECK_STATUS";\n'
+        '    if [[ "$*" == *statusCheckRollup* && "$*" != *headRefName* ]]; then printf "%s\\n" "$POLLED_PR"; exit "$CHECK_STATUS";\n'
         '    else printf "{\\"number\\":99,\\"headRefName\\":\\"attestation/append-contract\\",'
         '\\"headRefOid\\":\\"%s\\",\\"baseRefName\\":\\"main\\",\\"state\\":\\"OPEN\\"}\\n" "$APPEND_SHA"; fi ;;\n'
         '  "pr merge") exit "$ARM_STATUS" ;;\n'
@@ -558,7 +565,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         if len(pulls) == 1000:
             assert "list reached 1000" in result.stderr
         if expected_submit:
-            assert "gh pr view attestation/append-contract --repo example/data-pulse --json number,headRefName,headRefOid,baseRefName,state" in calls
+            assert "gh pr view attestation/append-contract --repo example/data-pulse --json number,headRefName,headRefOid,baseRefName,state,statusCheckRollup" in calls
             assert f"gh pr merge --auto --merge 99 --repo example/data-pulse --match-head-commit {'d' * 40}" in calls
             wait_call = f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 0"
             assert (wait_call in calls) is (arm_status == 0 and check_status == 0)
