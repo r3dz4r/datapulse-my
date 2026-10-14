@@ -635,9 +635,25 @@ jobs:
               --json number,headRefName,headRefOid,baseRefName,state,statusCheckRollup)"; then
               refuse_acceptance 'Append PR lookup failed: no matching open PR could be confirmed'
             fi
+            check_json="$pr_json"
+            # Keep the required-check result while resolving missing PR identity
+            # fields from a separate lookup. Neither response proves acceptance;
+            # the fetched-main byte proof below remains mandatory.
+            if ! retry_timeout 10 jq -e \
+              '(.number | type) == "number" and (.headRefName | type) == "string" and (.baseRefName | type) == "string"' \
+              <<< "$pr_json" >/dev/null; then
+              if ! pr_json="$(retry_timeout 20 gh pr view "$branch" --repo "$GITHUB_REPOSITORY" \
+                --json number,headRefName,headRefOid,baseRefName,state)"; then
+                refuse_acceptance 'Append PR identity lookup failed'
+              fi
+              if ! retry_timeout 10 jq -e --arg head "$head_sha" '.headRefOid == $head' \
+                <<< "$check_json" >/dev/null; then
+                refuse_acceptance 'Append check lookup head mismatch'
+              fi
+            fi
             pr_number="$(retry_timeout 10 jq -er '.number' <<< "$pr_json")"
             state="$(retry_timeout 10 jq -r '.state' <<< "$pr_json")"
-            check_state="$(retry_timeout 10 jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
+            check_state="$(retry_timeout 10 jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$check_json")"
             [[ -n "$check_state" ]] || check_state='not reported'
             if ! retry_timeout 10 jq -e --arg branch "$branch" --arg head "$head_sha" \
               '.headRefName == $branch and .headRefOid == $head and .baseRefName == "main" and .state == "OPEN"' \
@@ -680,6 +696,7 @@ jobs:
                 if named_timeout 240 python3 scripts/verify_attestation_append.py --base "$PROMOTION_SOURCE_SHA" --wait-for-acceptance 0; then
                   exit 0
                 fi
+                echo 'Append candidate must be accepted in authoritative Git before publication.' >&2
                 refuse_acceptance 'Append acceptance wait failed'
               fi
               remaining=$((deadline - SECONDS))
