@@ -166,6 +166,7 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
     steps = {step["name"]: step for step in job["steps"]}
     for name in (
         "Validate manifest and health schemas",
+        "Verify live documentation counts",
         "Verify repository contract",
         "Verify distribution surfaces match canonical evidence",
         "Verify OpenWiki source contract",
@@ -191,6 +192,7 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
             "Install artifact verification dependencies",
             "Install verification dependencies",
             "Validate manifest and health schemas",
+            "Verify live documentation counts",
             "Verify repository contract",
             "Verify distribution surfaces match canonical evidence",
             "Verify OpenWiki source contract",

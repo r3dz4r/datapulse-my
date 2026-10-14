@@ -4,7 +4,7 @@ Working agreement for AI agents (Hermes, Codex, Claude Code) operating inside th
 
 ## What this repo is
 
-`r3dz4r/datapulse-my` — open-source trust layer for Malaysian public data. 425 official datasets from `data.gov.my`, `BNM`, `DOSM`, `DOE`, `KKM`, `KPDN`, `MET Malaysia` continuously probed and classified into a 10-status taxonomy (`fresh | aging | stale | discontinued | degraded | browser_dependent | unreachable | unknown | unknown_freshness | reference`). Live MCP server with 19 read-only tools (canonical count: `jq '.tools | length' mcp.json` — do NOT hardcode this number in prose). Hosted on `https://www.data-pulse.my` and `https://mcp.data-pulse.my`.
+`r3dz4r/datapulse-my` — open-source trust layer for Malaysian public data. 440 official datasets from `data.gov.my`, `BNM`, `DOSM`, `DOE`, `KKM`, `KPDN`, `MET Malaysia` continuously probed and classified into a 10-status taxonomy (`fresh | aging | stale | discontinued | degraded | browser_dependent | unreachable | unknown | unknown_freshness | reference`). Live MCP server with 19 read-only tools (canonical count: `jq '.tools | length' mcp.json` — do NOT hardcode this number in prose). Hosted on `https://www.data-pulse.my` and `https://mcp.data-pulse.my`.
 
 **One-line constraint:** every change here is publicly visible. The dashboard auto-deploys on push to main (modulo `[skip deploy]` trailers). Bad data leaks fast.
 
@@ -35,7 +35,7 @@ datapulse-my/
 ├── catalog-snapshot.json      # point-in-time snapshot (generated)
 ├── changelog.json             # release-by-release summary (generated)
 │
-├── mcp/                       # read-only FastMCP server (~2,000 lines)
+├── mcp/                       # read-only FastMCP server
 │   ├── server.py              # 19 tools (see mcp.json — canonical)
 │   ├── tests/                 # pytest integration tests
 │   ├── AGENTS.md              # <-- per-subdir working agreement
@@ -50,7 +50,7 @@ datapulse-my/
 │   ├── trust-layer-notebook.AGENTS.md
 │   └── ...
 │
-├── scripts/                   # 108 Python files driving the pipeline
+├── scripts/                   # 127 Python files driving the pipeline
 │   ├── gen_*.py               # generators (regenerate artifacts from sources)
 │   ├── verify_*.py            # invariants (release-blocking)
 │   ├── validate_*.py          # schema + content validators
