@@ -29,6 +29,7 @@ CANONICAL_PIPELINE = Path(
     os.environ.get("DOTFILES_DIR", "/home/redza/dotfiles")
 ) / "scripts" / "datapulse-pipeline.sh"
 DEPLOY_WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
+BUILD_WORKFLOW = ROOT / ".github/workflows/publish-publication.yml"
 SERVED_VERIFIER = ROOT / "scripts/verify_served_release.sh"
 
 
@@ -79,9 +80,9 @@ def _github_path_matches(pattern: str, path: str) -> bool:
     return re.fullmatch(expression, path) is not None
 
 
-def _deploy_trigger_matches(changed_paths: list[str]) -> bool:
-    """Return whether any changed path matches the workflow's push allowlist."""
-    workflow = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+def _build_trigger_matches(changed_paths: list[str]) -> bool:
+    """Return whether any changed path matches the build workflow's push allowlist."""
+    workflow = yaml.safe_load(_read(BUILD_WORKFLOW))
     patterns = workflow[True]["push"]["paths"]
     return any(
         _github_path_matches(pattern, path)
@@ -91,8 +92,10 @@ def _deploy_trigger_matches(changed_paths: list[str]) -> bool:
 
 
 def test_cloudflare_push_trigger_is_code_plane_allowlist() -> None:
-    workflow = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+    workflow = yaml.safe_load(_read(BUILD_WORKFLOW))
+    deploy = yaml.safe_load(_read(DEPLOY_WORKFLOW))
 
+    assert workflow[True]["push"]["branches"] == ["main"]
     assert workflow[True]["push"]["paths"] == [
         "docs/**",
         "scripts/**",
@@ -102,28 +105,30 @@ def test_cloudflare_push_trigger_is_code_plane_allowlist() -> None:
         "attestations/**",
         "config/public-surfaces.json",
         ".github/workflows/deploy-cloudflare-pages.yml",
+        ".github/workflows/publish-publication.yml",
         "datapulse.json",
         "mcp.json",
         "requirements.txt",
     ]
+    assert "push" not in deploy[True]
 
 
 def test_cloudflare_push_trigger_excludes_health_cycles_and_keeps_code_plane() -> None:
-    assert not _deploy_trigger_matches(["health/latest.json", "health/trends.json"])
-    assert _deploy_trigger_matches(["attestations/chain-index.json"])
-    assert _deploy_trigger_matches(["docs/index.html"])
-    assert _deploy_trigger_matches(["scripts/publish_health_index.py"])
-    assert _deploy_trigger_matches(["functions/health/[[path]].js"])
-    assert _deploy_trigger_matches(["health/latest.json", "docs/index.html"])
+    assert not _build_trigger_matches(["health/latest.json", "health/trends.json"])
+    assert _build_trigger_matches(["attestations/chain-index.json"])
+    assert _build_trigger_matches(["docs/index.html"])
+    assert _build_trigger_matches(["scripts/publish_health_index.py"])
+    assert _build_trigger_matches(["functions/health/[[path]].js"])
+    assert _build_trigger_matches(["health/latest.json", "docs/index.html"])
 
 
 def test_cloudflare_push_trigger_deploys_observation_receipt_changes() -> None:
     """Signed observation receipts are assembled into the site, so they must trigger a deploy."""
-    patterns = yaml.safe_load(_read(DEPLOY_WORKFLOW))[True]["push"]["paths"]
+    patterns = yaml.safe_load(_read(BUILD_WORKFLOW))[True]["push"]["paths"]
 
     assert "observation-receipts/**" in patterns
-    assert _deploy_trigger_matches(["observation-receipts/chain_head.json"])
-    assert _deploy_trigger_matches(["observation-receipts/days/2026-09-18.json"])
+    assert _build_trigger_matches(["observation-receipts/chain_head.json"])
+    assert _build_trigger_matches(["observation-receipts/days/2026-09-18.json"])
 
 
 def test_public_surfaces_declares_only_the_servable_observation_receipt_entry_point() -> None:
@@ -199,15 +204,17 @@ def test_systemd_unit_emits_lock_skip_telemetry() -> None:
 
 
 def test_cloudflare_workflow_uses_release_build_and_declared_inputs() -> None:
-    workflow = _read(DEPLOY_WORKFLOW)
-    paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
+    build = _read(BUILD_WORKFLOW)
+    deploy = _read(DEPLOY_WORKFLOW)
+    paths_block = build.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
 
-    assert "bash scripts/generate.sh release-build" in workflow
+    assert "bash scripts/generate.sh release-build" in build
+    assert "bash scripts/generate.sh release-build" in deploy
     assert '"scripts/**"' in paths_block
     assert '"health/**"' not in paths_block
-    assert "npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview --branch=main" in workflow
-    assert "cloudflare/wrangler-action" not in workflow
-    assert "actions/deploy-pages" not in workflow
+    assert "npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview --branch=main" in deploy
+    assert "cloudflare/wrangler-action" not in deploy
+    assert "actions/deploy-pages" not in deploy
 
 
 def test_cloudflare_release_and_proof_steps_keep_protected_attestation_key_setup() -> None:
@@ -241,12 +248,14 @@ def test_cloudflare_workflow_permissions_and_concurrency_are_not_broadened() -> 
 
 def test_sigstore_oidc_is_isolated_to_a_least_privilege_job() -> None:
     workflow = yaml.safe_load(_read(DEPLOY_WORKFLOW))
+    build = yaml.safe_load(_read(BUILD_WORKFLOW))
     signing = workflow["jobs"]["sign_health"]
 
+    assert build["permissions"] == {"contents": "read"}
     assert workflow["permissions"] == {"contents": "read"}
     assert signing["permissions"] == {"contents": "read", "id-token": "write"}
-    assert "permissions" not in workflow["jobs"]["deploy"]
-    assert "permissions" not in workflow["jobs"]["classify"]
+    assert workflow["jobs"]["deploy"]["permissions"] == {"contents": "read", "actions": "read"}
+    assert workflow["jobs"]["classify"]["permissions"] == {"contents": "read", "actions": "read"}
     assert workflow["jobs"]["deploy"]["needs"] == ["classify", "sign_health"]
 
 
@@ -688,10 +697,11 @@ def test_cloudflare_full_release_keeps_fresh_cryptographic_verification() -> Non
 
 
 def test_cloudflare_workflow_retains_dynamic_public_artifact_contracts() -> None:
-    workflow = _read(DEPLOY_WORKFLOW)
-    paths_block = workflow.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
+    build = _read(BUILD_WORKFLOW)
+    paths_block = build.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
 
     assert '"health/**"' not in paths_block
+    assert '"scripts/**"' in paths_block
     served = _read(SERVED_VERIFIER)
     assert 'fetch "dataset register" "$base_url/"' in served
     assert 'fetch_alias dashboard "$base_url/dashboard"' in served

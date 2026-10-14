@@ -1,23 +1,11 @@
 name: Deploy canonical dashboard to Cloudflare Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: [Build canonical Pages publication]
+    types: [completed]
     branches: [main]
-    paths:
-      - "docs/**"
-      - "scripts/**"
-      - "mcp/**"
-      - "functions/**"
-      - "observation-receipts/**"
-      # The accepted witness changes only attestations/, so its merge must re-run Pages.
-      - "attestations/**"
-      - "config/public-surfaces.json"
-      - ".github/workflows/deploy-cloudflare-pages.yml"
-      - "datapulse.json"
-      - "mcp.json"
-      - "requirements.txt"
   workflow_dispatch:
-
 permissions:
   contents: read
 
@@ -41,6 +29,11 @@ concurrency:
 jobs:
   classify:
     name: Classify native Pages input
+    environment: production
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: read
+      actions: read
     runs-on: ubuntu-latest
     # Initial settlement owns its budget before the signer starts.
     timeout-minutes: 20
@@ -48,7 +41,29 @@ jobs:
       health_only: ${{ steps.classify.outputs.health_only }}
       settled_sha: ${{ steps.settled_main.outputs.settled_sha }}
       settlement_reason: ${{ steps.settled_main.outputs.settlement_reason }}
+      build_run_id: ${{ steps.build.outputs.run_id }}
+      build_attempt: ${{ steps.build.outputs.attempt }}
     steps:
+      # Resolve inside the lock. A late old completion must consume the newest
+      # successful main build, never the workflow_run event's older head.
+      - name: Select newest successful main build
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          builds="$(timeout -k 5s 60s gh api --method GET \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/publish-publication.yml/runs" \
+            -f branch=main -f status=success -f per_page=100)"
+          selected="$(jq -ec --arg repo "$GITHUB_REPOSITORY" \
+            '[.workflow_runs[] | select(.head_repository.full_name == $repo and .head_branch == "main" and .status == "completed" and .conclusion == "success" and (.event == "push" or .event == "workflow_dispatch"))] | max_by(.run_number) // error("No verified main build")' <<< "$builds")"
+          sha="$(jq -er '.head_sha | select(test("^[0-9a-f]{40}$"))' <<< "$selected")"
+          run_id="$(jq -er '.id' <<< "$selected")"
+          attempt="$(jq -er '.run_attempt' <<< "$selected")"
+          echo "PROMOTION_BUILT_SHA=$sha" >> "$GITHUB_ENV"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "attempt=$attempt" >> "$GITHUB_OUTPUT"
+
       - name: Wait for settled main before promoting
         id: settled_main
         env:
@@ -82,7 +97,7 @@ jobs:
                   break
               response = subprocess.run(
                   ["timeout", "-k", "5s", f"{call_budget}s", "gh", "api",
-                   f"repos/{os.environ['GITHUB_REPOSITORY']}/commits/refs/heads/main",
+                   f"repos/{os.environ['GITHUB_REPOSITORY']}/commits/{os.environ.get('PROMOTION_BUILT_SHA', 'refs/heads/main')}",
                    "--header", "Cache-Control: no-cache"],
                   # Let GNU timeout kill its child group before the Python
                   # fallback kills the timeout supervisor itself.
@@ -92,6 +107,8 @@ jobs:
               sha = head["sha"]
               if re.fullmatch(r"[0-9a-f]{40}", sha) is None:
                   raise SystemExit("Main head lookup returned an invalid SHA")
+              if os.environ.get("PROMOTION_BUILT_SHA", sha) != sha:
+                  raise SystemExit("Build identity differs from settlement lookup")
               commit = head["commit"]
               committed_at = datetime.fromisoformat(commit["committer"]["date"].replace("Z", "+00:00"))
               age = (datetime.now(timezone.utc) - committed_at).total_seconds()
@@ -145,14 +162,52 @@ jobs:
         with:
           ref: ${{ steps.settled_main.outputs.settled_sha }}
           fetch-depth: 0
+          sparse-checkout: |
+            scripts/classify_change.py
+            scripts/verify_release_artifact.py
+          sparse-checkout-cone-mode: false
+      - name: Require available verified build before preparing any append
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: pages-build-${{ steps.build.outputs.run_id }}-${{ steps.build.outputs.attempt }}
+          run-id: ${{ steps.build.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/pages-build
+
+      - name: Verify build handoff before preparing any append
+        env:
+          SELECTED_SHA: ${{ steps.settled_main.outputs.settled_sha }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify_release_artifact.py verify \
+            --site "$RUNNER_TEMP/pages-build/workspace" \
+            --manifest "$RUNNER_TEMP/pages-build/manifest.json" \
+            --source-commit "$SELECTED_SHA"
+
+      - name: Refuse production regression and identify classification base
+        id: production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SELECTED_SHA: ${{ steps.settled_main.outputs.settled_sha }}
+        run: |
+          set -Eeuo pipefail
+          response="$(curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/datapulse-p4b-preview")"
+          deployed="$(jq -er 'select(.success == true) | .result.canonical_deployment.deployment_trigger.metadata.commit_hash | select(test("^[0-9a-f]{40}$"))' <<< "$response")"
+          timeout -k 5s 60s git fetch origin "$deployed"
+          # Also covers an earlier run that published but failed served checks.
+          timeout -k 5s 10s git merge-base --is-ancestor "$deployed" "$SELECTED_SHA"
+          echo "source_sha=$deployed" >> "$GITHUB_OUTPUT"
+
       - id: classify
         env:
-          BEFORE_SHA: ${{ github.event.before }}
+          BEFORE_SHA: ${{ steps.production.outputs.source_sha }}
           AFTER_SHA: ${{ steps.settled_main.outputs.settled_sha }}
         run: |
           set -Eeuo pipefail
           echo "health_only=false" >> "$GITHUB_OUTPUT"
-          [[ "${GITHUB_EVENT_NAME}" == "push" ]] || exit 0
           git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null || exit 0
           if git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" | python3 scripts/classify_change.py; then
             echo "health_only=true" >> "$GITHUB_OUTPUT"
@@ -172,6 +227,7 @@ jobs:
       id-token: write
     env:
       PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}
+      PROMOTION_BUILT_SHA: ${{ needs.classify.outputs.settled_sha }}
     outputs:
       settled_sha: ${{ steps.settled_main.outputs.settled_sha }}
       health_only: ${{ steps.settled_main.outputs.health_only }}
@@ -183,6 +239,7 @@ jobs:
         with:
           ref: ${{ needs.classify.outputs.settled_sha }}
           fetch-depth: 0
+          filter: blob:none
           # Deliberately avoid persisting checkout credentials so the push's App-token header is not duplicated.
           persist-credentials: false
 
@@ -309,6 +366,11 @@ jobs:
               || [[ ! "$current_sha" =~ ^[0-9a-f]{40}$ ]]; then
               echo '::error title=Unidentified main revision::Main lookup failed or returned an empty/malformed SHA; refusing signing.' >&2
               exit 1
+            fi
+            if [[ -n "${PROMOTION_BUILT_SHA:-}" ]]; then
+              timeout -k 5s 60s git fetch origin "$current_sha"
+              timeout -k 5s 10s git merge-base --is-ancestor "$PROMOTION_BUILT_SHA" "$current_sha"
+              current_sha="$PROMOTION_BUILT_SHA"
             fi
             [[ "$current_sha" != "$PROMOTION_SOURCE_SHA" ]] || break
             if [[ "$attempts" -ge "$max_attempts" ]]; then
@@ -859,6 +921,9 @@ jobs:
           fi
 
   deploy:
+    permissions:
+      contents: read
+      actions: read
     needs: [classify, sign_health]
     runs-on: ubuntu-latest
     environment: production
@@ -871,6 +936,26 @@ jobs:
         with:
           ref: ${{ needs.sign_health.outputs.settled_sha }}
           fetch-depth: 0
+          filter: blob:none
+
+      - name: Download verified per-commit release build
+        if: needs.sign_health.outputs.health_only != 'true'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: pages-build-${{ needs.classify.outputs.build_run_id }}-${{ needs.classify.outputs.build_attempt }}
+          run-id: ${{ needs.classify.outputs.build_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/pages-build
+
+      - name: Verify per-commit build identity and bytes
+        if: needs.sign_health.outputs.health_only != 'true'
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/verify_release_artifact.py verify \
+            --site "$RUNNER_TEMP/pages-build/workspace" \
+            --manifest "$RUNNER_TEMP/pages-build/manifest.json" \
+            --source-commit "$PROMOTION_SOURCE_SHA"
+          echo "VERIFIED_PAGES_BUILD=$RUNNER_TEMP/pages-build/workspace" >> "$GITHUB_ENV"
 
       - name: Validate canonical health snapshot
         run: |
@@ -909,6 +994,13 @@ jobs:
           DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}
         run: |
           set -Eeuo pipefail
+          if [[ -n "${VERIFIED_PAGES_BUILD:-}" ]]; then
+            # Replace directory inventories, including files removed by the
+            # generators; overlay-copying would retain obsolete served pages.
+            rm -rf docs health deltas record-evidence badges samples data
+            cp -R "$VERIFIED_PAGES_BUILD/." .
+            exit 0
+          fi
           export DATAPULSE_SOURCE_COMMIT_SHA="$PROMOTION_SOURCE_SHA"
           export DATAPULSE_SOURCE_COMMIT_DATE="$(git show -s --format=%cs "$PROMOTION_SOURCE_SHA")"
           if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then
@@ -936,6 +1028,14 @@ jobs:
             echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json
             chmod 600 /tmp/datapulse-attestation-key.json
             export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json
+          fi
+          if [[ -n "${VERIFIED_PAGES_BUILD:-}" ]]; then
+            python3 scripts/verify_release_artifact.py verify \
+              --site "$VERIFIED_PAGES_BUILD" \
+              --manifest "$RUNNER_TEMP/pages-build/manifest.json" \
+              --source-commit "$PROMOTION_SOURCE_SHA"
+            python3 scripts/verify_release_reproducible.py --verify-proof docs/release-verification.md
+            exit 0
           fi
           python3 scripts/verify_release_reproducible.py \
             --workdir-root "$RUNNER_TEMP" \
@@ -1069,6 +1169,22 @@ jobs:
         with:
           name: sigstore-health-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/sigstore-publication
+
+      - name: Bind built dashboard to accepted sign-time trust plane
+        if: needs.sign_health.outputs.health_only != 'true'
+        run: |
+          set -Eeuo pipefail
+          publication="$RUNNER_TEMP/sigstore-publication"
+          test -s "$publication/datapulse.json"
+          test -s "$publication/attestations/latest/binding.json"
+          # A build's private candidate may have an older predecessor. Rebind
+          # only the dashboard projection to the one accepted by this signer;
+          # never publish or append a per-build candidate to repair references.
+          cp "$publication/datapulse.json" datapulse.json
+          rm -rf attestations .attestations
+          cp -R "$publication/attestations" "$publication/.attestations" .
+          python3 scripts/embed_dashboard_data.py --health health/latest.json
+          bash scripts/verify_release_invariants.sh --local
 
       - name: Assemble canonical Pages artifact
         run: |
@@ -1289,7 +1405,7 @@ jobs:
           for attempt in 1 2 3 4; do
             output="$(mktemp)"
             set +e
-            npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview --branch=main 2>&1 | tee "$output"
+            npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview --branch=main --commit-hash="$PROMOTION_SOURCE_SHA" 2>&1 | tee "$output"
             status="${PIPESTATUS[0]}"
             set -e
             if [[ "$status" -eq 0 ]]; then
