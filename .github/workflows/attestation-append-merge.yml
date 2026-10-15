@@ -183,7 +183,7 @@ jobs:
               fi
             fi
 
-            if merge_output="$(gh pr merge "$number" --auto --squash 2>&1)"; then
+            if merge_output="$(gh pr merge "$number" --auto --merge 2>&1)"; then
               echo "Auto-merge enabled on pull request #$number on attempt $attempt/$max_attempts."
               exit 0
             fi
