@@ -572,6 +572,52 @@ def test_option_skips_the_kv_backed_surfaces_and_names_them(tmp_path: Path) -> N
     assert "served surface=release reproducibility proof" in result.stdout
 
 
+@pytest.mark.parametrize("kv_excluded", [True, False])
+def test_kv_backed_fetches_are_opt_in_excluded_when_origin_is_missing(
+    tmp_path: Path, kv_excluded: bool
+) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    (served / "health/latest.json").unlink()
+    (served / "health/index.json").unlink()
+
+    result = _run_verifier(
+        tmp_path, root, built, served, kv_surfaces_published_elsewhere=kv_excluded
+    )
+    combined = result.stdout + result.stderr
+
+    if kv_excluded:
+        assert result.returncode == 0, combined
+        assert "served health/latest.json" in combined
+        assert "/health/index.json" in combined
+        assert "not fetched or compared" in combined
+        assert "served surface=health snapshot" not in combined
+        assert "served surface=dashboard health projection" not in combined
+        assert "served surface=declared public surface /health/latest.json" not in combined
+        assert "served surface=release reproducibility proof" in combined
+        assert "served surface=trends snapshot" in combined
+    else:
+        assert result.returncode == 1, combined
+        assert "missing or stale served surface: health snapshot (HTTP 404)" in combined
+        assert "not fetched or compared" not in combined
+
+
+def test_option_still_rejects_a_wrong_served_trends_count(tmp_path: Path) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    (served / "health/latest.json").unlink()
+    (served / "health/index.json").unlink()
+    trends_path = served / "health/trends.json"
+    trends = json.loads(trends_path.read_text(encoding="utf-8"))
+    trends["summary"]["datasets_total"] = 1
+    _write(trends_path, json.dumps(trends))
+
+    result = _run_verifier(
+        tmp_path, root, built, served, kv_surfaces_published_elsewhere=True
+    )
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "served trends are invalid" in result.stdout
+
+
 def test_option_present_still_fails_on_a_tampered_static_surface(tmp_path: Path) -> None:
     """The exclusion must not widen to the register the lane can genuinely prove."""
     root, built, served = _stage_fixture(tmp_path)
