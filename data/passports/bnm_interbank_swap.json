@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-15T10:11:41Z",
+    "last_checked": "2026-10-15T15:04:36Z",
     "record_count": 2,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
       "column_count": null,
-      "content_shape_changed": false,
-      "first_row_hash": "shape-v1:ceb535d75f35d14d667b9bc7a8508565a0ddbf930e8ba531ab62e7115d3cfe5f"
+      "content_shape_changed": true,
+      "first_row_hash": "shape-v1:0c9ecd651edaa18f9697c4c17415a8618664083a837891035fa3e67d91060119"
     },
-    "status": "fresh"
+    "status": "degraded"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/interbank-swap",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Interbank Swap",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-15T10:11:41Z",
+    "observed_verified_at": "2026-10-15T15:04:36Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1129,7 +1129,7 @@
     "receipt": {
       "evidence_path": "data/bnm_interbank_swap.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:466b519a6ec53b63161e01045338e4d7be16029639657c3d490e4c8a7492ff61",
+      "receipt_digest": "sha256:21e39aae0b7d6357a67b672642e6c7ef67afd68e11b933407f48659945cbfb75",
       "sigstore_path": "data/bnm_interbank_swap.receipt.sigstore.json",
       "statement_path": "data/bnm_interbank_swap.receipt.statement.json"
     },
