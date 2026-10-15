@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.22](https://github.com/r3dz4r/datapulse-my/compare/v3.55.21...v3.55.22) (2026-10-15)
+
+
+### Bug Fixes
+
+* **ci:** classify a real health-cycle merge as health-only ([d221dd3](https://github.com/r3dz4r/datapulse-my/commit/d221dd3123495e9e6e5d2aca027ca81daa7ebf0e))
+
 ## [3.55.21](https://github.com/r3dz4r/datapulse-my/compare/v3.55.20...v3.55.21) (2026-10-15)
 
 
