@@ -3,16 +3,19 @@
 
 The default mode accepts health-cycle outputs only when ``health/latest.json``
 is included. Mixed-ownership generated pages also require the snapshot pair.
+``--ci-artifact-profile`` additionally accepts signed observation-receipt outputs
+for CI only; publication must keep the default profile because receipts are site inputs.
 ``--append-only`` accepts the immutable append and its verified projections.
 Unknown paths deliberately select the source/release profile.
 """
 
 from __future__ import annotations
 
+import argparse
+from collections.abc import Iterable
+from datetime import date
 import re
 import sys
-from datetime import date
-from collections.abc import Iterable
 
 
 ROOT_OUTPUTS = frozenset(
@@ -86,7 +89,20 @@ def is_mixed_ownership_health_output(path: str) -> bool:
     return path == "README.md" or re.fullmatch(r"data/[A-Za-z0-9_-]+\.md", path) is not None
 
 
-def is_health_only_change(paths: Iterable[str]) -> bool:
+def _is_observation_receipt_output(path: str) -> bool:
+    if path == "observation-receipts/chain_head.json":
+        return True
+    match = re.fullmatch(r"observation-receipts/days/([0-9]{4}-[0-9]{2}-[0-9]{2})\.json", path)
+    if match is None:
+        return False
+    try:
+        date.fromisoformat(match.group(1))
+    except ValueError:
+        return False
+    return True
+
+
+def is_health_only_change(paths: Iterable[str], *, ci_artifact_profile: bool = False) -> bool:
     """Return whether paths are health outputs with a snapshot and required context."""
     normalized = tuple(path for path in paths if path)
     if not normalized or "health/latest.json" not in normalized:
@@ -98,6 +114,7 @@ def is_health_only_change(paths: Iterable[str]) -> bool:
         return False
     return all(
         is_health_cycle_output(path) or is_mixed_ownership_health_output(path)
+        or (ci_artifact_profile and _is_observation_receipt_output(path))
         for path in normalized
     )
 
@@ -135,12 +152,19 @@ def is_append_only_change(paths: Iterable[str]) -> bool:
 
 def main() -> int:
     """Read newline-separated paths from standard input and return classifier status."""
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
+    profiles = parser.add_mutually_exclusive_group()
+    profiles.add_argument("--append-only", action="store_true", help="classify attestation appends")
+    profiles.add_argument(
+        "--ci-artifact-profile",
+        action="store_true",
+        help="include observation-receipt outputs for CI, never for publication",
+    )
+    args = parser.parse_args()
     paths = sys.stdin.read().splitlines()
-    if sys.argv[1:] == ["--append-only"]:
+    if args.append_only:
         return 0 if is_append_only_change(paths) else 1
-    if sys.argv[1:]:
-        raise SystemExit("usage: classify_change.py [--append-only]")
-    return 0 if is_health_only_change(paths) else 1
+    return 0 if is_health_only_change(paths, ci_artifact_profile=args.ci_artifact_profile) else 1
 
 
 if __name__ == "__main__":

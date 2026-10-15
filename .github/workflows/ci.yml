@@ -49,7 +49,7 @@ jobs:
             exit 0
           fi
           changed_paths=$(git diff --name-only "${diff_args[@]}")
-          if printf '%s\n' "$changed_paths" | python3 scripts/classify_change.py; then
+          if printf '%s\n' "$changed_paths" | python3 scripts/classify_change.py --ci-artifact-profile; then
             echo "health_only=true" >> "$GITHUB_OUTPUT"
           fi
           if printf '%s\n' "$changed_paths" | python3 scripts/classify_change.py --append-only; then
@@ -101,7 +101,7 @@ jobs:
 
       - name: Install artifact verification dependencies
         if: env.ARTIFACT_ONLY_FAST_PATH == 'true' || env.APPEND_ONLY_FAST_PATH == 'true'
-        run: python3 -m pip install jsonschema==4.25.0 cryptography==50.0.0
+        run: python3 -m pip install jsonschema==4.25.0 cryptography==50.0.0 pytest==8.4.1
 
       - name: Install verification dependencies
         if: env.FULL_VERIFICATION == 'true'
@@ -118,6 +118,9 @@ jobs:
 
       - name: Verify live documentation counts
         run: python3 scripts/verify_doc_claims.py
+
+      - name: Verify signed chain-head monotonicity
+        run: python3 -m pytest -q scripts/tests/test_chain_head_monotonicity.py
 
       - name: Validate tracked release-proof legacy format
         if: env.FULL_VERIFICATION == 'true'
