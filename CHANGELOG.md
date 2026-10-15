@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.24](https://github.com/r3dz4r/datapulse-my/compare/v3.55.23...v3.55.24) (2026-10-15)
+
+
+### Bug Fixes
+
+* **ci:** let receipt-bearing health cycles take the fast path ([d3595ad](https://github.com/r3dz4r/datapulse-my/commit/d3595ad03a29d3a0e356e2b01c94e1a0a4559f9c))
+* **ci:** let receipt-bearing health cycles take the fast path ([d9efa41](https://github.com/r3dz4r/datapulse-my/commit/d9efa41308341f1c820b5818445b932aedf0f5a8))
+
 ## [3.55.23](https://github.com/r3dz4r/datapulse-my/compare/v3.55.22...v3.55.23) (2026-10-15)
 
 
