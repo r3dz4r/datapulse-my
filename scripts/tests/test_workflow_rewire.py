@@ -291,22 +291,28 @@ def test_sigstore_signer_down_is_explicit_and_partial_outputs_are_cleaned_up() -
     assert install["continue-on-error"] is True
     assert "continue-on-error" not in sign
     assert "continue-on-error" not in upload
-    assert sign["if"] == "steps.install_cosign.outcome == 'success'"
+    assert sign["if"] == (
+        "steps.install_cosign.outcome == 'success' && "
+        "steps.append_acceptance.outputs.state == 'accepted'"
+    )
     assert ".health.latest.sigstore.json.tmp" in sign["run"]
     assert "state=signer_down" in sign["run"]
     assert "verify_sigstore_bundle.py" in sign["run"]
     assert sign["run"].index("verify_sigstore_bundle.py") < sign["run"].index(
         'mv "$bundle_tmp" "$publication/health.latest.sigstore.json"'
     )
-    assert upload["if"] == "steps.sign_current_health.outputs.state == 'signed'"
+    assert upload["if"] == (
+        "steps.sign_current_health.outputs.state == 'signed' && "
+        "steps.append_acceptance.outputs.state == 'accepted'"
+    )
     assert parsed["jobs"]["sign_health"]["outputs"]["attestation_state"] == (
         "${{ steps.attestation_result.outputs.state }}"
     )
-    assert attestation["if"] == "always()"
+    assert attestation["if"] == "always() && steps.append_acceptance.outputs.state == 'accepted'"
     assert "state=signer_down" in attestation["run"]
     assert "state=signed" in attestation["run"]
     assert "Signer output, verification, or publication was incomplete." in attestation["run"]
-    assert result["if"] == "always()"
+    assert result["if"] == "always() && steps.append_acceptance.outputs.state == 'accepted'"
     assert "rm -f \"$RUNNER_TEMP/sigstore-publication/.health.latest.sigstore.json.tmp\"" in result["run"]
     assert "signed=false" in result["run"]
     assert "signed=true" in result["run"]
@@ -323,15 +329,18 @@ def test_per_dataset_receipts_are_generated_signed_and_staged_for_every_deployme
         if step.get("name") == "Assemble canonical Pages artifact"
     )
 
-    assert "if" not in generate
-    assert sign["if"] == "steps.sign_current_health.outputs.state == 'signed'"
+    assert generate["if"] == "steps.append_acceptance.outputs.state == 'accepted'"
+    assert sign["if"] == (
+        "steps.sign_current_health.outputs.state == 'signed' && "
+        "steps.append_acceptance.outputs.state == 'accepted'"
+    )
     assert "python3 scripts/gen_per_dataset_receipt.py" in generate["run"]
     assert "python3 scripts/sign_per_dataset_receipts.py" in sign["run"]
     assert "python3 scripts/verify_per_dataset_receipt.py" in sign["run"]
     assert "--certificate-identity \"$SIGSTORE_IDENTITY\"" in sign["run"]
     assert "continue-on-error" not in sign
     assert "mkdir -p \"$publication/data\"" in sign["run"]
-    assert result["if"] == "always()"
+    assert result["if"] == "always() && steps.append_acceptance.outputs.state == 'accepted'"
     assert "steps.sign_current_health.outputs.state" in result["run"]
     assert "steps.sign_per_dataset.outcome" in result["run"]
     assert "rm -rf \"$RUNNER_TEMP/sigstore-publication/data\"" in result["run"]
