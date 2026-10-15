@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
@@ -32,6 +33,7 @@ SERVER_JSON_NAME = "server.json"
 # reports 418 rather than some earlier number in the same sentence.
 DATASET_COUNT_RE = re.compile(r"(\d+)(?:\D*)\bdatasets\b", re.IGNORECASE)
 COMPARED_FIELDS = ("title", "description")
+MAX_REGISTRY_PAGES = 100
 
 
 class CannotDetermine(Exception):
@@ -122,8 +124,8 @@ def load_canonical_server(root: Path) -> dict[str, Any]:
     return data
 
 
-def load_registry_payload(fixture: Path | None) -> dict[str, Any]:
-    """Load the versions list from a fixture path or the live registry endpoint."""
+def load_registry_payload(fixture: Path | None, cursor: str | None = None) -> dict[str, Any]:
+    """Load one versions page from a fixture path or the live registry endpoint."""
     if fixture is not None:
         try:
             text = fixture.read_text(encoding="utf-8")
@@ -132,22 +134,28 @@ def load_registry_payload(fixture: Path | None) -> dict[str, Any]:
         except OSError as exc:
             raise CannotDetermine(f"cannot read fixture: {exc}") from exc
         return _parse_json_object(text, "registry fixture")
+    url = REGISTRY_URL if cursor is None else f"{REGISTRY_URL}?{urlencode({'cursor': cursor})}"
     request = Request(
-        REGISTRY_URL,
+        url,
         headers={
             "Accept": "application/json",
             "User-Agent": "DataPulse-Registry-Distribution-Verify/1.0",
         },
     )
-    try:
-        with urlopen(request, timeout=30) as response:
-            raw = response.read()
-    except HTTPError as exc:
-        raise CannotDetermine(f"registry HTTP {exc.code}") from exc
-    except URLError as exc:
-        raise CannotDetermine(f"registry network failure: {exc.reason}") from exc
-    except (OSError, TimeoutError) as exc:
-        raise CannotDetermine(f"registry network failure: {exc}") from exc
+    for attempt in range(2):
+        try:
+            with urlopen(request, timeout=30) as response:
+                raw = response.read()
+            break
+        except HTTPError as exc:
+            if attempt == 1:
+                raise CannotDetermine(f"registry HTTP {exc.code}") from exc
+        except URLError as exc:
+            if attempt == 1:
+                raise CannotDetermine(f"registry network failure: {exc.reason}") from exc
+        except (OSError, TimeoutError) as exc:
+            if attempt == 1:
+                raise CannotDetermine(f"registry network failure: {exc}") from exc
     try:
         text = raw.decode("utf-8")
     except UnicodeError as exc:
@@ -172,6 +180,32 @@ def extract_servers(payload: dict[str, Any]) -> list[dict[str, Any]]:
             raise CannotDetermine(f"registry servers[{index}] missing string version")
         extracted.append(server)
     return extracted
+
+
+def load_published_servers(fixture: Path | None, version: str) -> list[dict[str, Any]]:
+    """Read versions until the canonical one appears or the listing is exhausted."""
+    published: list[dict[str, Any]] = []
+    cursor: str | None = None
+    seen_cursors: set[str] = set()
+    for _ in range(MAX_REGISTRY_PAGES):
+        payload = load_registry_payload(fixture, cursor)
+        page = extract_servers(payload)
+        published.extend(page)
+        if any(server["version"] == version for server in page):
+            return published
+        metadata = payload.get("metadata", {})
+        if not isinstance(metadata, dict):
+            raise CannotDetermine("registry response has invalid metadata")
+        next_cursor = metadata.get("nextCursor")
+        if next_cursor is None or next_cursor == "":
+            return published
+        if not isinstance(next_cursor, str):
+            raise CannotDetermine("registry response has invalid nextCursor")
+        if next_cursor in seen_cursors:
+            raise CannotDetermine("registry pagination repeats a cursor")
+        seen_cursors.add(next_cursor)
+        cursor = next_cursor
+    raise CannotDetermine(f"registry pagination exceeds {MAX_REGISTRY_PAGES} pages")
 
 
 def compare_entry(
@@ -238,7 +272,8 @@ def emit_report(report: RegistryDistributionReport, *, as_json: bool) -> None:
     if report.entry is None:
         listed = ", ".join(report.published_versions) if report.published_versions else "(none)"
         print(
-            f"version {report.version} is not published; published versions: {listed}",
+            f"version {report.version} is not published in fully-read registry listing; "
+            f"published versions: {listed}",
             file=sys.stderr,
         )
         return
@@ -258,8 +293,7 @@ def main(argv: list[str] | None = None) -> int:
     root = args.root.expanduser().resolve()
     try:
         canonical = load_canonical_server(root)
-        payload = load_registry_payload(resolve_fixture(args.fixture))
-        published_servers = extract_servers(payload)
+        published_servers = load_published_servers(resolve_fixture(args.fixture), canonical["version"])
     except CannotDetermine as exc:
         print(f"cannot determine: {exc}", file=sys.stderr)
         return 2
