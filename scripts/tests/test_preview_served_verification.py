@@ -563,7 +563,7 @@ def test_option_skips_the_kv_backed_surfaces_and_names_them(tmp_path: Path) -> N
     ]
     # One loud line, naming every excluded surface and the reason.
     assert len(notices) == 1
-    assert "served health/latest.json" in notices[0]
+    assert "/health/latest.json" in notices[0]
     assert "dataset-count" in notices[0]
     assert "release-proof health" in notices[0]
     assert "/health/index.json" in notices[0]
@@ -587,35 +587,89 @@ def test_kv_backed_fetches_are_opt_in_excluded_when_origin_is_missing(
 
     if kv_excluded:
         assert result.returncode == 0, combined
-        assert "served health/latest.json" in combined
+        assert "/health/latest.json" in combined
         assert "/health/index.json" in combined
         assert "not fetched or compared" in combined
         assert "served surface=health snapshot" not in combined
         assert "served surface=dashboard health projection" not in combined
         assert "served surface=declared public surface /health/latest.json" not in combined
         assert "served surface=release reproducibility proof" in combined
-        assert "served surface=trends snapshot" in combined
+        assert "served surface=trends snapshot" not in combined
     else:
         assert result.returncode == 1, combined
         assert "missing or stale served surface: health snapshot (HTTP 404)" in combined
         assert "not fetched or compared" not in combined
 
 
-def test_option_still_rejects_a_wrong_served_trends_count(tmp_path: Path) -> None:
+def test_strict_mode_still_rejects_a_wrong_served_trends_count(tmp_path: Path) -> None:
     root, built, served = _stage_fixture(tmp_path)
-    (served / "health/latest.json").unlink()
-    (served / "health/index.json").unlink()
     trends_path = served / "health/trends.json"
     trends = json.loads(trends_path.read_text(encoding="utf-8"))
     trends["summary"]["datasets_total"] = 1
     _write(trends_path, json.dumps(trends))
 
-    result = _run_verifier(
-        tmp_path, root, built, served, kv_surfaces_published_elsewhere=True
-    )
+    result = _run_verifier(tmp_path, root, built, served)
 
     assert result.returncode == 1, result.stdout + result.stderr
     assert "served trends are invalid" in result.stdout
+
+
+def test_health_namespace_exclusion_names_all_missing_declared_paths(tmp_path: Path) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    surfaces = json.loads((root / "config/public-surfaces.json").read_text(encoding="utf-8"))
+    health_paths = [
+        path for path in surfaces["pages"] + surfaces["artifacts"]
+        if path.startswith("/health/")
+    ]
+    for path in (*health_paths, "/health/index.json"):
+        (served / path.lstrip("/")).unlink()
+
+    result = _run_verifier(
+        tmp_path, root, built, served, kv_surfaces_published_elsewhere=True
+    )
+    combined = result.stdout + result.stderr
+
+    assert result.returncode == 0, combined
+    notices = [line for line in result.stdout.splitlines() if "::warning" in line]
+    assert len(notices) == 1
+    for path in (*health_paths, "/health/index.json"):
+        assert path in notices[0]
+        assert f"served surface=declared public surface {path}" not in combined
+    assert "served surface=trends snapshot" not in combined
+    assert "served surface=drift snapshot" not in combined
+    assert "served surface=reconciliation snapshot" not in combined
+    assert "served surface=declared public surface /mcp.json" in combined
+
+
+def test_health_namespace_strict_mode_rejects_missing_reconciliation(tmp_path: Path) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    (served / "health/reconciliation.json").unlink()
+
+    result = _run_verifier(tmp_path, root, built, served)
+    combined = result.stdout + result.stderr
+
+    assert result.returncode == 1, combined
+    assert "missing or stale served surface: declared public surface /health/reconciliation.json (HTTP 404)" in combined
+    assert "::warning" not in combined
+
+
+def test_health_namespace_rule_excludes_new_declared_path(tmp_path: Path) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    config = root / "config/public-surfaces.json"
+    surfaces = json.loads(config.read_text(encoding="utf-8"))
+    surfaces["artifacts"].append("/health/future.json")
+    _write(config, json.dumps(surfaces))
+
+    flagged = _run_verifier(
+        tmp_path, root, built, served, kv_surfaces_published_elsewhere=True
+    )
+    strict = _run_verifier(tmp_path, root, built, served)
+
+    assert flagged.returncode == 0, flagged.stdout + flagged.stderr
+    assert "/health/future.json" in flagged.stdout
+    assert "served surface=declared public surface /health/future.json" not in flagged.stdout
+    assert strict.returncode == 1, strict.stdout + strict.stderr
+    assert "missing or stale served surface: declared public surface /health/future.json (HTTP 404)" in strict.stdout
 
 
 def test_option_present_still_fails_on_a_tampered_static_surface(tmp_path: Path) -> None:
