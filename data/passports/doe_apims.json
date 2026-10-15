@@ -3,9 +3,9 @@
     "access_dependency": "browser",
     "access_method": "Camofox",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": null,
     "incomplete": false,
-    "last_checked": "2026-10-15T04:07:40Z",
+    "last_checked": "2026-10-15T05:47:42Z",
     "record_count": null,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://eqms.doe.gov.my/APIMS/main",
@@ -39,7 +39,7 @@
     "geography": "Malaysia (68 monitoring stations)",
     "name": "DOE APIMS Air Quality (Hourly API)",
     "namespace": "environment",
-    "observed_verified_at": "2026-10-15T04:07:40Z",
+    "observed_verified_at": "2026-10-15T05:47:42Z",
     "source": "DOE MyEQMS portal (Camofox-rendered)",
     "steward": "Department of Environment Malaysia"
   },
@@ -884,7 +884,7 @@
     "receipt": {
       "evidence_path": "data/doe_apims.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:266d2174e50274ad976ed708f0354314f39c1d34d7fd470e3598aaa40278701f",
+      "receipt_digest": "sha256:b53cef4c0c384cf3abf5ab0223560d7a334683718a9f460ade9120b9d61f3863",
       "sigstore_path": "data/doe_apims.receipt.sigstore.json",
       "statement_path": "data/doe_apims.receipt.statement.json"
     },
