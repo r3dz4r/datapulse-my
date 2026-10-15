@@ -76,6 +76,15 @@ def test_required_context_keeps_its_job_identity_and_dependency() -> None:
     ("changed_paths", "health_only", "append_only"),
     [
         (("health/latest.json",), "true", "false"),
+        (
+            (
+                "health/latest.json",
+                "observation-receipts/chain_head.json",
+                "observation-receipts/days/2026-10-15.json",
+            ),
+            "true",
+            "false",
+        ),
         (("health/latest.json", "scripts/changed.py"), "false", "false"),
         (
             (
@@ -170,6 +179,7 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
         "Verify repository contract",
         "Verify distribution surfaces match canonical evidence",
         "Verify OpenWiki source contract",
+        "Verify signed chain-head monotonicity",
     ):
         assert "if" not in steps[name]
     assert steps["Install artifact verification dependencies"]["if"] == (
@@ -196,8 +206,25 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
             "Verify repository contract",
             "Verify distribution surfaces match canonical evidence",
             "Verify OpenWiki source contract",
+            "Verify signed chain-head monotonicity",
             "Verify immutable attestation append against accepted base",
             "Verify attestation workflow contract",
         }:
             continue
         assert step["if"] == "env.FULL_VERIFICATION == 'true'", name
+
+
+def test_ci_profiles_keep_chain_head_ordering_check_and_its_dependencies() -> None:
+    steps = {step["name"]: step for step in _workflow()["jobs"][REQUIRED_JOB]["steps"]}
+    check = steps["Verify signed chain-head monotonicity"]
+    assert "if" not in check
+    assert check["run"] == "python3 -m pytest -q scripts/tests/test_chain_head_monotonicity.py"
+    assert "pytest==8.4.1" in steps["Install artifact verification dependencies"]["run"]
+
+
+def test_ci_classify_call_sites_use_separate_profiles() -> None:
+    script = _workflow()["jobs"]["classify"]["steps"][1]["run"]
+    invocations = [line.strip() for line in script.splitlines() if "python3 scripts/classify_change.py" in line]
+    assert len(invocations) == 2
+    assert invocations[0].endswith("python3 scripts/classify_change.py --ci-artifact-profile; then")
+    assert invocations[1].endswith("python3 scripts/classify_change.py --append-only; then")

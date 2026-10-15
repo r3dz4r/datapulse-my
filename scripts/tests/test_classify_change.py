@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 import subprocess
 import sys
@@ -15,6 +16,7 @@ from scripts.classify_change import is_append_only_change, is_health_cycle_outpu
 ROOT = Path(__file__).resolve().parents[2]
 CLASSIFIER = ROOT / "scripts/classify_change.py"
 GENERATOR = ROOT / "scripts/generate.sh"
+RECEIPT_FIXTURE = ROOT / "scripts/tests/fixtures/health-branch-receipt-paths.txt"
 
 
 REVISION = "a" * 64
@@ -317,3 +319,86 @@ def test_cli_returns_source_mode_for_mixed_changes() -> None:
     )
 
     assert result.returncode == 1
+
+
+def _receipt_fixture_paths() -> list[str]:
+    captured = RECEIPT_FIXTURE.read_bytes()
+    assert hashlib.sha256(captured).hexdigest() == (
+        "a340e8ea4fc8c4d0325fd0f8a630c037aa2ce9f779aedc1ffbf5b17bb948cd00"
+    )
+    return captured.decode("utf-8").splitlines()
+
+
+def _classify_cli(paths: list[str], flags: tuple[str, ...]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(CLASSIFIER), *flags],
+        input="\n".join(paths) + "\n",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+@pytest.mark.parametrize("flags, expected", [((), 1), (("--ci-artifact-profile",), 0)])
+def test_real_receipt_health_cycle_selects_only_ci_artifact_profile(
+    flags: tuple[str, ...], expected: int
+) -> None:
+    result = _classify_cli(_receipt_fixture_paths(), flags)
+    assert result.returncode == expected, result.stderr
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize("flags", [(), ("--ci-artifact-profile",)])
+@pytest.mark.parametrize(
+    "receipt_path",
+    [
+        "observation-receipts/days/.json",
+        "observation-receipts/days/2026-10-10.json.bak",
+        "observation-receipts/days/nested/2026-10-10.json",
+        "observation-receipts/other.json",
+        "observation-receipts/days/2026-02-30.json",
+        "observation-receipts/days/../2026-10-10.json",
+        "observation-receipts//chain_head.json",
+    ],
+)
+def test_malformed_receipt_paths_are_refused_in_both_profiles(
+    flags: tuple[str, ...], receipt_path: str
+) -> None:
+    result = _classify_cli(["health/latest.json", receipt_path], flags)
+    assert result.returncode == 1, result.stderr
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize("flags", [(), ("--ci-artifact-profile",)])
+def test_code_only_change_is_refused_in_both_profiles(flags: tuple[str, ...]) -> None:
+    result = _classify_cli([".github/workflows/ci.yml", "scripts/gen_drift.py"], flags)
+    assert result.returncode == 1, result.stderr
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize("flags", [(), ("--ci-artifact-profile",)])
+@pytest.mark.parametrize("source_path", [".github/workflows/ci.yml", "scripts/gen_drift.py"])
+def test_receipt_fixture_with_source_path_is_refused_in_both_profiles(
+    flags: tuple[str, ...], source_path: str
+) -> None:
+    result = _classify_cli([*_receipt_fixture_paths(), source_path], flags)
+    assert result.returncode == 1, result.stderr
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    "paths, expected",
+    [
+        (["health/latest.json", "observation-receipts/chain_head.json"], 0),
+        (["health/latest.json", "observation-receipts/days/2026-10-15.json"], 0),
+        (["observation-receipts/chain_head.json"], 1),
+        ([], 1),
+        (["health/latest.json", "README.md", "observation-receipts/chain_head.json"], 1),
+    ],
+)
+def test_ci_artifact_profile_preserves_required_health_context(
+    paths: list[str], expected: int
+) -> None:
+    result = _classify_cli(paths, ("--ci-artifact-profile",))
+    assert result.returncode == expected, result.stderr
+    assert result.stderr == ""

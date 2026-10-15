@@ -1005,6 +1005,20 @@ def test_health_only_path_is_selected_only_by_the_generated_output_classifier() 
     assert "Deploy canonical Cloudflare Pages artifact" in workflow
 
 
+def test_publication_classifier_invocations_pass_no_profile_flags() -> None:
+    # Both initial classification and re-settlement must preserve full receipt releases.
+    workflow = yaml.safe_load(_workflow())
+    invocations = [
+        line.strip()
+        for job in workflow["jobs"].values()
+        for step in job.get("steps", [])
+        for line in step.get("run", "").splitlines()
+        if re.search(r"\bpython3\s+scripts/classify_change\.py\b", line)
+    ]
+    assert len(invocations) == 2
+    assert all(line.endswith("python3 scripts/classify_change.py; then") for line in invocations)
+
+
 def test_pages_concurrency_serializes_all_production_candidates() -> None:
     workflow = yaml.safe_load(_workflow())
 
