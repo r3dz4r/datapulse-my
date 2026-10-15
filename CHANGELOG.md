@@ -14,6 +14,17 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.20](https://github.com/r3dz4r/datapulse-my/compare/v3.55.19...v3.55.20) (2026-10-15)
+
+
+### Bug Fixes
+
+* **ci:** defer publication pending append acceptance ([920973f](https://github.com/r3dz4r/datapulse-my/commit/920973fb169bd015c08c75371a9553654552d0a2))
+* **ci:** defer publication pending append acceptance ([39aedd4](https://github.com/r3dz4r/datapulse-my/commit/39aedd42a98e1b3ffca63460a819da365bf1f7fb))
+* **preview:** exclude the whole served /health/ namespace by rule, not by a hand-listed trio ([fca9c53](https://github.com/r3dz4r/datapulse-my/commit/fca9c53d8054f5fd001f2063225b6473339f3139))
+* **preview:** skip the KV-backed health fetches when those surfaces are published elsewhere ([a696e9d](https://github.com/r3dz4r/datapulse-my/commit/a696e9ddca881cbac2123564f0cbe4d91c93bab1))
+* **preview:** skip the KV-backed health fetches when those surfaces are published elsewhere ([f1abf82](https://github.com/r3dz4r/datapulse-my/commit/f1abf820a3c9aa856cbca07cd3a215c234b6212f))
+
 ## [3.55.19](https://github.com/r3dz4r/datapulse-my/compare/v3.55.18...v3.55.19) (2026-10-14)
 
 
