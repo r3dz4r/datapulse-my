@@ -660,6 +660,7 @@ jobs:
           # acceptance proof fit 3000s + 5s kill grace < 51m step < 132m job.
           # The extra 1515s covers preflight/submission, lookups and byte proof;
           # it is not additional patience for an undecided required check.
+          # append-deferred exits successfully; signing and deploy require accepted.
           timeout -k 5s 3000s bash -Eeuo pipefail <<'ACCEPTANCE'
           # Safe calls may be repeated after a cap hit; decisions and the
           # mutating submission must preserve failure instead of being retried.

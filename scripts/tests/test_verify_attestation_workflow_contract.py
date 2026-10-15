@@ -159,6 +159,7 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
         submission += f'git -C "{authority}" commit -am "new health observation"\n'
         submission += f'git --git-dir="{origin}" fetch "{authority}" main:main\n'
     (scripts / "submit_attestation_append.sh").write_text(submission)
+    (scripts / "close_superseded_appends.sh").write_text("#!/bin/bash\nexit 0\n")
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     verifier = ROOT / "scripts/verify_attestation_append.py"
@@ -175,11 +176,12 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
         'case "$1 $2" in\n'
         '  "pr list") printf "[]\\n" ;;\n'
         '  "pr view")\n'
-        '    if [[ "$*" == *statusCheckRollup* ]]; then printf "{\\"headRefOid\\":\\"%s\\",\\"state\\":\\"MERGED\\",'
-        '\\"statusCheckRollup\\":[{\\"name\\":\\"deterministic-safety-net\\",\\"status\\":\\"COMPLETED\\",\\"conclusion\\":\\"SUCCESS\\"}]}\\n" "$(git rev-parse HEAD)";\n'
-        '    else printf "{\\"number\\":99,\\"headRefName\\":\\"%s\\",'
-        '\\"headRefOid\\":\\"%s\\",\\"baseRefName\\":\\"main\\",\\"state\\":\\"OPEN\\"}\\n" '
-        '"$(git branch --show-current)" "$(git rev-parse HEAD)"; fi ;;\n'
+        '    printf \'{"number":99,"headRefName":"%s","headRefOid":"%s",'
+        '"baseRefName":"main","isCrossRepository":false,"state":"%s",'
+        '"createdAt":"2026-08-15T00:00:00Z","autoMergeRequest":{},'
+        '"statusCheckRollup":[{"name":"deterministic-safety-net",'
+        '"status":"COMPLETED","conclusion":"SUCCESS"}]}\\n\' '
+        '"$(git branch --show-current)" "$(git rev-parse HEAD)" "$PR_STATE" ;;\n'
         '  "pr merge") : ;;\n'
         '  *) exit 2 ;;\n'
         'esac\n'
@@ -189,14 +191,22 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
     pages = PAGES.read_text(encoding="utf-8")
     guard = next(step for step in re.split(r"(?=^      - )", pages, flags=re.MULTILINE)
                  if "- name: Require authoritative acceptance before signing publication\n" in step)
+    output = tmp_path / "guard-output"
+    summary = tmp_path / "guard-summary"
+    guard_run = textwrap.dedent(guard.split("        run: |\n", 1)[1])
+    if not accepted:
+        guard_run = re.sub(r"^\s*sleep .*$", "              SECONDS=$deadline", guard_run, flags=re.MULTILINE)
     result = subprocess.run(
-        ["bash", "-c", textwrap.dedent(guard.split("        run: |\n", 1)[1])], cwd=root,
+        ["bash", "-c", guard_run], cwd=root,
         env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
              **{key: str(value) for key, value in yaml.safe_load(pages)["env"].items()},
-             "GITHUB_SHA": "b" * 40, "PROMOTION_SOURCE_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse"},
+             "GITHUB_SHA": "b" * 40, "PROMOTION_SOURCE_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse",
+             "PR_STATE": "MERGED" if accepted else "OPEN", "GITHUB_OUTPUT": str(output),
+             "GITHUB_STEP_SUMMARY": str(summary)},
         text=True, capture_output=True,
     )
-    assert (result.returncode == 0) is accepted, result.stdout + result.stderr
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert output.read_text() == ("state=accepted\n" if accepted else "state=append-deferred\n")
     assert git(root, "branch", "--show-current") == "attestation/append-contract"
     assert (root / "health/latest.json").read_bytes() == health
     assert (root / ".attestations/chain_head.json").read_bytes() == head
@@ -205,4 +215,4 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
         verify_append(root, "origin/main", require_committed=True)
         assert git(root, "rev-parse", "origin/main") != source
     else:
-        assert "must be accepted" in result.stderr
+        assert "append-deferred" in summary.read_text()
