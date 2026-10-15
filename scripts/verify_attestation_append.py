@@ -26,6 +26,10 @@ from scripts.verify_attestation_binding import ContractError, _load, _parse_time
 PROJECTIONS = {"attestations/chain-index.json", ".attestations/chain_head.json"}
 
 
+class AcceptancePending(ValueError):
+    """Valid candidate has not yet appeared in authoritative Git."""
+
+
 def wait_for_acceptance(root: Path, source: str, timeout: int, poll_seconds: int = 15) -> None:
     """Keep the sign-time tree frozen until its exact evidence is accepted on main.
 
@@ -43,8 +47,11 @@ def wait_for_acceptance(root: Path, source: str, timeout: int, poll_seconds: int
     candidate_bytes = (root / candidate_path).read_bytes()
     deadline = time.monotonic() + timeout
     while True:
-        subprocess.run(["git", "fetch", "origin", "refs/heads/main:refs/remotes/origin/main"],
-                       cwd=root, check=True, capture_output=True, timeout=30)
+        try:
+            subprocess.run(["git", "fetch", "origin", "refs/heads/main:refs/remotes/origin/main"],
+                           cwd=root, check=True, capture_output=True, timeout=30)
+        except subprocess.TimeoutExpired as error:
+            raise AcceptancePending("append-deferred: authoritative Git fetch timed out") from error
         accepted = subprocess.run(["git", "rev-parse", "refs/remotes/origin/main"],
                                   cwd=root, check=True, capture_output=True, text=True).stdout.strip()
         subprocess.run(["git", "merge-base", "--is-ancestor", source, accepted],
@@ -63,7 +70,7 @@ def wait_for_acceptance(root: Path, source: str, timeout: int, poll_seconds: int
             probe.check_returncode()
         remaining = deadline - time.monotonic()
         if remaining <= 0:
-            raise ValueError("candidate must be accepted in authoritative Git before publication; acceptance wait timed out")
+            raise AcceptancePending("append-deferred: candidate must be accepted in authoritative Git before publication; acceptance wait timed out")
         time.sleep(min(poll_seconds, remaining))
 
 
@@ -233,6 +240,9 @@ def main() -> int:
         if args.print_paths:
             for path in append_paths(args.root, args.base):
                 print(path)
+    except AcceptancePending as error:
+        sys.stderr.write(f"attestation append: {error}\n")
+        return 75
     except (ValueError, OSError, KeyError, subprocess.SubprocessError) as error:
         raise SystemExit(f"attestation append: {error}") from error
     return 0

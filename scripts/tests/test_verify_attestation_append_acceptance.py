@@ -3,15 +3,194 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import json
+import os
 from pathlib import Path
 import subprocess
+import sys
+import textwrap
+from types import SimpleNamespace
 
 import pytest
+import yaml
 
 from scripts import gen_attestations as ga
 from scripts import verify_attestation_append as verifier
 from scripts.tests.test_append_set_isolation import NOW, accept, git
 from scripts.tests.test_attestations import fixture_root
+
+
+ROOT = Path(__file__).resolve().parents[2]
+WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
+
+
+def workflow() -> dict:
+    return yaml.safe_load(WORKFLOW.read_text())
+
+
+def run_wait(
+    tmp_path: Path, *, early: bool = False, check: str = "SUCCESS",
+    merged: bool = False, proof: int = 75, outer_timeout: bool = False,
+    lookup_status: int = 0, new_submission: bool = False, merge_at: int = 2,
+    patience: int = 0,
+) -> tuple[subprocess.CompletedProcess[str], str, str]:
+    """Run the shipped shell; replace only network, Git and expensive proofs."""
+    steps = workflow()["jobs"]["sign_health"]["steps"]
+    name = ("Wait for an existing append before generating a candidate" if early else
+            "Require authoritative acceptance before signing publication")
+    step = next(step for step in steps if step.get("name") == name)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    for name in ("submit_attestation_append.sh", "close_superseded_appends.sh"):
+        (scripts / name).write_text('echo "$0 $*" >> "$CALL_LOG"\n')
+    gh = f"#!{sys.executable}\n" + textwrap.dedent('''\
+        import json, os, pathlib, sys
+        args = sys.argv[1:]
+        with open(os.environ["CALL_LOG"], "a") as log:
+            log.write("gh " + " ".join(args) + "\\n")
+        pr = dict(number=42, headRefName="attestation/append-test", headRefOid="a" * 40,
+                  baseRefName="main", isCrossRepository=False, state="OPEN",
+                  createdAt="2026-10-14T00:00:00Z", autoMergeRequest={"enabledAt": "now"},
+                  statusCheckRollup=[dict(name="deterministic-safety-net", status="COMPLETED",
+                                          conclusion=os.environ["CHECK"])])
+        if args[:2] == ["pr", "list"]:
+            print(json.dumps([] if pathlib.Path("merged").exists() or os.environ["NEW_SUBMISSION"] == "1" else [pr]))
+        elif args[:2] == ["pr", "view"]:
+            count = pathlib.Path("views")
+            n = int(count.read_text()) + 1 if count.exists() else 1
+            count.write_text(str(n))
+            if n >= 2 and os.environ["LOOKUP_STATUS"] != "0":
+                sys.exit(int(os.environ["LOOKUP_STATUS"]))
+            if os.environ["MERGE_LATER"] == "1" and n >= int(os.environ["MERGE_AT"]):
+                pr["state"] = "MERGED"
+                pathlib.Path("merged").touch()
+            print(json.dumps(pr))
+        elif args[:2] != ["pr", "merge"]:
+            sys.exit("unexpected GitHub call: " + repr(args))
+    ''')
+    programs = {
+        "gh": gh,
+        "python3": '#!/bin/bash\necho "python3 $*" >> "$CALL_LOG"\n'
+                   'if [[ "$*" == *--wait-for-acceptance* ]]; then exit "$PROOF"; fi\n'
+                   'if [[ "$*" == *--require-committed* ]]; then exit 1; fi\n',
+        "git": '#!/bin/bash\necho "git $*" >> "$CALL_LOG"\n'
+               'case "$1" in branch) echo attestation/append-test;; '
+               'rev-parse) printf "%040d\\n" 0 | tr 0 a;; esac\n',
+        "sleep": '#!/bin/sh\necho "sleep $*" >> "$CALL_LOG"\n',
+        "timeout": '#!/bin/bash\nshift 2\ncap="$1"; shift\n'
+                   'if [[ "$OUTER_TIMEOUT" == 1 && ( "$cap" == 3000s || "$cap" == 1900s ) ]]; then exit 124; fi\n'
+                   'exec "$@"\n',
+    }
+    for name, body in programs.items():
+        path = bin_dir / name
+        path.write_text(body)
+        path.chmod(0o755)
+    output = tmp_path / "output"
+    log = tmp_path / "calls"
+    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+           "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
+           "GITHUB_REPOSITORY": "example/test", "PROMOTION_SOURCE_SHA": "a" * 40,
+           "APPEND_ACCEPTANCE_PATIENCE_SECONDS": str(patience), "CALL_LOG": str(log),
+           "CHECK": check, "MERGE_LATER": str(int(merged)), "PROOF": str(proof),
+           "OUTER_TIMEOUT": str(int(outer_timeout)), "LOOKUP_STATUS": str(lookup_status),
+           "NEW_SUBMISSION": str(int(new_submission)), "MERGE_AT": str(merge_at)}
+    result = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, env=env,
+                            capture_output=True, text=True, timeout=10)
+    return result, output.read_text() if output.exists() else "", log.read_text() if log.exists() else ""
+
+
+@pytest.mark.parametrize("early", [False, True])
+def test_open_passed_armed_append_defers_without_acceptance(tmp_path: Path, early: bool) -> None:
+    result, output, calls = run_wait(tmp_path, early=early)
+    assert result.returncode == 0, result.stderr
+    assert "state=append-deferred" in output
+    assert "state=accepted" not in output
+    assert "append-deferred" in result.stdout + result.stderr
+    assert "#42" in result.stdout + result.stderr
+    assert "age" in result.stdout + result.stderr
+    assert "submit_attestation_append.sh" not in calls
+    assert "gh pr merge" not in calls  # Already armed: do not submit/arm twice.
+    assert "append-deferred" in (tmp_path / "summary").read_text()
+
+
+@pytest.mark.parametrize("early", [False, True])
+def test_failed_required_check_refuses_without_deferral(tmp_path: Path, early: bool) -> None:
+    result, output, _ = run_wait(tmp_path, early=early, check="FAILURE")
+    assert result.returncode != 0
+    assert "required check failed" in result.stderr
+    assert "append-deferred" not in output + result.stdout + result.stderr
+    assert "state=accepted" not in output
+
+
+@pytest.mark.parametrize("early", [False, True])
+def test_process_timeout_defers_without_acceptance(tmp_path: Path, early: bool) -> None:
+    result, output, _ = run_wait(tmp_path, early=early, outer_timeout=True)
+    assert result.returncode == 0, result.stderr
+    assert "state=append-deferred" in output
+    assert "state=accepted" not in output
+
+
+@pytest.mark.parametrize("early", [False, True])
+@pytest.mark.parametrize("status", [64, 124, 137])
+def test_lookup_failure_preserves_refusal_or_timeout_deferral(
+    tmp_path: Path, early: bool, status: int,
+) -> None:
+    result, output, _ = run_wait(tmp_path, early=early, lookup_status=status)
+    assert "state=accepted" not in output
+    if status in (124, 137):
+        assert result.returncode == 0, result.stderr
+        assert "state=append-deferred" in output
+    else:
+        assert result.returncode != 0
+        assert "append-deferred" not in output + result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("merged", [False, True])
+def test_new_submission_uses_the_same_acceptance_gate(tmp_path: Path, merged: bool) -> None:
+    result, output, calls = run_wait(tmp_path, new_submission=True, merged=merged,
+                                     proof=0 if merged else 75)
+    assert result.returncode == 0, result.stderr
+    assert "submit_attestation_append.sh" in calls
+    assert output == ("state=accepted\n" if merged else "state=append-deferred\n")
+
+
+@pytest.mark.parametrize("early", [False, True])
+def test_merge_between_list_and_view_is_accepted(tmp_path: Path, early: bool) -> None:
+    result, output, _ = run_wait(tmp_path, early=early, merged=True, merge_at=1, proof=0)
+    assert result.returncode == 0, result.stderr
+    assert output == ("state=ready\n" if early else "state=accepted\n")
+
+
+@pytest.mark.parametrize("early", [False, True])
+def test_merge_and_exact_proof_accept_without_deferral(tmp_path: Path, early: bool) -> None:
+    result, output, calls = run_wait(tmp_path, early=early, merged=True, proof=0,
+                                    merge_at=3, patience=60)
+    assert result.returncode == 0, result.stderr
+    assert output == ("state=ready\n" if early else "state=accepted\n")
+    assert "append-deferred" not in result.stdout + result.stderr
+    assert "sleep 15" in calls
+
+
+def test_merged_append_with_invalid_proof_still_refuses(tmp_path: Path) -> None:
+    result, output, _ = run_wait(tmp_path, merged=True, proof=1)
+    assert result.returncode != 0
+    assert "state=accepted" not in output
+    assert "append-deferred" not in output + result.stdout + result.stderr
+
+
+def test_deferral_gates_candidate_signing_and_deploy() -> None:
+    jobs = workflow()["jobs"]
+    steps = jobs["sign_health"]["steps"]
+    early = next(i for i, step in enumerate(steps) if step.get("id") == "existing_append")
+    acceptance = next(i for i, step in enumerate(steps) if step.get("id") == "append_acceptance")
+    for step in steps[early + 1:acceptance + 1]:
+        assert "steps.existing_append.outputs.state == 'ready'" in step["if"], step["name"]
+    for step in steps[acceptance + 1:]:
+        assert "steps.append_acceptance.outputs.state == 'accepted'" in step["if"], step["name"]
+    assert "needs.sign_health.outputs.append_state == 'accepted'" in jobs["deploy"]["if"]
+    assert "append-deferred" in jobs["sign_health"]["outputs"]["append_state"]
 
 
 @pytest.fixture
@@ -54,7 +233,10 @@ def test_wait_observes_later_merge_without_mutating_candidate(
         assert git(root, "rev-parse", "origin/main") == source
         merge_append(authority, origin)
 
-    monkeypatch.setattr(verifier.time, "sleep", accept_on_sleep)
+    # Do not patch the global time module used by subprocess's timeout wait.
+    monkeypatch.setattr(verifier, "time", SimpleNamespace(
+        sleep=accept_on_sleep, monotonic=verifier.time.monotonic,
+    ))
     verifier.wait_for_acceptance(root, source, timeout=60, poll_seconds=1)
     assert sleeps == [1]
     assert git(root, "rev-parse", "HEAD") == source
@@ -99,3 +281,114 @@ def test_wait_fails_closed_on_fetch_error(
     git(root, "remote", "set-url", "origin", str(root / "missing-origin"))
     with pytest.raises(subprocess.CalledProcessError):
         verifier.wait_for_acceptance(root, source, timeout=0)
+
+
+def test_pending_proof_has_distinct_exit_without_claiming_acceptance(
+    candidate: tuple[Path, str, Path, Path, list[str]],
+) -> None:
+    root, source, _, _, _ = candidate
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/verify_attestation_append.py"),
+         "--root", str(root), "--base", source, "--wait-for-acceptance", "0"],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 75
+    assert "append-deferred" in result.stderr
+    assert result.stdout == ""
+
+
+def test_fetch_timeout_defers_without_accepting(
+    candidate: tuple[Path, str, Path, Path, list[str]], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, source, _, _, _ = candidate
+    run = subprocess.run
+
+    def capped_fetch(args: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+        if args[:2] == ["git", "fetch"]:
+            raise subprocess.TimeoutExpired(args, 30)
+        return run(args, **kwargs)
+
+    monkeypatch.setattr(verifier.subprocess, "run", capped_fetch)
+    with pytest.raises(verifier.AcceptancePending, match="append-deferred"):
+        verifier.wait_for_acceptance(root, source, timeout=0)
+
+
+@pytest.mark.parametrize("explicit_number", [False, True])
+@pytest.mark.parametrize("protect_old", [False, True])
+def test_cleanup_closes_only_older_exact_accepted_blobs_and_never_accepted_pr(
+    candidate: tuple[Path, str, Path, Path, list[str]], tmp_path: Path,
+    explicit_number: bool, protect_old: bool,
+) -> None:
+    root, _, authority, origin, paths = candidate
+    paths = list(paths)
+    for filename in (f"health.{'c' * 64}.statement.json",
+                     f"health.{'c' * 64}.sigstore.bundle.json", f"reference.{'c' * 64}.json"):
+        witness = authority / "attestations/rekor/2026-08-15" / filename
+        witness.parent.mkdir(parents=True, exist_ok=True)
+        witness.write_text("{}\n")
+        paths.append(witness.relative_to(authority).as_posix())
+    merge_append(authority, origin)
+    accepted_sha = git(authority, "rev-parse", "HEAD")
+
+    def row(number: int, created: str, **extra: object) -> dict:
+        return dict(number=number, headRefName=f"attestation/append-{number}",
+                    headRefOid="a" * 40, baseRefName="main", isCrossRepository=False,
+                    state="OPEN", createdAt=created, **extra)
+
+    accepted = row(42, "2026-10-15T00:00:00Z", mergeCommit={"oid": accepted_sha})
+    accepted.update(state="MERGED", mergedAt="2026-10-15T01:00:00Z")
+    older = [row(n, "2026-10-14T00:00:00Z") for n in (41, 40, 39, 38, 37)]
+    older[-1]["isCrossRepository"] = True
+    # Including the accepted number in the mock open list tests the final guard.
+    rows = [{**accepted, "state": "OPEN"}, *older, row(43, "2026-10-16T00:00:00Z")]
+    files = [{"filename": path, "sha": git(authority, "rev-parse", f"HEAD:{path}"),
+              "status": "added"} for path in paths]
+    assert any(file["filename"].endswith("/chain_head.json") for file in files)
+    bin_dir = tmp_path / "cleanup-bin"
+    bin_dir.mkdir()
+    gh = bin_dir / "gh"
+    gh.write_text(f"#!{sys.executable}\n" + textwrap.dedent('''\
+        import json, os, pathlib, sys
+        args = sys.argv[1:]
+        accepted = json.loads(os.environ["ACCEPTED"])
+        rows = json.loads(os.environ["ROWS"])
+        if args[:2] == ["pr", "list"]:
+            print(json.dumps([accepted] if "merged" in args else rows))
+        elif args[:2] == ["pr", "view"]:
+            number = int(args[2])
+            row = accepted if number == 42 else next(row for row in rows if row["number"] == number)
+            if number == 38:
+                row["headRefOid"] = "b" * 40
+            print(json.dumps(row))
+        elif args[0] == "api":
+            number = int(args[1].split("/")[-2])
+            files = json.loads(os.environ["FILES"])
+            if number == 40:
+                files[0]["sha"] = "0" * 40
+            if number == 39:
+                files[0]["status"] = "modified"
+            print(json.dumps([files]))
+        elif args[:2] == ["pr", "close"]:
+            with open(os.environ["CLOSED"], "a") as out:
+                out.write(args[2] + "\\n")
+        else:
+            sys.exit("unexpected GitHub call: " + repr(args))
+    '''))
+    gh.chmod(0o755)
+    closed = tmp_path / "closed"
+    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+           "GITHUB_REPOSITORY": "example/test", "ACCEPTED": json.dumps(accepted),
+           "ROWS": json.dumps(rows), "FILES": json.dumps(files), "CLOSED": str(closed)}
+    before = git(root, "status", "--porcelain")
+    result = subprocess.run(
+        ["bash", str(ROOT / "scripts/close_superseded_appends.sh"),
+         "42" if explicit_number else "", "41" if protect_old else ""], cwd=root, env=env,
+        capture_output=True, text=True, timeout=15,
+    )
+    assert result.returncode == 0, result.stderr
+    if protect_old:
+        assert not closed.exists()
+    else:
+        assert closed.read_text() == "41\n"
+        assert "#42" in result.stdout
+    assert git(root, "status", "--porcelain") == before
