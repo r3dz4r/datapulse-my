@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Classify newline-separated changed paths for narrow CI profiles.
 
-The default mode accepts exact health-cycle outputs only when ``health/latest.json``
-is included. ``--append-only`` accepts the immutable append and its verified
-projections. Unknown paths deliberately select the source/release profile.
+The default mode accepts health-cycle outputs only when ``health/latest.json``
+is included. Mixed-ownership generated pages also require the snapshot pair.
+``--append-only`` accepts the immutable append and its verified projections.
+Unknown paths deliberately select the source/release profile.
 """
 
 from __future__ import annotations
@@ -47,6 +48,7 @@ APPEND_PROJECTIONS = LATEST_ATTESTATION_OUTPUTS | {
     ".attestations/chain_head.json",
     "attestations/chain-index.json",
 }
+SNAPSHOT_PAIR = frozenset({"catalog-snapshot.json", "changelog.json"})
 
 
 def _has_safe_components(path: str) -> bool:
@@ -79,11 +81,24 @@ def is_health_cycle_output(path: str) -> bool:
     return False
 
 
+def is_mixed_ownership_health_output(path: str) -> bool:
+    """Recognize files whose health-generated sections share a public page."""
+    return path == "README.md" or re.fullmatch(r"data/[A-Za-z0-9_-]+\.md", path) is not None
+
+
 def is_health_only_change(paths: Iterable[str]) -> bool:
-    """Return whether paths are exclusively owned health outputs with a snapshot."""
+    """Return whether paths are health outputs with a snapshot and required context."""
     normalized = tuple(path for path in paths if path)
-    return bool(normalized) and "health/latest.json" in normalized and all(
-        is_health_cycle_output(path) for path in normalized
+    if not normalized or "health/latest.json" not in normalized:
+        return False
+    # These pages retain external sections; require the two outputs written
+    # together by gen_catalog_snapshot.py before using the artifact profile.
+    has_mixed_ownership_output = any(is_mixed_ownership_health_output(path) for path in normalized)
+    if has_mixed_ownership_output and not SNAPSHOT_PAIR.issubset(normalized):
+        return False
+    return all(
+        is_health_cycle_output(path) or is_mixed_ownership_health_output(path)
+        for path in normalized
     )
 
 
