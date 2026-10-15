@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.010543981481481482,
+        "latest_days": 0.0008217592592592593,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-15T19:28:12Z",
+    "last_checked": "2026-10-15T19:49:41Z",
     "record_count": 1,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kangar",
@@ -39,7 +39,7 @@
     "geography": "Kangar, Perlis",
     "name": "GTFS Realtime — BAS.MY Kangar Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-15T19:28:12Z",
+    "observed_verified_at": "2026-10-15T19:49:41Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_kangar.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:fbc2ee4bb9ecadc22ca58816ed7e246e5fefd94caf2fcc1f985e2f9f07607ab8",
+      "receipt_digest": "sha256:2eb700875a369e6f9b6aa2e650eb6fbbf25f38d0d5efeec31dfed9c146b8e5c0",
       "sigstore_path": "data/gtfs_realtime_mybas_kangar.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_kangar.receipt.statement.json"
     },
