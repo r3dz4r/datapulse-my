@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": true,
-    "last_checked": "2026-10-14T22:21:40Z",
-    "record_count": 1231,
+    "last_checked": "2026-10-15T22:27:33Z",
+    "record_count": 1228,
     "record_count_estimated": true,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pekab40_01_timeseries.parquet",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "KKMNOW PeKa B40 Daily Health Screenings by State",
     "namespace": "healthcare",
-    "observed_verified_at": "2026-10-14T22:21:40Z",
+    "observed_verified_at": "2026-10-15T22:27:33Z",
     "source": "github.com/MoH-Malaysia/kkmnow-data",
     "steward": "Ministry of Health Malaysia"
   },
@@ -1117,7 +1117,7 @@
     "receipt": {
       "evidence_path": "data/kkmnow_pekab40.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:371c03efb96f4949260862dd18857364b421bb8c58cdbfb8ca952dbc0886b1ff",
+      "receipt_digest": "sha256:ac6ca8663250fb1dc948012909b0078924f5c430fced7ff4259b5ebcebbbcb4a",
       "sigstore_path": "data/kkmnow_pekab40.receipt.sigstore.json",
       "statement_path": "data/kkmnow_pekab40.receipt.statement.json"
     },
