@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0008796296296296296,
+        "latest_days": 0.005844907407407407,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-15T00:26:45Z",
+    "last_checked": "2026-10-15T00:43:43Z",
     "record_count": 44,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuching",
@@ -39,7 +39,7 @@
     "geography": "Kuching, Sarawak",
     "name": "GTFS Realtime — BAS.MY Kuching Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-15T00:26:45Z",
+    "observed_verified_at": "2026-10-15T00:43:43Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_kuching.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:e91468a6a254308e936017f923a34e66d53725f2f6fc1f49e28f8d88919a566e",
+      "receipt_digest": "sha256:2f85d9e1772dc993b428c18a118273ffccf5babc4b847c82f63eb2dce3aff87b",
       "sigstore_path": "data/gtfs_realtime_mybas_kuching.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_kuching.receipt.statement.json"
     },
