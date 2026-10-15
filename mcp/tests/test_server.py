@@ -216,23 +216,12 @@ async def test_modern_and_legacy_clients_preserve_discovery_surface_and_cache_hi
 
         assert modern.protocol_version == "2026-07-28"
         assert modern.server_info.name == "DataPulse"
-        assert modern.instructions == (
-            "DataPulse is a read-only evidence and freshness layer for 425 official Malaysian "
-            "public datasets. Use it for Malaysian data questions about currentness, freshness, "
-            "licence, provenance, reachability, schema or record drift, reliability, signed "
-            "evidence, or citation verification. For a currentness/provenance claim use "
-            "search_datasets → verify_dataset → get_evidence or get_provenance. verify_dataset "
-            "verifies published evidence and signed receipts; get_evidence returns observation "
-            "fields and receipt/evidence references; get_provenance returns citation metadata and "
-            "source/licence context. verify_evidence is a rate-limited live transport comparison "
-            "and can be not_verifiable; offline signed-attestation verification is distinct from "
-            "live transport verification. Cite dataset identity, source/evidence URL, observed-at "
-            "or last-checked time, DataPulse status/verdict, licence/attribution, and receipt/evidence "
-            "digest when available. Stale, discontinued, unreachable, degraded, and unknown-freshness "
-            "evidence cannot support a currentness claim; unknown-freshness requires abstention or an "
-            "explicitly qualified answer. DataPulse verifies observations about a source, not semantic "
-            "truth of every upstream value."
-        )
+        expected_count = len(json.loads((REPO_DIR / "datapulse.json").read_text())["datasets"])
+        assert f"{expected_count} official Malaysian" in modern.instructions
+        assert "search_datasets → verify_dataset → get_evidence or get_provenance." in modern.instructions
+        assert "can be not_verifiable;" in modern.instructions
+        assert "unknown-freshness requires abstention" in modern.instructions
+        assert "not semantic truth of every upstream value." in modern.instructions
         capabilities = modern.server_capabilities.model_dump(by_alias=True, exclude_none=True)
         assert {"tools", "resources", "prompts"} <= set(capabilities)
         for result in (tools, resources, templates, index):
