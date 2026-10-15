@@ -21,13 +21,17 @@ def _run() -> str:
                 if step.get("name") == "Require authoritative acceptance before signing publication")
 
 
-def _exercise(tmp_path: Path, **settings: str) -> tuple[subprocess.CompletedProcess[str], list[str]]:
+def _exercise(
+    tmp_path: Path, *, pr_number: int = 99, pr_branch: str = "attestation/append-candidate",
+    **settings: str,
+) -> tuple[subprocess.CompletedProcess[str], list[str]]:
     """Keep real shell/jq parsing; replace GitHub, Git, verifier and cap expiry."""
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     scripts = tmp_path / "scripts"
     scripts.mkdir()
     (scripts / "submit_attestation_append.sh").write_text('echo submit >> "$CALL_LOG"\n')
+    (scripts / "close_superseded_appends.sh").write_text('echo close >> "$CALL_LOG"\n')
     mocks = {
         "timeout": r'''#!/bin/bash
 shift 2
@@ -89,8 +93,10 @@ esac
         path.write_text(source)
         path.chmod(0o755)
     initial = {
-        "number": 99, "headRefName": "attestation/append-candidate", "headRefOid": "head-sha",
-        "baseRefName": "main", "state": settings.pop("initial_state", "OPEN"),
+        "number": pr_number, "headRefName": pr_branch, "headRefOid": "head-sha",
+        "baseRefName": "main", "isCrossRepository": False,
+        "createdAt": "2026-10-15T00:00:00Z", "autoMergeRequest": None,
+        "state": settings.pop("initial_state", "OPEN"),
         "statusCheckRollup": [{"name": "deterministic-safety-net", "status": "COMPLETED",
                                "conclusion": settings.pop("initial_check", "SUCCESS")}],
     }
@@ -101,6 +107,8 @@ esac
     env = {
         **os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
         "GITHUB_REPOSITORY": "test/repo", "PROMOTION_SOURCE_SHA": "source-sha",
+        "GITHUB_OUTPUT": str(tmp_path / "outputs"),
+        "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
         "APPEND_ACCEPTANCE_PATIENCE_SECONDS": "30", "CALL_LOG": str(log),
         "CAP_MARKER": str(tmp_path / "cap-fired"), "CAP_TARGET": "none", "CAP_ALWAYS": "0",
         "CAP_STATUS": "124", "PROOF_STATUS": "0", "COMMITTED_STATUS": "1",
@@ -130,34 +138,42 @@ def test_safe_cap_hit_is_named_and_retried(tmp_path: Path, target: str, cap: int
 
 
 def test_parser_retry_cannot_hide_an_existing_append_pr(tmp_path: Path) -> None:
-    result, calls = _exercise(tmp_path, CAP_TARGET="jq", OPEN_PRS=json.dumps([
-        {"number": 77, "headRefName": "attestation/append-existing"},
-    ]))
-    assert result.returncode == 1
-    assert "#77 (attestation/append-existing)" in result.stderr
-    assert "already open" in result.stderr
+    result, calls = _exercise(tmp_path, CAP_TARGET="jq", pr_number=77,
+                              pr_branch="attestation/append-existing", OPEN_PRS=json.dumps([{
+                                  "number": 77, "headRefName": "attestation/append-existing",
+                                  "headRefOid": "head-sha", "baseRefName": "main",
+                                  "createdAt": "2026-10-15T00:00:00Z",
+                              }]))
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Already-open append PR #77 (attestation/append-existing)" in result.stdout
     assert "Retrying capped safe call" in result.stderr
     assert "submit" not in calls
+    assert any("--wait-for-acceptance 0" in call for call in calls)
+    assert (tmp_path / "outputs").read_text() == "state=accepted\n"
 
 
 @pytest.mark.parametrize(("target", "cap", "command"), [
     ("submit", 360, "bash scripts/submit_attestation_append.sh"),
     ("decision", 240, "python3 scripts/verify_attestation_append.py"),
 ])
-def test_submission_and_decision_caps_are_fatal(
+def test_submission_and_decision_caps_defer_without_retry(
     tmp_path: Path, target: str, cap: int, command: str,
 ) -> None:
     result, calls = _exercise(tmp_path, CAP_TARGET=target)
-    assert result.returncode != 0
+    assert result.returncode == 0, result.stdout + result.stderr
     assert command in result.stderr
     assert f"exceeded {cap}s (exit 124)" in result.stderr
     assert "Retrying" not in result.stderr
     assert sum(call.startswith("cap ") for call in calls) == 1
+    assert (tmp_path / "outputs").read_text() == "state=append-deferred\n"
+    assert "append-deferred" in (tmp_path / "summary").read_text()
     if target == "submit":
-        assert result.returncode == 124
+        assert "Bounded append operation timed out" in result.stdout
+        assert not any("--wait-for-acceptance" in call for call in calls)
     else:
-        assert "Append acceptance wait failed" in result.stderr
-        assert "patience 30s" in result.stderr
+        assert "PR #99 (attestation/append-candidate)" in result.stdout
+        assert "deterministic-safety-net: COMPLETED/SUCCESS" in result.stdout
+        assert "patience 30s" in result.stdout
 
 
 @pytest.mark.parametrize("settings", [
@@ -185,20 +201,24 @@ def test_decided_refusal_fails_immediately_with_context(tmp_path: Path, settings
 
 def test_permanent_read_cap_stops_at_existing_deadline(tmp_path: Path) -> None:
     result, calls = _exercise(tmp_path, CAP_TARGET="poll", CAP_ALWAYS="1")
-    assert result.returncode != 0
+    assert result.returncode == 0, result.stdout + result.stderr
     assert "exceeded 20s" in result.stderr
     assert "retry exhausted" in result.stderr
     assert "patience 30s" in result.stderr
     assert sum(call == "cap 20s poll" for call in calls) == 2
     assert not any("--wait-for-acceptance" in call for call in calls)
+    assert (tmp_path / "outputs").read_text() == "state=append-deferred\n"
+    assert "Bounded append operation timed out" in result.stdout
 
 
 @pytest.mark.parametrize("state", ["OPEN", "MERGED"])
 def test_successful_check_and_merge_never_replace_byte_proof(tmp_path: Path, state: str) -> None:
     result, calls = _exercise(tmp_path, poll_state=state, PROOF_STATUS="1")
     assert result.returncode == 1
-    assert "Append acceptance wait failed" in result.stderr
+    assert "Append acceptance proof failed" in result.stderr
+    assert "deterministic-safety-net: COMPLETED/SUCCESS" in result.stderr
     assert any("--wait-for-acceptance 0" in call for call in calls)
+    assert not (tmp_path / "outputs").exists()
 
 
 def test_non_timeout_verification_failure_is_not_retried(tmp_path: Path) -> None:
