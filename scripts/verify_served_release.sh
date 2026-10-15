@@ -6,10 +6,8 @@ set -Eeuo pipefail
 usage() {
   echo "usage: $0 --base-url URL --site DIR --sigstore-signed true|false --health-only true|false --source-commit SHA [--sigstore-publication DIR] [--cosign PATH] [--kv-surfaces-published-elsewhere]" >&2
   echo "  --sigstore-publication is required only when --sigstore-signed true" >&2
-  echo "  --kv-surfaces-published-elsewhere skips only the served KV-backed health comparisons" >&2
-  echo "    (health/latest.json freshness and dataset count, the release-proof health" >&2
-  echo "    cross-check, and the /health/index.json dashboard projection); the default" >&2
-  echo "    remains strict and every static surface is still compared" >&2
+  echo "  --kv-surfaces-published-elsewhere skips served /health/ namespace checks" >&2
+  echo "    and the release-proof health cross-check; the default remains strict" >&2
   exit 64
 }
 
@@ -20,13 +18,9 @@ health_only="${DATAPULSE_HEALTH_ONLY:-}"
 publication_dir="${DATAPULSE_SIGSTORE_PUBLICATION_DIR:-}"
 source_commit="${DATAPULSE_SOURCE_COMMIT:-${GITHUB_SHA:-}}"
 cosign_bin="${DATAPULSE_COSIGN:-}"
-# The KV-backed health surfaces (/health/latest.json and /health/index.json, and
-# the release-proof health fields read against them) are served from the
-# isolated health namespace, which another lane publishes on its own cadence. A
-# lane that assembles a fresh snapshot but holds no KV write credential cannot
-# satisfy a comparison against that store, so it opts in by name to excluding
-# exactly those comparisons. The default stays strict: without this flag every
-# comparison runs, and a stale served snapshot still fails.
+# The /health/ namespace is published by another lane on its own cadence. A
+# preview lane with no KV write credential opts in to excluding its served
+# fetches and comparisons; strict mode still verifies every surface.
 kv_surfaces_published_elsewhere=false
 # This must exceed the time needed to move the largest declared surface, even
 # when the response is compressed on the wire but slow to arrive.
@@ -58,11 +52,6 @@ fail() { echo "::error title=Cloudflare Pages contract failed::$1"; exit 1; }
 # imply the served surface is signed when it is not.
 if [[ "$sigstore_signed" == true && -z "$publication_dir" ]]; then
   fail "missing staged signing inputs"
-fi
-# Loud, single-line record of exactly what this opt-in excludes: the KV-backed
-# health surfaces, by name, and why. Static surfaces are untouched by it.
-if [[ "$kv_surfaces_published_elsewhere" == true ]]; then
-  echo "::warning title=KV-backed health surfaces published elsewhere::skipping KV-backed health surfaces published by another lane on its own cadence: served health/latest.json freshness and dataset-count comparison, served release-proof health freshness and dataset-count cross-check, and served dashboard health projection /health/index.json; every static surface is still fetched and compared"
 fi
 smoke_dir="$(mktemp -d)"
 trap 'rm -rf "$smoke_dir"' EXIT
@@ -214,8 +203,8 @@ grep -Fq "'/health/index.json'" "$smoke_dir/index.html" || fail "origin root doe
 observed_register_rows="$(grep -o '<article class="register-row' "$smoke_dir/index.html" | wc -l)"; [[ "$observed_register_rows" -eq "$expected_dataset_count" ]] || fail "origin root register rows mismatch: expected $expected_dataset_count, observed $observed_register_rows"
 grep -q 'DataPulse MY' "$smoke_dir/index.html" && fail "origin root retains the retired product-name alias"
 fetch_alias landing.html "$base_url/landing.html" /; fetch_alias landing "$base_url/landing" /; fetch_alias dashboard "$base_url/dashboard" /; fetch_alias register "$base_url/register" /
-fetch "health snapshot" "$base_url/health/latest.json" "$smoke_dir/health/latest.json"
 if [[ "$kv_surfaces_published_elsewhere" != true ]]; then
+fetch "health snapshot" "$base_url/health/latest.json" "$smoke_dir/health/latest.json"
 python3 - "$site_dir/health/latest.json" "$smoke_dir/health/latest.json" <<'PY'
 import json,sys
 from pathlib import Path
@@ -225,8 +214,8 @@ if not (built.get('checked_at') and served.get('checked_at')) or served['checked
 if not isinstance(served.get('datasets'), list) or len(served['datasets']) != len(built.get('datasets', [])):
  raise SystemExit('served health snapshot dataset count differs from the assembled snapshot')
 PY
-fi
 fetch "dashboard health projection" "$base_url/health/index.json" "$smoke_dir/health/index.json"
+fi
 sigstore_path="signatures/health.latest.sigstore.json"
 if [[ "$sigstore_signed" == true ]]; then
   staged_bundle="$publication_dir/health.latest.sigstore.json"; staged_manifest="$publication_dir/datapulse.json"; test -s "$staged_bundle" || fail "verified Sigstore bundle is missing from the deploy job"; test -s "$staged_manifest" || fail "signed manifest snapshot is missing from the deploy job"
@@ -244,7 +233,6 @@ python3 - "$smoke_dir/release-verification.md" "$source_commit" "$smoke_dir/heal
 import json,re,sys
 from pathlib import Path
 proof, sha, health_path, mcp_path, health_only, kv_excluded=sys.argv[1:]; contents=Path(proof).read_text(encoding='utf-8')
-health=json.loads(Path(health_path).read_text())
 if health_only == 'true':
  required={'release-proof title':r'^# Release reproducibility verification$','verification timestamp':r'^- (?:Generated|Verified) at: `[^`\\n]+`$','Source SHA':r'^- Source SHA: `[0-9a-f]{7,64}`$','Profile result':r'^- Profile result: .+$','Total files built':r'^- Total files built: .+$','hash table':r'^\\| Path category \\| File count \\| First-run hash \\| Second-run hash \\| Match\\? \\|$','hash table category row':r'^\\| (?![-: ]+\\|)[^|]+ \\| \\d+ \\|','Reproduction section':r'^## Reproduction$'}; missing=[k for k,v in required.items() if not re.search(v,contents,re.M)]
 else:
@@ -256,6 +244,7 @@ else:
 # two cross-checks by name: the served health snapshot is published by another lane on its own
 # cadence, but the proof's static identity above is still compared byte-for-value.
 if kv_excluded != 'true':
+ health=json.loads(Path(health_path).read_text())
  m=re.search(r'^- Health checked at: `([^`]+)`$', contents, re.M)
  if not m: missing.append('- Health checked at: `<timestamp>`')
  elif not health.get('checked_at') or m.group(1) > health['checked_at']: missing.append(f'- Health checked at: `{m.group(1)}` (not at or before served health {health.get("checked_at")})')
@@ -265,7 +254,27 @@ if kv_excluded != 'true':
 if missing: raise SystemExit('release proof drift: '+'; '.join(missing))
 PY
 mapfile -t pages < <(jq -er '.pages[]' config/public-surfaces.json); mapfile -t artifacts < <(jq -er '.artifacts[]' config/public-surfaces.json)
-for path in "${pages[@]}" "${artifacts[@]}"; do [[ "$path" == / || "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "unsafe declared public path: $path"; if [[ "$path" == */ ]]; then declared_file="$(find "$site_dir${path}" -type f -print -quit)" || fail "declared collection is missing: $path"; [[ -n "$declared_file" ]] || fail "declared collection is empty: $path"; path="/${declared_file#"$site_dir/"}"; fi; fetch "declared public surface $path" "$base_url$path" "$smoke_dir/surfaces${path%/}/index"; verify_declared_surface_content "$path" "$smoke_dir/surfaces${path%/}/index"; done
+excluded_health_paths=(/health/latest.json /health/index.json)
+declare -A excluded_health_seen=([/health/latest.json]=1 [/health/index.json]=1)
+for path in "${pages[@]}" "${artifacts[@]}"; do
+  [[ "$path" == / || "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "unsafe declared public path: $path"
+  # A preview does not own the served /health/ namespace, including paths
+  # added to the declaration after this verifier was written.
+  if [[ "$kv_surfaces_published_elsewhere" == true && "$path" == /health/* ]]; then
+    if [[ -z "${excluded_health_seen[$path]:-}" ]]; then
+      excluded_health_paths+=("$path")
+      excluded_health_seen["$path"]=1
+    fi
+    continue
+  fi
+  if [[ "$path" == */ ]]; then declared_file="$(find "$site_dir${path}" -type f -print -quit)" || fail "declared collection is missing: $path"; [[ -n "$declared_file" ]] || fail "declared collection is empty: $path"; path="/${declared_file#"$site_dir/"}"; fi
+  fetch "declared public surface $path" "$base_url$path" "$smoke_dir/surfaces${path%/}/index"
+  verify_declared_surface_content "$path" "$smoke_dir/surfaces${path%/}/index"
+done
+if [[ "$kv_surfaces_published_elsewhere" == true ]]; then
+  excluded_health_list="$(printf '%s, ' "${excluded_health_paths[@]}")"
+  echo "::warning title=KV-backed health surfaces published elsewhere::KV-backed surfaces published by another lane on its own cadence were not fetched or compared: ${excluded_health_list%, }; the release-proof health freshness and dataset-count cross-check was not performed; all non-/health/ declared public surfaces retain their served checks"
+fi
 verify_attestation_plane
 if [[ "$kv_surfaces_published_elsewhere" != true ]]; then
 python3 - "$smoke_dir/index.html" "$smoke_dir/health/index.json" "$smoke_dir/health/latest.json" <<'PY'
@@ -280,10 +289,12 @@ if not all(isinstance(row,dict) and isinstance(row.get('dataset_id'),str) for ro
 if {row['dataset_id'] for row in projection['datasets']} != {row['dataset_id'] for row in health['datasets']}: raise SystemExit('dashboard health projection dataset IDs differ from served health/latest.json')
 PY
 fi
+if [[ "$kv_surfaces_published_elsewhere" != true ]]; then
 expected_dataset_count="$(jq -er '.datasets | select(type == "array" and length > 0) | length' "$smoke_dir/health/latest.json")" || fail "served health has no dataset array"
 for kind in trends drift reconciliation; do fetch "$kind snapshot" "$base_url/health/$kind.json" "$smoke_dir/$kind.json"; done
 jq -e --argjson expected "$expected_dataset_count" '.schema == "datapulse/v1/dataset-trends" and (.datasets|type == "array" and length == $expected) and (.summary.datasets_total == $expected)' "$smoke_dir/trends.json" >/dev/null || fail "served trends are invalid"
 jq -e --argjson expected "$expected_dataset_count" '.schema == "datapulse/v1/dataset-drift" and (.datasets|type == "array" and length == $expected) and (.summary.datasets_total == $expected)' "$smoke_dir/drift.json" >/dev/null || fail "served drift is invalid"
 jq -e --argjson expected "$expected_dataset_count" '.schema == "datapulse/v1/dataset-reconciliation" and (.summary.datasets_total == $expected) and (.summary.datasets_grouped + .summary.datasets_single_source == $expected)' "$smoke_dir/reconciliation.json" >/dev/null || fail "served reconciliation is invalid"
+fi
 fetch "MCP inventory" "$base_url/mcp.json" "$smoke_dir/mcp.json"; jq -e '.tools | type == "array" and length > 0 and all(.[]; type == "object" and (.name | type == "string" and length > 0) and (.inputSchema | type == "object"))' "$smoke_dir/mcp.json" >/dev/null || fail "served MCP inventory is invalid"
 fetch "LLM index" "$base_url/llms.txt" "$smoke_dir/llms.txt"; grep -Fxq '<!-- BEGIN mcp-tools -->' "$smoke_dir/llms.txt" || fail "served llms index has no MCP tools block"; grep -Fxq '<!-- END mcp-tools -->' "$smoke_dir/llms.txt" || fail "served llms index has incomplete MCP tools block"
