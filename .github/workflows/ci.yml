@@ -164,7 +164,17 @@ jobs:
 
       - name: Run repository-contract and MCP tests
         if: env.FULL_VERIFICATION == 'true'
-        run: python3 -m pytest -q scripts/tests/ mcp/tests/
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -Eeuo pipefail
+          # Discovery provenance follows default-branch history. Test the
+          # candidate as that branch, otherwise PR-only MCP revisions are invisible.
+          default_ref="refs/remotes/origin/$DEFAULT_BRANCH"
+          default_sha=$(git rev-parse --verify "$default_ref")
+          trap 'git update-ref "$default_ref" "$default_sha"' EXIT
+          git update-ref "$default_ref" HEAD
+          python3 -m pytest -q scripts/tests/ mcp/tests/
 
       - name: Test local agent-ready verification
         if: env.FULL_VERIFICATION == 'true'
