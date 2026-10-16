@@ -14,6 +14,18 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.25](https://github.com/r3dz4r/datapulse-my/compare/v3.55.24...v3.55.25) (2026-10-16)
+
+
+### Bug Fixes
+
+* **mcp:** derive initialize dataset count ([ce17694](https://github.com/r3dz4r/datapulse-my/commit/ce17694f4bc0cafd93ebf4822dcf97aac1d5275d))
+* **mcp:** derive the initialize dataset count from the manifest ([298cd2b](https://github.com/r3dz4r/datapulse-my/commit/298cd2bb2ccca0417d1b7eccaf56a79af26c4fa9))
+* **nginx:** record the deliberate 503 for the paused engine surface ([a192084](https://github.com/r3dz4r/datapulse-my/commit/a192084446d61fa1cc52546f05d0e42d803dcc44))
+* **nginx:** record the deliberate 503 for the paused engine surface ([7639aa2](https://github.com/r3dz4r/datapulse-my/commit/7639aa2e0a986aef0c60b56b412fd00396371587))
+* refresh MCP discovery source identity ([9b7c1cc](https://github.com/r3dz4r/datapulse-my/commit/9b7c1ccb5cb33f598c833fa67cfb66d5f56d7762))
+* refresh MCP discovery source identity ([d7ff433](https://github.com/r3dz4r/datapulse-my/commit/d7ff4330d0b97916d4837c3752c376cd1d4fee4b))
+
 ## [3.55.24](https://github.com/r3dz4r/datapulse-my/compare/v3.55.23...v3.55.24) (2026-10-15)
 
 
