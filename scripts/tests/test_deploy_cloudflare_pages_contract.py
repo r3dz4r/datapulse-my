@@ -179,7 +179,7 @@ def _append_acceptance_step() -> dict:
     )
 
 
-def test_append_deferred_skips_signing_and_deployment() -> None:
+def test_append_deferred_skips_signing_and_full_release_deployment() -> None:
     workflow = yaml.safe_load(_workflow())
     signing = workflow["jobs"]["sign_health"]
     steps = {step.get("name"): step for step in signing["steps"]}
@@ -221,7 +221,64 @@ def test_append_deferred_skips_signing_and_deployment() -> None:
     assert steps["Record Sigstore result"]["if"] == (
         "always() && steps.append_acceptance.outputs.state == 'accepted'"
     )
-    assert workflow["jobs"]["deploy"]["if"] == "needs.sign_health.outputs.append_state == 'accepted'"
+    assert workflow["jobs"]["deploy"]["if"] == (
+        "needs.sign_health.outputs.health_only == 'true' || "
+        "needs.sign_health.outputs.append_state == 'accepted'"
+    )
+
+
+@pytest.mark.parametrize("health_only", ["true", "false", ""])
+@pytest.mark.parametrize("append_state", ["accepted", "append-deferred", ""])
+def test_deploy_gate_reaches_health_publication_without_bypassing_full_release_append(
+    health_only: str, append_state: str,
+) -> None:
+    deploy = yaml.safe_load(_workflow())["jobs"]["deploy"]
+    assert deploy["needs"] == ["classify", "sign_health"]
+    condition = deploy["if"].replace(
+        "needs.sign_health.outputs.health_only", repr(health_only),
+    ).replace("needs.sign_health.outputs.append_state", repr(append_state))
+    # Exercise the workflow's comparison/OR expression, rather than a duplicate
+    # predicate. Neither always() nor a failed dependency may enable promotion.
+    result = subprocess.run(["bash", "-c", f"[[ {condition} ]]"], capture_output=True, text=True)
+    assert result.returncode in (0, 1), result.stderr
+    assert (result.returncode == 0) == (health_only == "true" or append_state == "accepted")
+
+
+def test_deferred_health_publication_keeps_verified_source_and_preserves_trust_plane() -> None:
+    workflow = yaml.safe_load(_workflow())
+    signing = workflow["jobs"]["sign_health"]
+    outputs = signing["outputs"]
+    assert outputs["settled_sha"] == "${{ steps.settled_main.outputs.settled_sha }}"
+    assert outputs["health_only"] == "${{ steps.settled_main.outputs.health_only }}"
+    assert outputs["attestation_state"] == "${{ steps.attestation_result.outputs.state }}"
+    assert outputs["signed"] == "${{ steps.sigstore_result.outputs.signed }}"
+    settled = next(step for step in signing["steps"] if step.get("id") == "settled_main")
+    assert settled["if"] == (
+        "steps.existing_append.outputs.state == 'ready' || "
+        "(steps.existing_append.outputs.state == 'append-deferred' && "
+        "needs.classify.outputs.health_only == 'true')"
+    )
+    preserve = _deploy_step("Preserve served attestation plane (health-only path)")
+    assert preserve["if"] == (
+        "needs.sign_health.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.attestation_state == 'signer_down'"
+    )
+    deferred = _deploy_step("Preserve served attestation plane (deferred health path)")
+    assert deferred["if"] == (
+        "needs.sign_health.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.append_state == 'append-deferred'"
+    )
+    assert deferred["run"] == preserve["run"]
+    assert 'python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root"' in preserve["run"]
+    assemble = _deploy_step("Assemble canonical Pages artifact")
+    summary_copy = next(line for line in assemble["run"].splitlines() if "cp " in line and "datapulse_summary.json" in line)
+    assert summary_copy.strip().endswith(" _site/")
+    assert "if" not in assemble
+    assert "rm -f _site/attestations/latest/binding.json" in assemble["run"]
+    build = yaml.safe_load((ROOT / ".github/workflows/publish-publication.yml").read_text())
+    staging = next(step for step in build["jobs"]["build"]["steps"]
+                   if step.get("name") == "Stage only generated publication inputs")
+    assert 'datapulse_summary.json' in staging["run"]
 
 
 def _append_existing_step() -> dict:
@@ -1001,7 +1058,10 @@ def test_health_only_path_is_selected_only_by_the_generated_output_classifier() 
     assert "if: needs.sign_health.outputs.health_only == 'true'" in workflow
     assert "if: needs.sign_health.outputs.health_only != 'true'" in workflow
     deploy_job = workflow.split("  deploy:\n", 1)[1].split("    steps:\n", 1)[0]
-    assert "if: needs.sign_health.outputs.append_state == 'accepted'" in deploy_job
+    assert (
+        "if: needs.sign_health.outputs.health_only == 'true' || "
+        "needs.sign_health.outputs.append_state == 'accepted'"
+    ) in deploy_job
     assert "Deploy canonical Cloudflare Pages artifact" in workflow
 
 
@@ -1049,7 +1109,9 @@ def test_pages_resettlement_reuses_wait_and_exports_one_downstream_revision() ->
     ceiling = workflow["env"]["PROMOTION_SETTLED_MAX_WAIT_SECONDS"]
     assert 2 * (ceiling + 10 + 65 + 15 + 15 + 15 + 35 + 15) + 3 * 35 + 35 < guard["timeout-minutes"] * 60
     selected = "${{ needs.sign_health.outputs.settled_sha }}"
-    assert jobs["sign_health"]["outputs"]["settled_sha"] == "${{ steps.settled_main.outputs.settled_sha }}"
+    assert jobs["sign_health"]["outputs"]["settled_sha"] == (
+        "${{ steps.settled_main.outputs.settled_sha }}"
+    )
     assert jobs["deploy"]["env"]["PROMOTION_SOURCE_SHA"] == selected
     checkout = next(step for step in jobs["deploy"]["steps"] if step.get("uses") == "actions/checkout@v4")
     assert checkout["with"]["ref"] == selected
@@ -1359,7 +1421,7 @@ def test_pages_resettlement_guard_exercises_recovery_and_fail_closed(
 
 
 def test_attestation_state_machine_fails_closed_outside_health_only_signer_degradation() -> None:
-    """Only a classifier-scoped signer outage may take the degraded publication path."""
+    """Unsigned health publication preserves verified served attestations."""
     workflow = _workflow()
     parsed = yaml.safe_load(workflow)
     sign_job = parsed["jobs"]["sign_health"]

@@ -389,7 +389,9 @@ jobs:
           EXISTING_APPEND
 
       - name: Require settled main before signing
-        if: steps.existing_append.outputs.state == 'ready'
+        # A deferred append can still publish health after this job verifies its
+        # own settled revision; signing remains gated on accepted append state.
+        if: steps.existing_append.outputs.state == 'ready' || (steps.existing_append.outputs.state == 'append-deferred' && needs.classify.outputs.health_only == 'true')
         id: settled_main
         # Fits both 900s waits plus bounded head reads and checkout verification.
         timeout-minutes: 40
@@ -1041,7 +1043,8 @@ jobs:
           fi
 
   deploy:
-    if: needs.sign_health.outputs.append_state == 'accepted'
+    # Health publishes without a new append; full releases still require acceptance.
+    if: needs.sign_health.outputs.health_only == 'true' || needs.sign_health.outputs.append_state == 'accepted'
     permissions:
       contents: read
       actions: read
@@ -1297,6 +1300,87 @@ jobs:
         with:
           name: sigstore-health-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/sigstore-publication
+
+      - name: Preserve served attestation plane (deferred health path)
+        if: needs.sign_health.outputs.health_only == 'true' && needs.sign_health.outputs.append_state == 'append-deferred'
+        run: |
+          set -Eeuo pipefail
+          # A health-only checkout can lag a completed release. Its attestation
+          # files are not authoritative: preserve the currently served verified
+          # plane, or stop before a Cloudflare artifact is uploaded.
+          fail() { echo "::error title=Cloudflare attestation preservation failed::$1"; exit 1; }
+          website_origin="$(jq -er '.origins.website | select(type == "string" and test("^https://[^/]+$"))' config/public-surfaces.json)" || fail "invalid website origin"
+          preserved_root="$RUNNER_TEMP/preserved-attestations"
+          rm -rf "$preserved_root"
+          mkdir -p "$preserved_root/health" "$preserved_root/attestations/latest" "$preserved_root/docs/.well-known"
+          fetch_public() {
+            local path="$1" output="$2"
+            [[ "$path" =~ ^[A-Za-z0-9._/-]+$ ]] || fail "unsafe served path: $path"
+            mkdir -p "$(dirname "$output")"
+            curl --fail --location --silent --show-error --proto '=https' \
+              --retry 3 --retry-delay 5 --retry-all-errors \
+              --connect-timeout 10 --max-time 30 \
+              "${website_origin}/${path}" --output "$output" || fail "served attestation file could not be fetched: $path"
+          }
+          # A lagging plane may carry no per-set health snapshot; treat its
+          # absence as "not recorded", never as a reason to reject the plane.
+          fetch_optional() {
+            local path="$1" output="$2"
+            [[ "$path" =~ ^[A-Za-z0-9._/-]+$ ]] || fail "unsafe served path: $path"
+            mkdir -p "$(dirname "$output")"
+            curl --fail --location --silent --show-error --proto '=https' \
+              --retry 3 --retry-delay 5 --retry-all-errors \
+              --connect-timeout 10 --max-time 30 \
+              "${website_origin}/${path}" --output "$output" 2>/dev/null || true
+          }
+          fetch_public health/latest.json "$preserved_root/health/latest.json"
+          fetch_public .well-known/datapulse-probe-keys.json "$preserved_root/docs/.well-known/datapulse-probe-keys.json"
+          fetch_public attestations/latest/index.json "$preserved_root/attestations/latest/index.json"
+          fetch_public attestations/latest/chain_head.json "$preserved_root/attestations/latest/chain_head.json"
+          fetch_public attestations/latest/scores.json "$preserved_root/attestations/latest/scores.json"
+          fetch_public attestations/latest/binding.json "$preserved_root/attestations/latest/binding.json"
+          fetch_public attestations/chain-index.json "$preserved_root/attestations/chain-index.json"
+          fetch_public .attestations/chain_head.json "$preserved_root/.attestations/chain_head.json"
+          python3 scripts/attestation_fetch_refs.py --root "$preserved_root" > "$RUNNER_TEMP/immutable-refs.txt"
+          while IFS= read -r reference; do
+            fetch_public "$reference" "$preserved_root/$reference"
+          done < "$RUNNER_TEMP/immutable-refs.txt"
+          python3 scripts/attestation_fetch_refs.py --root "$preserved_root" --proofs > "$RUNNER_TEMP/proof-refs.txt"
+          while IFS= read -r reference; do
+            fetch_public "$reference" "$preserved_root/$reference"
+          done < "$RUNNER_TEMP/proof-refs.txt"
+          # Full verification authenticates dataset membership in every fetched
+          # immutable set, including earlier heads in the accepted lineage.
+          while IFS= read -r metadata_ref; do
+            [[ "$metadata_ref" == */index.json ]] || continue
+            directory="${metadata_ref%/index.json}"
+            # Main's correction evidence records the health input beside the
+            # signed set; fetch it so the lineage verifier can check its digest.
+            fetch_optional "$directory/health.json" "$preserved_root/$directory/health.json"
+            fetch_optional "$directory/health.json.gz" "$preserved_root/$directory/health.json.gz"
+            # A correction also pins its new input in a content-addressed
+            # snapshot named by its signed record; fetch that too so the full
+            # lineage verification can authenticate the record.
+            correction_snapshot="$(jq -r '.payload.correction.health_snapshot_ref // empty' "$preserved_root/$directory/binding.json")"
+            if [[ -n "$correction_snapshot" ]]; then
+              [[ "$correction_snapshot" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/revisions/[0-9a-f]{64}/health\.json(\.gz)?$ ]] || fail "unsafe correction snapshot reference: $correction_snapshot"
+              fetch_public "$correction_snapshot" "$preserved_root/$correction_snapshot"
+            fi
+            while IFS= read -r reference; do
+              [[ "$reference" == "$directory/"* && "$reference" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/(revisions/[0-9a-f]{64}/)?[A-Za-z0-9_-]+\.json$ ]] || fail "served attestation reference is unsafe: $reference"
+              fetch_public "$reference" "$preserved_root/$reference"
+            done < <(jq -r '.attestations | to_entries[] | .value' "$preserved_root/$metadata_ref")
+          done < "$RUNNER_TEMP/immutable-refs.txt"
+          if attestation_plane_state="$(python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root")"; then
+            if [[ "$attestation_plane_state" == "signer_down" ]]; then
+              echo '::warning title=Signer lane down (P6); attestation failed-closed::Served attestation plane is stale and explicitly reports artifact_signed:false; preserving it unchanged.'
+            fi
+          else
+            if ! python3 scripts/verify_attestation_binding.py --root "$preserved_root"; then
+              echo "Attestation cryptographic verification failed; refusing to preserve the served plane."
+            fi
+            fail "served health/binding plane is inconsistent; Run a full release-build deployment to heal the public trust plane."
+          fi
 
       - name: Bind built dashboard to accepted sign-time trust plane
         if: needs.sign_health.outputs.health_only != 'true'
