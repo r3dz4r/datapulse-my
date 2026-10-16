@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.26](https://github.com/r3dz4r/datapulse-my/compare/v3.55.25...v3.55.26) (2026-10-16)
+
+
+### Bug Fixes
+
+* allow health-only Pages publication without accepted append ([c066fa3](https://github.com/r3dz4r/datapulse-my/commit/c066fa34acfdca3940b68fe458a94abe65d3f834))
+* preserve settled Pages source on deferred health publish ([f853bc5](https://github.com/r3dz4r/datapulse-my/commit/f853bc5edc120c8ecc2941f03f9cf31d5f391952))
+* publish the Pages summary on a health-only change ([beb2825](https://github.com/r3dz4r/datapulse-my/commit/beb28252267b70ccc3ed059b550f99a36f37de4b))
+
 ## [3.55.25](https://github.com/r3dz4r/datapulse-my/compare/v3.55.24...v3.55.25) (2026-10-16)
 
 
