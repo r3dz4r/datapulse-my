@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.28](https://github.com/r3dz4r/datapulse-my/compare/v3.55.27...v3.55.28) (2026-10-16)
+
+
+### Bug Fixes
+
+* align append mirror verification with candidate projection ([28f326a](https://github.com/r3dz4r/datapulse-my/commit/28f326ac6e0e9e67e0fe044314c9bcf064d70a43))
+* **append:** resolve the day after alignment and raise once on a stale projection ([08ec0ca](https://github.com/r3dz4r/datapulse-my/commit/08ec0caf8343030babb8da25ca3e782f8d155b28))
+
 ## [3.55.27](https://github.com/r3dz4r/datapulse-my/compare/v3.55.26...v3.55.27) (2026-10-16)
 
 
