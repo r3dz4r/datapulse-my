@@ -248,19 +248,27 @@ def test_deferred_health_publication_keeps_verified_source_and_preserves_trust_p
     workflow = yaml.safe_load(_workflow())
     signing = workflow["jobs"]["sign_health"]
     outputs = signing["outputs"]
-    assert outputs["settled_sha"] == (
-        "${{ steps.settled_main.outputs.settled_sha || needs.classify.outputs.settled_sha }}"
+    assert outputs["settled_sha"] == "${{ steps.settled_main.outputs.settled_sha }}"
+    assert outputs["health_only"] == "${{ steps.settled_main.outputs.health_only }}"
+    assert outputs["attestation_state"] == "${{ steps.attestation_result.outputs.state }}"
+    assert outputs["signed"] == "${{ steps.sigstore_result.outputs.signed }}"
+    settled = next(step for step in signing["steps"] if step.get("id") == "settled_main")
+    assert settled["if"] == (
+        "steps.existing_append.outputs.state == 'ready' || "
+        "(steps.existing_append.outputs.state == 'append-deferred' && "
+        "needs.classify.outputs.health_only == 'true')"
     )
-    assert outputs["health_only"] == (
-        "${{ steps.settled_main.outputs.health_only || needs.classify.outputs.health_only }}"
-    )
-    assert outputs["attestation_state"] == "${{ steps.attestation_result.outputs.state || 'signer_down' }}"
-    assert outputs["signed"] == "${{ steps.sigstore_result.outputs.signed || 'false' }}"
     preserve = _deploy_step("Preserve served attestation plane (health-only path)")
     assert preserve["if"] == (
         "needs.sign_health.outputs.health_only == 'true' && "
         "needs.sign_health.outputs.attestation_state == 'signer_down'"
     )
+    deferred = _deploy_step("Preserve served attestation plane (deferred health path)")
+    assert deferred["if"] == (
+        "needs.sign_health.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.append_state == 'append-deferred'"
+    )
+    assert deferred["run"] == preserve["run"]
     assert 'python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root"' in preserve["run"]
     assemble = _deploy_step("Assemble canonical Pages artifact")
     summary_copy = next(line for line in assemble["run"].splitlines() if "cp " in line and "datapulse_summary.json" in line)
@@ -1102,7 +1110,7 @@ def test_pages_resettlement_reuses_wait_and_exports_one_downstream_revision() ->
     assert 2 * (ceiling + 10 + 65 + 15 + 15 + 15 + 35 + 15) + 3 * 35 + 35 < guard["timeout-minutes"] * 60
     selected = "${{ needs.sign_health.outputs.settled_sha }}"
     assert jobs["sign_health"]["outputs"]["settled_sha"] == (
-        "${{ steps.settled_main.outputs.settled_sha || needs.classify.outputs.settled_sha }}"
+        "${{ steps.settled_main.outputs.settled_sha }}"
     )
     assert jobs["deploy"]["env"]["PROMOTION_SOURCE_SHA"] == selected
     checkout = next(step for step in jobs["deploy"]["steps"] if step.get("uses") == "actions/checkout@v4")
@@ -1413,13 +1421,13 @@ def test_pages_resettlement_guard_exercises_recovery_and_fail_closed(
 
 
 def test_attestation_state_machine_fails_closed_outside_health_only_signer_degradation() -> None:
-    """Only a classifier-scoped signer outage may take the degraded publication path."""
+    """Unsigned health publication preserves verified served attestations."""
     workflow = _workflow()
     parsed = yaml.safe_load(workflow)
     sign_job = parsed["jobs"]["sign_health"]
     deploy_steps = parsed["jobs"]["deploy"]["steps"]
 
-    assert sign_job["outputs"]["attestation_state"] == "${{ steps.attestation_result.outputs.state || 'signer_down' }}"
+    assert sign_job["outputs"]["attestation_state"] == "${{ steps.attestation_result.outputs.state }}"
     assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" not in workflow
     assert "--allow-unattested-health" not in workflow
     assert workflow.count("continue-on-error: true") == 1
