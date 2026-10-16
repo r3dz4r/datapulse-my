@@ -187,10 +187,11 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
             cursor = None
     if set(new["heads"]) - set(old["heads"]) != seen:
         raise ValueError("candidate contains a sibling or unaccepted head")
-    directory = accepted_day_directory(root, new)
     head = _load(root / new["heads"][new["current_head"]], "current head")
+    projection_matches_current = False
     if "append_content_sha256" not in head["payload"]:
         selected_directory(root)
+        projection_matches_current = True
     else:
         # Publication checks still require current projections. An append commit
         # carries immutable evidence only, so its inherited projections may
@@ -200,12 +201,13 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
             projected = _load(projection, "projected head")["chain_head"]
             if projected not in new["envelopes"]:
                 raise ContractError("latest projection is stale or mixed")
-            projected_directory = set_directory(new["heads"][projected])
-            projected_revision = root / projected_directory / "revisions" / projected
-            if projected_revision.is_dir():
-                projected_directory = projected_revision.relative_to(root).as_posix()
             projected_document = {**new, "current_head": projected}
+            projected_directory = accepted_day_directory(root, projected_document)
+            projected_revision = root / projected_directory / "revisions" / projected / "chain_head.json"
+            if projected_revision.is_file():
+                projected_directory = projected_revision.parent.relative_to(root).as_posix()
             verify_legacy_mirror(root, projected_document, projected_directory)
+            projection_matches_current = projected == new["current_head"]
             for filename in FILES:
                 latest = root / "attestations/latest" / filename
                 frozen = root / projected_directory / filename
@@ -218,7 +220,8 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
     if require_committed:
         for digest in seen:
             raise ValueError(f"candidate head {digest} must be accepted in authoritative Git before publication")
-        selected_directory(root)
+        if not projection_matches_current:
+            raise ContractError("latest projection is stale or mixed")
 
 
 def main() -> int:
