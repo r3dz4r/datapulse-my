@@ -235,10 +235,12 @@ jobs:
       PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}
       PROMOTION_BUILT_SHA: ${{ needs.classify.outputs.settled_sha }}
     outputs:
-      settled_sha: ${{ steps.settled_main.outputs.settled_sha }}
-      health_only: ${{ steps.settled_main.outputs.health_only }}
-      attestation_state: ${{ steps.attestation_result.outputs.state }}
-      signed: ${{ steps.sigstore_result.outputs.signed }}
+      # A deferred append skips signer settlement; retain the verified classifier
+      # identity and route unsigned health through served-plane preservation.
+      settled_sha: ${{ steps.settled_main.outputs.settled_sha || needs.classify.outputs.settled_sha }}
+      health_only: ${{ steps.settled_main.outputs.health_only || needs.classify.outputs.health_only }}
+      attestation_state: ${{ steps.attestation_result.outputs.state || 'signer_down' }}
+      signed: ${{ steps.sigstore_result.outputs.signed || 'false' }}
       receipts_signed: ${{ steps.per_receipt_result.outputs.signed }}
       append_state: ${{ steps.existing_append.outputs.state == 'append-deferred' && 'append-deferred' || steps.append_acceptance.outputs.state }}
     steps:
@@ -1041,7 +1043,8 @@ jobs:
           fi
 
   deploy:
-    if: needs.sign_health.outputs.append_state == 'accepted'
+    # Health publishes without a new append; full releases still require acceptance.
+    if: needs.sign_health.outputs.health_only == 'true' || needs.sign_health.outputs.append_state == 'accepted'
     permissions:
       contents: read
       actions: read
