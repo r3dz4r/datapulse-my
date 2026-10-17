@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Pin the incident's fail-closed boundary until authorized reconciliation exists.
-
-There is no selected head on the 2026-10-17 fork: both consumers must refuse it.
-A new signed child of either sibling alone cannot consume the other sibling.
-These tests deliberately do not claim that passing tests unblocks publication.
-"""
+"""Ratify first-parent merge order without rewriting signed fork evidence."""
 from __future__ import annotations
 
 import hashlib
@@ -16,13 +11,13 @@ import pytest
 
 from scripts import gen_attestations as ga
 from scripts import verify_attestation_append as verifier
-from scripts.attestation_sets import discovery, verify_set
+from scripts.attestation_sets import discovery, first_parent_order, verify_set
 from scripts.tests.test_append_set_isolation import NOW, accept, git, staged_bytes
 from scripts.tests.test_attestations import fixture_root
 from scripts.verify_attestation_binding import ContractError
 
 ROOT = Path(__file__).resolve().parents[2]
-INCIDENT = "12c6b966d343937a4fe9ac0adfe8c7f7746450b6"
+INCIDENT = "origin/main"
 PARENT = "efdc505c7d31e8d07136194918bce1f6a8e4e8222037631f798cfa5c0330944f"
 SIBLINGS = (
     "063aa71d64e2dd9f96ef85a7ee7cadcbf6248b27a4232ac031e0ba46b39f8423",
@@ -69,27 +64,116 @@ def test_accepted_git_rejects_nonregular_unreferenced_evidence(tmp_path: Path) -
         verifier.accepted_discovery(root, "HEAD")
 
 
-def test_signed_descendant_of_one_sibling_does_not_reconcile_fork(tmp_path: Path) -> None:
+def merged_fork(tmp_path: Path, *, extension: str | None = None,
+                tie: bool = False) -> tuple[Path, str, str, str]:
+    """Merge immutable siblings; the earlier signed set enters main second."""
     root, key = fixture_root(tmp_path / "left")
     ga.generate(root, key, NOW)
     base = accept(root)
     right = tmp_path / "right"
     shutil.copytree(root, right)
-    ga.generate(root, key, NOW + timedelta(days=1))
-    ga.generate(right, right / key.name, NOW + timedelta(days=2))
-    sibling = staged_bytes(right, base)
-    accept(root)
-    ga.generate(root, key, NOW + timedelta(days=3))
-    accept(root)
-    for path, raw in sibling.items():
+    ga.generate(root, key, NOW + timedelta(days=2))
+    winner = discovery(root)["current_head"]
+    if extension == "accepted":
+        ga.generate(root, key, NOW + timedelta(days=3))
+    terminal = discovery(root)["current_head"]
+    left_paths = staged_bytes(root, base)
+    ga.generate(right, right / key.name, NOW + timedelta(days=1))
+    loser = discovery(right)["current_head"]
+    if extension == "rejected":
+        ga.generate(right, right / key.name, NOW + timedelta(days=3))
+    right_paths = staged_bytes(right, base)
+    git(root, "restore", ".")
+    git(root, "switch", "-c", "left")
+    git(root, "add", "--", *left_paths)
+    git(root, "commit", "-m", "left append")
+    git(root, "switch", "-c", "right", base)
+    for path, raw in right_paths.items():
         target = root / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(raw)
-    accept(root)
-    with pytest.raises(ContractError, match="accepted parent"):
+    git(root, "add", "--", *right_paths)
+    git(root, "commit", "-m", "right append")
+    git(root, "switch", "main")
+    if tie:
+        git(root, "merge", "--no-ff", "-m", "both siblings", "left", "right")
+    else:
+        git(root, "merge", "--no-ff", "-m", "first accepted", "left")
+        git(root, "merge", "--no-ff", "-m", "second accepted", "right")
+    return root, winner, loser, terminal
+
+
+@pytest.mark.parametrize("extension", [None, "accepted"])
+def test_first_merged_child_and_accepted_extension_agree(
+    tmp_path: Path, extension: str | None,
+) -> None:
+    root, winner, loser, terminal = merged_fork(tmp_path, extension=extension)
+    for document in (discovery(root), verifier.accepted_discovery(root, "HEAD")):
+        assert document["current_head"] == terminal
+        assert document["rejected_heads"] == {loser: winner}
+        assert loser not in document["heads"]
+    verifier.verify_append(root, "HEAD")
+
+
+def test_extension_of_rejected_child_fails(tmp_path: Path) -> None:
+    root, _, _, _ = merged_fork(tmp_path, extension="rejected")
+    with pytest.raises(ContractError, match="fork or disconnected accepted forward head"):
         discovery(root)
-    with pytest.raises(ContractError, match="accepted parent"):
-        verifier.accepted_discovery(root, "HEAD")
+    with pytest.raises(ContractError, match="fork or disconnected accepted forward head"):
+        verifier.verify_append(root, "HEAD")
+
+
+def test_generator_appends_to_accepted_child_after_reconciliation(tmp_path: Path) -> None:
+    root, winner, loser, _ = merged_fork(tmp_path)
+    base = git(root, "rev-parse", "HEAD")
+    ga.generate(root, root / "private.json", NOW + timedelta(days=3))
+    document = discovery(root)
+    terminal = document["current_head"]
+    assert document["envelopes"][terminal]["parent_head"] == winner
+    assert document["rejected_heads"] == {loser: winner}
+    paths = verifier.append_paths(root, base)
+    assert any(path.endswith(f"/{terminal}/chain_head.json") for path in paths)
+    assert not any(loser in path for path in paths)
+    verifier.verify_append(root, base)
+
+
+def test_checkpoint_recomputes_rejection_from_accepted_history(tmp_path: Path) -> None:
+    root, winner, loser, _ = merged_fork(tmp_path)
+    document = discovery(root)
+    document.pop("rejected_heads")
+    ga.dump(root / "attestations/chain-index.json", document)
+    accept(root)
+    for result in (discovery(root), verifier.accepted_discovery(root, "HEAD")):
+        assert result["current_head"] == winner
+        assert result["rejected_heads"] == {loser: winner}
+
+
+def test_candidate_cannot_use_history_beyond_accepted_base(tmp_path: Path) -> None:
+    root, _, _, _ = merged_fork(tmp_path)
+    assert discovery(root)["current_head"]
+    with pytest.raises(ContractError, match="fork or disconnected accepted forward head"):
+        verifier.verify_append(root, "HEAD~1")
+    with pytest.raises(ContractError, match="fork or disconnected accepted forward head"):
+        discovery(root, fork_order={})
+
+
+@pytest.mark.parametrize("unavailable", ["tie", "missing_merge", "shallow", "no_git"])
+def test_undecidable_fork_fails_closed(tmp_path: Path, unavailable: str) -> None:
+    root, _, _, _ = merged_fork(tmp_path, tie=unavailable == "tie")
+    if unavailable == "missing_merge":
+        git(root, "reset", "--soft", "HEAD~1")
+        git(root, "commit", "-m", "direct introduction has no introducing merge")
+    elif unavailable == "shallow":
+        clone = tmp_path / "shallow"
+        git(tmp_path, "clone", "--depth=1", root.as_uri(), str(clone))
+        root = clone
+    elif unavailable == "no_git":
+        shutil.rmtree(root / ".git")
+    with pytest.raises(ContractError, match="fork or disconnected accepted forward head"):
+        discovery(root)
+    if unavailable != "no_git":
+        with pytest.raises(ContractError, match="fork or disconnected accepted forward head"):
+            verifier.accepted_discovery(root, "HEAD")
 
 
 @pytest.mark.parametrize("mutation", ["edit", "delete"])
@@ -111,7 +195,7 @@ def test_streaming_verifier_preserves_raw_byte_immutability(
         verifier.verify_append(root, base)
 
 
-def test_on_disk_fork_has_no_generator_or_accepted_head() -> None:
+def test_on_disk_fork_selects_first_merged_child_without_evidence_changes() -> None:
     revisions = ROOT / "attestations/2026-10-17/revisions"
 
     def revision_digests() -> dict[Path, str]:
@@ -124,14 +208,16 @@ def test_on_disk_fork_has_no_generator_or_accepted_head() -> None:
         head = verify_set(ROOT, reference)
         assert head["chain_head"] == sibling
         assert head["payload"]["previous_chain_head"] == PARENT
-    # The real differential: neither side returns a value, so no equality of
-    # successful head selections may be asserted for this incident.
-    with pytest.raises(ContractError, match="fork or disconnected accepted forward head") as generator:
-        discovery(ROOT)
-    with pytest.raises(ContractError, match="fork or disconnected accepted forward head") as accepted:
-        verifier.accepted_discovery(ROOT, INCIDENT)
-    assert str(generator.value) == str(accepted.value)
-    assert f"accepted_parent={PARENT}" in str(accepted.value)
-    assert all(sibling in str(accepted.value) for sibling in SIBLINGS)
+    order = first_parent_order(ROOT, INCIDENT)
+    refs = [f"attestations/2026-10-17/revisions/{sibling}/chain_head.json"
+            for sibling in SIBLINGS]
+    assert order[refs[1]] < order[refs[0]]
+    generator = discovery(ROOT)
+    accepted = verifier.accepted_discovery(ROOT, INCIDENT)
+    for document in (generator, accepted):
+        assert document["current_head"] == SIBLINGS[1]
+        assert document["rejected_heads"] == {SIBLINGS[0]: SIBLINGS[1]}
+        assert SIBLINGS[0] not in document["heads"]
     assert before == revision_digests()
-    assert git(ROOT, "diff", INCIDENT, "--", "attestations") == ""
+    assert git(ROOT, "diff", INCIDENT, "--", *[
+        f"attestations/2026-10-17/revisions/{sibling}" for sibling in SIBLINGS]) == ""
