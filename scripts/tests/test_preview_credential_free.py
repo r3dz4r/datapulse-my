@@ -18,8 +18,10 @@ references the production credential.
 
 from __future__ import annotations
 
+import json
 import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -38,8 +40,8 @@ UNSIGNED_MESSAGE = (
     "this release-build is UNSIGNED"
 )
 
-# Every generator the two profiles reference. Stubs keep the test focused on the
-# attestation branch instead of executing the real pipeline.
+# Other generators are stubs to focus on the attestation branch. The dynamic-URL
+# producer runs unchanged, including its calls to the surface generators.
 PYTHON_GENERATORS = (
     "gen_health_trust_summary.py",
     "gen_readme.py",
@@ -62,6 +64,9 @@ PYTHON_GENERATORS = (
     "gen_catalog_graph.py",
     "gen_json_envelope.py",
     "gen_jsonld_catalog.py",
+    "gen_dataset_passports.py",
+    "gen_dataset_pages.py",
+    "gen_okf_bundle.py",
     "gen_dashboard_filters.py",
     "embed_dashboard_data.py",
     "check_url_drift.py",
@@ -90,7 +95,7 @@ NOOP_STUB = "raise SystemExit(0)\n"
 
 
 def _stage_stub_repo(tmp_path: Path, *, registry: bool = True) -> Path:
-    """Create a throwaway tree whose generators are no-op stubs."""
+    """Rehearse the profiles with a real URL producer and stubbed renderers."""
     source = tmp_path / "stub-repo"
     scripts = source / "scripts"
     scripts.mkdir(parents=True)
@@ -100,6 +105,34 @@ def _stage_stub_repo(tmp_path: Path, *, registry: bool = True) -> Path:
         (scripts / name).write_text(content, encoding="utf-8")
     for name in SHELL_GENERATORS:
         (scripts / name).write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    shutil.copy2(ROOT / "scripts/gen_dynamic_manifest_urls.py", scripts)
+    # Use the existing policy unchanged and a confirmed monthly rollover. This
+    # exercises the producer's update and refresh branches without network I/O.
+    policy = json.loads((ROOT / "scripts/probe-policy.json").read_text(encoding="utf-8"))
+    settings = policy["datasets"]["pricecatcher"]
+    template = settings["dynamic-url"]["template"]
+    observed = template.replace("{YYYY-MM}", "2026-10")
+    documents = {
+        "scripts/probe-policy.json": {"datasets": {"pricecatcher": settings}},
+        "datapulse.json": {
+            "datasets": [{
+                "id": "pricecatcher",
+                "url": template.replace("{YYYY-MM}", "2026-09"),
+            }],
+        },
+        "health/latest.json": {
+            "datasets": [{
+                "dataset_id": "pricecatcher",
+                "url": observed,
+                "request_url": observed,
+                "http_status": 200,
+            }],
+        },
+    }
+    for relative, document in documents.items():
+        target = source / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(document) + "\n", encoding="utf-8")
     if registry:
         well_known = source / "docs/.well-known"
         well_known.mkdir(parents=True)
@@ -125,7 +158,7 @@ def _run_generate(
         environment["DATAPULSE_ALLOW_UNSIGNED_BUILD"] = escape
     if key_path is not None:
         environment["DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE"] = str(key_path)
-    return subprocess.run(
+    result = subprocess.run(
         ["bash", "scripts/generate.sh", profile],
         cwd=source,
         env=environment,
@@ -133,6 +166,13 @@ def _run_generate(
         text=True,
         check=False,
     )
+    assert "Dynamic URLs: 1 manifest updates, 1 surface refreshes" in result.stdout, (
+        result.stdout + result.stderr
+    )
+    manifest = json.loads((source / "datapulse.json").read_text(encoding="utf-8"))
+    health = json.loads((source / "health/latest.json").read_text(encoding="utf-8"))
+    assert manifest["datasets"][0]["url"] == health["datasets"][0]["request_url"]
+    return result
 
 
 def _attestation_log(source: Path) -> str | None:
