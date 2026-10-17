@@ -3,24 +3,24 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": null,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "cadence_fallback",
+        "mode": "not_evaluated",
         "sample_days": 7,
         "stdev_days": null,
-        "threshold_days": 0.125,
+        "threshold_days": null,
         "window_days": 14
       }
     },
     "expected_record_count": null,
-    "freshness_signal": "content-date-parse",
-    "freshness_signal_source": "content_date_parse",
+    "freshness_signal": "no-header",
+    "freshness_signal_source": "none",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-17T02:58:51Z",
+    "last_checked": "2026-10-17T03:15:17Z",
     "record_count": null,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "degraded"
   },
   "identity": {
     "canonical_url": "https://www.eperolehan.gov.my/quotation-tender-notice",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "ePerolehan Tender Notices (DIIKLANKAN)",
     "namespace": "other",
-    "observed_verified_at": "2026-10-17T02:58:51Z",
+    "observed_verified_at": "2026-10-17T03:15:17Z",
     "source": "ePerolehan",
     "steward": "Ministry of Finance Malaysia"
   },
@@ -894,7 +894,7 @@
     "receipt": {
       "evidence_path": "data/eperolehan-diklankan.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:b238bc6533333c2d8ca5c443289533aec071000563b1f5fdf3e3d79d97d1589c",
+      "receipt_digest": "sha256:eaa0c35717de0ca34c534fac6b1012b3576a5496fbb9bbbbad6c9ef85603fd5f",
       "sigstore_path": "data/eperolehan-diklankan.receipt.sigstore.json",
       "statement_path": "data/eperolehan-diklankan.receipt.statement.json"
     },
