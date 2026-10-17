@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 3.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-16T22:33:47Z",
-    "record_count": 37960,
+    "last_checked": "2026-10-17T23:45:43Z",
+    "record_count": 37970,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:d03b0c9174a885656d7c0b69e9eed754073781d89ce0fd333378609089ad9bb2"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=blood_donations",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily Blood Donations by Blood Group",
     "namespace": "healthcare",
-    "observed_verified_at": "2026-10-16T22:33:47Z",
+    "observed_verified_at": "2026-10-17T23:45:43Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "National Blood Centre and Ministry of Health Malaysia"
   },
@@ -846,7 +846,7 @@
     "receipt": {
       "evidence_path": "data/blood_donations.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:153ec426c69b831a51311c688c36cc53fd34f63f57768b1f5f5329fc0befb352",
+      "receipt_digest": "sha256:e7fb706cf18174ed7b2af24c16960cedc49a3daecb696f0610f44f244a2225a3",
       "sigstore_path": "data/blood_donations.receipt.sigstore.json",
       "statement_path": "data/blood_donations.receipt.statement.json"
     },
