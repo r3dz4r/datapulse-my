@@ -326,7 +326,13 @@ def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
         children = [(digest, reference, head) for digest, (reference, head) in pending.items()
                     if head["payload"]["previous_chain_head"] == parent]
         if len(children) != 1:
-            raise ContractError("fork or disconnected accepted forward head: candidate does not append to accepted parent")
+            # Neither filesystem order nor publication time authorizes a
+            # sibling. Report the signed operands rather than choosing one.
+            predecessors = {digest: head["payload"]["previous_chain_head"]
+                            for digest, (_, head) in sorted(pending.items())}
+            raise ContractError(
+                "fork or disconnected accepted forward head: candidate does not append to accepted parent; "
+                f"accepted_parent={parent}; pending_parents={json.dumps(predecessors, sort_keys=True)}")
         digest, reference, head = children[0]
         day = head["payload"]["date"]
         run = document["days"].setdefault(day, [])
