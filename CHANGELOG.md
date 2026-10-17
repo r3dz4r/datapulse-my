@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.30](https://github.com/r3dz4r/datapulse-my/compare/v3.55.29...v3.55.30) (2026-10-17)
+
+
+### Bug Fixes
+
+* **urls:** follow the probe policy's monthly roll in the manifest ([f63aeb5](https://github.com/r3dz4r/datapulse-my/commit/f63aeb51e8ceae7e80518b36169b671ad60f861d))
+* **urls:** follow the probe policy's monthly roll in the manifest ([5141eab](https://github.com/r3dz4r/datapulse-my/commit/5141eab9c4d7cb2782779c8ea9159f61f03b986e))
+
 ## [3.55.29](https://github.com/r3dz4r/datapulse-my/compare/v3.55.28...v3.55.29) (2026-10-17)
 
 
