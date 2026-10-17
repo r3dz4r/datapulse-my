@@ -1,0 +1,34 @@
+{
+  "schema": "datapulse/v1/attestation-binding-envelope",
+  "payload": {
+    "schema": "datapulse/v1/attestation-binding",
+    "date": "2026-10-17",
+    "published_at": "2026-10-17T07:47:53Z",
+    "freshness": {
+      "max_age_seconds": 129600
+    },
+    "health": {
+      "artifact_ref": "health/latest.json",
+      "artifact_sha256": "7e13b4844e7f55e113effe660aa9de2f66c509c566b6f364c2c423e35f5a7baa",
+      "dataset_count": 440,
+      "dataset_ids_sha256": "50d2b243aeee23470db89defc80ecfe5a776f40d4fc556163529311ccbc266e1",
+      "observed_at": "2026-10-17T07:34:18Z"
+    },
+    "ed25519": {
+      "chain_head_ref": "attestations/2026-10-17/revisions/8730c6aa944bdb88fbe1b1fafe08549e9a8951f8754a0124450d923dd147d4cf/chain_head.json",
+      "chain_head": "8730c6aa944bdb88fbe1b1fafe08549e9a8951f8754a0124450d923dd147d4cf",
+      "key_id": "ed25519-a829715828ba0f88",
+      "key_status": "active"
+    }
+  },
+  "signature_base64": "O4DY3O6yZ3Ioous/PO+rtHcvMSLzWe7MQ33Ph1row/LtoLjZIMU4U78E7DbkWN0AaIbG0xk3cRb5wZwz2LvTDA==",
+  "claims": {
+    "artifact_signed": true,
+    "rekor_witnessed": true,
+    "source_truth_verified": false
+  },
+  "rekor": {
+    "reference_ref": "attestations/rekor/2026-10-17/reference.6018ccdd03c8cb08f006d97a0e775fa0ebdfb213f72a238a742650e2bbff19b0.json",
+    "bundle_ref": "attestations/rekor/2026-10-17/health.6018ccdd03c8cb08f006d97a0e775fa0ebdfb213f72a238a742650e2bbff19b0.sigstore.bundle.json"
+  }
+}
