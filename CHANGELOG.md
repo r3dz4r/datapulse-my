@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.29](https://github.com/r3dz4r/datapulse-my/compare/v3.55.28...v3.55.29) (2026-10-17)
+
+
+### Bug Fixes
+
+* **mcp:** admit a degraded headerless snapshot as a legitimate state ([7594e98](https://github.com/r3dz4r/datapulse-my/commit/7594e98a312dba0d48ccdd93260ab7e2c50d2ec4))
+
 ## [3.55.28](https://github.com/r3dz4r/datapulse-my/compare/v3.55.27...v3.55.28) (2026-10-16)
 
 
