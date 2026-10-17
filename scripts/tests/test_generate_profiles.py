@@ -26,6 +26,7 @@ RELEASE_FIXTURE = ROOT / "scripts/tests/fixtures/generator/python_release"
 SHELL_FIXTURE = ROOT / "scripts/tests/fixtures/generator/shell"
 GENERATORS = (
     "bump_mcp_source_version.py",
+    "gen_dynamic_manifest_urls.py",
     "gen_data_reports.sh",
     "gen_badges.sh",
     "gen_status_legend.sh",
@@ -333,6 +334,7 @@ def _stage_source(tmp_path: Path) -> Path:
 
     scripts = source / "scripts"
     scripts.mkdir()
+    _write_json(scripts / "probe-policy.json", {"datasets": {}})
     shutil.copytree(ROOT / "scripts/templates", scripts / "templates")
     shutil.copy2(ROOT / "scripts/generate.sh", scripts / "generate.sh")
     shutil.copy2(ROOT / "scripts/public_surface_generation.py", scripts / "public_surface_generation.py")
@@ -591,7 +593,7 @@ def test_attempts_remaining_steps_after_failure(tmp_path: Path) -> None:
     )
 
     assert result.returncode != 0
-    assert "Step 14/14:" in result.stdout
+    assert "Step 15/15:" in result.stdout
     assert "Failures (" in result.stderr
 
 
