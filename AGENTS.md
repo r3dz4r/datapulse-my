@@ -50,7 +50,7 @@ datapulse-my/
 │   ├── trust-layer-notebook.AGENTS.md
 │   └── ...
 │
-├── scripts/                   # 127 Python files driving the pipeline
+├── scripts/                   # 128 Python files driving the pipeline
 │   ├── gen_*.py               # generators (regenerate artifacts from sources)
 │   ├── verify_*.py            # invariants (release-blocking)
 │   ├── validate_*.py          # schema + content validators

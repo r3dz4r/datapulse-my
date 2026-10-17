@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
-import io
-from pathlib import Path
+from collections.abc import Iterator
+import fnmatch
+import hashlib
+import os
+from pathlib import Path, PurePosixPath
 import subprocess
 import sys
-import tempfile
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -17,6 +19,7 @@ from scripts.attestation_sets import (
     PIPELINE_OWNED_PROJECTIONS,
     discovery,
     external_rekor_paths,
+    first_parent_order,
     set_directory,
     verify_legacy_mirror,
     selected_directory,
@@ -90,47 +93,170 @@ def git_bytes(root: Path, revision: str, path: str) -> bytes:
     return subprocess.run(["git", "show", f"{revision}:{path}"], cwd=root, check=True, capture_output=True).stdout
 
 
-def accepted_files(root: Path, revision: str) -> dict[str, bytes]:
-    """Read accepted evidence in one Git operation, preserving exact raw bytes."""
-    entries = subprocess.run(["git", "ls-tree", "-rz", revision, "--", "attestations",
-                              "docs/.well-known/datapulse-probe-keys.json"],
-                             cwd=root, check=True, capture_output=True).stdout.split(b"\0")
-    blobs = []
-    for entry in filter(None, entries):
-        metadata, path = entry.split(b"\t", 1)
-        mode, kind, digest = metadata.split()
-        if kind != b"blob" or mode not in {b"100644", b"100755"}:
+def _tree_entries(root: Path, *args: str) -> Iterator[tuple[str, str, str, str]]:
+    """Stream NUL-delimited tree metadata, retaining at most one pipe chunk."""
+    command = ["git", "ls-tree", "-z", *args]
+    with subprocess.Popen(command, cwd=root, stdout=subprocess.PIPE) as process:
+        pending = b""
+        try:
+            while chunk := process.stdout.read(65536):
+                entries = (pending + chunk).split(b"\0")
+                pending = entries.pop()
+                for entry in entries:
+                    metadata, path = entry.split(b"\t", 1)
+                    mode, kind, digest = metadata.decode("ascii").split()
+                    yield mode, kind, digest, path.decode("utf-8")
+            if pending:
+                raise ContractError("accepted Git tree entry is incomplete")
+            if process.wait():
+                raise subprocess.CalledProcessError(process.returncode, command)
+        finally:
+            # Closing a partially consumed iterator must not leave ls-tree
+            # blocked on a full pipe (including on a validation failure).
+            if process.poll() is None:
+                process.terminate()
+
+
+def accepted_files(root: Path, revision: str) -> Iterator[tuple[str, str]]:
+    """Yield accepted paths and Git object IDs, never all historical blob bytes."""
+    for mode, kind, digest, path in _tree_entries(
+            root, "-r", revision, "--", "attestations",
+            "docs/.well-known/datapulse-probe-keys.json"):
+        if kind != "blob" or mode not in {"100644", "100755"}:
             raise ContractError("accepted attestation evidence must be regular files")
-        blobs.append((path.decode("utf-8"), digest))
-    if not blobs:
-        return {}
-    batch = subprocess.run(["git", "cat-file", "--batch"], cwd=root, check=True,
-                           input=b"".join(digest + b"\n" for _, digest in blobs), capture_output=True).stdout
-    stream, result = io.BytesIO(batch), {}
-    for path, digest in blobs:
-        actual, kind, size = stream.readline().split()
-        if actual != digest or kind != b"blob":
+        yield path, digest
+
+
+class _GitPath:
+    """Read-only subset of Path used by discovery, backed by one Git tree.
+
+    Blob requests are synchronous: cat-file never queues the whole ledger.
+    Only the most recently listed directory is retained, not a file inventory.
+    """
+
+    def __init__(self, tree: _GitTree, path: PurePosixPath = PurePosixPath(".")) -> None:
+        self.tree, self.path = tree, path
+
+    def __truediv__(self, path: str) -> _GitPath:
+        relative = PurePosixPath(path)
+        if relative.is_absolute() or ".." in relative.parts or "\n" in path or "\r" in path:
+            raise ContractError("unsafe accepted Git path")
+        return _GitPath(self.tree, self.path / relative)
+
+    def __lt__(self, other: _GitPath) -> bool:
+        return self.path < other.path
+
+    @property
+    def name(self) -> str:
+        return self.path.name
+
+    def relative_to(self, root: _GitPath) -> PurePosixPath:
+        return self.path.relative_to(root.path)
+
+    def read_bytes(self) -> bytes:
+        return self.tree.read(self.path)
+
+    def read_text(self, encoding: str = "utf-8") -> str:
+        return self.read_bytes().decode(encoding)
+
+    def is_file(self) -> bool:
+        return self.tree.entries(self.path.parent).get(self.name) == "blob"
+
+    def is_dir(self) -> bool:
+        return self.path == PurePosixPath(".") or self.tree.entries(self.path.parent).get(self.name) == "tree"
+
+    def exists(self) -> bool:
+        return self.is_file() or self.is_dir()
+
+    def iterdir(self) -> Iterator[_GitPath]:
+        for name in self.tree.entries(self.path):
+            yield self / name
+
+    def glob(self, pattern: str) -> Iterator[_GitPath]:
+        first, separator, rest = pattern.partition("/")
+        for child in self.iterdir():
+            if fnmatch.fnmatchcase(child.name, first):
+                if not separator:
+                    yield child
+                elif child.is_dir():
+                    yield from child.glob(rest)
+
+
+class _GitTree:
+    """Bounded directory metadata and per-blob access for the signed verifier."""
+
+    def __init__(self, root: Path, revision: str, process: subprocess.Popen) -> None:
+        self.root, self.revision, self.process = root, revision, process
+        self.cached_path: PurePosixPath | None = None
+        self.cached_entries: dict[str, str] = {}
+
+    def entries(self, path: PurePosixPath) -> dict[str, str]:
+        if self.cached_path != path:
+            if path != PurePosixPath(".") and self.entries(path.parent).get(path.name) != "tree":
+                return {}
+            tree = self.revision if path == PurePosixPath(".") else f"{self.revision}:{path}"
+            entries = {}
+            for _, kind, _, name in _tree_entries(self.root, tree):
+                entries[name] = kind
+            self.cached_path, self.cached_entries = path, entries
+        return self.cached_entries
+
+    def read(self, path: PurePosixPath) -> bytes:
+        self.process.stdin.write(f"{self.revision}:{path}\n".encode("utf-8"))
+        self.process.stdin.flush()
+        header = self.process.stdout.readline().split()
+        if len(header) == 2 and header[1] == b"missing":
+            raise FileNotFoundError(str(path))
+        if len(header) != 3 or header[1] != b"blob":
             raise ContractError("accepted Git blob is missing or invalid")
-        result[path] = stream.read(int(size))
-        if len(result[path]) != int(size) or stream.read(1) != b"\n":
+        size = int(header[2])
+        data = self.process.stdout.read(size)
+        if len(data) != size or self.process.stdout.read(1) != b"\n":
             raise ContractError("accepted Git blob bytes are incomplete")
-    return result
+        return data
 
 
-def accepted_discovery(root: Path, revision: str, files: dict[str, bytes] | None = None) -> dict:
-    """Resolve the accepted tree, including sets absent from its legacy index."""
-    files = accepted_files(root, revision) if files is None else files
-    with tempfile.TemporaryDirectory(prefix="accepted-attestations-") as temporary:
-        for path, data in files.items():
-            target = Path(temporary) / path
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(data)
-        return discovery(Path(temporary))
+def accepted_discovery(root: Path, revision: str) -> dict:
+    """Verify accepted signed sets directly from Git without exporting the ledger."""
+    revision = subprocess.run(["git", "rev-parse", "--verify", f"{revision}^{{commit}}"],
+                              cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+    order = first_parent_order(root, revision)
+    # Preserve the original rejection of nonregular evidence, including files
+    # not referenced by a signed set. This scans metadata only.
+    for _ in accepted_files(root, revision):
+        pass
+    with subprocess.Popen(["git", "cat-file", "--batch"], cwd=root,
+                          stdin=subprocess.PIPE, stdout=subprocess.PIPE) as process:
+        try:
+            document = discovery(_GitPath(_GitTree(root, revision, process)), fork_order=order)
+        except BaseException:
+            # An invalid object header can leave unread output in the pipe.
+            # Do not wait for a writer blocked on that output after rejection.
+            process.terminate()
+            process.wait()
+            raise
+        finally:
+            process.stdin.close()
+        if process.wait():
+            raise subprocess.CalledProcessError(process.returncode, process.args)
+        return document
+
+
+def _file_object_id(path: Path, algorithm: str) -> str:
+    """Hash exact on-disk bytes as a Git blob, including its length header."""
+    digest = hashlib.new(algorithm)
+    with path.open("rb") as source:
+        size = os.fstat(source.fileno()).st_size
+        digest.update(f"blob {size}\0".encode("ascii"))
+        while chunk := source.read(65536):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def append_paths(root: Path, base: str) -> list[str]:
     """Return only immutable files belonging to new, verified append sets."""
-    old, new = accepted_discovery(root, base), discovery(root)
+    old = accepted_discovery(root, base)
+    new = discovery(root, fork_order=first_parent_order(root, base))
     paths = set()
     for digest in set(new["heads"]) - set(old["heads"]):
         directory = set_directory(new["heads"][digest])
@@ -158,14 +284,15 @@ def append_paths(root: Path, base: str) -> list[str]:
 
 def verify_append(root: Path, base: str, require_committed: bool = False) -> None:
     """Reject rewritten ledger bytes, remaps, lost entries, forks and stale parents."""
-    files = accepted_files(root, base)
-    for path, data in files.items():
+    algorithm = subprocess.run(["git", "rev-parse", "--show-object-format"], cwd=root,
+                               check=True, capture_output=True, text=True).stdout.strip()
+    for path, digest in accepted_files(root, base):
         if not path.startswith("attestations/") or path in PROJECTIONS or path.startswith("attestations/latest/"):
             continue
-        if not (root / path).is_file() or (root / path).read_bytes() != data:
+        if not (root / path).is_file() or _file_object_id(root / path, algorithm) != digest:
             raise ValueError(f"immutable evidence changed or deleted: {path}")
-    old = accepted_discovery(root, base, files)
-    new = discovery(root)
+    old = accepted_discovery(root, base)
+    new = discovery(root, fork_order=first_parent_order(root, base))
     for field in ("heads", "anchors", "envelopes"):
         if any(new.get(field, {}).get(k) != v for k, v in old.get(field, {}).items()):
             raise ValueError(f"accepted {field} entry replaced or deleted")
