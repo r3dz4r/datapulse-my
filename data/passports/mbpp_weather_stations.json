@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "ArcGIS FeatureServer read-only GET/query",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-17T12:44:12Z",
+    "last_checked": "2026-10-17T13:04:03Z",
     "record_count": 28,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "fresh"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://vip.mbpp.gov.my/vipserver/rest/services/Weather_Station/FeatureServer/50",
@@ -39,7 +39,7 @@
     "geography": "Pulau Pinang (MBPP weather-station locations)",
     "name": "MBPP Weather Station Observations",
     "namespace": "weather",
-    "observed_verified_at": "2026-10-17T12:44:12Z",
+    "observed_verified_at": "2026-10-17T13:04:03Z",
     "source": "MBPP ArcGIS FeatureServer",
     "steward": "Majlis Bandaraya Pulau Pinang (MBPP)"
   },
@@ -833,7 +833,7 @@
     "receipt": {
       "evidence_path": "data/mbpp_weather_stations.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:ea9448a6d92ec5817b872828b4d47ef1cd4c8f47467ad133264446645caf5c16",
+      "receipt_digest": "sha256:6fef77dbbd2a5ac553be863577368d3b492ea3dda1a2ad40fc692005a727a8bc",
       "sigstore_path": "data/mbpp_weather_stations.receipt.sigstore.json",
       "statement_path": "data/mbpp_weather_stations.receipt.statement.json"
     },
