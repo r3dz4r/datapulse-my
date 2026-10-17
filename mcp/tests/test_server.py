@@ -2485,9 +2485,9 @@ def test_browser_content_freshness_extraction() -> None:
     assert any(item["content_freshness_date"] for item in browser_datasets)
 
 
-def test_headerless_direct_datasets_distinguish_reference_data() -> None:
-    manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
-    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+def _assert_headerless_direct_datasets_distinguish_reference_data(
+    manifest: dict, health: dict
+) -> None:
     reference_ids = {
         item["id"] for item in manifest["datasets"] if item.get("data_type") == "reference"
     }
@@ -2504,9 +2504,79 @@ def test_headerless_direct_datasets_distinguish_reference_data() -> None:
     assert all(
         item["freshness_signal_source"] == "none"
         and item["status"]
-        == ("reference" if item["dataset_id"] in reference_ids else "unknown-freshness")
+        in {
+            "degraded",
+            "reference" if item["dataset_id"] in reference_ids else "unknown-freshness",
+        }
         for item in headerless_without_content_date
     )
+
+
+def test_headerless_direct_datasets_distinguish_reference_data() -> None:
+    manifest = json.loads((REPO_DIR / "datapulse.json").read_text(encoding="utf-8"))
+    health = json.loads((REPO_DIR / "health/latest.json").read_text(encoding="utf-8"))
+    _assert_headerless_direct_datasets_distinguish_reference_data(manifest, health)
+
+
+@pytest.fixture
+def headerless_direct_snapshot() -> tuple[dict, dict]:
+    dataset_id = "synthetic-headerless"
+    manifest = {"datasets": [{"id": dataset_id, "data_type": "dataset"}]}
+    health = {
+        "datasets": [
+            {
+                "dataset_id": dataset_id,
+                "http_status": 200,
+                "access_dependency": "direct",
+                "last_modified": None,
+                "content_freshness_date": None,
+                "freshness_signal_source": "none",
+                "status": "unknown-freshness",
+            }
+        ]
+    }
+    return manifest, health
+
+
+@pytest.mark.parametrize(
+    ("status", "is_reference"),
+    [
+        ("reference", True),
+        ("unknown-freshness", False),
+        ("degraded", False),
+    ],
+)
+def test_headerless_direct_statuses(
+    headerless_direct_snapshot: tuple[dict, dict], status: str, is_reference: bool
+) -> None:
+    manifest, health = headerless_direct_snapshot
+    if is_reference:
+        manifest["datasets"][0]["data_type"] = "reference"
+    health["datasets"][0]["status"] = status
+    _assert_headerless_direct_datasets_distinguish_reference_data(manifest, health)
+
+
+@pytest.mark.parametrize(
+    "status",
+    ["fresh", "aging", "stale", "discontinued", "browser_dependent", "unreachable", "unknown"],
+)
+def test_headerless_direct_claimed_status_is_rejected(
+    headerless_direct_snapshot: tuple[dict, dict], status: str
+) -> None:
+    manifest, health = headerless_direct_snapshot
+    health["datasets"][0]["status"] = status
+    with pytest.raises(AssertionError):
+        _assert_headerless_direct_datasets_distinguish_reference_data(manifest, health)
+
+
+def test_headerless_direct_degraded_requires_no_freshness_signal(
+    headerless_direct_snapshot: tuple[dict, dict],
+) -> None:
+    manifest, health = headerless_direct_snapshot
+    health["datasets"][0]["status"] = "degraded"
+    health["datasets"][0]["freshness_signal_source"] = "content_date_parse"
+    with pytest.raises(AssertionError):
+        _assert_headerless_direct_datasets_distinguish_reference_data(manifest, health)
 
 
 def test_gtfs_static_ktmb_in_manifest() -> None:
