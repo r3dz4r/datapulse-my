@@ -327,13 +327,17 @@ def generate_envelope(root: str, row: dict[str, Any], health: dict[str, Any]) ->
     return row["id"], serialized
 
 
-def generate(root: Path, *, dry_run: bool, force: bool) -> int:
+def generate(root: Path, *, dry_run: bool, force: bool, target_dataset_id: str | None = None) -> int:
     manifest = load_json(root / "datapulse.json")
     snapshot = load_json(root / "health/latest.json")
     manifest_rows = manifest.get("datasets")
     health_rows = snapshot.get("datasets")
     if not isinstance(manifest_rows, list) or not isinstance(health_rows, list):
         raise ValueError("datapulse.json and health/latest.json must contain datasets arrays")
+    if target_dataset_id is not None and not any(
+        isinstance(row, dict) and row.get("id") == target_dataset_id for row in manifest_rows
+    ):
+        raise ValueError(f"datapulse.json has no dataset {target_dataset_id}")
     health_by_id = {
         row["dataset_id"]: row
         for row in health_rows
@@ -345,6 +349,8 @@ def generate(root: Path, *, dry_run: bool, force: bool) -> int:
         if not isinstance(row, dict) or not isinstance(row.get("id"), str):
             raise ValueError("datapulse.json contains a dataset without a string id")
         dataset_id = row["id"]
+        if target_dataset_id is not None and target_dataset_id != dataset_id:
+            continue
         if "gtfs" in dataset_id.lower():
             continue
         path = output_dir / f"{dataset_id}.json"
@@ -382,8 +388,9 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--dataset", help="Regenerate only this manifest dataset")
     args = parser.parse_args()
-    generate(args.root.resolve(), dry_run=args.dry_run, force=args.force)
+    generate(args.root.resolve(), dry_run=args.dry_run, force=args.force, target_dataset_id=args.dataset)
     return 0
 
 

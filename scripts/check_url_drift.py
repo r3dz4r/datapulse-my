@@ -66,6 +66,10 @@ def compare_urls(sources: dict[str, dict[str, str | None]]) -> list[str]:
 def audit(root: Path) -> tuple[list[str], list[str]]:
     manifest = read_json(root / "datapulse.json")["datasets"]
     health = {row["dataset_id"]: row for row in read_json(root / "health/latest.json")["datasets"]}
+    policy = read_json(root / "scripts/probe-policy.json")["datasets"]
+    if not isinstance(policy, dict) or not all(isinstance(settings, dict) for settings in policy.values()):
+        raise ValueError("probe policy must contain dataset settings")
+    dynamic_ids = {dataset_id for dataset_id, settings in policy.items() if "dynamic-url" in settings}
     # The homepage register is rendered from the canonical manifest; its inline
     # payload is intentionally limited to one dataset and cannot be this audit's
     # catalogue-wide source of truth.
@@ -85,6 +89,7 @@ def audit(root: Path) -> tuple[list[str], list[str]]:
 
     sources = {}
     cadence = []
+    availability = []
     for entry in manifest:
         dataset_id = entry["id"]
         sources[dataset_id] = {
@@ -96,6 +101,11 @@ def audit(root: Path) -> tuple[list[str], list[str]]:
         }
         if dataset_id.startswith(GTFS_PREFIX):
             sources[dataset_id].pop("json envelope")
+        if dataset_id in dynamic_ids:
+            sources[dataset_id]["observed request"] = url(health.get(dataset_id), "request_url")
+            status = health.get(dataset_id, {}).get("http_status")
+            if type(status) is not int or not 200 <= status < 300:
+                availability.append(f"{dataset_id}: observed URL has no confirmed HTTP 2xx (status={status!r})")
         frequency = entry.get("refresh_frequency")
         if frequency not in ALLOWED_FREQUENCIES:
             cadence.append(f"{dataset_id}: unsupported refresh_frequency={frequency!r}")
@@ -107,7 +117,7 @@ def audit(root: Path) -> tuple[list[str], list[str]]:
     html = (root / "docs/index.html").read_text(encoding="utf-8")
     if 'dataset.refresh_frequency ? `On its ${dataset.refresh_frequency} cadence`' not in html:
         cadence.append("dashboard: Next expected update is not derived from dataset.refresh_frequency")
-    return compare_urls(sources), cadence
+    return compare_urls(sources) + availability, cadence
 
 
 def main() -> int:
