@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=arc_dosm","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-16T22:33:47Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-12T18:33:27Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/dosm_arc_dosm.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 316
-stale_after: "2026-10-17T12:00:00Z"
+stale_after: "2026-10-13T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
