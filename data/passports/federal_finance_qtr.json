@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1020.0,
+        "latest_days": 199.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-10T11:37:57Z",
-    "record_count": 1243,
+    "last_checked": "2026-10-17T11:44:34Z",
+    "record_count": 1342,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:f29e92166efabfccf3ef82e36a103dcf5b6b65eca76b4f4f440708122a086003"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=federal_finance_qtr",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Quarterly Federal Government Finance",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-10T11:37:57Z",
+    "observed_verified_at": "2026-10-17T11:44:34Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "Accountant General’s Department of Malaysia"
   },
@@ -886,7 +886,7 @@
     "receipt": {
       "evidence_path": "data/federal_finance_qtr.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:cc5286d2e4cc03018a74ce52bc06eb95526e33e26c8e7ee514106a882a41b668",
+      "receipt_digest": "sha256:4f084d02aa28e40b2878cc49db65cf9407221c80eb654a06559073fe26f7986b",
       "sigstore_path": "data/federal_finance_qtr.receipt.sigstore.json",
       "statement_path": "data/federal_finance_qtr.receipt.statement.json"
     },
