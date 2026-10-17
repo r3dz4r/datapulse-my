@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 108.0,
+        "latest_days": 77.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-10T11:37:57Z",
-    "record_count": 296,
+    "last_checked": "2026-10-17T11:44:34Z",
+    "record_count": 299,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:6e34eb2042e5bc362956a3c064a74f828b52fc81d4e8c75a261ef928166e3fd3"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=iowrt",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Headline Wholesale & Retail Trade",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-10T11:37:57Z",
+    "observed_verified_at": "2026-10-17T11:44:34Z",
     "source": "DOSM via data.gov.my",
     "steward": "Department of Statistics Malaysia"
   },
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_iowrt.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:c84dcee4448a8a6c4baf9e96b7f1b1398f01a0f72ec8300d5f6524017236217e",
+      "receipt_digest": "sha256:73dfa12d1751280f886e630602f8b845f1c04446a755a1d8747f1c2acdfedf9f",
       "sigstore_path": "data/dosm_iowrt.receipt.sigstore.json",
       "statement_path": "data/dosm_iowrt.receipt.statement.json"
     },

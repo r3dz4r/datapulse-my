@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1020.0,
+        "latest_days": 199.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-10T11:37:57Z",
-    "record_count": 2373,
+    "last_checked": "2026-10-17T11:44:34Z",
+    "record_count": 2562,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:bbc19ae5b40f0658b9ffb02e2b93a5e86f5e325e01cfbf10150cae2e4df9146c"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/publicadmin/federal_finance_qtr_revenue.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia (federal government)",
     "name": "data.gov.my Quarterly Federal Government Revenue",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-10T11:37:57Z",
+    "observed_verified_at": "2026-10-17T11:44:34Z",
     "source": "data.gov.my (storage.data.gov.my)",
     "steward": "Accountant General's Department of Malaysia"
   },
@@ -847,7 +847,7 @@
     "receipt": {
       "evidence_path": "data/federal_finance_qtr_revenue.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:c367f18f1e9c932741dec35efcfbd2696e8f635a5787ba04fab733a802b12616",
+      "receipt_digest": "sha256:a3a52fedb4fea51c02e103d1546048284ecc29c4d3f45d2f8de55b66a3dd369d",
       "sigstore_path": "data/federal_finance_qtr_revenue.receipt.sigstore.json",
       "statement_path": "data/federal_finance_qtr_revenue.receipt.statement.json"
     },
