@@ -19,6 +19,7 @@ from scripts.attestation_sets import (
     PIPELINE_OWNED_PROJECTIONS,
     discovery,
     external_rekor_paths,
+    first_parent_order,
     set_directory,
     verify_legacy_mirror,
     selected_directory,
@@ -219,6 +220,7 @@ def accepted_discovery(root: Path, revision: str) -> dict:
     """Verify accepted signed sets directly from Git without exporting the ledger."""
     revision = subprocess.run(["git", "rev-parse", "--verify", f"{revision}^{{commit}}"],
                               cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+    order = first_parent_order(root, revision)
     # Preserve the original rejection of nonregular evidence, including files
     # not referenced by a signed set. This scans metadata only.
     for _ in accepted_files(root, revision):
@@ -226,7 +228,7 @@ def accepted_discovery(root: Path, revision: str) -> dict:
     with subprocess.Popen(["git", "cat-file", "--batch"], cwd=root,
                           stdin=subprocess.PIPE, stdout=subprocess.PIPE) as process:
         try:
-            document = discovery(_GitPath(_GitTree(root, revision, process)))
+            document = discovery(_GitPath(_GitTree(root, revision, process)), fork_order=order)
         except BaseException:
             # An invalid object header can leave unread output in the pipe.
             # Do not wait for a writer blocked on that output after rejection.
@@ -253,7 +255,8 @@ def _file_object_id(path: Path, algorithm: str) -> str:
 
 def append_paths(root: Path, base: str) -> list[str]:
     """Return only immutable files belonging to new, verified append sets."""
-    old, new = accepted_discovery(root, base), discovery(root)
+    old = accepted_discovery(root, base)
+    new = discovery(root, fork_order=first_parent_order(root, base))
     paths = set()
     for digest in set(new["heads"]) - set(old["heads"]):
         directory = set_directory(new["heads"][digest])
@@ -289,7 +292,7 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
         if not (root / path).is_file() or _file_object_id(root / path, algorithm) != digest:
             raise ValueError(f"immutable evidence changed or deleted: {path}")
     old = accepted_discovery(root, base)
-    new = discovery(root)
+    new = discovery(root, fork_order=first_parent_order(root, base))
     for field in ("heads", "anchors", "envelopes"):
         if any(new.get(field, {}).get(k) != v for k, v in old.get(field, {}).items()):
             raise ValueError(f"accepted {field} entry replaced or deleted")
