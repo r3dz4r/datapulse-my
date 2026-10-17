@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 23.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": true,
-    "last_checked": "2026-10-10T12:22:40Z",
-    "record_count": 14887,
+    "last_checked": "2026-10-17T12:24:45Z",
+    "record_count": 5055,
     "record_count_estimated": true,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -39,7 +39,7 @@
     "geography": "national",
     "name": "PriceCatcher (Grocery Prices)",
     "namespace": "other",
-    "observed_verified_at": "2026-10-10T12:22:40Z",
+    "observed_verified_at": "2026-10-17T12:24:45Z",
     "source": "data.gov.my (KPDN)",
     "steward": "KPDN"
   },
@@ -623,18 +623,18 @@
               "Different declared and observed URLs are preserved rather than resolved automatically."
             ],
             "reason_codes": [
-              "source_observed_boundary_recorded"
+              "source_observed_url_conflict"
             ],
-            "state": "pass"
+            "state": "unknown"
           }
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 4,
+          "evaluated": 3,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 4,
-          "unknown": 0
+          "passed": 3,
+          "unknown": 1
         },
         "evidence_refs": [
           {
@@ -674,9 +674,9 @@
           "url_declared",
           "publisher_metadata_declared",
           "observation_reference_present",
-          "source_observed_boundary_recorded"
+          "source_observed_url_conflict"
         ],
-        "state": "pass"
+        "state": "unknown"
       },
       "reproducibility": {
         "checks": [
@@ -833,7 +833,7 @@
     "receipt": {
       "evidence_path": "data/pricecatcher.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:05e803e7c972d421cebfba7dda95b92759ce20b10441c9b06daf2ce21467ac73",
+      "receipt_digest": "sha256:5bb46c285294819e036824c58cb1e28c0536431dd525b60aa2b0fd86d5082753",
       "sigstore_path": "data/pricecatcher.receipt.sigstore.json",
       "statement_path": "data/pricecatcher.receipt.statement.json"
     },
