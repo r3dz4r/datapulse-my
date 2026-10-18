@@ -434,6 +434,112 @@ def test_existing_append_bounds_every_call_and_total_budget() -> None:
     assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
 
 
+def test_existing_append_defers_only_at_patience_expiry() -> None:
+    step = _append_existing_step()
+    run = step["run"]
+    assert step["timeout-minutes"] == 32
+    assert int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"]) == 1485
+    assert run.count('echo "state=append-deferred"') == 1
+    assert len(re.findall(r'^\s+defer_append$', run, re.MULTILINE)) == 1
+    assert re.search(r'if \[\[ "\$SECONDS" -ge "\$deadline" \]\]; then\n\s+defer_append\n', run)
+    assert '"$BASH_COMMAND"' in run
+
+
+@pytest.mark.parametrize("status", [124, 137])
+@pytest.mark.parametrize("command,occurrence", [
+    ("bash -Eeuo pipefail", 1),
+    ("bash scripts/close_superseded_appends.sh", 1),
+    ("gh pr list", 1), ("jq length", 1), ("jq -c", 1),
+    ("jq -er .number", 1), ("jq -er .headRefName", 1),
+    ("jq -er .headRefOid", 1), ("jq -er .createdAt", 1),
+    ("date -u +%s", 1), ("date -ud", 1),
+    ("gh pr view", 1), ("jq -e --arg branch", 1),
+    ("jq -r [.statusCheckRollup", 1),
+    ('jq -r .state == "OPEN"', 1), ("gh pr merge", 1),
+    ("gh pr view", 2), ("jq -r [.statusCheckRollup", 2),
+    ("jq -r .state", 2), ("jq -r .headRefOid", 1),
+    ("git fetch", 1), ("git merge-base", 1),
+    ("bash scripts/close_superseded_appends.sh", 2),
+    ("gh pr list", 2), ("jq length", 2), ("jq -c", 2),
+    ("git fetch", 2), ("git merge-base", 2), ("git restore", 1),
+    ("sleep", 1),
+])
+def test_existing_append_command_timeout_is_attributed_and_fails(
+    tmp_path: Path, status: int, command: str, occurrence: int,
+) -> None:
+    """Fault each bounded call and ERR fallback in the real step's child shell."""
+    head = "d" * 40
+    initial = {"number": 99, "headRefName": "attestation/append-contract", "headRefOid": head,
+               "baseRefName": "main", "state": "OPEN", "isCrossRepository": False,
+               "createdAt": "2026-10-15T00:00:00Z", "autoMergeRequest": None,
+               "statusCheckRollup": [{"name": "deterministic-safety-net", "status": "COMPLETED",
+                                      "conclusion": "SUCCESS"}]}
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    # Stub the timeout boundary, retaining the real child shell and JSON parser.
+    # A timed-out read deliberately emits partial stdout to catch swallowed failures.
+    stub = bin_dir / "timeout"
+    stub.write_text(textwrap.dedent('''\
+        #!/bin/bash
+        set -eu
+        if [[ "${0##*/}" == timeout ]]; then shift 3; else set -- "${0##*/}" "$@"; fi
+        if [[ "$*" == "$FAIL_COMMAND"* ]]; then
+          count=0
+          if [[ -f "$COUNT_FILE" ]]; then read -r count < "$COUNT_FILE"; fi
+          count=$((count + 1))
+          echo "$count" > "$COUNT_FILE"
+          if [[ "$count" == "$FAIL_OCCURRENCE" ]]; then
+            printf '%q ' "$@" > "$FAILED_COMMAND_FILE"
+            echo partial-json
+            exit "$FAIL_STATUS"
+          fi
+        fi
+        case "$1 $2" in
+          "bash -Eeuo") exec "$@" ;;
+          "bash scripts/close_superseded_appends.sh")
+            if [[ "$#" -gt 2 ]]; then touch "$MERGED_MARKER"; fi ;;
+          "gh pr")
+            case "$3" in
+              list) if [[ -f "$MERGED_MARKER" ]]; then echo '[]'; else echo "[$INITIAL_PR]"; fi ;;
+              view) if [[ "$*" == *autoMergeRequest* || "$FAIL_COMMAND" == sleep ]]; then echo "$INITIAL_PR"; else echo "$MERGED_PR"; fi ;;
+              merge) : ;;
+              *) exit 2 ;;
+            esac ;;
+          "jq "*) exec "$@" ;;
+          "date "*) exec /usr/bin/date "${@:2}" ;;
+          "git "*) : ;;
+          *) exit 2 ;;
+        esac
+        '''))
+    stub.chmod(0o755)
+    for name in ("date", "sleep"):
+        (bin_dir / name).symlink_to(stub)
+    workflow_env = yaml.safe_load(_workflow())["env"]
+    env = {**os.environ, **{key: str(value) for key, value in workflow_env.items()},
+           "PATH": f"{bin_dir}:{os.environ['PATH']}", "GITHUB_REPOSITORY": "fixture/datapulse",
+           "PROMOTION_SOURCE_SHA": "c" * 40, "INITIAL_PR": json.dumps(initial),
+           "MERGED_PR": json.dumps({**initial, "state": "MERGED"}),
+           "FAIL_COMMAND": command, "FAIL_OCCURRENCE": str(occurrence), "FAIL_STATUS": str(status),
+           "COUNT_FILE": str(tmp_path / "count"), "FAILED_COMMAND_FILE": str(tmp_path / "failed"),
+           "MERGED_MARKER": str(tmp_path / "merged"), "GITHUB_OUTPUT": str(tmp_path / "outputs"),
+           "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
+    result = subprocess.run(["bash", "-c", _append_existing_step()["run"]], cwd=tmp_path, env=env,
+                            capture_output=True, text=True, timeout=10)
+    failed_command = (tmp_path / "failed").read_text().strip()
+    expected_command = command if command.startswith(("date", "sleep")) else failed_command
+    assert result.returncode == status, result.stdout + result.stderr
+    assert set((tmp_path / "outputs").read_text().splitlines()) == {"state=append-wait-failed"}
+    summary = (tmp_path / "summary").read_text()
+    for evidence in (result.stderr, summary):
+        assert expected_command in evidence
+        assert f"status {status}" in evidence
+        elapsed = re.search(r"elapsed (\d+)s", evidence)
+        assert elapsed is not None and int(elapsed[1]) < 1485, evidence
+        assert "patience 1485s" in evidence
+        assert "append-deferred" not in evidence
+    assert "::notice title=append-wait-failed::" in result.stderr
+
+
 @pytest.mark.parametrize("existing", [False, True], ids=["submitted", "already-open"])
 @pytest.mark.parametrize("scenario", [
     "closed", "failure", "cancelled", "timed_out", "force_push", "merged_force_push",
@@ -525,11 +631,16 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
     result = subprocess.run(["bash", "-c", run], cwd=tmp_path, env=env,
                             capture_output=True, text=True, timeout=10)
     calls = log.read_text().splitlines()
-    deferred = scenario in {"lookup_failed", "exhausted", "not_reported"}
+    read_timeout = existing and scenario == "lookup_failed"
+    deferred = scenario in {"exhausted", "not_reported"} or (scenario == "lookup_failed" and not existing)
     assert (result.returncode == 0) is (scenario == "pending_merge" or deferred), result.stdout + result.stderr
     assert ("slept" in calls) is (scenario in {"pending_merge", "exhausted", "not_reported"}
                                   or (scenario == "lookup_failed" and not existing))
-    if scenario != "pending_merge" and not deferred:
+    if read_timeout:
+        assert result.returncode == 124
+        assert "gh pr view 99" in result.stderr
+        assert set((tmp_path / "outputs").read_text().splitlines()) == {"state=append-wait-failed"}
+    elif scenario != "pending_merge" and not deferred:
         assert "PR #99" in result.stderr
         assert "(attestation/append-contract)" in result.stderr
         assert "deterministic-safety-net:" in result.stderr
