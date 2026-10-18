@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:72c57eb9ac44831ceed94f664a408f184b3d665be3b03c1144b17f0b0286371d"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/interbank-swap",
@@ -1129,7 +1129,7 @@
     "receipt": {
       "evidence_path": "data/bnm_interbank_swap.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:dd0cd137a2ef9bdcb48d38119a47ceb834d1dc6f63269b9caf92152114bb7dc3",
+      "receipt_digest": "sha256:f7a2986153a2bafec10903a721316d6ad1dc31b6eab8dc85ece523314eb9c08a",
       "sigstore_path": "data/bnm_interbank_swap.receipt.sigstore.json",
       "statement_path": "data/bnm_interbank_swap.receipt.statement.json"
     },
