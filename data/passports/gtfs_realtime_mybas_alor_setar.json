@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.009907407407407408,
+        "latest_days": 0.0008217592592592593,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-18T01:30:13Z",
-    "record_count": 44,
+    "last_checked": "2026-10-18T01:50:13Z",
+    "record_count": 43,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-alor-setar",
@@ -39,7 +39,7 @@
     "geography": "Alor Setar, Kedah",
     "name": "GTFS Realtime — BAS.MY Alor Setar Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-18T01:30:13Z",
+    "observed_verified_at": "2026-10-18T01:50:13Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_alor_setar.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:9f3faf7913bcb37bcd5fc54519de7115735d43af364bcde68ceea169ae9ace52",
+      "receipt_digest": "sha256:3cd3ca3a774367ba22713d308523b7ac90f05551d1cface83b28216e4e4d2098",
       "sigstore_path": "data/gtfs_realtime_mybas_alor_setar.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_alor_setar.receipt.statement.json"
     },

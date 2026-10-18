@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.010266203703703704,
+        "latest_days": 0.0008101851851851852,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-18T01:30:13Z",
+    "last_checked": "2026-10-18T01:50:13Z",
     "record_count": 25,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuala-terengganu",
@@ -39,7 +39,7 @@
     "geography": "Kuala Terengganu, Terengganu",
     "name": "GTFS Realtime — BAS.MY Kuala Terengganu Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-18T01:30:13Z",
+    "observed_verified_at": "2026-10-18T01:50:13Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_kuala_terengganu.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:f066b3fe1467fa2729743b21e47c0a89ba5ad103ec959de7d6f0010338428ae7",
+      "receipt_digest": "sha256:b8756325846dcdfc5dbbd51411a0809cd7bf72c676319b9f8a175304cc58ecc0",
       "sigstore_path": "data/gtfs_realtime_mybas_kuala_terengganu.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_kuala_terengganu.receipt.statement.json"
     },
