@@ -11,7 +11,7 @@ import pytest
 
 from scripts import gen_attestations as ga
 from scripts import verify_attestation_append as verifier
-from scripts.attestation_sets import discovery, first_parent_order, verify_set
+from scripts.attestation_sets import assert_head_extends_base, discovery, first_parent_order, verify_set
 from scripts.tests.test_append_set_isolation import NOW, accept, git, staged_bytes
 from scripts.tests.test_attestations import fixture_root
 from scripts.verify_attestation_binding import ContractError
@@ -215,7 +215,9 @@ def test_on_disk_fork_selects_first_merged_child_without_evidence_changes() -> N
     generator = discovery(ROOT)
     accepted = verifier.accepted_discovery(ROOT, INCIDENT)
     for document in (generator, accepted):
-        assert document["current_head"] == SIBLINGS[1]
+        lineage = assert_head_extends_base(document, PARENT)
+        assert SIBLINGS[1] in lineage
+        assert SIBLINGS[0] not in lineage
         assert document["rejected_heads"] == {SIBLINGS[0]: SIBLINGS[1]}
         assert SIBLINGS[0] not in document["heads"]
     assert before == revision_digests()
