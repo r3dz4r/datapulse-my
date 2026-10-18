@@ -60,7 +60,12 @@ jobs:
     needs: classify
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # 40, not 25: the suite grew past the old ceiling. The append-fork regression file alone
+    # walks the 65k-file attestation chain and takes ~8 minutes, so two runs were killed at the
+    # boundary and GitHub reports a timed-out job as 'cancelled' — indistinguishable from an
+    # external cancel. If this creeps toward the new ceiling, cut the suite's runtime rather
+    # than raising it again.
+    timeout-minutes: 40
     env:
       ARTIFACT_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.health_only == 'true' }}
       APPEND_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.append_only == 'true' }}

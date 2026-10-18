@@ -11,12 +11,20 @@ from pathlib import Path
 import pytest
 
 from scripts.classify_change import is_append_only_change, is_health_cycle_output, is_health_only_change
+from scripts.gen_dynamic_manifest_urls import SURFACE_PATHS
 
 
 ROOT = Path(__file__).resolve().parents[2]
 CLASSIFIER = ROOT / "scripts/classify_change.py"
 GENERATOR = ROOT / "scripts/generate.sh"
 RECEIPT_FIXTURE = ROOT / "scripts/tests/fixtures/health-branch-receipt-paths.txt"
+DYNAMIC_URL_SURFACES = "changed dataset JSON envelopes, JSON-LD, passports, and website pages"
+DYNAMIC_URL_HEALTH_PATHS = {"data/passports/sample.json", "docs/datasets/sample.html"}
+DYNAMIC_URL_RELEASE_PATHS = {
+    "data/json/sample.json",
+    "data/jsonld/sample.json",
+    "docs/okf/datasets/sample.md",
+}
 
 
 REVISION = "a" * 64
@@ -224,6 +232,14 @@ def _declared_health_cycle_outputs() -> tuple[list[str], list[str]]:
         assert declaration is not None, f"unparsed health-cycle output: {line}"
         for item in declaration.group(1).split("; "):
             item = re.sub(r" \([^)]*\)$", "", item)
+            if item == DYNAMIC_URL_SURFACES:
+                # A health-cycle invocation can also write release-owned surfaces.
+                # Expand the grouped prose and check both classes explicitly.
+                surfaces = {template.format(id="sample") for template in SURFACE_PATHS}
+                assert surfaces == DYNAMIC_URL_HEALTH_PATHS | DYNAMIC_URL_RELEASE_PATHS
+                paths.extend(sorted(DYNAMIC_URL_HEALTH_PATHS))
+                excluded.extend(sorted(DYNAMIC_URL_RELEASE_PATHS))
+                continue
             # These are release-profile paths, append-only artifacts, or a broad wildcard.
             if (
                 item in {"data/<id>.md", "README.md", "attestations/latest/*"}
@@ -242,10 +258,22 @@ def _declared_health_cycle_outputs() -> tuple[list[str], list[str]]:
 
 
 def test_declared_health_cycle_outputs_are_classified() -> None:
-    paths, _ = _declared_health_cycle_outputs()
+    paths, excluded = _declared_health_cycle_outputs()
     assert paths, "health-cycle outputs declaration is empty"
     rejected = [path for path in paths if not is_health_cycle_output(path)]
     assert rejected == [], f"declared health-cycle outputs rejected: {rejected}"
+    assert DYNAMIC_URL_HEALTH_PATHS.issubset(paths)
+    assert DYNAMIC_URL_RELEASE_PATHS.issubset(excluded)
+    # The producer also regenerates the catalogue and dashboard. Manifest and
+    # release-surface changes must still select full verification in both modes.
+    for path in DYNAMIC_URL_RELEASE_PATHS | {
+        "datapulse.json", "data/jsonld/catalog.json", "docs/index.html",
+    }:
+        assert not is_health_cycle_output(path), path
+        for ci_artifact_profile in (False, True):
+            assert not is_health_only_change(
+                ("health/latest.json", path), ci_artifact_profile=ci_artifact_profile
+            ), path
 
 
 @pytest.mark.parametrize(

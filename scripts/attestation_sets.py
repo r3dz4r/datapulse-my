@@ -7,6 +7,7 @@ import gzip
 import hashlib
 import json
 import logging
+import subprocess
 import sys
 import re
 import zlib
@@ -269,7 +270,38 @@ def descriptor(head: dict, reference: str, sequence: int) -> dict:
             "scores_ref": directory + "/scores.json"}
 
 
-def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
+def first_parent_order(root: Path, revision: str = "HEAD") -> dict[str, int]:
+    """Rank revision introductions by accepted first-parent position, never dates.
+
+    Only a first introduction by a merge is decisive. Missing or shallow Git
+    history supplies no authority to resolve a fork. Callers reading a Git
+    pseudo-root must compute this in the real repository and inject the result.
+    """
+    try:
+        shallow = subprocess.run(["git", "rev-parse", "--is-shallow-repository"],
+                                 cwd=root, check=True, capture_output=True, text=True)
+        if shallow.stdout.strip() != "false":
+            return {}
+        history = subprocess.run([
+            "git", "log", "--first-parent", "--reverse", "--diff-merges=first-parent",
+            "--diff-filter=A", "--format=COMMIT %H %P", "--name-only", revision, "--",
+            ":(top)attestations/*/revisions/*/chain_head.json",
+        ], cwd=root, check=True, capture_output=True, text=True).stdout
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    introductions: dict[str, int | None] = {}
+    position, merged = -1, False
+    for line in history.splitlines():
+        if line.startswith("COMMIT "):
+            position += 1
+            merged = len(line.split()) > 3  # Marker, commit, and at least two parents.
+        elif SET_REF.fullmatch(line):
+            introductions.setdefault(line, position if merged else None)
+    return {path: rank for path, rank in introductions.items() if rank is not None}
+
+
+def discovery(root: Path, *, verify_datasets: bool = True,
+              fork_order: dict[str, int] | None = None) -> dict:
     """Validate v2, or derive v2 from verified v1 entries without rewriting evidence."""
     path = root / "attestations/chain-index.json"
     if not path.exists():
@@ -321,13 +353,56 @@ def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
                     raise ContractError("duplicate append head identity")
         else:
             pending[digest] = (reference, head)
+    # Recompute rejection from history; an unsigned index field is no authority.
+    document.pop("rejected_heads", None)
+    rejected: dict[str, str] = {}
+
+    def select(children: list[tuple[str, str, dict]]) -> tuple[str, str, dict] | None:
+        nonlocal fork_order
+        if len(children) == 1:
+            return children[0]
+        if not children:
+            return None
+        if fork_order is None:
+            fork_order = first_parent_order(root)
+        ranks = [fork_order.get(reference) for _, reference, _ in children]
+        if None in ranks or len(set(ranks)) != len(ranks):
+            return None
+        return min(children, key=lambda child: fork_order[child[1]])
+
+    def refuse() -> None:
+        predecessors = {digest: head["payload"]["previous_chain_head"]
+                        for digest, (_, head) in sorted(pending.items())}
+        raise ContractError(
+            "fork or disconnected accepted forward head: candidate does not append to accepted parent; "
+            f"accepted_parent={document['current_head'] or '0' * 64}; "
+            f"pending_parents={json.dumps(predecessors, sort_keys=True)}")
+
+    # A regenerated checkpoint may already contain the winner. Its sibling is
+    # still on disk and must be reclassified, without trusting a saved rejection.
+    for accepted, entry in document["envelopes"].items():
+        siblings = [(digest, reference, head) for digest, (reference, head) in pending.items()
+                    if head["payload"]["previous_chain_head"] == entry["parent_head"]]
+        if siblings:
+            reference = document["heads"][accepted]
+            selected = select(siblings + [(accepted, reference, {})])
+            if selected is None or selected[0] != accepted:
+                refuse()
+            for digest, _, _ in siblings:
+                rejected[digest] = accepted
+                del pending[digest]
     while pending:
         parent = document["current_head"] or "0" * 64
         children = [(digest, reference, head) for digest, (reference, head) in pending.items()
                     if head["payload"]["previous_chain_head"] == parent]
-        if len(children) != 1:
-            raise ContractError("fork or disconnected accepted forward head: candidate does not append to accepted parent")
-        digest, reference, head = children[0]
+        selected = select(children)
+        if selected is None:
+            refuse()
+        digest, reference, head = selected
+        for sibling, _, _ in children:
+            if sibling != digest:
+                rejected[sibling] = digest
+                del pending[sibling]
         day = head["payload"]["date"]
         run = document["days"].setdefault(day, [])
         document["heads"][digest] = reference
@@ -336,6 +411,8 @@ def discovery(root: Path, *, verify_datasets: bool = True) -> dict:
         document["current_head"] = digest
         del pending[digest]
     validate_discovery(root, document, verify_datasets=verify_datasets)
+    if rejected:
+        document["rejected_heads"] = dict(sorted(rejected.items()))
     return document
 
 
