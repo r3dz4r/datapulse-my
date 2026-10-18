@@ -239,8 +239,12 @@ def test_cloudflare_workflow_permissions_and_concurrency_are_not_broadened() -> 
     concurrency = workflow["concurrency"]
 
     assert workflow["permissions"] == {"contents": "read"}
-    assert concurrency["group"] == "cloudflare-pages-production"
-    assert concurrency["cancel-in-progress"] is False
+    # Queue depth prevents pending promotions from evicting one another.
+    assert concurrency == {
+        "group": "cloudflare-pages-production",
+        "cancel-in-progress": False,
+        "queue": "max",
+    }
     assert "concurrency" not in workflow["jobs"]["sign_health"]
     assert "concurrency" not in workflow["jobs"]["deploy"]
     assert "[skip deploy]" not in _read(DEPLOY_WORKFLOW)
@@ -676,12 +680,25 @@ def test_cloudflare_health_only_classifier_is_scoped_to_pipeline_outputs() -> No
 def test_health_and_source_candidates_share_the_non_cancelable_promotion_lane() -> None:
     workflow = yaml.safe_load(_read(DEPLOY_WORKFLOW))
 
+    # Preserve the shared lock while queuing pending runs instead of evicting them.
     assert workflow["concurrency"] == {
         "group": "cloudflare-pages-production",
         "cancel-in-progress": False,
+        "queue": "max",
     }
     for job_name in ("classify", "sign_health", "deploy"):
         assert "concurrency" not in workflow["jobs"][job_name]
+
+
+def test_daily_attestation_queues_in_the_shared_production_lane() -> None:
+    workflow = yaml.safe_load(_read(ROOT / ".github/workflows/datapulse-attest-daily.yml"))
+
+    # Frequent deploy arrivals must not evict a pending daily append producer.
+    assert workflow["concurrency"] == {
+        "group": "cloudflare-pages-production",
+        "cancel-in-progress": False,
+        "queue": "max",
+    }
 
 
 def test_ci_and_release_please_delegate_health_path_decisions_to_shared_classifier() -> None:

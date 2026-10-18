@@ -25,6 +25,8 @@ concurrency:
   # promoting after a newer source release.
   group: cloudflare-pages-production
   cancel-in-progress: false
+  # Queue pending promotions instead of evicting the daily append producer.
+  queue: max
 
 jobs:
   classify:

@@ -13,6 +13,8 @@ permissions:
 concurrency:
   group: cloudflare-pages-production
   cancel-in-progress: false
+  # Queue pending promotions instead of evicting the daily append producer.
+  queue: max
 
 jobs:
   attest-and-commit:
