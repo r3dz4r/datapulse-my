@@ -267,11 +267,27 @@ jobs:
         run: |
           set -Eeuo pipefail
           started=$SECONDS
+          defer_append() {
+            echo "state=append-deferred" >> "$GITHUB_OUTPUT"
+            evidence="PR #${pr_number:-none} (${branch:-candidate}); age ${age_seconds:-unknown}s; deterministic-safety-net: ${check_state:-unavailable}; elapsed $((SECONDS - started))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)"
+            echo "::notice title=append-deferred::$evidence; publication deferred to the next run."
+            echo "append-deferred: $evidence. Signing and deploy skipped; next run retries automatically." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
           fail_append_wait() {
-            local status="$1" failed_command="$2" evidence
+            local status="$1" failed_command="$2" evidence elapsed
             if [[ "$status" == 124 || "$status" == 137 ]]; then
+              # Preserve an inner read failure if its status crosses the deadline in transit.
+              if [[ -f "$GITHUB_OUTPUT" ]] && grep -Fxq 'state=append-wait-failed' "$GITHUB_OUTPUT"; then
+                exit "$status"
+              fi
+              elapsed=$((SECONDS - started))
+              if (( elapsed >= APPEND_ACCEPTANCE_PATIENCE_SECONDS )); then
+                # A command substitution cannot stop the enclosing wait with exit 0.
+                if (( BASH_SUBSHELL > 0 )); then exit "$status"; else defer_append; fi
+              fi
               failed_command="${failed_command//$'\n'/ }"
-              evidence="command $failed_command; status $status; elapsed $((SECONDS - started))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)"
+              evidence="command $failed_command; status $status; elapsed ${elapsed}s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)"
               echo "state=append-wait-failed" >> "$GITHUB_OUTPUT"
               echo "::notice title=append-wait-failed::$evidence; publication failed." >&2
               echo "append-wait-failed: $evidence. Signing and deploy skipped." >> "$GITHUB_STEP_SUMMARY"
@@ -289,7 +305,7 @@ jobs:
             fi
             return "$status"
           }
-          export -f bounded fail_append_wait
+          export -f bounded fail_append_wait defer_append
           export started
           # One shared patience for all already-open appends, not per PR.
           # 415s beyond patience covers bounded lookups and accepted-tree import.
@@ -297,13 +313,6 @@ jobs:
           trap 'fail_append_wait "$?" "$BASH_COMMAND"' ERR
           started=$SECONDS
           deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))
-          defer_append() {
-            echo "state=append-deferred" >> "$GITHUB_OUTPUT"
-            evidence="PR #${pr_number:-none} (${branch:-candidate}); age ${age_seconds:-unknown}s; deterministic-safety-net: ${check_state:-unavailable}; elapsed $((SECONDS - started))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)"
-            echo "::notice title=append-deferred::$evidence; publication deferred to the next run."
-            echo "append-deferred: $evidence. Signing and deploy skipped; next run retries automatically." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          }
           bounded timeout -k 5s 120s bash scripts/close_superseded_appends.sh
           while :; do
             open_prs="$(bounded timeout -k 5s 20s gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
