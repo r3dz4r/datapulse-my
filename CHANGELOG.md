@@ -14,6 +14,18 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.31](https://github.com/r3dz4r/datapulse-my/compare/v3.55.30...v3.55.31) (2026-10-18)
+
+
+### Bug Fixes
+
+* **ci:** queue shared production promotions so the daily append producer is not starved ([5823adb](https://github.com/r3dz4r/datapulse-my/commit/5823adb0d8a74132a3e13273a71c50013bd68962))
+* **ci:** queue shared production promotions to prevent starvation ([3ded35a](https://github.com/r3dz4r/datapulse-my/commit/3ded35a886bc1577e52de1001c9dff6c6f29f30c))
+* **deploy:** attribute append wait timeouts and fail closed ([788e4a4](https://github.com/r3dz4r/datapulse-my/commit/788e4a4786cbc84d1e73ad0721242eb392a9bc4b))
+* **deploy:** attribute append wait timeouts and stop the false green deferral ([2129e4a](https://github.com/r3dz4r/datapulse-my/commit/2129e4a441ee5bfc24ee954fd7a43ca74aa42c43))
+* **deploy:** restore bounded append wait deferral ([4389c65](https://github.com/r3dz4r/datapulse-my/commit/4389c65291b5d533f8fc79726a98fa8a39ebb9b9))
+* **deploy:** restore bounded append-wait deferral, keep the attribution ([11e0a16](https://github.com/r3dz4r/datapulse-my/commit/11e0a161a7c43be50af830cb7b118f491fe6466d))
+
 ## [3.55.30](https://github.com/r3dz4r/datapulse-my/compare/v3.55.29...v3.55.30) (2026-10-18)
 
 
