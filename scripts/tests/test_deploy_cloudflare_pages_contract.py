@@ -1193,9 +1193,11 @@ def test_publication_classifier_invocations_pass_no_profile_flags() -> None:
 def test_pages_concurrency_serializes_all_production_candidates() -> None:
     workflow = yaml.safe_load(_workflow())
 
+    # Pending candidates must survive newer arrivals in the shared promotion lane.
     assert workflow["concurrency"] == {
         "group": "cloudflare-pages-production",
         "cancel-in-progress": False,
+        "queue": "max",
     }
     assert "concurrency" not in workflow["jobs"]["sign_health"]
     assert "concurrency" not in workflow["jobs"]["deploy"]

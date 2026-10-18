@@ -44,8 +44,9 @@ def test_only_completed_builds_enter_the_single_non_cancelable_lane() -> None:
     }
     assert "concurrency" not in build
     assert all("concurrency" not in job for job in build["jobs"].values())
+    # Pending promotions must queue rather than evict the daily attestation run.
     assert publish["concurrency"] == {
-        "group": "cloudflare-pages-production", "cancel-in-progress": False,
+        "group": "cloudflare-pages-production", "cancel-in-progress": False, "queue": "max",
     }
     assert build["jobs"]["build"]["if"] == "github.ref == 'refs/heads/main'"
     assert "workflow_run.conclusion == 'success'" in publish["jobs"]["classify"]["if"]

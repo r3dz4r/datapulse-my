@@ -250,5 +250,9 @@ def test_production_bounds_and_concurrency_are_unchanged() -> None:
     assert "timeout -k 5s 3000s bash -Eeuo pipefail" in _run()
     step = next(step for step in workflow["jobs"]["sign_health"]["steps"] if step.get("run") == _run())
     assert step["timeout-minutes"] == 51
-    assert workflow["concurrency"]["group"] == "cloudflare-pages-production"
-    assert workflow["concurrency"]["cancel-in-progress"] is False
+    # Queue pending runs so deploy arrivals cannot starve the append producer.
+    assert workflow["concurrency"] == {
+        "group": "cloudflare-pages-production",
+        "cancel-in-progress": False,
+        "queue": "max",
+    }
