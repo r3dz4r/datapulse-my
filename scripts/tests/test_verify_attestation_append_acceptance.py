@@ -134,17 +134,42 @@ def test_process_timeout_defers_without_acceptance(tmp_path: Path, early: bool) 
 
 @pytest.mark.parametrize("early", [False, True])
 @pytest.mark.parametrize("status", [64, 124, 137])
-def test_lookup_failure_preserves_refusal_or_timeout_deferral(
+def test_lookup_failure_preserves_refusal_or_timeout_attribution(
     tmp_path: Path, early: bool, status: int,
 ) -> None:
-    result, output, _ = run_wait(tmp_path, early=early, lookup_status=status)
+    result, output, _ = run_wait(tmp_path, early=early, lookup_status=status,
+                                 patience=60 if early else 0)
     assert "state=accepted" not in output
     if status in (124, 137):
-        assert result.returncode == 0, result.stderr
-        assert "state=append-deferred" in output
+        if early:
+            assert result.returncode != 0
+            assert output == "state=append-wait-failed\n"
+            assert "timeout -k 5s 20s gh pr view 42" in result.stderr
+            assert f"status {status}" in result.stderr
+        else:
+            assert result.returncode == 0, result.stderr
+            assert "state=append-deferred" in output
     else:
         assert result.returncode != 0
         assert "append-deferred" not in output + result.stdout + result.stderr
+
+
+def test_early_lookup_timeout_before_patience_is_attributed(tmp_path: Path) -> None:
+    result, output, _ = run_wait(tmp_path, early=True, lookup_status=124, patience=60)
+    assert result.returncode != 0
+    assert output == "state=append-wait-failed\n"
+    assert "timeout -k 5s 20s gh pr view 42" in result.stderr
+    assert "status 124" in result.stderr
+    assert "elapsed " in result.stderr
+    assert "patience 60s" in result.stderr
+
+
+def test_lookup_timeout_after_patience_defers_from_enclosing_wait(tmp_path: Path) -> None:
+    result, output, _ = run_wait(tmp_path, early=True, lookup_status=124, patience=0)
+    assert result.returncode == 0, result.stderr
+    assert output == "state=append-deferred\n"
+    assert "state=append-wait-failed" not in output
+    assert "state=accepted" not in output
 
 
 @pytest.mark.parametrize("merged", [False, True])
