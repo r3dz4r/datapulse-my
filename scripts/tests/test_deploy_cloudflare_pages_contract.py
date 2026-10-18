@@ -325,6 +325,16 @@ def test_publication_append_time_bounds_contract() -> None:
     _assert_append_time_bounds(yaml.safe_load(_workflow()))
 
 
+def test_attestation_restore_timeouts_cover_measured_cold_restore() -> None:
+    restores = re.findall(
+        r"timeout -k 5s (\d+)s git restore --source (?:origin/main|HEAD)"
+        r" --worktree -- attestations \.attestations/chain_head\.json",
+        _workflow(),
+    )
+    assert len(restores) == 2
+    assert all(int(seconds) >= 60 for seconds in restores)
+
+
 @pytest.mark.parametrize("moved", ["worst", "patience", "wrapper", "step", "job"])
 def test_publication_append_time_bounds_reject_isolated_ordering_drift(moved: str) -> None:
     workflow = yaml.safe_load(_workflow())
