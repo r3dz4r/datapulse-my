@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.010462962962962962,
+        "latest_days": 0.0005671296296296297,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-18T10:21:57Z",
-    "record_count": 55,
+    "last_checked": "2026-10-18T10:43:19Z",
+    "record_count": 51,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kota-bharu",
@@ -39,7 +39,7 @@
     "geography": "Kota Bharu, Kelantan",
     "name": "GTFS Realtime — BAS.MY Kota Bharu Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-18T10:21:57Z",
+    "observed_verified_at": "2026-10-18T10:43:19Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_kota_bharu.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:d4dcb2a4827590c61a41ec5c0a7437d6ac313908b88121120765671ef45dfa3b",
+      "receipt_digest": "sha256:46747ba3e0d7c5c15485d2a24e6a08857cbf9232aa570b68a27a26a318ad1681",
       "sigstore_path": "data/gtfs_realtime_mybas_kota_bharu.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_kota_bharu.receipt.statement.json"
     },
