@@ -3,13 +3,13 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0007407407407407407,
+        "latest_days": 0.005601851851851852,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 8,
+        "sample_days": 7,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-melaka",
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_melaka.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:b078d828bcb1f427cb0b155a4b94513f4f12f8075fe4dd2edae5b4a530d1c949",
+      "receipt_digest": "sha256:1c3887acc3d7c8c8905157f2e46e607dc56a34ccec44596e5bdb5f3daddfff70",
       "sigstore_path": "data/gtfs_realtime_mybas_melaka.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_melaka.receipt.statement.json"
     },
