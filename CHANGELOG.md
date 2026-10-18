@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.32](https://github.com/r3dz4r/datapulse-my/compare/v3.55.31...v3.55.32) (2026-10-18)
+
+
+### Bug Fixes
+
+* **deploy:** budget attestation restore from cold measurement ([a4a2fb7](https://github.com/r3dz4r/datapulse-my/commit/a4a2fb7d5e72d69192416b81d756303b05fd4c45))
+* **deploy:** budget the attestation restore from a cold measurement ([bc91163](https://github.com/r3dz4r/datapulse-my/commit/bc911634a0f59c7eae34e02f9feee03deffb239d))
+
 ## [3.55.31](https://github.com/r3dz4r/datapulse-my/compare/v3.55.30...v3.55.31) (2026-10-18)
 
 
