@@ -264,15 +264,35 @@ jobs:
           GIT_TERMINAL_PROMPT: "0"
         run: |
           set -Eeuo pipefail
-          trap 'status=$?; if [[ "$status" == 124 || "$status" == 137 ]]; then
-            echo "state=append-deferred" >> "$GITHUB_OUTPUT"
-            echo "::notice title=append-deferred::Bounded append operation timed out; publication deferred to the next run."
-            echo "append-deferred: bounded append operation timed out; signing and deploy skipped. Next run retries automatically." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi; exit "$status"' ERR
+          started=$SECONDS
+          fail_append_wait() {
+            local status="$1" failed_command="$2" evidence
+            if [[ "$status" == 124 || "$status" == 137 ]]; then
+              failed_command="${failed_command//$'\n'/ }"
+              evidence="command $failed_command; status $status; elapsed $((SECONDS - started))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)"
+              echo "state=append-wait-failed" >> "$GITHUB_OUTPUT"
+              echo "::notice title=append-wait-failed::$evidence; publication failed." >&2
+              echo "append-wait-failed: $evidence. Signing and deploy skipped." >> "$GITHUB_STEP_SUMMARY"
+            fi
+            exit "$status"
+          }
+          trap 'fail_append_wait "$?" "$BASH_COMMAND"' ERR
+          bounded() {
+            local status failed_command
+            # ERR is suppressed in conditionals; attribute the original call here.
+            if "$@"; then return 0; else status=$?; fi
+            if [[ "$status" == 124 || "$status" == 137 ]]; then
+              printf -v failed_command '%q ' "$@"
+              fail_append_wait "$status" "${failed_command% }"
+            fi
+            return "$status"
+          }
+          export -f bounded fail_append_wait
+          export started
           # One shared patience for all already-open appends, not per PR.
           # 415s beyond patience covers bounded lookups and accepted-tree import.
-          timeout -k 5s 1900s bash -Eeuo pipefail <<'EXISTING_APPEND'
+          bounded timeout -k 5s 1900s bash -Eeuo pipefail <<'EXISTING_APPEND'
+          trap 'fail_append_wait "$?" "$BASH_COMMAND"' ERR
           started=$SECONDS
           deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))
           defer_append() {
@@ -282,25 +302,28 @@ jobs:
             echo "append-deferred: $evidence. Signing and deploy skipped; next run retries automatically." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           }
-          timeout -k 5s 120s bash scripts/close_superseded_appends.sh
+          bounded timeout -k 5s 120s bash scripts/close_superseded_appends.sh
           while :; do
-            open_prs="$(timeout -k 5s 20s gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
+            open_prs="$(bounded timeout -k 5s 20s gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
               --json number,headRefName,headRefOid,baseRefName,createdAt)"
-            if [[ "$(timeout -k 5s 10s jq 'length' <<< "$open_prs")" -ge 1000 ]]; then
+            open_pr_count="$(bounded timeout -k 5s 10s jq 'length' <<< "$open_prs")"
+            if [[ "$open_pr_count" -ge 1000 ]]; then
               echo 'Open pull request list reached 1000; append state is unknown, so publication must wait.' >&2
               exit 1
             fi
-            open_append="$(timeout -k 5s 10s jq -c \
+            open_append="$(bounded timeout -k 5s 10s jq -c \
               '[.[] | select(.baseRefName == "main" and (.headRefName | startswith("attestation/append-")))] | first // empty' \
               <<< "$open_prs")"
             [[ -n "$open_append" ]] || break
-            pr_number="$(timeout -k 5s 10s jq -er '.number' <<< "$open_append")"
-            branch="$(timeout -k 5s 10s jq -er '.headRefName' <<< "$open_append")"
-            head_sha="$(timeout -k 5s 10s jq -er '.headRefOid' <<< "$open_append")"
-            created_at="$(timeout -k 5s 10s jq -er '.createdAt' <<< "$open_append")"
-            age_seconds="$(( $(date -u +%s) - $(date -ud "$created_at" +%s) ))"
+            pr_number="$(bounded timeout -k 5s 10s jq -er '.number' <<< "$open_append")"
+            branch="$(bounded timeout -k 5s 10s jq -er '.headRefName' <<< "$open_append")"
+            head_sha="$(bounded timeout -k 5s 10s jq -er '.headRefOid' <<< "$open_append")"
+            created_at="$(bounded timeout -k 5s 10s jq -er '.createdAt' <<< "$open_append")"
+            now_epoch="$(date -u +%s)"
+            created_epoch="$(date -ud "$created_at" +%s)"
+            age_seconds="$((now_epoch - created_epoch))"
             echo "Already-open append PR #$pr_number ($branch); age ${age_seconds}s."
-            if pr_json="$(timeout -k 5s 20s gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
+            if pr_json="$(bounded timeout -k 5s 20s gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
               --json number,headRefName,headRefOid,baseRefName,isCrossRepository,state,autoMergeRequest,statusCheckRollup)"; then
               :
             else
@@ -309,7 +332,7 @@ jobs:
               echo "::error title=Append PR lookup failed::PR #$pr_number ($branch); deterministic-safety-net: unavailable; elapsed $((SECONDS - started))s" >&2
               exit 1
             fi
-            if timeout -k 5s 10s jq -e --arg branch "$branch" --arg head "$head_sha" \
+            if bounded timeout -k 5s 10s jq -e --arg branch "$branch" --arg head "$head_sha" \
               '.headRefName == $branch and .headRefOid == $head and .baseRefName == "main" and .isCrossRepository == false and (.state == "OPEN" or .state == "MERGED")' \
               <<< "$pr_json" >/dev/null; then
               :
@@ -319,14 +342,15 @@ jobs:
               echo "::error title=Append PR mismatch::PR #$pr_number ($branch) changed while checking its head" >&2
               exit 1
             fi
-            check_state="$(timeout -k 5s 10s jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
+            check_state="$(bounded timeout -k 5s 10s jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
             [[ -n "$check_state" ]] || check_state='not reported'
             if [[ "$check_state" =~ (FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE) ]]; then
               echo "::error title=Append required check failed::PR #$pr_number ($branch); deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
               exit 1
             fi
-            if [[ "$(timeout -k 5s 10s jq -r '.state == "OPEN" and .autoMergeRequest == null' <<< "$pr_json")" == true ]]; then
-              if timeout -k 5s 20s gh pr merge --auto --merge "$pr_number" --repo "$GITHUB_REPOSITORY" \
+            needs_auto_merge="$(bounded timeout -k 5s 10s jq -r '.state == "OPEN" and .autoMergeRequest == null' <<< "$pr_json")"
+            if [[ "$needs_auto_merge" == true ]]; then
+              if bounded timeout -k 5s 20s gh pr merge --auto --merge "$pr_number" --repo "$GITHUB_REPOSITORY" \
                 --match-head-commit "$head_sha"; then
                 :
               else
@@ -338,7 +362,7 @@ jobs:
             fi
             echo "Waiting for already-open append PR #$pr_number ($branch) to merge."
             while :; do
-              if pr_json="$(timeout -k 5s 20s gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
+              if pr_json="$(bounded timeout -k 5s 20s gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" \
                 --json headRefOid,state,statusCheckRollup)"; then
                 :
               else
@@ -347,10 +371,11 @@ jobs:
                 echo "::error title=Append PR lookup failed::PR #$pr_number ($branch); deterministic-safety-net: unavailable; elapsed $((SECONDS - started))s" >&2
                 exit 1
               fi
-              check_state="$(timeout -k 5s 10s jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
+              check_state="$(bounded timeout -k 5s 10s jq -r '[.statusCheckRollup[]? | select((.name // .context) == "deterministic-safety-net") | "\(.status // .state)/\(.conclusion // "")"] | join(", ")' <<< "$pr_json")"
               [[ -n "$check_state" ]] || check_state='not reported'
-              state="$(timeout -k 5s 10s jq -r '.state' <<< "$pr_json")"
-              if [[ "$(timeout -k 5s 10s jq -r '.headRefOid' <<< "$pr_json")" != "$head_sha" ]]; then
+              state="$(bounded timeout -k 5s 10s jq -r '.state' <<< "$pr_json")"
+              polled_head_sha="$(bounded timeout -k 5s 10s jq -r '.headRefOid' <<< "$pr_json")"
+              if [[ "$polled_head_sha" != "$head_sha" ]]; then
                 echo "::error title=Append head changed::PR #$pr_number ($branch); deterministic-safety-net: $check_state; elapsed $((SECONDS - started))s" >&2
                 exit 1
               fi
@@ -369,8 +394,8 @@ jobs:
               remaining=$((deadline - SECONDS))
               sleep "$((remaining > 0 ? (remaining < 15 ? remaining : 15) : 0))"
             done
-            timeout -k 5s 30s git fetch origin refs/heads/main:refs/remotes/origin/main
-            if timeout -k 5s 10s git merge-base --is-ancestor "$head_sha" origin/main; then
+            bounded timeout -k 5s 30s git fetch origin refs/heads/main:refs/remotes/origin/main
+            if bounded timeout -k 5s 10s git merge-base --is-ancestor "$head_sha" origin/main; then
               :
             else
               status=$?
@@ -378,13 +403,13 @@ jobs:
               echo "::error title=Append merge missing::PR #$pr_number ($branch) is merged but its head is absent from main; deterministic-safety-net: $check_state" >&2
               exit 1
             fi
-            timeout -k 5s 120s bash scripts/close_superseded_appends.sh "$pr_number"
+            bounded timeout -k 5s 120s bash scripts/close_superseded_appends.sh "$pr_number"
           done
-          timeout -k 5s 30s git fetch origin refs/heads/main:refs/remotes/origin/main
-          timeout -k 5s 10s git merge-base --is-ancestor "$PROMOTION_SOURCE_SHA" origin/main
+          bounded timeout -k 5s 30s git fetch origin refs/heads/main:refs/remotes/origin/main
+          bounded timeout -k 5s 10s git merge-base --is-ancestor "$PROMOTION_SOURCE_SHA" origin/main
           # Import accepted evidence while keeping the source checkout at
           # PROMOTION_SOURCE_SHA, shared by signing and deployment for health.
-          timeout -k 5s 10s git restore --source origin/main --worktree -- attestations .attestations/chain_head.json
+          bounded timeout -k 5s 10s git restore --source origin/main --worktree -- attestations .attestations/chain_head.json
           echo "state=ready" >> "$GITHUB_OUTPUT"
           EXISTING_APPEND
 
