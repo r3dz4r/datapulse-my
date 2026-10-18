@@ -14,6 +14,16 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.30](https://github.com/r3dz4r/datapulse-my/compare/v3.55.29...v3.55.30) (2026-10-18)
+
+
+### Bug Fixes
+
+* **attestations:** reconcile forks by first merged child ([f97e9f5](https://github.com/r3dz4r/datapulse-my/commit/f97e9f5213a01f34dccf23cffe32538a91b3b271))
+* **attestations:** stream accepted ledger reads and pin fork refusal ([01aa9f1](https://github.com/r3dz4r/datapulse-my/commit/01aa9f1c665273557a0bfec3b9c934a0108ab0db))
+* **urls:** follow the probe policy's monthly roll in the manifest ([f63aeb5](https://github.com/r3dz4r/datapulse-my/commit/f63aeb51e8ceae7e80518b36169b671ad60f861d))
+* **urls:** follow the probe policy's monthly roll in the manifest ([5141eab](https://github.com/r3dz4r/datapulse-my/commit/5141eab9c4d7cb2782779c8ea9159f61f03b986e))
+
 ## [3.55.29](https://github.com/r3dz4r/datapulse-my/compare/v3.55.28...v3.55.29) (2026-10-17)
 
 
