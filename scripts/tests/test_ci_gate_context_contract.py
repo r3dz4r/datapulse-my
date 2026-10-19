@@ -117,9 +117,8 @@ def test_pytest_shards_cover_every_file_once_and_keep_history_scoped() -> None:
     )
     # Discovery provenance must follow the candidate; without this the gate returns green on a stale
     # candidate. The gate restores the ref, which the discovery-gate test asserts independently.
-    assert 'git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" HEAD' in (
-        steps["Run pytest shard"]["run"]
-    )
+    assert 'git update-ref "$default_ref" HEAD' in steps["Run pytest shard"]["run"]
+    assert "trap" in steps["Run pytest shard"]["run"]
 
     selected: list[str] = []
     for shard in shards["strategy"]["matrix"]["shard"]:
