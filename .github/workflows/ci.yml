@@ -399,7 +399,10 @@ jobs:
     # Branch protection requires this exact context, and a required check must never pass because
     # nothing ran. This job judges results only: no checkout, no verifier step, five-minute bound.
     needs: [classify, pytest-suite, safety-net-verifiers]
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true')
+    # always() is load-bearing: without it a failed or skipped upstream job skips this one, and a
+    # skipped job satisfies a required check without judging anything. Main's copy had no needs here,
+    # so it never needed the guard.
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
