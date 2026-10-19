@@ -69,29 +69,33 @@ jobs:
 
   verify-push-gate-coverage:
     name: Verify every main push has a gate
-    needs: classify
+    needs: [classify, deterministic-safety-net, health-integrity]
     if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     steps:
-      - name: Require a verification profile
+      - name: Require at least one verification gate to have run
         env:
           CLASSIFY_RESULT: ${{ needs.classify.result }}
+          SAFETY_RESULT: ${{ needs.deterministic-safety-net.result }}
+          HEALTH_RESULT: ${{ needs.health-integrity.result }}
           HEALTH_ONLY: ${{ needs.classify.outputs.health_only }}
           APPEND_ONLY: ${{ needs.classify.outputs.append_only }}
           RELEASE_ONLY: ${{ needs.classify.outputs.release_only }}
           CHANGED_PATHS: ${{ needs.classify.outputs.changed_paths }}
         run: |
-          if [[ "$CLASSIFY_RESULT" == "success" ]] &&
-             [[ "$HEALTH_ONLY" == "true" || "$APPEND_ONLY" == "true" || "$RELEASE_ONLY" == "true" ]]; then
+          # The invariant is measured on what actually ran, not inferred from the profile
+          # flags: a profile can be computed correctly and still leave both gates skipped,
+          # which is the defect this job exists for.
+          if [[ "$SAFETY_RESULT" != "skipped" || "$HEALTH_RESULT" != "skipped" ]]; then
             exit 0
           fi
-          echo "::error::Push to main has no verification gate: health_only=$HEALTH_ONLY, append_only=$APPEND_ONLY, release_only=$RELEASE_ONLY; changed paths: ${CHANGED_PATHS:-'(diff unavailable)'}. Classify these paths so a verification gate runs (classify result: $CLASSIFY_RESULT)." >&2
+          echo "::error::Push to main verified nothing: safety-net=$SAFETY_RESULT, health-integrity=$HEALTH_RESULT; health_only=$HEALTH_ONLY, append_only=$APPEND_ONLY, release_only=$RELEASE_ONLY; classify=$CLASSIFY_RESULT; changed paths: ${CHANGED_PATHS:-'(diff unavailable)'}. A push must run at least one gate: give these paths a verification profile in scripts/classify_change.py, or widen the gate's condition — do not silence this job." >&2
           exit 1
 
   deterministic-safety-net:
     needs: classify
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && (needs.classify.outputs.release_only == 'true' || needs.classify.outputs.append_only == 'true'))
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true')
     runs-on: ubuntu-latest
     # 40, not 25: the suite grew past the old ceiling. The append-fork regression file alone
     # walks the 65k-file attestation chain and takes ~8 minutes, so two runs were killed at the

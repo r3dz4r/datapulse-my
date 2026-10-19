@@ -26,9 +26,9 @@ def test_required_context_runs_for_classified_pushes() -> None:
     condition = job["if"]
 
     assert "github.event_name == 'push'" in condition
-    assert "release_only" in condition
-    assert "append_only" in condition
-    assert "health_only" not in condition
+    # Fail-safe default: anything that is not the health-only fast path gets the full suite,
+    # so a source, release or append push can never land unverified.
+    assert "health_only != 'true'" in condition
 
 
 def test_required_context_is_produced_for_merge_queue_events() -> None:
@@ -46,8 +46,7 @@ def test_required_context_is_produced_for_merge_queue_events() -> None:
         "github.event_name == 'workflow_dispatch' || "
         "github.event_name == 'merge_group' || "
         "(github.event_name == 'push' && "
-        "(needs.classify.outputs.release_only == 'true' || "
-        "needs.classify.outputs.append_only == 'true'))"
+        "needs.classify.outputs.health_only != 'true')"
     )
 
     append_step = next(
@@ -287,30 +286,32 @@ def test_push_without_available_base_fails_classification(tmp_path: Path) -> Non
 
 
 @pytest.mark.parametrize(
-    ("result", "health", "append", "release", "expected"),
+    ("safety", "health", "expected"),
     [
-        ("success", "true", "false", "false", 0),
-        ("success", "false", "true", "false", 0),
-        ("success", "false", "false", "true", 0),
-        ("success", "false", "false", "false", 1),
-        ("failure", "false", "false", "false", 1),
-        ("failure", "true", "false", "false", 1),
+        # A gate ran (whatever its verdict) -> the push was verified.
+        ("success", "skipped", 0),
+        ("skipped", "success", 0),
+        ("failure", "skipped", 0),
+        ("skipped", "failure", 0),
+        # Neither gate ran -> the push verified nothing, which is the defect.
+        ("skipped", "skipped", 1),
     ],
 )
-def test_main_push_coverage_guard(
-    result: str, health: str, append: str, release: str, expected: int
-) -> None:
+def test_main_push_coverage_guard(safety: str, health: str, expected: int) -> None:
     guard = _workflow()["jobs"]["verify-push-gate-coverage"]
-    assert guard["needs"] == "classify"
+    # The guard must observe the gates themselves, not infer coverage from the profile flags.
+    assert set(guard["needs"]) == {"classify", "deterministic-safety-net", "health-integrity"}
     assert "always()" in guard["if"]
     assert "github.ref == 'refs/heads/main'" in guard["if"]
     assert int(guard["timeout-minutes"]) <= 5
     step = guard["steps"][0]
     environment = os.environ | {
-        "CLASSIFY_RESULT": result,
-        "HEALTH_ONLY": health,
-        "APPEND_ONLY": append,
-        "RELEASE_ONLY": release,
+        "CLASSIFY_RESULT": "success",
+        "SAFETY_RESULT": safety,
+        "HEALTH_RESULT": health,
+        "HEALTH_ONLY": "false",
+        "APPEND_ONLY": "false",
+        "RELEASE_ONLY": "false",
         "CHANGED_PATHS": "VERSION.txt, scripts/changed.py",
     }
     process = subprocess.run(
@@ -318,6 +319,7 @@ def test_main_push_coverage_guard(
     )
     assert process.returncode == expected
     if expected:
+        assert "verified nothing" in process.stderr
         assert all(profile in process.stderr for profile in ("health_only", "append_only", "release_only"))
         assert "VERSION.txt, scripts/changed.py" in process.stderr
 
