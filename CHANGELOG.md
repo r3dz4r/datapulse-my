@@ -14,6 +14,17 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.33](https://github.com/r3dz4r/datapulse-my/compare/v3.55.32...v3.55.33) (2026-10-19)
+
+
+### Bug Fixes
+
+* **ci:** assert the separated concurrency lanes in the attestation contract ([7643cba](https://github.com/r3dz4r/datapulse-my/commit/7643cba99d7265b94e075960c8256194d6893b7e))
+* **ci:** assert the separated concurrency lanes in the attestation contract ([92fc2f3](https://github.com/r3dz4r/datapulse-my/commit/92fc2f3a78d0855ac3b4d65f0f805d5f532a427a))
+* **ci:** fail the deploy run when the production publication is stale ([b9e8a90](https://github.com/r3dz4r/datapulse-my/commit/b9e8a90c80ccc9c410b6d304679b0513b3cc21d6))
+* **ci:** separate deploy and attestation concurrency lanes ([676a5cf](https://github.com/r3dz4r/datapulse-my/commit/676a5cf484c9efca316f239f71ff5f73aeca0019))
+* separate deploy and attestation concurrency lanes ([627e58d](https://github.com/r3dz4r/datapulse-my/commit/627e58d97695ea1a4914ec2fc2576938f553aef6))
+
 ## [3.55.32](https://github.com/r3dz4r/datapulse-my/compare/v3.55.31...v3.55.32) (2026-10-18)
 
 
