@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.34](https://github.com/r3dz4r/datapulse-my/compare/v3.55.33...v3.55.34) (2026-10-19)
+
+
+### Bug Fixes
+
+* **ci:** give health-integrity full history so chain linearity can resolve the graph ([e5c9878](https://github.com/r3dz4r/datapulse-my/commit/e5c9878ed8ff1affe607acf55766e3cbde1e19eb))
+* **ci:** give health-integrity full history so chain linearity can resolve the graph ([860a229](https://github.com/r3dz4r/datapulse-my/commit/860a2296560b0081b51cde12cfbf06ae9195afbc))
+
 ## [3.55.33](https://github.com/r3dz4r/datapulse-my/compare/v3.55.32...v3.55.33) (2026-10-19)
 
 
