@@ -228,3 +228,13 @@ def test_ci_classify_call_sites_use_separate_profiles() -> None:
     assert len(invocations) == 2
     assert invocations[0].endswith("python3 scripts/classify_change.py --ci-artifact-profile; then")
     assert invocations[1].endswith("python3 scripts/classify_change.py --append-only; then")
+
+
+def test_health_integrity_checkout_has_full_history() -> None:
+    """Chain linearity needs the commit graph; a depth-1 clone reports a false fork."""
+    job = _workflow()["jobs"]["health-integrity"]
+    checkout = next(
+        step for step in job["steps"] if str(step.get("uses", "")).startswith("actions/checkout")
+    )
+
+    assert checkout["with"]["fetch-depth"] == "0"
