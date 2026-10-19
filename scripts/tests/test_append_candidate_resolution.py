@@ -2,6 +2,7 @@
 """Pin candidate and projection resolution in the append verifier."""
 from __future__ import annotations
 
+from collections import Counter
 from datetime import timedelta
 from pathlib import Path
 
@@ -15,6 +16,29 @@ from scripts.tests.test_attestations import fixture_root
 
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_new_append_set_is_verified_once_per_discovery(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, NOW)
+    accept(root)
+    ga.generate(root, key, NOW + timedelta(days=1))
+    git(root, "restore", ".")
+    candidate = next((root / "attestations/2026-08-16/revisions").glob("*/chain_head.json"))
+    reference = candidate.relative_to(root).as_posix()
+    calls: Counter[str] = Counter()
+    original = attestation_sets.verify_set
+
+    def count(candidate_root: Path, candidate_ref: str, *, verify_datasets: bool = True) -> dict:
+        calls[candidate_ref] += 1
+        return original(candidate_root, candidate_ref, verify_datasets=verify_datasets)
+
+    monkeypatch.setattr(attestation_sets, "verify_set", count)
+    document = discovery(root)
+    assert document["heads"][document["current_head"]] == reference
+    assert calls[reference] == 1
 
 
 def test_mirror_directory_follows_aligned_projection(
