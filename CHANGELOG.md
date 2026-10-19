@@ -14,6 +14,16 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.35](https://github.com/r3dz4r/datapulse-my/compare/v3.55.34...v3.55.35) (2026-10-19)
+
+
+### Bug Fixes
+
+* **ci:** require a verification profile for every main push ([2d29f9c](https://github.com/r3dz4r/datapulse-my/commit/2d29f9cbc243016ee66d67a4b8fa7c157212ee52))
+* **ci:** require verification profile for main pushes ([e332430](https://github.com/r3dz4r/datapulse-my/commit/e332430b8d7da0ab0cc9b2c1b6ee56a23fc31c06))
+* **ci:** widen the push gate and measure coverage on job results ([7bf36ec](https://github.com/r3dz4r/datapulse-my/commit/7bf36ecec8940e3d2aa099321b04338d3abd02ac))
+* **ci:** widen the push gate and measure coverage on job results ([6ce712f](https://github.com/r3dz4r/datapulse-my/commit/6ce712f7954474b429d0c17e9e94dbd478f61b1e))
+
 ## [3.55.34](https://github.com/r3dz4r/datapulse-my/compare/v3.55.33...v3.55.34) (2026-10-19)
 
 
