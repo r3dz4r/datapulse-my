@@ -21,11 +21,13 @@ def _workflow() -> dict[str, object]:
     return yaml.load(CI_WORKFLOW.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
 
 
-def test_required_context_is_not_produced_by_push_events() -> None:
+def test_required_context_runs_for_classified_pushes() -> None:
     job = _workflow()["jobs"][REQUIRED_JOB]
     condition = job["if"]
 
-    assert "github.event_name == 'push'" not in condition
+    assert "github.event_name == 'push'" in condition
+    assert "release_only" in condition
+    assert "append_only" in condition
     assert "health_only" not in condition
 
 
@@ -42,7 +44,10 @@ def test_required_context_is_produced_for_merge_queue_events() -> None:
     assert job["if"] == (
         "github.event_name == 'pull_request' || "
         "github.event_name == 'workflow_dispatch' || "
-        "github.event_name == 'merge_group'"
+        "github.event_name == 'merge_group' || "
+        "(github.event_name == 'push' && "
+        "(needs.classify.outputs.release_only == 'true' || "
+        "needs.classify.outputs.append_only == 'true'))"
     )
 
     append_step = next(
@@ -73,10 +78,11 @@ def test_required_context_keeps_its_job_identity_and_dependency() -> None:
 
 
 @pytest.mark.parametrize(
-    ("changed_paths", "health_only", "append_only"),
+    ("event_name", "changed_paths", "health_only", "append_only", "release_only"),
     [
-        (("health/latest.json",), "true", "false"),
+        ("pull_request", ("health/latest.json",), "true", "false", "false"),
         (
+            "pull_request",
             (
                 "health/latest.json",
                 "observation-receipts/chain_head.json",
@@ -84,17 +90,24 @@ def test_required_context_keeps_its_job_identity_and_dependency() -> None:
             ),
             "true",
             "false",
+            "false",
         ),
-        (("health/latest.json", "scripts/changed.py"), "false", "false"),
         (
+            "pull_request", ("health/latest.json", "scripts/changed.py"),
+            "false", "false", "false",
+        ),
+        (
+            "pull_request",
             (
                 ".attestations/chain_head.json",
                 "attestations/2026-10-09/revisions/" + "a" * 64 + "/binding.json",
             ),
             "false",
             "true",
+            "false",
         ),
         (
+            "pull_request",
             (
                 ".attestations/chain_head.json",
                 "attestations/2026-10-09/revisions/" + "a" * 64 + "/binding.json",
@@ -102,11 +115,32 @@ def test_required_context_keeps_its_job_identity_and_dependency() -> None:
             ),
             "false",
             "false",
+            "false",
+        ),
+        (
+            "push",
+            (".release-please-manifest.json", "CHANGELOG.md", "VERSION.txt", "server.json"),
+            "false", "false", "true",
+        ),
+        ("push", ("VERSION.txt",), "false", "false", "false"),
+        ("push", ("health/latest.json",), "true", "false", "false"),
+        (
+            "push",
+            (
+                ".attestations/chain_head.json",
+                "attestations/2026-10-09/revisions/" + "a" * 64 + "/binding.json",
+            ),
+            "false", "true", "false",
         ),
     ],
 )
-def test_artifact_only_fast_path_classifies_pr_diff(
-    tmp_path: Path, changed_paths: tuple[str, ...], health_only: str, append_only: str
+def test_classify_step_classifies_diff(
+    tmp_path: Path,
+    event_name: str,
+    changed_paths: tuple[str, ...],
+    health_only: str,
+    append_only: str,
+    release_only: str,
 ) -> None:
     classify = _workflow()["jobs"]["classify"]
     checkout = classify["steps"][0]
@@ -117,6 +151,7 @@ def test_artifact_only_fast_path_classifies_pr_diff(
     assert checkout["with"]["sparse-checkout"] == "scripts/classify_change.py"
     assert checkout["with"]["sparse-checkout-cone-mode"] == "false"
     assert classify["outputs"]["append_only"] == "${{ steps.classify.outputs.append_only }}"
+    assert classify["outputs"]["release_only"] == "${{ steps.classify.outputs.release_only }}"
 
     repository = tmp_path / "repository"
     repository.mkdir()
@@ -139,10 +174,10 @@ def test_artifact_only_fast_path_classifies_pr_diff(
 
     output = tmp_path / "github-output"
     environment = os.environ | {
-        "GITHUB_EVENT_NAME": "pull_request",
+        "GITHUB_EVENT_NAME": event_name,
         "GITHUB_OUTPUT": str(output),
-        "BEFORE_SHA": "",
-        "AFTER_SHA": "",
+        "BEFORE_SHA": base,
+        "AFTER_SHA": head,
         "BASE_SHA": base,
         "HEAD_SHA": head,
     }
@@ -157,6 +192,8 @@ def test_artifact_only_fast_path_classifies_pr_diff(
     lines = output.read_text(encoding="utf-8").splitlines()
     assert f"health_only={health_only}" in lines
     assert f"append_only={append_only}" in lines
+    assert f"release_only={release_only}" in lines
+    assert f"changed_paths={', '.join(sorted(changed_paths))}" in lines
 
 
 def test_artifact_only_fast_path_preserves_required_verification() -> None:
@@ -225,9 +262,64 @@ def test_ci_profiles_keep_chain_head_ordering_check_and_its_dependencies() -> No
 def test_ci_classify_call_sites_use_separate_profiles() -> None:
     script = _workflow()["jobs"]["classify"]["steps"][1]["run"]
     invocations = [line.strip() for line in script.splitlines() if "python3 scripts/classify_change.py" in line]
-    assert len(invocations) == 2
+    assert len(invocations) == 3
     assert invocations[0].endswith("python3 scripts/classify_change.py --ci-artifact-profile; then")
     assert invocations[1].endswith("python3 scripts/classify_change.py --append-only; then")
+    assert invocations[2].endswith("python3 scripts/classify_change.py --release-only; then")
+
+
+def test_push_without_available_base_fails_classification(tmp_path: Path) -> None:
+    script = _workflow()["jobs"]["classify"]["steps"][1]["run"]
+    output = tmp_path / "github-output"
+    environment = os.environ | {
+        "GITHUB_EVENT_NAME": "push",
+        "GITHUB_OUTPUT": str(output),
+        "BEFORE_SHA": "0" * 40,
+        "AFTER_SHA": "1" * 40,
+        "BASE_SHA": "",
+        "HEAD_SHA": "",
+    }
+    result = subprocess.run(
+        ["bash", "-c", script], cwd=ROOT, env=environment, capture_output=True, text=True
+    )
+    assert result.returncode != 0
+    assert "diff unavailable" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("result", "health", "append", "release", "expected"),
+    [
+        ("success", "true", "false", "false", 0),
+        ("success", "false", "true", "false", 0),
+        ("success", "false", "false", "true", 0),
+        ("success", "false", "false", "false", 1),
+        ("failure", "false", "false", "false", 1),
+        ("failure", "true", "false", "false", 1),
+    ],
+)
+def test_main_push_coverage_guard(
+    result: str, health: str, append: str, release: str, expected: int
+) -> None:
+    guard = _workflow()["jobs"]["verify-push-gate-coverage"]
+    assert guard["needs"] == "classify"
+    assert "always()" in guard["if"]
+    assert "github.ref == 'refs/heads/main'" in guard["if"]
+    assert int(guard["timeout-minutes"]) <= 5
+    step = guard["steps"][0]
+    environment = os.environ | {
+        "CLASSIFY_RESULT": result,
+        "HEALTH_ONLY": health,
+        "APPEND_ONLY": append,
+        "RELEASE_ONLY": release,
+        "CHANGED_PATHS": "VERSION.txt, scripts/changed.py",
+    }
+    process = subprocess.run(
+        ["bash", "-c", step["run"]], env=environment, capture_output=True, text=True
+    )
+    assert process.returncode == expected
+    if expected:
+        assert all(profile in process.stderr for profile in ("health_only", "append_only", "release_only"))
+        assert "VERSION.txt, scripts/changed.py" in process.stderr
 
 
 def test_health_integrity_checkout_has_full_history() -> None:

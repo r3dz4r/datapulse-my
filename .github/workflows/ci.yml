@@ -21,6 +21,8 @@ jobs:
     outputs:
       health_only: ${{ steps.classify.outputs.health_only }}
       append_only: ${{ steps.classify.outputs.append_only }}
+      release_only: ${{ steps.classify.outputs.release_only }}
+      changed_paths: ${{ steps.classify.outputs.changed_paths }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,8 +40,13 @@ jobs:
           set -Eeuo pipefail
           echo "health_only=false" >> "$GITHUB_OUTPUT"
           echo "append_only=false" >> "$GITHUB_OUTPUT"
+          echo "release_only=false" >> "$GITHUB_OUTPUT"
+          echo "changed_paths=(diff unavailable)" >> "$GITHUB_OUTPUT"
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
-            git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null || exit 0
+            if ! git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+              echo "::error::Push diff unavailable: before commit ${BEFORE_SHA} is absent from checkout" >&2
+              exit 1
+            fi
             diff_args=("$BEFORE_SHA" "$AFTER_SHA")
           elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
             git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null || exit 0
@@ -49,16 +56,42 @@ jobs:
             exit 0
           fi
           changed_paths=$(git diff --name-only "${diff_args[@]}")
+          echo "changed_paths=${changed_paths//$'\n'/, }" >> "$GITHUB_OUTPUT"
           if printf '%s\n' "$changed_paths" | python3 scripts/classify_change.py --ci-artifact-profile; then
             echo "health_only=true" >> "$GITHUB_OUTPUT"
           fi
           if printf '%s\n' "$changed_paths" | python3 scripts/classify_change.py --append-only; then
             echo "append_only=true" >> "$GITHUB_OUTPUT"
           fi
+          if printf '%s\n' "$changed_paths" | python3 scripts/classify_change.py --release-only; then
+            echo "release_only=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  verify-push-gate-coverage:
+    name: Verify every main push has a gate
+    needs: classify
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require a verification profile
+        env:
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
+          HEALTH_ONLY: ${{ needs.classify.outputs.health_only }}
+          APPEND_ONLY: ${{ needs.classify.outputs.append_only }}
+          RELEASE_ONLY: ${{ needs.classify.outputs.release_only }}
+          CHANGED_PATHS: ${{ needs.classify.outputs.changed_paths }}
+        run: |
+          if [[ "$CLASSIFY_RESULT" == "success" ]] &&
+             [[ "$HEALTH_ONLY" == "true" || "$APPEND_ONLY" == "true" || "$RELEASE_ONLY" == "true" ]]; then
+            exit 0
+          fi
+          echo "::error::Push to main has no verification gate: health_only=$HEALTH_ONLY, append_only=$APPEND_ONLY, release_only=$RELEASE_ONLY; changed paths: ${CHANGED_PATHS:-'(diff unavailable)'}. Classify these paths so a verification gate runs (classify result: $CLASSIFY_RESULT)." >&2
+          exit 1
 
   deterministic-safety-net:
     needs: classify
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && (needs.classify.outputs.release_only == 'true' || needs.classify.outputs.append_only == 'true'))
     runs-on: ubuntu-latest
     # 40, not 25: the suite grew past the old ceiling. The append-fork regression file alone
     # walks the 65k-file attestation chain and takes ~8 minutes, so two runs were killed at the

@@ -10,7 +10,12 @@ from pathlib import Path
 
 import pytest
 
-from scripts.classify_change import is_append_only_change, is_health_cycle_output, is_health_only_change
+from scripts.classify_change import (
+    is_append_only_change,
+    is_health_cycle_output,
+    is_health_only_change,
+    is_release_only_change,
+)
 from scripts.gen_dynamic_manifest_urls import SURFACE_PATHS
 
 
@@ -42,6 +47,38 @@ APPEND_PATHS = (
     f"attestations/rekor/2026-10-09/health.{REVISION}.statement.json",
     f"attestations/rekor/2026-10-09/reference.{REVISION}.json",
 )
+
+RELEASE_PATHS = (
+    ".release-please-manifest.json",
+    "CHANGELOG.md",
+    "VERSION.txt",
+    "server.json",
+)
+
+
+def test_release_only_change_requires_all_markers_and_accepts_release_extra_file() -> None:
+    assert is_release_only_change(RELEASE_PATHS)
+    assert is_release_only_change(RELEASE_PATHS[:3])
+    assert _classify_cli(list(RELEASE_PATHS), ("--release-only",)).returncode == 0
+
+
+@pytest.mark.parametrize(
+    "paths",
+    [
+        (),
+        ("VERSION.txt",),
+        ("server.json",),
+        (".release-please-manifest.json", "CHANGELOG.md"),
+        (".release-please-manifest.json", "VERSION.txt"),
+        ("CHANGELOG.md", "VERSION.txt"),
+        (*RELEASE_PATHS, "scripts/classify_change.py"),
+        (*RELEASE_PATHS, "health/latest.json"),
+        (*RELEASE_PATHS, "../VERSION.txt"),
+    ],
+)
+def test_release_only_change_rejects_missing_markers_and_foreign_paths(paths: tuple[str, ...]) -> None:
+    assert not is_release_only_change(paths)
+    assert _classify_cli(list(paths), ("--release-only",)).returncode != 0
 
 
 def test_append_only_change_accepts_immutable_revision_and_chain_heads() -> None:
