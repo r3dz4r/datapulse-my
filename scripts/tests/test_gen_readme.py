@@ -123,7 +123,9 @@ def test_readme_regeneration_is_a_no_op(tmp_path: Path) -> None:
 def test_required_gate_checks_readme_before_it_regenerates() -> None:
     """The required job must fail on committed drift before the generator masks it."""
     workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
-    steps = workflow["jobs"]["deterministic-safety-net"]["steps"]
+    # The README check and generator live in the verifier job; the required context only judges
+    # results, so asking it for the ordering would assert a job that no longer does the work.
+    steps = workflow["jobs"]["safety-net-verifiers"]["steps"]
     runs = [step.get("run") for step in steps]
 
     check_index = runs.index("python3 scripts/gen_readme.py --check")

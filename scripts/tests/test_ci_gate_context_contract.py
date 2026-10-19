@@ -115,10 +115,11 @@ def test_pytest_shards_cover_every_file_once_and_keep_history_scoped() -> None:
     assert steps["Run pytest shard"]["env"]["DEFAULT_BRANCH"] == (
         "${{ github.event.repository.default_branch }}"
     )
-    # The origin default-branch ref must not be repointed at the candidate: tests that resolve real
-    # history through origin then describe a graph that does not exist, and append fork resolution
-    # fails against a parent the branch was never merged from.
-    assert "git update-ref" not in steps["Run pytest shard"]["run"]
+    # Discovery provenance must follow the candidate; without this the gate returns green on a stale
+    # candidate. The gate restores the ref, which the discovery-gate test asserts independently.
+    assert 'git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" HEAD' in (
+        steps["Run pytest shard"]["run"]
+    )
 
     selected: list[str] = []
     for shard in shards["strategy"]["matrix"]["shard"]:

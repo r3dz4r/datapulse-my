@@ -25,7 +25,9 @@ def _test_step() -> dict:
         (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"),
         Loader=yaml.BaseLoader,
     )
-    job = workflow["jobs"]["deterministic-safety-net"]
+    # The suite runs in the sharded job now; the required context only judges results. What this
+    # test needs is the step that actually invokes pytest, so it follows the work.
+    job = workflow["jobs"]["pytest-shards"]
     assert "github.event_name == 'pull_request'" in job["if"]
     assert "github.event_name == 'merge_group'" in job["if"]
     assert "continue-on-error" not in job
@@ -33,11 +35,11 @@ def _test_step() -> dict:
     assert checkout["with"]["fetch-depth"] == "0"
     step = next(
         step for step in job["steps"]
-        if step.get("name") == "Run repository-contract and MCP tests"
+        if step.get("name") == "Run pytest shard"
     )
-    assert step["if"] == "env.FULL_VERIFICATION == 'true'"
+    assert "if" not in step
     assert "continue-on-error" not in step
-    assert "python3 -m pytest -q scripts/tests/ mcp/tests/" in step["run"]
+    assert "python3 -m pytest -q" in step["run"]
     return step
 
 
@@ -112,7 +114,9 @@ def test_pr_gate_checks_candidate_history_and_restores_default_ref(
     runner = fake_bin / "python3"
     runner.write_text(
         '#!/bin/bash\nset -Eeuo pipefail\n'
-        '[[ "$*" == "-m pytest -q scripts/tests/ mcp/tests/" ]]\n'
+        # The shard step invokes pytest with an explicit file list, so match the shape rather than
+        # the old whole-suite argument string.
+        '[[ "$*" == -m\\ pytest\\ -q* ]]\n'
         'exec "$TEST_PYTHON" -m pytest -q "$PROVENANCE_TEST"\n',
         encoding="utf-8",
     )
@@ -126,8 +130,20 @@ def test_pr_gate_checks_candidate_history_and_restores_default_ref(
     }
 
     def run_gate() -> subprocess.CompletedProcess[str]:
+        # Execute the CI's own invocation tail, not the whole shard step: the step first selects its
+        # files from the real repository, which a bare fixture repository does not have. The tail
+        # starts at the origin-ref rewrite, because that is what makes provenance follow the
+        # candidate, and ends at the pytest call. test_files is populated so the shape is identical.
+        lines = step["run"].splitlines()
+        start = next(
+            index for index, line in enumerate(lines)
+            if "original_default_ref=$(git rev-parse" in line
+        )
+        script = 'test_files=("scripts/tests/test_discovery_provenance.py")\n' + "\n".join(
+            lines[start:]
+        )
         result = subprocess.run(
-            ["bash", "-c", step["run"]], cwd=repository, env=environment,
+            ["bash", "-c", script], cwd=repository, env=environment,
             capture_output=True, text=True, check=False,
         )
         assert _git(repository, "rev-parse", default_ref) == accepted_base

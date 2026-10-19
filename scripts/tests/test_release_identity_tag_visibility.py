@@ -102,7 +102,9 @@ def test_positive_control_fixture_with_key_passes() -> None:
 
 
 def test_negative_control_fixture_with_key_removed_fails() -> None:
-    with pytest.raises(AssertionError, match=r"deterministic-safety-net.*fetch-tags"):
+    # The message names whichever job holds the release-identity step, which is now the verifier
+    # job rather than the required context; assert the defect (missing fetch-tags), not the name.
+    with pytest.raises(AssertionError, match=r"fetch-tags"):
         _assert_checkout_fetches_tags(FIXTURE_WITHOUT_KEY, "fixture-without-key")
 
 
@@ -114,5 +116,7 @@ def test_negative_control_real_workflow_without_with_block_fails() -> None:
     step.pop("with", None)
     mutated = yaml.safe_dump(workflow)
 
-    with pytest.raises(AssertionError, match=r"deterministic-safety-net.*fetch-tags"):
+    # The message names whichever job holds the release-identity step, which is now the verifier
+    # job rather than the required context; assert the defect (missing fetch-tags), not the name.
+    with pytest.raises(AssertionError, match=r"fetch-tags"):
         _assert_checkout_fetches_tags(mutated, "mutated-ci.yml")

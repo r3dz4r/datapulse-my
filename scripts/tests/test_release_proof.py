@@ -39,7 +39,7 @@ python3 scripts/verify_release_reproducible.py
 
 def _legacy_format_validator() -> str:
     workflow = yaml.safe_load(CI_WORKFLOW.read_text(encoding="utf-8"))
-    steps = workflow["jobs"]["deterministic-safety-net"]["steps"]
+    steps = workflow["jobs"]["safety-net-verifiers"]["steps"]
     step = next(step for step in steps if step.get("name") == "Validate tracked release-proof legacy format")["run"]
     script = step.split("python3 - docs/release-verification.md <<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
     return textwrap.dedent(script)
