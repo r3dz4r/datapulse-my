@@ -317,7 +317,8 @@ def discovery(root: Path, *, verify_datasets: bool = True,
         result = {**document, "schema": "datapulse/v2/chain-index", "envelopes": {}, "days": {}}
         for digest, reference in heads.items():
             try:
-                head = verify_set(root, reference, verify_datasets=verify_datasets)
+                head = verify_set(
+                    root, reference, verify_datasets=verify_datasets)
                 if head["chain_head"] != digest:
                     continue  # Preserve unresolved historical map entries, never assert them.
             except (ValueError, OSError, KeyError, TypeError):
@@ -339,20 +340,22 @@ def discovery(root: Path, *, verify_datasets: bool = True,
     # The committed index is the legacy checkpoint. New append sets discover
     # themselves; no appender has to rewrite a shared selector or map.
     pending = {}
+    candidate_references = []
     for candidate in sorted((root / "attestations").glob("*/revisions/*/chain_head.json")):
         raw = _load(candidate, "append head")
         if "append_content_sha256" not in raw.get("payload", {}):
             continue
         reference = candidate.relative_to(root).as_posix()
-        head = verify_set(root, reference, verify_datasets=verify_datasets)
-        digest = head["chain_head"]
+        candidate_references.append(reference)
+        digest = raw["chain_head"]
         if digest in heads:
             if heads[digest] != reference:
-                day = head["payload"]["date"]
+                day = raw["payload"]["date"]
                 if heads[digest] != f"attestations/{day}/chain_head.json":
+                    verify_set(root, reference, verify_datasets=verify_datasets)
                     raise ContractError("duplicate append head identity")
         else:
-            pending[digest] = (reference, head)
+            pending[digest] = (reference, raw)
     # Recompute rejection from history; an unsigned index field is no authority.
     document.pop("rejected_heads", None)
     rejected: dict[str, str] = {}
@@ -371,6 +374,9 @@ def discovery(root: Path, *, verify_datasets: bool = True,
         return min(children, key=lambda child: fork_order[child[1]])
 
     def refuse() -> None:
+        # A structural refusal must still surface any broken candidate evidence.
+        for reference in candidate_references:
+            verify_set(root, reference, verify_datasets=verify_datasets)
         predecessors = {digest: head["payload"]["previous_chain_head"]
                         for digest, (_, head) in sorted(pending.items())}
         raise ContractError(
@@ -410,7 +416,14 @@ def discovery(root: Path, *, verify_datasets: bool = True,
         run.append(digest)
         document["current_head"] = digest
         del pending[digest]
+    # Accepted candidates are checked by the final lineage validation. Rejected
+    # siblings are checked here too, so a failed signature or digest cannot hide
+    # behind an otherwise valid first-merged child.
     validate_discovery(root, document, verify_datasets=verify_datasets)
+    accepted_references = {document["heads"][digest] for digest in document["envelopes"]}
+    for reference in candidate_references:
+        if reference not in accepted_references:
+            verify_set(root, reference, verify_datasets=verify_datasets)
     if rejected:
         document["rejected_heads"] = dict(sorted(rejected.items()))
     return document

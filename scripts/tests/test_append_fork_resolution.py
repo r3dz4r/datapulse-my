@@ -13,7 +13,7 @@ from scripts import gen_attestations as ga
 from scripts import verify_attestation_append as verifier
 from scripts.attestation_sets import assert_head_extends_base, discovery, first_parent_order, verify_set
 from scripts.tests.test_append_set_isolation import NOW, accept, git, staged_bytes
-from scripts.tests.test_attestations import fixture_root
+from scripts.tests.test_attestations import fixture_root, write
 from scripts.verify_attestation_binding import ContractError
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -113,6 +113,30 @@ def test_first_merged_child_and_accepted_extension_agree(
         assert document["rejected_heads"] == {loser: winner}
         assert loser not in document["heads"]
     verifier.verify_append(root, "HEAD")
+
+
+@pytest.mark.parametrize("mutation", ("signature", "dataset", "scores"))
+def test_rejected_sibling_integrity_is_still_checked(
+    tmp_path: Path, mutation: str,
+) -> None:
+    root, _, loser, _ = merged_fork(tmp_path)
+    directory = root / "attestations/2026-08-16/revisions" / loser
+    filename = {"signature": "binding.json", "dataset": "sample.json",
+                "scores": "scores.json"}[mutation]
+    target = directory / filename
+    document = ga.load(target)
+    if mutation == "signature":
+        document["signature_base64"] = "invalid"
+        expected = "immutable binding signature is invalid"
+    elif mutation == "dataset":
+        document["chain_link"] = "0" * 64
+        expected = "dataset attestation chain link is invalid"
+    else:
+        document["datasets"][0]["score"] = 0
+        expected = "append content digest disagrees"
+    write(target, document)
+    with pytest.raises(ContractError, match=expected):
+        discovery(root)
 
 
 def test_extension_of_rejected_child_fails(tmp_path: Path) -> None:
