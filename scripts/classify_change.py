@@ -6,7 +6,8 @@ is included. Mixed-ownership generated pages also require the snapshot pair.
 ``--ci-artifact-profile`` additionally accepts signed observation-receipt outputs
 for CI only; publication must keep the default profile because receipts are site inputs.
 ``--append-only`` accepts the immutable append and its verified projections.
-Unknown paths deliberately select the source/release profile.
+``--release-only`` accepts release-please's version markers and extra file.
+Unknown paths deliberately select the source profile.
 """
 
 from __future__ import annotations
@@ -52,6 +53,8 @@ APPEND_PROJECTIONS = LATEST_ATTESTATION_OUTPUTS | {
     "attestations/chain-index.json",
 }
 SNAPSHOT_PAIR = frozenset({"catalog-snapshot.json", "changelog.json"})
+RELEASE_MARKERS = frozenset({".release-please-manifest.json", "CHANGELOG.md", "VERSION.txt"})
+RELEASE_OUTPUTS = RELEASE_MARKERS | {"server.json"}
 
 
 def _has_safe_components(path: str) -> bool:
@@ -150,11 +153,18 @@ def is_append_only_change(paths: Iterable[str]) -> bool:
     return bool(normalized) and all(is_append_output(path) for path in normalized)
 
 
+def is_release_only_change(paths: Iterable[str]) -> bool:
+    """Return whether paths are exclusively a complete release-please change."""
+    normalized = {path for path in paths if path}
+    return RELEASE_MARKERS.issubset(normalized) and normalized.issubset(RELEASE_OUTPUTS)
+
+
 def main() -> int:
     """Read newline-separated paths from standard input and return classifier status."""
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     profiles = parser.add_mutually_exclusive_group()
     profiles.add_argument("--append-only", action="store_true", help="classify attestation appends")
+    profiles.add_argument("--release-only", action="store_true", help="classify release-please artifacts")
     profiles.add_argument(
         "--ci-artifact-profile",
         action="store_true",
@@ -164,6 +174,8 @@ def main() -> int:
     paths = sys.stdin.read().splitlines()
     if args.append_only:
         return 0 if is_append_only_change(paths) else 1
+    if args.release_only:
+        return 0 if is_release_only_change(paths) else 1
     return 0 if is_health_only_change(paths, ci_artifact_profile=args.ci_artifact_profile) else 1
 
 
