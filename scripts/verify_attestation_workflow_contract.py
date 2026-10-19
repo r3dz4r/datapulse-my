@@ -36,6 +36,24 @@ def _require(workflow: str, label: str, fragment: str) -> None:
         raise ContractError(f"{label}: missing required {fragment!r}")
 
 
+def _concurrency_block(workflow: str, label: str) -> str:
+    match = re.search(
+        r"^concurrency:\n(?P<block>(?:^[ \t]+.*(?:\n|$))*)",
+        workflow,
+        re.MULTILINE,
+    )
+    if match is None:
+        raise ContractError(f"{label}: missing concurrency configuration")
+    return match.group("block")
+
+
+def _concurrency_group(block: str, label: str) -> str:
+    match = re.search(r"^  group:\s*(?P<group>[^\s#]+)", block, re.MULTILINE)
+    if match is None:
+        raise ContractError(f"{label}: missing concurrency group")
+    return match.group("group")
+
+
 def _command_block(workflow: str, command: str, ending: str, label: str) -> str:
     match = re.search(
         rf"{re.escape(command)}(?P<block>(?:[^\n]*\n)*?\s+{re.escape(ending)})",
@@ -157,9 +175,16 @@ def verify_workflows(daily_path: Path, pages_path: Path) -> None:
     )
     _require_daily_guards(daily)
     _require_pages_boundaries(pages)
-    for label, workflow in (("daily workflow", daily), ("Pages workflow", pages)):
-        _require(workflow, label, "group: cloudflare-pages-production")
-        _require(workflow, label, "cancel-in-progress: false")
+    daily_concurrency = _concurrency_block(daily, "daily workflow")
+    pages_concurrency = _concurrency_block(pages, "Pages workflow")
+    _require(daily_concurrency, "daily workflow", "queue: max")
+    _require(daily_concurrency, "daily workflow", "cancel-in-progress: false")
+    _require(pages_concurrency, "Pages workflow", "queue: single")
+    _require(pages_concurrency, "Pages workflow", "cancel-in-progress: false")
+    daily_group = _concurrency_group(daily_concurrency, "daily workflow")
+    pages_group = _concurrency_group(pages_concurrency, "Pages workflow")
+    if daily_group.casefold() == pages_group.casefold():
+        raise ContractError("daily and Pages workflows must use separate concurrency groups")
     _require(pages, "Pages workflow", "--require-committed")
     _require(pages, "Pages workflow", "bash scripts/submit_attestation_append.sh")
     if daily.index("bash scripts/refresh_chain_head.sh") > daily.index("python3 scripts/gen_sigstore_bundle.py"):

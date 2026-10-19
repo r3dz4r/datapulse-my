@@ -122,6 +122,29 @@ def test_contract_rejects_missing_pages_full_release_gate(tmp_path: Path) -> Non
         verify_workflows(daily, pages)
 
 
+@pytest.mark.parametrize(
+    ("target", "old", "new", "message"),
+    (
+        ("pages", "group: cloudflare-pages-deploy", "group: CLOUDFLARE-PAGES-PRODUCTION", "separate concurrency groups"),
+        ("daily", "queue: max", "queue: single", "queue: max"),
+        ("pages", "queue: single", "queue: max", "queue: single"),
+        ("daily", "cancel-in-progress: false", "cancel-in-progress: true", "cancel-in-progress: false"),
+        ("pages", "cancel-in-progress: false", "cancel-in-progress: true", "cancel-in-progress: false"),
+    ),
+)
+def test_contract_rejects_concurrency_lane_regressions(
+    tmp_path: Path, target: str, old: str, new: str, message: str
+) -> None:
+    daily, pages = _workflow_pair(tmp_path)
+    path = daily if target == "daily" else pages
+    original = path.read_text(encoding="utf-8")
+    assert old in original
+    path.write_text(original.replace(old, new, 1), encoding="utf-8")
+
+    with pytest.raises(ContractError, match=message):
+        verify_workflows(daily, pages)
+
+
 @pytest.mark.parametrize("accepted", [True, False])
 def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
     tmp_path: Path, accepted: bool,
