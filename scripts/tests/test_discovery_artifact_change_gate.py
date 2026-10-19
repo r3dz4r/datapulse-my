@@ -122,6 +122,9 @@ def test_pr_gate_checks_candidate_history_and_restores_default_ref(
     )
     runner.chmod(0o755)
     environment = os.environ | {
+        # The provenance rewrite is scoped to the shard that runs the provenance tests; declare the
+        # shard here so the extracted invocation executes the branch the CI would take.
+        "TEST_SHARD": "a",
         "DEFAULT_BRANCH": "trunk",
         "PATH": f"{fake_bin}:{os.environ['PATH']}",
         "PYTHONPATH": str(ROOT),
@@ -137,7 +140,7 @@ def test_pr_gate_checks_candidate_history_and_restores_default_ref(
         lines = step["run"].splitlines()
         start = next(
             index for index, line in enumerate(lines)
-            if "original_default_ref=$(git rev-parse" in line
+            if "if [[ \"$TEST_SHARD\"" in line
         )
         script = 'test_files=("scripts/tests/test_discovery_provenance.py")\n' + "\n".join(
             lines[start:]

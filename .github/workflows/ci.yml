@@ -179,10 +179,13 @@ jobs:
           # Discovery provenance must follow the CANDIDATE, not the true default branch: without this
           # the gate derives identity from history that still matches the artifacts and returns green
           # on a stale candidate, which is the false green test_discovery_artifact_change_gate exists
-          # to catch. The original ref is restored on exit so the gate never leaves the clone mutated.
-          original_default_ref=$(git rev-parse "refs/remotes/origin/$DEFAULT_BRANCH" || true)
-          trap 'if [ -n "${original_default_ref:-}" ]; then git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" "$original_default_ref"; fi' EXIT
-          git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" HEAD
+          # to catch. It is scoped to the shard that runs the provenance tests, because the fork
+          # resolution tests in the history shard need the TRUE default branch to compare against.
+          if [[ "$TEST_SHARD" == 'a' ]]; then
+            original_default_ref=$(git rev-parse "refs/remotes/origin/$DEFAULT_BRANCH" || true)
+            trap 'if [ -n "${original_default_ref:-}" ]; then git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" "$original_default_ref"; fi' EXIT
+            git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" HEAD
+          fi
           python3 -m pytest -q "${test_files[@]}"
 
   safety-net-verifiers:
