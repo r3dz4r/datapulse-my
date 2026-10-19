@@ -185,29 +185,24 @@ def test_systemd_unit_preserves_scoped_commit() -> None:
     assert "README.md" not in exec_start
 
 
-def test_source_ci_verifies_and_generates_readme_before_judging_contracts() -> None:
-    """README template verification and regeneration belong to the verifier job, in that order.
+def test_source_ci_generates_readme_before_running_source_tests() -> None:
+    """The README check and generator stay ahead of each other, and the suite still runs.
 
-    This used to assert a cross-job ordering — generate README, then run pytest — because both
-    lived in one job. They no longer do: the suite runs in the pytest shards, alongside the
-    verifiers, which is the change that removed the serial clone. What must survive is that CI
-    still proves the committed README matches its template and regenerates it before the
-    contract verifiers judge the tree, so a stale README can never pass as fresh.
+    They used to be asserted against one job because one job held both. The suite now runs in its
+    own job beside the verifiers, so what must survive is: the template check precedes regeneration
+    (or drift is masked), and the suite job still invokes pytest.
     """
     workflow = yaml.safe_load(_read(ROOT / ".github/workflows/ci.yml"))
     steps = workflow["jobs"]["safety-net-verifiers"]["steps"]
     names = [step.get("name") for step in steps]
-
     verify = names.index("Verify README matches its template before regeneration")
     generate = names.index("Generate README from canonical inputs")
     assert steps[generate]["run"] == "python3 scripts/gen_readme.py"
-    assert verify < generate, "the template check must run before regeneration overwrites it"
+    assert verify < generate
 
-    assert workflow["jobs"]["pytest-shards"]["strategy"]["matrix"]["shard"] == [
-        "history",
-        "a",
-        "b",
-    ]
+    suite = workflow["jobs"]["pytest-suite"]["steps"]
+    pytest_step = next(s for s in suite if s.get("name") == "Run repository-contract and MCP tests")
+    assert "python3 -m pytest -q scripts/tests/ mcp/tests/" in pytest_step["run"]
 
 
 def test_systemd_unit_emits_lock_skip_telemetry() -> None:
@@ -782,7 +777,9 @@ def test_ci_jsonschema_and_cryptography_installs_use_matching_pins() -> None:
         if "pip install" in line and ("jsonschema" in line or "cryptography" in line)
     ]
 
-    assert len(dependency_installs) == 2
+    # Two jobs each install the pinned pair (the suite and the verifiers), so the assertion is
+    # about every install agreeing on one pin set rather than about a fixed count.
+    assert len(dependency_installs) >= 2
     assert all(
         re.search(
             r"pip install jsonschema==4\.25\.0 cryptography==50\.0\.0(?:\s|$)",

@@ -93,35 +93,42 @@ jobs:
           echo "::error::Push to main verified nothing: safety-net=$SAFETY_RESULT, health-integrity=$HEALTH_RESULT; health_only=$HEALTH_ONLY, append_only=$APPEND_ONLY, release_only=$RELEASE_ONLY; classify=$CLASSIFY_RESULT; changed paths: ${CHANGED_PATHS:-'(diff unavailable)'}. A push must run at least one gate: give these paths a verification profile in scripts/classify_change.py, or widen the gate's condition — do not silence this job." >&2
           exit 1
 
-  pytest-shards:
-    name: Pytest shard (${{ matrix.shard }})
+  pytest-suite:
+    # The whole suite in one job, exactly as main runs it. Splitting the file set across shards
+    # proved unsafe: at least one test resolves repository history through ambient refs and
+    # fails when it runs without its neighbours.
     needs: classify
-    if: (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true')) && (github.event_name != 'pull_request' || (needs.classify.outputs.health_only != 'true' && needs.classify.outputs.append_only != 'true'))
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true')
     runs-on: ubuntu-latest
-    # Keep the original 40-minute bound on each test runner while the split is measured.
+    # 40, not 25: the suite grew past the old ceiling. The append-fork regression file alone
+    # walks the 65k-file attestation chain and takes ~8 minutes, so two runs were killed at the
+    # boundary and GitHub reports a timed-out job as 'cancelled' — indistinguishable from an
+    # external cancel. If this creeps toward the new ceiling, cut the suite's runtime rather
+    # than raising it again.
     timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [history, a, b]
+    env:
+      ARTIFACT_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.health_only == 'true' }}
+      APPEND_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.append_only == 'true' }}
+      FULL_VERIFICATION: ${{ github.event_name != 'pull_request' || (needs.classify.outputs.health_only != 'true' && needs.classify.outputs.append_only != 'true') }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          # Every shard gets full history. Shards a and b used a shallow clone to save time, but the
-          # suite derives identities from the commit graph (discovery provenance, MCP source stamp,
-          # release proof, memory bounds) and a depth-1 clone makes those tests fail for reasons that
-          # have nothing to do with the change under test. A wrong red is worse than a slower green,
-          # and the shards run in parallel so the clone is not on the critical path.
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Check out r3dz4r/dotfiles (contract tests reference dotfiles/system/* and dotfiles/scripts/*)
+      - name: Check out r3dz4r/dotfiles (contract checks reference dotfiles/system/* and dotfiles/scripts/*)
+        if: env.FULL_VERIFICATION == 'true'
         uses: actions/checkout@v4
         with:
           repository: r3dz4r/dotfiles
           path: /home/runner/work/datapulse-my/datapulse-my/.dotfiles
           token: ${{ secrets.CROSS_REPO_TOKEN }}
+        # NOTE: do NOT add continue-on-error here. We want a 403 (insufficient
+        # PAT scopes) to fail the workflow loudly so the operator notices
+        # and fixes the token. With continue-on-error:true the 3 contract
+        # tests silently skip and the CI green-light hides the secret
+        # misconfiguration.
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -131,70 +138,100 @@ jobs:
           cache-dependency-path: requirements-dev.txt
 
       - name: Install Pandoc
+        if: env.FULL_VERIFICATION == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y pandoc=3.1.3+ds-2
           pandoc --version | sed -n '1p'
 
+      - name: Install artifact verification dependencies
+        if: env.ARTIFACT_ONLY_FAST_PATH == 'true' || env.APPEND_ONLY_FAST_PATH == 'true'
+        run: python3 -m pip install jsonschema==4.25.0 cryptography==50.0.0 pytest==8.4.1
+
       - name: Install verification dependencies
+        if: env.FULL_VERIFICATION == 'true'
         run: python3 -m pip install --requirement requirements-dev.txt
 
-      - name: Run pytest shard
+      - name: Check shell syntax
+        if: env.FULL_VERIFICATION == 'true'
+        run: find . -type f -name '*.sh' -not -path './.git/*' -print0 | xargs -0 -n1 bash -n
+
+      - name: Validate manifest and health schemas
+        run: |
+          python3 -m jsonschema -i datapulse.json datapulse.schema.json
+          python3 -m jsonschema -i health/latest.json health.schema.json
+
+      - name: Verify live documentation counts
+        run: python3 scripts/verify_doc_claims.py
+
+      - name: Verify signed chain-head monotonicity
+        run: python3 -m pytest -q scripts/tests/test_chain_head_monotonicity.py
+
+      - name: Validate tracked release-proof legacy format
+        if: env.FULL_VERIFICATION == 'true'
+        run: |
+          python3 - docs/release-verification.md <<'PY'
+          from __future__ import annotations
+
+          from pathlib import Path
+          import re
+          import sys
+
+
+          proof_path = Path(sys.argv[1])
+          try:
+              proof = proof_path.read_text(encoding="utf-8")
+          except OSError as error:
+              raise SystemExit(f"legacy release proof format: could not read {proof_path}: {error}") from error
+
+          required = {
+              "release-proof title": r"^# Release reproducibility verification$",
+              "verification timestamp": r"^- Verified at: `[^`\\n]+`$",
+              "Source SHA": r"^- Source SHA: `[0-9a-f]{7,64}`$",
+              "Profile result": r"^- Profile result: .+$",
+              "Total files built": r"^- Total files built: .+$",
+              "hash table": r"^\\| Path category \\| File count \\| First-run hash \\| Second-run hash \\| Match\\? \\|$",
+              "hash table category row": r"^\\| (?![-: ]+\\|)[^|]+ \\| \\d+ \\|",
+              "Reproduction section": r"^## Reproduction$",
+          }
+          missing = [label for label, pattern in required.items() if re.search(pattern, proof, re.MULTILINE) is None]
+          if missing:
+              raise SystemExit("legacy release proof format: missing " + "; ".join(missing))
+          PY
+
+      - name: Verify README matches its template before regeneration
+        if: env.FULL_VERIFICATION == 'true'
+        run: python3 scripts/gen_readme.py --check
+
+      - name: Generate README from canonical inputs
+        if: env.FULL_VERIFICATION == 'true'
+        run: python3 scripts/gen_readme.py
+
+      - name: Run repository-contract and MCP tests
+        if: env.FULL_VERIFICATION == 'true'
         env:
-          TEST_SHARD: ${{ matrix.shard }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -Eeuo pipefail
-          tests=$(python3 - <<'PY'
-          from pathlib import Path
-          import os
-
-          history = {
-              "scripts/tests/test_append_fork_resolution.py",
-              "scripts/tests/test_attestation_rekor_wiring.py",
-              "scripts/tests/test_chain_head_monotonicity.py",
-              "scripts/tests/test_deploy_cloudflare_pages_contract.py",
-              "scripts/tests/test_publish_pipeline_split.py",
-          }
-          files = sorted(str(path) for directory in ("scripts/tests", "mcp/tests")
-                         for path in Path(directory).glob("test_*.py"))
-          if not history.issubset(files):
-              raise SystemExit("history shard test file missing")
-          remainder = [path for path in files if path not in history]
-          shard = os.environ["TEST_SHARD"]
-          selected = {"history": sorted(history), "a": remainder[::2],
-                      "b": remainder[1::2]}[shard]
-          print("\n".join(selected))
-          PY
-          )
-          mapfile -t test_files <<< "$tests"
-          if [[ ${#test_files[@]} -eq 0 ]]; then
-            echo "::error::Empty pytest shard: $TEST_SHARD" >&2
-            exit 1
-          fi
-          if [[ "${SHARD_DRY_RUN:-}" == '1' ]]; then
-            printf '%s\n' "${test_files[@]}"
-            exit 0
-          fi
-          # Discovery provenance follows default-branch history. Test the candidate as that branch,
-          # otherwise PR-only MCP revisions are invisible. This mirrors main's single-job behaviour
-          # exactly and applies to EVERY shard: the fork-resolution tests resolve the accepted parent
-          # through the same ref, so scoping the rewrite to one shard made them fail.
+          # Discovery provenance follows default-branch history. Test the
+          # candidate as that branch, otherwise PR-only MCP revisions are invisible.
           default_ref="refs/remotes/origin/$DEFAULT_BRANCH"
           default_sha=$(git rev-parse --verify "$default_ref")
           trap 'git update-ref "$default_ref" "$default_sha"' EXIT
           git update-ref "$default_ref" HEAD
-          python3 -m pytest -q "${test_files[@]}"
+          python3 -m pytest -q scripts/tests/ mcp/tests/
+
 
   safety-net-verifiers:
-    name: Safety net verifiers
-    # The verifier sequence lives here rather than in the required context so it runs BESIDE the
-    # pytest partition instead of after it. Both jobs pay a full-history checkout, but they no
-    # longer serialise, which is what put 21.5 minutes on every source push.
-    needs: [classify]
-    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true'))
+    # The verifier sequence, in its own job so it runs BESIDE the suite instead of after it.
+    needs: classify
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true')
     runs-on: ubuntu-latest
-    # Keep the original 40-minute bound for the contract verifiers and artifact checks.
+    # 40, not 25: the suite grew past the old ceiling. The append-fork regression file alone
+    # walks the 65k-file attestation chain and takes ~8 minutes, so two runs were killed at the
+    # boundary and GitHub reports a timed-out job as 'cancelled' — indistinguishable from an
+    # external cancel. If this creeps toward the new ceiling, cut the suite's runtime rather
+    # than raising it again.
     timeout-minutes: 40
     env:
       ARTIFACT_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.health_only == 'true' }}
@@ -357,25 +394,24 @@ jobs:
         # Promote when a report-only run has no non-REPORT finding on the clean tree.
         run: python3 scripts/verify_documentation.py --report-only
 
+
   deterministic-safety-net:
-    # Branch protection requires this exact context, and a required check must never go green
-    # because nothing ran. This job therefore does one thing: judge the results of the work the
-    # other jobs performed. It carries no checkout and no verifier step, so it costs seconds
-    # rather than repeating a full-history clone.
-    needs: [classify, pytest-shards, safety-net-verifiers]
-    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true'))
+    # Branch protection requires this exact context, and a required check must never pass because
+    # nothing ran. This job judges results only: no checkout, no verifier step, five-minute bound.
+    needs: [classify, pytest-suite, safety-net-verifiers]
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       FULL_VERIFICATION: ${{ github.event_name != 'pull_request' || (needs.classify.outputs.health_only != 'true' && needs.classify.outputs.append_only != 'true') }}
     steps:
-      - name: Require successful pytest shards
+      - name: Require successful test suite
         if: always() && env.FULL_VERIFICATION == 'true'
         env:
-          SHARD_RESULT: ${{ needs.pytest-shards.result }}
+          SUITE_RESULT: ${{ needs.pytest-suite.result }}
         run: |
-          if [[ "$SHARD_RESULT" != 'success' ]]; then
-            echo "::error::Pytest shards concluded $SHARD_RESULT" >&2
+          if [[ "$SUITE_RESULT" != 'success' ]]; then
+            echo "::error::Test suite concluded $SUITE_RESULT" >&2
             exit 1
           fi
 
@@ -384,10 +420,8 @@ jobs:
         env:
           VERIFIER_RESULT: ${{ needs.safety-net-verifiers.result }}
         run: |
-          # A skipped verifier job is legitimate — the safety net is skipped on a health-only push,
-          # and health-integrity covers that path — but failure, cancellation or any other outcome
-          # must fail the required context. Judging the observed result, never a profile flag, is
-          # the rule this step exists to enforce.
+          # A skipped verifier job is legitimate: the safety net is skipped on a health-only push,
+          # and health-integrity covers that path. Anything else must fail the required context.
           if [[ "$VERIFIER_RESULT" != 'success' && "$VERIFIER_RESULT" != 'skipped' ]]; then
             echo "::error::Safety net verifiers concluded $VERIFIER_RESULT" >&2
             exit 1
