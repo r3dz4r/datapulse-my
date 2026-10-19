@@ -34,7 +34,7 @@ def _run(script: str, root: Path, **environment: str) -> subprocess.CompletedPro
     )
 
 
-def test_only_completed_builds_enter_the_single_non_cancelable_lane() -> None:
+def test_only_completed_builds_enter_the_newest_wins_deploy_lane() -> None:
     build, publish = _workflow(BUILD), _workflow(PUBLISH)
     # PyYAML's YAML 1.1 loader treats the Actions `on` key as True.
     assert build[True]["push"]["branches"] == ["main"]
@@ -44,9 +44,9 @@ def test_only_completed_builds_enter_the_single_non_cancelable_lane() -> None:
     }
     assert "concurrency" not in build
     assert all("concurrency" not in job for job in build["jobs"].values())
-    # Pending promotions must queue rather than evict the daily attestation run.
+    # Pending deploys may be replaced; in-flight promotions remain protected.
     assert publish["concurrency"] == {
-        "group": "cloudflare-pages-production", "cancel-in-progress": False, "queue": "max",
+        "group": "cloudflare-pages-deploy", "cancel-in-progress": False, "queue": "single",
     }
     assert build["jobs"]["build"]["if"] == "github.ref == 'refs/heads/main'"
     assert "workflow_run.conclusion == 'success'" in publish["jobs"]["classify"]["if"]

@@ -241,7 +241,7 @@ def test_named_timeout_preserves_kill_status_and_closes_child_pipes(tmp_path: Pa
     assert "bash -c" in result.stderr
 
 
-def test_production_bounds_and_concurrency_are_unchanged() -> None:
+def test_production_bounds_and_newest_wins_deploy_concurrency() -> None:
     workflow = yaml.safe_load(WORKFLOW.read_text())
     assert workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"] == 1485
     assert workflow["env"]["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"] == 1185
@@ -250,9 +250,9 @@ def test_production_bounds_and_concurrency_are_unchanged() -> None:
     assert "timeout -k 5s 3000s bash -Eeuo pipefail" in _run()
     step = next(step for step in workflow["jobs"]["sign_health"]["steps"] if step.get("run") == _run())
     assert step["timeout-minutes"] == 51
-    # Queue pending runs so deploy arrivals cannot starve the append producer.
+    # Replace superseded pending deploys while preserving the active promotion.
     assert workflow["concurrency"] == {
-        "group": "cloudflare-pages-production",
+        "group": "cloudflare-pages-deploy",
         "cancel-in-progress": False,
-        "queue": "max",
+        "queue": "single",
     }

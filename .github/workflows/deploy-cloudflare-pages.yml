@@ -20,13 +20,11 @@ env:
   APPEND_ACCEPTANCE_PATIENCE_SECONDS: 1485
 
 concurrency:
-  # Every production candidate, including health-only candidates, shares one
-  # non-cancelable promotion lane. This prevents a stale health run from
-  # promoting after a newer source release.
-  group: cloudflare-pages-production
+  # Keep deploy candidates separate from the never-evict daily append producer.
+  # A newer candidate replaces the pending deploy; the active run finishes.
+  group: cloudflare-pages-deploy
   cancel-in-progress: false
-  # Queue pending promotions instead of evicting the daily append producer.
-  queue: max
+  queue: single
 
 jobs:
   classify:
