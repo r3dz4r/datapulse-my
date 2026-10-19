@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 3.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-19T06:34:57Z",
+    "last_checked": "2026-10-19T07:39:50Z",
     "record_count": 2,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
       "column_count": null,
-      "content_shape_changed": false,
-      "first_row_hash": "shape-v1:97f7c0f86ff1a2a9aeadf939bbeba9ac76f66ceb8dbf8c434c8db98606cdf9fa"
+      "content_shape_changed": true,
+      "first_row_hash": "shape-v1:867e1368368aad7b51bf68f4ea6ef27b773232ea6157f8a893824b33ec7fade4"
     },
-    "status": "aging"
+    "status": "degraded"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/kl-usd-reference-rate",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Kuala Lumpur USD/MYR Reference Rate",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-19T06:34:57Z",
+    "observed_verified_at": "2026-10-19T07:39:50Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1129,7 +1129,7 @@
     "receipt": {
       "evidence_path": "data/bnm_kl_usd_myr.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:dcc20634daf1d03f93942f292ba6280446090008744175f80176ace077ad8eb5",
+      "receipt_digest": "sha256:2f4b15e56f02f3a280b32ed8841faa8d561a3c515cd76a4d75192f4715e90c6f",
       "sigstore_path": "data/bnm_kl_usd_myr.receipt.sigstore.json",
       "statement_path": "data/bnm_kl_usd_myr.receipt.statement.json"
     },
