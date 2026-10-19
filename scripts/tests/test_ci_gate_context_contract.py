@@ -42,11 +42,12 @@ def test_required_context_is_produced_for_merge_queue_events() -> None:
 
     job = workflow["jobs"][REQUIRED_JOB]
     assert job["if"] == (
+        "always() && ("
         "github.event_name == 'pull_request' || "
         "github.event_name == 'workflow_dispatch' || "
         "github.event_name == 'merge_group' || "
         "(github.event_name == 'push' && "
-        "needs.classify.outputs.health_only != 'true')"
+        "needs.classify.outputs.health_only != 'true'))"
     )
 
     append_step = next(
@@ -73,7 +74,90 @@ def test_required_context_keeps_its_job_identity_and_dependency() -> None:
     jobs = _workflow()["jobs"]
 
     assert REQUIRED_JOB in jobs
-    assert jobs[REQUIRED_JOB]["needs"] == "classify"
+    assert jobs[REQUIRED_JOB]["needs"] == ["classify", "pytest-shards"]
+    assert "strategy" not in jobs[REQUIRED_JOB]
+
+
+def test_pytest_shards_cover_every_file_once_and_keep_history_scoped() -> None:
+    jobs = _workflow()["jobs"]
+    shards = jobs["pytest-shards"]
+    assert shards["needs"] == "classify"
+    assert shards["strategy"]["fail-fast"] == "false"
+    assert shards["strategy"]["matrix"]["shard"] == ["history", "a", "b"]
+    assert shards["if"] == (
+        "(github.event_name == 'pull_request' || "
+        "github.event_name == 'workflow_dispatch' || "
+        "github.event_name == 'merge_group' || "
+        "(github.event_name == 'push' && needs.classify.outputs.health_only != 'true')) "
+        "&& (github.event_name != 'pull_request' || "
+        "(needs.classify.outputs.health_only != 'true' && "
+        "needs.classify.outputs.append_only != 'true'))"
+    )
+
+    steps = {step["name"]: step for step in shards["steps"]}
+    assert steps["Check out history shard"]["if"] == "matrix.shard == 'history'"
+    assert steps["Check out history shard"]["with"]["fetch-depth"] == "0"
+    assert steps["Check out shallow shard"]["if"] == "matrix.shard != 'history'"
+    assert "with" not in steps["Check out shallow shard"]
+    assert steps["Install verification dependencies"]["run"] == (
+        "python3 -m pip install --requirement requirements-dev.txt"
+    )
+    assert "pandoc=3.1.3+ds-2" in steps["Install Pandoc"]["run"]
+    required_setup = next(
+        step for step in jobs[REQUIRED_JOB]["steps"] if step.get("name") == "Set up Python"
+    )
+    assert steps["Set up Python"]["with"] == required_setup["with"]
+    assert steps["Run pytest shard"]["env"]["DEFAULT_BRANCH"] == (
+        "${{ github.event.repository.default_branch }}"
+    )
+    assert 'git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" HEAD' in (
+        steps["Run pytest shard"]["run"]
+    )
+
+    selected: list[str] = []
+    for shard in shards["strategy"]["matrix"]["shard"]:
+        result = subprocess.run(
+            ["bash", "-c", steps["Run pytest shard"]["run"]],
+            cwd=ROOT,
+            env=os.environ | {"TEST_SHARD": shard, "SHARD_DRY_RUN": "1"},
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr
+        files = result.stdout.splitlines()
+        assert files, shard
+        selected.extend(files)
+        if shard == "history":
+            assert set(files) == {
+                "scripts/tests/test_append_fork_resolution.py",
+                "scripts/tests/test_attestation_rekor_wiring.py",
+                "scripts/tests/test_chain_head_monotonicity.py",
+                "scripts/tests/test_deploy_cloudflare_pages_contract.py",
+                "scripts/tests/test_publish_pipeline_split.py",
+            }
+
+    current = {
+        str(path.relative_to(ROOT))
+        for directory in (ROOT / "scripts/tests", ROOT / "mcp/tests")
+        for path in directory.glob("test_*.py")
+    }
+    assert len(selected) == len(set(selected))
+    assert set(selected) == current
+
+
+@pytest.mark.parametrize("shard_result", ["failure", "cancelled", "skipped", "success"])
+def test_required_context_rejects_red_or_missing_shards(shard_result: str) -> None:
+    job = _workflow()["jobs"][REQUIRED_JOB]
+    step = next(step for step in job["steps"] if step.get("name") == "Require successful pytest shards")
+    assert step["if"] == "always() && env.FULL_VERIFICATION == 'true'"
+    assert step["env"]["SHARD_RESULT"] == "${{ needs.pytest-shards.result }}"
+    result = subprocess.run(
+        ["bash", "-c", step["run"]],
+        env=os.environ | {"SHARD_RESULT": shard_result},
+        capture_output=True,
+        text=True,
+    )
+    assert (result.returncode == 0) == (shard_result == "success")
 
 
 @pytest.mark.parametrize(
@@ -233,6 +317,7 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
     )
     for name, step in steps.items():
         if name in {
+            "Require successful pytest shards",
             "Check out repository",
             "Set up Python",
             "Install artifact verification dependencies",

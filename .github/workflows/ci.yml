@@ -93,21 +93,114 @@ jobs:
           echo "::error::Push to main verified nothing: safety-net=$SAFETY_RESULT, health-integrity=$HEALTH_RESULT; health_only=$HEALTH_ONLY, append_only=$APPEND_ONLY, release_only=$RELEASE_ONLY; classify=$CLASSIFY_RESULT; changed paths: ${CHANGED_PATHS:-'(diff unavailable)'}. A push must run at least one gate: give these paths a verification profile in scripts/classify_change.py, or widen the gate's condition — do not silence this job." >&2
           exit 1
 
-  deterministic-safety-net:
+  pytest-shards:
+    name: Pytest shard (${{ matrix.shard }})
     needs: classify
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true')
+    if: (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true')) && (github.event_name != 'pull_request' || (needs.classify.outputs.health_only != 'true' && needs.classify.outputs.append_only != 'true'))
     runs-on: ubuntu-latest
-    # 40, not 25: the suite grew past the old ceiling. The append-fork regression file alone
-    # walks the 65k-file attestation chain and takes ~8 minutes, so two runs were killed at the
-    # boundary and GitHub reports a timed-out job as 'cancelled' — indistinguishable from an
-    # external cancel. If this creeps toward the new ceiling, cut the suite's runtime rather
-    # than raising it again.
+    # Keep the original 40-minute bound on each test runner while the split is measured.
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [history, a, b]
+    steps:
+      - name: Check out history shard
+        if: matrix.shard == 'history'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Check out shallow shard
+        if: matrix.shard != 'history'
+        uses: actions/checkout@v4
+
+      - name: Check out r3dz4r/dotfiles (contract tests reference dotfiles/system/* and dotfiles/scripts/*)
+        uses: actions/checkout@v4
+        with:
+          repository: r3dz4r/dotfiles
+          path: /home/runner/work/datapulse-my/datapulse-my/.dotfiles
+          token: ${{ secrets.CROSS_REPO_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install Pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc=3.1.3+ds-2
+          pandoc --version | sed -n '1p'
+
+      - name: Install verification dependencies
+        run: python3 -m pip install --requirement requirements-dev.txt
+
+      - name: Run pytest shard
+        env:
+          TEST_SHARD: ${{ matrix.shard }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -Eeuo pipefail
+          tests=$(python3 - <<'PY'
+          from pathlib import Path
+          import os
+
+          history = {
+              "scripts/tests/test_append_fork_resolution.py",
+              "scripts/tests/test_attestation_rekor_wiring.py",
+              "scripts/tests/test_chain_head_monotonicity.py",
+              "scripts/tests/test_deploy_cloudflare_pages_contract.py",
+              "scripts/tests/test_publish_pipeline_split.py",
+          }
+          files = sorted(str(path) for directory in ("scripts/tests", "mcp/tests")
+                         for path in Path(directory).glob("test_*.py"))
+          if not history.issubset(files):
+              raise SystemExit("history shard test file missing")
+          remainder = [path for path in files if path not in history]
+          shard = os.environ["TEST_SHARD"]
+          selected = {"history": sorted(history), "a": remainder[::2],
+                      "b": remainder[1::2]}[shard]
+          print("\n".join(selected))
+          PY
+          )
+          mapfile -t test_files <<< "$tests"
+          if [[ ${#test_files[@]} -eq 0 ]]; then
+            echo "::error::Empty pytest shard: $TEST_SHARD" >&2
+            exit 1
+          fi
+          if [[ "${SHARD_DRY_RUN:-}" == '1' ]]; then
+            printf '%s\n' "${test_files[@]}"
+            exit 0
+          fi
+          # Discovery provenance follows the candidate as the default branch.
+          git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" HEAD
+          python3 -m pytest -q "${test_files[@]}"
+
+  deterministic-safety-net:
+    needs: [classify, pytest-shards]
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true'))
+    runs-on: ubuntu-latest
+    # Keep the original 40-minute bound for the contract verifiers and artifact checks.
     timeout-minutes: 40
     env:
       ARTIFACT_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.health_only == 'true' }}
       APPEND_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.append_only == 'true' }}
       FULL_VERIFICATION: ${{ github.event_name != 'pull_request' || (needs.classify.outputs.health_only != 'true' && needs.classify.outputs.append_only != 'true') }}
     steps:
+      - name: Require successful pytest shards
+        if: always() && env.FULL_VERIFICATION == 'true'
+        env:
+          SHARD_RESULT: ${{ needs.pytest-shards.result }}
+        run: |
+          if [[ "$SHARD_RESULT" != 'success' ]]; then
+            echo "::error::Pytest shards concluded $SHARD_RESULT" >&2
+            exit 1
+          fi
+
       - name: Check out repository
         uses: actions/checkout@v4
         with:
@@ -203,20 +296,6 @@ jobs:
       - name: Generate README from canonical inputs
         if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/gen_readme.py
-
-      - name: Run repository-contract and MCP tests
-        if: env.FULL_VERIFICATION == 'true'
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          set -Eeuo pipefail
-          # Discovery provenance follows default-branch history. Test the
-          # candidate as that branch, otherwise PR-only MCP revisions are invisible.
-          default_ref="refs/remotes/origin/$DEFAULT_BRANCH"
-          default_sha=$(git rev-parse --verify "$default_ref")
-          trap 'git update-ref "$default_ref" "$default_sha"' EXIT
-          git update-ref "$default_ref" HEAD
-          python3 -m pytest -q scripts/tests/ mcp/tests/
 
       - name: Test local agent-ready verification
         if: env.FULL_VERIFICATION == 'true'
