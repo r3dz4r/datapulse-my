@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:f6ebe9551c362a442e16beb8d9cca909ddab62b32a404ec781e71751f7cc1e8e"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/transportation/rail/rapidrail_2026_daily.csv",
@@ -847,7 +847,7 @@
     "receipt": {
       "evidence_path": "data/ridership_od_rapidrail_daily.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:fe20874b5bc84909e3568db4a5b302b841f33dafb727a0f6c27ffd63054c945e",
+      "receipt_digest": "sha256:268658badbe4a96a39900aa3458f35f819204838983a8c032c578d90f3782d4e",
       "sigstore_path": "data/ridership_od_rapidrail_daily.receipt.sigstore.json",
       "statement_path": "data/ridership_od_rapidrail_daily.receipt.statement.json"
     },
