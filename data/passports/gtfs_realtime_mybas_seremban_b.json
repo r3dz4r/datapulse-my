@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0008101851851851852,
+        "latest_days": 0.00625,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-seremban-b",
@@ -1081,7 +1081,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_seremban_b.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:1c5eaa7fe5129eb5d88ec379052a0fce6d4f06f8fa522d0bfbddb7da0e596b03",
+      "receipt_digest": "sha256:bca8b8453342006abb0224cbafd39d75882bc06154ae2c3ea1d01c1db2e97f54",
       "sigstore_path": "data/gtfs_realtime_mybas_seremban_b.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_seremban_b.receipt.statement.json"
     },
