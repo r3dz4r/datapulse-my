@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pekab40_01_timeseries.parquet",
@@ -1117,7 +1117,7 @@
     "receipt": {
       "evidence_path": "data/kkmnow_pekab40.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:8ec0c0732f04bea3ee25a943b33739cc5924b504526b232ffeeea9b667c5e191",
+      "receipt_digest": "sha256:5ae9d2d401b56fde5b0e59bc981e881a2df961a0b7f07da66f7715b5d13d2864",
       "sigstore_path": "data/kkmnow_pekab40.receipt.sigstore.json",
       "statement_path": "data/kkmnow_pekab40.receipt.statement.json"
     },

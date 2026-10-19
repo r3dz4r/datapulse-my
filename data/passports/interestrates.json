@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 45.0,
+        "latest_days": 46.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 90,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:f15a72621662bb8115156b0324aa5daaf367e452aac851b2d5dfee9a459419d3"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/finsector/interest_rates.csv",
@@ -1127,7 +1127,7 @@
     "receipt": {
       "evidence_path": "data/interestrates.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:ce0c4cd4699630f274921577e84bd55c7f8724ed1695bc0222cb5a10f451a879",
+      "receipt_digest": "sha256:fc2bb5e5d9e7b34d594f6ac753761fdf32a54b8ec39c1b040e24060bd80e38d7",
       "sigstore_path": "data/interestrates.receipt.sigstore.json",
       "statement_path": "data/interestrates.receipt.statement.json"
     },
