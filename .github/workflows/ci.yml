@@ -105,16 +105,16 @@ jobs:
       matrix:
         shard: [history, a, b]
     steps:
-      - name: Check out history shard
-        if: matrix.shard == 'history'
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
+          # Every shard gets full history. Shards a and b used a shallow clone to save time, but the
+          # suite derives identities from the commit graph (discovery provenance, MCP source stamp,
+          # release proof, memory bounds) and a depth-1 clone makes those tests fail for reasons that
+          # have nothing to do with the change under test. A wrong red is worse than a slower green,
+          # and the shards run in parallel so the clone is not on the critical path.
           fetch-depth: 0
           fetch-tags: true
-
-      - name: Check out shallow shard
-        if: matrix.shard != 'history'
-        uses: actions/checkout@v4
 
       - name: Check out r3dz4r/dotfiles (contract tests reference dotfiles/system/* and dotfiles/scripts/*)
         uses: actions/checkout@v4
@@ -176,8 +176,11 @@ jobs:
             printf '%s\n' "${test_files[@]}"
             exit 0
           fi
-          # Discovery provenance follows the candidate as the default branch.
-          git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" HEAD
+          # Do NOT repoint refs/remotes/origin/$DEFAULT_BRANCH at the candidate here. An earlier
+          # revision did, to make discovery provenance follow the candidate, and it broke every test
+          # that resolves real history through origin — append fork resolution compares the accepted
+          # parent against the branch it was merged from, and rewriting the ref makes that comparison
+          # describe a graph that does not exist. The full clone already provides the true ref.
           python3 -m pytest -q "${test_files[@]}"
 
   safety-net-verifiers:

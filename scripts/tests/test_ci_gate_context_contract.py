@@ -99,10 +99,11 @@ def test_pytest_shards_cover_every_file_once_and_keep_history_scoped() -> None:
     )
 
     steps = {step["name"]: step for step in shards["steps"]}
-    assert steps["Check out history shard"]["if"] == "matrix.shard == 'history'"
-    assert steps["Check out history shard"]["with"]["fetch-depth"] == "0"
-    assert steps["Check out shallow shard"]["if"] == "matrix.shard != 'history'"
-    assert "with" not in steps["Check out shallow shard"]
+    # Every shard must carry full history. A shallow shard made identity-deriving tests fail for a
+    # reason unrelated to the change, which is the wrong kind of red, and the shards run in
+    # parallel so the clone is not the critical path.
+    assert "Check out shallow shard" not in steps
+    assert steps["Check out repository"]["with"]["fetch-depth"] == "0"
     assert steps["Install verification dependencies"]["run"] == (
         "python3 -m pip install --requirement requirements-dev.txt"
     )
@@ -114,9 +115,10 @@ def test_pytest_shards_cover_every_file_once_and_keep_history_scoped() -> None:
     assert steps["Run pytest shard"]["env"]["DEFAULT_BRANCH"] == (
         "${{ github.event.repository.default_branch }}"
     )
-    assert 'git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" HEAD' in (
-        steps["Run pytest shard"]["run"]
-    )
+    # The origin default-branch ref must not be repointed at the candidate: tests that resolve real
+    # history through origin then describe a graph that does not exist, and append fork resolution
+    # fails against a parent the branch was never merged from.
+    assert "git update-ref" not in steps["Run pytest shard"]["run"]
 
     selected: list[str] = []
     for shard in shards["strategy"]["matrix"]["shard"]:
