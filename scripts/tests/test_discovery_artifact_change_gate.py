@@ -15,6 +15,7 @@ import yaml
 
 from scripts import gen_mcp_reference
 from scripts.classify_change import is_append_only_change, is_health_only_change
+from scripts.tests.test_ci_required_gate_contract import _job_runs
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,8 +27,10 @@ def _test_step() -> dict:
         Loader=yaml.BaseLoader,
     )
     job = workflow["jobs"]["deterministic-safety-net"]
-    assert "github.event_name == 'pull_request'" in job["if"]
-    assert "github.event_name == 'merge_group'" in job["if"]
+    assert _job_runs("pull_request", "refs/pull/42/merge", "success", "false")
+    assert _job_runs("merge_group", "refs/heads/gh-readonly-queue/main/pr-42", "success", "false")
+    assert _job_runs("push", "refs/heads/some-branch", "success", "true")
+    assert not _job_runs("push", "refs/heads/main", "success", "true")
     assert "continue-on-error" not in job
     checkout = next(step for step in job["steps"] if step.get("name") == "Check out repository")
     assert checkout["with"]["fetch-depth"] == "0"
