@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import shutil
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -17,6 +18,24 @@ SOURCE_HEALTH = (ROOT / "health/latest.json").read_bytes()
 SOURCE_TOOLS = {
     tool["name"] for tool in json.loads((ROOT / "mcp.json").read_text(encoding="utf-8"))["tools"]
 }
+
+
+def _fixture_root(tmp_path: Path) -> Path:
+    for relative in (
+        "datapulse.json",
+        "mcp.json",
+        "health.schema.json",
+        "health/latest.json",
+        "docs/index.html",
+        "datapulse.schema.json",
+        "agent.json",
+        "docs/ai-catalog.json",
+        "attestations/latest/chain_head.json",
+    ):
+        destination = tmp_path / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / relative, destination)
+    return tmp_path
 
 
 def _public_fetch(served_html: bytes, served_health: bytes, served_tools: set[str], *, index: bytes | None = None):
@@ -46,9 +65,9 @@ def _public_fetch(served_html: bytes, served_health: bytes, served_tools: set[st
     return fetch
 
 
-def _run_clean() -> tuple[list[str], list[str], list[str]]:
+def _run_clean(root: Path = ROOT) -> tuple[list[str], list[str], list[str]]:
     return parity.verify(
-        ROOT,
+        root,
         fetch=_public_fetch(SOURCE_INDEX, SOURCE_HEALTH, SOURCE_TOOLS),
     )
 
@@ -59,41 +78,35 @@ def test_clean_state_passes() -> None:
     assert {"dataset_count", "tool_count", "taxonomy"} <= set(passed)
 
 
-def test_wrong_dataset_count_fails() -> None:
-    path = ROOT / "datapulse.json"
-    original = path.read_text(encoding="utf-8")
-    try:
-        payload = json.loads(original)
-        payload["datasets"] = payload["datasets"][:-1]
-        path.write_text(json.dumps(payload), encoding="utf-8")
-        errors, _, _ = _run_clean()
-        assert any("dataset_count parity failure" in error for error in errors)
-    finally:
-        path.write_text(original, encoding="utf-8")
+def test_wrong_dataset_count_fails(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    path = root / "datapulse.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["datasets"] = payload["datasets"][:-1]
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    errors, _, _ = _run_clean(root)
+    assert any("dataset_count parity failure" in error for error in errors)
 
 
-def test_wrong_tool_count_fails() -> None:
-    path = ROOT / "mcp.json"
-    original = path.read_text(encoding="utf-8")
-    try:
-        payload = json.loads(original)
-        removed = payload["tools"].pop()["name"]
-        path.write_text(json.dumps(payload), encoding="utf-8")
-        errors, _, _ = _run_clean()
-        assert any("mcp_tool parity failure" in error and removed in error for error in errors)
-    finally:
-        path.write_text(original, encoding="utf-8")
+def test_wrong_tool_count_fails(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    path = root / "mcp.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    removed = payload["tools"].pop()["name"]
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    errors, _, _ = _run_clean(root)
+    assert any("mcp_tool parity failure" in error and removed in error for error in errors)
 
 
-def test_taxonomy_violation_fails() -> None:
-    path = ROOT / "docs/index.html"
-    original = path.read_text(encoding="utf-8")
-    try:
-        path.write_text(original + '<article data-status="verified"></article>', encoding="utf-8")
-        errors, _, _ = _run_clean()
-        assert any("status_taxonomy violation" in error and '"verified"' in error for error in errors)
-    finally:
-        path.write_text(original, encoding="utf-8")
+def test_taxonomy_violation_fails(tmp_path: Path) -> None:
+    root = _fixture_root(tmp_path)
+    path = root / "docs/index.html"
+    path.write_text(
+        path.read_text(encoding="utf-8") + '<article data-status="verified"></article>',
+        encoding="utf-8",
+    )
+    errors, _, _ = _run_clean(root)
+    assert any("status_taxonomy violation" in error and '"verified"' in error for error in errors)
 
 
 def test_health_snapshot_digest_match_avoids_served_document_fetch() -> None:
