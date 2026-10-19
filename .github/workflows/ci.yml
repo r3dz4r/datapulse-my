@@ -180,8 +180,12 @@ jobs:
           git update-ref "refs/remotes/origin/$DEFAULT_BRANCH" HEAD
           python3 -m pytest -q "${test_files[@]}"
 
-  deterministic-safety-net:
-    needs: [classify, pytest-shards]
+  safety-net-verifiers:
+    name: Safety net verifiers
+    # The verifier sequence lives here rather than in the required context so it runs BESIDE the
+    # pytest partition instead of after it. Both jobs pay a full-history checkout, but they no
+    # longer serialise, which is what put 21.5 minutes on every source push.
+    needs: [classify]
     if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true'))
     runs-on: ubuntu-latest
     # Keep the original 40-minute bound for the contract verifiers and artifact checks.
@@ -191,16 +195,6 @@ jobs:
       APPEND_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.append_only == 'true' }}
       FULL_VERIFICATION: ${{ github.event_name != 'pull_request' || (needs.classify.outputs.health_only != 'true' && needs.classify.outputs.append_only != 'true') }}
     steps:
-      - name: Require successful pytest shards
-        if: always() && env.FULL_VERIFICATION == 'true'
-        env:
-          SHARD_RESULT: ${{ needs.pytest-shards.result }}
-        run: |
-          if [[ "$SHARD_RESULT" != 'success' ]]; then
-            echo "::error::Pytest shards concluded $SHARD_RESULT" >&2
-            exit 1
-          fi
-
       - name: Check out repository
         uses: actions/checkout@v4
         with:
@@ -356,6 +350,42 @@ jobs:
         if: env.FULL_VERIFICATION == 'true'
         # Promote when a report-only run has no non-REPORT finding on the clean tree.
         run: python3 scripts/verify_documentation.py --report-only
+
+  deterministic-safety-net:
+    # Branch protection requires this exact context, and a required check must never go green
+    # because nothing ran. This job therefore does one thing: judge the results of the work the
+    # other jobs performed. It carries no checkout and no verifier step, so it costs seconds
+    # rather than repeating a full-history clone.
+    needs: [classify, pytest-shards, safety-net-verifiers]
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FULL_VERIFICATION: ${{ github.event_name != 'pull_request' || (needs.classify.outputs.health_only != 'true' && needs.classify.outputs.append_only != 'true') }}
+    steps:
+      - name: Require successful pytest shards
+        if: always() && env.FULL_VERIFICATION == 'true'
+        env:
+          SHARD_RESULT: ${{ needs.pytest-shards.result }}
+        run: |
+          if [[ "$SHARD_RESULT" != 'success' ]]; then
+            echo "::error::Pytest shards concluded $SHARD_RESULT" >&2
+            exit 1
+          fi
+
+      - name: Require successful verifier job
+        if: always()
+        env:
+          VERIFIER_RESULT: ${{ needs.safety-net-verifiers.result }}
+        run: |
+          # A skipped verifier job is legitimate — the safety net is skipped on a health-only push,
+          # and health-integrity covers that path — but failure, cancellation or any other outcome
+          # must fail the required context. Judging the observed result, never a profile flag, is
+          # the rule this step exists to enforce.
+          if [[ "$VERIFIER_RESULT" != 'success' && "$VERIFIER_RESULT" != 'skipped' ]]; then
+            echo "::error::Safety net verifiers concluded $VERIFIER_RESULT" >&2
+            exit 1
+          fi
 
   health-integrity:
     needs: classify

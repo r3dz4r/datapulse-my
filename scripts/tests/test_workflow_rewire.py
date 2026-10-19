@@ -185,14 +185,29 @@ def test_systemd_unit_preserves_scoped_commit() -> None:
     assert "README.md" not in exec_start
 
 
-def test_source_ci_generates_readme_before_running_source_tests() -> None:
-    workflow = yaml.safe_load(_read(ROOT / ".github/workflows/ci.yml"))
-    steps = workflow["jobs"]["deterministic-safety-net"]["steps"]
-    generate = next(step for step in steps if step.get("name") == "Generate README from canonical inputs")
-    tests = next(step for step in steps if step.get("name") == "Run repository-contract and MCP tests")
+def test_source_ci_verifies_and_generates_readme_before_judging_contracts() -> None:
+    """README template verification and regeneration belong to the verifier job, in that order.
 
-    assert generate["run"] == "python3 scripts/gen_readme.py"
-    assert steps.index(generate) < steps.index(tests)
+    This used to assert a cross-job ordering — generate README, then run pytest — because both
+    lived in one job. They no longer do: the suite runs in the pytest shards, alongside the
+    verifiers, which is the change that removed the serial clone. What must survive is that CI
+    still proves the committed README matches its template and regenerates it before the
+    contract verifiers judge the tree, so a stale README can never pass as fresh.
+    """
+    workflow = yaml.safe_load(_read(ROOT / ".github/workflows/ci.yml"))
+    steps = workflow["jobs"]["safety-net-verifiers"]["steps"]
+    names = [step.get("name") for step in steps]
+
+    verify = names.index("Verify README matches its template before regeneration")
+    generate = names.index("Generate README from canonical inputs")
+    assert steps[generate]["run"] == "python3 scripts/gen_readme.py"
+    assert verify < generate, "the template check must run before regeneration overwrites it"
+
+    assert workflow["jobs"]["pytest-shards"]["strategy"]["matrix"]["shard"] == [
+        "history",
+        "a",
+        "b",
+    ]
 
 
 def test_systemd_unit_emits_lock_skip_telemetry() -> None:

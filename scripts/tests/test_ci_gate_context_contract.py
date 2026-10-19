@@ -15,6 +15,10 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
 REQUIRED_JOB = "deterministic-safety-net"
+# The verifier sequence lives in its own job so it runs beside the pytest partition rather than
+# after it; the required context only judges results. Shape assertions about the verifiers follow
+# the work to that job, while identity and dependency assertions stay on the required context.
+VERIFIER_JOB = "safety-net-verifiers"
 
 
 def _workflow() -> dict[str, object]:
@@ -51,7 +55,7 @@ def test_required_context_is_produced_for_merge_queue_events() -> None:
     )
 
     append_step = next(
-        step for step in job["steps"]
+        step for step in workflow["jobs"][VERIFIER_JOB]["steps"]
         if step.get("name") == "Verify immutable attestation append against accepted base"
     )
     assert append_step["if"] == (
@@ -74,7 +78,7 @@ def test_required_context_keeps_its_job_identity_and_dependency() -> None:
     jobs = _workflow()["jobs"]
 
     assert REQUIRED_JOB in jobs
-    assert jobs[REQUIRED_JOB]["needs"] == ["classify", "pytest-shards"]
+    assert jobs[REQUIRED_JOB]["needs"] == ["classify", "pytest-shards", VERIFIER_JOB]
     assert "strategy" not in jobs[REQUIRED_JOB]
 
 
@@ -104,7 +108,7 @@ def test_pytest_shards_cover_every_file_once_and_keep_history_scoped() -> None:
     )
     assert "pandoc=3.1.3+ds-2" in steps["Install Pandoc"]["run"]
     required_setup = next(
-        step for step in jobs[REQUIRED_JOB]["steps"] if step.get("name") == "Set up Python"
+        step for step in jobs[VERIFIER_JOB]["steps"] if step.get("name") == "Set up Python"
     )
     assert steps["Set up Python"]["with"] == required_setup["with"]
     assert steps["Run pytest shard"]["env"]["DEFAULT_BRANCH"] == (
@@ -279,8 +283,50 @@ def test_classify_step_classifies_diff(
     assert f"changed_paths={', '.join(sorted(changed_paths))}" in lines
 
 
-def test_artifact_only_fast_path_preserves_required_verification() -> None:
+def test_required_context_judges_results_without_repeating_the_work() -> None:
+    """The required context must not carry a checkout or a verifier step.
+
+    Both are what made every source push pay a full-history clone twice, serially. The
+    required name stays on a single non-matrix job because branch protection requires that
+    exact context; the work it judges lives in its own jobs.
+    """
+    jobs = _workflow()["jobs"]
+    required = jobs[REQUIRED_JOB]
+    verifier = jobs[VERIFIER_JOB]
+
+    assert "strategy" not in required
+    actions = [step.get("uses", "") for step in required["steps"]]
+    assert not any(action.startswith("actions/checkout") for action in actions), (
+        "the required context must not check out the repository; the verifier job owns that"
+    )
+    assert "timeout-minutes" in required
+    assert int(required["timeout-minutes"]) <= 5, (
+        "a result-checking job that needs a longer bound is doing work again"
+    )
+
+    required_names = {step["name"] for step in required["steps"]}
+    assert required_names == {"Require successful pytest shards", "Require successful verifier job"}
+    assert "pytest-shards" not in (verifier.get("needs") or []), (
+        "the verifier job must not wait on the shards; running beside them is the whole saving"
+    )
+    assert verifier["needs"] == ["classify"]
+
+
+@pytest.mark.parametrize("verifier_result", ["failure", "cancelled", "success", "skipped"])
+def test_required_context_rejects_a_red_verifier_job(verifier_result: str) -> None:
     job = _workflow()["jobs"][REQUIRED_JOB]
+    step = next(step for step in job["steps"] if step["name"] == "Require successful verifier job")
+    result = subprocess.run(
+        ["bash", "-c", step["run"]],
+        env=os.environ | {"VERIFIER_RESULT": verifier_result},
+        capture_output=True,
+        text=True,
+    )
+    assert (result.returncode == 0) == (verifier_result in {"success", "skipped"})
+
+
+def test_artifact_only_fast_path_preserves_required_verification() -> None:
+    job = _workflow()["jobs"][VERIFIER_JOB]
     assert job["env"]["ARTIFACT_ONLY_FAST_PATH"] == (
         "${{ github.event_name == 'pull_request' && needs.classify.outputs.health_only == 'true' }}"
     )
@@ -336,7 +382,7 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
 
 
 def test_ci_profiles_keep_chain_head_ordering_check_and_its_dependencies() -> None:
-    steps = {step["name"]: step for step in _workflow()["jobs"][REQUIRED_JOB]["steps"]}
+    steps = {step["name"]: step for step in _workflow()["jobs"][VERIFIER_JOB]["steps"]}
     check = steps["Verify signed chain-head monotonicity"]
     assert "if" not in check
     assert check["run"] == "python3 -m pytest -q scripts/tests/test_chain_head_monotonicity.py"
