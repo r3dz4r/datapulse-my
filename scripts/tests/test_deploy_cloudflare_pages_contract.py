@@ -1200,14 +1200,14 @@ def test_publication_classifier_invocations_pass_no_profile_flags() -> None:
     assert all(line.endswith("python3 scripts/classify_change.py; then") for line in invocations)
 
 
-def test_pages_concurrency_serializes_all_production_candidates() -> None:
+def test_pages_concurrency_keeps_one_pending_deploy_candidate() -> None:
     workflow = yaml.safe_load(_workflow())
 
-    # Pending candidates must survive newer arrivals in the shared promotion lane.
+    # New arrivals replace pending deploys without canceling the active run.
     assert workflow["concurrency"] == {
-        "group": "cloudflare-pages-production",
+        "group": "cloudflare-pages-deploy",
         "cancel-in-progress": False,
-        "queue": "max",
+        "queue": "single",
     }
     assert "concurrency" not in workflow["jobs"]["sign_health"]
     assert "concurrency" not in workflow["jobs"]["deploy"]

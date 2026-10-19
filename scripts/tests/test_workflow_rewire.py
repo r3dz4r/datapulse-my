@@ -239,11 +239,11 @@ def test_cloudflare_workflow_permissions_and_concurrency_are_not_broadened() -> 
     concurrency = workflow["concurrency"]
 
     assert workflow["permissions"] == {"contents": "read"}
-    # Queue depth prevents pending promotions from evicting one another.
+    # New deploy candidates replace only pending deploys, never an in-flight run.
     assert concurrency == {
-        "group": "cloudflare-pages-production",
+        "group": "cloudflare-pages-deploy",
         "cancel-in-progress": False,
-        "queue": "max",
+        "queue": "single",
     }
     assert "concurrency" not in workflow["jobs"]["sign_health"]
     assert "concurrency" not in workflow["jobs"]["deploy"]
@@ -677,21 +677,22 @@ def test_cloudflare_health_only_classifier_is_scoped_to_pipeline_outputs() -> No
         assert not is_health_only_change(("health/latest.json", rejected_path))
 
 
-def test_health_and_source_candidates_share_the_non_cancelable_promotion_lane() -> None:
+def test_health_and_source_candidates_share_the_newest_wins_deploy_lane() -> None:
     workflow = yaml.safe_load(_read(DEPLOY_WORKFLOW))
 
-    # Preserve the shared lock while queuing pending runs instead of evicting them.
+    # One pending deploy can be replaced without canceling an in-flight promotion.
     assert workflow["concurrency"] == {
-        "group": "cloudflare-pages-production",
+        "group": "cloudflare-pages-deploy",
         "cancel-in-progress": False,
-        "queue": "max",
+        "queue": "single",
     }
     for job_name in ("classify", "sign_health", "deploy"):
         assert "concurrency" not in workflow["jobs"][job_name]
 
 
-def test_daily_attestation_queues_in_the_shared_production_lane() -> None:
+def test_daily_attestation_queues_in_a_separate_never_evict_lane() -> None:
     workflow = yaml.safe_load(_read(ROOT / ".github/workflows/datapulse-attest-daily.yml"))
+    deploy = yaml.safe_load(_read(DEPLOY_WORKFLOW))
 
     # Frequent deploy arrivals must not evict a pending daily append producer.
     assert workflow["concurrency"] == {
@@ -699,6 +700,7 @@ def test_daily_attestation_queues_in_the_shared_production_lane() -> None:
         "cancel-in-progress": False,
         "queue": "max",
     }
+    assert workflow["concurrency"]["group"].casefold() != deploy["concurrency"]["group"].casefold()
 
 
 def test_ci_and_release_please_delegate_health_path_decisions_to_shared_classifier() -> None:
