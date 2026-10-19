@@ -46,12 +46,15 @@ def test_required_context_is_produced_for_merge_queue_events() -> None:
 
     job = workflow["jobs"][REQUIRED_JOB]
     verifier = workflow["jobs"][VERIFIER_JOB]
+    # always() is required now that this job has upstream needs: without it a failed suite or
+    # verifier job would skip the required context, and a skip satisfies branch protection.
     assert job["if"] == (
+        "always() && ("
         "github.event_name == 'pull_request' || "
         "github.event_name == 'workflow_dispatch' || "
         "github.event_name == 'merge_group' || "
         "(github.event_name == 'push' && "
-        "needs.classify.outputs.health_only != 'true')"
+        "needs.classify.outputs.health_only != 'true'))"
     )
 
     append_step = next(
