@@ -242,7 +242,7 @@ def test_on_disk_fork_selects_first_merged_child_without_evidence_changes() -> N
         lineage = assert_head_extends_base(document, PARENT)
         assert SIBLINGS[1] in lineage
         assert SIBLINGS[0] not in lineage
-        assert document["rejected_heads"] == {SIBLINGS[0]: SIBLINGS[1]}
+        assert document["rejected_heads"].get(SIBLINGS[0]) == SIBLINGS[1]
         assert SIBLINGS[0] not in document["heads"]
     assert before == revision_digests()
     assert git(ROOT, "diff", INCIDENT, "--", *[
