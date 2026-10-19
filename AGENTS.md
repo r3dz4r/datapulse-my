@@ -10,7 +10,7 @@ Working agreement for AI agents (Hermes, Codex, Claude Code) operating inside th
 
 ## Hard rules
 
-1. **Do not write/edit/refactor code.** Dispatch `codex-run` (with a tight brief). You may edit `.gitignore`, commit messages, and markdown files under `docs/` — those are operator-owned.
+1. **Do not write/edit/refactor code.** Dispatch `codex-run` (with a tight brief). You may edit `.gitignore`, commit messages, and markdown files under `docs/` — those are operator-owned. **A dispatched worker is the exception and must write the scoped code itself:** this rule addresses the Hermes orchestrator, not the worker, and it does not authorise a worker to dispatch another agent. A worker that stops because it read this rule as applying to itself has misread it — report any other conflict, but not this one.
 2. **No `--yolo`, no bypassing preflight gates.** The deterministic-safety-net job in `.github/workflows/ci.yml` must stay green. If it fails, fix the gate (or the brief that fed into it) — don't silence the failure.
 3. **Push requires explicit "push".** "Proceed" / "go" / "dispatch codex" authorises only the *immediately preceding, clearly scoped* action. "Push" must be literal.
 4. **Never silently rotate credentials, edit firewall rules, or stop `systemd` services** on the public-facing VPS (`https://data-pulse.my`). These are always-ask.

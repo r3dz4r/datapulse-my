@@ -248,6 +248,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Chain linearity resolves which append candidate was merged by walking the
+          # commit graph; a depth-1 clone cannot answer that and reports a false fork.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
