@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.36](https://github.com/r3dz4r/datapulse-my/compare/v3.55.35...v3.55.36) (2026-10-19)
+
+
+### Performance Improvements
+
+* **attestation:** verify each discovered append set once per call ([118070e](https://github.com/r3dz4r/datapulse-my/commit/118070eea550793b16584a3093cb805c7c61661a))
+* verify discovered append sets once per call ([09ec6e8](https://github.com/r3dz4r/datapulse-my/commit/09ec6e8cf2bffb6054576a78093b8dd0d7722074))
+
 ## [3.55.35](https://github.com/r3dz4r/datapulse-my/compare/v3.55.34...v3.55.35) (2026-10-19)
 
 
