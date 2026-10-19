@@ -2,10 +2,10 @@
 
 **Created:** 2026-08-03
 **Historical submission date:** 2026-08-18
-**Last live audit:** 2026-09-01
+**Last live audit:** 2026-10-19 (Glama re-audit); prior full audit 2026-09-01
 **Document status:** Historical submission record plus current directory audit. Do not treat old payloads or third-party metadata as current DataPulse capability truth.
 
-**Current result:** The aiecosystem.my listing is live and visible. The assistants.my submission has not been made. The official MCP Registry has one active latest record and four deprecated historical records. Glama’s listing exists but is stale/unhealthy.
+**Current result:** The aiecosystem.my listing is live and visible. The assistants.my submission has not been made. The official MCP Registry has one active latest record and four deprecated historical records. Glama's connector is live and **healthy** — re-verified 2026-10-19 (status Healthy, uptime 99.0% over 63 days, last tested 2026-10-19 09:17, TDQS A 4.4/5.0 scored 2026-10-17 across the 19 advertised tools). The 2026-09-01 "stale/unhealthy" assessment below was correct when written and is superseded by that probe, not deleted.
 
 **Context on fit:** DataPulse is an open-source, AI-ready evidence layer for Malaysian public data. It publishes freshness, licence, provenance, and source-condition evidence through machine-readable surfaces and a public read-only MCP server. Current capability counts belong to the live `mcp.json` advertisement, not this submission record.
 
@@ -78,6 +78,31 @@ Form fields: Tool name · Website URL · Short desc (EN, max 120 chars) · Short
 
 The original 2026-08-18 aiecosystem payload is retained above as a historical submission record. It is not a reusable current capability manifest.
 
+## Re-audit 2026-10-19 — Glama
+
+The 2026-09-01 note recorded Glama as stale/unhealthy with a last test of 2026-08-20. That is no longer the state. Probed 2026-10-19 at 19:2x MYT:
+
+| Signal | Observed value | Source |
+|---|---|---|
+| Connector page | HTTP 200 — `https://glama.ai/mcp/connectors/io.github.r3dz4r/datapulse-my` | direct fetch |
+| Legacy server path | HTTP 404 | direct fetch |
+| Status | Healthy | connector page |
+| Uptime | 99.0% over 63 days | connector page |
+| Last tested | 2026-10-19 09:17 | connector page |
+| Transport | Streamable HTTP · MCP 2025-11-25 | connector page |
+| Endpoint | `https://mcp.data-pulse.my/mcp` | connector page |
+| Ownership | verified | connector page |
+| TDQS | A 4.4/5.0, scored 2026-10-17 11:45 across the advertised tools | connector page |
+| Advertised tools | matches the live `mcp.json` count | `mcp.json` |
+
+**Metadata ownership.** Glama derives the listing from this repository and the served MCP endpoint; the repository's only Glama-specific control is `glama.json`, whose schema (`https://glama.ai/mcp/schemas/server.json`) accepts exactly one property — `maintainers`. It currently holds `["r3dz4r"]` and is correct. There is no description, version or package field to update there: those come from `server.json` and the live server. No edit to `glama.json` is warranted, and inventing fields would fail the schema.
+
+**Sync check.** `server.json` advertises name `io.github.r3dz4r/datapulse-my`, version matching `VERSION.txt`, description matching the Glama listing, and the same remote URL. Ownership, endpoint, tool count and description all agree, so the listing reflects current state.
+
+**Standing staleness risk.** The listing description embeds a dataset count ("440 Malaysian public datasets") in `server.json`. When the catalogue changes, the listing and the registry record go stale together until a new registry publish. Treat that count as a generated value to refresh at publish time, not hand-authored copy.
+
+**What is not fixable from here.** Glama's test cadence, uptime history and TDQS score are its own measurements. The only lever this repository has is keeping the endpoint healthy and the metadata accurate, both of which currently hold.
+
 ## Disposition
 
 - [x] Review both historical submission drafts.
@@ -85,7 +110,7 @@ The original 2026-08-18 aiecosystem payload is retained above as a historical su
 - [x] Confirm the aiecosystem edit page is a review-gated edit surface, not proof that the existing listing is pending.
 - [x] Confirm assistants.my has no DataPulse listing — no submission performed.
 - [x] Confirm the official MCP Registry has one active latest record and four deprecated historical records.
-- [x] Mark Glama metadata as stale/unhealthy external metadata.
+- [x] Glama re-audited 2026-10-19: connector live and healthy, metadata in sync with `server.json`; the 2026-09-01 stale/unhealthy mark is superseded and retained here as history.
 - [x] Remove personal submission contact detail from this public document.
 - [x] Remove reusable tool-count and count-heavy current claims (done 2026-09-02; a stale count lived here before that).
 - [ ] Reconcile served `agent.json` with served `mcp.json` before any future count-based submission copy.
