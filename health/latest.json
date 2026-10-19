@@ -1,28 +1,28 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-10-19T03:42:36Z",
+  "checked_at": "2026-10-19T03:49:44Z",
   "_trust_summary": {
-    "checked_at": "2026-10-19T03:42:36Z",
+    "checked_at": "2026-10-19T03:49:44Z",
     "datasets_total": 440,
     "by_status": {
-      "fresh": 131,
+      "fresh": 132,
       "aging": 133,
-      "stale": 124,
+      "stale": 127,
       "discontinued": 1,
       "degraded": 2,
       "browser_dependent": 0,
-      "unreachable": 7,
+      "unreachable": 3,
       "unknown": 0,
       "unknown_freshness": 6,
       "reference": 36
     },
     "datasets_health_signal_source": {
       "last_modified_header": 161,
-      "content_date_parse": 232,
-      "neither": 47
+      "content_date_parse": 236,
+      "neither": 43
     },
     "datasets_with_no_last_modified_header": 276,
-    "datasets_with_no_record_count_extracted": 18,
+    "datasets_with_no_record_count_extracted": 14,
     "oldest_last_modified": "2024-01-02T01:00:56Z",
     "newest_last_modified": "2026-10-18T19:31:25Z",
     "stale_datasets": [
@@ -219,6 +219,10 @@
         "days_since_modified": 1752
       },
       {
+        "dataset_id": "vaxreg_covid",
+        "days_since_modified": 1700
+      },
+      {
         "dataset_id": "vaxreg_covid_demog",
         "days_since_modified": 1700
       },
@@ -327,6 +331,10 @@
         "days_since_modified": 1387
       },
       {
+        "dataset_id": "births",
+        "days_since_modified": 1176
+      },
+      {
         "dataset_id": "covid_deaths_linelist",
         "days_since_modified": 884
       },
@@ -372,6 +380,10 @@
       },
       {
         "dataset_id": "covid_cases_vaxstatus",
+        "days_since_modified": 506
+      },
+      {
+        "dataset_id": "covid_cases_age",
         "days_since_modified": 506
       },
       {
@@ -472,58 +484,58 @@
       },
       {
         "dataset_id": "gtfs_realtime_ktmb",
-        "days_since_modified": 0.006539351851851852
+        "days_since_modified": 0.011493055555555555
       },
       {
         "dataset_id": "gtfs_realtime_mybas_seremban_b",
-        "days_since_modified": 0.006458333333333333
+        "days_since_modified": 0.011412037037037037
       },
       {
         "dataset_id": "gtfs_realtime_mybas_seremban_a",
-        "days_since_modified": 0.006435185185185185
+        "days_since_modified": 0.01138888888888889
       },
       {
         "dataset_id": "gtfs_realtime_mybas_melaka",
-        "days_since_modified": 0.006168981481481482
+        "days_since_modified": 0.011122685185185185
       },
       {
         "dataset_id": "gtfs_realtime_mybas_ipoh",
-        "days_since_modified": 0.0061574074074074074
+        "days_since_modified": 0.011111111111111112
       },
       {
         "dataset_id": "gtfs_realtime_mybas_kuching",
-        "days_since_modified": 0.005983796296296296
+        "days_since_modified": 0.0109375
       },
       {
         "dataset_id": "gtfs_realtime_mybas_kangar",
-        "days_since_modified": 0.0059490740740740745
+        "days_since_modified": 0.010902777777777779
       },
       {
         "dataset_id": "gtfs_realtime_mybas_alor_setar",
-        "days_since_modified": 0.0059375
+        "days_since_modified": 0.010891203703703703
       },
       {
         "dataset_id": "gtfs_realtime_mybas_kuala_terengganu",
-        "days_since_modified": 0.005914351851851852
+        "days_since_modified": 0.010868055555555556
       },
       {
         "dataset_id": "gtfs_realtime_mybas_johor",
-        "days_since_modified": 0.005821759259259259
+        "days_since_modified": 0.010775462962962962
       },
       {
         "dataset_id": "gtfs_realtime_prasarana_bus_penang",
-        "days_since_modified": 0.005729166666666666
+        "days_since_modified": 0.01068287037037037
       },
       {
         "dataset_id": "gtfs_realtime_prasarana_bus_kl",
-        "days_since_modified": 0.005671296296296297
+        "days_since_modified": 0.010625
       },
       {
         "dataset_id": "gtfs_realtime_mybas_kota_bharu",
-        "days_since_modified": 0.005625
+        "days_since_modified": 0.010578703703703703
       }
     ],
-    "pipeline_heartbeat_at": "2026-10-19T03:48:35Z"
+    "pipeline_heartbeat_at": "2026-10-19T03:55:43Z"
   },
   "datasets": [
     {
@@ -85884,7 +85896,7 @@
       "newest_vehicle_timestamp": 1792380791,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.006539351851851852,
+      "staleness_days": 0.011493055555555555,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -85897,7 +85909,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.006539351851851852,
+        "latest_days": 0.011493055555555555,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -86706,7 +86718,7 @@
       "newest_vehicle_timestamp": 1792380866,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.005671296296296297,
+      "staleness_days": 0.010625,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -86719,7 +86731,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.005671296296296297,
+        "latest_days": 0.010625,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -87528,7 +87540,7 @@
       "newest_vehicle_timestamp": 1792380861,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.005729166666666666,
+      "staleness_days": 0.01068287037037037,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -87541,7 +87553,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.005729166666666666,
+        "latest_days": 0.01068287037037037,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -89172,7 +89184,7 @@
       "newest_vehicle_timestamp": 1792380842,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0059490740740740745,
+      "staleness_days": 0.010902777777777779,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -89185,7 +89197,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0059490740740740745,
+        "latest_days": 0.010902777777777779,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -89994,7 +90006,7 @@
       "newest_vehicle_timestamp": 1792380843,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0059375,
+      "staleness_days": 0.010891203703703703,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -90007,7 +90019,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0059375,
+        "latest_days": 0.010891203703703703,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -90816,7 +90828,7 @@
       "newest_vehicle_timestamp": 1792380870,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.005625,
+      "staleness_days": 0.010578703703703703,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -90829,7 +90841,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.005625,
+        "latest_days": 0.010578703703703703,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -91638,7 +91650,7 @@
       "newest_vehicle_timestamp": 1792380845,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.005914351851851852,
+      "staleness_days": 0.010868055555555556,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -91651,7 +91663,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.005914351851851852,
+        "latest_days": 0.010868055555555556,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -92460,7 +92472,7 @@
       "newest_vehicle_timestamp": 1792380824,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0061574074074074074,
+      "staleness_days": 0.011111111111111112,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -92473,7 +92485,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0061574074074074074,
+        "latest_days": 0.011111111111111112,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -93282,7 +93294,7 @@
       "newest_vehicle_timestamp": 1792380800,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.006435185185185185,
+      "staleness_days": 0.01138888888888889,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -93295,7 +93307,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.006435185185185185,
+        "latest_days": 0.01138888888888889,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -94104,7 +94116,7 @@
       "newest_vehicle_timestamp": 1792380798,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.006458333333333333,
+      "staleness_days": 0.011412037037037037,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -94117,7 +94129,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.006458333333333333,
+        "latest_days": 0.011412037037037037,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -94926,7 +94938,7 @@
       "newest_vehicle_timestamp": 1792380823,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.006168981481481482,
+      "staleness_days": 0.011122685185185185,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -94939,7 +94951,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.006168981481481482,
+        "latest_days": 0.011122685185185185,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -95748,7 +95760,7 @@
       "newest_vehicle_timestamp": 1792380853,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.005821759259259259,
+      "staleness_days": 0.010775462962962962,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -95761,7 +95773,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.005821759259259259,
+        "latest_days": 0.010775462962962962,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -96570,7 +96582,7 @@
       "newest_vehicle_timestamp": 1792380839,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.005983796296296296,
+      "staleness_days": 0.0109375,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -96583,7 +96595,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.005983796296296296,
+        "latest_days": 0.0109375,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -144583,19 +144595,19 @@
     },
     {
       "dataset_id": "covid_cases_age",
-      "last_checked": "2026-10-18T23:49:26Z",
+      "last_checked": "2026-10-19T03:49:44Z",
       "namespace": "healthcare",
       "url": "https://api.data.gov.my/data-catalogue?id=covid_cases_age",
-      "status": "unreachable",
-      "status_reason": null,
-      "message": "HTTP 521",
+      "status": "stale",
+      "status_reason": "publisher-likely-retired",
+      "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=covid_cases_age",
       "access_method": "direct curl GET",
-      "http_status": 521,
-      "content_length": null,
+      "http_status": 200,
+      "content_length": 10079621,
       "last_modified": null,
-      "content_freshness_date": null,
-      "first_record_timestamp": null,
+      "content_freshness_date": "2025-05-31",
+      "first_record_timestamp": "2022-11-28",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
       "transition_registration_count": null,
@@ -144606,25 +144618,31 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
+      "record_count": 33218,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
-      "column_count": null,
-      "first_row_hash": null,
-      "shape_basis": null,
+      "column_count": 16,
+      "first_row_hash": "shape-v1:b969c1024f149bf50d20f605a568c4d7c37744d10b0c6a0e355fc23895280246",
+      "shape_basis": "json-array",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
       "content_shape_changed": false,
       "locations": null,
       "date_range": null,
-      "newest_date": null,
-      "oldest_date": null,
-      "distinct_dates": null,
-      "rows_per_date": null,
-      "largest_gap_days": null,
-      "dimension_cardinality": null,
+      "newest_date": "2025-05-31",
+      "oldest_date": "2020-01-25",
+      "distinct_dates": 1954,
+      "rows_per_date": {
+        "max": 17,
+        "mean": 17.0,
+        "min": 17
+      },
+      "largest_gap_days": 1,
+      "dimension_cardinality": {
+        "state": 17
+      },
       "agency": null,
       "stops": null,
       "routes": null,
@@ -144635,29 +144653,29 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": 10000,
-      "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "record_count_within_tolerance": true,
+      "staleness_days": 506,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
-      "anomaly_detected": false,
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
         "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 3,
+        "latest_days": 506.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -144685,9 +144703,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -144705,9 +144723,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -144750,16 +144768,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
-              "unknown": 1,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
-              "shape_metadata_missing",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -145102,13 +145120,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -145146,9 +145164,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -145187,16 +145205,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_observed",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -145397,7 +145415,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "ready",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -236550,19 +236568,19 @@
     },
     {
       "dataset_id": "vaxreg_covid",
-      "last_checked": "2026-10-18T23:49:26Z",
+      "last_checked": "2026-10-19T03:49:44Z",
       "namespace": "healthcare",
       "url": "https://api.data.gov.my/data-catalogue?id=vaxreg_covid",
-      "status": "unreachable",
-      "status_reason": null,
-      "message": "HTTP 521",
+      "status": "stale",
+      "status_reason": "publisher-likely-retired",
+      "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=vaxreg_covid",
       "access_method": "direct curl GET",
-      "http_status": 521,
-      "content_length": null,
+      "http_status": 200,
+      "content_length": 424651,
       "last_modified": null,
-      "content_freshness_date": null,
-      "first_record_timestamp": null,
+      "content_freshness_date": "2022-02-22",
+      "first_record_timestamp": "2021-02-23",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
       "transition_registration_count": null,
@@ -236573,25 +236591,31 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
+      "record_count": 6205,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
-      "column_count": null,
-      "first_row_hash": null,
-      "shape_basis": null,
+      "column_count": 3,
+      "first_row_hash": "shape-v1:65ee238e27291a95e8ee3450c52b96bf993be2a4b08fe17e2752db9a0511ea83",
+      "shape_basis": "json-array",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
       "content_shape_changed": false,
       "locations": null,
       "date_range": null,
-      "newest_date": null,
-      "oldest_date": null,
-      "distinct_dates": null,
-      "rows_per_date": null,
-      "largest_gap_days": null,
-      "dimension_cardinality": null,
+      "newest_date": "2022-02-22",
+      "oldest_date": "2021-02-23",
+      "distinct_dates": 365,
+      "rows_per_date": {
+        "max": 17,
+        "mean": 17.0,
+        "min": 17
+      },
+      "largest_gap_days": 1,
+      "dimension_cardinality": {
+        "state": 17
+      },
       "agency": null,
       "stops": null,
       "routes": null,
@@ -236602,29 +236626,29 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": 6205,
-      "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "record_count_within_tolerance": true,
+      "staleness_days": 1700,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
-      "anomaly_detected": false,
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
         "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 3,
+        "latest_days": 1700.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -236652,9 +236676,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -236672,9 +236696,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -236717,16 +236741,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
-              "unknown": 1,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
-              "shape_metadata_missing",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -237069,13 +237093,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -237113,9 +237137,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -237154,16 +237178,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_observed",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -237364,7 +237388,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "ready",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -256420,18 +256444,18 @@
     },
     {
       "dataset_id": "metrics_dataset_cumul",
-      "last_checked": "2026-10-18T23:49:26Z",
+      "last_checked": "2026-10-19T03:49:44Z",
       "namespace": "government_open_data",
       "url": "https://api.data.gov.my/data-catalogue?id=metrics_dataset_cumul",
-      "status": "unreachable",
+      "status": "fresh",
       "status_reason": null,
-      "message": "HTTP 521",
+      "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=metrics_dataset_cumul",
       "access_method": "direct curl GET",
-      "http_status": 521,
-      "content_length": null,
+      "http_status": 200,
+      "content_length": 81351,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2026-10-18",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -256443,13 +256467,13 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
+      "record_count": 338,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
-      "column_count": null,
-      "first_row_hash": null,
-      "shape_basis": null,
+      "column_count": 8,
+      "first_row_hash": "shape-v1:3ab529ee051494f5fdbe31044601c99bc5a5ec9a332039d32d2ed595b4e1e569",
+      "shape_basis": "json-array",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
@@ -256458,10 +256482,10 @@
       "date_range": null,
       "newest_date": null,
       "oldest_date": null,
-      "distinct_dates": null,
+      "distinct_dates": 0,
       "rows_per_date": null,
       "largest_gap_days": null,
-      "dimension_cardinality": null,
+      "dimension_cardinality": {},
       "agency": null,
       "stops": null,
       "routes": null,
@@ -256472,12 +256496,12 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": 281,
-      "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "record_count_within_tolerance": true,
+      "staleness_days": 1,
+      "staleness_status": "fresh",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
       "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
@@ -256485,16 +256509,16 @@
         "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 3,
+        "latest_days": 1.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -256522,9 +256546,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -256542,9 +256566,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -256587,16 +256611,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
-              "unknown": 1,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
-              "shape_metadata_missing",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -256939,13 +256963,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -256983,9 +257007,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -257024,16 +257048,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_observed",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -257234,7 +257258,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "ready",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -276299,19 +276323,19 @@
     },
     {
       "dataset_id": "births",
-      "last_checked": "2026-10-18T23:49:26Z",
+      "last_checked": "2026-10-19T03:49:44Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=births",
-      "status": "unreachable",
-      "status_reason": null,
-      "message": "HTTP 521",
+      "status": "stale",
+      "status_reason": "publisher-likely-retired",
+      "message": "HTTP 200",
       "request_url": "https://api.data.gov.my/data-catalogue?id=births",
       "access_method": "direct curl GET",
-      "http_status": 521,
-      "content_length": null,
+      "http_status": 200,
+      "content_length": 2289547,
       "last_modified": null,
-      "content_freshness_date": null,
-      "first_record_timestamp": null,
+      "content_freshness_date": "2023-07-31",
+      "first_record_timestamp": "1920-01-01",
       "registration_format_compatible": null,
       "legacy_registration_count": null,
       "transition_registration_count": null,
@@ -276322,25 +276346,31 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
+      "record_count": 37833,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
-      "column_count": null,
-      "first_row_hash": null,
-      "shape_basis": null,
+      "column_count": 3,
+      "first_row_hash": "shape-v1:599eb878e879d8e98479e31359ffe8634bbf41817aad28e534f845a6bd3cb184",
+      "shape_basis": "json-array",
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
       "content_shape_changed": false,
       "locations": null,
       "date_range": null,
-      "newest_date": null,
-      "oldest_date": null,
-      "distinct_dates": null,
-      "rows_per_date": null,
-      "largest_gap_days": null,
-      "dimension_cardinality": null,
+      "newest_date": "2023-07-31",
+      "oldest_date": "1920-01-01",
+      "distinct_dates": 37833,
+      "rows_per_date": {
+        "max": 1,
+        "mean": 1.0,
+        "min": 1
+      },
+      "largest_gap_days": 1,
+      "dimension_cardinality": {
+        "state": 1
+      },
       "agency": null,
       "stops": null,
       "routes": null,
@@ -276351,29 +276381,29 @@
       "header_timestamp": null,
       "newest_vehicle_timestamp": null,
       "expected_record_count": 37833,
-      "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "record_count_within_tolerance": true,
+      "staleness_days": 1176,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
-      "anomaly_detected": false,
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
         "sample_days": 7,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 3,
+        "latest_days": 1176.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -276401,9 +276431,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -276421,9 +276451,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -276466,16 +276496,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
-              "unknown": 1,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
-              "shape_metadata_missing",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -276818,13 +276848,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -276862,9 +276892,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -276903,16 +276933,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_observed",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -277113,7 +277143,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "ready",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
