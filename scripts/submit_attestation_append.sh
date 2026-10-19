@@ -28,7 +28,6 @@ head="${identity[0]}"
 day="${identity[1]}"
 branch="attestation/append-$head"
 # Check the freshly fetched accepted parent without rewriting a signed candidate.
-python3 scripts/verify_attestation_append.py --base origin/main
 path_output="$(python3 scripts/verify_attestation_append.py --base origin/main --print-paths)"
 [[ -n "$path_output" ]] || exit 0
 readarray -t paths <<<"$path_output"
