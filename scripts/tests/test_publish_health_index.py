@@ -320,6 +320,57 @@ def test_publish_retries_once_after_timeout_then_succeeds(monkeypatch: object) -
     assert attempts == 2
 
 
+def test_publish_retries_after_http_5xx(monkeypatch: object) -> None:
+    module = _module()
+    attempts = 0
+
+    def publish_once(*_args: object) -> tuple[int, int]:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise module.PublishError("HTTP 504")
+        return 3, 4
+
+    monkeypatch.setattr(module, "publish_unchanged_aware", publish_once)
+    assert module.publish_unchanged_aware_with_retry("api", "token", {"key": b"value"}) == (3, 4)
+    assert attempts == 2
+
+
+def test_publish_retries_http_5xx_after_long_first_attempt(monkeypatch: object) -> None:
+    module = _module()
+    attempts = 0
+    times = iter((100.0, 100.0 + module.TOTAL_TIMEOUT_SECONDS / 2 + 1))
+    monkeypatch.setattr(module.time, "monotonic", lambda: next(times))
+
+    def publish_once(*_args: object) -> tuple[int, int]:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise module.PublishError("HTTP 504")
+        return 3, 4
+
+    monkeypatch.setattr(module, "publish_unchanged_aware", publish_once)
+    assert module.publish_unchanged_aware_with_retry("api", "token", {"key": b"value"}) == (3, 4)
+    assert attempts == 2
+
+
+def test_projection_is_published_after_artifacts(monkeypatch: object, tmp_path: Path) -> None:
+    module = _module()
+    health = tmp_path / "latest.json"
+    _health(health)
+    payloads = module.health_payloads(health)
+    writes: list[str] = []
+
+    monkeypatch.setattr(module, "resolve_account_id", lambda *_args: "account")
+    monkeypatch.setattr(module, "read_value", lambda *_args: None)
+    monkeypatch.setattr(module, "publish_value", lambda _base, _account, _token, key, _payload: writes.append(key))
+
+    module.publish_unchanged_aware("https://api.example.test", "token", payloads)
+
+    assert writes[-1] == module.KEY
+    assert all(key.startswith("health/") for key in writes[:-1])
+
+
 def test_publish_does_not_retry_http_4xx(monkeypatch: object) -> None:
     module = _module()
     attempts = 0
