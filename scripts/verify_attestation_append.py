@@ -3,20 +3,28 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from collections.abc import Iterator
+from datetime import date
 import fnmatch
 import hashlib
+import json
 import os
 from pathlib import Path, PurePosixPath
 import subprocess
 import sys
 import time
 
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.attestation_fetch_refs import SNAPSHOT_FILES
 from scripts.attestation_sets import (
     FILES,
     PIPELINE_OWNED_PROJECTIONS,
+    SET_REF,
+    assert_head_extends_base,
+    descriptor,
     discovery,
     external_rekor_paths,
     first_parent_order,
@@ -24,7 +32,9 @@ from scripts.attestation_sets import (
     verify_legacy_mirror,
     selected_directory,
 )
-from scripts.verify_attestation_binding import ContractError, _load, _parse_time
+from scripts.verify_attestation_binding import (
+    ContractError, _load, _parse_time, _verify_legacy_plane, _verify_signature,
+)
 
 PROJECTIONS = {"attestations/chain-index.json", ".attestations/chain_head.json"}
 
@@ -216,19 +226,190 @@ class _GitTree:
         return data
 
 
+def _spine_discovery(root: _GitPath, references: set[str], order: dict[str, int]) -> dict:
+    """Derive accepted maps from signed heads and indexes, not dataset blobs."""
+    checkpoint = "attestations/chain-index.json"
+    document = (_load(root / checkpoint, "chain index") if checkpoint in references else
+                {"schema": "datapulse/v2/chain-index", "heads": {}, "anchors": {},
+                 "envelopes": {}, "days": {}, "current_head": None})
+    if document.get("schema") == "datapulse/v1/chain-index":
+        # The legacy migration resolves gaps by verifying sets, not by following
+        # parents. Keep that one-time path until a v2 boundary has been pinned.
+        return discovery(root, fork_order=order)
+    if document.get("schema") != "datapulse/v2/chain-index":
+        raise ContractError("unknown chain index schema")
+    heads = document.get("heads")
+    if not isinstance(heads, dict) or len(set(heads.values())) != len(heads):
+        raise ContractError("duplicate or invalid chain head mapping")
+    registry = None
+    verified = {}
+
+    def head_at(reference: str) -> dict:
+        nonlocal registry
+        if reference in verified:
+            return verified[reference]
+        directory = set_directory(reference)
+        head = _load(root / reference, "immutable chain head")
+        index = _load(root / directory / "index.json", "immutable index")
+        binding = _load(root / directory / "binding.json", "immutable binding")
+        payload = binding.get("payload", {})
+        if registry is None:
+            registry = _load(root / "docs/.well-known/datapulse-probe-keys.json", "key registry")
+        matches = [row for row in registry.get("keys", [])
+                   if row.get("key_id") == payload.get("ed25519", {}).get("key_id")]
+        if registry.get("schema") != "datapulse/v2/probe-key-registry" or len(matches) != 1:
+            raise ContractError("historical attestation key missing or ambiguous")
+        row = matches[0]
+        published = _parse_time(payload.get("published_at"), "publication time")
+        if (row.get("purpose") != "attestation-chain-signing" or row.get("status") == "compromised"
+                or row.get("compromised_at") or not (
+                    _parse_time(row.get("not_before"), "key start") <= published
+                    <= _parse_time(row.get("not_after"), "key end"))):
+            raise ContractError("historical signer is unauthorized")
+        public = Ed25519PublicKey.from_public_bytes(base64.b64decode(row["public_key_base64"], validate=True))
+        _verify_signature(public, payload, binding.get("signature_base64"), "immutable binding")
+        _verify_legacy_plane(root, index, head, public, row, verify_datasets=False)
+        if (binding.get("schema") != "datapulse/v1/attestation-binding-envelope"
+                or payload.get("schema") != "datapulse/v1/attestation-binding"
+                or payload.get("date") != head["payload"]["date"]
+                or payload.get("ed25519", {}).get("chain_head_ref") != reference
+                or payload.get("ed25519", {}).get("chain_head") != head["chain_head"]
+                or index.get("binding_ref") != directory + "/binding.json"):
+            raise ContractError("immutable binding/index/head disagree")
+        match = SET_REF.fullmatch(reference)
+        if match[1] != head["payload"]["date"] or (match[2] and match[2] != head["chain_head"]):
+            raise ContractError("immutable head path identity mismatch")
+        # Accepted evidence bytes are protected by verify_append's Git-level
+        # immutable-file check; full discovery still verifies the candidate.
+        # Only the spine and day indexes are needed to derive accepted structure.
+        # Membership checks use tree metadata, never one cat-file read per dataset.
+        for did, ref in index["attestations"].items():
+            if ref != directory + "/" + did + ".json":
+                raise ContractError("dataset attestation reference is invalid")
+            if ref not in references:
+                raise ContractError(f"dataset attestation {did} is missing")
+        for filename in FILES:
+            if directory + "/" + filename not in references:
+                raise ContractError("immutable set evidence is missing")
+        verified[reference] = head
+        return head
+
+    def validate() -> None:
+        envelopes, days = document.get("envelopes", {}), document.get("days", {})
+        seen = set()
+        for day, run in days.items():
+            date.fromisoformat(day)
+            if not isinstance(run, list) or not run:
+                raise ContractError("invalid day list")
+            for sequence, digest in enumerate(run, 1):
+                if digest in seen or digest not in envelopes or digest not in heads:
+                    raise ContractError("repeated or unresolved discovery head")
+                seen.add(digest)
+                head = head_at(heads[digest])
+                if (head["chain_head"] != digest or head["payload"]["date"] != day
+                        or envelopes[digest] != descriptor(head, heads[digest], sequence)):
+                    raise ContractError("discovery descriptor disagrees with signed set")
+                if sequence > 1 and head["payload"]["previous_chain_head"] != run[sequence - 2]:
+                    raise ContractError("same-day fork or missing parent")
+        if set(heads) - seen != set(document.get("unresolved_heads", [])):
+            raise ContractError("unresolved head mappings changed without reconciliation")
+        if seen != set(envelopes):
+            raise ContractError("day lists and descriptors disagree")
+        current = document.get("current_head")
+        if not seen and current is None:
+            return
+        if current not in seen or current != days[max(days)][-1]:
+            raise ContractError("current selector is not the terminal accepted head")
+        boundary = document.get("migration_head")
+        # Follow signed parents backwards to the migration/fork boundary. Older
+        # disconnected history remains pinned by the checkpoint's day indexes.
+        visited = assert_head_extends_base(document, boundary)
+        forward = {h for h, entry in envelopes.items()
+                   if boundary is None or entry["date"] >= envelopes[boundary]["date"]}
+        if forward != visited | ({boundary} if boundary else set()):
+            raise ContractError("fork or disconnected accepted forward head")
+
+    validate()
+    pending = {}
+    for reference in sorted(references):
+        match = SET_REF.fullmatch(reference)
+        if match is None or match[2] is None or match[3] != "chain_head":
+            continue
+        raw = _load(root / reference, "append head")
+        if "append_content_sha256" not in raw.get("payload", {}):
+            continue
+        digest = raw["chain_head"]
+        if digest in heads:
+            if heads[digest] not in {reference, f"attestations/{raw['payload']['date']}/chain_head.json"}:
+                raise ContractError("duplicate append head identity")
+        else:
+            pending[digest] = (reference, head_at(reference))
+    document.pop("rejected_heads", None)
+    rejected = {}
+
+    def select(children: list[tuple[str, str]]) -> tuple[str, str] | None:
+        if len(children) == 1:
+            return children[0]
+        ranks = [order.get(reference) for _, reference in children]
+        if not children or None in ranks or len(set(ranks)) != len(ranks):
+            return None
+        return min(children, key=lambda child: order[child[1]])
+
+    def refuse() -> None:
+        predecessors = {digest: head["payload"]["previous_chain_head"]
+                        for digest, (_, head) in sorted(pending.items())}
+        raise ContractError(
+            "fork or disconnected accepted forward head: candidate does not append to accepted parent; "
+            f"accepted_parent={document['current_head'] or '0' * 64}; "
+            f"pending_parents={json.dumps(predecessors, sort_keys=True)}")
+
+    for accepted, entry in document["envelopes"].items():
+        siblings = [(digest, reference) for digest, (reference, head) in pending.items()
+                    if head["payload"]["previous_chain_head"] == entry["parent_head"]]
+        if siblings:
+            selected = select(siblings + [(accepted, heads[accepted])])
+            if selected is None or selected[0] != accepted:
+                refuse()
+            for digest, _ in siblings:
+                rejected[digest] = accepted
+                del pending[digest]
+    while pending:
+        parent = document["current_head"] or "0" * 64
+        children = [(digest, reference) for digest, (reference, head) in pending.items()
+                    if head["payload"]["previous_chain_head"] == parent]
+        selected = select(children)
+        if selected is None:
+            refuse()
+        digest, reference = selected
+        for sibling, _ in children:
+            if sibling != digest:
+                rejected[sibling] = digest
+                del pending[sibling]
+        head = pending[digest][1]
+        run = document["days"].setdefault(head["payload"]["date"], [])
+        heads[digest] = reference
+        document["envelopes"][digest] = descriptor(head, reference, len(run) + 1)
+        run.append(digest)
+        document["current_head"] = digest
+        del pending[digest]
+    validate()
+    if rejected:
+        document["rejected_heads"] = dict(sorted(rejected.items()))
+    return document
+
+
 def accepted_discovery(root: Path, revision: str) -> dict:
-    """Verify accepted signed sets directly from Git without exporting the ledger."""
+    """Derive accepted structure directly from Git without exporting the ledger."""
     revision = subprocess.run(["git", "rev-parse", "--verify", f"{revision}^{{commit}}"],
                               cwd=root, check=True, capture_output=True, text=True).stdout.strip()
     order = first_parent_order(root, revision)
     # Preserve the original rejection of nonregular evidence, including files
     # not referenced by a signed set. This scans metadata only.
-    for _ in accepted_files(root, revision):
-        pass
+    references = {path for path, _ in accepted_files(root, revision)}
     with subprocess.Popen(["git", "cat-file", "--batch"], cwd=root,
                           stdin=subprocess.PIPE, stdout=subprocess.PIPE) as process:
         try:
-            document = discovery(_GitPath(_GitTree(root, revision, process)), fork_order=order)
+            document = _spine_discovery(_GitPath(_GitTree(root, revision, process)), references, order)
         except BaseException:
             # An invalid object header can leave unread output in the pipe.
             # Do not wait for a writer blocked on that output after rejection.
@@ -257,6 +438,10 @@ def append_paths(root: Path, base: str) -> list[str]:
     """Return only immutable files belonging to new, verified append sets."""
     old = accepted_discovery(root, base)
     new = discovery(root, fork_order=first_parent_order(root, base))
+    return _append_paths(root, old, new)
+
+
+def _append_paths(root: Path, old: dict, new: dict) -> list[str]:
     paths = set()
     for digest in set(new["heads"]) - set(old["heads"]):
         directory = set_directory(new["heads"][digest])
@@ -282,14 +467,75 @@ def append_paths(root: Path, base: str) -> list[str]:
     return sorted(paths)
 
 
+def _checkout_changes(root: Path, base: str) -> tuple[set[str], dict[str, str]]:
+    """Use Git's stat cache without refreshing away raw-byte differences.
+
+    Unlike porcelain diff, diff-index's raw output retains stat-dirty paths
+    even when a clean filter would normalize their bytes back to the base.
+    Explicitly inspect index flags too: sparse/assume-unchanged entries must
+    never exempt accepted evidence from verification.
+    """
+    command = ["git", "-c", "core.fsmonitor=false", "-c", "core.ignorestat=false",
+               "-c", "core.trustctime=true", "-c", "core.checkstat=default"]
+    changed = subprocess.run(
+        [*command, "diff-index", "--name-only", "-z", "--no-renames",
+         "--ignore-submodules=none", base, "--", "attestations"],
+        cwd=root, check=True, capture_output=True).stdout
+    paths = {os.fsdecode(path) for path in changed.split(b"\0") if path}
+    entries = subprocess.run(
+        ["git", "ls-files", "-v", "--stage", "-z", "--", "attestations"],
+        cwd=root, check=True, capture_output=True).stdout
+    indexed = {}
+    for entry in entries.split(b"\0"):
+        if not entry:
+            continue
+        metadata, raw_path = entry.split(b"\t", 1)
+        flag, mode, digest, stage = metadata.split()
+        path = os.fsdecode(raw_path)
+        if flag != b"H" or stage != b"0" or mode not in {b"100644", b"100755"}:
+            paths.add(path)
+        indexed[path] = digest.decode("ascii")
+    return paths, indexed
+
+
+def _accepted_object_sizes(root: Path, indexed: dict[str, str]) -> dict[str, int]:
+    """Read blob headers only; normalized index bytes may differ in size on disk."""
+    digests = sorted(set(indexed.values()))
+    result = subprocess.run(
+        ["git", "cat-file", "--batch-check=%(objectname) %(objectsize)"],
+        input="".join(digest + "\n" for digest in digests), cwd=root,
+        check=True, capture_output=True, text=True)
+    return {digest: int(size) for digest, size in (line.split() for line in result.stdout.splitlines())}
+
+
+def _filtered_paths(root: Path, indexed: dict[str, str]) -> set[str]:
+    """Arbitrary clean filters/encodings can change bytes without changing size."""
+    result = subprocess.run(
+        ["git", "check-attr", "-z", "--stdin", "filter", "working-tree-encoding", "ident"],
+        input=b"".join(os.fsencode(path) + b"\0" for path in indexed),
+        cwd=root, check=True, capture_output=True).stdout.split(b"\0")
+    return {os.fsdecode(result[i]) for i in range(0, len(result) - 1, 3)
+            if result[i + 2] not in {b"unspecified", b"unset"}}
+
+
 def verify_append(root: Path, base: str, require_committed: bool = False) -> None:
     """Reject rewritten ledger bytes, remaps, lost entries, forks and stale parents."""
     algorithm = subprocess.run(["git", "rev-parse", "--show-object-format"], cwd=root,
                                check=True, capture_output=True, text=True).stdout.strip()
+    changed, indexed = _checkout_changes(root, base)
+    changed.update(_filtered_paths(root, indexed))
+    sizes = _accepted_object_sizes(root, indexed)
     for path, digest in accepted_files(root, base):
         if not path.startswith("attestations/") or path in PROJECTIONS or path.startswith("attestations/latest/"):
             continue
-        if not (root / path).is_file() or _file_object_id(root / path, algorithm) != digest:
+        target = root / path
+        if not target.is_file():
+            raise ValueError(f"immutable evidence changed or deleted: {path}")
+        # Even a stat-clean index can contain normalized LF while the checkout
+        # contains CRLF. Size catches that case without reading historical bytes.
+        needs_hash = (path in changed or indexed.get(path) != digest
+                      or target.stat().st_size != sizes[digest])
+        if needs_hash and _file_object_id(target, algorithm) != digest:
             raise ValueError(f"immutable evidence changed or deleted: {path}")
     old = accepted_discovery(root, base)
     new = discovery(root, fork_order=first_parent_order(root, base))
@@ -349,6 +595,12 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
             raise ValueError(f"candidate head {digest} must be accepted in authoritative Git before publication")
         if not projection_matches_current:
             raise ContractError("latest projection is stale or mixed")
+    # The index records the exact bytes to submit, including already committed
+    # local appends. Untracked candidates still receive signed discovery checks.
+    for path in _append_paths(root, old, new):
+        digest = _file_object_id(root / path, algorithm)
+        if path in indexed and digest != indexed[path]:
+            raise ValueError(f"immutable evidence changed or deleted: {path}")
 
 
 def main() -> int:
