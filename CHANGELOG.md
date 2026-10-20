@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.38](https://github.com/r3dz4r/datapulse-my/compare/v3.55.37...v3.55.38) (2026-10-20)
+
+
+### Performance Improvements
+
+* **attestations:** derive accepted state from the chain spine ([d144cc1](https://github.com/r3dz4r/datapulse-my/commit/d144cc1342163bfb81ef84a5cf377f084aa187c5))
+* **attestations:** make the append verifier fit its submission bound ([b21d21f](https://github.com/r3dz4r/datapulse-my/commit/b21d21f49c0fbd7e575fa1db84cde128ea2bdcb5))
+* avoid rehashing unchanged accepted attestation files ([bee7b70](https://github.com/r3dz4r/datapulse-my/commit/bee7b70db3194773c0383540f5efc722afb3e1f7))
+
 ## [3.55.37](https://github.com/r3dz4r/datapulse-my/compare/v3.55.36...v3.55.37) (2026-10-19)
 
 
