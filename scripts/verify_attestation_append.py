@@ -257,6 +257,10 @@ def append_paths(root: Path, base: str) -> list[str]:
     """Return only immutable files belonging to new, verified append sets."""
     old = accepted_discovery(root, base)
     new = discovery(root, fork_order=first_parent_order(root, base))
+    return _append_paths(root, old, new)
+
+
+def _append_paths(root: Path, old: dict, new: dict) -> list[str]:
     paths = set()
     for digest in set(new["heads"]) - set(old["heads"]):
         directory = set_directory(new["heads"][digest])
@@ -282,14 +286,75 @@ def append_paths(root: Path, base: str) -> list[str]:
     return sorted(paths)
 
 
+def _checkout_changes(root: Path, base: str) -> tuple[set[str], dict[str, str]]:
+    """Use Git's stat cache without refreshing away raw-byte differences.
+
+    Unlike porcelain diff, diff-index's raw output retains stat-dirty paths
+    even when a clean filter would normalize their bytes back to the base.
+    Explicitly inspect index flags too: sparse/assume-unchanged entries must
+    never exempt accepted evidence from verification.
+    """
+    command = ["git", "-c", "core.fsmonitor=false", "-c", "core.ignorestat=false",
+               "-c", "core.trustctime=true", "-c", "core.checkstat=default"]
+    changed = subprocess.run(
+        [*command, "diff-index", "--name-only", "-z", "--no-renames",
+         "--ignore-submodules=none", base, "--", "attestations"],
+        cwd=root, check=True, capture_output=True).stdout
+    paths = {os.fsdecode(path) for path in changed.split(b"\0") if path}
+    entries = subprocess.run(
+        ["git", "ls-files", "-v", "--stage", "-z", "--", "attestations"],
+        cwd=root, check=True, capture_output=True).stdout
+    indexed = {}
+    for entry in entries.split(b"\0"):
+        if not entry:
+            continue
+        metadata, raw_path = entry.split(b"\t", 1)
+        flag, mode, digest, stage = metadata.split()
+        path = os.fsdecode(raw_path)
+        if flag != b"H" or stage != b"0" or mode not in {b"100644", b"100755"}:
+            paths.add(path)
+        indexed[path] = digest.decode("ascii")
+    return paths, indexed
+
+
+def _accepted_object_sizes(root: Path, indexed: dict[str, str]) -> dict[str, int]:
+    """Read blob headers only; normalized index bytes may differ in size on disk."""
+    digests = sorted(set(indexed.values()))
+    result = subprocess.run(
+        ["git", "cat-file", "--batch-check=%(objectname) %(objectsize)"],
+        input="".join(digest + "\n" for digest in digests), cwd=root,
+        check=True, capture_output=True, text=True)
+    return {digest: int(size) for digest, size in (line.split() for line in result.stdout.splitlines())}
+
+
+def _filtered_paths(root: Path, indexed: dict[str, str]) -> set[str]:
+    """Arbitrary clean filters/encodings can change bytes without changing size."""
+    result = subprocess.run(
+        ["git", "check-attr", "-z", "--stdin", "filter", "working-tree-encoding", "ident"],
+        input=b"".join(os.fsencode(path) + b"\0" for path in indexed),
+        cwd=root, check=True, capture_output=True).stdout.split(b"\0")
+    return {os.fsdecode(result[i]) for i in range(0, len(result) - 1, 3)
+            if result[i + 2] not in {b"unspecified", b"unset"}}
+
+
 def verify_append(root: Path, base: str, require_committed: bool = False) -> None:
     """Reject rewritten ledger bytes, remaps, lost entries, forks and stale parents."""
     algorithm = subprocess.run(["git", "rev-parse", "--show-object-format"], cwd=root,
                                check=True, capture_output=True, text=True).stdout.strip()
+    changed, indexed = _checkout_changes(root, base)
+    changed.update(_filtered_paths(root, indexed))
+    sizes = _accepted_object_sizes(root, indexed)
     for path, digest in accepted_files(root, base):
         if not path.startswith("attestations/") or path in PROJECTIONS or path.startswith("attestations/latest/"):
             continue
-        if not (root / path).is_file() or _file_object_id(root / path, algorithm) != digest:
+        target = root / path
+        if not target.is_file():
+            raise ValueError(f"immutable evidence changed or deleted: {path}")
+        # Even a stat-clean index can contain normalized LF while the checkout
+        # contains CRLF. Size catches that case without reading historical bytes.
+        needs_hash = (path in changed or indexed.get(path) != digest
+                      or target.stat().st_size != sizes[digest])
+        if needs_hash and _file_object_id(target, algorithm) != digest:
             raise ValueError(f"immutable evidence changed or deleted: {path}")
     old = accepted_discovery(root, base)
     new = discovery(root, fork_order=first_parent_order(root, base))
@@ -349,6 +414,12 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
             raise ValueError(f"candidate head {digest} must be accepted in authoritative Git before publication")
         if not projection_matches_current:
             raise ContractError("latest projection is stale or mixed")
+    # The index records the exact bytes to submit, including already committed
+    # local appends. Untracked candidates still receive signed discovery checks.
+    for path in _append_paths(root, old, new):
+        digest = _file_object_id(root / path, algorithm)
+        if path in indexed and digest != indexed[path]:
+            raise ValueError(f"immutable evidence changed or deleted: {path}")
 
 
 def main() -> int:
