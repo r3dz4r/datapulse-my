@@ -426,7 +426,11 @@ jobs:
           bounded timeout -k 5s 10s git merge-base --is-ancestor "$PROMOTION_SOURCE_SHA" origin/main
           # Import accepted evidence while keeping the source checkout at
           # PROMOTION_SOURCE_SHA, shared by signing and deployment for health.
-          bounded timeout -k 5s 60s bash scripts/restore_attestations.sh --source origin/main
+          # 240s, not 60s: computing the delta is itself O(tree) (74,618 files,
+          # 2.0 GB) and a fresh CI index has no stat cache, so run 39453880072
+          # was killed at 60s with 67s elapsed. Revert once the signing job stops
+          # materialising the attestation tree at all.
+          bounded timeout -k 5s 140s bash scripts/restore_attestations.sh --source origin/main
           echo "state=ready" >> "$GITHUB_OUTPUT"
           EXISTING_APPEND
 
@@ -506,7 +510,7 @@ jobs:
             fi
             # Discard only the accepted-evidence overlay imported above; the
             # newer main checkout carries that evidence with its own source.
-            timeout -k 5s 60s bash scripts/restore_attestations.sh --source HEAD
+            timeout -k 5s 140s bash scripts/restore_attestations.sh --source HEAD
             timeout -k 5s 30s git checkout --detach "$settled_sha"
             [[ "$(timeout -k 5s 10s git rev-parse HEAD)" == "$settled_sha" ]]
             echo "Re-settled promotion revision: $PROMOTION_SOURCE_SHA -> $settled_sha ($settlement_reason)"
