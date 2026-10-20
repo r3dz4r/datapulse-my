@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.39](https://github.com/r3dz4r/datapulse-my/compare/v3.55.38...v3.55.39) (2026-10-20)
+
+
+### Performance Improvements
+
+* **attestations:** bound append discovery to spine and delta ([9a14e53](https://github.com/r3dz4r/datapulse-my/commit/9a14e53b219b7cf85baab5d930bdd83b95970e87))
+* **attestations:** bound append verification to the delta and the spine ([1c0aaeb](https://github.com/r3dz4r/datapulse-my/commit/1c0aaeb5ae34086d1834be61dc1e2944319b2237))
+
 ## [3.55.38](https://github.com/r3dz4r/datapulse-my/compare/v3.55.37...v3.55.38) (2026-10-20)
 
 
