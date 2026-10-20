@@ -418,7 +418,7 @@ jobs:
           bounded timeout -k 5s 10s git merge-base --is-ancestor "$PROMOTION_SOURCE_SHA" origin/main
           # Import accepted evidence while keeping the source checkout at
           # PROMOTION_SOURCE_SHA, shared by signing and deployment for health.
-          bounded timeout -k 5s 60s git restore --source origin/main --worktree -- attestations .attestations/chain_head.json
+          bounded timeout -k 5s 60s bash scripts/restore_attestations.sh --source origin/main
           echo "state=ready" >> "$GITHUB_OUTPUT"
           EXISTING_APPEND
 
@@ -498,7 +498,7 @@ jobs:
             fi
             # Discard only the accepted-evidence overlay imported above; the
             # newer main checkout carries that evidence with its own source.
-            timeout -k 5s 60s git restore --source HEAD --worktree -- attestations .attestations/chain_head.json
+            timeout -k 5s 60s bash scripts/restore_attestations.sh --source HEAD
             timeout -k 5s 30s git checkout --detach "$settled_sha"
             [[ "$(timeout -k 5s 10s git rev-parse HEAD)" == "$settled_sha" ]]
             echo "Re-settled promotion revision: $PROMOTION_SOURCE_SHA -> $settled_sha ($settlement_reason)"
