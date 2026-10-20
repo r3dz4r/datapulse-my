@@ -332,6 +332,7 @@ def test_signing_bounds_and_served_gates_survive_the_split() -> None:
         "PROMOTION_SETTLED_MAX_WAIT_SECONDS": 900,
         "APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS": 1185,
         "APPEND_ACCEPTANCE_PATIENCE_SECONDS": 1485,
+        "PUBLICATION_CHAIN_MAX_DEPTH": 3,
     }
     jobs = workflow["jobs"]
     assert [jobs[name]["timeout-minutes"] for name in ("classify", "sign_health", "deploy")] == [20, 132, 30]
