@@ -43,7 +43,7 @@ def run_wait(
     bin_dir.mkdir()
     scripts = tmp_path / "scripts"
     scripts.mkdir()
-    for name in ("submit_attestation_append.sh", "close_superseded_appends.sh"):
+    for name in ("submit_attestation_append.sh", "close_superseded_appends.sh", "restore_attestations.sh"):
         (scripts / name).write_text('echo "$0 $*" >> "$CALL_LOG"\n')
     gh = f"#!{sys.executable}\n" + textwrap.dedent('''\
         import json, os, pathlib, sys

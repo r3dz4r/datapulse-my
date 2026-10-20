@@ -327,12 +327,19 @@ def test_publication_append_time_bounds_contract() -> None:
 
 def test_attestation_restore_timeouts_cover_measured_cold_restore() -> None:
     restores = re.findall(
-        r"timeout -k 5s (\d+)s git restore --source (?:origin/main|HEAD)"
-        r" --worktree -- attestations \.attestations/chain_head\.json",
+        r"timeout -k 5s (\d+)s bash scripts/restore_attestations\.sh"
+        r" --source (?:origin/main|HEAD)",
         _workflow(),
     )
     assert len(restores) == 2
     assert all(int(seconds) >= 60 for seconds in restores)
+    # The delta-only helper keeps the budget; a whole-tree restore must not
+    # creep back in beside it.
+    assert not re.search(
+        r"git restore --source (?:origin/main|HEAD) --worktree"
+        r" -- attestations \.attestations/chain_head\.json",
+        _workflow(),
+    )
 
 
 @pytest.mark.parametrize("moved", ["worst", "patience", "wrapper", "step", "job"])
@@ -471,7 +478,8 @@ def test_existing_append_defers_only_at_patience_expiry() -> None:
     ("git fetch", 1), ("git merge-base", 1),
     ("bash scripts/close_superseded_appends.sh", 2),
     ("gh pr list", 2), ("jq length", 2), ("jq -c", 2),
-    ("git fetch", 2), ("git merge-base", 2), ("git restore", 1),
+    ("git fetch", 2), ("git merge-base", 2),
+    ("bash scripts/restore_attestations.sh", 1),
     ("sleep", 1),
 ])
 def test_existing_append_command_timeout_is_attributed_and_fails(
@@ -517,6 +525,7 @@ def test_existing_append_command_timeout_is_attributed_and_fails(
             esac ;;
           "jq "*) exec "$@" ;;
           "date "*) exec /usr/bin/date "${@:2}" ;;
+          "bash scripts/restore_attestations.sh") : ;;
           "git "*) : ;;
           *) exit 2 ;;
         esac
@@ -590,6 +599,9 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
     (tmp_path / "scripts").mkdir()
     (tmp_path / "scripts/submit_attestation_append.sh").write_text('echo submit >> "$CALL_LOG"\n')
     (tmp_path / "scripts/close_superseded_appends.sh").write_text('echo close >> "$CALL_LOG"\n')
+    (tmp_path / "scripts/restore_attestations.sh").write_bytes(
+        (ROOT / "scripts/restore_attestations.sh").read_bytes()
+    )
     (bin_dir / "gh").write_text(
         '#!/bin/bash\necho "gh $*" >> "$CALL_LOG"\n'
         'case "$1 $2" in\n'
@@ -616,8 +628,10 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
         'case "$*" in\n'
         ' "branch --show-current") echo attestation/append-contract ;;\n'
         ' "rev-parse HEAD") echo "$APPEND_SHA" ;;\n'
+        ' "rev-parse --show-toplevel") printf "%s\\n" "$PWD" ;;\n'
+        ' "rev-parse --verify --quiet "*) printf "%s\\n" "$PROMOTION_SOURCE_SHA" ;;\n'
         ' "merge-base "*) [[ "$SCENARIO" != proof_failed ]] ;;\n'
-        ' "fetch "*|"restore "*) : ;;\n'
+        ' "fetch "*|"restore "*|"diff "*) : ;;\n'
         ' *) exit 2 ;;\nesac\n'
     )
     for stub in bin_dir.iterdir():
@@ -1448,6 +1462,9 @@ def test_pages_resettlement_guard_exercises_recovery_and_fail_closed(
         target.write_text("{}")
     (remote / "scripts").mkdir()
     (remote / "scripts/classify_change.py").write_bytes((ROOT / "scripts/classify_change.py").read_bytes())
+    (remote / "scripts/restore_attestations.sh").write_bytes(
+        (ROOT / "scripts/restore_attestations.sh").read_bytes()
+    )
     shas = []
     for index in range(4):
         if index == 1 and scenario == "history_rewrite":
