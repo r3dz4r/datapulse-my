@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.55.40](https://github.com/r3dz4r/datapulse-my/compare/v3.55.39...v3.55.40) (2026-10-20)
+
+
+### Bug Fixes
+
+* **deploy:** restore only differing attestation paths ([fb518d2](https://github.com/r3dz4r/datapulse-my/commit/fb518d20770d6d0749b697aa0788d1738338a2d3))
+* **deploy:** restore only the attestation paths that differ ([3174a89](https://github.com/r3dz4r/datapulse-my/commit/3174a895518366a130cdfd8a8deea09c9b5ae486))
+* **test:** stub restore helper in acceptance harness ([e92632f](https://github.com/r3dz4r/datapulse-my/commit/e92632f9b618c216b06a9785a5095b5390c58e50))
+
 ## [3.55.39](https://github.com/r3dz4r/datapulse-my/compare/v3.55.38...v3.55.39) (2026-10-20)
 
 
