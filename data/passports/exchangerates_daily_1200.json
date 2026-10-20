@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-20T04:18:25Z",
-    "record_count": 18826,
+    "last_checked": "2026-10-20T05:24:54Z",
+    "record_count": 18829,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
       "column_count": 29,
-      "content_shape_changed": false,
-      "first_row_hash": "shape-v1:cbbf1065608777a25c02fc2d59877213a4dca345927525e9ffffc9de7195a145"
+      "content_shape_changed": true,
+      "first_row_hash": "shape-v1:98b1e238c94bb046b617feb3a930f72b315e2735f2bf91da1e747b3cdb93a7bc"
     },
-    "status": "fresh"
+    "status": "degraded"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
@@ -39,7 +39,7 @@
     "geography": "national (BNM reference rates)",
     "name": "BNM Daily Exchange Rates (1200)",
     "namespace": "other",
-    "observed_verified_at": "2026-10-20T04:18:25Z",
+    "observed_verified_at": "2026-10-20T05:24:54Z",
     "source": "data.gov.my (BNM)",
     "steward": "BNM"
   },
@@ -873,7 +873,7 @@
     "receipt": {
       "evidence_path": "data/exchangerates_daily_1200.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:1b7b2497b6a5abac4e23c2f9d843d0a530ceb5fe284cbb40a1be3fb15a7d4727",
+      "receipt_digest": "sha256:abb9633bcc036fc3a2d2379ab05e3b975455baa0807957d7362b696f870266d1",
       "sigstore_path": "data/exchangerates_daily_1200.receipt.sigstore.json",
       "statement_path": "data/exchangerates_daily_1200.receipt.statement.json"
     },
