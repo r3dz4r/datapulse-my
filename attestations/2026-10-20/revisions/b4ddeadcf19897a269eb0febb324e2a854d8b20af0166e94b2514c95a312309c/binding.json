@@ -1,0 +1,44 @@
+{
+  "schema": "datapulse/v1/attestation-binding-envelope",
+  "payload": {
+    "schema": "datapulse/v1/attestation-binding",
+    "date": "2026-10-20",
+    "published_at": "2026-10-20T11:12:34Z",
+    "freshness": {
+      "max_age_seconds": 129600
+    },
+    "health": {
+      "artifact_ref": "health/latest.json",
+      "artifact_sha256": "5f34fe7253d618d009cc6fab877cd0cc55579f71489bf1432ceb30974ef690ae",
+      "dataset_count": 440,
+      "dataset_ids_sha256": "50d2b243aeee23470db89defc80ecfe5a776f40d4fc556163529311ccbc266e1",
+      "observed_at": "2026-10-20T10:32:29Z"
+    },
+    "ed25519": {
+      "chain_head_ref": "attestations/2026-10-20/revisions/b4ddeadcf19897a269eb0febb324e2a854d8b20af0166e94b2514c95a312309c/chain_head.json",
+      "chain_head": "b4ddeadcf19897a269eb0febb324e2a854d8b20af0166e94b2514c95a312309c",
+      "key_id": "ed25519-a829715828ba0f88",
+      "key_status": "active"
+    },
+    "correction": {
+      "schema": "datapulse/v1/attestation-correction",
+      "revision_id": "76d68e702cc8d1357b679366efb0f809f1de6567664e5f3a574790a3eaa3317f",
+      "reason": "health artifact bytes changed",
+      "original_chain_head": "0f39b358ca7aa5a58e92bc73490d34c1e88d29308f9227880885e70b3d00aff8",
+      "supersedes_chain_head": "42b359a9275dbffc1c181318c81b867a354f0d5e43e6168e42eb5f1b85ff8a6a",
+      "previous_health_sha256": "f7f2b4c16549393ce2e66e6eaf4f8e1c33891a1d03854b4aa11d13816e82fa29",
+      "health_sha256": "5f34fe7253d618d009cc6fab877cd0cc55579f71489bf1432ceb30974ef690ae",
+      "health_snapshot_ref": "attestations/2026-10-20/revisions/76d68e702cc8d1357b679366efb0f809f1de6567664e5f3a574790a3eaa3317f/health.json.gz"
+    }
+  },
+  "signature_base64": "aXc6a0xKJwZEJv3p/fCxdswfMpD0RELSnVt/sqX+KRgxjqpkN33ZnLV0ShC+u7bSB4wAhQwG/MuoLdpminp+Bw==",
+  "claims": {
+    "artifact_signed": true,
+    "rekor_witnessed": true,
+    "source_truth_verified": false
+  },
+  "rekor": {
+    "reference_ref": "attestations/rekor/2026-10-20/reference.ae53186cec7ce9c55b04f102fe547a1cac20b19148a5398fceedf5601af25caa.json",
+    "bundle_ref": "attestations/rekor/2026-10-20/health.ae53186cec7ce9c55b04f102fe547a1cac20b19148a5398fceedf5601af25caa.sigstore.bundle.json"
+  }
+}
