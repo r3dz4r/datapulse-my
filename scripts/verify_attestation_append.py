@@ -24,12 +24,14 @@ from scripts.attestation_sets import (
     PIPELINE_OWNED_PROJECTIONS,
     SET_REF,
     assert_head_extends_base,
+    correction_record,
     descriptor,
     discovery,
     external_rekor_paths,
     first_parent_order,
     set_directory,
     verify_legacy_mirror,
+    verify_set,
     selected_directory,
 )
 from scripts.verify_attestation_binding import (
@@ -226,8 +228,13 @@ class _GitTree:
         return data
 
 
-def _spine_discovery(root: _GitPath, references: set[str], order: dict[str, int]) -> dict:
-    """Derive accepted maps from signed heads and indexes, not dataset blobs."""
+def _spine_discovery(root: _GitPath | Path, references: set[str], order: dict[str, int],
+                     *, delta: set[str] | None = None) -> dict:
+    """Derive maps from the signed spine, fully verifying only delta sets.
+
+    With no delta this reads an accepted Git tree. In a checkout, the caller
+    must first protect accepted bytes with the Git-level immutable-file check.
+    """
     checkpoint = "attestations/chain-index.json"
     document = (_load(root / checkpoint, "chain index") if checkpoint in references else
                 {"schema": "datapulse/v2/chain-index", "heads": {}, "anchors": {},
@@ -243,16 +250,23 @@ def _spine_discovery(root: _GitPath, references: set[str], order: dict[str, int]
         raise ContractError("duplicate or invalid chain head mapping")
     registry = None
     verified = {}
+    bindings = {}
 
     def head_at(reference: str) -> dict:
         nonlocal registry
         if reference in verified:
             return verified[reference]
         directory = set_directory(reference)
+        if delta is not None and reference in delta:
+            verified[reference] = verify_set(root, reference)
+            bindings[reference] = _load(root / directory / "binding.json", "immutable binding")["payload"]
+            return verified[reference]
         head = _load(root / reference, "immutable chain head")
         index = _load(root / directory / "index.json", "immutable index")
         binding = _load(root / directory / "binding.json", "immutable binding")
         payload = binding.get("payload", {})
+        if delta is not None:
+            bindings[reference] = payload
         if registry is None:
             registry = _load(root / "docs/.well-known/datapulse-probe-keys.json", "key registry")
         matches = [row for row in registry.get("keys", [])
@@ -280,7 +294,7 @@ def _spine_discovery(root: _GitPath, references: set[str], order: dict[str, int]
         if match[1] != head["payload"]["date"] or (match[2] and match[2] != head["chain_head"]):
             raise ContractError("immutable head path identity mismatch")
         # Accepted evidence bytes are protected by verify_append's Git-level
-        # immutable-file check; full discovery still verifies the candidate.
+        # immutable-file check; delta sets take the full verify_set path above.
         # Only the spine and day indexes are needed to derive accepted structure.
         # Membership checks use tree metadata, never one cat-file read per dataset.
         for did, ref in index["attestations"].items():
@@ -311,6 +325,23 @@ def _spine_discovery(root: _GitPath, references: set[str], order: dict[str, int]
                     raise ContractError("discovery descriptor disagrees with signed set")
                 if sequence > 1 and head["payload"]["previous_chain_head"] != run[sequence - 2]:
                     raise ContractError("same-day fork or missing parent")
+                if delta is not None:
+                    # Correction provenance is spine data too. Recheck every
+                    # day run using already read bindings, including history.
+                    payload = bindings[heads[digest]]
+                    record = payload.get("correction")
+                    if sequence == 1:
+                        if record is not None:
+                            raise ContractError("original attestation cannot be a correction")
+                    else:
+                        previous = bindings[heads[run[sequence - 2]]]
+                        expected = correction_record(day, run[0], run[sequence - 2],
+                                                     previous["health"]["artifact_sha256"],
+                                                     payload["health"]["artifact_sha256"])
+                        if isinstance(record, dict) and record.get("health_snapshot_ref") == expected["health_snapshot_ref"].removesuffix(".gz"):
+                            expected["health_snapshot_ref"] = expected["health_snapshot_ref"].removesuffix(".gz")
+                        if record != expected or head["payload"].get("correction") != record:
+                            raise ContractError("signed correction provenance disagrees with the append lineage")
         if set(heads) - seen != set(document.get("unresolved_heads", [])):
             raise ContractError("unresolved head mappings changed without reconciliation")
         if seen != set(envelopes):
@@ -333,11 +364,21 @@ def _spine_discovery(root: _GitPath, references: set[str], order: dict[str, int]
     pending = {}
     for reference in sorted(references):
         match = SET_REF.fullmatch(reference)
+        if delta is not None and match is None and reference.endswith("/chain_head.json"):
+            parts = PurePosixPath(reference).parts
+            if len(parts) == 5 and parts[2] == "revisions":
+                # Full discovery's glob also sees malformed date/hash names.
+                # Do not let filtering by SET_REF hide a broken candidate.
+                raw = _load(root / reference, "append head")
+                if "append_content_sha256" in raw.get("payload", {}):
+                    raise ContractError("unsafe immutable attestation reference")
         if match is None or match[2] is None or match[3] != "chain_head":
             continue
         raw = _load(root / reference, "append head")
         if "append_content_sha256" not in raw.get("payload", {}):
             continue
+        if delta is not None and reference in delta:
+            head_at(reference)  # Aliases and rejected siblings need full verification too.
         digest = raw["chain_head"]
         if digest in heads:
             if heads[digest] not in {reference, f"attestations/{raw['payload']['date']}/chain_head.json"}:
@@ -436,9 +477,51 @@ def _file_object_id(path: Path, algorithm: str) -> str:
 
 def append_paths(root: Path, base: str) -> list[str]:
     """Return only immutable files belonging to new, verified append sets."""
-    old = accepted_discovery(root, base)
-    new = discovery(root, fork_order=first_parent_order(root, base))
-    return _append_paths(root, old, new)
+    return _verified_append_paths(root, base, check_delta_index=False)
+
+
+def _candidate_discovery(root: Path, base: str, accepted_references: set[str]) -> dict:
+    """Read the checkout's spine and delta; accepted payload bytes stay in Git.
+
+    Include ignored and untracked paths: a new set or an unexpected addition to
+    an accepted set must not escape validation by staying out of the index.
+    """
+    listed = subprocess.run(
+        ["git", "ls-files", "--cached", "--others", "--directory", "-z", "--", "attestations"],
+        cwd=root, check=True, capture_output=True).stdout
+    references = set()
+    for raw_path in listed.split(b"\0"):
+        if not raw_path:
+            continue
+        path = os.fsdecode(raw_path)
+        references.add(path.rstrip("/"))
+        if path.endswith("/"):
+            # Git collapses new directories, including empty ones. Walk only
+            # these delta directories; never recurse through tracked history.
+            for directory, subdirs, files in os.walk(root / path):
+                references.update((Path(directory) / name).relative_to(root).as_posix()
+                                  for name in subdirs + files)
+    additions = references - accepted_references
+    for path in additions:
+        target = root / path
+        if target.is_symlink() or not (target.is_file() or target.is_dir()):
+            raise ContractError("candidate attestation evidence must be regular files")
+    # An addition to a closed historical set also requires full validation,
+    # including its exact directory membership. New revisions under a legacy
+    # date alias are independent sets rather than changes to that alias.
+    directories = set()
+    for path in additions:
+        parts = PurePosixPath(path).parts
+        if len(parts) >= 3:
+            if parts[2] == "revisions":
+                if len(parts) >= 5:
+                    directories.add("/".join(parts[:4]))
+            else:
+                directories.add("/".join(parts[:2]))
+    delta = {reference for reference in references
+             if (match := SET_REF.fullmatch(reference)) is not None
+             and match[3] == "chain_head" and set_directory(reference) in directories}
+    return _spine_discovery(root, references, first_parent_order(root, base), delta=delta)
 
 
 def _append_paths(root: Path, old: dict, new: dict) -> list[str]:
@@ -520,16 +603,23 @@ def _filtered_paths(root: Path, indexed: dict[str, str]) -> set[str]:
 
 def verify_append(root: Path, base: str, require_committed: bool = False) -> None:
     """Reject rewritten ledger bytes, remaps, lost entries, forks and stale parents."""
+    _verified_append_paths(root, base, require_committed)
+
+
+def _verified_append_paths(root: Path, base: str, require_committed: bool = False,
+                           *, check_delta_index: bool = True) -> list[str]:
     algorithm = subprocess.run(["git", "rev-parse", "--show-object-format"], cwd=root,
                                check=True, capture_output=True, text=True).stdout.strip()
     changed, indexed = _checkout_changes(root, base)
     changed.update(_filtered_paths(root, indexed))
     sizes = _accepted_object_sizes(root, indexed)
+    accepted_references = set()
     for path, digest in accepted_files(root, base):
+        accepted_references.add(path)
         if not path.startswith("attestations/") or path in PROJECTIONS or path.startswith("attestations/latest/"):
             continue
         target = root / path
-        if not target.is_file():
+        if target.is_symlink() or not target.is_file():
             raise ValueError(f"immutable evidence changed or deleted: {path}")
         # Even a stat-clean index can contain normalized LF while the checkout
         # contains CRLF. Size catches that case without reading historical bytes.
@@ -538,7 +628,7 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
         if needs_hash and _file_object_id(target, algorithm) != digest:
             raise ValueError(f"immutable evidence changed or deleted: {path}")
     old = accepted_discovery(root, base)
-    new = discovery(root, fork_order=first_parent_order(root, base))
+    new = _candidate_discovery(root, base, accepted_references)
     for field in ("heads", "anchors", "envelopes"):
         if any(new.get(field, {}).get(k) != v for k, v in old.get(field, {}).items()):
             raise ValueError(f"accepted {field} entry replaced or deleted")
@@ -597,10 +687,13 @@ def verify_append(root: Path, base: str, require_committed: bool = False) -> Non
             raise ContractError("latest projection is stale or mixed")
     # The index records the exact bytes to submit, including already committed
     # local appends. Untracked candidates still receive signed discovery checks.
-    for path in _append_paths(root, old, new):
-        digest = _file_object_id(root / path, algorithm)
-        if path in indexed and digest != indexed[path]:
-            raise ValueError(f"immutable evidence changed or deleted: {path}")
+    paths = _append_paths(root, old, new)
+    if check_delta_index:
+        for path in paths:
+            digest = _file_object_id(root / path, algorithm)
+            if path in indexed and digest != indexed[path]:
+                raise ValueError(f"immutable evidence changed or deleted: {path}")
+    return paths
 
 
 def main() -> int:
@@ -618,9 +711,9 @@ def main() -> int:
                 raise ValueError("acceptance waiting cannot print submission paths")
             wait_for_acceptance(args.root, args.base, args.wait_for_acceptance)
         else:
-            verify_append(args.root, args.base, args.require_committed)
+            paths = _verified_append_paths(args.root, args.base, args.require_committed)
         if args.print_paths:
-            for path in append_paths(args.root, args.base):
+            for path in paths:
                 print(path)
     except AcceptancePending as error:
         sys.stderr.write(f"attestation append: {error}\n")
