@@ -18,7 +18,7 @@ Working agreement for AI agents (Hermes, Codex, Claude Code) operating inside th
 6. **The 10-status taxonomy is stable.** Adding a status requires changing `gen_health_methodology.py`, `embed_dashboard_data.py`, `gen_changelog.py`, the dashboard hero, `mcp/server.py`, AND the public-facing methodology page. If you think you need an 11th status, surface it to the operator first.
 7. **All 4 MCP tool annotations are mandatory** on every tool — see `mcp/AGENTS.md` for the canonical list. OpenAI's directory and M8ven both reject tools missing hints.
 8. **Tests live next to code.** `mcp/tests/` for the server, `scripts/tests/` for the generators. New code needs new tests; coverage floor is enforced by the deterministic-safety-net gate.
-9. **`datapulse.json` and `health/latest.json` are pipeline outputs, not hand-edited.** Hand-edits get overwritten on the next timer tick.
+9. **Every committed artifact is a generator output — nothing here is maintained by hand.** A change to any artifact is a change to the generator that emits it, or to the canonical source that generator reads, followed by regeneration; a hand-edit is not a path, and hand-edits get overwritten on the next timer tick. **Artifacts** (generated, never hand-edited): `datapulse.json`, `health/`, `record-evidence/`, `.attestations/`, `data/`, `docs/index.html`, `changelog.json`, `mcp.json`, `catalog-snapshot.json`. **Sources** (authored, then consumed by generators or validators): the `scripts/` themselves, `config/`, `templates/`, and the two schema files. A source is not an artifact: it is read, never regenerated in place. Two gaps against this rule are open and recorded rather than hidden — `datapulse.schema.json` and `health.schema.json` have no generator, and the manifest's dataset rows come from no generator either. Do not describe either as hand-authored; describe them as gaps.
 10. **Deploy posture is read-only + fail-closed.** If a probe fails, mark the dataset `stale` or `unreachable` — do not silently retry until it works.
 
 ## Repo map
@@ -27,8 +27,8 @@ Working agreement for AI agents (Hermes, Codex, Claude Code) operating inside th
 datapulse-my/
 ├── README.md                  # public-facing; badges, agent-quickstart, value prop
 ├── datapulse.json             # 440-dataset manifest (generated)
-├── datapulse.schema.json      # manifest JSON Schema (hand-authored)
-├── health.schema.json         # health JSON Schema (hand-authored)
+├── datapulse.schema.json      # manifest JSON Schema (source; no generator — see rule 9)
+├── health.schema.json         # health JSON Schema (source; no generator — see rule 9)
 ├── agent.json                 # machine-readable agent capability manifest
 ├── mcp.json                   # MCP server advertisement
 ├── llms.txt                   # LLM-friendly index of this repo
@@ -85,13 +85,13 @@ datapulse-my/
 └── archive/                   # historical datasets (deprecated, kept for diff)
 ```
 
-## Script taxonomy — which scripts regenerate vs hand-author
+## Script taxonomy — what each script class does
 
 | Pattern | Examples | Rule |
 |---|---|---|
 | `gen_*.py` | `gen_changelog`, `gen_health_history`, `gen_dataset_deltas`, `gen_attestations` | **Regenerable.** Timer-tick runs them. Safe to delete + re-run; safe to edit output paths. |
 | `verify_*.py` | `verify_release_reproducible`, `verify_mcp_deployment`, `verify_repository_contract` | **Release-blocking invariants.** If they fail, the release is blocked. Changes here require a test of the new invariant. |
-| `validate_*.py` | `validate_policy_schema`, `validate_at_runtime` | **Schema/content validators.** Hand-authored. Change the schema → update both validator and consumers. |
+| `validate_*.py` | `validate_policy_schema`, `validate_at_runtime` | **Schema/content validators.** Sources, not artifacts — they read the schema files and check content against them. Change a schema → update the validator, every generator that reads it, and its consumers. |
 | `embed_*.py` | `embed_dashboard_data` | **Renders `docs/index.html`.** Touches only the dashboard hero. One of several generators that write under `docs/` — `gen_okf_bundle.py` is the largest by file count (inventory 2026-09-20); other writers own different artifacts under `docs/` (e.g. `gen_health_methodology.py` → `docs/health-methodology.md`, `gen_ai_catalog.py` → `docs/ai-catalog.json`). |
 | `check.py`, `check_*.py` | `check`, `check_heartbeat`, `check_url_drift` | **Operator smoke-test entry points.** Not part of the timer; invoked manually or by `task.sh status`. |
 | `init_keys.py` | `init_keys` | **One-time key registry bootstrap.** Ed25519 keypair generation; idempotent. |
