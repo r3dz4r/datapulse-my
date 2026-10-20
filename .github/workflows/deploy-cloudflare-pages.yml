@@ -6,6 +6,12 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      chain_depth:
+        description: Successor depth (0 for a new publication chain)
+        type: string
+        required: true
+        default: '0'
 permissions:
   contents: read
 
@@ -18,6 +24,8 @@ env:
   # Existing-append ordering: 1185 < 1485 < 1905 < 1920 < 7920.
   APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS: 1185
   APPEND_ACCEPTANCE_PATIENCE_SECONDS: 1485
+  # At most three successors per root run; malformed/exhausted depths stop.
+  PUBLICATION_CHAIN_MAX_DEPTH: 3
 
 concurrency:
   # Keep deploy candidates separate from the never-evict daily append producer.
@@ -1736,3 +1744,88 @@ jobs:
             2) echo "::warning title=Production publication freshness unknown::$verdict; Pages API credentials or deployment metadata may be unavailable. Freshness is not verified." ;;
             *) echo "::error title=Publication freshness gate failed::Unexpected gate exit $status"; exit "$status" ;;
           esac
+
+  publication_chain:
+    name: Decide bounded publication successor
+    needs: [classify, sign_health, deploy, publication_freshness]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/publication_chain.py
+          sparse-checkout-cone-mode: false
+      - name: Decide whether a newer main needs publication
+        id: chain
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLICATION_RESULT: ${{ needs.deploy.result == 'success' && needs.publication_freshness.result == 'success' && 'success' || 'failure' }}
+          PUBLISHED_SHA: ${{ needs.sign_health.outputs.settled_sha }}
+          CHAIN_DEPTH: ${{ github.event.inputs.chain_depth }}
+        run: |
+          set -Eeuo pipefail
+          # Only workflow_run lacks the dispatch input; never repair bad dispatch input.
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            CHAIN_DEPTH=0
+          fi
+          main_sha=""
+          if [[ "$PUBLICATION_RESULT" == "success" ]]; then
+            if ! main_sha="$(timeout -k 5s 60s gh api \
+              "repos/$GITHUB_REPOSITORY/commits/refs/heads/main" \
+              --header "Cache-Control: no-cache" --jq '.sha')"; then
+              main_sha=""
+            fi
+          fi
+          # This only detects movement. The successor reuses classify + settlement
+          # inside the unchanged lock; no SHA is selected or passed here.
+          if ! verdict="$(jq -n \
+            --arg publication_result "$PUBLICATION_RESULT" \
+            --arg published_sha "$PUBLISHED_SHA" --arg main_sha "$main_sha" \
+            --arg chain_depth "$CHAIN_DEPTH" --arg max_depth "$PUBLICATION_CHAIN_MAX_DEPTH" \
+            '{publication_result: $publication_result, published_sha: $published_sha,
+              main_sha: $main_sha, chain_depth: $chain_depth, max_depth: $max_depth}' \
+            | python3 scripts/publication_chain.py)"; then
+            verdict='{"decision":"stop","reason":"decision_unavailable","next_depth":null}'
+          fi
+          echo "$verdict"
+          jq -r '"decision=\(.decision)\nreason=\(.reason)\nnext_depth=\(.next_depth // "")"' \
+            <<< "$verdict" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch one bounded successor
+        id: successor
+        if: success() && !cancelled() && steps.chain.outputs.decision == 'chain' && needs.deploy.result == 'success' && needs.publication_freshness.result == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT_DEPTH: ${{ steps.chain.outputs.next_depth }}
+        run: |
+          set -Eeuo pipefail
+          # One request, no retries: an ambiguous response must not duplicate work.
+          # workflow_dispatch still shares the single pending slot with arrivals.
+          timeout -k 5s 60s gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-cloudflare-pages.yml/dispatches" \
+            -f ref=main -f "inputs[chain_depth]=$NEXT_DEPTH"
+
+      - name: Summarize publication successor
+        if: always()
+        env:
+          DECISION: ${{ steps.chain.outputs.decision }}
+          REASON: ${{ steps.chain.outputs.reason }}
+          NEXT_DEPTH: ${{ steps.chain.outputs.next_depth }}
+          DISPATCH_OUTCOME: ${{ steps.successor.outcome }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$DECISION" == "chain" && "$DISPATCH_OUTCOME" == "success" ]]; then
+            printf 'Publication successor: chain (%s); dispatched depth %s.\n' \
+              "$REASON" "$NEXT_DEPTH" >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "$DECISION" == "chain" ]]; then
+            printf 'Publication successor: stop (dispatch_%s); no retry.\n' \
+              "${DISPATCH_OUTCOME:-unavailable}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'Publication successor: stop (%s).\n' \
+              "${REASON:-decision_unavailable}" >> "$GITHUB_STEP_SUMMARY"
+          fi
