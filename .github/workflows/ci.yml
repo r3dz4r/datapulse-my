@@ -44,8 +44,8 @@ jobs:
           echo "changed_paths=(diff unavailable)" >> "$GITHUB_OUTPUT"
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
             if ! git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
-              echo "::error::Push diff unavailable: before commit ${BEFORE_SHA} is absent from checkout" >&2
-              exit 1
+              echo "::warning::Push diff unavailable: before commit ${BEFORE_SHA} is absent from checkout; running full verification" >&2
+              exit 0
             fi
             diff_args=("$BEFORE_SHA" "$AFTER_SHA")
           elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
@@ -95,7 +95,8 @@ jobs:
 
   deterministic-safety-net:
     needs: classify
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true')
+    # A skipped required check satisfies branch protection, so only main pushes may skip.
+    if: always() && !(github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.classify.result == 'success' && needs.classify.outputs.health_only == 'true')
     runs-on: ubuntu-latest
     # 40, not 25: the suite grew past the old ceiling. The append-fork regression file alone
     # walks the 65k-file attestation chain and takes ~8 minutes, so two runs were killed at the
