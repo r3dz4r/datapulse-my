@@ -20,6 +20,7 @@ PROJECTIONS = (
     "attestations/latest/index.json",
     "attestations/latest/chain_head.json",
     "attestations/chain-index.json",
+    ".attestations/chain_head.json",
 )
 REGISTRY = "docs/.well-known/datapulse-probe-keys.json"
 
@@ -44,8 +45,12 @@ def _check_evidence(root: Path, *, require_main: bool) -> None:
     status = _git(root, "status", "--porcelain", "--untracked-files=all")
     for line in status.splitlines():
         path = line[3:]
-        if require_main or path not in PROJECTIONS:
+        if path not in PROJECTIONS:
             raise ProjectionError(f"working tree must be clean: {path}")
+    tracked_projections = set(_git(root, "ls-files", "--", *PROJECTIONS).splitlines())
+    for path in PROJECTIONS:
+        if path not in tracked_projections:
+            raise ProjectionError(f"projection file is not tracked at HEAD: {path}")
 
     # Discovery verifies files throughout each immutable set, including signed
     # datasets and snapshots. Check the entire evidence tree before it reads any.
@@ -80,11 +85,12 @@ def _derive(root: Path, *, require_main: bool) -> dict[str, bytes]:
         PROJECTIONS[0]: (root / directory / "index.json").read_bytes(),
         PROJECTIONS[1]: (root / directory / "chain_head.json").read_bytes(),
         PROJECTIONS[2]: (json.dumps(document, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
+        PROJECTIONS[3]: (root / directory / "chain_head.json").read_bytes(),
     }
 
 
 def derive_projections(root: Path) -> dict[str, bytes]:
-    """Derive three projections only from a clean accepted main checkout."""
+    """Derive four projections only from a clean accepted main checkout."""
     return _derive(root.resolve(), require_main=True)
 
 
@@ -94,7 +100,7 @@ def _value(path: str, raw: bytes | None) -> str:
     document = json.loads(raw)
     if path == PROJECTIONS[0]:
         return f"date={document['date']} chain_head_ref={document['chain_head_ref']}"
-    if path == PROJECTIONS[1]:
+    if path in {PROJECTIONS[1], PROJECTIONS[3]}:
         return f"chain_head={document['chain_head']}"
     return f"current_head={document['current_head']} days={len(document['days'])}"
 
