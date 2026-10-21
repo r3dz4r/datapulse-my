@@ -42,6 +42,28 @@ git diff --cached --quiet && exit 0
 message="$(git diff --cached --name-only | python3 scripts/attestation_commit_back.py --date "$day")"
 [[ -n "$message" ]]
 git commit -m "$message"
+# Main may accept another revision while this candidate is being prepared.
+git fetch origin main
+if ! git merge --no-edit origin/main; then
+  conflicting_paths="$(git diff --name-only --diff-filter=U)"
+  if [[ -n "$conflicting_paths" ]]; then
+    printf 'Append base sync failed; conflicting paths:\n%s\n' "$conflicting_paths" >&2
+    git merge --abort
+  else
+    echo 'Append base sync failed; merge did not complete.' >&2
+  fi
+  exit 1
+fi
+python3 scripts/verify_attestation_append.py --base origin/main --require-committed
+projected_head="$(jq -er '.current_head' attestations/chain-index.json)"
+projected_path="$(jq -r --arg head "$projected_head" '.heads[$head] // empty' attestations/chain-index.json)"
+projected_dir="${projected_path%/chain_head.json}"
+if [[ "$projected_path" != attestations/*/revisions/"$projected_head"/chain_head.json || ! -d "$projected_dir" ]]; then
+  printf 'Append base sync failed; projected head %s has no revision directory: %s\n' \
+    "$projected_head" "$projected_dir" >&2
+  exit 1
+fi
+echo 'append base synced to main'
 # Credentials stay in the runner environment; neither configuration nor logs
 # contain their values. A unique hash branch is never force-updated or rebased.
 git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
