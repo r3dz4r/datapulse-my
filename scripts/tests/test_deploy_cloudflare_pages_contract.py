@@ -5,13 +5,15 @@ from __future__ import annotations
 import json
 import ast
 import builtins
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import re
 import os
 from pathlib import Path
 import subprocess
 import tempfile
 import textwrap
+import shutil
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -19,6 +21,8 @@ import yaml
 
 from scripts.classify_change import is_health_only_change
 from scripts.attestation_fetch_refs import fetch_refs
+from scripts.tests.test_attestation_projections import accepted_root
+from scripts.tests.test_attestations import fixture_root
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -53,6 +57,99 @@ def test_pages_passes_explicit_full_revision_depth_without_raising_guard() -> No
     run = _deploy_step("Keep verifier-reachable attestation history")["run"]
     assert "--full-revisions-per-day 1" in run
     assert "--max-files 18000" in run
+
+
+def test_pages_rejects_projections_different_from_accepted_main_before_publication() -> None:
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    names = [step.get("name") for step in steps]
+    guard = _deploy_step("Require served projections from committed main")
+    run = guard["run"]
+    assert names.index("Keep verifier-reachable attestation history") < names.index(guard["name"])
+    assert names.index(guard["name"]) < names.index("Deploy isolated Cloudflare Pages preview artifact")
+    assert "python3 scripts/gen_attestation_projections.py --root \"$accepted_root\" --check" in run
+    assert "served projections must match the committed tree" in run
+    assert "served_head=" in run and "committed_head=" in run
+    for path in (
+        "attestations/latest/index.json",
+        "attestations/latest/chain_head.json",
+        "attestations/latest/scores.json",
+        "attestations/chain-index.json",
+        ".attestations/chain_head.json",
+    ):
+        assert path in run
+
+
+@pytest.mark.parametrize("mismatch", [False, True])
+def test_pages_projection_guard_checks_assembled_bytes(tmp_path: Path, mismatch: bool) -> None:
+    root, _ = accepted_root(tmp_path)
+    (root / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
+    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
+    site = root / "_site"
+    for path in (
+        "attestations/latest/index.json",
+        "attestations/latest/chain_head.json",
+        "attestations/latest/scores.json",
+        "attestations/chain-index.json",
+        ".attestations/chain_head.json",
+    ):
+        target = site / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / path, target)
+    committed_head = json.loads((root / "attestations/chain-index.json").read_text())["current_head"]
+    if mismatch:
+        index = site / "attestations/chain-index.json"
+        document = json.loads(index.read_text())
+        document["current_head"] = "f" * 64
+        index.write_text(json.dumps(document))
+    runner_temp = tmp_path / "runner"
+    runner_temp.mkdir()
+    result = subprocess.run(
+        ["bash", "-c", _deploy_step("Require served projections from committed main")["run"]],
+        cwd=root, env={**os.environ, "RUNNER_TEMP": str(runner_temp)},
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == (1 if mismatch else 0), result.stdout + result.stderr
+    if mismatch:
+        assert "served projections must match the committed tree" in result.stderr
+        assert f"served_head={'f' * 64}" in result.stderr
+        assert f"committed_head={committed_head}" in result.stderr
+
+
+def test_pages_reuses_valid_accepted_day_without_rewriting_projections(tmp_path: Path) -> None:
+    from scripts import gen_attestations as ga
+
+    root, key = fixture_root(tmp_path)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    health = root / "health/latest.json"
+    snapshot = json.loads(health.read_text())
+    observed = (now - timedelta(seconds=30)).isoformat().replace("+00:00", "Z")
+    snapshot["checked_at"] = observed
+    snapshot["datasets"][0]["last_checked"] = observed
+    health.write_text(json.dumps(snapshot))
+    subprocess.run(["git", "init", "-b", "main"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.test"], cwd=root, check=True)
+    (root / ".gitignore").write_text("private.json\n")
+    ga.generate(root, key, now)
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-m", "accepted day"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
+    subprocess.run(["git", "fetch", "origin", "main"], cwd=root, check=True, capture_output=True)
+    (root / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
+    paths = (
+        "attestations/latest/index.json",
+        "attestations/latest/chain_head.json",
+        "attestations/latest/scores.json",
+        "attestations/chain-index.json",
+        ".attestations/chain_head.json",
+    )
+    before = {path: ((root / path).read_bytes(), (root / path).stat().st_mtime_ns) for path in paths}
+    refresh = next(step for step in yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+                   if step.get("name") == "Refresh legacy chain head before signing")
+    source = refresh["run"].split("if python3 - <<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
+    result = subprocess.run([sys.executable, "-c", source], cwd=root, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert before == {path: ((root / path).read_bytes(), (root / path).stat().st_mtime_ns) for path in paths}
 
 
 @pytest.mark.parametrize(("omitted", "present", "status", "expected"), [
@@ -2031,6 +2128,10 @@ def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manife
         index for index, step in enumerate(steps)
         if step.get("name") == "Keep verifier-reachable attestation history"
     )
+    projection_guard_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Require served projections from committed main"
+    )
     ceiling_guard_index = next(
         index for index, step in enumerate(steps)
         if step.get("name") == "Guard Cloudflare Pages file ceiling"
@@ -2039,7 +2140,8 @@ def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manife
         index for index, step in enumerate(steps)
         if step.get("name") == "Assemble canonical Pages artifact"
     ) + 1
-    assert asset_guard_index == selection_index + 1
+    assert projection_guard_index == selection_index + 1
+    assert asset_guard_index == projection_guard_index + 1
     assert ceiling_guard_index == asset_guard_index + 1
     assert manifest_create_index == ceiling_guard_index + 1
     assert "set -Eeuo pipefail" in steps[asset_guard_index]["run"]
@@ -2120,6 +2222,9 @@ def test_sign_health_refreshes_chain_head_before_signing() -> None:
 
     assert "if: needs.sign_health.outputs.health_only != 'true'" not in refresh_step
     assert "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}" in refresh_step
+    assert 'accepted_discovery(root, "origin/main")' in refresh_step
+    assert "ga.agrees(root, directory, manifest, ga.health_binding(root, health), registry, None)" in refresh_step
+    assert "Reusing accepted same-day envelope; projections remain unchanged." in refresh_step
     assert "bash scripts/refresh_chain_head.sh" in refresh_step
 
 
