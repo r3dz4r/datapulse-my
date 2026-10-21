@@ -5,22 +5,22 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": null,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "not_evaluated",
+        "mode": "cadence_fallback",
         "sample_days": 0,
         "stdev_days": null,
-        "threshold_days": null,
+        "threshold_days": 3,
         "window_days": 14
       }
     },
     "expected_record_count": 2520,
-    "freshness_signal": "no-header",
-    "freshness_signal_source": "none",
+    "freshness_signal": "content-date-parse",
+    "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-19T23:58:17Z",
+    "last_checked": "2026-10-21T00:05:47Z",
     "record_count": 3080,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:645ed633e9cd59951656d6162c9ba466a6687d04af54d5e516c6d484a0989c7a"
     },
-    "status": "unknown-freshness"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/weather/forecast",
@@ -39,7 +39,7 @@
     "geography": "Malaysia (360 district-level locations)",
     "name": "MET Malaysia Weather Forecast",
     "namespace": "weather",
-    "observed_verified_at": "2026-10-19T23:58:17Z",
+    "observed_verified_at": "2026-10-21T00:05:47Z",
     "source": "data.gov.my (MET Malaysia)",
     "steward": "MET Malaysia"
   },
@@ -833,7 +833,7 @@
     "receipt": {
       "evidence_path": "data/met_weather.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:3239c0fb70e3b977c0f3b273e63b245ae26dd40748506baa8f0e8c36d3a2359d",
+      "receipt_digest": "sha256:ab08a877e948ca87be9a3171028e971ea88316d7b6e33ce27910e9fa6debae4b",
       "sigstore_path": "data/met_weather.receipt.sigstore.json",
       "statement_path": "data/met_weather.receipt.statement.json"
     },
