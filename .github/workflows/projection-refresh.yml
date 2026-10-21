@@ -19,6 +19,9 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # RELEASE_APP_PRIVATE_KEY is a production-environment secret, so this job
+    # must declare the environment or the App token cannot be minted.
+    environment: production
     steps:
       - name: Check out main
         uses: actions/checkout@v4
