@@ -1,0 +1,66 @@
+name: Refresh accepted attestation projections
+
+on:
+  push:
+    branches: [main]
+    paths: ['attestations/**']
+  workflow_dispatch:
+
+concurrency:
+  group: projection-refresh-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install projection verification dependency
+        run: python3 -m pip install cryptography==50.0.0
+
+      - name: Refresh accepted projections
+        id: projections
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(python3 scripts/gen_attestation_projections.py 2>&1)"
+          result=$?
+          set -e
+          printf '%s\n' "$output"
+          if (( result == 2 )); then
+            reason="${output//$'\n'/; }"
+            echo "reason=$reason" >> "$GITHUB_OUTPUT"
+            echo "::error::Projection refresh refused (exit 2): $reason"
+            exit 2
+          fi
+          if (( result != 0 )); then
+            echo "::error::Projection refresh failed with exit $result."
+            exit "$result"
+          fi
+
+      - name: Commit and push changed projections
+        run: |
+          set -euo pipefail
+          git add -- attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json
+          if git diff --cached --quiet; then
+            echo 'Accepted projections are unchanged.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(attestations): refresh accepted projections'
+          git push origin HEAD:main
