@@ -81,6 +81,23 @@ jobs:
             echo "days_after=$days_after"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Close superseded projection pull requests
+        if: steps.projections.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GH_REPO}/pulls?state=open&per_page=100" \
+            --jq '.[] | select(.head.ref | startswith("projection/refresh-")) | [.number, .head.ref] | @tsv' |
+            while IFS=$'\t' read -r number head; do
+              if [[ "$head" == "projection/refresh-${GITHUB_RUN_ID}" ]]; then
+                continue
+              fi
+              gh pr comment "$number" --body "Superseded by projection refresh run ${GITHUB_RUN_ID}."
+              gh pr close "$number"
+            done
+
       - name: Create and push refresh branch
         if: steps.projections.outputs.changed == 'true'
         env:
