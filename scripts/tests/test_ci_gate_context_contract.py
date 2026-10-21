@@ -231,18 +231,6 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
     assert steps["Verify attestation workflow contract"]["if"] == (
         "env.ARTIFACT_ONLY_FAST_PATH != 'true'"
     )
-    projection_check = steps["Check accepted attestation projections"]
-    assert projection_check["run"] == "python3 scripts/gen_attestation_projections.py --check"
-    assert "github.event_name == 'pull_request'" in projection_check["if"]
-    assert "github.ref == 'refs/heads/main'" in projection_check["if"]
-    assert "append_only" in projection_check["if"]
-    assert steps["Explain evidence-only append projection deferral"]["run"].strip() == (
-        "echo 'SKIPPED: evidence-only append; projections refresh after merge'"
-    )
-    names = list(steps)
-    assert names.index("Check accepted attestation projections") < names.index(
-        "Check out r3dz4r/dotfiles (contract checks reference dotfiles/system/* and dotfiles/scripts/*)"
-    )
     for name, step in steps.items():
         if name in {
             "Check out repository",
@@ -255,8 +243,6 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
             "Verify distribution surfaces match canonical evidence",
             "Verify OpenWiki source contract",
             "Verify signed chain-head monotonicity",
-            "Check accepted attestation projections",
-            "Explain evidence-only append projection deferral",
             "Verify immutable attestation append against accepted base",
             "Verify attestation workflow contract",
         }:
