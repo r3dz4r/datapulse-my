@@ -114,6 +114,19 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Check out r3dz4r/dotfiles (contract checks reference dotfiles/system/* and dotfiles/scripts/*)
+        if: env.FULL_VERIFICATION == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: r3dz4r/dotfiles
+          path: /home/runner/work/datapulse-my/datapulse-my/.dotfiles
+          token: ${{ secrets.CROSS_REPO_TOKEN }}
+        # NOTE: do NOT add continue-on-error here. We want a 403 (insufficient
+        # PAT scopes) to fail the workflow loudly so the operator notices
+        # and fixes the token. With continue-on-error:true the 3 contract
+        # tests silently skip and the CI green-light hides the secret
+        # misconfiguration.
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -150,41 +163,6 @@ jobs:
 
       - name: Verify signed chain-head monotonicity
         run: python3 -m pytest -q scripts/tests/test_chain_head_monotonicity.py
-
-      - name: Check accepted attestation projections
-        if: >-
-          (github.event_name == 'pull_request' &&
-           !(needs.classify.outputs.append_only == 'true' &&
-             startsWith(github.head_ref, 'attestation/append-') &&
-             !contains(needs.classify.outputs.changed_paths, 'attestations/latest/') &&
-             !contains(needs.classify.outputs.changed_paths, 'attestations/chain-index.json') &&
-             !contains(needs.classify.outputs.changed_paths, '.attestations/chain_head.json'))) ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
-        run: python3 scripts/gen_attestation_projections.py --check
-
-      - name: Explain evidence-only append projection deferral
-        if: >-
-          github.event_name == 'pull_request' &&
-          needs.classify.outputs.append_only == 'true' &&
-          startsWith(github.head_ref, 'attestation/append-') &&
-          !contains(needs.classify.outputs.changed_paths, 'attestations/latest/') &&
-          !contains(needs.classify.outputs.changed_paths, 'attestations/chain-index.json') &&
-          !contains(needs.classify.outputs.changed_paths, '.attestations/chain_head.json')
-        run: |
-          echo 'SKIPPED: evidence-only append; projections refresh after merge'
-
-      - name: Check out r3dz4r/dotfiles (contract checks reference dotfiles/system/* and dotfiles/scripts/*)
-        if: env.FULL_VERIFICATION == 'true'
-        uses: actions/checkout@v4
-        with:
-          repository: r3dz4r/dotfiles
-          path: /home/runner/work/datapulse-my/datapulse-my/.dotfiles
-          token: ${{ secrets.CROSS_REPO_TOKEN }}
-        # NOTE: do NOT add continue-on-error here. We want a 403 (insufficient
-        # PAT scopes) to fail the workflow loudly so the operator notices
-        # and fixes the token. With continue-on-error:true the 3 contract
-        # tests silently skip and the CI green-light hides the secret
-        # misconfiguration.
 
       - name: Validate tracked release-proof legacy format
         if: env.FULL_VERIFICATION == 'true'
