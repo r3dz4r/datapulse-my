@@ -4,14 +4,17 @@ on:
   push:
     branches: [main]
     paths: ['attestations/**']
+  schedule:
+    - cron: '52 * * * *'
   workflow_dispatch:
 
 concurrency:
-  group: projection-refresh-main
+  group: projection-refresh
   cancel-in-progress: false
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   refresh:
@@ -31,7 +34,7 @@ jobs:
       - name: Install projection verification dependency
         run: python3 -m pip install cryptography==50.0.0
 
-      - name: Refresh accepted projections
+      - name: Derive accepted projections on main
         id: projections
         shell: bash
         run: |
@@ -43,27 +46,66 @@ jobs:
           printf '%s\n' "$output"
           if (( result == 2 )); then
             reason="${output//$'\n'/; }"
-            echo "reason=$reason" >> "$GITHUB_OUTPUT"
-            echo "::error::Projection refresh refused (exit 2): $reason"
+            echo "::error title=Projection refresh refused::Writer exited 2 (append-only violation or acceptance-boundary refusal): $reason"
             exit 2
           fi
           if (( result != 0 )); then
             echo "::error::Projection refresh failed with exit $result."
             exit "$result"
           fi
-
-      - name: Commit and push changed projections
-        run: |
-          set -euo pipefail
-          git add -- attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json
-          if git diff --cached --quiet; then
-            echo 'Accepted projections are unchanged.'
+          if git diff --quiet -- .attestations/chain_head.json attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json; then
+            echo 'UNCHANGED: there was nothing to refresh.'
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          previous_head="$(git rev-parse HEAD)"
+          derived_head="$(jq -r '.chain_head' attestations/latest/chain_head.json)"
+          days_before="$(git show HEAD:attestations/chain-index.json | jq '.days | length')"
+          days_after="$(jq '.days | length' attestations/chain-index.json)"
+          {
+            echo "changed=true"
+            echo "previous_head=$previous_head"
+            echo "derived_head=$derived_head"
+            echo "days_before=$days_before"
+            echo "days_after=$days_after"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create and push refresh branch
+        if: steps.projections.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git switch -c "projection/refresh-${GITHUB_RUN_ID}"
+          if ! python3 scripts/gen_attestation_projections.py --check; then
+            echo '::error title=Projection verification failed::Generated projections did not pass --check; no branch was pushed.'
+            exit 1
+          fi
+          git add -- .attestations/chain_head.json attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'chore(attestations): refresh accepted projections'
-          git push origin HEAD:main
+          git push --set-upstream origin "projection/refresh-${GITHUB_RUN_ID}"
 
-      - name: Check accepted projections
-        run: python3 scripts/gen_attestation_projections.py --check
+      - name: Open pull request and enable auto-merge
+        if: steps.projections.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          head="projection/refresh-${GITHUB_RUN_ID}"
+          body="$(cat <<'BODY'
+          Accepted projection refresh derived from head ${{ steps.projections.outputs.derived_head }}.
+
+          Previous committed head: ${{ steps.projections.outputs.previous_head }}
+          Day count: ${{ steps.projections.outputs.days_before }} → ${{ steps.projections.outputs.days_after }}.
+          BODY
+          )"
+          url="$(gh pr create --base main --head "$head" \
+            --title 'chore(attestations): refresh accepted projections' \
+            --body "$body")"
+          number="${url##*/}"
+          echo "Opened pull request #$number for $head -> main."
+          gh pr merge "$number" --auto --squash
+          echo "Enabled squash auto-merge on pull request #$number."
