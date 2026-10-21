@@ -25,6 +25,14 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -73,7 +81,7 @@ jobs:
       - name: Create and push refresh branch
         if: steps.projections.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
           git switch -c "projection/refresh-${GITHUB_RUN_ID}"
@@ -85,12 +93,13 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'chore(attestations): refresh accepted projections'
-          git push --set-upstream origin "projection/refresh-${GITHUB_RUN_ID}"
+          git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
+            push --set-upstream origin "projection/refresh-${GITHUB_RUN_ID}"
 
       - name: Open pull request and enable auto-merge
         if: steps.projections.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
