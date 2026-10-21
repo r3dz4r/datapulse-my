@@ -38,7 +38,12 @@ from scripts.verify_attestation_binding import (
     ContractError, _load, _parse_time, _verify_legacy_plane, _verify_signature,
 )
 
-PROJECTIONS = {"attestations/chain-index.json", ".attestations/chain_head.json"}
+PROJECTIONS = {
+    "attestations/chain-index.json",
+    "attestations/latest/index.json",
+    "attestations/latest/chain_head.json",
+    ".attestations/chain_head.json",
+}
 
 
 class AcceptancePending(ValueError):
@@ -581,6 +586,25 @@ def _checkout_changes(root: Path, base: str) -> tuple[set[str], dict[str, str]]:
     return paths, indexed
 
 
+def _evidence_paths_changed(root: Path, base: str) -> bool:
+    """Treat an unreadable base diff as evidence-bearing, never as an exemption."""
+    commands = (
+        ["git", "diff", "--no-ext-diff", "--no-textconv", "--no-renames",
+         "--ignore-submodules=none", "--name-only", "-z", base, "--", "attestations", ".attestations"],
+        ["git", "ls-files", "--others", "--exclude-standard", "-z", "--", "attestations", ".attestations"],
+        ["git", "ls-files", "--others", "--ignored", "--exclude-standard", "-z", "--",
+         "attestations", ".attestations"],
+    )
+    try:
+        for command in commands:
+            output = subprocess.run(command, cwd=root, check=True, capture_output=True).stdout
+            if any(os.fsdecode(path) not in PROJECTIONS for path in output.split(b"\0") if path):
+                return True
+    except (OSError, subprocess.SubprocessError):
+        return True
+    return False
+
+
 def _accepted_object_sizes(root: Path, indexed: dict[str, str]) -> dict[str, int]:
     """Read blob headers only; normalized index bytes may differ in size on disk."""
     digests = sorted(set(indexed.values()))
@@ -662,24 +686,40 @@ def _verified_append_paths(root: Path, base: str, require_committed: bool = Fals
         projection = root / "attestations/latest/chain_head.json"
         if projection.exists():
             projected = _load(projection, "projected head")["chain_head"]
-            if projected not in new["envelopes"]:
+            projection_only = not _evidence_paths_changed(root, base)
+            if projected not in new["envelopes"] and not projection_only:
                 raise ContractError("latest projection is stale or mixed")
-            projected_document = {**new, "current_head": projected}
-            projected_directory = accepted_day_directory(root, projected_document)
-            projected_revision = root / projected_directory / "revisions" / projected / "chain_head.json"
-            if projected_revision.is_file():
-                projected_directory = projected_revision.parent.relative_to(root).as_posix()
-            verify_legacy_mirror(root, projected_document, projected_directory)
-            projection_matches_current = projected == new["current_head"]
-            for filename in FILES:
-                latest = root / "attestations/latest" / filename
-                frozen = root / projected_directory / filename
-                if filename in PIPELINE_OWNED_PROJECTIONS:
-                    if _parse_time(_load(latest, "latest scores").get("generated_at"), "latest scores time") < _parse_time(
-                            _load(frozen, "frozen scores").get("generated_at"), "frozen scores time"):
-                        raise ContractError("latest projection is stale or mixed")
-                elif latest.read_bytes() != frozen.read_bytes():
-                    raise ContractError("latest projection is stale or mixed")
+            if projection_only:
+                base_projected = json.loads(git_bytes(root, base, "attestations/latest/chain_head.json"))["chain_head"]
+                if projected in new["envelopes"]:
+                    try:
+                        assert_head_extends_base({**new, "current_head": projected}, base_projected)
+                    except ContractError as error:
+                        raise ContractError("latest projection is stale or mixed") from error
+            if projected not in new["envelopes"]:
+                # This head may already be accepted on main but absent from a
+                # projection-only PR tree. The mirror must still agree locally.
+                verify_legacy_mirror(root, new, "attestations/latest")
+            else:
+                projected_document = {**new, "current_head": projected}
+                projected_directory = accepted_day_directory(root, projected_document)
+                projected_revision = root / projected_directory / "revisions" / projected / "chain_head.json"
+                if projected_revision.is_file():
+                    projected_directory = projected_revision.parent.relative_to(root).as_posix()
+                verify_legacy_mirror(root, projected_document, projected_directory)
+                projection_matches_current = projected == new["current_head"]
+                # An evidence-free refresh can inherit stale latest files until
+                # publication; committed checks still require frozen agreement.
+                if not projection_only or require_committed:
+                    for filename in FILES:
+                        latest = root / "attestations/latest" / filename
+                        frozen = root / projected_directory / filename
+                        if filename in PIPELINE_OWNED_PROJECTIONS:
+                            if _parse_time(_load(latest, "latest scores").get("generated_at"), "latest scores time") < _parse_time(
+                                    _load(frozen, "frozen scores").get("generated_at"), "frozen scores time"):
+                                raise ContractError("latest projection is stale or mixed")
+                        elif latest.read_bytes() != frozen.read_bytes():
+                            raise ContractError("latest projection is stale or mixed")
     if require_committed:
         for digest in seen:
             raise ValueError(f"candidate head {digest} must be accepted in authoritative Git before publication")

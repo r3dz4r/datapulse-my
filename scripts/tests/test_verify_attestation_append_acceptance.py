@@ -239,6 +239,67 @@ def candidate(tmp_path: Path) -> tuple[Path, str, Path, Path, list[str]]:
     return root, source, authority, origin, paths
 
 
+def projection_candidate(tmp_path: Path) -> tuple[Path, str, bytes, bytes]:
+    """Accept a new evidence set, then refresh only its four projections."""
+    root, key = fixture_root(tmp_path)
+    (root / ".gitignore").write_text("private.json\n")
+    ga.generate(root, key, NOW)
+    git(root, "init", "-b", "main")
+    git(root, "config", "user.name", "Test")
+    git(root, "config", "user.email", "test@example.test")
+    git(root, "add", ".gitignore")
+    accept(root)
+    old_head = (root / "attestations/latest/chain_head.json").read_bytes()
+    old_mirror = (root / ".attestations/chain_head.json").read_bytes()
+    ga.generate(root, key, NOW + timedelta(days=1))
+    git(root, "restore", "--", "attestations/latest", "attestations/chain-index.json",
+        ".attestations/chain_head.json", "datapulse.json")
+    git(root, "add", "attestations/2026-08-16")
+    git(root, "commit", "-m", "accepted evidence only")
+    base = git(root, "rev-parse", "HEAD")
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/gen_attestation_projections.py"), "--root", str(root)],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    return root, base, old_head, old_mirror
+
+
+def test_projection_ahead_without_new_evidence_is_accepted(tmp_path: Path) -> None:
+    root, base, old_head, _ = projection_candidate(tmp_path)
+    assert (root / "attestations/latest/chain_head.json").read_bytes() != old_head
+    verifier.verify_append(root, base)
+    with pytest.raises(verifier.ContractError, match="latest projection is stale or mixed"):
+        verifier.verify_append(root, base, require_committed=True)
+
+
+def test_projection_ahead_with_modified_envelope_is_rejected(tmp_path: Path) -> None:
+    root, base, _, _ = projection_candidate(tmp_path)
+    envelope = root / "attestations/latest/binding.json"
+    envelope.write_bytes(envelope.read_bytes() + b" ")
+    with pytest.raises(verifier.ContractError, match="latest projection is stale or mixed") as error:
+        verifier.verify_append(root, base)
+    assert str(error.value) == "latest projection is stale or mixed"
+
+
+def test_projection_only_backward_move_is_rejected(tmp_path: Path) -> None:
+    root, base, old_head, old_mirror = projection_candidate(tmp_path)
+    base = accept(root)
+    (root / "attestations/latest/chain_head.json").write_bytes(old_head)
+    (root / ".attestations/chain_head.json").write_bytes(old_mirror)
+    with pytest.raises(verifier.ContractError, match="latest projection is stale or mixed") as error:
+        verifier.verify_append(root, base)
+    assert str(error.value) == "latest projection is stale or mixed"
+
+
+def test_projection_only_mirror_disagreement_is_rejected(tmp_path: Path) -> None:
+    root, base, _, old_mirror = projection_candidate(tmp_path)
+    (root / ".attestations/chain_head.json").write_bytes(old_mirror)
+    with pytest.raises(verifier.ContractError, match="legacy mirror disagrees with current head") as error:
+        verifier.verify_append(root, base)
+    assert str(error.value).startswith("legacy mirror disagrees with current head")
+
+
 def merge_append(authority: Path, origin: Path) -> None:
     git(authority, "add", "attestations")
     git(authority, "commit", "-m", "accept immutable append")

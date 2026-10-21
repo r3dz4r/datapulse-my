@@ -9,6 +9,8 @@ WORKFLOW = Path(__file__).resolve().parents[2] / ".github/workflows/projection-r
 def test_projection_refresh_workflow_contract() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
     push_at = text.index("push --set-upstream origin")
+    close_at = text.index("- name: Close superseded projection pull requests")
+    create_at = text.index("- name: Create and push refresh branch")
     checks = [
         ("creates a pull request", "gh pr create" in text),
         ("enables auto-merge", "gh pr merge" in text and "--auto" in text),
@@ -25,6 +27,14 @@ def test_projection_refresh_workflow_contract() -> None:
             and text.count("steps.app-token.outputs.token") >= 2,
         ),
         ("keeps concurrency runs active", "cancel-in-progress: false" in text),
+        (
+            "closes previous projection refresh pull requests before creating a new one",
+            close_at < create_at
+            and 'startswith("projection/refresh-")' in text[close_at:create_at]
+            and '"projection/refresh-${GITHUB_RUN_ID}"' in text[close_at:create_at]
+            and "gh pr close" in text[close_at:create_at]
+            and "GITHUB_RUN_ID" in text[close_at:create_at],
+        ),
     ]
     failed = False
     for description, passed in checks:
