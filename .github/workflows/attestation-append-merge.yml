@@ -6,6 +6,9 @@ on:
   push:
     branches:
       - attestation/append-*
+      - main
+    paths:
+      - 'attestations/**'
   workflow_run:
     workflows: ["Pull request CI"]
     types: [completed]
@@ -31,7 +34,54 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  refresh_accepted_projections:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    steps:
+      - name: Check out accepted main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install attestation verification dependency
+        run: python3 -m pip install cryptography==50.0.0
+
+      - name: Refresh accepted projections
+        run: python3 scripts/gen_attestation_projections.py
+
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Commit and push changed projections
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          git add -- attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json
+          if git diff --cached --quiet; then
+            echo 'Accepted projections are unchanged.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(attestations): refresh accepted projections'
+          gh auth setup-git
+          git push origin HEAD:main
+
   check_production_ref:
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       admitted: ${{ steps.policy.outputs.admitted }}
