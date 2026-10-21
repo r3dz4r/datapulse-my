@@ -13,6 +13,7 @@ from scripts import gen_attestations as ga
 from scripts.attestation_sets import verify_legacy_mirror
 from scripts.tests.test_append_set_isolation import NOW
 from scripts.tests.test_attestations import fixture_root
+from scripts.verify_attestation_append import accepted_discovery
 
 SCRIPT = Path(__file__).resolve().parents[1] / "gen_attestation_projections.py"
 PROJECTIONS = (
@@ -78,10 +79,57 @@ def test_second_revision_advances_head_and_day_count(tmp_path: Path) -> None:
     latest_head = json.loads((root / PROJECTIONS[1]).read_text(encoding="utf-8"))
     latest_index = json.loads((root / PROJECTIONS[0]).read_text(encoding="utf-8"))
     check(result.returncode == 0 and current["current_head"] != previous["current_head"]
+          and current["current_head"] == accepted_discovery(root, "HEAD")["current_head"]
           and len(current["days"]) == len(previous["days"]) + 1
           and latest_head["chain_head"] == current["current_head"]
           and latest_index["date"] == "2026-08-16",
           f"accepted revision advances head and day count: {result.stderr}")
+
+
+def test_older_dated_first_merged_child_is_selected(tmp_path: Path) -> None:
+    root, key = accepted_root(tmp_path / "accepted")
+    base = git(root, "rev-parse", "HEAD")
+    sibling = tmp_path / "sibling"
+    shutil.copytree(root, sibling)
+    ga.generate(root, key, NOW + timedelta(days=1))
+    older = next((root / "attestations/2026-08-16/revisions").glob("*/chain_head.json"))
+    older_head = json.loads(older.read_text(encoding="utf-8"))["chain_head"]
+    git(root, "restore", ".")
+    git(root, "switch", "-c", "older")
+    git(root, "add", "--", "attestations/2026-08-16")
+    git(root, "commit", "-m", "older signed child")
+
+    ga.generate(sibling, sibling / key.name, NOW + timedelta(days=2))
+    newer = next((sibling / "attestations/2026-08-17/revisions").glob("*/chain_head.json"))
+    newer_head = json.loads(newer.read_text(encoding="utf-8"))["chain_head"]
+    git(root, "switch", "-c", "newer", base)
+    shutil.copytree(newer.parent, root / newer.parent.relative_to(sibling))
+    git(root, "add", "--", "attestations/2026-08-17")
+    git(root, "commit", "-m", "newer signed sibling")
+    git(root, "switch", "main")
+    git(root, "merge", "--no-ff", "-m", "accept older child", "older")
+    git(root, "merge", "--no-ff", "-m", "retain newer sibling", "newer")
+
+    result = run(root)
+    current = index(root)
+    check(result.returncode == 0 and current["current_head"] == older_head
+          and current["current_head"] == accepted_discovery(root, "HEAD")["current_head"]
+          and newer_head in current["rejected_heads"]
+          and json.loads((root / PROJECTIONS[1]).read_text(encoding="utf-8"))["chain_head"] == older_head,
+          f"first merged older-dated child wins over newer sibling: {result.stdout} {result.stderr}")
+
+
+def test_dirty_projection_does_not_override_accepted_git_head(tmp_path: Path) -> None:
+    root, key = accepted_root(tmp_path)
+    accept_next_day(root, key)
+    accepted = accepted_discovery(root, "HEAD")["current_head"]
+    checkpoint = root / PROJECTIONS[2]
+    document = index(root)
+    document["current_head"] = "f" * 64
+    checkpoint.write_text(json.dumps(document) + "\n", encoding="utf-8")
+    result = run(root)
+    check(result.returncode == 0 and index(root)["current_head"] == accepted,
+          f"accepted Git head overrides dirty projection: {result.stdout} {result.stderr}")
 
 
 def test_stale_legacy_mirror_is_refreshed_from_accepted_head(tmp_path: Path) -> None:
@@ -133,7 +181,7 @@ def test_conflicting_sibling_refuses_with_both_heads(tmp_path: Path) -> None:
     output = result.stdout + result.stderr
     check(result.returncode == 2 and accepted in output and first_head in output
           and second_head in output,
-          f"conflicting siblings identify accepted and candidate heads: {output}")
+          f"conflicting siblings exit={result.returncode} identify accepted and candidate heads: {output}")
 
 
 def test_idempotent_second_run(tmp_path: Path) -> None:

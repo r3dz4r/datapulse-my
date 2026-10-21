@@ -12,7 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.attestation_sets import assert_head_extends_base, discovery, set_directory
+from scripts.attestation_sets import assert_head_extends_base, set_directory
+from scripts.verify_attestation_append import accepted_discovery, git_bytes
 from scripts.verify_attestation_binding import ContractError
 
 logger = logging.getLogger(__name__)
@@ -68,9 +69,9 @@ def _check_evidence(root: Path, *, require_main: bool) -> None:
 
 def _derive(root: Path, *, require_main: bool) -> dict[str, bytes]:
     _check_evidence(root, require_main=require_main)
-    accepted = json.loads((root / "attestations/chain-index.json").read_text(encoding="utf-8"))
+    accepted = json.loads(git_bytes(root, "HEAD", "attestations/chain-index.json"))
     previous = accepted["current_head"]
-    document = discovery(root)
+    document = accepted_discovery(root, "HEAD")
     current = document["current_head"]
     try:
         assert_head_extends_base(document, previous)
