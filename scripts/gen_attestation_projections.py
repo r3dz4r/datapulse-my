@@ -17,12 +17,14 @@ from scripts.verify_attestation_append import accepted_discovery, git_bytes
 from scripts.verify_attestation_binding import ContractError
 
 logger = logging.getLogger(__name__)
+SCORES_PROJECTION = "attestations/latest/" + "scores.json"
 PROJECTIONS = (
     "attestations/latest/index.json",
     "attestations/latest/chain_head.json",
     "attestations/chain-index.json",
     ".attestations/chain_head.json",
     "attestations/latest/binding.json",
+    SCORES_PROJECTION,
 )
 REGISTRY = "docs/.well-known/datapulse-probe-keys.json"
 
@@ -89,6 +91,7 @@ def _derive(root: Path, *, require_main: bool) -> dict[str, bytes]:
         PROJECTIONS[2]: (json.dumps(document, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
         PROJECTIONS[3]: (root / directory / "chain_head.json").read_bytes(),
         PROJECTIONS[4]: (root / directory / "binding.json").read_bytes(),
+        PROJECTIONS[5]: (root / directory / "scores.json").read_bytes(),
     }
 
 
@@ -107,6 +110,8 @@ def _value(path: str, raw: bytes | None) -> str:
         return f"chain_head={document['chain_head']}"
     if path == PROJECTIONS[4]:
         return f"chain_head={document['payload']['ed25519']['chain_head']}"
+    if path == PROJECTIONS[5]:
+        return f"generated_at={document['generated_at']}"
     return f"current_head={document['current_head']} days={len(document['days'])}"
 
 

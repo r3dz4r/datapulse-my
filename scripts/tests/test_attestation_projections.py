@@ -24,6 +24,7 @@ PROJECTIONS = (
     "attestations/chain-index.json",
     ".attestations/chain_head.json",
     "attestations/latest/binding.json",
+    "attestations/latest/scores.json",
 )
 
 
@@ -77,7 +78,8 @@ def test_second_revision_advances_head_and_day_count(tmp_path: Path) -> None:
     root, key = accepted_root(tmp_path)
     previous = index(root)
     accept_next_day(root, key)
-    scores = (root / "attestations/latest/scores.json").read_bytes()
+    latest_scores = root / "attestations/latest/scores.json"
+    latest_scores.write_bytes(b'{"generated_at":"2000-01-01T00:00:00Z"}\n')
     result = run(root)
     current = index(root)
     latest_head = json.loads((root / PROJECTIONS[1]).read_text(encoding="utf-8"))
@@ -91,7 +93,7 @@ def test_second_revision_advances_head_and_day_count(tmp_path: Path) -> None:
     binding = root / "attestations/latest/binding.json"
     assert binding.read_bytes() == (root / latest_index["binding_ref"]).read_bytes()
     assert json.loads(binding.read_bytes())["payload"]["ed25519"]["chain_head"] == current["current_head"]
-    assert (root / "attestations/latest/scores.json").read_bytes() == scores
+    assert latest_scores.read_bytes() == (root / Path(latest_index["binding_ref"]).with_name("scores.json")).read_bytes()
 
 
 def test_older_dated_first_merged_child_is_selected(tmp_path: Path) -> None:
@@ -210,7 +212,7 @@ def test_check_names_stale_file_and_values(tmp_path: Path) -> None:
     result = run(root, "--check")
     after = {path: (root / path).read_bytes() for path in PROJECTIONS}
     stale = [line for line in result.stdout.splitlines() if line.startswith("STALE ")]
-    check(result.returncode == 1 and len(stale) == 5
+    check(result.returncode == 1 and len(stale) == 6
           and all(path in result.stdout for path in PROJECTIONS)
           and old in result.stdout and "derived=" in result.stdout and before == after,
           f"stale check reports both values without writing: {result.stdout} {result.stderr}")
@@ -245,8 +247,7 @@ def test_binding_only_drift_is_checked_and_repaired(tmp_path: Path, damage: str)
     latest_index = json.loads((root / PROJECTIONS[0]).read_bytes())
     expected = (root / latest_index["binding_ref"]).read_bytes()
     assert binding.read_bytes() == expected
-    untouched = {path: (root / path).read_bytes()
-                 for path in (*PROJECTIONS[:4], "attestations/latest/scores.json")}
+    untouched = {path: (root / path).read_bytes() for path in PROJECTIONS if path != PROJECTIONS[4]}
     if damage == "missing":
         binding.unlink()
     else:
