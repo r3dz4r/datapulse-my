@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 
 WORKFLOW = Path(__file__).resolve().parents[2] / ".github/workflows/projection-refresh.yml"
+ROOT = WORKFLOW.parents[2]
 
 
 def test_projection_refresh_workflow_contract() -> None:
@@ -51,3 +53,24 @@ def test_projection_refresh_workflow_contract() -> None:
         print(f"{'PASS' if passed else 'FAIL'}: {description}")
         failed |= not passed
     assert not failed, "projection refresh workflow contract failed"
+
+
+def test_projection_refresh_carries_scores_from_projected_revision() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    copy_scores = next(
+        (line for line in text.splitlines() if "cp -- \"$frozen_scores\"" in line),
+        "",
+    )
+    add_line = next(line for line in text.splitlines() if "git add --" in line)
+    diff_line = next(line for line in text.splitlines() if "if git diff --quiet --" in line)
+    assert "binding_ref" in text and copy_scores, "refresh must copy frozen scores selected by binding_ref"
+    assert "attestations/latest/scores.json" in add_line
+    assert "attestations/latest/scores.json" in diff_line
+
+    latest_scores = json.loads((ROOT / "attestations/latest/scores.json").read_text())
+    latest_index = json.loads((ROOT / "attestations/latest/index.json").read_text())
+    frozen_path = ROOT / Path(latest_index["binding_ref"]).with_name("scores.json")
+    frozen_scores = json.loads(frozen_path.read_text())
+    assert latest_scores["generated_at"] >= frozen_scores["generated_at"], (
+        "latest scores must be at least as recent as the frozen scores of the projected head"
+    )
