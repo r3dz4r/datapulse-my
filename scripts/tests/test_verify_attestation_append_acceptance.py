@@ -6,6 +6,7 @@ from datetime import timedelta
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -240,6 +241,72 @@ def candidate(tmp_path: Path) -> tuple[Path, str, Path, Path, list[str]]:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes((root / path).read_bytes())
     return root, source, authority, origin, paths
+
+
+def test_append_with_mixed_previous_head_projection_is_rejected(
+    candidate: tuple[Path, str, Path, Path, list[str]],
+) -> None:
+    root, source, _, _, _ = candidate
+    candidate_binding = (root / "attestations/latest/binding.json").read_bytes()
+    for path in ("attestations/chain-index.json", "attestations/latest/index.json",
+                 "attestations/latest/chain_head.json", ".attestations/chain_head.json"):
+        (root / path).write_bytes(verifier.git_bytes(root, source, path))
+    assert (root / "attestations/latest/binding.json").read_bytes() == candidate_binding
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/verify_attestation_append.py"),
+         "--root", str(root), "--base", source],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 1
+    assert "attestation append: latest projection is stale or mixed" in result.stderr
+
+
+def test_append_latest_is_judged_against_own_head(
+    candidate: tuple[Path, str, Path, Path, list[str]],
+) -> None:
+    root, source, _, _, _ = candidate
+    (root / "attestations/chain-index.json").write_bytes(
+        verifier.git_bytes(root, source, "attestations/chain-index.json")
+    )
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/verify_attestation_append.py"),
+         "--root", str(root), "--base", source],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "append judged against its own head" in result.stderr
+
+
+def test_append_with_own_head_binding_disagreement_is_rejected(
+    candidate: tuple[Path, str, Path, Path, list[str]],
+) -> None:
+    root, source, _, _, _ = candidate
+    binding = root / "attestations/latest/binding.json"
+    binding.write_bytes(binding.read_bytes() + b" ")
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/verify_attestation_append.py"),
+         "--root", str(root), "--base", source],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 1
+    assert "attestation append: latest projection is stale or mixed" in result.stderr
+    assert "append judged against its own head" not in result.stderr
+
+
+def test_append_missing_own_frozen_directory_is_rejected(
+    candidate: tuple[Path, str, Path, Path, list[str]],
+) -> None:
+    root, source, _, _, _ = candidate
+    directory = verifier.accepted_day_directory(root, ga.load(root / "attestations/chain-index.json"))
+    shutil.rmtree(root / directory)
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/verify_attestation_append.py"),
+         "--root", str(root), "--base", source],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 1
+    assert "attestation append:" in result.stderr
+    assert "append judged against its own head" not in result.stderr
 
 
 def projection_candidate(tmp_path: Path) -> tuple[Path, str, bytes, bytes]:
