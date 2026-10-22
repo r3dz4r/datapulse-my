@@ -64,12 +64,6 @@ jobs:
             echo "::error::Projection refresh failed with exit $result."
             exit "$result"
           fi
-          frozen_scores="$(jq -r '.binding_ref | sub("binding[.]json$"; "scores.json")' attestations/latest/index.json)"
-          if [[ ! -f "$frozen_scores" ]]; then
-            echo "::error title=Projection refresh refused::Frozen scores are missing for projected revision: $frozen_scores"
-            exit 1
-          fi
-          cp -- "$frozen_scores" attestations/latest/scores.json
           if git diff --quiet -- .attestations/chain_head.json attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json attestations/latest/binding.json attestations/latest/scores.json; then
             echo 'UNCHANGED: there was nothing to refresh.'
             echo 'changed=false' >> "$GITHUB_OUTPUT"
