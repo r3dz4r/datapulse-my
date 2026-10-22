@@ -30,7 +30,10 @@ def _exercise(
     bin_dir.mkdir()
     scripts = tmp_path / "scripts"
     scripts.mkdir()
-    (scripts / "submit_attestation_append.sh").write_text('echo submit >> "$CALL_LOG"\n')
+    (scripts / "submit_attestation_append.sh").write_text(
+        'echo submit >> "$CALL_LOG"\n'
+        'if [[ "${1:-}" == --rebuild ]]; then exit 1; fi\n'
+    )
     (scripts / "close_superseded_appends.sh").write_text('echo close >> "$CALL_LOG"\n')
     mocks = {
         "timeout": r'''#!/bin/bash
