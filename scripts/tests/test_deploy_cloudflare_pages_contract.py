@@ -512,12 +512,18 @@ def test_append_acceptance_bounds_every_external_call_and_total_budget() -> None
     cleanup_caps = [cap for position, cap in bounded_calls
                     if commands[position:].startswith('bash scripts/close_superseded_appends.sh')]
     assert len(cleanup_caps) == 3
+    rebuild_caps = [cap for position, cap in bounded_calls
+                    if commands[position:].startswith('bash scripts/submit_attestation_append.sh')
+                    and '--rebuild' in commands[position:position + 120]]
+    assert len(rebuild_caps) == 2
+    assert max(rebuild_caps) < whole_step
     fixed_budget = (
         sum(cap for _, cap in bounded_calls)
         - cleanup_caps[0]
         - min(budget_between(open_branch, submit_branch), budget_between(submit_branch, after_submit))
         - budget_between(poll_start, proof_start)
         - min(cleanup_caps[1:])
+        - sum(rebuild_caps)  # Each failed-check path exits after its one rebuild.
     )
     assert patience + fixed_budget < whole_step < step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
     assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
@@ -694,7 +700,10 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     (tmp_path / "scripts").mkdir()
-    (tmp_path / "scripts/submit_attestation_append.sh").write_text('echo submit >> "$CALL_LOG"\n')
+    (tmp_path / "scripts/submit_attestation_append.sh").write_text(
+        'echo submit >> "$CALL_LOG"\n'
+        'if [[ "${1:-}" == --rebuild ]]; then exit 1; fi\n'
+    )
     (tmp_path / "scripts/close_superseded_appends.sh").write_text('echo close >> "$CALL_LOG"\n')
     (tmp_path / "scripts/restore_attestations.sh").write_bytes(
         (ROOT / "scripts/restore_attestations.sh").read_bytes()

@@ -842,13 +842,25 @@ jobs:
               age_seconds="$(( $(date -u +%s) - $(date -ud "$created_at" +%s) ))"
               echo "Already-open append PR #$pr_number ($branch); age ${age_seconds}s; waiting for acceptance."
             else
-              named_timeout 360 bash scripts/submit_attestation_append.sh
-              branch="$(retry_timeout 10 git branch --show-current)"
+              submission_result="${RUNNER_TEMP:-$PWD}/append-submission-result"
+              APPEND_SUBMISSION_RESULT="$submission_result" named_timeout 360 bash scripts/submit_attestation_append.sh
+              if [[ -s "$submission_result" ]]; then
+                read -r branch head_sha rebuilt < "$submission_result"
+              else
+                branch="$(retry_timeout 10 git branch --show-current)"
+                head_sha="$(retry_timeout 10 git rev-parse HEAD)"
+                rebuilt=0
+              fi
               if [[ "$branch" != attestation/append-* ]]; then
                 state='no append PR'
                 refuse_acceptance "Append submission failed: expected an attestation append branch, got $branch"
               fi
-              head_sha="$(retry_timeout 10 git rev-parse HEAD)"
+              if [[ "$rebuilt" == 1 ]]; then
+                pr_number="$(retry_timeout 20 gh pr view "$branch" --repo "$GITHUB_REPOSITORY" --json number --jq .number)"
+                state='replacement filed'
+                check_state='pending'
+                defer_append
+              fi
               # Submission has a separate fixed budget; patience starts at polling.
               started=$SECONDS
               deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))
@@ -905,6 +917,12 @@ jobs:
               refuse_acceptance "Append PR mismatch: submitted branch $branch at $head_sha has no matching open PR targeting main"
             fi
             if [[ "$check_state" =~ (FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE) ]]; then
+              if [[ "$state" == OPEN ]] && named_timeout 300 bash scripts/submit_attestation_append.sh \
+                --rebuild "$pr_number" "$branch" "$head_sha"; then
+                state='replacement filed'
+                check_state='new append PR'
+                defer_append
+              fi
               refuse_acceptance 'Append required check failed'
             fi
             if [[ "$state" == OPEN && "$(retry_timeout 10 jq -r '.autoMergeRequest == null' <<< "$check_json")" == true ]]; then
@@ -941,6 +959,12 @@ jobs:
                 refuse_acceptance 'Append PR closed'
               fi
               if [[ "$check_state" =~ (FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE) ]]; then
+                if [[ "$state" == OPEN ]] && named_timeout 300 bash scripts/submit_attestation_append.sh \
+                  --rebuild "$pr_number" "$branch" "$head_sha"; then
+                  state='replacement filed'
+                  check_state='new append PR'
+                  defer_append
+                fi
                 refuse_acceptance 'Append required check failed'
               fi
               if [[ "$state" == MERGED || "$SECONDS" -ge "$deadline" ]]; then

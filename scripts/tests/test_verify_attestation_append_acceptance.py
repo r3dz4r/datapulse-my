@@ -44,7 +44,10 @@ def run_wait(
     scripts = tmp_path / "scripts"
     scripts.mkdir()
     for name in ("submit_attestation_append.sh", "close_superseded_appends.sh", "restore_attestations.sh"):
-        (scripts / name).write_text('echo "$0 $*" >> "$CALL_LOG"\n')
+        body = 'echo "$0 $*" >> "$CALL_LOG"\n'
+        if name == "submit_attestation_append.sh":
+            body += 'if [[ "${1:-}" == --rebuild ]]; then exit 1; fi\n'
+        (scripts / name).write_text(body)
     gh = f"#!{sys.executable}\n" + textwrap.dedent('''\
         import json, os, pathlib, sys
         args = sys.argv[1:]
