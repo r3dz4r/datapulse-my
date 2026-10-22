@@ -1579,7 +1579,8 @@ jobs:
           set_dir="${set_ref%/*}"
           git -C "$accepted_root" sparse-checkout set --no-cone \
             /attestations/chain-index.json /attestations/latest/index.json \
-            /attestations/latest/chain_head.json /attestations/latest/scores.json \
+            /attestations/latest/chain_head.json /attestations/latest/binding.json \
+            /attestations/latest/scores.json \
             /.attestations/chain_head.json /docs/.well-known/datapulse-probe-keys.json \
             "/$set_dir/"
           git -C "$accepted_root" reset --hard HEAD >/dev/null
@@ -1594,7 +1595,7 @@ jobs:
             exit 1
           fi
           for path in attestations/latest/index.json attestations/latest/chain_head.json \
-            attestations/latest/scores.json attestations/chain-index.json \
+            attestations/latest/binding.json attestations/latest/scores.json attestations/chain-index.json \
             .attestations/chain_head.json; do
             if [[ ! -f "_site/$path" ]] || ! cmp -s "$accepted_root/$path" "_site/$path"; then
               echo "::error title=Attestation projection mismatch::served projections must match the committed tree: $path served_head=$served_head committed_head=$committed_head" >&2
