@@ -5,22 +5,22 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.0,
+        "latest_days": null,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "cadence_fallback",
-        "sample_days": 0,
+        "mode": "not_evaluated",
+        "sample_days": 1,
         "stdev_days": null,
-        "threshold_days": 3,
+        "threshold_days": null,
         "window_days": 14
       }
     },
     "expected_record_count": 2520,
-    "freshness_signal": "content-date-parse",
-    "freshness_signal_source": "content_date_parse",
+    "freshness_signal": "no-header",
+    "freshness_signal_source": "none",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-21T00:05:47Z",
+    "last_checked": "2026-10-22T21:50:28Z",
     "record_count": 3080,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:645ed633e9cd59951656d6162c9ba466a6687d04af54d5e516c6d484a0989c7a"
     },
-    "status": "fresh"
+    "status": "unknown-freshness"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/weather/forecast",
@@ -39,7 +39,7 @@
     "geography": "Malaysia (360 district-level locations)",
     "name": "MET Malaysia Weather Forecast",
     "namespace": "weather",
-    "observed_verified_at": "2026-10-21T00:05:47Z",
+    "observed_verified_at": "2026-10-22T21:50:28Z",
     "source": "data.gov.my (MET Malaysia)",
     "steward": "MET Malaysia"
   },
@@ -828,12 +828,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-10/met_weather.json",
-    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "attestation": "attestations/2026-10-22/revisions/16024cc20fafbc222867d25b43405d6941cb76f006344efb5cc30ef329b0831d/met_weather.json",
+    "chain_reference": "attestations/2026-10-22/revisions/16024cc20fafbc222867d25b43405d6941cb76f006344efb5cc30ef329b0831d/chain_head.json",
     "receipt": {
       "evidence_path": "data/met_weather.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:ab08a877e948ca87be9a3171028e971ea88316d7b6e33ce27910e9fa6debae4b",
+      "receipt_digest": "sha256:df0fbdd7f783006ea780d1f1a4cef185e069e7b9227135ec1778ebd82c7054b7",
       "sigstore_path": "data/met_weather.receipt.sigstore.json",
       "statement_path": "data/met_weather.receipt.statement.json"
     },
