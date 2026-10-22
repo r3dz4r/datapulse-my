@@ -22,6 +22,16 @@ def test_projection_refresh_workflow_contract() -> None:
         ("declares workflow_dispatch trigger", "  workflow_dispatch:" in text),
         ("runs --check before branch push", text.index("gen_attestation_projections.py --check") < push_at),
         (
+            "detects a binding-only refresh",
+            "attestations/latest/binding.json" in next(
+                line for line in text.splitlines() if "if git diff --quiet --" in line),
+        ),
+        (
+            "stages the refreshed binding",
+            "attestations/latest/binding.json" in next(
+                line for line in text.splitlines() if "git add --" in line),
+        ),
+        (
             "mints and uses App token for push and PR",
             "uses: actions/create-github-app-token@v1" in text
             and text.count("steps.app-token.outputs.token") >= 2,

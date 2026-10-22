@@ -9,6 +9,8 @@ import subprocess
 from datetime import timedelta
 from pathlib import Path
 
+import pytest
+
 from scripts import gen_attestations as ga
 from scripts.attestation_sets import verify_legacy_mirror
 from scripts.tests.test_append_set_isolation import NOW
@@ -21,6 +23,7 @@ PROJECTIONS = (
     "attestations/latest/chain_head.json",
     "attestations/chain-index.json",
     ".attestations/chain_head.json",
+    "attestations/latest/binding.json",
 )
 
 
@@ -74,6 +77,7 @@ def test_second_revision_advances_head_and_day_count(tmp_path: Path) -> None:
     root, key = accepted_root(tmp_path)
     previous = index(root)
     accept_next_day(root, key)
+    scores = (root / "attestations/latest/scores.json").read_bytes()
     result = run(root)
     current = index(root)
     latest_head = json.loads((root / PROJECTIONS[1]).read_text(encoding="utf-8"))
@@ -84,6 +88,10 @@ def test_second_revision_advances_head_and_day_count(tmp_path: Path) -> None:
           and latest_head["chain_head"] == current["current_head"]
           and latest_index["date"] == "2026-08-16",
           f"accepted revision advances head and day count: {result.stderr}")
+    binding = root / "attestations/latest/binding.json"
+    assert binding.read_bytes() == (root / latest_index["binding_ref"]).read_bytes()
+    assert json.loads(binding.read_bytes())["payload"]["ed25519"]["chain_head"] == current["current_head"]
+    assert (root / "attestations/latest/scores.json").read_bytes() == scores
 
 
 def test_older_dated_first_merged_child_is_selected(tmp_path: Path) -> None:
@@ -202,7 +210,7 @@ def test_check_names_stale_file_and_values(tmp_path: Path) -> None:
     result = run(root, "--check")
     after = {path: (root / path).read_bytes() for path in PROJECTIONS}
     stale = [line for line in result.stdout.splitlines() if line.startswith("STALE ")]
-    check(result.returncode == 1 and len(stale) == 4
+    check(result.returncode == 1 and len(stale) == 5
           and all(path in result.stdout for path in PROJECTIONS)
           and old in result.stdout and "derived=" in result.stdout and before == after,
           f"stale check reports both values without writing: {result.stdout} {result.stderr}")
@@ -224,3 +232,56 @@ def test_write_refuses_ignored_untracked_evidence(tmp_path: Path) -> None:
     result = run(root)
     check(result.returncode == 2 and "evidence file is not tracked at HEAD" in result.stdout,
           f"write refuses ignored evidence outside HEAD: {result.stdout} {result.stderr}")
+
+
+@pytest.mark.parametrize("damage", ["previous", "missing", "whitespace"])
+def test_binding_only_drift_is_checked_and_repaired(tmp_path: Path, damage: str) -> None:
+    root, key = accepted_root(tmp_path)
+    binding = root / "attestations/latest/binding.json"
+    previous = binding.read_bytes()
+    accept_next_day(root, key)
+    result = run(root)
+    assert result.returncode == 0, result.stdout + result.stderr
+    latest_index = json.loads((root / PROJECTIONS[0]).read_bytes())
+    expected = (root / latest_index["binding_ref"]).read_bytes()
+    assert binding.read_bytes() == expected
+    untouched = {path: (root / path).read_bytes()
+                 for path in (*PROJECTIONS[:4], "attestations/latest/scores.json")}
+    if damage == "missing":
+        binding.unlink()
+    else:
+        binding.write_bytes(previous if damage == "previous" else expected + b" ")
+    before = binding.read_bytes() if binding.is_file() else None
+    result = run(root, "--check")
+    assert result.returncode == 1, result.stdout + result.stderr
+    stale = [line for line in result.stdout.splitlines() if line.startswith("STALE ")]
+    assert len(stale) == 1 and "attestations/latest/binding.json" in stale[0]
+    assert "committed=" in stale[0] and "derived=chain_head=" in stale[0]
+    assert (binding.read_bytes() if binding.is_file() else None) == before
+    assert {path: (root / path).read_bytes() for path in untouched} == untouched
+    result = run(root)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert binding.read_bytes() == expected
+    assert {path: (root / path).read_bytes() for path in untouched} == untouched
+    result = run(root, "--check")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_write_refuses_untracked_binding_projection(tmp_path: Path) -> None:
+    root, _ = accepted_root(tmp_path)
+    git(root, "rm", "--cached", "--", "attestations/latest/binding.json")
+    result = run(root)
+    assert result.returncode == 2
+    assert "projection file is not tracked at HEAD: attestations/latest/binding.json" in result.stdout
+
+
+def test_write_refuses_dirty_immutable_binding(tmp_path: Path) -> None:
+    root, _ = accepted_root(tmp_path)
+    latest_index = json.loads((root / PROJECTIONS[0]).read_bytes())
+    frozen = root / latest_index["binding_ref"]
+    frozen.write_bytes(frozen.read_bytes() + b" ")
+    before = {path: (root / path).read_bytes() for path in PROJECTIONS}
+    result = run(root)
+    assert result.returncode == 2 and "working tree must be clean:" in result.stdout
+    assert latest_index["binding_ref"] in result.stdout
+    assert {path: (root / path).read_bytes() for path in PROJECTIONS} == before

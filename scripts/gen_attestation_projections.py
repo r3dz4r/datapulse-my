@@ -22,6 +22,7 @@ PROJECTIONS = (
     "attestations/latest/chain_head.json",
     "attestations/chain-index.json",
     ".attestations/chain_head.json",
+    "attestations/latest/binding.json",
 )
 REGISTRY = "docs/.well-known/datapulse-probe-keys.json"
 
@@ -87,11 +88,12 @@ def _derive(root: Path, *, require_main: bool) -> dict[str, bytes]:
         PROJECTIONS[1]: (root / directory / "chain_head.json").read_bytes(),
         PROJECTIONS[2]: (json.dumps(document, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
         PROJECTIONS[3]: (root / directory / "chain_head.json").read_bytes(),
+        PROJECTIONS[4]: (root / directory / "binding.json").read_bytes(),
     }
 
 
 def derive_projections(root: Path) -> dict[str, bytes]:
-    """Derive four projections only from a clean accepted main checkout."""
+    """Derive five projections only from a clean accepted main checkout."""
     return _derive(root.resolve(), require_main=True)
 
 
@@ -103,6 +105,8 @@ def _value(path: str, raw: bytes | None) -> str:
         return f"date={document['date']} chain_head_ref={document['chain_head_ref']}"
     if path in {PROJECTIONS[1], PROJECTIONS[3]}:
         return f"chain_head={document['chain_head']}"
+    if path == PROJECTIONS[4]:
+        return f"chain_head={document['payload']['ed25519']['chain_head']}"
     return f"current_head={document['current_head']} days={len(document['days'])}"
 
 
