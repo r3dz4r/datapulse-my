@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-21T00:05:47Z",
+    "last_checked": "2026-10-22T21:50:28Z",
     "record_count": 634,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:ee26b4b00c9d9aeca18fd7c1123d6321341c51c7d2349b0a25cc1a772d158413"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/healthcare/cosmetic_manufacturers.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Approved Manufacturers of Cosmetic Products",
     "namespace": "healthcare",
-    "observed_verified_at": "2026-10-21T00:05:47Z",
+    "observed_verified_at": "2026-10-22T21:50:28Z",
     "source": "data.gov.my (storage)",
     "steward": "National Pharmaceutical Regulatory Agency and Ministry of Health Malaysia"
   },
@@ -828,12 +828,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-10/cosmetics_manufacturers.json",
-    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "attestation": "attestations/2026-10-22/revisions/16024cc20fafbc222867d25b43405d6941cb76f006344efb5cc30ef329b0831d/cosmetics_manufacturers.json",
+    "chain_reference": "attestations/2026-10-22/revisions/16024cc20fafbc222867d25b43405d6941cb76f006344efb5cc30ef329b0831d/chain_head.json",
     "receipt": {
       "evidence_path": "data/cosmetics_manufacturers.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:38ecd5ea80c4c47ac7f54bdba56af10b42e3be12b6933c507969e29f1650cddd",
+      "receipt_digest": "sha256:c2e708d87377a53e0ea9418d0e21bac5c60df7fd398bcbeac78d584820383e0f",
       "sigstore_path": "data/cosmetics_manufacturers.receipt.sigstore.json",
       "statement_path": "data/cosmetics_manufacturers.receipt.statement.json"
     },
