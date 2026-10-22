@@ -88,6 +88,7 @@ def test_pages_projection_guard_checks_assembled_bytes(tmp_path: Path, mismatch:
     for path in (
         "attestations/latest/index.json",
         "attestations/latest/chain_head.json",
+        "attestations/latest/binding.json",
         "attestations/latest/scores.json",
         "attestations/chain-index.json",
         ".attestations/chain_head.json",
