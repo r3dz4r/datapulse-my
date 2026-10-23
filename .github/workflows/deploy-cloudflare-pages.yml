@@ -843,13 +843,32 @@ jobs:
               echo "Already-open append PR #$pr_number ($branch); age ${age_seconds}s; waiting for acceptance."
             else
               submission_result="${RUNNER_TEMP:-$PWD}/append-submission-result"
+              : > "$submission_result"
               APPEND_SUBMISSION_RESULT="$submission_result" named_timeout 360 bash scripts/submit_attestation_append.sh
               if [[ -s "$submission_result" ]]; then
                 read -r branch head_sha rebuilt < "$submission_result"
               else
                 branch="$(retry_timeout 10 git branch --show-current)"
-                head_sha="$(retry_timeout 10 git rev-parse HEAD)"
+                head_sha=''
                 rebuilt=0
+                # Only an attached append branch supplies fallback identity.
+                if [[ "$branch" == attestation/append-* ]]; then
+                  head_sha="$(retry_timeout 10 git rev-parse HEAD)"
+                fi
+              fi
+              if [[ "$branch" == noop ]]; then
+                # A no-op is a submission outcome, never an acceptance proof.
+                if named_timeout 240 python3 scripts/verify_attestation_append.py --base "$PROMOTION_SOURCE_SHA" --wait-for-acceptance 0; then
+                  echo '::notice title=Append submission no-op::Frozen evidence is accepted on main; continuing publication.'
+                  echo "state=accepted" >> "$GITHUB_OUTPUT"
+                  exit 0
+                else
+                  status=$?
+                fi
+                if [[ "$status" == 75 || "$status" == 124 || "$status" == 137 ]]; then
+                  defer_append
+                fi
+                refuse_acceptance 'Append acceptance proof failed'
               fi
               if [[ "$branch" != attestation/append-* ]]; then
                 state='no append PR'
@@ -1573,16 +1592,34 @@ jobs:
           git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
           accepted_root="$RUNNER_TEMP/accepted-projections"
           git worktree add --detach --no-checkout "$accepted_root" origin/main
-          committed_head="$(git show origin/main:attestations/chain-index.json | jq -er '.current_head')"
-          set_ref="$(git show origin/main:attestations/chain-index.json | jq -er --arg head "$committed_head" '.heads[$head]')"
-          [[ "$set_ref" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/(revisions/[0-9a-f]{64}/)?chain_head\.json$ ]]
-          set_dir="${set_ref%/*}"
-          git -C "$accepted_root" sparse-checkout set --no-cone \
-            /attestations/chain-index.json /attestations/latest/index.json \
-            /attestations/latest/chain_head.json /attestations/latest/binding.json \
-            /attestations/latest/scores.json \
-            /.attestations/chain_head.json /docs/.well-known/datapulse-probe-keys.json \
-            "/$set_dir/"
+          committed_head="$(git -C "$accepted_root" show HEAD:attestations/chain-index.json | jq -er '.current_head')"
+          # Discovery reads the signed spine from Git. Only the selected
+          # projection source files need a filesystem checkout.
+          projection_paths="$(python3 - "$accepted_root" <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          from scripts.attestation_sets import FILES, set_directory
+          from scripts.gen_attestation_projections import PROJECTIONS, REGISTRY
+          from scripts.verify_attestation_append import accepted_discovery
+
+          root = Path(sys.argv[1])
+          document = accepted_discovery(root, "HEAD")
+          head = document["current_head"]
+          directory = set_directory(document["heads"][head])
+          revision_head = f"{directory}/revisions/{head}/chain_head.json"
+          listed = subprocess.check_output(
+              ["git", "-C", str(root), "ls-tree", "--name-only", "HEAD", "--", revision_head],
+              text=True,
+          ).splitlines()
+          if revision_head in listed:
+              directory = set_directory(revision_head)
+          paths = {*PROJECTIONS, REGISTRY, *(f"{directory}/{name}" for name in FILES)}
+          print("\n".join("/" + path for path in sorted(paths)))
+          PY
+          )"
+          git -C "$accepted_root" sparse-checkout set --no-cone --stdin <<< "$projection_paths"
           git -C "$accepted_root" reset --hard HEAD >/dev/null
           if served_head="$(jq -er '.current_head | select(type == "string")' _site/attestations/chain-index.json)"; then
             :

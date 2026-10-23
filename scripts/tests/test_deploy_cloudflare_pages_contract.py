@@ -79,6 +79,95 @@ def test_pages_rejects_projections_different_from_accepted_main_before_publicati
         assert path in run
 
 
+def test_projection_checkout_covers_committed_heads_revisions(tmp_path: Path) -> None:
+    run = _deploy_step("Require served projections from committed main")["run"]
+    match = re.search(r'projection_paths="\$\(python3 - "\$accepted_root" <<\'PY\'\n(?P<body>.*?)\nPY\n\)"', run, re.S)
+    assert match is not None
+    assert "accepted_discovery(root, \"HEAD\")" in match.group("body")
+    assert "set_directory(document[\"heads\"][head])" in match.group("body")
+    assert "PROJECTIONS, REGISTRY" in match.group("body")
+    assert "for name in FILES" in match.group("body")
+    assert "sparse-checkout set --no-cone --stdin" in run
+    assert '"/$set_dir/"' not in run and ' /attestations/' not in run
+
+    from scripts import attestation_sets, gen_attestation_projections
+    from scripts.verify_attestation_append import accepted_discovery
+
+    root, key = accepted_root(tmp_path)
+    from scripts import gen_attestations as ga
+    ga.generate(root, key, datetime(2026, 8, 15, 2, tzinfo=timezone.utc), force_append=True)
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "accepted revision"], cwd=root,
+                   check=True, capture_output=True)
+    document = accepted_discovery(root, "HEAD")
+    head = document["current_head"]
+    directory = attestation_sets.set_directory(document["heads"][head])
+    revision_head = f"{directory}/revisions/{head}/chain_head.json"
+    if subprocess.run(["git", "cat-file", "-e", f"HEAD:{revision_head}"], cwd=root,
+                      capture_output=True).returncode == 0:
+        directory = attestation_sets.set_directory(revision_head)
+    selected = set(gen_attestation_projections.PROJECTIONS) | {gen_attestation_projections.REGISTRY}
+    selected.update(f"{directory}/{name}" for name in attestation_sets.FILES)
+    assert len(selected) == 11
+    assert "attestations" not in selected
+    assert all(not path.endswith("/") for path in selected)
+    result = subprocess.run([sys.executable, "-c", match.group("body"), str(root)], cwd=ROOT,
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert set(result.stdout.splitlines()) == {"/" + path for path in selected}
+
+
+@pytest.mark.parametrize("proof_status", [0, 75, 1, 124, 137])
+def test_noop_submission_reaches_accepted_state_without_pr_refusal(
+    tmp_path: Path, proof_status: int,
+) -> None:
+    run = _append_acceptance_step()["run"]
+    arm_start = run.index('if [[ "$branch" == noop ]]; then')
+    arm_end = run.index('if [[ "$branch" != attestation/append-* ]]', arm_start)
+    arm = run[arm_start:arm_end].rstrip()
+    output = tmp_path / "outputs"
+    calls_file = tmp_path / "calls"
+    harness = f'''
+calls_file="{calls_file}"
+named_timeout() {{ shift; "$@"; }}
+python3() {{ printf '%s\\n' "$*" >> "$calls_file"; return "$PROOF_STATUS"; }}
+retry_timeout() {{ printf 'retry %s\\n' "$*" >> "$calls_file"; "$@"; }}
+defer_append() {{ echo "state=append-deferred" >> "$GITHUB_OUTPUT"; exit 0; }}
+refuse_acceptance() {{ echo "$1" >&2; exit 1; }}
+git() {{ printf 'git %s\\n' "$*" >> "$calls_file"; }}
+gh() {{ printf 'gh %s\\n' "$*" >> "$calls_file"; }}
+branch=noop
+'''
+    script = harness + arm
+    result = subprocess.run(
+        ["bash", "-c", script],
+        env={**os.environ, "GITHUB_OUTPUT": str(output), "PROOF_STATUS": str(proof_status),
+             "PROMOTION_SOURCE_SHA": "source-sha"},
+        capture_output=True, text=True,
+    )
+    calls = calls_file.read_text().splitlines() if calls_file.exists() else []
+    output_text = output.read_text() if output.exists() else ""
+    expected_state = (
+        "accepted" if proof_status == 0
+        else "append-deferred" if proof_status in (75, 124, 137)
+        else None
+    )
+    assert result.returncode == (0 if expected_state else 1)
+    assert output_text == (f"state={expected_state}\n" if expected_state else "")
+    assert any("--base source-sha --wait-for-acceptance 0" in call for call in calls)
+    assert ("::notice title=Append submission no-op" in result.stdout) == (proof_status == 0)
+    assert not any(call.startswith("git ") for call in calls)
+    assert not any(call.startswith("gh pr view ") for call in calls)
+    if proof_status == 1:
+        assert "Append acceptance proof failed" in result.stderr
+    assert arm_start < run.index('if [[ "$branch" != attestation/append-* ]]')
+    assert "head_sha=''" in run
+    assert 'branch="$(retry_timeout 10 git branch --show-current)"' in run
+    assert 'if [[ "$branch" == attestation/append-* ]]; then' in run
+    assert 'head_sha="$(retry_timeout 10 git rev-parse HEAD)"' in run
+    assert 'gh pr view "$branch"' in run and '--wait-for-acceptance 0' in run
+
+
 @pytest.mark.parametrize("mismatch", [False, True])
 def test_pages_projection_guard_checks_assembled_bytes(tmp_path: Path, mismatch: bool) -> None:
     root, _ = accepted_root(tmp_path)
