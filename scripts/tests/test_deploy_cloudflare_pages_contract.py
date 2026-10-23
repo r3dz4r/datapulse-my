@@ -138,12 +138,12 @@ def test_projection_checkout_set_is_pointer_derived_and_bounded() -> None:
 
 
 @pytest.mark.parametrize(
-    ("refresh_open", "pass_on", "check_status"),
-    [(True, 100, 1), (False, 100, 1), (True, 3, 1), (True, 100, 2)],
-    ids=["refresh-timeout", "no-refresh", "refresh-passes", "invalid-evidence"],
+    ("pass_on", "check_status"),
+    [(100, 1), (1, 1), (3, 1), (100, 2)],
+    ids=["refresh-timeout", "already-fresh", "refresh-passes", "invalid-evidence"],
 )
-def test_deploy_waits_for_open_projection_refresh_before_refusing(
-    tmp_path: Path, refresh_open: bool, pass_on: int, check_status: int,
+def test_deploy_waits_for_committed_projection_refresh_before_refusing(
+    tmp_path: Path, pass_on: int, check_status: int,
 ) -> None:
     root, _ = accepted_root(tmp_path)
     subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
@@ -176,8 +176,7 @@ def test_deploy_waits_for_open_projection_refresh_before_refusing(
     )
     (bin_dir / "gh").write_text(
         '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\n'
-        '[[ "$1 $2" == "pr list" ]] || exit 2\n'
-        'printf "%s\\n" "$OPEN_PRS"\n'
+        'exit 2\n'
     )
     (bin_dir / "git").write_text(
         '#!/bin/bash\nprintf "git %s\\n" "$*" >> "$CALL_LOG"\n'
@@ -189,29 +188,26 @@ def test_deploy_waits_for_open_projection_refresh_before_refusing(
     runner_temp.mkdir()
     count_file = tmp_path / "count"
     calls_file = tmp_path / "calls"
-    pulls = [
-        {"number": 1, "headRefName": "projection/refresh-other-base", "baseRefName": "other"},
-        {"number": 2, "headRefName": "attestation/append-test", "baseRefName": "main"},
-    ]
-    if refresh_open:
-        pulls.append({"number": 42, "headRefName": "projection/refresh-test", "baseRefName": "main"})
     run = _deploy_step("Require served projections from committed main")["run"]
+    assert "gh pr " not in run
     # Advance Bash's clock in the parent shell; exercise the real 600s bound.
     harness = 'sleep() { printf "sleep %s\\n" "$*" >> "$CALL_LOG"; SECONDS=$((SECONDS + $1)); }\n'
     result = subprocess.run(
         ["bash", "-c", harness + run], cwd=root,
         env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
              "PYTHONPATH": str(ROOT), "RUNNER_TEMP": str(runner_temp),
-             "GITHUB_REPOSITORY": "example/data-pulse", "GH_TOKEN": "test-token",
              "CHECK_COUNT": str(count_file), "CALL_LOG": str(calls_file),
-             "OPEN_PRS": json.dumps(pulls), "PASS_ON": str(pass_on),
+             "PASS_ON": str(pass_on),
              "CHECK_STATUS": str(check_status)},
         capture_output=True, text=True, timeout=30,
     )
     count = int(count_file.read_text())
     calls = calls_file.read_text().splitlines() if calls_file.exists() else []
     notices = result.stdout + result.stderr
-    assert count <= 600 // 20 + 1
+    assert count <= 32
+    assert not any(call.startswith("gh ") for call in calls)
+    assert sum("fetch --no-tags origin refs/heads/main:refs/remotes/origin/main" in call
+               for call in calls) == count
     refusal = "served projections must match the committed tree"
     if result.returncode == 1:
         assert (
@@ -220,9 +216,8 @@ def test_deploy_waits_for_open_projection_refresh_before_refusing(
         ) in result.stderr.splitlines()
     # An unchanged remote ref must not trigger repeated worktree resets.
     assert sum("reset --hard HEAD" in call for call in calls) == 1
-    if not refresh_open:
-        assert result.returncode == 1
-        assert refusal in result.stderr
+    if pass_on == 1:
+        assert result.returncode == 0, notices
         assert count == 1
         assert "Projections pending refresh" not in notices
         assert not any(call.startswith("sleep ") for call in calls)
@@ -231,7 +226,7 @@ def test_deploy_waits_for_open_projection_refresh_before_refusing(
         assert refusal in result.stderr
         assert count == 1
         assert "Projections pending refresh" not in notices
-        assert not any(call.startswith(("sleep ", "gh ")) for call in calls)
+        assert not any(call.startswith("sleep ") for call in calls)
     elif pass_on == 100:
         assert result.returncode == 1
         assert refusal in result.stderr
@@ -239,7 +234,7 @@ def test_deploy_waits_for_open_projection_refresh_before_refusing(
         assert notices.count("::notice title=Projections pending refresh::") == 1
         assert notices.count("::notice title=Projections pending refresh timed out::") == 1
         assert f"served_head={head} committed_head={head}" in notices
-        assert "#42" in notices
+        assert sum(call == "sleep 20" for call in calls) <= 30
     else:
         assert result.returncode == 0, notices
         assert count == pass_on
@@ -283,8 +278,7 @@ def test_projection_refresh_materializes_moved_main_before_rechecking(tmp_path: 
         f'os.execv({sys.executable!r}, [{sys.executable!r}, *args])\n'
     )
     (bin_dir / "gh").write_text(
-        '#!/bin/bash\n'
-        'printf \'[{"number":42,"headRefName":"projection/refresh-test","baseRefName":"main"}]\\n\'\n'
+        '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\nexit 2\n'
     )
     (bin_dir / "git").write_text(
         '#!/bin/bash\nprintf "git %s\\n" "$*" >> "$CALL_LOG"\n'
@@ -313,6 +307,7 @@ def test_projection_refresh_materializes_moved_main_before_rechecking(tmp_path: 
     for path in PROJECTIONS:
         assert (accepted / path).read_bytes() == (site / path).read_bytes()
     calls = calls_file.read_text().splitlines()
+    assert not any(call.startswith("gh ") for call in calls)
     assert calls.count("check") == 2
     assert sum("reset --hard HEAD" in call for call in calls) == 2
     selected = subprocess.check_output(["git", "ls-files", "-t"], cwd=accepted, text=True).splitlines()

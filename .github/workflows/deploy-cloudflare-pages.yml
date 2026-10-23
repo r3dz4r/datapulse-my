@@ -1177,7 +1177,6 @@ jobs:
     permissions:
       contents: read
       actions: read
-      pull-requests: read
     needs: [classify, sign_health]
     runs-on: ubuntu-latest
     environment: production
@@ -1649,37 +1648,33 @@ jobs:
               (( remaining > 0 )) || return 124
               timeout --signal=KILL "${remaining}s" "$@"
             }
-            if open_prs="$(refresh_call timeout -k 5s 20s gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
-              --json number,headRefName,baseRefName)" && \
-              refresh_pr="$(refresh_call jq -er '[.[] | select(.baseRefName == "main" and (.headRefName | startswith("projection/refresh-")))] | first | .number // empty' <<< "$open_prs")"; then
-              echo "::notice title=Projections pending refresh::Waiting for projection refresh PR #$refresh_pr; served_head=$served_head committed_head=$committed_head"
-              export -f materialize_projections
-              export accepted_root
-              for ((attempt=0; attempt<30; attempt++)); do
-                (( refresh_deadline - SECONDS >= 20 )) || break
-                sleep 20
-                (( SECONDS < refresh_deadline )) || break
-                main_before="$(refresh_call git rev-parse origin/main)" || break
-                refresh_call git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main || break
-                main_after="$(refresh_call git rev-parse origin/main)" || break
-                if [[ "$main_after" != "$main_before" ]]; then
-                  # Fetch moves the remote ref, not the detached worktree's HEAD.
-                  refresh_call git -C "$accepted_root" update-ref --no-deref HEAD "$main_after" || break
-                  refresh_call bash -Eeuo pipefail -c materialize_projections || break
-                  refresh_call git -C "$accepted_root" reset --hard HEAD >/dev/null || break
-                  committed_head="$(refresh_call git -C "$accepted_root" show HEAD:attestations/chain-index.json | refresh_call jq -er '.current_head')" || break
-                fi
-                if refresh_call python3 scripts/gen_attestation_projections.py --root "$accepted_root" --check; then
-                  projection_status=0
-                  break
-                else
-                  projection_status=$?
-                fi
-                [[ "$projection_status" == 1 ]] || break
-              done
-              if [[ "$projection_status" != 0 ]]; then
-                echo "::notice title=Projections pending refresh timed out::Projection refresh PR #$refresh_pr did not clear the check; served_head=$served_head committed_head=$committed_head"
+            echo "::notice title=Projections pending refresh::served_head=$served_head committed_head=$committed_head"
+            export -f materialize_projections
+            export accepted_root
+            for ((attempt=0; attempt<30; attempt++)); do
+              (( refresh_deadline - SECONDS >= 20 )) || break
+              sleep 20
+              (( SECONDS < refresh_deadline )) || break
+              main_before="$(refresh_call git rev-parse origin/main)" || break
+              refresh_call git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main || break
+              main_after="$(refresh_call git rev-parse origin/main)" || break
+              if [[ "$main_after" != "$main_before" ]]; then
+                # Fetch moves the remote ref, not the detached worktree's HEAD.
+                refresh_call git -C "$accepted_root" update-ref --no-deref HEAD "$main_after" || break
+                refresh_call bash -Eeuo pipefail -c materialize_projections || break
+                refresh_call git -C "$accepted_root" reset --hard HEAD >/dev/null || break
+                committed_head="$(refresh_call git -C "$accepted_root" show HEAD:attestations/chain-index.json | refresh_call jq -er '.current_head')" || break
               fi
+              if refresh_call python3 scripts/gen_attestation_projections.py --root "$accepted_root" --check; then
+                projection_status=0
+                break
+              else
+                projection_status=$?
+              fi
+              [[ "$projection_status" == 1 ]] || break
+            done
+            if [[ "$projection_status" != 0 ]]; then
+              echo "::notice title=Projections pending refresh timed out::served_head=$served_head committed_head=$committed_head"
             fi
           fi
           if [[ "$projection_status" != 0 ]]; then
