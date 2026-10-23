@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.57.11](https://github.com/r3dz4r/datapulse-my/compare/v3.57.10...v3.57.11) (2026-10-23)
+
+
+### Bug Fixes
+
+* **deploy:** verify noop append acceptance ([367989d](https://github.com/r3dz4r/datapulse-my/commit/367989d2c43d097597ac9a613bbb0acee469df23))
+* **deploy:** verify noop append acceptance and derive the projection checkout set ([80965be](https://github.com/r3dz4r/datapulse-my/commit/80965be5f6768563ea3424ab7fce30285cbf442f))
+
 ## [3.57.10](https://github.com/r3dz4r/datapulse-my/compare/v3.57.9...v3.57.10) (2026-10-22)
 
 
