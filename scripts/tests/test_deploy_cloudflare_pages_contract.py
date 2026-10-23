@@ -117,6 +117,269 @@ def test_projection_checkout_covers_committed_heads_revisions(tmp_path: Path) ->
     assert set(result.stdout.splitlines()) == {"/" + path for path in selected}
 
 
+def test_projection_checkout_set_is_pointer_derived_and_bounded() -> None:
+    run = _deploy_step("Require served projections from committed main")["run"]
+    checkout = next(line for line in run.splitlines() if "sparse-checkout set" in line)
+    assert '--stdin <<< "$projection_paths"' in checkout
+    assert "attestations/" not in checkout and "revisions/" not in checkout
+    assert '"/$set_dir/"' not in _workflow()
+    match = re.search(
+        r'projection_paths="\$\(python3 - "\$accepted_root" <<\'PY\'\n(?P<body>.*?)\nPY\n\)"',
+        run, re.S,
+    )
+    assert match is not None
+    body = match.group("body")
+    assert 'accepted_discovery(root, "HEAD")' in body
+    assert 'head = document["current_head"]' in body
+    assert 'directory = set_directory(document["heads"][head])' in body
+    assert 'set_directory(revision_head)' in body
+    assert 'paths = {*PROJECTIONS, REGISTRY, *(f"{directory}/{name}" for name in FILES)}' in body
+    assert 'print("\\n".join("/" + path for path in sorted(paths)))' in body
+
+
+@pytest.mark.parametrize(
+    ("refresh_open", "pass_on", "check_status"),
+    [(True, 100, 1), (False, 100, 1), (True, 3, 1), (True, 100, 2)],
+    ids=["refresh-timeout", "no-refresh", "refresh-passes", "invalid-evidence"],
+)
+def test_deploy_waits_for_open_projection_refresh_before_refusing(
+    tmp_path: Path, refresh_open: bool, pass_on: int, check_status: int,
+) -> None:
+    root, _ = accepted_root(tmp_path)
+    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
+    site = root / "_site"
+    for path in (
+        "attestations/latest/index.json", "attestations/latest/chain_head.json",
+        "attestations/latest/binding.json", "attestations/latest/scores.json",
+        "attestations/chain-index.json", ".attestations/chain_head.json",
+    ):
+        target = site / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / path, target)
+    head = json.loads((site / "attestations/chain-index.json").read_text())["current_head"]
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "python3").write_text(
+        f'#!{sys.executable}\n'
+        'import os, pathlib, sys\n'
+        'if sys.argv[1] == "-":\n'
+        f'    os.execv({sys.executable!r}, [{sys.executable!r}, *sys.argv[1:]])\n'
+        'counter = pathlib.Path(os.environ["CHECK_COUNT"])\n'
+        'count = int(counter.read_text()) + 1 if counter.exists() else 1\n'
+        'counter.write_text(str(count))\n'
+        'if count >= int(os.environ["PASS_ON"]):\n'
+        '    print("OK: accepted attestation projections match evidence")\n'
+        '    sys.exit(0)\n'
+        'print("STALE attestations/chain-index.json committed=old derived=new"\n'
+        '      if os.environ["CHECK_STATUS"] == "1" else "REFUSED: invalid evidence")\n'
+        'sys.exit(int(os.environ["CHECK_STATUS"]))\n'
+    )
+    (bin_dir / "gh").write_text(
+        '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\n'
+        '[[ "$1 $2" == "pr list" ]] || exit 2\n'
+        'printf "%s\\n" "$OPEN_PRS"\n'
+    )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\nprintf "git %s\\n" "$*" >> "$CALL_LOG"\n'
+        f'exec "{shutil.which("git")}" "$@"\n'
+    )
+    for stub in bin_dir.iterdir():
+        stub.chmod(0o755)
+    runner_temp = tmp_path / "runner"
+    runner_temp.mkdir()
+    count_file = tmp_path / "count"
+    calls_file = tmp_path / "calls"
+    pulls = [
+        {"number": 1, "headRefName": "projection/refresh-other-base", "baseRefName": "other"},
+        {"number": 2, "headRefName": "attestation/append-test", "baseRefName": "main"},
+    ]
+    if refresh_open:
+        pulls.append({"number": 42, "headRefName": "projection/refresh-test", "baseRefName": "main"})
+    run = _deploy_step("Require served projections from committed main")["run"]
+    # Advance Bash's clock in the parent shell; exercise the real 600s bound.
+    harness = 'sleep() { printf "sleep %s\\n" "$*" >> "$CALL_LOG"; SECONDS=$((SECONDS + $1)); }\n'
+    result = subprocess.run(
+        ["bash", "-c", harness + run], cwd=root,
+        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+             "PYTHONPATH": str(ROOT), "RUNNER_TEMP": str(runner_temp),
+             "GITHUB_REPOSITORY": "example/data-pulse", "GH_TOKEN": "test-token",
+             "CHECK_COUNT": str(count_file), "CALL_LOG": str(calls_file),
+             "OPEN_PRS": json.dumps(pulls), "PASS_ON": str(pass_on),
+             "CHECK_STATUS": str(check_status)},
+        capture_output=True, text=True, timeout=30,
+    )
+    count = int(count_file.read_text())
+    calls = calls_file.read_text().splitlines() if calls_file.exists() else []
+    notices = result.stdout + result.stderr
+    assert count <= 600 // 20 + 1
+    refusal = "served projections must match the committed tree"
+    if result.returncode == 1:
+        assert (
+            "::error title=Attestation projection mismatch::"
+            f"{refusal}: served_head={head} committed_head={head} (committed projections are stale)"
+        ) in result.stderr.splitlines()
+    # An unchanged remote ref must not trigger repeated worktree resets.
+    assert sum("reset --hard HEAD" in call for call in calls) == 1
+    if not refresh_open:
+        assert result.returncode == 1
+        assert refusal in result.stderr
+        assert count == 1
+        assert "Projections pending refresh" not in notices
+        assert not any(call.startswith("sleep ") for call in calls)
+    elif check_status != 1:
+        assert result.returncode == 1
+        assert refusal in result.stderr
+        assert count == 1
+        assert "Projections pending refresh" not in notices
+        assert not any(call.startswith(("sleep ", "gh ")) for call in calls)
+    elif pass_on == 100:
+        assert result.returncode == 1
+        assert refusal in result.stderr
+        assert count > 1
+        assert notices.count("::notice title=Projections pending refresh::") == 1
+        assert notices.count("::notice title=Projections pending refresh timed out::") == 1
+        assert f"served_head={head} committed_head={head}" in notices
+        assert "#42" in notices
+    else:
+        assert result.returncode == 0, notices
+        assert count == pass_on
+        assert refusal not in result.stderr
+        assert result.stdout.index("Projections pending refresh") < result.stdout.index("OK:")
+    assert all(call == "sleep 20" for call in calls if call.startswith("sleep "))
+
+
+def test_projection_refresh_materializes_moved_main_before_rechecking(tmp_path: Path) -> None:
+    from scripts.tests.test_attestation_projections import accept_next_day
+
+    root, key = accepted_root(tmp_path)
+    accept_next_day(root, key)
+    stale_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts/gen_attestation_projections.py"), "--root", str(root)],
+        cwd=ROOT, check=True, capture_output=True,
+    )
+    subprocess.run(["git", "add", "-u"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "refresh accepted projections"], cwd=root,
+                   check=True, capture_output=True)
+    refresh_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    site = root / "_site"
+    from scripts.gen_attestation_projections import PROJECTIONS
+    for path in PROJECTIONS:
+        target = site / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / path, target)
+    subprocess.run(["git", "reset", "--hard", stale_sha], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "python3").write_text(
+        f'#!{sys.executable}\n'
+        'import os, sys\n'
+        'args = sys.argv[1:]\n'
+        'if args[0] != "-":\n'
+        '    with open(os.environ["CALL_LOG"], "a") as log:\n'
+        '        log.write("check\\n")\n'
+        f'    args[0] = {str(ROOT / "scripts/gen_attestation_projections.py")!r}\n'
+        f'os.execv({sys.executable!r}, [{sys.executable!r}, *args])\n'
+    )
+    (bin_dir / "gh").write_text(
+        '#!/bin/bash\n'
+        'printf \'[{"number":42,"headRefName":"projection/refresh-test","baseRefName":"main"}]\\n\'\n'
+    )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\nprintf "git %s\\n" "$*" >> "$CALL_LOG"\n'
+        f'exec "{shutil.which("git")}" "$@"\n'
+    )
+    for stub in bin_dir.iterdir():
+        stub.chmod(0o755)
+    runner_temp = tmp_path / "runner"
+    runner_temp.mkdir()
+    calls_file = tmp_path / "calls"
+    harness = (
+        'sleep() { SECONDS=$((SECONDS + $1)); '
+        'command git update-ref refs/heads/main "$REFRESH_SHA"; }\n'
+    )
+    result = subprocess.run(
+        ["bash", "-c", harness + _deploy_step("Require served projections from committed main")["run"]],
+        cwd=root, env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+                       "PYTHONPATH": str(ROOT), "RUNNER_TEMP": str(runner_temp),
+                       "GITHUB_REPOSITORY": "example/data-pulse", "CALL_LOG": str(calls_file),
+                       "REFRESH_SHA": refresh_sha}, capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.index("Projections pending refresh") < result.stdout.index("OK:")
+    accepted = runner_temp / "accepted-projections"
+    assert subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=accepted, text=True).strip() == refresh_sha
+    for path in PROJECTIONS:
+        assert (accepted / path).read_bytes() == (site / path).read_bytes()
+    calls = calls_file.read_text().splitlines()
+    assert calls.count("check") == 2
+    assert sum("reset --hard HEAD" in call for call in calls) == 2
+    selected = subprocess.check_output(["git", "ls-files", "-t"], cwd=accepted, text=True).splitlines()
+    assert sum(line.startswith("H ") for line in selected) == 11
+
+
+@pytest.mark.parametrize(
+    "observed_branch", ["", "main", "attestation/append-contract"],
+    ids=["detached", "non-append", "attached"],
+)
+def test_missing_submission_result_never_claims_no_append_pr_from_detached_head(
+    tmp_path: Path, observed_branch: str,
+) -> None:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "submit_attestation_append.sh").write_text('rm -f "$APPEND_SUBMISSION_RESULT"\n')
+    (bin_dir / "python3").write_text(
+        '#!/bin/bash\n[[ "$*" != *--require-committed* ]]\n'
+    )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\ncase "$*" in\n'
+        '"branch --show-current") printf "%s\\n" "$OBSERVED_BRANCH" ;;\n'
+        '"rev-parse HEAD") printf "%040d\\n" 1 ;;\n'
+        '*) exit 2 ;;\nesac\n'
+    )
+    (bin_dir / "gh").write_text(
+        f'#!{sys.executable}\n'
+        'import json, os, sys\n'
+        'with open(os.environ["CALL_LOG"], "a") as log:\n'
+        '    log.write(json.dumps(sys.argv[1:]) + "\\n")\n'
+        'if sys.argv[1:3] == ["pr", "list"]:\n'
+        '    print("[]")\n'
+        'else:\n'
+        '    sys.exit(1)\n'
+    )
+    for stub in bin_dir.iterdir():
+        stub.chmod(0o755)
+    calls_file = tmp_path / "calls"
+    result = subprocess.run(
+        ["bash", "-c", _append_acceptance_step()["run"]], cwd=tmp_path,
+        env={**os.environ, **{key: str(value) for key, value in yaml.safe_load(_workflow())["env"].items()},
+             "PATH": f"{bin_dir}:{os.environ['PATH']}", "RUNNER_TEMP": str(tmp_path),
+             "GITHUB_REPOSITORY": "example/data-pulse", "GITHUB_OUTPUT": str(tmp_path / "output"),
+             "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"), "CALL_LOG": str(calls_file),
+             "OBSERVED_BRANCH": observed_branch},
+        capture_output=True, text=True, timeout=15,
+    )
+    calls = [json.loads(line) for line in calls_file.read_text().splitlines()]
+    assert result.returncode != 0
+    assert "::error" in result.stderr
+    assert all("" not in call for call in calls)
+    views = [call for call in calls if call[:2] == ["pr", "view"]]
+    if observed_branch.startswith("attestation/append-"):
+        assert views and all(call[2] == observed_branch for call in views)
+        assert "Append PR lookup failed" in result.stderr
+    else:
+        assert f"expected an attestation append branch, got {observed_branch}::" in result.stderr
+        assert "no submission result was produced" in result.stderr
+        assert f"local branch='{observed_branch}'" in result.stderr
+        assert "PR #unknown" in result.stderr
+        assert "PR existence unverified" in result.stderr
+        assert not views
+        assert "no append PR" not in result.stderr
+
+
 @pytest.mark.parametrize("proof_status", [0, 75, 1, 124, 137])
 def test_noop_submission_reaches_accepted_state_without_pr_refusal(
     tmp_path: Path, proof_status: int,

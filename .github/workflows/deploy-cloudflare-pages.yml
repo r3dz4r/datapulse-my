@@ -847,7 +847,9 @@ jobs:
               APPEND_SUBMISSION_RESULT="$submission_result" named_timeout 360 bash scripts/submit_attestation_append.sh
               if [[ -s "$submission_result" ]]; then
                 read -r branch head_sha rebuilt < "$submission_result"
+                submission_state='submission result received'
               else
+                submission_state='no submission result was produced'
                 branch="$(retry_timeout 10 git branch --show-current)"
                 head_sha=''
                 rebuilt=0
@@ -871,7 +873,8 @@ jobs:
                 refuse_acceptance 'Append acceptance proof failed'
               fi
               if [[ "$branch" != attestation/append-* ]]; then
-                state='no append PR'
+                pr_number=unknown
+                state="unknown ($submission_state; local branch='$branch'; PR existence unverified)"
                 refuse_acceptance "Append submission failed: expected an attestation append branch, got $branch"
               fi
               if [[ "$rebuilt" == 1 ]]; then
@@ -1174,6 +1177,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      pull-requests: read
     needs: [classify, sign_health]
     runs-on: ubuntu-latest
     environment: production
@@ -1587,12 +1591,15 @@ jobs:
         run: python3 scripts/select_served_attestations.py --apply --root . --site _site --full-revisions-per-day 1 --max-files 18000
 
       - name: Require served projections from committed main
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
           git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
           accepted_root="$RUNNER_TEMP/accepted-projections"
           git worktree add --detach --no-checkout "$accepted_root" origin/main
           committed_head="$(git -C "$accepted_root" show HEAD:attestations/chain-index.json | jq -er '.current_head')"
+          materialize_projections() {
           # Discovery reads the signed spine from Git. Only the selected
           # projection source files need a filesystem checkout.
           projection_paths="$(python3 - "$accepted_root" <<'PY'
@@ -1620,6 +1627,8 @@ jobs:
           PY
           )"
           git -C "$accepted_root" sparse-checkout set --no-cone --stdin <<< "$projection_paths"
+          }
+          materialize_projections
           git -C "$accepted_root" reset --hard HEAD >/dev/null
           if served_head="$(jq -er '.current_head | select(type == "string")' _site/attestations/chain-index.json)"; then
             :
@@ -1627,7 +1636,53 @@ jobs:
             served_head=invalid
           fi
           # The accepted writer checks the Git-selected chain without modifying it.
-          if ! python3 scripts/gen_attestation_projections.py --root "$accepted_root" --check; then
+          if python3 scripts/gen_attestation_projections.py --root "$accepted_root" --check; then
+            projection_status=0
+          else
+            projection_status=$?
+          fi
+          if [[ "$projection_status" == 1 ]]; then
+            refresh_deadline=$((SECONDS + 600))
+            # Every blocking call shares the wall-clock budget, without kill grace.
+            refresh_call() {
+              local remaining=$((refresh_deadline - SECONDS))
+              (( remaining > 0 )) || return 124
+              timeout --signal=KILL "${remaining}s" "$@"
+            }
+            if open_prs="$(refresh_call timeout -k 5s 20s gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 1000 \
+              --json number,headRefName,baseRefName)" && \
+              refresh_pr="$(refresh_call jq -er '[.[] | select(.baseRefName == "main" and (.headRefName | startswith("projection/refresh-")))] | first | .number // empty' <<< "$open_prs")"; then
+              echo "::notice title=Projections pending refresh::Waiting for projection refresh PR #$refresh_pr; served_head=$served_head committed_head=$committed_head"
+              export -f materialize_projections
+              export accepted_root
+              for ((attempt=0; attempt<30; attempt++)); do
+                (( refresh_deadline - SECONDS >= 20 )) || break
+                sleep 20
+                (( SECONDS < refresh_deadline )) || break
+                main_before="$(refresh_call git rev-parse origin/main)" || break
+                refresh_call git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main || break
+                main_after="$(refresh_call git rev-parse origin/main)" || break
+                if [[ "$main_after" != "$main_before" ]]; then
+                  # Fetch moves the remote ref, not the detached worktree's HEAD.
+                  refresh_call git -C "$accepted_root" update-ref --no-deref HEAD "$main_after" || break
+                  refresh_call bash -Eeuo pipefail -c materialize_projections || break
+                  refresh_call git -C "$accepted_root" reset --hard HEAD >/dev/null || break
+                  committed_head="$(refresh_call git -C "$accepted_root" show HEAD:attestations/chain-index.json | refresh_call jq -er '.current_head')" || break
+                fi
+                if refresh_call python3 scripts/gen_attestation_projections.py --root "$accepted_root" --check; then
+                  projection_status=0
+                  break
+                else
+                  projection_status=$?
+                fi
+                [[ "$projection_status" == 1 ]] || break
+              done
+              if [[ "$projection_status" != 0 ]]; then
+                echo "::notice title=Projections pending refresh timed out::Projection refresh PR #$refresh_pr did not clear the check; served_head=$served_head committed_head=$committed_head"
+              fi
+            fi
+          fi
+          if [[ "$projection_status" != 0 ]]; then
             echo "::error title=Attestation projection mismatch::served projections must match the committed tree: served_head=$served_head committed_head=$committed_head (committed projections are stale)" >&2
             exit 1
           fi
