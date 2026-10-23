@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from scripts import gen_attestations as ga
+from scripts.tests.test_attestation_projections import accepted_root
 from scripts.tests.test_attestations import fixture_root
 
 
@@ -22,6 +23,26 @@ def _git(root: Path, *args: str) -> str:
     return subprocess.run(
         ["git", *args], cwd=root, check=True, capture_output=True, text=True
     ).stdout.strip()
+
+
+def test_nothing_to_append_writes_noop_result(tmp_path: Path) -> None:
+    root, _ = accepted_root(tmp_path / "repo")
+    scripts = root / "scripts"
+    scripts.mkdir()
+    for name in (
+        "verify_attestation_append.py", "attestation_fetch_refs.py", "attestation_sets.py",
+        "verify_attestation_binding.py", "attestation_commit_back.py", "gen_attestations.py",
+    ):
+        shutil.copyfile(ROOT / "scripts" / name, scripts / name)
+    _git(root, "remote", "add", "origin", str(root))
+    result_file = tmp_path / "submission-result"
+    result = subprocess.run(
+        ["bash", str(ROOT / "scripts/submit_attestation_append.sh")], cwd=root,
+        env={**os.environ, "APPEND_SUBMISSION_RESULT": str(result_file)},
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result_file.read_text().split() == ["noop", "-", "0"]
 
 
 @pytest.mark.parametrize("advance_chain", [False, True])

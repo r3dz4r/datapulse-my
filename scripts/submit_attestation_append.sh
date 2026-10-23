@@ -16,6 +16,12 @@ elif (( $# != 0 )); then
   exit 2
 fi
 
+write_noop_result() {
+  if [[ -n "${APPEND_SUBMISSION_RESULT:-}" ]]; then
+    printf 'noop - 0\n' > "$APPEND_SUBMISSION_RESULT"
+  fi
+}
+
 rebuild_from_main() {
   local old_parent="$1" new_base="$2" old_parent_head="$3" new_parent_head="$4"
   local binding="$5" reference published_at path current_pr
@@ -90,7 +96,7 @@ rebuild_from_main() {
 expected_source="$(git rev-parse HEAD)"
 if [[ -z "$old_pr" ]]; then
   path_output="$(python3 scripts/verify_attestation_append.py --base "$expected_source" --print-paths)"
-  [[ -n "$path_output" ]] || exit 0
+  [[ -n "$path_output" ]] || { write_noop_result; exit 0; }
   readarray -t old_paths <<<"$path_output"
   old_parent="$expected_source"
   binding_path="$(python3 - <<'PY'
@@ -173,16 +179,16 @@ branch="attestation/append-$head"
 [[ -z "${APPEND_REBUILD_SUFFIX:-}" ]] || branch="${branch}-${APPEND_REBUILD_SUFFIX}"
 # Check the freshly fetched accepted parent without rewriting a signed candidate.
 path_output="$(python3 scripts/verify_attestation_append.py --base origin/main --print-paths)"
-[[ -n "$path_output" ]] || exit 0
+[[ -n "$path_output" ]] || { write_noop_result; exit 0; }
 readarray -t paths <<<"$path_output"
-(( ${#paths[@]} )) || exit 0
+(( ${#paths[@]} )) || { write_noop_result; exit 0; }
 git config user.name github-actions[bot]
 git config user.email 41898282+github-actions[bot]@users.noreply.github.com
 git switch -c "$branch"
 # Only this finalized append's evidence enters Git. Discovery and publication
 # projections are derived after acceptance, so concurrent commits share no writes.
 git add -- "${paths[@]}"
-git diff --cached --quiet && exit 0
+git diff --cached --quiet && { write_noop_result; exit 0; }
 message="$(git diff --cached --name-only | python3 scripts/attestation_commit_back.py --date "$day")"
 [[ -n "$message" ]]
 git commit -m "$message"
