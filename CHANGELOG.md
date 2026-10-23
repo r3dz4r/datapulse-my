@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.57.12](https://github.com/r3dz4r/datapulse-my/compare/v3.57.11...v3.57.12) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ci:** bound projection refresh wait before Pages deployment ([568c7c6](https://github.com/r3dz4r/datapulse-my/commit/568c7c6d8213681d882ca7b6a9948e4d4c361782))
+* **ci:** wait for an open projection refresh before refusing, and stop claiming a PR that cannot be known ([ce0bcef](https://github.com/r3dz4r/datapulse-my/commit/ce0bcef8d434e33e0415116ccc486096b7d8159b))
+* **deploy:** wait for committed projections without PR lookup ([6a867a8](https://github.com/r3dz4r/datapulse-my/commit/6a867a84924fe242f6c9e8e48b07e8f170a79985))
+
 ## [3.57.11](https://github.com/r3dz4r/datapulse-my/compare/v3.57.10...v3.57.11) (2026-10-23)
 
 
