@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": true,
-    "last_checked": "2026-10-24T18:26:08Z",
+    "last_checked": "2026-10-24T16:07:55Z",
     "record_count": 321,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
       "column_count": 6,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "first_row_hash": "shape-v1:6889f512f4fba8a04e81f42e84053e5f9f001715ad2bc601879a03466e2bcec5"
     },
-    "status": "degraded"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=government_apps_downloads",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Downloads of Government Mobile Applications",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-24T18:26:08Z",
+    "observed_verified_at": "2026-10-24T16:07:55Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "National Digital Department and Ministry of Digital"
   },
@@ -946,12 +946,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/1cad81a5f0ac77873a0e1395d79b56da43f71f1bac162e143e1d44af8949c605/government_apps_downloads.json",
-    "chain_reference": "attestations/2026-10-24/revisions/1cad81a5f0ac77873a0e1395d79b56da43f71f1bac162e143e1d44af8949c605/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/79831ed1c17c1f0c1081d17ff2bfe873ab5c8420f839889edcfcd1a4bafde857/government_apps_downloads.json",
+    "chain_reference": "attestations/2026-10-24/revisions/79831ed1c17c1f0c1081d17ff2bfe873ab5c8420f839889edcfcd1a4bafde857/chain_head.json",
     "receipt": {
       "evidence_path": "data/government_apps_downloads.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:dc36fe285de76545e9df9d783765e1cccd599d05e97a1c72071cb1d6ea33a1ed",
+      "receipt_digest": "sha256:72c2347afc80e78befd40fde7446e330abf7432021d87b009e8a495fc8e47e5e",
       "sigstore_path": "data/government_apps_downloads.receipt.sigstore.json",
       "statement_path": "data/government_apps_downloads.receipt.statement.json"
     },
