@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 3.0,
+        "latest_days": 4.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-23T21:55:09Z",
+    "last_checked": "2026-10-24T22:12:04Z",
     "record_count": 634,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:ee26b4b00c9d9aeca18fd7c1123d6321341c51c7d2349b0a25cc1a772d158413"
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/healthcare/cosmetic_manufacturers.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Approved Manufacturers of Cosmetic Products",
     "namespace": "healthcare",
-    "observed_verified_at": "2026-10-23T21:55:09Z",
+    "observed_verified_at": "2026-10-24T22:12:04Z",
     "source": "data.gov.my (storage)",
     "steward": "National Pharmaceutical Regulatory Agency and Ministry of Health Malaysia"
   },
@@ -833,7 +833,7 @@
     "receipt": {
       "evidence_path": "data/cosmetics_manufacturers.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:ddabe19d2d2c3fee342a18750e3d58b17f01a79691a9cd281f8d31b5d96b9808",
+      "receipt_digest": "sha256:51b8c467cf922bb9da9bef4edb19ec6ea5f741c4abcf33c3ee1b3c03905785e5",
       "sigstore_path": "data/cosmetics_manufacturers.receipt.sigstore.json",
       "statement_path": "data/cosmetics_manufacturers.receipt.statement.json"
     },
