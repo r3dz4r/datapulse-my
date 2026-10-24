@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.010138888888888888,
+        "latest_days": 0.0008449074074074074,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-24T19:31:47Z",
+    "last_checked": "2026-10-24T20:30:45Z",
     "record_count": 0,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-penang",
@@ -39,7 +39,7 @@
     "geography": "Penang",
     "name": "GTFS Realtime — Rapid Penang Bus Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-24T19:31:47Z",
+    "observed_verified_at": "2026-10-24T20:30:45Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Prasarana Malaysia Berhad"
   },
@@ -920,12 +920,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/cb533727c821ce82e1e9be5de89cf694e511ffe27c6d1f00e5cd382896c99b67/gtfs_realtime_prasarana_bus_penang.json",
-    "chain_reference": "attestations/2026-10-24/revisions/cb533727c821ce82e1e9be5de89cf694e511ffe27c6d1f00e5cd382896c99b67/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/384fe072e2fa0c5961683e783183b8ec36cf88a186bffd09d566aebf9b24107d/gtfs_realtime_prasarana_bus_penang.json",
+    "chain_reference": "attestations/2026-10-24/revisions/384fe072e2fa0c5961683e783183b8ec36cf88a186bffd09d566aebf9b24107d/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_prasarana_bus_penang.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:2f57c3734faf0b737506f0da2f1eceb2c8939486049330d71f315737e5452dc3",
+      "receipt_digest": "sha256:6e03bc8741bd4fab6f38036a73c82bafb5770d8d9acfc2f96384e078e4e67a1e",
       "sigstore_path": "data/gtfs_realtime_prasarana_bus_penang.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_prasarana_bus_penang.receipt.statement.json"
     },
