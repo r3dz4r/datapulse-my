@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-22T21:50:28Z",
+    "last_checked": "2026-10-24T02:00:30Z",
     "record_count": 1,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
       "column_count": 2,
-      "content_shape_changed": false,
+      "content_shape_changed": true,
       "first_row_hash": "shape-v1:f0a5d8e8806c818fa057d025c7f656d4e159e9607a8128856c444455f5dba781"
     },
-    "status": "fresh"
+    "status": "degraded"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.sg/v1/environment/air-temperature",
@@ -39,7 +39,7 @@
     "geography": "Singapore",
     "name": "Weather Readings real-time (SG)",
     "namespace": "weather",
-    "observed_verified_at": "2026-10-22T21:50:28Z",
+    "observed_verified_at": "2026-10-24T02:00:30Z",
     "source": "data.gov.sg",
     "steward": "Singapore Government"
   },
@@ -881,12 +881,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-23/revisions/d4d9e041e3bea898e0f8404069eb4944cc6716361d180ba22fb06b2f0c19caad/sg_datagov_weather_readings.json",
-    "chain_reference": "attestations/2026-10-23/revisions/d4d9e041e3bea898e0f8404069eb4944cc6716361d180ba22fb06b2f0c19caad/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/c5272829277743c8f604147fc4a902190ffa7045b67d0d81114dc4ad6d99c09b/sg_datagov_weather_readings.json",
+    "chain_reference": "attestations/2026-10-24/revisions/c5272829277743c8f604147fc4a902190ffa7045b67d0d81114dc4ad6d99c09b/chain_head.json",
     "receipt": {
       "evidence_path": "data/sg_datagov_weather_readings.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:1386de0f70094b63c599a284ed4b716c106611f0b41c24d9daad72e0b7141c8e",
+      "receipt_digest": "sha256:cfb17fa022dbbfc6ad4b937d7dbbc57634b8e36915b4e35f4d8f30db791b3699",
       "sigstore_path": "data/sg_datagov_weather_readings.receipt.sigstore.json",
       "statement_path": "data/sg_datagov_weather_readings.receipt.statement.json"
     },

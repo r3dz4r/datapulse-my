@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.005208333333333333,
+        "latest_days": 0.000787037037037037,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-23T17:21:08Z",
-    "record_count": 1,
+    "last_checked": "2026-10-24T05:39:39Z",
+    "record_count": 24,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kangar",
@@ -39,7 +39,7 @@
     "geography": "Kangar, Perlis",
     "name": "GTFS Realtime — BAS.MY Kangar Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-23T17:21:08Z",
+    "observed_verified_at": "2026-10-24T05:39:39Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1076,12 +1076,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-23/revisions/d4d9e041e3bea898e0f8404069eb4944cc6716361d180ba22fb06b2f0c19caad/gtfs_realtime_mybas_kangar.json",
-    "chain_reference": "attestations/2026-10-23/revisions/d4d9e041e3bea898e0f8404069eb4944cc6716361d180ba22fb06b2f0c19caad/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/c5272829277743c8f604147fc4a902190ffa7045b67d0d81114dc4ad6d99c09b/gtfs_realtime_mybas_kangar.json",
+    "chain_reference": "attestations/2026-10-24/revisions/c5272829277743c8f604147fc4a902190ffa7045b67d0d81114dc4ad6d99c09b/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_kangar.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:fd9ce8ca191f050b51f8497b42ca64865354924b516543041d5347cf1a91d288",
+      "receipt_digest": "sha256:9b15b100c771ad4c5fc8e0126ad6153d196976875fbd63f55b0d81765d1eee7b",
       "sigstore_path": "data/gtfs_realtime_mybas_kangar.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_kangar.receipt.statement.json"
     },

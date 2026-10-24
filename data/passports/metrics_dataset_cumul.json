@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-22T21:50:28Z",
+    "last_checked": "2026-10-23T21:55:09Z",
     "record_count": 338,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:3ab529ee051494f5fdbe31044601c99bc5a5ec9a332039d32d2ed595b4e1e569"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=metrics_dataset_cumul",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Cumulative Views and Downloads by Dataset",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-22T21:50:28Z",
+    "observed_verified_at": "2026-10-23T21:55:09Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "National Digital Department and Ministry of Digital"
   },
@@ -946,12 +946,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-23/revisions/d4d9e041e3bea898e0f8404069eb4944cc6716361d180ba22fb06b2f0c19caad/metrics_dataset_cumul.json",
-    "chain_reference": "attestations/2026-10-23/revisions/d4d9e041e3bea898e0f8404069eb4944cc6716361d180ba22fb06b2f0c19caad/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/c5272829277743c8f604147fc4a902190ffa7045b67d0d81114dc4ad6d99c09b/metrics_dataset_cumul.json",
+    "chain_reference": "attestations/2026-10-24/revisions/c5272829277743c8f604147fc4a902190ffa7045b67d0d81114dc4ad6d99c09b/chain_head.json",
     "receipt": {
       "evidence_path": "data/metrics_dataset_cumul.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:caf79fefcbd29c8fbdda0508859e11033739590b67d849e3ec8b0a662320b0e9",
+      "receipt_digest": "sha256:9ac67b40298306316cc7e79b465d79481ed464ec17d97db52fabb536a1976436",
       "sigstore_path": "data/metrics_dataset_cumul.receipt.sigstore.json",
       "statement_path": "data/metrics_dataset_cumul.receipt.statement.json"
     },
