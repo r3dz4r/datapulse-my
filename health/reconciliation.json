@@ -1,6 +1,6 @@
 {
   "schema": "datapulse/v1/dataset-reconciliation",
-  "generated_at": "2026-10-24T10:16:37Z",
+  "generated_at": "2026-10-24T18:16:26Z",
   "window_days": 0,
   "methodology": {
     "identity_precedence": [
@@ -26,8 +26,8 @@
     "datasets_grouped": 64,
     "datasets_single_source": 376,
     "by_verdict": {
-      "agree": 27,
-      "discrepancy": 1,
+      "agree": 26,
+      "discrepancy": 2,
       "different_granularity": 0,
       "insufficient_data": 0
     }
@@ -393,9 +393,9 @@
           "url": "https://api.data.gov.my/data-catalogue?id=cpi_headline_inflation",
           "status": "aging",
           "availability_class": "available",
-          "record_count": 7826,
+          "record_count": 7840,
           "record_count_estimated": false,
-          "content_date": "2026-08-01",
+          "content_date": "2026-09-01",
           "content_date_source": "content_date_parse"
         },
         {
@@ -406,9 +406,9 @@
           "url": "https://storage.dosm.gov.my/cpi/cpi_2d_inflation.csv",
           "status": "fresh",
           "availability_class": "available",
-          "record_count": 7826,
+          "record_count": 7840,
           "record_count_estimated": false,
-          "content_date": "2026-08-01",
+          "content_date": "2026-09-01",
           "content_date_source": "last_modified_header"
         }
       ],
@@ -449,9 +449,9 @@
           "url": "https://api.data.gov.my/data-catalogue?id=cpi_state",
           "status": "aging",
           "availability_class": "available",
-          "record_count": 44800,
+          "record_count": 45024,
           "record_count_estimated": false,
-          "content_date": "2026-08-01",
+          "content_date": "2026-09-01",
           "content_date_source": "content_date_parse"
         },
         {
@@ -462,9 +462,9 @@
           "url": "https://storage.dosm.gov.my/cpi/cpi_2d_state.csv",
           "status": "fresh",
           "availability_class": "available",
-          "record_count": 44800,
+          "record_count": 45024,
           "record_count_estimated": false,
-          "content_date": "2026-08-01",
+          "content_date": "2026-09-01",
           "content_date_source": "last_modified_header"
         }
       ],
@@ -487,9 +487,9 @@
       "grouping_method": "seed",
       "relationship": "equivalent",
       "confidence": "reviewed",
-      "verdict": "agree",
-      "requires_human_review": false,
-      "reason": "all evaluable publication signals are within the declared tolerance",
+      "verdict": "discrepancy",
+      "requires_human_review": true,
+      "reason": "one or more comparable publication signals exceed the declared tolerance",
       "rationale": "Reviewed OpenDOSM CSV and data.gov.my catalogue presentations of the same DOSM series.",
       "tolerances": {
         "record_count_policy": "strict",
@@ -503,11 +503,11 @@
           "source": "data.gov.my",
           "source_family": "dosm",
           "url": "https://api.data.gov.my/data-catalogue?id=cpi_state_inflation",
-          "status": "aging",
-          "availability_class": "available",
-          "record_count": 44576,
+          "status": "degraded",
+          "availability_class": "failed",
+          "record_count": 44800,
           "record_count_estimated": false,
-          "content_date": "2026-08-01",
+          "content_date": "2026-09-01",
           "content_date_source": "content_date_parse"
         },
         {
@@ -518,9 +518,9 @@
           "url": "https://storage.dosm.gov.my/cpi/cpi_2d_state_inflation.csv",
           "status": "fresh",
           "availability_class": "available",
-          "record_count": 44576,
+          "record_count": 44800,
           "record_count_estimated": false,
-          "content_date": "2026-08-01",
+          "content_date": "2026-09-01",
           "content_date_source": "last_modified_header"
         }
       ],
@@ -533,7 +533,7 @@
           "record_count_within_tolerance": true,
           "content_date_delta_days": 0,
           "content_date_within_tolerance": true,
-          "availability_match": true
+          "availability_match": false
         }
       ]
     },
@@ -729,9 +729,9 @@
           "url": "https://storage.dosm.gov.my/cpi/cpi_2d_core_inflation.csv",
           "status": "fresh",
           "availability_class": "available",
-          "record_count": 1442,
+          "record_count": 1456,
           "record_count_estimated": false,
-          "content_date": "2026-08-01",
+          "content_date": "2026-09-01",
           "content_date_source": "last_modified_header"
         },
         {
@@ -742,9 +742,9 @@
           "url": "https://storage.dosm.gov.my/cpi/cpi_2d_core_inflation.csv",
           "status": "fresh",
           "availability_class": "available",
-          "record_count": 1442,
+          "record_count": 1456,
           "record_count_estimated": false,
-          "content_date": "2026-08-01",
+          "content_date": "2026-09-01",
           "content_date_source": "last_modified_header"
         }
       ],
@@ -785,9 +785,9 @@
           "url": "https://storage.dosm.gov.my/trade/trade_headline.csv",
           "status": "fresh",
           "availability_class": "available",
-          "record_count": 755,
+          "record_count": 1310,
           "record_count_estimated": false,
-          "content_date": "2026-08-01",
+          "content_date": "2026-09-01",
           "content_date_source": "last_modified_header"
         },
         {
@@ -798,9 +798,9 @@
           "url": "https://storage.dosm.gov.my/trade/trade_headline.csv",
           "status": "fresh",
           "availability_class": "available",
-          "record_count": 755,
+          "record_count": 1310,
           "record_count_estimated": false,
-          "content_date": "2026-08-01",
+          "content_date": "2026-09-01",
           "content_date_source": "last_modified_header"
         }
       ],
