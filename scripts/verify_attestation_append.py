@@ -22,7 +22,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.attestation_fetch_refs import SNAPSHOT_FILES
 from scripts.attestation_sets import (
     FILES,
-    PIPELINE_OWNED_PROJECTIONS,
     SET_REF,
     assert_head_extends_base,
     correction_record,
@@ -710,11 +709,7 @@ def _verified_append_paths(root: Path, base: str, require_committed: bool = Fals
                 frozen = root / candidate_directory / filename
                 if not latest.is_file() or not frozen.is_file():
                     raise ContractError("latest projection is stale or mixed")
-                if filename in PIPELINE_OWNED_PROJECTIONS:
-                    if _parse_time(_load(latest, "latest scores").get("generated_at"), "latest scores time") < _parse_time(
-                            _load(frozen, "frozen scores").get("generated_at"), "frozen scores time"):
-                        raise ContractError("latest projection is stale or mixed")
-                elif latest.read_bytes() != frozen.read_bytes():
+                if latest.read_bytes() != frozen.read_bytes():
                     raise ContractError("latest projection is stale or mixed")
             verify_legacy_mirror(root, new, candidate_directory)
             projection_matches_current = True
@@ -750,11 +745,7 @@ def _verified_append_paths(root: Path, base: str, require_committed: bool = Fals
                     for filename in FILES:
                         latest = root / "attestations/latest" / filename
                         frozen = root / projected_directory / filename
-                        if filename in PIPELINE_OWNED_PROJECTIONS:
-                            if _parse_time(_load(latest, "latest scores").get("generated_at"), "latest scores time") < _parse_time(
-                                    _load(frozen, "frozen scores").get("generated_at"), "frozen scores time"):
-                                raise ContractError("latest projection is stale or mixed")
-                        elif latest.read_bytes() != frozen.read_bytes():
+                        if latest.read_bytes() != frozen.read_bytes():
                             raise ContractError("latest projection is stale or mixed")
     if require_committed:
         for digest in seen:
