@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-24T22:24:46Z",
-    "record_count": 18290,
+    "last_checked": "2026-10-25T22:41:25Z",
+    "record_count": 18414,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:f6ebe9551c362a442e16beb8d9cca909ddab62b32a404ec781e71751f7cc1e8e"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/transportation/bus/brt_2026_daily.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily Origin-Destination Ridership: BRT Sunway Line",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-24T22:24:46Z",
+    "observed_verified_at": "2026-10-25T22:41:25Z",
     "source": "data.gov.my (storage)",
     "steward": "Prasarana Malaysia Berhad and Ministry of Transport"
   },
@@ -847,7 +847,7 @@
     "receipt": {
       "evidence_path": "data/ridership_od_brt_daily.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:948de2a246c9cd16d4f3290dd708679248de10fa939ceb9e3d5885add4816a0d",
+      "receipt_digest": "sha256:1d8717c3417b2eb5788c7cae8c5114c34ef57632e912a0f8204d2bd5f4206636",
       "sigstore_path": "data/ridership_od_brt_daily.receipt.sigstore.json",
       "statement_path": "data/ridership_od_brt_daily.receipt.statement.json"
     },
