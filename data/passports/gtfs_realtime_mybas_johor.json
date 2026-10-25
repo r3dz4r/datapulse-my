@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0008449074074074074,
+        "latest_days": 0.010902777777777779,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-24T23:11:28Z",
-    "record_count": 69,
+    "last_checked": "2026-10-24T23:43:10Z",
+    "record_count": 71,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-johor",
@@ -39,7 +39,7 @@
     "geography": "Johor",
     "name": "GTFS Realtime — BAS.MY Johor Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-24T23:11:28Z",
+    "observed_verified_at": "2026-10-24T23:43:10Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1076,12 +1076,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/79831ed1c17c1f0c1081d17ff2bfe873ab5c8420f839889edcfcd1a4bafde857/gtfs_realtime_mybas_johor.json",
-    "chain_reference": "attestations/2026-10-24/revisions/79831ed1c17c1f0c1081d17ff2bfe873ab5c8420f839889edcfcd1a4bafde857/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/gtfs_realtime_mybas_johor.json",
+    "chain_reference": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_johor.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:fccbf517a7b14f82f045e59220f2897924e4dd44d4bfe11b10dc05188de25107",
+      "receipt_digest": "sha256:e3f38e0dc7c2afe52fddafe4620f5d01c7731e2c9b904dc1add327171e907bac",
       "sigstore_path": "data/gtfs_realtime_mybas_johor.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_johor.receipt.statement.json"
     },
