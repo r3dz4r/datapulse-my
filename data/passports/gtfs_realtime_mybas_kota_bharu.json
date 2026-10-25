@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.0007754629629629629,
+        "latest_days": 0.0009375,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-25T00:47:37Z",
-    "record_count": 57,
+    "last_checked": "2026-10-25T01:40:51Z",
+    "record_count": 59,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kota-bharu",
@@ -39,7 +39,7 @@
     "geography": "Kota Bharu, Kelantan",
     "name": "GTFS Realtime — BAS.MY Kota Bharu Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-25T00:47:37Z",
+    "observed_verified_at": "2026-10-25T01:40:51Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1076,12 +1076,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/gtfs_realtime_mybas_kota_bharu.json",
-    "chain_reference": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/chain_head.json",
+    "attestation": "attestations/2026-10-25/revisions/d47358ca1e296108286bc3c42240dfddf02de6ee7c8ed284905b686425bfe3fb/gtfs_realtime_mybas_kota_bharu.json",
+    "chain_reference": "attestations/2026-10-25/revisions/d47358ca1e296108286bc3c42240dfddf02de6ee7c8ed284905b686425bfe3fb/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_kota_bharu.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:45c7cc7b1b9af250d26eb08f3165b4da220697bab1b2c8e23505a3f911e4fc0f",
+      "receipt_digest": "sha256:3ee2008c39b48310d44f65e8a648c321fe11cf4bc42a5c652729196e56d33bc6",
       "sigstore_path": "data/gtfs_realtime_mybas_kota_bharu.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_kota_bharu.receipt.statement.json"
     },
