@@ -8,11 +8,11 @@ sources:
   - {"id": "paynet","resource": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_directdebit","title": "Payments Network Malaysia and Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-24T22:24:46Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-23T21:55:09Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Payments Network Malaysia Sdn Bhd, Central Bank of Malaysia"
-datapulse:real_status: "aging"
+datapulse:real_status: "fresh"
 datapulse:health_report: "/data/trnsc_daily_directdebit.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 1203
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-Daily DirectDebit Transactions is published by Payments Network Malaysia and Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
+Daily DirectDebit Transactions is published by Payments Network Malaysia and Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
 
 # Schema
 
