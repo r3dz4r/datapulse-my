@@ -1,0 +1,47 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "eperolehan-diklankan",
+  "status": "stale",
+  "last_checked": "2026-10-04T03:50:43Z",
+  "freshness_days": 1,
+  "next_expected_update": null,
+  "refresh_frequency": "hourly",
+  "record_count": null,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    },
+    {
+      "name": "freshness",
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    }
+  ],
+  "known_quirks": [
+    "`href-dash` links require a click-flow rather than direct navigation.",
+    "Detail pages render 8–12 seconds after a click.",
+    "Gridcell indexes are offset by 1.",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://www.eperolehan.gov.my/quotation-tender-notice",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "ePerolehan (other)"
+}

@@ -1,0 +1,47 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "kkm_idengue",
+  "status": "unknown-freshness",
+  "last_checked": "2026-10-03T15:47:47Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "daily",
+  "record_count": null,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Browser check succeeded"
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    }
+  ],
+  "known_quirks": [
+    "The portal is JavaScript-rendered; direct HTTP requests return only the SPA",
+    "The site and state labels are in Bahasa Malaysia.",
+    "The supplementary death count appears in an iframe chart rather than the",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://idengue.mysa.gov.my/",
+    "access_method": "Camofox; 30s before snapshot"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "KKM iDengue portal (Camofox-rendered) (healthcare)"
+}

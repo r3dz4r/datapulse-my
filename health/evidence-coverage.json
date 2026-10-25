@@ -1,0 +1,58 @@
+{
+  "schema": "datapulse/v1/evidence-coverage",
+  "generated_at": "2026-10-25T10:34:53Z",
+  "dataset_denominator": 440,
+  "source_window": {
+    "trend_window_days": 14,
+    "drift_window_days": 30,
+    "daily_retention": {
+      "input_available": true,
+      "retention_days": 7,
+      "compacted_cycles": 6982
+    }
+  },
+  "trend_evidence": {
+    "evaluable_datasets": 373,
+    "insufficient_datasets": 67,
+    "sample_day_distribution": {
+      "0": 45,
+      "13": 394,
+      "2": 1
+    },
+    "requirements": {
+      "minimum_sample_days": 3,
+      "minimum_history_span_days": 2.0
+    }
+  },
+  "drift_evidence": {
+    "evaluable_datasets": 430,
+    "insufficient_datasets": 10,
+    "requirements": {
+      "minimum_record_sample_days": 2,
+      "minimum_record_span_days": 1.0,
+      "comparison_requirement": "existing drift verdict must not be insufficient_data"
+    }
+  },
+  "retained_history": {
+    "raw": {
+      "datasets_with_observations": 440,
+      "observation_count": 470360,
+      "dataset_day_count": 3520
+    },
+    "compacted": {
+      "datasets_with_observations": 440,
+      "observation_count": 20934,
+      "dataset_day_count": 20934
+    }
+  },
+  "record_evidence": {
+    "eligible_manifest_datasets": 65,
+    "datasets_with_valid_latest_receipts": 65,
+    "receipt_count": 65,
+    "coverage_pct": 100.0
+  },
+  "consistency_checks": {
+    "valid": true,
+    "failed_checks": []
+  }
+}

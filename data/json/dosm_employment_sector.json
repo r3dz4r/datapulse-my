@@ -1,0 +1,63 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_employment_sector",
+  "status": "stale",
+  "last_checked": "2026-09-05T02:34:56Z",
+  "freshness_days": 1737,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 198,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "sector",
+      "type": "string"
+    },
+    {
+      "name": "sex",
+      "type": "string"
+    },
+    {
+      "name": "proportion",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 198 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 4 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Annual dates use January 1 as the reporting date.",
+    "`both` is an aggregate and coexists with sex-disaggregated rows.",
+    "The three sector proportions sum to 100 for each date and sex, subject to"
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/labour/employment_sector.csv",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "OpenDOSM (storage.dosm.gov.my) (economy)"
+}

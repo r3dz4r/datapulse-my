@@ -1,0 +1,39 @@
+---
+type: "Dataset"
+title: "Monthly CPI by Group"
+description: "DataPulse projection of Monthly CPI by Group from Department of Statistics Malaysia."
+resource: "https://storage.dosm.gov.my/cpi/cpi_3d.csv"
+tags: ["OpenDOSM (also indexed by data.gov.my)","non-vertical","monthly"]
+sources:
+  - {"id": "dosm","resource": "https://storage.dosm.gov.my/cpi/cpi_3d.csv","title": "Department of Statistics Malaysia"}
+generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
+verified:
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:04:39Z"}
+status: "stable"
+datapulse:licence: "Creative Commons Attribution 4.0"
+datapulse:attribution: "Data source: Department of Statistics Malaysia"
+datapulse:real_status: "fresh"
+datapulse:health_report: "/data/cpi_3d.md"
+datapulse:methodology_version: 3
+datapulse:expected_record_count: 9306
+stale_after: "2026-10-17T12:00:00Z"
+datapulse:stale_after_basis: "cadence"
+---
+
+# Summary
+
+Monthly CPI by Group is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+
+# Schema
+
+- `column_count`: `3`
+- `first_row_hash`: `shape-v1:dd0d2808ed5fc13d586a6daa420e1dfdd7fa9d4c0121bc308e7b672ac76ae1ca`
+- `record_count`: `9447`
+
+# Quirks
+
+No probe quirks were recorded.
+
+# Health
+
+See the [published health report](/data/cpi_3d.md). The probe is described by [the opendosm_storage attested computation](/computations/opendosm-storage.md).

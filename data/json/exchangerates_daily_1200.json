@@ -1,0 +1,47 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "exchangerates_daily_1200",
+  "status": "aging",
+  "last_checked": "2026-10-04T03:40:24Z",
+  "freshness_days": 2,
+  "next_expected_update": null,
+  "refresh_frequency": "daily (weekdays, 1200 MYT)",
+  "record_count": 18793,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 18793 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as aging"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 29 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "BNM publishes four daily endpoints at 0900, 1130, 1200, and 1700 MYT.",
+    "The endpoint returns the full history rather than only the latest record.",
+    "The noon rate is the most cited reference and is consistently a middle rate.",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "data.gov.my (BNM) (other)"
+}

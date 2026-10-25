@@ -1,0 +1,37 @@
+---
+type: "Dataset"
+title: "MET Malaysia Weather Forecast"
+description: "DataPulse projection of MET Malaysia Weather Forecast from MET Malaysia."
+resource: "https://api.data.gov.my/weather/forecast"
+tags: ["data.gov.my (MET Malaysia)","non-vertical","daily"]
+sources:
+  - {"id": "met","resource": "https://api.data.gov.my/weather/forecast","title": "MET Malaysia"}
+generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
+verified:
+  - {"by": "process:datapulse-health-timer","at": "2026-10-23T21:55:09Z"}
+status: "stable"
+datapulse:licence: "Open Government Licence (Malaysia)"
+datapulse:attribution: "MET Malaysia (Malaysian Meteorological Department)"
+datapulse:real_status: "unknown-freshness"
+datapulse:health_report: "/data/met_weather.md"
+datapulse:methodology_version: 3
+datapulse:expected_record_count: 2520
+---
+
+# Summary
+
+MET Malaysia Weather Forecast is published by MET Malaysia and tracked by DataPulse. The latest published probe classifies it as `unknown-freshness`.
+
+# Schema
+
+- `column_count`: `9`
+- `first_row_hash`: `shape-v1:645ed633e9cd59951656d6162c9ba466a6687d04af54d5e516c6d484a0989c7a`
+- `record_count`: `3080`
+
+# Quirks
+
+No probe quirks were recorded.
+
+# Health
+
+See the [published health report](/data/met_weather.md). The probe is described by [the unclassified attested computation](/computations/unclassified.md).

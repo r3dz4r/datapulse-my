@@ -1,0 +1,47 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "doe_apims",
+  "status": "fresh",
+  "last_checked": "2026-10-04T03:50:43Z",
+  "freshness_days": 0,
+  "next_expected_update": null,
+  "refresh_frequency": "hourly",
+  "record_count": null,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Browser check succeeded"
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    }
+  ],
+  "known_quirks": [
+    "The table is JavaScript-rendered and collection requires Camofox.",
+    "A `**` suffix means two or more pollutant parameters share the same dominant",
+    "The legacy `apims.doe.gov.my` host returns 403 anti-bot responses. Use the",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://eqms.doe.gov.my/APIMS/main",
+    "access_method": "Camofox; 30s before snapshot"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "DOE MyEQMS portal (Camofox-rendered) (environment)"
+}

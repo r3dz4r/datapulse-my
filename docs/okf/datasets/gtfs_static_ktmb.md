@@ -1,0 +1,36 @@
+---
+type: "Dataset"
+title: "GTFS Static — KTMB Rail Schedule"
+description: "DataPulse projection of GTFS Static — KTMB Rail Schedule from Keretapi Tanah Melayu Berhad (KTMB)."
+resource: "https://api.data.gov.my/gtfs-static/ktmb"
+tags: ["data.gov.my (GTFS API)","non-vertical","daily"]
+sources:
+  - {"id": "ktmb","resource": "https://api.data.gov.my/gtfs-static/ktmb","title": "Keretapi Tanah Melayu Berhad (KTMB)"}
+generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
+verified:
+  - {"by": "process:datapulse-health-timer","at": "2026-10-23T21:55:09Z"}
+status: "stable"
+datapulse:licence: "Creative Commons Attribution 4.0"
+datapulse:attribution: "Keretapi Tanah Melayu Berhad"
+datapulse:real_status: "fresh"
+datapulse:health_report: "/data/gtfs_static_ktmb.md"
+datapulse:methodology_version: 3
+datapulse:expected_record_count: null
+---
+
+# Summary
+
+GTFS Static — KTMB Rail Schedule is published by Keretapi Tanah Melayu Berhad (KTMB) and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+
+# Schema
+
+- `first_row_hash`: `shape-v1:7d1476cf665af2f4fd1911e0f2f68a9d69ade989cfc3fff5e44f7f96dd5a6e9e`
+- `record_count`: `5250`
+
+# Quirks
+
+No probe quirks were recorded.
+
+# Health
+
+See the [published health report](/data/gtfs_static_ktmb.md). The probe is described by [the unclassified attested computation](/computations/unclassified.md).

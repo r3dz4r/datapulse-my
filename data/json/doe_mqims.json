@@ -1,0 +1,47 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "doe_mqims",
+  "status": "fresh",
+  "last_checked": "2026-10-03T10:36:37Z",
+  "freshness_days": 0,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": null,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Browser check succeeded"
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "URL responds but row extraction produced no result (body may be binary/JSON/empty)"
+    }
+  ],
+  "known_quirks": [
+    "The table is JavaScript-rendered and collection requires Camofox.",
+    "Measurements come from monthly manual sampling rather than continuous",
+    "MMWQI cells may be empty in the accessibility tree while their asynchronous",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://eqms.doe.gov.my/MQIMS/main",
+    "access_method": "Camofox; 30s before snapshot"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "DOE MyEQMS portal (Camofox-rendered) (environment)"
+}

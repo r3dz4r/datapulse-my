@@ -1,0 +1,1000 @@
+{
+  "cycle": "2026-08-16T02:09",
+  "observed_at": "2026-08-16T02:09:20Z",
+  "previous_cycle": "2026-08-16T02:00",
+  "previous_cycle_skipped_reason": null,
+  "summary": {
+    "added": 0,
+    "removed": 0,
+    "status_changed": 46,
+    "anomaly_changed": 22,
+    "url_changed": 1,
+    "schema_changed": 2,
+    "record_count_changed": 50
+  },
+  "deltas": {
+    "added": [],
+    "removed": [],
+    "status_changed": [
+      {
+        "dataset_id": "blood_donations",
+        "name": "Daily Blood Donations by Blood Group",
+        "from_status": "aging",
+        "to_status": "fresh",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "bnm_interest_rate",
+        "name": "Interest Rates: Banking Institutions",
+        "from_status": "fresh",
+        "to_status": "degraded",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content-shape-changed"
+      },
+      {
+        "dataset_id": "bnm_interest_volume",
+        "name": "Interest Volume: Banking Institutions",
+        "from_status": "fresh",
+        "to_status": "degraded",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content-shape-changed"
+      },
+      {
+        "dataset_id": "bnm_kijang_emas",
+        "name": "Kijang Emas (Gold Reference Price)",
+        "from_status": "fresh",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "bnm_myor",
+        "name": "Malaysia Overnight Rate (MYOR)",
+        "from_status": "fresh",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "cpi_state",
+        "name": "Monthly CPI by State & Division (2-digit)",
+        "from_status": "unknown-freshness",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "cpi_state_inflation",
+        "name": "Monthly CPI Inflation by State & Division (2-digit)",
+        "from_status": "unknown-freshness",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "dosm_arc_dosm",
+        "name": "DOSM's Advance Release Calendar",
+        "from_status": "fresh",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "employment_sector",
+        "name": "Employment by MSIC Sector and Sex",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "fertility",
+        "name": "TFR and ASFR",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "gdp_annual_nominal_supply",
+        "name": "Annual Nominal GDP by Economic Sector",
+        "from_status": "unknown-freshness",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "gdp_annual_real_supply",
+        "name": "Annual Real GDP by Economic Sector",
+        "from_status": "unknown-freshness",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "gdp_gni_annual_nominal",
+        "name": "Annual Nominal GDP & GNI: 1947 to Present",
+        "from_status": "unknown-freshness",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "gdp_qtr_real_sa",
+        "name": "Quarterly Real GDP (Seasonally Adjusted)",
+        "from_status": "unknown-freshness",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "gdp_state_real_supply",
+        "name": "Annual Real GDP by State & Economic Sector",
+        "from_status": "unknown-freshness",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hansard_mps",
+        "name": "Malaysian Parliament Hansard MPs",
+        "from_status": "fresh",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hansard_parliamentary_terms",
+        "name": "Malaysian Parliamentary Terms",
+        "from_status": "fresh",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hansard_sittings",
+        "name": "Malaysian Parliament Hansard Sitting Catalogue",
+        "from_status": "fresh",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_expenditure_dun",
+        "name": "Household Expenditure by DUN",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_expenditure_parlimen",
+        "name": "Household Expenditure by Parliament",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_income",
+        "name": "Household Income",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_income_district",
+        "name": "Household Income by Administrative District",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_income_state",
+        "name": "Household Income by State",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_inequality",
+        "name": "Income Inequality",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_inequality_district",
+        "name": "Income Inequality by District",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_inequality_state",
+        "name": "Income Inequality by State",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_poverty",
+        "name": "Poverty",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_poverty_district",
+        "name": "Poverty by Administrative District",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "hh_poverty_state",
+        "name": "Poverty by State",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "legal_advisory_branch",
+        "name": "Legal Advisory Services by Branch",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "legal_advisory_case_type",
+        "name": "Legal Advisory Services by Branch & Case Type",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "legal_advisory_category",
+        "name": "Legal Advisory Services by Branch & Category",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "legal_advisory_subcategory",
+        "name": "Legal Advisory Services by Branch & Subcategory",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "lfs_qtr",
+        "name": "Quarterly Principal Labour Force Statistics",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "lfs_qtr_state",
+        "name": "Quarterly Principal Labour Force Statistics by State",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "lfs_year",
+        "name": "Annual Principal Labour Force Statistics",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "marriages_state",
+        "name": "Annual Marriages by State",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "marriages_state_age",
+        "name": "Annual Marriage by State & Age Group",
+        "from_status": "unknown-freshness",
+        "to_status": "stale",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "ppi",
+        "name": "Monthly Producer Price Index (PPI)",
+        "from_status": "unknown-freshness",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "ppi_sop",
+        "name": "Monthly PPI by Stage of Processing",
+        "from_status": "unknown-freshness",
+        "to_status": "fresh",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "last_modified_header"
+      },
+      {
+        "dataset_id": "registrations_type_fuel",
+        "name": "Monthly Vehicle Registrations by Vehicle and Fuel Type",
+        "from_status": "fresh",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "ridership_ktmb_monthly",
+        "name": "Monthly KTMB Ridership",
+        "from_status": "fresh",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "last_modified_header"
+      },
+      {
+        "dataset_id": "trade_sitc_1d",
+        "name": "Monthly Trade by SITC Section (1 digit)",
+        "from_status": "unknown-freshness",
+        "to_status": "aging",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "trnsc_daily_fpx",
+        "name": "Daily FPX Transactions",
+        "from_status": "aging",
+        "to_status": "fresh",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "trnsc_daily_jompay",
+        "name": "Daily JomPAY Transactions",
+        "from_status": "aging",
+        "to_status": "fresh",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      },
+      {
+        "dataset_id": "trnsc_daily_san",
+        "name": "Daily Shared ATM Network (SAN) Transactions",
+        "from_status": "aging",
+        "to_status": "fresh",
+        "from_cycle": "2026-08-16T02:00",
+        "signal_source": "content_date_parse"
+      }
+    ],
+    "anomaly_changed": [
+      {
+        "dataset_id": "employment_sector",
+        "name": "Employment by MSIC Sector and Sex",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "fertility",
+        "name": "TFR and ASFR",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_expenditure_dun",
+        "name": "Household Expenditure by DUN",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_expenditure_parlimen",
+        "name": "Household Expenditure by Parliament",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_income",
+        "name": "Household Income",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_income_district",
+        "name": "Household Income by Administrative District",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_income_state",
+        "name": "Household Income by State",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_inequality",
+        "name": "Income Inequality",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_inequality_district",
+        "name": "Income Inequality by District",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_inequality_state",
+        "name": "Income Inequality by State",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_poverty",
+        "name": "Poverty",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_poverty_district",
+        "name": "Poverty by Administrative District",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "hh_poverty_state",
+        "name": "Poverty by State",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "legal_advisory_branch",
+        "name": "Legal Advisory Services by Branch",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "legal_advisory_case_type",
+        "name": "Legal Advisory Services by Branch & Case Type",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "legal_advisory_category",
+        "name": "Legal Advisory Services by Branch & Category",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "legal_advisory_subcategory",
+        "name": "Legal Advisory Services by Branch & Subcategory",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "lfs_qtr",
+        "name": "Quarterly Principal Labour Force Statistics",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "lfs_qtr_state",
+        "name": "Quarterly Principal Labour Force Statistics by State",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "lfs_year",
+        "name": "Annual Principal Labour Force Statistics",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "marriages_state",
+        "name": "Annual Marriages by State",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      },
+      {
+        "dataset_id": "marriages_state_age",
+        "name": "Annual Marriage by State & Age Group",
+        "from_anomaly_detected": false,
+        "to_anomaly_detected": true,
+        "from_cycle": "2026-08-16T02:00",
+        "metric": "freshness_delta_days"
+      }
+    ],
+    "url_changed": [
+      {
+        "dataset_id": "ppi_sop",
+        "name": "Monthly PPI by Stage of Processing",
+        "from_url": "https://api.data.gov.my/data-catalogue?id=ppi_sop",
+        "to_url": "https://storage.dosm.gov.my/ppi/ppi_sop.csv",
+        "from_cycle": "2026-08-16T02:00"
+      }
+    ],
+    "schema_changed": [
+      {
+        "dataset_id": "bnm_interest_rate",
+        "name": "Interest Rates: Banking Institutions",
+        "from_shape_hash": "shape-v1:37c5dd363ab3362335db9e13dce971632b379fe85c6538c4ddd15f5c84e36050",
+        "to_shape_hash": "shape-v1:6f8ffe650be3f5da4ec5d9e7c6c5c5f4c78a921d6d46b94ae181263dd4e79ab1",
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "bnm_interest_volume",
+        "name": "Interest Volume: Banking Institutions",
+        "from_shape_hash": "shape-v1:9974ba13e8600a645ec5fcbec868c7cac6279f934e7e528227a89e0de4aef732",
+        "to_shape_hash": "shape-v1:3a96e911e43192d8fcb6ece4b72e377ef579d2eebdec507eaf7155fd9e3ee7b7",
+        "from_cycle": "2026-08-16T02:00"
+      }
+    ],
+    "record_count_changed": [
+      {
+        "dataset_id": "blood_donations",
+        "name": "Daily Blood Donations by Blood Group",
+        "from_count": 37650,
+        "to_count": 37660,
+        "delta": 10,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "blood_donations_state",
+        "name": "data.gov.my Daily Blood Donations by Blood Group & State",
+        "from_count": 489450,
+        "to_count": 489580,
+        "delta": 130,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "bop_balance",
+        "name": "Balance of Payments by Account",
+        "from_count": 325,
+        "to_count": 330,
+        "delta": 5,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "cosmetic_notifications",
+        "name": "Cosmetic Product Notifications",
+        "from_count": 241830,
+        "to_count": 241771,
+        "delta": -59,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dgm_payments_transactions_fpx",
+        "name": "data.gov.my Daily FPX Transactions",
+        "from_count": 7248,
+        "to_count": 7254,
+        "delta": 6,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal",
+        "name": "OpenDOSM Quarterly Nominal GDP",
+        "from_count": 130,
+        "to_count": 133,
+        "delta": 3,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_demand",
+        "name": "Quarterly Nominal GDP by Expenditure Type",
+        "from_count": 825,
+        "to_count": 844,
+        "delta": 19,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_demand_granular",
+        "name": "Quarterly Nominal GDP by Expenditure Subtype",
+        "from_count": 3425,
+        "to_count": 3504,
+        "delta": 79,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_supply",
+        "name": "Quarterly Nominal GDP by Economic Sector",
+        "from_count": 910,
+        "to_count": 931,
+        "delta": 21,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_nominal_supply_granular",
+        "name": "Quarterly Nominal GDP by Economic Subsector",
+        "from_count": 10010,
+        "to_count": 10241,
+        "delta": 231,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real",
+        "name": "OpenDOSM Quarterly Real GDP",
+        "from_count": 130,
+        "to_count": 133,
+        "delta": 3,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_demand",
+        "name": "Quarterly Real GDP by Expenditure Type",
+        "from_count": 825,
+        "to_count": 844,
+        "delta": 19,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_demand_granular",
+        "name": "Quarterly Real GDP by Expenditure Subtype",
+        "from_count": 3425,
+        "to_count": 3504,
+        "delta": 79,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_sa",
+        "name": "OpenDOSM Quarterly Real GDP (Seasonally Adjusted)",
+        "from_count": 45,
+        "to_count": 46,
+        "delta": 1,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_sa_demand",
+        "name": "Quarterly Real GDP (Seasonally Adjusted) by Expenditure Type",
+        "from_count": 270,
+        "to_count": 276,
+        "delta": 6,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_sa_supply",
+        "name": "Quarterly Real GDP (Seasonally Adjusted) by Economic Sector",
+        "from_count": 315,
+        "to_count": 322,
+        "delta": 7,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_supply",
+        "name": "Quarterly Real GDP by Economic Sector",
+        "from_count": 910,
+        "to_count": 931,
+        "delta": 21,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "dosm_gdp_qtr_real_supply_granular",
+        "name": "Quarterly Real GDP by Economic Subsector",
+        "from_count": 10010,
+        "to_count": 10241,
+        "delta": 231,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gdp_qtr_nominal",
+        "name": "OpenDOSM Quarterly Nominal GDP",
+        "from_count": 130,
+        "to_count": 133,
+        "delta": 3,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gdp_qtr_real",
+        "name": "OpenDOSM Quarterly Real GDP",
+        "from_count": 130,
+        "to_count": 133,
+        "delta": 3,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gdp_qtr_real_sa",
+        "name": "Quarterly Real GDP (Seasonally Adjusted)",
+        "from_count": 45,
+        "to_count": 46,
+        "delta": 1,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_ipoh",
+        "name": "GTFS Realtime — BAS.MY Ipoh Vehicle Positions",
+        "from_count": 18,
+        "to_count": 22,
+        "delta": 4,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_johor",
+        "name": "GTFS Realtime — BAS.MY Johor Vehicle Positions",
+        "from_count": 80,
+        "to_count": 79,
+        "delta": -1,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kota_bharu",
+        "name": "GTFS Realtime — BAS.MY Kota Bharu Vehicle Positions",
+        "from_count": 58,
+        "to_count": 60,
+        "delta": 2,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_kuala_terengganu",
+        "name": "GTFS Realtime — BAS.MY Kuala Terengganu Vehicle Positions",
+        "from_count": 25,
+        "to_count": 26,
+        "delta": 1,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_melaka",
+        "name": "GTFS Realtime — BAS.MY Melaka Vehicle Positions",
+        "from_count": 19,
+        "to_count": 32,
+        "delta": 13,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_realtime_mybas_seremban_b",
+        "name": "GTFS Realtime — BAS.MY Seremban B Vehicle Positions",
+        "from_count": 23,
+        "to_count": 26,
+        "delta": 3,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_kl",
+        "name": "GTFS Realtime — Rapid KL Bus Vehicle Positions",
+        "from_count": 78,
+        "to_count": 88,
+        "delta": 10,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_mrtfeeder",
+        "name": "GTFS Realtime — MRT Feeder Bus Vehicle Positions",
+        "from_count": 88,
+        "to_count": 104,
+        "delta": 16,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_realtime_prasarana_bus_penang",
+        "name": "GTFS Realtime — Rapid Penang Bus Vehicle Positions",
+        "from_count": 151,
+        "to_count": 150,
+        "delta": -1,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_static_mybas_alor_setar",
+        "name": "GTFS Static — BAS.MY Alor Setar Bus Schedule",
+        "from_count": 35388,
+        "to_count": 0,
+        "delta": -35388,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_static_mybas_ipoh",
+        "name": "GTFS Static — BAS.MY Ipoh Bus Schedule",
+        "from_count": 18788,
+        "to_count": 18518,
+        "delta": -270,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_static_mybas_kangar",
+        "name": "GTFS Static — BAS.MY Kangar Bus Schedule",
+        "from_count": 16160,
+        "to_count": 0,
+        "delta": -16160,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_static_mybas_kota_bharu",
+        "name": "GTFS Static — BAS.MY Kota Bharu Bus Schedule",
+        "from_count": 47556,
+        "to_count": 0,
+        "delta": -47556,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_static_mybas_kuala_terengganu",
+        "name": "GTFS Static — BAS.MY Kuala Terengganu Bus Schedule",
+        "from_count": 20616,
+        "to_count": 0,
+        "delta": -20616,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_static_mybas_kuching",
+        "name": "GTFS Static — BAS.MY Kuching Bus Schedule",
+        "from_count": 17170,
+        "to_count": 0,
+        "delta": -17170,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_static_mybas_seremban_a",
+        "name": "GTFS Static — BAS.MY Seremban A Bus Schedule",
+        "from_count": 16517,
+        "to_count": 16057,
+        "delta": -460,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_static_mybas_seremban_b",
+        "name": "GTFS Static — BAS.MY Seremban B Bus Schedule",
+        "from_count": 24467,
+        "to_count": 23555,
+        "delta": -912,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "gtfs_static_prasarana_bus_penang",
+        "name": "GTFS Static — Rapid Penang Bus Schedule",
+        "from_count": 308509,
+        "to_count": 520570,
+        "delta": 212061,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "ppi_sop",
+        "name": "Monthly PPI by Stage of Processing",
+        "from_count": 0,
+        "to_count": 12134,
+        "delta": 12134,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "ridership_ktmb_daily",
+        "name": "Daily KTMB Ridership",
+        "from_count": 8978,
+        "to_count": 8983,
+        "delta": 5,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "ridership_od_ets",
+        "name": "KTMB ETS Origin-Destination Ridership",
+        "from_count": 523224,
+        "to_count": 525537,
+        "delta": 2313,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "ridership_od_intercity",
+        "name": "KTMB Intercity Origin-Destination Ridership",
+        "from_count": 124946,
+        "to_count": 125532,
+        "delta": 586,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "ridership_od_komuter",
+        "name": "KTMB Komuter Origin-Destination Ridership",
+        "from_count": 1161398,
+        "to_count": 1164783,
+        "delta": 3385,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "ridership_od_komuter_utara",
+        "name": "KTMB Komuter Utara Origin-Destination Ridership",
+        "from_count": 901567,
+        "to_count": 905700,
+        "delta": 4133,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "ridership_od_shuttle_tebrau",
+        "name": "KTMB Shuttle Tebrau Origin-Destination Ridership",
+        "from_count": 6232,
+        "to_count": 6260,
+        "delta": 28,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "trnsc_daily_directdebit",
+        "name": "Daily DirectDebit Transactions",
+        "from_count": 1211,
+        "to_count": 1212,
+        "delta": 1,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "trnsc_daily_fpx",
+        "name": "Daily FPX Transactions",
+        "from_count": 7248,
+        "to_count": 7254,
+        "delta": 6,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "trnsc_daily_jompay",
+        "name": "Daily JomPAY Transactions",
+        "from_count": 2415,
+        "to_count": 2417,
+        "delta": 2,
+        "from_cycle": "2026-08-16T02:00"
+      },
+      {
+        "dataset_id": "trnsc_daily_san",
+        "name": "Daily Shared ATM Network (SAN) Transactions",
+        "from_count": 7243,
+        "to_count": 7249,
+        "delta": 6,
+        "from_cycle": "2026-08-16T02:00"
+      }
+    ]
+  },
+  "source_artifacts": {
+    "manifest_sha256": "8fc68afcf8bb2ef70949644f077f999b30857a19dd57e2f2ba908fd77246e38c",
+    "previous_manifest_sha256": null,
+    "health_latest_sha256": "3d0a058e35d7b7b202bbc48a860599cfdf7b47dc5dc847d8ecd28bafeda8331a",
+    "history_jsonl_cycle_sha256": "bb8bbb50427e1c1340727cf75f2973131efbab806d9b254ac0ae0cdddf6c0684"
+  }
+}

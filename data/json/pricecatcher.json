@@ -1,0 +1,48 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "pricecatcher",
+  "status": "fresh",
+  "last_checked": "2026-10-17T12:24:45Z",
+  "freshness_days": 0,
+  "next_expected_update": null,
+  "refresh_frequency": "monthly",
+  "record_count": 5055,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 5055 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "pass",
+      "method": "Health snapshot classifies the dataset as fresh"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [
+    "PriceCatcher is not available through the data.gov.my OpenAPI. Consumers",
+    "The main file stores `premise_code` and `item_code` as integer foreign keys.",
+    "Monthly Parquet files follow the `pricecatcher_YYYY-MM.parquet` filename",
+    "Releases are monthly, and the filename suffix represents the publish month.",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-10.parquet",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "data.gov.my (KPDN) (other)"
+}

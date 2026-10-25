@@ -1,0 +1,45 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "st_re_projects",
+  "status": "stale",
+  "last_checked": "2026-09-05T02:34:56Z",
+  "freshness_days": 1372,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": null,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via ST MyEnergyStats protocol PDF"
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    },
+    {
+      "name": "freshness",
+      "status": "fail",
+      "method": "Health snapshot classifies the dataset as stale"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [
+    "The dashboard's freshness signal is the latest year-month detected in server-rendered text.",
+    "Fields are inferred at the next probe run."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://meih.st.gov.my/statistics",
+    "access_method": "curl"
+  },
+  "licence": "Open Government Licence (Malaysia)",
+  "attribution": "meih.st.gov.my (ST) (other)"
+}

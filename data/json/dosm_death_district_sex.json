@@ -1,0 +1,72 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "dosm_death_district_sex",
+  "status": "aging",
+  "last_checked": "2026-09-05T02:34:56Z",
+  "freshness_days": 1007,
+  "next_expected_update": null,
+  "refresh_frequency": "annual",
+  "record_count": 2361,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "date",
+      "type": "date"
+    },
+    {
+      "name": "state",
+      "type": "string"
+    },
+    {
+      "name": "district",
+      "type": "string"
+    },
+    {
+      "name": "sex",
+      "type": "string"
+    },
+    {
+      "name": "abs",
+      "type": "number"
+    },
+    {
+      "name": "rate",
+      "type": "number"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 2361 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as aging"
+    },
+    {
+      "name": "schema_stable",
+      "status": "pass",
+      "method": "Probe observed 6 column(s) with no content-shape change"
+    }
+  ],
+  "known_quirks": [
+    "Annual dates use 1 January.",
+    "Both-sex aggregates coexist with male and female rows and must not be summed together.",
+    "The 2020 file has 147 district labels; 2021 onward has 160.",
+    "Absolute counts are stored as decimal-valued numbers in the source."
+  ],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://storage.dosm.gov.my/demography/death_district_sex.csv",
+    "access_method": "curl"
+  },
+  "licence": "Creative Commons Attribution 4.0",
+  "attribution": "OpenDOSM (storage.dosm.gov.my) (economy)"
+}
