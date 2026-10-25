@@ -8,11 +8,11 @@ sources:
   - {"id": "national_blood_centre","resource": "https://api.data.gov.my/data-catalogue?id=blood_donations","title": "National Blood Centre and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-24T22:24:46Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-23T21:55:09Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Blood Centre, Ministry of Health Malaysia"
-datapulse:real_status: "stale"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/blood_donations.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 10000
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-Daily Blood Donations by Blood Group is published by National Blood Centre and Ministry of Health Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Daily Blood Donations by Blood Group is published by National Blood Centre and Ministry of Health Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
