@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": true,
-    "last_checked": "2026-10-24T22:12:04Z",
+    "last_checked": "2026-10-24T22:24:46Z",
     "record_count": 311,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:5b98f9bb4a145f161b27303642090c11e5116c32581f5b2c3b6a8c2490e57864"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=arc_dosm",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "DOSM's Advance Release Calendar",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-24T22:12:04Z",
+    "observed_verified_at": "2026-10-24T22:24:46Z",
     "source": "DOSM via data.gov.my",
     "steward": "Department of Statistics Malaysia"
   },
@@ -2326,12 +2326,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/dosm_arc_dosm.json",
-    "chain_reference": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/dosm_arc_dosm.json",
+    "chain_reference": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/chain_head.json",
     "receipt": {
       "evidence_path": "data/dosm_arc_dosm.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:fa721772c4732c9422d650695092544a4940f580a343564d385314287b828d2b",
+      "receipt_digest": "sha256:d925dce6cfd21f1cc22d4135de20e32cdcb0d70a182c36aa408b3c000dfebdb5",
       "sigstore_path": "data/dosm_arc_dosm.receipt.sigstore.json",
       "statement_path": "data/dosm_arc_dosm.receipt.statement.json"
     },

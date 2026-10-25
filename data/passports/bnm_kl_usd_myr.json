@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-24T23:20:56Z",
+    "last_checked": "2026-10-25T00:07:59Z",
     "record_count": 2,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:97f7c0f86ff1a2a9aeadf939bbeba9ac76f66ceb8dbf8c434c8db98606cdf9fa"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/kl-usd-reference-rate",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Kuala Lumpur USD/MYR Reference Rate",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-24T23:20:56Z",
+    "observed_verified_at": "2026-10-25T00:07:59Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1124,12 +1124,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/bnm_kl_usd_myr.json",
-    "chain_reference": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/bnm_kl_usd_myr.json",
+    "chain_reference": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/chain_head.json",
     "receipt": {
       "evidence_path": "data/bnm_kl_usd_myr.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:a87bbdac4e8b9803a0f2e74b5db18cb51c5fc604df858430b219f6971e5dc2df",
+      "receipt_digest": "sha256:5d9e95d8508033bde07cdb544c4dfbde355bc7ecf3a463d3f347db0af96a2fe9",
       "sigstore_path": "data/bnm_kl_usd_myr.receipt.sigstore.json",
       "statement_path": "data/bnm_kl_usd_myr.receipt.statement.json"
     },

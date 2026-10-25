@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-24T23:20:56Z",
+    "last_checked": "2026-10-25T00:07:59Z",
     "record_count": 2,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:6fe164d8799e62c9f7b5dad8a92a7c4993633de6ca9c5abcdd15ca8356ebd065"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/interbank-swap",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Interbank Swap",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-24T23:20:56Z",
+    "observed_verified_at": "2026-10-25T00:07:59Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1124,12 +1124,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/bnm_interbank_swap.json",
-    "chain_reference": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/bnm_interbank_swap.json",
+    "chain_reference": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/chain_head.json",
     "receipt": {
       "evidence_path": "data/bnm_interbank_swap.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:1c970db015d2cbf63090d23ba60ef03613491f443e2c6c01098cc6cbe7abb7b7",
+      "receipt_digest": "sha256:7b7ce724c9007fcd36fc08c7bc82fa3f8e7239008a137012ab6e9ba32e9af179",
       "sigstore_path": "data/bnm_interbank_swap.receipt.sigstore.json",
       "statement_path": "data/bnm_interbank_swap.receipt.statement.json"
     },
