@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -24,6 +25,34 @@ def inputs(**overrides: object) -> dict[str, object]:
         "publication_result": "success", "published_sha": "a" * 40,
         "main_sha": "b" * 40, "chain_depth": "0", "max_depth": "3",
     } | overrides
+
+
+def test_publication_wait_budgets_preserve_declared_ordering() -> None:
+    source = WORKFLOW.read_text()
+    workflow = yaml.safe_load(source)
+    env = workflow["env"]
+
+    assert source.count("timeout -k 5s 600s bash scripts/restore_attestations.sh") == 2
+    assert "timeout -k 5s 140s bash scripts/restore_attestations.sh" not in source
+    assert env["APPEND_ACCEPTANCE_PATIENCE_SECONDS"] == (
+        env["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"] + 300
+    )
+
+    ordering_lines = [
+        line for line in source.splitlines()
+        if "Ordering (including 5s kill grace):" in line
+        or "Existing-append ordering:" in line
+    ]
+    assert len(ordering_lines) == 2
+    declared_bound = max(
+        job["timeout-minutes"] * 60
+        for job in workflow["jobs"].values()
+        if isinstance(job, dict) and "timeout-minutes" in job
+    )
+    for line in ordering_lines:
+        numbers = [int(value) for value in re.findall(r"\d+", line.split(":", 1)[1])]
+        assert numbers == sorted(set(numbers))
+        assert numbers[-1] == declared_bound
 
 
 def test_success_with_new_main_chains_once() -> None:

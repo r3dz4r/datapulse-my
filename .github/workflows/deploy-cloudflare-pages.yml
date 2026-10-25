@@ -18,12 +18,12 @@ permissions:
 env:
   PROMOTION_SETTLED_QUIET_SECONDS: 300
   PROMOTION_SETTLED_MAX_WAIT_SECONDS: 900
-  # Required check measurements: 16m13s, 18m03s, 19m45s (1185s).
+  # Required check measurements: 16m13s, 18m03s, 19m45s (1185s), 20m48s (1248s) on 2026-10-25.
   # Both append waits get the worst observation + 300s for queue/merge margin.
-  # Ordering (including 5s kill grace): 1185 < 1485 < 3005 < 3060 < 7920.
-  # Existing-append ordering: 1185 < 1485 < 1905 < 1920 < 7920.
-  APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS: 1185
-  APPEND_ACCEPTANCE_PATIENCE_SECONDS: 1485
+  # Ordering (including 5s kill grace): 1248 < 1548 < 3005 < 3060 < 7920.
+  # Existing-append ordering: 1248 < 1548 < 1905 < 1920 < 7920.
+  APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS: 1248
+  APPEND_ACCEPTANCE_PATIENCE_SECONDS: 1548
   # At most three successors per root run; malformed/exhausted depths stop.
   PUBLICATION_CHAIN_MAX_DEPTH: 3
 
@@ -424,13 +424,16 @@ jobs:
           done
           bounded timeout -k 5s 30s git fetch origin refs/heads/main:refs/remotes/origin/main
           bounded timeout -k 5s 10s git merge-base --is-ancestor "$PROMOTION_SOURCE_SHA" origin/main
+          # A loaded runner hit the 140s cap during a wait already nineteen
+          # minutes in. 600s is over four times the largest restore
+          # ever needed and remains strictly inside the enclosing bound.
           # Import accepted evidence while keeping the source checkout at
           # PROMOTION_SOURCE_SHA, shared by signing and deployment for health.
           # 240s, not 60s: computing the delta is itself O(tree) (74,618 files,
           # 2.0 GB) and a fresh CI index has no stat cache, so run 39453880072
           # was killed at 60s with 67s elapsed. Revert once the signing job stops
           # materialising the attestation tree at all.
-          bounded timeout -k 5s 140s bash scripts/restore_attestations.sh --source origin/main
+          bounded timeout -k 5s 600s bash scripts/restore_attestations.sh --source origin/main
           echo "state=ready" >> "$GITHUB_OUTPUT"
           EXISTING_APPEND
 
@@ -510,7 +513,7 @@ jobs:
             fi
             # Discard only the accepted-evidence overlay imported above; the
             # newer main checkout carries that evidence with its own source.
-            timeout -k 5s 140s bash scripts/restore_attestations.sh --source HEAD
+            timeout -k 5s 600s bash scripts/restore_attestations.sh --source HEAD
             timeout -k 5s 30s git checkout --detach "$settled_sha"
             [[ "$(timeout -k 5s 10s git rev-parse HEAD)" == "$settled_sha" ]]
             echo "Re-settled promotion revision: $PROMOTION_SOURCE_SHA -> $settled_sha ($settlement_reason)"
