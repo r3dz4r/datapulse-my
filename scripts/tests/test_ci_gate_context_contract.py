@@ -51,9 +51,11 @@ def test_required_context_is_produced_for_merge_queue_events() -> None:
         "(github.event_name == 'pull_request' || github.event_name == 'merge_group') "
         "&& env.ARTIFACT_ONLY_FAST_PATH != 'true'"
     )
-    assert append_step["env"]["ACCEPTED_BASE"] == (
-        "${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}"
-    )
+    append_script = append_step["run"]
+    assert "git rev-parse --verify 'HEAD^1^{commit}'" in append_script
+    assert "|| {" in append_script
+    assert "exit 1" in append_script
+    assert "github.event" not in append_script
 
 
 def test_every_ci_job_declares_a_timeout() -> None:
