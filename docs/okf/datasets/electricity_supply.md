@@ -8,7 +8,7 @@ sources:
   - {"id": "energy_commission","resource": "https://storage.data.gov.my/energy/electricity_supply.csv","title": "Energy Commission and electricity utilities"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-17T11:55:36Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:04:39Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Tenaga Nasional Berhad, Sabah Electricity Sdn. Bhd., Sarawak Energy Berhad, Energy Commission of Malaysia, Department of Statistics Malaysia"

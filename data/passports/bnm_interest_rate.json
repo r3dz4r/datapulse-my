@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 9.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-18T03:46:44Z",
+    "last_checked": "2026-10-25T03:58:10Z",
     "record_count": 3,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
       "column_count": 8,
-      "content_shape_changed": false,
-      "first_row_hash": "shape-v1:6f8ffe650be3f5da4ec5d9e7c6c5c5f4c78a921d6d46b94ae181263dd4e79ab1"
+      "content_shape_changed": true,
+      "first_row_hash": "shape-v1:37c5dd363ab3362335db9e13dce971632b379fe85c6538c4ddd15f5c84e36050"
     },
-    "status": "fresh"
+    "status": "degraded"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/interest-rate",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Interest Rates: Banking Institutions",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-18T03:46:44Z",
+    "observed_verified_at": "2026-10-25T03:58:10Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1124,12 +1124,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-25/revisions/39296ea7a6f7c2f05019ece42ec52a7ecec379725c5f8dc0138fc1ee0547ae9d/bnm_interest_rate.json",
-    "chain_reference": "attestations/2026-10-25/revisions/39296ea7a6f7c2f05019ece42ec52a7ecec379725c5f8dc0138fc1ee0547ae9d/chain_head.json",
+    "attestation": "attestations/2026-10-25/revisions/cbdb3c3e3b6338895edb08978007f9d60fc21a350c2e1151df50fe119c578996/bnm_interest_rate.json",
+    "chain_reference": "attestations/2026-10-25/revisions/cbdb3c3e3b6338895edb08978007f9d60fc21a350c2e1151df50fe119c578996/chain_head.json",
     "receipt": {
       "evidence_path": "data/bnm_interest_rate.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:8400b70db1dc7387a2a6bb9770c0565dc066f2ce2b2e55112798c5f625d8ab67",
+      "receipt_digest": "sha256:4311641d321adeb3b8aa95e5aa64a6ff82d805399aa930d983a770b8da7d52df",
       "sigstore_path": "data/bnm_interest_rate.receipt.sigstore.json",
       "statement_path": "data/bnm_interest_rate.receipt.statement.json"
     },
