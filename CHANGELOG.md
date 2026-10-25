@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.57.15](https://github.com/r3dz4r/datapulse-my/compare/v3.57.14...v3.57.15) (2026-10-25)
+
+
+### Bug Fixes
+
+* **pages:** give the publication cycle room to load — 24h freshness bound and measured wait budgets ([#2704](https://github.com/r3dz4r/datapulse-my/issues/2704)) ([e342572](https://github.com/r3dz4r/datapulse-my/commit/e3425721e10a238ebe75bec2267c0a9111c8fd21))
+
 ## [3.57.14](https://github.com/r3dz4r/datapulse-my/compare/v3.57.13...v3.57.14) (2026-10-25)
 
 
