@@ -8,7 +8,7 @@ sources:
   - {"id": "agc","resource": "https://api.data.gov.my/data-catalogue?id=federal_finance_year_de","title": "Accountant General’s Department of Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:04:39Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-17T11:55:36Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Accountant-General's Department"
@@ -32,7 +32,7 @@ Annual Federal Government Development Expenditure by Function is published by Ac
 
 # Quirks
 
-publisher-likely-retired
+No probe quirks were recorded.
 
 # Health
 
