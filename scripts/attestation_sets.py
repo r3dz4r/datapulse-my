@@ -26,9 +26,6 @@ from scripts.verify_attestation_binding import (
 
 SET_REF = re.compile(r"attestations/(\d{4}-\d{2}-\d{2})(?:/revisions/([0-9a-f]{64}))?/([A-Za-z0-9_-]+)\.json")
 FILES = ("chain_head.json", "index.json", "binding.json", "scores.json")
-# Rewritten every health cycle: the latest copy is fresher than the chain head's
-# frozen set, so byte-equality with that set is unsatisfiable.
-PIPELINE_OWNED_PROJECTIONS = ("scores.json",)
 logger = logging.getLogger(__name__)
 
 
@@ -547,14 +544,7 @@ def selected_directory(root: Path, *, projections: bool = True, verify_datasets:
             if not projection.is_file():
                 raise ContractError("latest projection is stale or mixed")
             frozen = root / directory / filename
-            if filename in PIPELINE_OWNED_PROJECTIONS:
-                latest_scores = _load(projection, "latest scores projection")
-                frozen_scores = _load(frozen, "immutable scores")
-                if _parse_time(latest_scores.get("generated_at"), "latest scores generated_at") < _parse_time(
-                    frozen_scores.get("generated_at"), "immutable scores generated_at"
-                ):
-                    raise ContractError("latest projection is stale or mixed")
-            elif projection.read_bytes() != frozen.read_bytes():
+            if projection.read_bytes() != frozen.read_bytes():
                 raise ContractError("latest projection is stale or mixed")
         # The legacy mirror is a mutable projection; a historical verification
         # plane assembled from immutable bytes is not required to carry it.

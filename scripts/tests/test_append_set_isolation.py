@@ -2,6 +2,7 @@
 """Prove staged-byte isolation independently of any particular filename list."""
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from datetime import datetime, timedelta, timezone
@@ -112,6 +113,26 @@ def test_immutable_only_append_advances_discovery_without_projection_writes(tmp_
     ga.promote(root, directory)
     assert selected_directory(root) == directory
     verify_append(root, "HEAD", require_committed=True)
+
+
+def test_inherited_scores_projection_must_match_accepted_set_bytes(tmp_path: Path) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, NOW)
+    accept(root)
+    frozen_scores = (root / selected_directory(root) / "scores.json").read_bytes()
+    ga.generate(root, key, NOW + timedelta(days=1))
+    git(root, "restore", ".")
+    scores_path = root / "attestations/latest/scores.json"
+    assert scores_path.read_bytes() == frozen_scores
+    verify_append(root, "HEAD")
+    scores = json.loads(scores_path.read_bytes())
+    scores["generated_at"] = "2026-08-15T02:00:00Z"
+    scores_path.write_text(json.dumps(scores) + "\n", encoding="utf-8")
+    git(root, "add", "--", "attestations/latest/scores.json")
+    git(root, "commit", "-m", "accept advanced scores projection")
+    base = git(root, "rev-parse", "HEAD")
+    with pytest.raises(ContractError, match="^latest projection is stale or mixed$"):
+        verify_append(root, base)
 
 
 def test_structurally_mergeable_signed_fork_still_fails_accepted_parent(tmp_path: Path) -> None:
