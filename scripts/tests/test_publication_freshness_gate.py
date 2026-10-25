@@ -24,9 +24,9 @@ NOW = "2026-10-18T06:00:00Z"
     [
         ("2026-10-18T05:00:00Z", "fresh", 0),
         ("2026-10-16T21:57:57.716027Z", "stale", 1),
-        ("2026-10-18T00:00:00.000001Z", "fresh", 0),
-        ("2026-10-18T00:00:00Z", "fresh", 0),
-        ("2026-10-17T23:59:59.999999Z", "stale", 1),
+        ("2026-10-17T06:00:00.000001Z", "fresh", 0),
+        ("2026-10-17T06:00:00Z", "fresh", 0),
+        ("2026-10-17T05:59:59.999999Z", "stale", 1),
         ("2026-10-18T05:00:00+00:00", "fresh", 0),
         (None, "unknown", 2),
         ("", "unknown", 2),
@@ -38,14 +38,14 @@ NOW = "2026-10-18T06:00:00Z"
     ],
 )
 def test_core_and_cli_verdicts(timestamp: str | None, verdict: str, code: int) -> None:
-    assert freshness_verdict(timestamp, NOW, 6) == verdict
+    assert freshness_verdict(timestamp, NOW, 24) == verdict
     args = [sys.executable, str(SCRIPT), "--now", NOW]
     if timestamp is not None:
         args.extend(["--timestamp", timestamp])
     result = subprocess.run(args, text=True, capture_output=True, check=False)
     assert result.returncode == code, result.stderr
     assert result.stdout.startswith(f"{verdict}: production deployment age ")
-    assert "bound 6h" in result.stdout
+    assert "bound 24h" in result.stdout
     assert len(result.stdout.splitlines()) == 1
 
 
@@ -61,7 +61,7 @@ def test_invalid_bound_is_unknown(bound: str) -> None:
 
 def test_custom_bound_and_invalid_now() -> None:
     assert freshness_verdict("2026-10-18T04:00:00Z", NOW, 1) == "stale"
-    assert freshness_verdict(NOW, "broken", 6) == "unknown"
+    assert freshness_verdict(NOW, "broken", 24) == "unknown"
 
 
 def _freshness_job() -> dict:

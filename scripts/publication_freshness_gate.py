@@ -34,7 +34,7 @@ def _age_hours(timestamp: str | None, now: str) -> float | None:
 def freshness_verdict(
     last_production_deployment_created_at: str | None,
     now: str,
-    max_age_hours: float = 6,
+    max_age_hours: float = 24,
 ) -> Literal["fresh", "stale", "unknown"]:
     """Pure age gate: the bound is inclusive; invalid or future input is unknown."""
     age = _age_hours(last_production_deployment_created_at, now)
@@ -47,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--timestamp", help="Canonical production deployment created_on (UTC)")
     parser.add_argument("--now", help="Override current UTC time for deterministic checks")
-    parser.add_argument("--max-age-hours", default="6", help="Maximum deployment age (default: 6)")
+    parser.add_argument("--max-age-hours", default="24", help="Maximum deployment age (default: 24)")
     args = parser.parse_args(argv)
     now = args.now if args.now is not None else datetime.now(timezone.utc).isoformat()
     try:
