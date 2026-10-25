@@ -77,6 +77,54 @@ def test_in_flight_is_injected(repository: tuple[Path, str, str]) -> None:
     assert publisher.evaluate(repo, in_flight_pr=42).line == "would-skip in-flight pr=42"
 
 
+def test_matching_merged_tree_is_recorded(repository: tuple[Path, str, str]) -> None:
+    repo, _, snapshot = repository
+    write(repo, "health/latest.json", '{"new":true}\n')
+    write(repo, "docs/index.html", "new dashboard\n")
+    merged = commit(repo, "chore(health): update due dataset health")
+    decision = publisher.evaluate(repo)
+    tree = git(repo, "rev-parse", f"{snapshot}^{{tree}}")
+    assert decision.comparison == f"matched-merged tree={tree} source={merged} note=cycle-already-reconciled"
+
+
+def test_prior_merged_commit_is_not_current_cycle(repository: tuple[Path, str, str]) -> None:
+    repo, _, _ = repository
+    assert publisher.evaluate(repo).comparison == "no-merged-commit reason=merged-not-after-source"
+
+
+def test_overlay_differs_from_merged_cycle(repository: tuple[Path, str, str]) -> None:
+    repo, _, _ = repository
+    write(repo, "health/latest.json", '{"lane":true}\n')
+    merged = commit(repo, "chore(health): update due dataset health")
+
+    decision = publisher.evaluate(repo)
+    assert decision.line.startswith("would-apply seq=1 tree=")
+    assert decision.comparison.startswith("differs-from-merged publisher=")
+    assert " merged=" in decision.comparison
+    assert " differing=2" in decision.comparison
+    assert git(repo, "rev-parse", "main") == merged
+
+
+def test_no_merged_commit_for_unmanaged_main(tmp_path: Path) -> None:
+    repo = tmp_path / "fixture"
+    repo.mkdir()
+    git(repo, "init", "-q", "-b", "main")
+    git(repo, "config", "user.name", "Fixture")
+    git(repo, "config", "user.email", "fixture@example.test")
+    write(repo, "config/keep.txt", "main only\n")
+    source = commit(repo, "initial main")
+    git(repo, "checkout", "-q", "--orphan", "health-snapshots")
+    git(repo, "rm", "-qr", "--cached", ".")
+    (repo / "config/keep.txt").unlink()
+    write(repo, "health/latest.json", '{"new":true}\n')
+    commit(repo, f"snapshot\n\nSnapshot-Seq: 1\nSnapshot-Source: {source}\n")
+    git(repo, "checkout", "-q", "main")
+
+    decision = publisher.evaluate(repo)
+    assert decision.line.startswith("would-apply seq=1 tree=")
+    assert decision.comparison == "no-merged-commit reason=no-managed-main-commit"
+
+
 def test_foreign_write_supersedes_snapshot(repository: tuple[Path, str, str]) -> None:
     repo, _, snapshot = repository
     previous_tree = git(repo, "rev-parse", f"{snapshot}^{{tree}}")
@@ -173,7 +221,7 @@ def test_merge_snapshot_history_fails(repository: tuple[Path, str, str]) -> None
         publisher.evaluate(repo)
 
 
-def test_cli_is_offline_and_emits_one_line(repository: tuple[Path, str, str]) -> None:
+def test_cli_is_offline_and_emits_two_lines(repository: tuple[Path, str, str]) -> None:
     repo, main, _ = repository
     before_refs = git(repo, "show-ref")
     result = subprocess.run(
@@ -181,7 +229,8 @@ def test_cli_is_offline_and_emits_one_line(repository: tuple[Path, str, str]) ->
         capture_output=True, text=True, check=True,
     )
     assert result.stdout.startswith("would-apply seq=1 tree=")
-    assert len(result.stdout.splitlines()) == 1
+    assert len(result.stdout.splitlines()) == 2
+    assert result.stdout.splitlines()[1] == "no-merged-commit reason=merged-not-after-source"
     assert result.stderr == ""
     assert git(repo, "status", "--porcelain") == ""
     assert git(repo, "show-ref") == before_refs

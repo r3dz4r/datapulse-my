@@ -42,6 +42,7 @@ class PublisherError(Exception):
 @dataclass(frozen=True)
 class Decision:
     line: str
+    comparison: str
     tree: str | None = None
     sha: str | None = None
 
@@ -102,9 +103,9 @@ def _managed(path: str) -> bool:
     )
 
 
-def _tree_entries(repo: Path, revision: str) -> list[tuple[str, str, str]]:
+def _tree_entries(repo: Path, revision: str, env: Mapping[str, str] | None = None) -> list[tuple[str, str, str]]:
     entries = []
-    for record in git(repo, "ls-tree", "-rz", revision).split(b"\0"):
+    for record in git(repo, "ls-tree", "-rz", revision, env=env).split(b"\0"):
         if not record:
             continue
         metadata, raw_path = record.split(b"\t", 1)
@@ -184,10 +185,11 @@ def overlay_objects(repo: Path) -> Iterator[OverlayObjects]:
 def _replace_index(repo: Path, revision: str, objects: OverlayObjects, *, managed_only: bool) -> None:
     env = objects.env
     git(repo, "read-tree", revision, env=env)
-    paths = [entry[2] for entry in _tree_entries(repo, revision)]
+    paths = [entry[2] for entry in _tree_entries(repo, revision, env=env)]
     removed = [path for path in paths if (not _managed(path) if managed_only else _managed(path) or path == WATERMARK)]
     if removed:
-        git(repo, "update-index", "--force-remove", "--", *removed, env=env)
+        git(repo, "update-index", "--force-remove", "-z", "--stdin", env=env,
+            input_data=b"\0".join(path.encode("utf-8", "surrogateescape") for path in removed) + b"\0")
 
 
 def _managed_tree(repo: Path, main: str, objects: OverlayObjects) -> str:
@@ -210,6 +212,42 @@ def _foreign_write(repo: Path, main: str, source: str, watermark_tree: str | Non
             return sha
         raise PublisherError("could not check foreign-write ancestry")
     return None
+
+
+def _merged_commit(repo: Path, main: str) -> str | None:
+    history = git(repo, "log", "--first-parent", "--format=%H%x09%s", main, "--", *ARTIFACT_PATHS)
+    for row in history.decode("utf-8", "replace").splitlines():
+        sha, subject = row.split("\t", 1)
+        if subject.startswith(PUBLISH_SUBJECT):
+            continue
+        changed = git(repo, "diff-tree", "--root", "--first-parent", "--no-commit-id", "--name-only", "-r", "-z", sha)
+        if any(_managed(path.decode("utf-8", "surrogateescape")) for path in changed.split(b"\0") if path):
+            return sha
+    return None
+
+
+def _comparison(repo: Path, main: str, source: str, overlay: Overlay, objects: OverlayObjects) -> str:
+    merged = _merged_commit(repo, main)
+    if merged is None:
+        return "no-merged-commit reason=no-managed-main-commit"
+    publisher_tree = _managed_tree(repo, overlay.tree, objects)
+    merged_tree = _managed_tree(repo, merged, objects)
+    merged_before_source = _try_git(repo, "merge-base", "--is-ancestor", merged, source)
+    if merged_before_source.returncode not in (0, 1):
+        raise PublisherError("could not check merged-commit ancestry")
+    if publisher_tree == merged_tree:
+        source_before_merged = _try_git(repo, "merge-base", "--is-ancestor", source, merged)
+        if source_before_merged.returncode not in (0, 1):
+            raise PublisherError("could not check source ancestry")
+        reconciled = merged_before_source.returncode == 0 or source_before_merged.returncode == 0
+        note = " note=cycle-already-reconciled" if reconciled else ""
+        return f"matched-merged tree={merged_tree} source={merged}{note}"
+    if merged_before_source.returncode == 0:
+        return "no-merged-commit reason=merged-not-after-source"
+    differing = len([path for path in git(
+        repo, "diff", "--name-only", "-z", publisher_tree, merged_tree, env=objects.env,
+    ).split(b"\0") if path])
+    return f"differs-from-merged publisher={publisher_tree} merged={merged_tree} differing={differing}"
 
 
 def build_overlay(repo: Path, main: str, tip: str, seq: int, objects: OverlayObjects) -> Overlay:
@@ -243,7 +281,7 @@ def build_overlay(repo: Path, main: str, tip: str, seq: int, objects: OverlayObj
 
 
 def evaluate(repo: Path, in_flight_pr: int | None = None) -> Decision:
-    """Return exactly one dry-run decision from local refs."""
+    """Return a dry-run decision and managed-tree comparison from local refs."""
     if in_flight_pr is not None and in_flight_pr < 1:
         raise PublisherError("in-flight PR number must be positive")
     tip = _ref(repo, "refs/heads/health-snapshots", "refs/remotes/origin/health-snapshots")
@@ -251,22 +289,21 @@ def evaluate(repo: Path, in_flight_pr: int | None = None) -> Decision:
     seq, source, _ = _snapshot(repo, tip)
     published_seq, watermark_tree = _watermark(repo, main)
     early = decide(seq, published_seq, in_flight_pr, None)
-    if early is not None:
-        return Decision(early)
     with overlay_objects(repo) as objects:
-        foreign = _foreign_write(repo, main, source, watermark_tree, objects)
-        skip = decide(seq, published_seq, in_flight_pr, foreign)
-        if skip is not None:
-            return Decision(skip)
+        foreign = _foreign_write(repo, main, source, watermark_tree, objects) if early is None else None
+        skip = early or decide(seq, published_seq, in_flight_pr, foreign)
         overlay = build_overlay(repo, main, tip, seq, objects)
+        comparison = _comparison(repo, main, source, overlay, objects)
+    if skip is not None:
+        return Decision(skip, comparison)
     return Decision(
         f"would-apply" f" seq={seq} tree={overlay.tree} sha={overlay.sha} changed={overlay.changed}",
-        overlay.tree, overlay.sha,
+        comparison, overlay.tree, overlay.sha,
     )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Read local refs and emit one machine-readable dry-run line."""
+    """Read local refs and emit decision and comparison lines."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path("."))
     parser.add_argument("--dry-run", action="store_true", required=True)
@@ -278,6 +315,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         LOGGER.error("snapshot publisher: %s", error)
         return 2
     sys.stdout.write(decision.line + "\n")
+    sys.stdout.write(decision.comparison + "\n")
     return 0
 
 
