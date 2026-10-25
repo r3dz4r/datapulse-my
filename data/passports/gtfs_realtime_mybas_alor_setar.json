@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.0011458333333333333,
+        "latest_days": 0.0008680555555555555,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-25T15:20:41Z",
-    "record_count": 13,
+    "last_checked": "2026-10-25T15:55:45Z",
+    "record_count": 11,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-alor-setar",
@@ -39,7 +39,7 @@
     "geography": "Alor Setar, Kedah",
     "name": "GTFS Realtime — BAS.MY Alor Setar Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-25T15:20:41Z",
+    "observed_verified_at": "2026-10-25T15:55:45Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1076,12 +1076,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-25/revisions/12370575b0b13dc4b31ac6bd584ef07b2869909187cd7efaa2c890cc46652968/gtfs_realtime_mybas_alor_setar.json",
-    "chain_reference": "attestations/2026-10-25/revisions/12370575b0b13dc4b31ac6bd584ef07b2869909187cd7efaa2c890cc46652968/chain_head.json",
+    "attestation": "attestations/2026-10-25/revisions/9038e3b2983c3b6b33f2e80faaf2caaf908806f60a6db80e6ed84cc6994ef3ad/gtfs_realtime_mybas_alor_setar.json",
+    "chain_reference": "attestations/2026-10-25/revisions/9038e3b2983c3b6b33f2e80faaf2caaf908806f60a6db80e6ed84cc6994ef3ad/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_alor_setar.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:82b60275741ee57e504bdfc082d8d226c73de73ab7ca2a9e00908d3eab976bd9",
+      "receipt_digest": "sha256:339fd546a355f49b9dd9ab64d0e5c890f21e1565ff149d37691b5f6261abf266",
       "sigstore_path": "data/gtfs_realtime_mybas_alor_setar.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_alor_setar.receipt.statement.json"
     },
