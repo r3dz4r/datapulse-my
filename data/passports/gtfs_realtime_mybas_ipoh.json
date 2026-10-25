@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.01050925925925926,
+        "latest_days": 0.0008217592592592593,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-25T10:43:53Z",
-    "record_count": 20,
+    "last_checked": "2026-10-25T12:04:52Z",
+    "record_count": 17,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-ipoh",
@@ -39,7 +39,7 @@
     "geography": "Ipoh, Perak",
     "name": "GTFS Realtime — BAS.MY Ipoh Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-25T10:43:53Z",
+    "observed_verified_at": "2026-10-25T12:04:52Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1076,12 +1076,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-25/revisions/be3b6a9da43591e55df4616fc5310cff2c65dc8996039e70861b7048e7f3e75f/gtfs_realtime_mybas_ipoh.json",
-    "chain_reference": "attestations/2026-10-25/revisions/be3b6a9da43591e55df4616fc5310cff2c65dc8996039e70861b7048e7f3e75f/chain_head.json",
+    "attestation": "attestations/2026-10-25/revisions/e282f14d83128d95d784e9a9731e1aee9caeb62987c11af9314ae06ec7959ef2/gtfs_realtime_mybas_ipoh.json",
+    "chain_reference": "attestations/2026-10-25/revisions/e282f14d83128d95d784e9a9731e1aee9caeb62987c11af9314ae06ec7959ef2/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_ipoh.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:3653158594123f7b7b1036ee08b7ed827942878f9f2234e33b073488e6e94197",
+      "receipt_digest": "sha256:2bd9f2890fe27e75acc0a75b0e91c685039ac10528c76027ff37a7aee34575f9",
       "sigstore_path": "data/gtfs_realtime_mybas_ipoh.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_ipoh.receipt.statement.json"
     },

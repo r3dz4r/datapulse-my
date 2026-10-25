@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.010428240740740741,
+        "latest_days": 0.0006828703703703704,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-25T10:43:53Z",
-    "record_count": 21,
+    "last_checked": "2026-10-25T12:04:52Z",
+    "record_count": 26,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-seremban-b",
@@ -39,7 +39,7 @@
     "geography": "Seremban, Negeri Sembilan",
     "name": "GTFS Realtime — BAS.MY Seremban B Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-25T10:43:53Z",
+    "observed_verified_at": "2026-10-25T12:04:52Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1076,12 +1076,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-25/revisions/be3b6a9da43591e55df4616fc5310cff2c65dc8996039e70861b7048e7f3e75f/gtfs_realtime_mybas_seremban_b.json",
-    "chain_reference": "attestations/2026-10-25/revisions/be3b6a9da43591e55df4616fc5310cff2c65dc8996039e70861b7048e7f3e75f/chain_head.json",
+    "attestation": "attestations/2026-10-25/revisions/e282f14d83128d95d784e9a9731e1aee9caeb62987c11af9314ae06ec7959ef2/gtfs_realtime_mybas_seremban_b.json",
+    "chain_reference": "attestations/2026-10-25/revisions/e282f14d83128d95d784e9a9731e1aee9caeb62987c11af9314ae06ec7959ef2/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_seremban_b.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:6a5cbb1f4b557737b74a09811bba8dfac95248a5896958a3688d021731766634",
+      "receipt_digest": "sha256:1ee67e64b5d82c7c3b49ce8183e82db6c524518fc7be5c387635dc5d56089fa7",
       "sigstore_path": "data/gtfs_realtime_mybas_seremban_b.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_seremban_b.receipt.statement.json"
     },
