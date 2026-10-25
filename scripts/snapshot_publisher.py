@@ -216,14 +216,16 @@ def build_overlay(repo: Path, main: str, tip: str, seq: int, objects: OverlayObj
     """Build a deterministic commit in scratch objects without updating refs."""
     env = dict(objects.env)
     _replace_index(repo, main, objects, managed_only=False)
+    entries = []
     for mode, oid, path in _tree_entries(repo, tip):
         if not _managed(path):
             raise PublisherError(f"snapshot contains unmanaged path: {path}")
-        git(repo, "update-index", "--add", "--cacheinfo", f"{mode},{oid},{path}", env=env)
+        entries.append(f"{mode} {oid} 0\t".encode("ascii") + path.encode("utf-8", "surrogateescape") + b"\0")
     snapshot_tree = _sha(git(repo, "rev-parse", f"{tip}^{{tree}}"))
     watermark = json.dumps({"seq": seq, "snapshot": tip, "tree": snapshot_tree}, separators=(",", ":")) + "\n"
     blob = _sha(git(repo, "hash-object", "-w", "--stdin", env=env, input_data=watermark.encode()))
-    git(repo, "update-index", "--add", "--cacheinfo", f"100644,{blob},{WATERMARK}", env=env)
+    entries.append(f"100644 {blob} 0\t{WATERMARK}".encode("ascii") + b"\0")
+    git(repo, "update-index", "-z", "--index-info", env=env, input_data=b"".join(entries))
     tree = _sha(git(repo, "write-tree", env=env))
     date = git(repo, "show", "-s", "--format=%cI", tip).decode("ascii").strip()
     env.update({

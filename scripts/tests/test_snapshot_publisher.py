@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -119,6 +120,24 @@ def test_overlay_is_deterministic_and_preserves_main(repository: tuple[Path, str
         assert publisher.git(repo, "show", f"{overlay.tree}:config/keep.txt", env=objects.env) == publisher.git(repo, "show", f"{main}:config/keep.txt")
         watermark = json.loads(publisher.git(repo, "show", f"{overlay.tree}:health/snapshot.json", env=objects.env))
         assert watermark == {"seq": 1, "snapshot": snapshot, "tree": git(repo, "rev-parse", f"{snapshot}^{{tree}}")}
+
+
+def test_large_snapshot_evaluates_within_ten_seconds(repository: tuple[Path, str, str]) -> None:
+    repo, main, _ = repository
+    git(repo, "checkout", "-q", "health-snapshots")
+    for index in range(2_500):
+        write(repo, f"badges/snapshot-{index:04d}.svg", "badge\n")
+    write(repo, "badges/with\nnewline.svg", "badge\n")
+    commit(repo, f"snapshot\n\nSnapshot-Seq: 2\nSnapshot-Source: {main}\n")
+    git(repo, "checkout", "-q", "main")
+
+    start = time.monotonic()
+    result = publisher.evaluate(repo)
+    elapsed = time.monotonic() - start
+    # One index update per path exceeds this budget; a batched overlay leaves
+    # ample room for Git startup and temporary file I/O on a slower CI host.
+    assert elapsed < 10, f"snapshot evaluation took {elapsed:.2f}s"
+    assert result.line.startswith("would-apply seq=2 tree=")
 
 
 @pytest.mark.parametrize("message", ["snapshot", "snapshot\n\nSnapshot-Seq: x\nSnapshot-Source: abc"])
