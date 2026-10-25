@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 3.0,
+        "latest_days": 4.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-24T22:12:04Z",
+    "last_checked": "2026-10-24T22:24:46Z",
     "record_count": 37995,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:d03b0c9174a885656d7c0b69e9eed754073781d89ce0fd333378609089ad9bb2"
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=blood_donations",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily Blood Donations by Blood Group",
     "namespace": "healthcare",
-    "observed_verified_at": "2026-10-24T22:12:04Z",
+    "observed_verified_at": "2026-10-24T22:24:46Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "National Blood Centre and Ministry of Health Malaysia"
   },
@@ -841,12 +841,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/blood_donations.json",
-    "chain_reference": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/blood_donations.json",
+    "chain_reference": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/chain_head.json",
     "receipt": {
       "evidence_path": "data/blood_donations.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:cc46c9d977d6f843bd8bd67381f5017deeb98ca10775365eb5d666eb9bc705b7",
+      "receipt_digest": "sha256:f8d567838d1b8088bec45ad9ea9d998364c79bac270517d9be3802e4c8cf8b9f",
       "sigstore_path": "data/blood_donations.receipt.sigstore.json",
       "statement_path": "data/blood_donations.receipt.statement.json"
     },

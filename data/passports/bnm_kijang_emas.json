@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-24T22:12:04Z",
+    "last_checked": "2026-10-24T22:24:46Z",
     "record_count": 2,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:2376f3ea9cbdd776f08ebe34e7d78084c8dd520a7f10e465c4b337a9801f7bb8"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/kijang-emas",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Kijang Emas (Gold Reference Price)",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-24T22:12:04Z",
+    "observed_verified_at": "2026-10-24T22:24:46Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1124,12 +1124,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/bnm_kijang_emas.json",
-    "chain_reference": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/bnm_kijang_emas.json",
+    "chain_reference": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/chain_head.json",
     "receipt": {
       "evidence_path": "data/bnm_kijang_emas.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:07a372c208126ca0c5483a61d50fb43360371e7feb5d9c4eac06c41d1291e20c",
+      "receipt_digest": "sha256:47638fa0fdf58e89623a2c9089d38a4048588dedc0d09758f4f4e39e61e974b9",
       "sigstore_path": "data/bnm_kijang_emas.receipt.sigstore.json",
       "statement_path": "data/bnm_kijang_emas.receipt.statement.json"
     },

@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": true,
-    "last_checked": "2026-10-24T22:12:04Z",
+    "last_checked": "2026-10-24T22:24:46Z",
     "record_count": 1233,
     "record_count_estimated": true,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pekab40_01_timeseries.parquet",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "KKMNOW PeKa B40 Daily Health Screenings by State",
     "namespace": "healthcare",
-    "observed_verified_at": "2026-10-24T22:12:04Z",
+    "observed_verified_at": "2026-10-24T22:24:46Z",
     "source": "github.com/MoH-Malaysia/kkmnow-data",
     "steward": "Ministry of Health Malaysia"
   },
@@ -1112,12 +1112,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/kkmnow_pekab40.json",
-    "chain_reference": "attestations/2026-10-24/revisions/c4340ac9908c12efaec65eefdbd406dd7907d49e028034aada8b3636f579e5a1/chain_head.json",
+    "attestation": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/kkmnow_pekab40.json",
+    "chain_reference": "attestations/2026-10-24/revisions/dbfccccd1b1db13b3ac5789716402447c7f2fcdb28142f8d1ae9d579a9770c99/chain_head.json",
     "receipt": {
       "evidence_path": "data/kkmnow_pekab40.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:104b5f39fbe176790940f7cbe536c248346b0e5f026fb59a09dee87db5684b43",
+      "receipt_digest": "sha256:78702e7d3f212dfdb95fb2963e0f7d488ce2bd371273c0e91f4406b3b12bf39b",
       "sigstore_path": "data/kkmnow_pekab40.receipt.sigstore.json",
       "statement_path": "data/kkmnow_pekab40.receipt.statement.json"
     },
