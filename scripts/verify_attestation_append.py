@@ -675,6 +675,15 @@ def _verified_append_paths(root: Path, base: str, require_committed: bool = Fals
             cursor = None
     if set(new["heads"]) - set(old["heads"]) != seen:
         raise ValueError("candidate contains a sibling or unaccepted head")
+    # Check staged candidate bytes before projection comparisons so tampering
+    # is reported as immutable evidence failure, even when it also breaks a
+    # projection that includes the same file.
+    paths = _append_paths(root, old, new)
+    if check_delta_index:
+        for path in paths:
+            digest = _file_object_id(root / path, algorithm)
+            if path in indexed and digest != indexed[path]:
+                raise ValueError(f"immutable evidence changed or deleted: {path}")
     head = _load(root / new["heads"][new["current_head"]], "current head")
     projection_matches_current = False
     if "append_content_sha256" not in head["payload"]:
@@ -752,14 +761,7 @@ def _verified_append_paths(root: Path, base: str, require_committed: bool = Fals
             raise ValueError(f"candidate head {digest} must be accepted in authoritative Git before publication")
         if not projection_matches_current:
             raise ContractError("latest projection is stale or mixed")
-    # The index records the exact bytes to submit, including already committed
-    # local appends. Untracked candidates still receive signed discovery checks.
-    paths = _append_paths(root, old, new)
-    if check_delta_index:
-        for path in paths:
-            digest = _file_object_id(root / path, algorithm)
-            if path in indexed and digest != indexed[path]:
-                raise ValueError(f"immutable evidence changed or deleted: {path}")
+    # Untracked candidates still receive signed discovery checks.
     return paths
 
 
