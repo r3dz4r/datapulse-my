@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0007638888888888889,
+        "latest_days": 0.0022222222222222222,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-25T13:50:59Z",
+    "last_checked": "2026-10-25T13:59:55Z",
     "record_count": 1,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuching",
@@ -39,7 +39,7 @@
     "geography": "Kuching, Sarawak",
     "name": "GTFS Realtime — BAS.MY Kuching Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-25T13:50:59Z",
+    "observed_verified_at": "2026-10-25T13:59:55Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1076,12 +1076,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-25/revisions/5f6a0ce937429903a86bb689329221c71e3502f730397245d181481ede464e43/gtfs_realtime_mybas_kuching.json",
-    "chain_reference": "attestations/2026-10-25/revisions/5f6a0ce937429903a86bb689329221c71e3502f730397245d181481ede464e43/chain_head.json",
+    "attestation": "attestations/2026-10-25/revisions/4e4d42d4c5c36bfccff7a670041f95d70ea3eedf19bc610361dd34aba109dd52/gtfs_realtime_mybas_kuching.json",
+    "chain_reference": "attestations/2026-10-25/revisions/4e4d42d4c5c36bfccff7a670041f95d70ea3eedf19bc610361dd34aba109dd52/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_kuching.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:86b512bf9c6d31e8191776138abe6f824f745c5ab2d63a08dddf4dd9758d85f8",
+      "receipt_digest": "sha256:4420b08f0cb0088b734df8e3a92013f72194913e6fff88922b68c2f244be1685",
       "sigstore_path": "data/gtfs_realtime_mybas_kuching.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_kuching.receipt.statement.json"
     },
