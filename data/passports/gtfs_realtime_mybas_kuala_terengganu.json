@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.0015625,
+        "latest_days": 0.0005555555555555556,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-25T08:07:37Z",
+    "last_checked": "2026-10-25T10:34:53Z",
     "record_count": 27,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuala-terengganu",
@@ -39,7 +39,7 @@
     "geography": "Kuala Terengganu, Terengganu",
     "name": "GTFS Realtime — BAS.MY Kuala Terengganu Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-25T08:07:37Z",
+    "observed_verified_at": "2026-10-25T10:34:53Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1076,12 +1076,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-25/revisions/5ed171f4fe752afd820eea9de70e89e1067bab9a21e0d11d82caae1438ed254b/gtfs_realtime_mybas_kuala_terengganu.json",
-    "chain_reference": "attestations/2026-10-25/revisions/5ed171f4fe752afd820eea9de70e89e1067bab9a21e0d11d82caae1438ed254b/chain_head.json",
+    "attestation": "attestations/2026-10-25/revisions/be3b6a9da43591e55df4616fc5310cff2c65dc8996039e70861b7048e7f3e75f/gtfs_realtime_mybas_kuala_terengganu.json",
+    "chain_reference": "attestations/2026-10-25/revisions/be3b6a9da43591e55df4616fc5310cff2c65dc8996039e70861b7048e7f3e75f/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_kuala_terengganu.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:aa30754186778ba03688539fddc89f7a004bc17cc651b10ef4679cb3c2f313b1",
+      "receipt_digest": "sha256:11f74a72d2a58eaad52482be35aed923f30eabde09588a508faf5da0b52c41f2",
       "sigstore_path": "data/gtfs_realtime_mybas_kuala_terengganu.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_kuala_terengganu.receipt.statement.json"
     },

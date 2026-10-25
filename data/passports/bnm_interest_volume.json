@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 9.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-18T09:12:40Z",
+    "last_checked": "2026-10-25T10:34:53Z",
     "record_count": 3,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
       "column_count": 9,
-      "content_shape_changed": false,
-      "first_row_hash": "shape-v1:3a96e911e43192d8fcb6ece4b72e377ef579d2eebdec507eaf7155fd9e3ee7b7"
+      "content_shape_changed": true,
+      "first_row_hash": "shape-v1:9974ba13e8600a645ec5fcbec868c7cac6279f934e7e528227a89e0de4aef732"
     },
-    "status": "fresh"
+    "status": "degraded"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/interest-volume",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Interest Volume: Banking Institutions",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-18T09:12:40Z",
+    "observed_verified_at": "2026-10-25T10:34:53Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1124,12 +1124,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-25/revisions/5ed171f4fe752afd820eea9de70e89e1067bab9a21e0d11d82caae1438ed254b/bnm_interest_volume.json",
-    "chain_reference": "attestations/2026-10-25/revisions/5ed171f4fe752afd820eea9de70e89e1067bab9a21e0d11d82caae1438ed254b/chain_head.json",
+    "attestation": "attestations/2026-10-25/revisions/be3b6a9da43591e55df4616fc5310cff2c65dc8996039e70861b7048e7f3e75f/bnm_interest_volume.json",
+    "chain_reference": "attestations/2026-10-25/revisions/be3b6a9da43591e55df4616fc5310cff2c65dc8996039e70861b7048e7f3e75f/chain_head.json",
     "receipt": {
       "evidence_path": "data/bnm_interest_volume.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:11caaed2fd1813fe4768674e332edeaf7e135caec106c61ca4eba56c2020eb40",
+      "receipt_digest": "sha256:dab6ad5b52993936e6088900461049dc280b040aa80f8db34918f6aced9abcca",
       "sigstore_path": "data/bnm_interest_volume.receipt.sigstore.json",
       "statement_path": "data/bnm_interest_volume.receipt.statement.json"
     },
