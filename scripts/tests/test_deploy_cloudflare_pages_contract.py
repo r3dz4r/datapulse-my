@@ -34,74 +34,6 @@ def _workflow() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
 
 
-def test_signed_publication_has_no_candidate_submission_or_append_wait() -> None:
-    signing = yaml.safe_load(_workflow())["jobs"]["sign_health"]
-    body = yaml.safe_dump(signing)
-    for forbidden in ("APPEND_", "submit_attestation_append.sh", "--wait-for-acceptance",
-                      "existing_append", "append_acceptance", "append_submission",
-                      "refresh_chain_head.sh", "bind_candidate_witness.py", "gh pr "):
-        assert forbidden not in body, forbidden
-    assert not any(key.startswith("APPEND_") for key in yaml.safe_load(_workflow())["env"])
-    assert "accepted_head" in {step.get("id") for step in signing["steps"]}
-
-
-@pytest.mark.parametrize("damage", ["none", "health", "manifest", "missing_head", "unnamed_head", "witness"])
-def test_signed_statement_uses_only_mains_accepted_head(tmp_path: Path, damage: str) -> None:
-    """Execute the shipped Git import, binding guard and statement generator."""
-    from scripts import gen_attestations as ga
-    from scripts.tests.test_append_set_isolation import accept, git
-    from scripts.tests.test_attestations import fixture_rekor_reference
-
-    root, key = fixture_root(tmp_path / "checkout")
-    now = datetime.now(timezone.utc).replace(microsecond=0)
-    health = root / "health/latest.json"
-    snapshot = json.loads(health.read_text())
-    snapshot["checked_at"] = (now - timedelta(seconds=30)).isoformat().replace("+00:00", "Z")
-    snapshot["datasets"][0]["last_checked"] = snapshot["checked_at"]
-    health.write_text(json.dumps(snapshot))
-    reference = fixture_rekor_reference(root, "rekor-fixture")
-    ga.generate(root, key, now, reference if damage != "witness" else None)
-    mirror = root / ".attestations/chain_head.json"
-    if damage == "missing_head":
-        mirror.unlink()
-    source = accept(root)
-    origin = tmp_path / "origin.git"
-    git(root, "clone", "--bare", str(root), str(origin))
-    git(root, "remote", "add", "origin", str(origin))
-    if damage == "health":
-        health.write_bytes(health.read_bytes() + b" ")
-    elif damage == "manifest":
-        manifest_path = root / "datapulse.json"
-        manifest = json.loads(manifest_path.read_text())
-        manifest["datasets"][0]["url"] = "https://example.test/changed-source"
-        manifest_path.write_text(json.dumps(manifest))
-    elif damage == "unnamed_head":
-        # A valid private append still cannot be signed before main names it.
-        ga.generate(root, key, now + timedelta(seconds=1), reference, force_append=True)
-    (root / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
-    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
-    guard = next(step for step in steps if step.get("id") == "accepted_head")
-    generate = next(step for step in steps if step.get("name") == "Generate deterministic health attestation statement")
-    runner = tmp_path / "runner"
-    runner.mkdir()
-    env = {**os.environ, "PROMOTION_SOURCE_SHA": source, "RUNNER_TEMP": str(runner),
-           "GITHUB_OUTPUT": str(tmp_path / "output")}
-    result = subprocess.run(["bash", "-c", guard["run"] + "\n" + generate["run"]],
-                            cwd=root, env=env, capture_output=True, text=True, timeout=30)
-    statement = runner / "health.latest.statement.json"
-    if damage in {"health", "manifest", "missing_head", "witness", "unnamed_head"}:
-        assert result.returncode != 0, result.stdout + result.stderr
-        assert not statement.exists(), "Unaccepted inputs must never reach signing"
-    else:
-        assert result.returncode == 0, result.stdout + result.stderr
-        accepted = json.loads(git(root, "show", "origin/main:attestations/chain-index.json"))
-        signed = json.loads(statement.read_text())
-        assert signed["predicate"]["legacyEd25519"]["chainHead"] == accepted["current_head"]
-        assert accepted["current_head"] in accepted["heads"]
-        assert (tmp_path / "output").read_text() == "state=accepted\n"
-    assert git(root, "rev-parse", "HEAD") == source
-
-
 def _deploy_step(name: str) -> dict:
     steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
     return next(step for step in steps if step.get("name") == name)
@@ -382,6 +314,118 @@ def test_projection_refresh_materializes_moved_main_before_rechecking(tmp_path: 
     assert sum(line.startswith("H ") for line in selected) == 11
 
 
+@pytest.mark.parametrize(
+    "observed_branch", ["", "main", "attestation/append-contract"],
+    ids=["detached", "non-append", "attached"],
+)
+def test_missing_submission_result_never_claims_no_append_pr_from_detached_head(
+    tmp_path: Path, observed_branch: str,
+) -> None:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "submit_attestation_append.sh").write_text('rm -f "$APPEND_SUBMISSION_RESULT"\n')
+    (bin_dir / "python3").write_text(
+        '#!/bin/bash\n[[ "$*" != *--require-committed* ]]\n'
+    )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\ncase "$*" in\n'
+        '"branch --show-current") printf "%s\\n" "$OBSERVED_BRANCH" ;;\n'
+        '"rev-parse HEAD") printf "%040d\\n" 1 ;;\n'
+        '*) exit 2 ;;\nesac\n'
+    )
+    (bin_dir / "gh").write_text(
+        f'#!{sys.executable}\n'
+        'import json, os, sys\n'
+        'with open(os.environ["CALL_LOG"], "a") as log:\n'
+        '    log.write(json.dumps(sys.argv[1:]) + "\\n")\n'
+        'if sys.argv[1:3] == ["pr", "list"]:\n'
+        '    print("[]")\n'
+        'else:\n'
+        '    sys.exit(1)\n'
+    )
+    for stub in bin_dir.iterdir():
+        stub.chmod(0o755)
+    calls_file = tmp_path / "calls"
+    result = subprocess.run(
+        ["bash", "-c", _append_acceptance_harness()], cwd=tmp_path,
+        env={**os.environ, **{key: str(value) for key, value in yaml.safe_load(_workflow())["env"].items()},
+             "PATH": f"{bin_dir}:{os.environ['PATH']}", "RUNNER_TEMP": str(tmp_path),
+             "GITHUB_REPOSITORY": "example/data-pulse", "GITHUB_OUTPUT": str(tmp_path / "output"),
+             "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"), "CALL_LOG": str(calls_file),
+             "OBSERVED_BRANCH": observed_branch},
+        capture_output=True, text=True, timeout=15,
+    )
+    calls = [json.loads(line) for line in calls_file.read_text().splitlines()]
+    assert result.returncode != 0
+    assert "::error" in result.stderr
+    assert all("" not in call for call in calls)
+    views = [call for call in calls if call[:2] == ["pr", "view"]]
+    if observed_branch.startswith("attestation/append-"):
+        assert views and all(call[2] == observed_branch for call in views)
+        assert "Append PR lookup failed" in result.stderr
+    else:
+        assert f"expected an attestation append branch, got {observed_branch}::" in result.stderr
+        assert "no submission result was produced" in result.stderr
+        assert f"local branch='{observed_branch}'" in result.stderr
+        assert "PR #unknown" in result.stderr
+        assert "PR existence unverified" in result.stderr
+        assert not views
+        assert "no append PR" not in result.stderr
+
+
+@pytest.mark.parametrize("proof_status", [0, 75, 1, 124, 137])
+def test_noop_submission_reaches_accepted_state_without_pr_refusal(
+    tmp_path: Path, proof_status: int,
+) -> None:
+    run = _append_preparation_step()["run"]
+    arm_start = run.index('if [[ "$branch" == noop ]]; then')
+    arm_end = run.index('if [[ "$branch" != attestation/append-* ]]', arm_start)
+    arm = run[arm_start:arm_end].rstrip()
+    output = tmp_path / "outputs"
+    calls_file = tmp_path / "calls"
+    harness = f'''
+calls_file="{calls_file}"
+named_timeout() {{ shift; "$@"; }}
+python3() {{ printf '%s\\n' "$*" >> "$calls_file"; return "$PROOF_STATUS"; }}
+retry_timeout() {{ printf 'retry %s\\n' "$*" >> "$calls_file"; "$@"; }}
+defer_append() {{ echo "state=append-deferred" >> "$GITHUB_OUTPUT"; exit 0; }}
+refuse_acceptance() {{ echo "$1" >&2; exit 1; }}
+git() {{ printf 'git %s\\n' "$*" >> "$calls_file"; }}
+gh() {{ printf 'gh %s\\n' "$*" >> "$calls_file"; }}
+branch=noop
+'''
+    script = harness + arm
+    result = subprocess.run(
+        ["bash", "-c", script],
+        env={**os.environ, "GITHUB_OUTPUT": str(output), "PROOF_STATUS": str(proof_status),
+             "PROMOTION_SOURCE_SHA": "source-sha"},
+        capture_output=True, text=True,
+    )
+    calls = calls_file.read_text().splitlines() if calls_file.exists() else []
+    output_text = output.read_text() if output.exists() else ""
+    expected_state = (
+        "accepted" if proof_status == 0
+        else "append-deferred" if proof_status in (75, 124, 137)
+        else None
+    )
+    assert result.returncode == (0 if expected_state else 1)
+    assert output_text == (f"state={expected_state}\n" if expected_state else "")
+    assert any("--base source-sha --wait-for-acceptance 0" in call for call in calls)
+    assert ("::notice title=Append submission no-op" in result.stdout) == (proof_status == 0)
+    assert not any(call.startswith("git ") for call in calls)
+    assert not any(call.startswith("gh pr view ") for call in calls)
+    if proof_status == 1:
+        assert "Append acceptance proof failed" in result.stderr
+    assert arm_start < run.index('if [[ "$branch" != attestation/append-* ]]')
+    assert "head_sha=''" in run
+    assert 'branch="$(retry_timeout 10 git branch --show-current)"' in run
+    assert 'if [[ "$branch" == attestation/append-* ]]; then' in run
+    assert 'head_sha="$(retry_timeout 10 git rev-parse HEAD)"' in run
+    assert 'gh pr view "$branch"' in run and '--wait-for-acceptance 0' in run
+
+
 @pytest.mark.parametrize("mismatch", [False, True])
 def test_pages_projection_guard_checks_assembled_bytes(tmp_path: Path, mismatch: bool) -> None:
     root, _ = accepted_root(tmp_path)
@@ -448,19 +492,10 @@ def test_pages_reuses_valid_accepted_day_without_rewriting_projections(tmp_path:
         ".attestations/chain_head.json",
     )
     before = {path: ((root / path).read_bytes(), (root / path).stat().st_mtime_ns) for path in paths}
-    # Existing witness verification is covered by the strict guard fixtures above.
-    from scripts.tests.test_attestations import fixture_rekor_reference
-    reference = fixture_rekor_reference(root, "rekor-fixture")
-    ga.generate(root, key, now, reference, force_append=True)
-    subprocess.run(["git", "add", "attestations", ".attestations"], cwd=root, check=True)
-    subprocess.run(["git", "commit", "-m", "accept witnessed set"], cwd=root, check=True, capture_output=True)
-    before = {path: ((root / path).read_bytes(), (root / path).stat().st_mtime_ns) for path in paths}
-    guard = next(step for step in yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
-                 if step.get("id") == "accepted_head")
-    result = subprocess.run(["bash", "-c", guard["run"]], cwd=root, capture_output=True, text=True,
-                            env={**os.environ, "PROMOTION_SOURCE_SHA": subprocess.check_output(
-                                ["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
-                                 "GITHUB_OUTPUT": str(tmp_path / "guard-output")})
+    refresh = next(step for step in yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+                   if step.get("name") == "Refresh legacy chain head before signing")
+    source = refresh["run"].split("if python3 - <<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
+    result = subprocess.run([sys.executable, "-c", source], cwd=root, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
     assert before == {path: ((root / path).read_bytes(), (root / path).stat().st_mtime_ns) for path in paths}
 
@@ -581,68 +616,106 @@ def test_pages_file_count_guard_reports_count_and_largest_directory(tmp_path: Pa
     assert "largest directory attestations: 5 files" in failing.stderr
 
 
-def test_unverified_head_skips_signing_and_all_deployment() -> None:
+def _append_acceptance_step() -> dict:
+    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+    return next(
+        step for step in steps
+        if step.get("name") == "Require authoritative acceptance before signing publication"
+    )
+
+
+def _append_preparation_step() -> dict:
+    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+    return next(step for step in steps if step.get("id") == "append_submission")
+
+
+def _append_acceptance_harness() -> str:
+    """Run both workflow phases with their step outputs carried across."""
+    return (
+        'APPEND_FINAL_OUTPUT="$GITHUB_OUTPUT"\n'
+        'GITHUB_OUTPUT="${RUNNER_TEMP:-$PWD}/append-prep-output"\n'
+        ': > "$GITHUB_OUTPUT"\n'
+        + _append_preparation_step()["run"]
+        + '\nAPPEND_PREP_STATE="" APPEND_BRANCH="" APPEND_HEAD_SHA=""\n'
+        + 'while IFS="=" read -r key value; do\n'
+        + '  case "$key" in\n'
+        + '    state) APPEND_PREP_STATE="$value" ;;\n'
+        + '    branch) APPEND_BRANCH="$value" ;;\n'
+        + '    head_sha) APPEND_HEAD_SHA="$value" ;;\n'
+        + '  esac\n'
+        + 'done < "$GITHUB_OUTPUT"\n'
+        + 'GITHUB_OUTPUT="$APPEND_FINAL_OUTPUT"\n'
+        + 'export APPEND_PREP_STATE APPEND_BRANCH APPEND_HEAD_SHA GITHUB_OUTPUT\n'
+        + _append_acceptance_step()["run"]
+    )
+
+
+def test_append_deferred_skips_signing_and_full_release_deployment() -> None:
     workflow = yaml.safe_load(_workflow())
     signing = workflow["jobs"]["sign_health"]
     steps = {step.get("name"): step for step in signing["steps"]}
-    assert signing["outputs"]["accepted_head_state"] == "${{ steps.accepted_head.outputs.state }}"
+    assert signing["outputs"]["append_state"] == (
+        "${{ steps.existing_append.outputs.state == 'append-deferred' && 'append-deferred' "
+        "|| steps.append_acceptance.outputs.state }}"
+    )
     assert steps["Generate deterministic health attestation statement"]["if"] == (
-        "steps.accepted_head.outputs.state == 'accepted'"
+        "steps.append_acceptance.outputs.state == 'accepted'"
     )
     assert steps["Attempt pinned Cosign signer installation for health-only degradation"]["if"] == (
-        "steps.accepted_head.outputs.state == 'accepted'"
+        "steps.append_acceptance.outputs.state == 'accepted'"
     )
     assert steps["Sign and verify current health DSSE bundle"]["if"] == (
         "steps.install_cosign.outcome == 'success' && "
-        "steps.accepted_head.outputs.state == 'accepted'"
+        "steps.append_acceptance.outputs.state == 'accepted'"
     )
     assert steps["Stage statement into Sigstore publication"]["if"] == (
         "steps.sign_current_health.outputs.state == 'signed' && "
-        "steps.accepted_head.outputs.state == 'accepted'"
+        "steps.append_acceptance.outputs.state == 'accepted'"
     )
     assert steps["Generate per-dataset evidence statements"]["if"] == (
-        "steps.accepted_head.outputs.state == 'accepted'"
+        "steps.append_acceptance.outputs.state == 'accepted'"
     )
     assert steps["Sign per-dataset evidence statements"]["if"] == (
         "steps.sign_current_health.outputs.state == 'signed' && "
-        "steps.accepted_head.outputs.state == 'accepted'"
+        "steps.append_acceptance.outputs.state == 'accepted'"
     )
     assert steps["Record per-dataset receipt result"]["if"] == (
-        "always() && steps.accepted_head.outputs.state == 'accepted'"
+        "always() && steps.append_acceptance.outputs.state == 'accepted'"
     )
     assert steps["Upload verified Sigstore bundle"]["if"] == (
         "steps.sign_current_health.outputs.state == 'signed' && "
-        "steps.accepted_head.outputs.state == 'accepted'"
+        "steps.append_acceptance.outputs.state == 'accepted'"
     )
     assert steps["Record explicit attestation state"]["if"] == (
-        "always() && steps.accepted_head.outputs.state == 'accepted'"
+        "always() && steps.append_acceptance.outputs.state == 'accepted'"
     )
     assert steps["Record Sigstore result"]["if"] == (
-        "always() && steps.accepted_head.outputs.state == 'accepted'"
+        "always() && steps.append_acceptance.outputs.state == 'accepted'"
     )
     assert workflow["jobs"]["deploy"]["if"] == (
-        "needs.sign_health.outputs.accepted_head_state == 'accepted'"
+        "needs.sign_health.outputs.health_only == 'true' || "
+        "needs.sign_health.outputs.append_state == 'accepted'"
     )
 
 
 @pytest.mark.parametrize("health_only", ["true", "false", ""])
-@pytest.mark.parametrize("accepted_state", ["accepted", "", "invalid"])
-def test_deploy_gate_requires_verified_main_head_for_every_publication(
-    health_only: str, accepted_state: str,
+@pytest.mark.parametrize("append_state", ["accepted", "append-deferred", ""])
+def test_deploy_gate_reaches_health_publication_without_bypassing_full_release_append(
+    health_only: str, append_state: str,
 ) -> None:
     deploy = yaml.safe_load(_workflow())["jobs"]["deploy"]
     assert deploy["needs"] == ["classify", "sign_health"]
     condition = deploy["if"].replace(
         "needs.sign_health.outputs.health_only", repr(health_only),
-    ).replace("needs.sign_health.outputs.accepted_head_state", repr(accepted_state))
+    ).replace("needs.sign_health.outputs.append_state", repr(append_state))
     # Exercise the workflow's comparison/OR expression, rather than a duplicate
     # predicate. Neither always() nor a failed dependency may enable promotion.
     result = subprocess.run(["bash", "-c", f"[[ {condition} ]]"], capture_output=True, text=True)
     assert result.returncode in (0, 1), result.stderr
-    assert (result.returncode == 0) == (accepted_state == "accepted")
+    assert (result.returncode == 0) == (health_only == "true" or append_state == "accepted")
 
 
-def test_health_publication_keeps_verified_source_and_preserves_trust_plane_on_signer_outage() -> None:
+def test_deferred_health_publication_keeps_verified_source_and_preserves_trust_plane() -> None:
     workflow = yaml.safe_load(_workflow())
     signing = workflow["jobs"]["sign_health"]
     outputs = signing["outputs"]
@@ -651,12 +724,22 @@ def test_health_publication_keeps_verified_source_and_preserves_trust_plane_on_s
     assert outputs["attestation_state"] == "${{ steps.attestation_result.outputs.state }}"
     assert outputs["signed"] == "${{ steps.sigstore_result.outputs.signed }}"
     settled = next(step for step in signing["steps"] if step.get("id") == "settled_main")
-    assert "if" not in settled
+    assert settled["if"] == (
+        "steps.existing_append.outputs.state == 'ready' || "
+        "(steps.existing_append.outputs.state == 'append-deferred' && "
+        "needs.classify.outputs.health_only == 'true')"
+    )
     preserve = _deploy_step("Preserve served attestation plane (health-only path)")
     assert preserve["if"] == (
         "needs.sign_health.outputs.health_only == 'true' && "
         "needs.sign_health.outputs.attestation_state == 'signer_down'"
     )
+    deferred = _deploy_step("Preserve served attestation plane (deferred health path)")
+    assert deferred["if"] == (
+        "needs.sign_health.outputs.health_only == 'true' && "
+        "needs.sign_health.outputs.append_state == 'append-deferred'"
+    )
+    assert deferred["run"] == preserve["run"]
     assert 'python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root"' in preserve["run"]
     assemble = _deploy_step("Assemble canonical Pages artifact")
     summary_copy = next(line for line in assemble["run"].splitlines() if "cp " in line and "datapulse_summary.json" in line)
@@ -669,10 +752,66 @@ def test_health_publication_keeps_verified_source_and_preserves_trust_plane_on_s
     assert 'datapulse_summary.json' in staging["run"]
 
 
+def _append_existing_step() -> dict:
+    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+    return next(step for step in steps
+                if step.get("name") == "Wait for an existing append before generating a candidate")
+
+
+def _assert_append_time_bounds(workflow: dict) -> None:
+    worst = int(workflow["env"]["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"])
+    patience = int(workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    job = workflow["jobs"]["sign_health"]
+    steps = {step.get("name"): step for step in job["steps"]}
+    existing = steps["Wait for an existing append before generating a candidate"]
+    preparation = steps["Prepare append candidate for acceptance"]
+    acceptance = steps["Require authoritative acceptance before signing publication"]
+    assert 0 < worst < patience
+    assert patience - worst >= 300, "keep at least five minutes of measured-check margin"
+    for step in (existing, preparation, acceptance):
+        wrapper = re.search(r"timeout -k (\d+)s (\d+)s bash", step["run"])
+        assert wrapper is not None
+        kill_after, duration = map(int, wrapper.groups())
+        assert duration < duration + kill_after < step["timeout-minutes"] * 60 < 3600
+        assert step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
+    assert patience < 1900 < 1920
+    assert patience < 1800 < 1860
+    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in existing["run"]
+    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in acceptance["run"]
+    assert "named_timeout 900 bash scripts/submit_attestation_append.sh" in preparation["run"]
+    assert "named_timeout 300 bash scripts/submit_attestation_append.sh" in acceptance["run"]
+    assert preparation["timeout-minutes"] == 30
+    assert acceptance["timeout-minutes"] == 31
+    assert 1725 + patience + 260 == 3470 < 1770 + 1800 == 3570
+    assert 3570 < 1775 + 1805 == 3580 < (30 + 31) * 60 == 3660
+    for consumer, token_id in ((existing, "append-token"),
+                               (preparation, "submission-append-token"),
+                               (acceptance, "acceptance-wait-token")):
+        index = job["steps"].index(consumer)
+        mint = job["steps"][index - 1]
+        assert mint.get("uses") == "actions/create-github-app-token@v1"
+        assert mint.get("id") == token_id
+        assert mint["with"] == job["steps"][1]["with"]
+        assert consumer["env"]["GH_TOKEN"] == f"${{{{ steps.{token_id}.outputs.token }}}}"
+        assert consumer["timeout-minutes"] < 60
+    # Jobs time all their sequential steps, not just the longest step. Reserve
+    # nine minutes for checkout, setup, witnessing and signing.
+    bounded_minutes = sum(step.get("timeout-minutes", 0) for step in job["steps"])
+    assert bounded_minutes + 9 == job["timeout-minutes"] == 142
+    # deploy starts after sign_health; its independent bound excludes that wait.
+    deploy = workflow["jobs"]["deploy"]
+    assert "sign_health" in deploy["needs"]
+    assert 0 < deploy["timeout-minutes"] <= 30
+
+
+def test_publication_append_time_bounds_contract() -> None:
+    _assert_append_time_bounds(yaml.safe_load(_workflow()))
+
+
 def test_attestation_restore_timeouts_cover_measured_cold_restore() -> None:
     restores = re.findall(
         r"timeout -k 5s (\d+)s bash scripts/restore_attestations\.sh"
-        r' --source (?:"\$accepted_main"|HEAD)',
+        r" --source (?:origin/main|HEAD)",
         _workflow(),
     )
     assert len(restores) == 2
@@ -684,6 +823,583 @@ def test_attestation_restore_timeouts_cover_measured_cold_restore() -> None:
         r" -- attestations \.attestations/chain_head\.json",
         _workflow(),
     )
+
+
+@pytest.mark.parametrize("moved", ["worst", "patience", "wrapper", "step", "job", "token"])
+def test_publication_append_time_bounds_reject_isolated_ordering_drift(moved: str) -> None:
+    workflow = yaml.safe_load(_workflow())
+    _assert_append_time_bounds(workflow)
+    job = workflow["jobs"]["sign_health"]
+    step = next(step for step in job["steps"]
+                if step.get("name") == "Require authoritative acceptance before signing publication")
+    patience = int(workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    if moved == "worst":
+        workflow["env"]["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"] = patience
+    elif moved == "patience":
+        workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"] = step["timeout-minutes"] * 60
+    elif moved == "wrapper":
+        step["run"] = re.sub(r"(timeout -k \d+s )\d+s bash",
+                             rf"\g<1>{step['timeout-minutes'] * 60}s bash", step["run"], count=1)
+    elif moved == "step":
+        step["timeout-minutes"] = 60
+    elif moved == "job":
+        job["timeout-minutes"] = step["timeout-minutes"]
+    else:
+        token = next(item for item in job["steps"] if item.get("id") == "acceptance-wait-token")
+        job["steps"].remove(token)
+    with pytest.raises(AssertionError):
+        _assert_append_time_bounds(workflow)
+
+
+def test_append_acceptance_inner_wait_fits_hard_wrapper() -> None:
+    run = _append_acceptance_step()["run"]
+    wait = re.search(
+        r"named_timeout (\d+) python3 scripts/verify_attestation_append.py "
+        r'--base "\$PROMOTION_SOURCE_SHA" --wait-for-acceptance (\d+)',
+        run,
+    )
+    assert wait is not None
+    outer, inner = map(int, wait.groups())
+    # The shell now owns the pending-PR wait. The verifier gets one bounded
+    # fetched-main probe after merge or at the patience deadline.
+    assert inner == 0 < outer
+    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in run
+
+
+@pytest.mark.parametrize("phase", ["preparation", "acceptance"])
+def test_append_acceptance_bounds_every_external_call_and_total_budget(phase: str) -> None:
+    step = _append_preparation_step() if phase == "preparation" else _append_acceptance_step()
+    run = step["run"]
+    commands = "\n".join(line for line in run.splitlines() if not line.lstrip().startswith("#"))
+    # The retry helper's parser discriminator is a shell comparison, not a call.
+    commands = commands.replace('[[ "$1" == jq ]]', '[[ parser_call ]]')
+    calls = list(re.finditer(r"(?<![\w-])(?:python3|bash|git|jq|gh)\b", commands))
+    assert calls
+    bounded_calls = []
+    for call in calls:
+        bound = re.search(r"timeout -k (\d+)s (\d+)s $", commands[:call.start()])
+        helper = re.search(r"(?:named_timeout|retry_timeout) (\d+) $", commands[:call.start()])
+        assert bound is not None or helper is not None, f"unbounded call: {commands[call.start():].splitlines()[0]}"
+        kill_after, duration = map(int, bound.groups()) if bound else (5, int(helper.group(1)))
+        assert kill_after > 0 and duration > 0
+        bounded_calls.append((call.start(), duration + kill_after))
+    # A process-group watchdog also caps shell overhead and any future calls.
+    whole_step = bounded_calls.pop(0)[1]
+    marker = "PREPARE" if phase == "preparation" else "ACCEPTANCE"
+    assert f"bash -Eeuo pipefail <<'{marker}'" in run
+    assert run.rstrip().endswith(marker)
+    job = yaml.safe_load(_workflow())["jobs"]["sign_health"]
+    patience = int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    def budget_between(start: int, end: int) -> int:
+        return sum(cap for position, cap in bounded_calls if start <= position < end)
+
+    if phase == "preparation":
+        open_branch = commands.index('if [[ -n "$open_append" ]]')
+        submit_branch = commands.index('APPEND_SUBMISSION_RESULT="$submission_result" named_timeout 900')
+        noop_branch = commands.index('if [[ "$branch" == noop ]]', submit_branch)
+        rebuilt_branch = commands.index('if [[ "$rebuilt" == 1 ]]', noop_branch)
+        preflight_and_lookup = sum(cap for position, cap in bounded_calls
+                                   if position < open_branch and
+                                   not commands[position:].startswith('bash scripts/close_superseded_appends.sh'))
+        already_open = budget_between(open_branch, submit_branch)
+        submitted = budget_between(submit_branch, noop_branch)
+        noop_proof = budget_between(noop_branch, rebuilt_branch)
+        rebuilt_lookup = sum(cap for position, cap in bounded_calls if position >= rebuilt_branch)
+        assert submitted >= 905
+        worst_path = preflight_and_lookup + max(already_open,
+                                                submitted + max(noop_proof, rebuilt_lookup))
+        assert worst_path == 1725 < 1770 < whole_step == 1775 < 1800
+    else:
+        poll_start = commands.rindex('while :; do')
+        proof_start = commands.index('if [[ "$state" == MERGED ||', poll_start)
+        cleanup_caps = [cap for position, cap in bounded_calls
+                        if commands[position:].startswith('bash scripts/close_superseded_appends.sh')]
+        rebuild_caps = [cap for position, cap in bounded_calls
+                        if commands[position:].startswith('bash scripts/submit_attestation_append.sh')
+                        and '--rebuild' in commands[position:position + 120]]
+        assert cleanup_caps == [125, 125]
+        assert rebuild_caps == [305, 305]
+        fixed_budget = (sum(cap for _, cap in bounded_calls)
+                        - budget_between(poll_start, proof_start)
+                        - min(cleanup_caps) - sum(rebuild_caps))
+        assert fixed_budget == 260
+        assert patience + fixed_budget == 1745 < 1800 < whole_step == 1805 < 1860
+    assert step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
+    assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
+
+
+def test_existing_append_bounds_every_call_and_total_budget() -> None:
+    step = _append_existing_step()
+    commands = "\n".join(line for line in step["run"].splitlines()
+                         if not line.lstrip().startswith("#"))
+    bounded_calls = []
+    for call in re.finditer(r"(?<![\w-])(?:python3|bash|git|jq|gh)\b", commands):
+        bound = re.search(r"timeout -k (\d+)s (\d+)s $", commands[:call.start()])
+        assert bound is not None, f"unbounded call: {commands[call.start():].splitlines()[0]}"
+        kill_after, duration = map(int, bound.groups())
+        assert kill_after > 0 and duration > 0
+        bounded_calls.append((call.start(), duration + kill_after))
+    whole_step = bounded_calls.pop(0)[1]
+    patience = int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    loop_start = commands.index("while :; do")
+    final_fetch = commands.rindex("timeout -k 5s 30s git fetch")
+    # Every call is bounded above; only preflight and the final import sit
+    # outside the shared patience clock for already-open append polling.
+    fixed_budget = sum(cap for position, cap in bounded_calls
+                       if position < loop_start or position >= final_fetch)
+    assert patience + fixed_budget < whole_step < step["timeout-minutes"] * 60
+    assert "bash -Eeuo pipefail <<'EXISTING_APPEND'" in step["run"]
+    assert step["run"].rstrip().endswith("EXISTING_APPEND")
+    assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
+
+
+def test_existing_append_defers_only_at_patience_expiry() -> None:
+    step = _append_existing_step()
+    run = step["run"]
+    assert step["timeout-minutes"] == 32
+    assert int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"]) == 1485
+    assert run.count('echo "state=append-deferred"') == 1
+    assert len(re.findall(r'^\s+defer_append$', run, re.MULTILINE)) == 1
+    assert re.search(r'if \[\[ "\$SECONDS" -ge "\$deadline" \]\]; then\n\s+defer_append\n', run)
+    assert '"$BASH_COMMAND"' in run
+
+
+@pytest.mark.parametrize("status", [124, 137])
+@pytest.mark.parametrize("command,occurrence", [
+    ("bash -Eeuo pipefail", 1),
+    ("bash scripts/close_superseded_appends.sh", 1),
+    ("gh pr list", 1), ("jq length", 1), ("jq -c", 1),
+    ("jq -er .number", 1), ("jq -er .headRefName", 1),
+    ("jq -er .headRefOid", 1), ("jq -er .createdAt", 1),
+    ("date -u +%s", 1), ("date -ud", 1),
+    ("gh pr view", 1), ("jq -e --arg branch", 1),
+    ("jq -r [.statusCheckRollup", 1),
+    ('jq -r .state == "OPEN"', 1), ("gh pr merge", 1),
+    ("gh pr view", 2), ("jq -r [.statusCheckRollup", 2),
+    ("jq -r .state", 2), ("jq -r .headRefOid", 1),
+    ("git fetch", 1), ("git merge-base", 1),
+    ("bash scripts/close_superseded_appends.sh", 2),
+    ("gh pr list", 2), ("jq length", 2), ("jq -c", 2),
+    ("git fetch", 2), ("git merge-base", 2),
+    ("bash scripts/restore_attestations.sh", 1),
+    ("sleep", 1),
+])
+def test_existing_append_command_timeout_is_attributed_and_fails(
+    tmp_path: Path, status: int, command: str, occurrence: int,
+) -> None:
+    """Fault each bounded call and ERR fallback in the real step's child shell."""
+    head = "d" * 40
+    initial = {"number": 99, "headRefName": "attestation/append-contract", "headRefOid": head,
+               "baseRefName": "main", "state": "OPEN", "isCrossRepository": False,
+               "createdAt": "2026-10-15T00:00:00Z", "autoMergeRequest": None,
+               "statusCheckRollup": [{"name": "deterministic-safety-net", "status": "COMPLETED",
+                                      "conclusion": "SUCCESS"}]}
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    # Stub the timeout boundary, retaining the real child shell and JSON parser.
+    # A timed-out read deliberately emits partial stdout to catch swallowed failures.
+    stub = bin_dir / "timeout"
+    stub.write_text(textwrap.dedent('''\
+        #!/bin/bash
+        set -eu
+        if [[ "${0##*/}" == timeout ]]; then shift 3; else set -- "${0##*/}" "$@"; fi
+        if [[ "$*" == "$FAIL_COMMAND"* ]]; then
+          count=0
+          if [[ -f "$COUNT_FILE" ]]; then read -r count < "$COUNT_FILE"; fi
+          count=$((count + 1))
+          echo "$count" > "$COUNT_FILE"
+          if [[ "$count" == "$FAIL_OCCURRENCE" ]]; then
+            printf '%q ' "$@" > "$FAILED_COMMAND_FILE"
+            echo partial-json
+            exit "$FAIL_STATUS"
+          fi
+        fi
+        case "$1 $2" in
+          "bash -Eeuo") exec "$@" ;;
+          "bash scripts/close_superseded_appends.sh")
+            if [[ "$#" -gt 2 ]]; then touch "$MERGED_MARKER"; fi ;;
+          "gh pr")
+            case "$3" in
+              list) if [[ -f "$MERGED_MARKER" ]]; then echo '[]'; else echo "[$INITIAL_PR]"; fi ;;
+              view) if [[ "$*" == *autoMergeRequest* || "$FAIL_COMMAND" == sleep ]]; then echo "$INITIAL_PR"; else echo "$MERGED_PR"; fi ;;
+              merge) : ;;
+              *) exit 2 ;;
+            esac ;;
+          "jq "*) exec "$@" ;;
+          "date "*) exec /usr/bin/date "${@:2}" ;;
+          "bash scripts/restore_attestations.sh") : ;;
+          "git "*) : ;;
+          *) exit 2 ;;
+        esac
+        '''))
+    stub.chmod(0o755)
+    for name in ("date", "sleep"):
+        (bin_dir / name).symlink_to(stub)
+    workflow_env = yaml.safe_load(_workflow())["env"]
+    env = {**os.environ, **{key: str(value) for key, value in workflow_env.items()},
+           "PATH": f"{bin_dir}:{os.environ['PATH']}", "GITHUB_REPOSITORY": "fixture/datapulse",
+           "PROMOTION_SOURCE_SHA": "c" * 40, "INITIAL_PR": json.dumps(initial),
+           "MERGED_PR": json.dumps({**initial, "state": "MERGED"}),
+           "FAIL_COMMAND": command, "FAIL_OCCURRENCE": str(occurrence), "FAIL_STATUS": str(status),
+           "COUNT_FILE": str(tmp_path / "count"), "FAILED_COMMAND_FILE": str(tmp_path / "failed"),
+           "MERGED_MARKER": str(tmp_path / "merged"), "GITHUB_OUTPUT": str(tmp_path / "outputs"),
+           "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
+    result = subprocess.run(["bash", "-c", _append_existing_step()["run"]], cwd=tmp_path, env=env,
+                            capture_output=True, text=True, timeout=10)
+    failed_command = (tmp_path / "failed").read_text().strip()
+    expected_command = command if command.startswith(("date", "sleep")) else failed_command
+    assert result.returncode == status, result.stdout + result.stderr
+    assert set((tmp_path / "outputs").read_text().splitlines()) == {"state=append-wait-failed"}
+    summary = (tmp_path / "summary").read_text()
+    for evidence in (result.stderr, summary):
+        assert expected_command in evidence
+        assert f"status {status}" in evidence
+        elapsed = re.search(r"elapsed (\d+)s", evidence)
+        assert elapsed is not None and int(elapsed[1]) < 1485, evidence
+        assert "patience 1485s" in evidence
+        assert "append-deferred" not in evidence
+    assert "::notice title=append-wait-failed::" in result.stderr
+
+
+@pytest.mark.parametrize("existing", [False, True], ids=["submitted", "already-open"])
+@pytest.mark.parametrize("scenario", [
+    "closed", "failure", "cancelled", "timed_out", "force_push", "merged_force_push",
+    "lookup_failed", "pending_merge", "exhausted", "not_reported", "legacy_failure", "proof_failed",
+])
+def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scenario: str) -> None:
+    """Exercise both real shell loops with bounded API stubs and a virtual clock."""
+    run_script = _append_existing_step()["run"] if existing else _append_acceptance_harness()
+    head = "d" * 40
+    initial = {"number": 99, "headRefName": "attestation/append-contract", "headRefOid": head,
+               "baseRefName": "main", "state": "OPEN", "isCrossRepository": False,
+               "createdAt": "2026-10-15T00:00:00Z", "autoMergeRequest": None, "statusCheckRollup": []}
+    required = {"name": "deterministic-safety-net", "status": "IN_PROGRESS", "conclusion": ""}
+    polled = {**initial, "statusCheckRollup": [required]}
+    if scenario == "closed":
+        polled["state"] = "CLOSED"
+    elif scenario in {"failure", "cancelled", "timed_out"}:
+        required.update(status="COMPLETED", conclusion=scenario.upper())
+    elif scenario == "legacy_failure":
+        polled["statusCheckRollup"] = [{"context": "deterministic-safety-net", "state": "FAILURE"}]
+    elif scenario in {"force_push", "merged_force_push"}:
+        polled["headRefOid"] = "e" * 40
+        if scenario == "merged_force_push":
+            polled["state"] = "MERGED"
+    elif scenario == "not_reported":
+        polled["statusCheckRollup"] = []
+    elif scenario == "proof_failed":
+        polled["state"] = "MERGED"
+        required.update(status="COMPLETED", conclusion="SUCCESS")
+    # An unrelated failing check must not abort the pending required check.
+    if scenario == "pending_merge":
+        polled["statusCheckRollup"].append({"name": "other", "status": "COMPLETED", "conclusion": "FAILURE"})
+    merged = {**initial, "state": "MERGED", "statusCheckRollup": [
+        {"name": "deterministic-safety-net", "status": "COMPLETED", "conclusion": "SUCCESS"},
+    ]}
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts/submit_attestation_append.sh").write_text(
+        'echo submit >> "$CALL_LOG"\n'
+        'if [[ "${1:-}" == --rebuild ]]; then exit 1; fi\n'
+    )
+    (tmp_path / "scripts/close_superseded_appends.sh").write_text('echo close >> "$CALL_LOG"\n')
+    (tmp_path / "scripts/restore_attestations.sh").write_bytes(
+        (ROOT / "scripts/restore_attestations.sh").read_bytes()
+    )
+    (bin_dir / "gh").write_text(
+        '#!/bin/bash\necho "gh $*" >> "$CALL_LOG"\n'
+        'case "$1 $2" in\n'
+        ' "pr list") if [[ "$EXISTING" == 1 && ! -f "$MERGED_MARKER" ]]; then echo "$OPEN_PRS"; else echo "[]"; fi ;;\n'
+        ' "pr merge") : ;;\n'
+        ' "pr view")\n'
+        '   if [[ "$*" != *statusCheckRollup* || "$*" == *autoMergeRequest* || "$*" == *headRefName* ]]; then echo "$INITIAL_PR";\n'
+        '   elif [[ "$SCENARIO" == lookup_failed ]]; then exit 124;\n'
+        '   elif [[ "$SCENARIO" == pending_merge && -f "$POLL_MARKER" ]]; then echo "$MERGED_PR"; touch "$MERGED_MARKER";\n'
+        '   else echo "$POLLED_PR"; touch "$POLL_MARKER"; fi ;;\n'
+        ' *) exit 2 ;;\nesac\n'
+    )
+    (bin_dir / "python3").write_text(
+        '#!/bin/bash\necho "verify $*" >> "$CALL_LOG"\n'
+        'if [[ "$*" == *--require-committed* ]]; then exit 1; fi\n'
+        'if [[ "$*" == *--wait-for-acceptance* ]]; then\n'
+        '  [[ "$SCENARIO" == pending_merge ]] && exit 0\n'
+        '  [[ "$SCENARIO" == proof_failed ]] && exit 1\n'
+        '  exit 75\n'
+        'fi\n'
+    )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\necho "git $*" >> "$CALL_LOG"\n'
+        'case "$*" in\n'
+        ' "branch --show-current") echo attestation/append-contract ;;\n'
+        ' "rev-parse HEAD") echo "$APPEND_SHA" ;;\n'
+        ' "rev-parse --show-toplevel") printf "%s\\n" "$PWD" ;;\n'
+        ' "rev-parse --verify --quiet "*) printf "%s\\n" "$PROMOTION_SOURCE_SHA" ;;\n'
+        ' "merge-base "*) [[ "$SCENARIO" != proof_failed ]] ;;\n'
+        ' "fetch "*|"restore "*|"diff "*) : ;;\n'
+        ' *) exit 2 ;;\nesac\n'
+    )
+    for stub in bin_dir.iterdir():
+        stub.chmod(0o755)
+    log = tmp_path / "calls.log"
+    workflow_env = yaml.safe_load(_workflow())["env"]
+    patience = int(workflow_env["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
+    worst_observed = int(workflow_env["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"])
+    env = {**os.environ, **{key: str(value) for key, value in workflow_env.items()},
+           "PATH": f"{bin_dir}:{os.environ['PATH']}", "GITHUB_REPOSITORY": "fixture/datapulse",
+           "PROMOTION_SOURCE_SHA": "c" * 40, "APPEND_SHA": head, "EXISTING": str(int(existing)),
+           "SCENARIO": scenario, "CALL_LOG": str(log), "INITIAL_PR": json.dumps(initial),
+           "OPEN_PRS": json.dumps([initial]), "POLLED_PR": json.dumps(polled), "MERGED_PR": json.dumps(merged),
+           "POLL_MARKER": str(tmp_path / "polled"), "MERGED_MARKER": str(tmp_path / "merged"),
+           "GITHUB_OUTPUT": str(tmp_path / "outputs"), "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
+    # Skip real sleeping. A successful check takes the measured worst-observed duration, while
+    # undecided cases advance to the configured patience without accepting.
+    advance = f"started + {worst_observed}" if scenario == "pending_merge" else "deadline"
+    run = re.sub(r'^\s*sleep .*$', f'echo slept >> "$CALL_LOG"; SECONDS=$(({advance}))',
+                 run_script, flags=re.MULTILINE)
+    result = subprocess.run(["bash", "-c", run], cwd=tmp_path, env=env,
+                            capture_output=True, text=True, timeout=10)
+    calls = log.read_text().splitlines()
+    read_timeout = existing and scenario == "lookup_failed"
+    deferred = scenario in {"exhausted", "not_reported"} or (scenario == "lookup_failed" and not existing)
+    assert (result.returncode == 0) is (scenario == "pending_merge" or deferred), result.stdout + result.stderr
+    assert ("slept" in calls) is (scenario in {"pending_merge", "exhausted", "not_reported"}
+                                  or (scenario == "lookup_failed" and not existing))
+    if read_timeout:
+        assert result.returncode == 124
+        assert "gh pr view 99" in result.stderr
+        assert set((tmp_path / "outputs").read_text().splitlines()) == {"state=append-wait-failed"}
+    elif scenario != "pending_merge" and not deferred:
+        assert "PR #99" in result.stderr
+        assert "(attestation/append-contract)" in result.stderr
+        assert "deterministic-safety-net:" in result.stderr
+    if deferred:
+        assert (tmp_path / "outputs").read_text() == "state=append-deferred\n"
+        assert "signing and deploy skipped" in (tmp_path / "summary").read_text().lower()
+    if scenario in {"exhausted", "not_reported"}:
+        summary = (tmp_path / "summary").read_text()
+        elapsed_match = re.search(r"elapsed (\d+)s", summary)
+        assert elapsed_match is not None, summary
+        assert patience <= int(elapsed_match.group(1)) <= patience + 1, summary
+        assert f"patience {patience}s" in summary
+        assert ("not reported" if scenario == "not_reported" else "IN_PROGRESS/") in summary
+    if scenario in {"failure", "cancelled", "timed_out", "legacy_failure"}:
+        assert "Append required check failed" in result.stderr
+    if scenario in {"force_push", "merged_force_push"}:
+        assert "Append head changed" in result.stderr
+    if not existing and scenario not in {"pending_merge", "exhausted", "not_reported", "proof_failed"}:
+        assert not any("--wait-for-acceptance" in call for call in calls)
+
+
+def test_append_acceptance_wrapper_kills_term_resistant_children(tmp_path: Path) -> None:
+    run = _append_acceptance_step()["run"]
+    wait = next(line.strip().removeprefix("if ! ").removesuffix("; then")
+                for line in run.splitlines() if "--wait-for-acceptance 0; then" in line)
+    # Exercise the actual wrapper without waiting for its production budget.
+    wait = wait.removeprefix("if ")
+    helpers = run.split("named_timeout()", 1)
+    wrapper = "named_timeout()" + helpers[1].split("retry_timeout()", 1)[0]
+    wrapper = wrapper.replace('timeout -k 5s "${cap}s"', 'timeout -k 0.1s "${cap}s"')
+    wait = wrapper + "\n" + wait.replace("named_timeout 240 ", "named_timeout 1 ")
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    verifier = bin_dir / "python3"
+    verifier.write_text('#!/bin/bash\ntrap "" TERM\nsleep 30 &\nwait\n')
+    verifier.chmod(0o755)
+    result = subprocess.run(
+        ["bash", "-c", wait + '\nstatus=$?\nexit "$status"'],
+        cwd=tmp_path,
+        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "PROMOTION_SOURCE_SHA": "c" * 40},
+        capture_output=True, text=True, timeout=5,
+    )
+    # Captured pipes must close too: killing only the verifier would leave its
+    # TERM-resistant child holding them open and exhaust the five-second bound.
+    assert result.returncode == 137, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize(
+    ("committed", "pulls", "gh_status", "expected_submit", "expected_append"),
+    [
+        (True, [], 0, False, None),
+        (False, [], 0, True, None),
+        (False, [{"number": 12, "headRefName": "feature/other"}], 0, True, None),
+        (False, [{"number": 998, "headRefName": "attestation/append-abc123"}], 0, False, "#998 (attestation/append-abc123)"),
+        (False, [
+            {"number": 12, "headRefName": "feature/other"},
+            {"number": 996, "headRefName": "attestation/append-def456"},
+        ], 0, False, "#996 (attestation/append-def456)"),
+        (False, [
+            {"number": number, "headRefName": f"feature/{number}"}
+            for number in range(1000)
+        ], 0, False, None),
+        (False, [], 2, False, None),
+    ],
+)
+@pytest.mark.parametrize(
+    ("wait_accepted", "pr_state", "recheck_status", "check_status"),
+    [
+        (True, "MERGED", 0, 0),
+        (False, "MERGED", 1, 0),
+        (False, "OPEN", 1, 0),
+        (False, "OPEN", 137, 124),
+        (True, "OPEN", 0, 0),  # The exact candidate merged at the deadline.
+    ],
+)
+@pytest.mark.parametrize("arm_status", [0, 1])
+def test_append_acceptance_guard_is_fail_closed_and_deterministic(
+    tmp_path: Path,
+    committed: bool,
+    pulls: list[dict],
+    gh_status: int,
+    expected_submit: bool,
+    expected_append: str | None,
+    wait_accepted: bool,
+    pr_state: str,
+    recheck_status: int,
+    check_status: int,
+    arm_status: int,
+) -> None:
+    step = _append_acceptance_step()
+    assert step["env"]["GH_TOKEN"] == "${{ steps.acceptance-wait-token.outputs.token }}"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (tmp_path / "scripts").mkdir()
+    (bin_dir / "python3").write_text(
+        '#!/bin/bash\nprintf "verify %s\\n" "$*" >> "$CALL_LOG"\n'
+        'if [[ "$*" == *"--wait-for-acceptance 0" ]]; then exit "$RECHECK_STATUS"; fi\n'
+        '[[ "$*" != *--require-committed* ]] || [[ "$COMMITTED" == 1 ]]\n'
+    )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\n'
+        'case "$*" in\n'
+        '  "branch --show-current") printf "attestation/append-contract\\n" ;;\n'
+        '  "rev-parse HEAD") printf "%s\\n" "$APPEND_SHA" ;;\n'
+        '  *) exit 2 ;;\n'
+        'esac\n'
+    )
+    (bin_dir / "gh").write_text(
+        '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\n'
+        'case "$1 $2" in\n'
+        '  "pr list") printf "%s\\n" "$OPEN_PRS"; exit "$GH_STATUS" ;;\n'
+        '  "pr view")\n'
+        '    if [[ "$*" == *statusCheckRollup* && "$*" != *headRefName* ]]; then printf "%s\\n" "$POLLED_PR"; exit "$CHECK_STATUS";\n'
+        '    else printf "{\\"number\\":%s,\\"headRefName\\":\\"%s\\",'
+        '\\"headRefOid\\":\\"%s\\",\\"baseRefName\\":\\"main\\",'
+        '\\"isCrossRepository\\":false,\\"state\\":\\"OPEN\\",'
+        '\\"createdAt\\":\\"2026-10-15T00:00:00Z\\",\\"autoMergeRequest\\":null,'
+        '\\"statusCheckRollup\\":[{\\"name\\":\\"deterministic-safety-net\\",'
+        '\\"status\\":\\"COMPLETED\\",\\"conclusion\\":\\"SUCCESS\\"}]}\\n" '
+        '"$PR_NUMBER" "$PR_BRANCH" "$APPEND_SHA"; fi ;;\n'
+        '  "pr merge") exit "$ARM_STATUS" ;;\n'
+        '  *) exit 2 ;;\n'
+        'esac\n'
+    )
+    (tmp_path / "scripts/submit_attestation_append.sh").write_text(
+        'printf "submit\\n" >> "$CALL_LOG"\n'
+    )
+    (tmp_path / "scripts/close_superseded_appends.sh").write_text(
+        'printf "close\\n" >> "$CALL_LOG"\n'
+    )
+    for stub in (bin_dir / "python3", bin_dir / "git", bin_dir / "gh"):
+        stub.chmod(0o755)
+    log = tmp_path / "calls.log"
+    output = tmp_path / "outputs"
+    summary = tmp_path / "summary"
+    pulls = [({"baseRefName": "main", "headRefOid": "d" * 40,
+               "createdAt": "2026-10-15T00:00:00Z", **pull}
+              if pull["headRefName"].startswith("attestation/append-") else pull)
+             for pull in pulls]
+    open_append = next((pull for pull in pulls if pull["headRefName"].startswith("attestation/append-")), None)
+    env = {
+        **os.environ,
+        **{key: str(value) for key, value in yaml.safe_load(_workflow())["env"].items()},
+        "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        "GITHUB_REPOSITORY": "example/data-pulse",
+        "GITHUB_SHA": "b" * 40,
+        "PROMOTION_SOURCE_SHA": "c" * 40,
+        "GH_TOKEN": "test-token",
+        "CALL_LOG": str(log),
+        "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(summary),
+        "COMMITTED": "1" if committed else "0",
+        "OPEN_PRS": json.dumps(pulls),
+        "PR_NUMBER": str(open_append["number"] if open_append else 99),
+        "PR_BRANCH": open_append["headRefName"] if open_append else "attestation/append-contract",
+        "GH_STATUS": str(gh_status),
+        "ARM_STATUS": str(arm_status),
+        "APPEND_SHA": "d" * 40,
+        "RECHECK_STATUS": str(recheck_status),
+        "CHECK_STATUS": str(check_status),
+        "POLLED_PR": json.dumps({
+            "headRefOid": "d" * 40,
+            "state": pr_state,
+            "statusCheckRollup": [{"name": "deterministic-safety-net", "status": "COMPLETED", "conclusion": "SUCCESS"}],
+        }),
+    }
+    outputs = []
+    expected_state = None
+    if committed:
+        expected_state = "accepted"
+    elif gh_status == 0 and len(pulls) < 1000 and arm_status == 0:
+        if check_status in {124, 137} or recheck_status in {124, 137}:
+            expected_state = "append-deferred"
+        elif check_status == 0 and recheck_status == 0:
+            expected_state = "accepted"
+    for _ in range(2):
+        log.write_text("")
+        output.write_text("")
+        summary.write_text("")
+        result = subprocess.run(
+            ["/bin/bash", "-c", re.sub(r'^\s*sleep .*$', '              SECONDS=$deadline', _append_acceptance_harness(), flags=re.MULTILINE)],
+            cwd=tmp_path, env=env, capture_output=True, text=True, check=False,
+        )
+        calls = log.read_text().splitlines()
+        # Elapsed wall time is deliberately reported, so normalize only that
+        # measurement when comparing two otherwise identical executions.
+        measured_stderr = re.sub(r"elapsed \d+s", "elapsed <measured>s", result.stderr)
+        measured_stderr = re.sub(r"\d+s remaining", "<measured>s remaining", measured_stderr)
+        outputs.append((result.returncode, re.sub(r"age \d+s", "age <measured>s", result.stdout),
+                        measured_stderr,
+                        output.read_text(), calls))
+        assert ("submit" in calls) is expected_submit
+        assert "verify scripts/verify_attestation_append.py --base HEAD" in calls
+        assert "verify scripts/verify_attestation_append.py --base HEAD --require-committed" in calls
+        if not committed:
+            assert (
+                "gh pr list --repo example/data-pulse --state open --limit 1000 "
+                "--json number,headRefName,headRefOid,baseRefName,createdAt"
+            ) in calls
+        else:
+            assert not any(call.startswith("gh ") for call in calls)
+        if expected_append:
+            assert expected_append in result.stdout
+            assert "Already-open append PR" in result.stdout
+        if len(pulls) == 1000:
+            assert "list reached 1000" in result.stderr
+        if expected_submit:
+            assert (
+                "gh pr view attestation/append-contract --repo example/data-pulse "
+                "--json number,headRefName,headRefOid,baseRefName,isCrossRepository,state,createdAt,autoMergeRequest,statusCheckRollup"
+            ) in calls
+            assert f"gh pr merge --auto --merge 99 --repo example/data-pulse --match-head-commit {'d' * 40}" in calls
+            wait_call = f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 0"
+            assert (wait_call in calls) is (arm_status == 0 and check_status == 0)
+            if arm_status:
+                assert "Could not arm merge-on-green for PR #99" in result.stderr
+            elif not wait_accepted:
+                if expected_state == "append-deferred":
+                    assert "append-deferred" in summary.read_text()
+                    assert "signing and deploy skipped" in summary.read_text().lower()
+                else:
+                    assert "::error title=Append acceptance proof failed::" in result.stderr
+                    assert "PR #99" in result.stderr
+                    assert "deterministic-safety-net:" in result.stderr
+                    assert "COMPLETED/SUCCESS" in result.stderr
+                    assert "elapsed " in result.stderr
+            if arm_status == 0 and not check_status:
+                assert f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 0" in calls
+        assert (result.returncode == 0) is (expected_state is not None), result.stdout + result.stderr
+        assert output.read_text() == (f"state={expected_state}\n" if expected_state else "")
+    assert outputs[0] == outputs[1]
 
 
 def _served_verifier() -> str:
@@ -983,7 +1699,8 @@ def test_health_only_path_is_selected_only_by_the_generated_output_classifier() 
     assert "if: needs.sign_health.outputs.health_only != 'true'" in workflow
     deploy_job = workflow.split("  deploy:\n", 1)[1].split("    steps:\n", 1)[0]
     assert (
-        "if: needs.sign_health.outputs.accepted_head_state == 'accepted'"
+        "if: needs.sign_health.outputs.health_only == 'true' || "
+        "needs.sign_health.outputs.append_state == 'accepted'"
     ) in deploy_job
     assert "Deploy canonical Cloudflare Pages artifact" in workflow
 
@@ -1118,7 +1835,7 @@ def test_pages_settlement_is_bounded_and_pins_the_promoted_revision() -> None:
     assert '"$current_sha" != "$PROMOTION_SOURCE_SHA"' in guard["run"]
     assert jobs["sign_health"]["steps"].index(guard) < next(
         i for i, step in enumerate(jobs["sign_health"]["steps"])
-        if step.get("id") == "accepted_head"
+        if step.get("name") == "Refresh legacy chain head before signing"
     )
 
 
@@ -1699,7 +2416,7 @@ def test_native_pages_scopes_attestation_key_setup_to_non_health_release_build()
     assert secret_expression not in verify_run
     assert secret_expression not in health_step.get("run", "")
     assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" not in health_step
-    assert _workflow().count(secret_expression) == 2
+    assert _workflow().count(secret_expression) == 3
 
     setup = (
         'if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then',
@@ -1895,14 +2612,28 @@ def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() ->
     assert "projection['checked_at'] < health['checked_at']" in verify
 
 
-def test_sign_health_verifies_accepted_head_before_statement_and_cosign() -> None:
-    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
-    names = [step.get("name") for step in steps]
-    guard = next(step for step in steps if step.get("id") == "accepted_head")
-    assert "if" not in guard and "continue-on-error" not in guard
-    assert names.index(guard["name"]) < names.index("Generate deterministic health attestation statement")
-    assert names.index("Generate deterministic health attestation statement") < names.index("Sign and verify current health DSSE bundle")
-    assert 'verify_contract(root, require_rekor=True, allow_newer_health=False)' in guard["run"]
+def test_sign_health_refreshes_chain_head_before_signing() -> None:
+    """The Sigstore statement must be generated from a freshly refreshed chain head."""
+    workflow = _workflow()
+    sign_health = workflow.split("  sign_health:\n", 1)[1].split("\n  deploy:\n", 1)[0]
+
+    assert "Refresh legacy chain head before signing" in sign_health
+    assert "bash scripts/refresh_chain_head.sh" in sign_health
+    assert "Generate deterministic health attestation statement" in sign_health
+    assert (
+        sign_health.index("Refresh legacy chain head before signing")
+        < sign_health.index("Generate deterministic health attestation statement")
+    )
+    refresh_step = sign_health.split(
+        "      - name: Refresh legacy chain head before signing\n", 1
+    )[1].split("      - name: Generate deterministic health attestation statement\n", 1)[0]
+
+    assert "if: needs.sign_health.outputs.health_only != 'true'" not in refresh_step
+    assert "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}" in refresh_step
+    assert 'accepted_discovery(root, "origin/main")' in refresh_step
+    assert "ga.agrees(root, directory, manifest, ga.health_binding(root, health), registry, None)" in refresh_step
+    assert "Reusing accepted same-day envelope; projections remain unchanged." in refresh_step
+    assert "bash scripts/refresh_chain_head.sh" in refresh_step
 
 
 def test_health_only_signed_artifact_carries_and_overlays_the_generated_attestation_plane() -> None:

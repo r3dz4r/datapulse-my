@@ -19,13 +19,28 @@ SCRIPT = ROOT / "scripts/publication_chain.py"
 WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
 
 
-def test_publication_chain_uses_verified_main_head_without_append_tokens() -> None:
-    signing = yaml.safe_load(WORKFLOW.read_text())["jobs"]["sign_health"]
-    assert signing["outputs"]["accepted_head_state"] == "${{ steps.accepted_head.outputs.state }}"
-    assert not any(step.get("uses") == "actions/create-github-app-token@v1" for step in signing["steps"])
-    guard = next(step for step in signing["steps"] if step.get("id") == "accepted_head")
-    assert "if" not in guard
-    assert 'accepted = accepted_discovery(root, revision)' in guard["run"]
+def test_append_publication_chain_uses_phase_outputs_after_fresh_tokens() -> None:
+    signing = workflow()["jobs"]["sign_health"]
+    steps = signing["steps"]
+    by_id = {step.get("id"): step for step in steps}
+    for consumer_id, mint_id in (
+        ("existing_append", "append-token"),
+        ("append_submission", "submission-append-token"),
+        ("append_acceptance", "acceptance-wait-token"),
+    ):
+        consumer = by_id[consumer_id]
+        mint = steps[steps.index(consumer) - 1]
+        assert mint["id"] == mint_id
+        assert mint["uses"] == "actions/create-github-app-token@v1"
+        assert consumer["env"]["GH_TOKEN"] == f"${{{{ steps.{mint_id}.outputs.token }}}}"
+        assert consumer["timeout-minutes"] < 60
+    assert by_id["append_acceptance"]["env"]["APPEND_PREP_STATE"] == (
+        "${{ steps.append_submission.outputs.state }}"
+    )
+    assert signing["outputs"]["append_state"] == (
+        "${{ steps.existing_append.outputs.state == 'append-deferred' && 'append-deferred' "
+        "|| steps.append_acceptance.outputs.state }}"
+    )
 
 
 def inputs(**overrides: object) -> dict[str, object]:
