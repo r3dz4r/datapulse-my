@@ -8,7 +8,7 @@ sources:
   - {"id": "ktmb","resource": "https://api.data.gov.my/gtfs-static/ktmb","title": "Keretapi Tanah Melayu Berhad (KTMB)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-23T21:55:09Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T22:24:46Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Keretapi Tanah Melayu Berhad"
