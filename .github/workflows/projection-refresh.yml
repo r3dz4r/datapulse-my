@@ -1,0 +1,140 @@
+name: Refresh accepted attestation projections
+
+on:
+  push:
+    branches: [main]
+    paths: ['attestations/**']
+  schedule:
+    - cron: '52 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: projection-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    # RELEASE_APP_PRIVATE_KEY is a production-environment secret, so this job
+    # must declare the environment or the App token cannot be minted.
+    environment: production
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install projection verification dependency
+        run: python3 -m pip install cryptography==50.0.0
+
+      - name: Derive accepted projections on main
+        id: projections
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(python3 scripts/gen_attestation_projections.py 2>&1)"
+          result=$?
+          set -e
+          printf '%s\n' "$output"
+          if (( result == 2 )); then
+            reason="${output//$'\n'/; }"
+            echo "::error title=Projection refresh refused::Writer exited 2 (append-only violation or acceptance-boundary refusal): $reason"
+            exit 2
+          fi
+          if (( result != 0 )); then
+            echo "::error::Projection refresh failed with exit $result."
+            exit "$result"
+          fi
+          if git diff --quiet -- .attestations/chain_head.json attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json attestations/latest/binding.json attestations/latest/scores.json; then
+            echo 'UNCHANGED: there was nothing to refresh.'
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          previous_head="$(git rev-parse HEAD)"
+          derived_head="$(jq -r '.chain_head' attestations/latest/chain_head.json)"
+          days_before="$(git show HEAD:attestations/chain-index.json | jq '.days | length')"
+          days_after="$(jq '.days | length' attestations/chain-index.json)"
+          {
+            echo "changed=true"
+            echo "previous_head=$previous_head"
+            echo "derived_head=$derived_head"
+            echo "days_before=$days_before"
+            echo "days_after=$days_after"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Close superseded projection pull requests
+        if: steps.projections.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GH_REPO}/pulls?state=open&per_page=100" \
+            --jq '.[] | select(.head.ref | startswith("projection/refresh-")) | [.number, .head.ref] | @tsv' |
+            while IFS=$'\t' read -r number head; do
+              if [[ "$head" == "projection/refresh-${GITHUB_RUN_ID}" ]]; then
+                continue
+              fi
+              gh pr comment "$number" --body "Superseded by projection refresh run ${GITHUB_RUN_ID}."
+              gh pr close "$number"
+            done
+
+      - name: Create and push refresh branch
+        if: steps.projections.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          git switch -c "projection/refresh-${GITHUB_RUN_ID}"
+          if ! python3 scripts/gen_attestation_projections.py --check; then
+            echo '::error title=Projection verification failed::Generated projections did not pass --check; no branch was pushed.'
+            exit 1
+          fi
+          git add -- .attestations/chain_head.json attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json attestations/latest/binding.json attestations/latest/scores.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(attestations): refresh accepted projections'
+          git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' \
+            push --set-upstream origin "projection/refresh-${GITHUB_RUN_ID}"
+
+      - name: Open pull request and enable auto-merge
+        if: steps.projections.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          head="projection/refresh-${GITHUB_RUN_ID}"
+          body="$(cat <<'BODY'
+          Accepted projection refresh derived from head ${{ steps.projections.outputs.derived_head }}.
+
+          Previous committed head: ${{ steps.projections.outputs.previous_head }}
+          Day count: ${{ steps.projections.outputs.days_before }} → ${{ steps.projections.outputs.days_after }}.
+          BODY
+          )"
+          url="$(gh pr create --base main --head "$head" \
+            --title 'chore(attestations): refresh accepted projections' \
+            --body "$body")"
+          number="${url##*/}"
+          echo "Opened pull request #$number for $head -> main."
+          gh pr merge "$number" --auto --squash
+          echo "Enabled squash auto-merge on pull request #$number."

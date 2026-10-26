@@ -8,7 +8,7 @@ sources:
   - {"id": "immigration","resource": "https://api.data.gov.my/data-catalogue?id=passports","title": "Immigration Department of Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:04:39Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Immigration Department of Malaysia"
@@ -28,7 +28,7 @@ Monthly Passport Issuances by State and Branch is published by Immigration Depar
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:73cea601374018b9e40a37c318581d6f6df68905fc83ac0d229815620d94facc`
-- `record_count`: `7920`
+- `record_count`: `7314`
 
 # Quirks
 

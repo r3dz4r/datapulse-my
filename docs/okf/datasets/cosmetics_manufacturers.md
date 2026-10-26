@@ -8,7 +8,7 @@ sources:
   - {"id": "npra","resource": "https://storage.data.gov.my/healthcare/cosmetic_manufacturers.csv","title": "National Pharmaceutical Regulatory Agency and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-12T18:33:27Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T22:24:46Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Pharmaceutical Regulatory Agency, Ministry of Health Malaysia"
@@ -26,7 +26,7 @@ Approved Manufacturers of Cosmetic Products is published by National Pharmaceuti
 
 - `column_count`: `5`
 - `first_row_hash`: `shape-v1:ee26b4b00c9d9aeca18fd7c1123d6321341c51c7d2349b0a25cc1a772d158413`
-- `record_count`: `629`
+- `record_count`: `634`
 
 # Quirks
 

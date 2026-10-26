@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 32.0,
+        "latest_days": 7.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-17T11:55:36Z",
-    "record_count": 1442,
+    "last_checked": "2026-10-24T12:04:39Z",
+    "record_count": 1456,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Monthly Core CPI Inflation",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-17T11:55:36Z",
+    "observed_verified_at": "2026-10-24T12:04:39Z",
     "source": "OpenDOSM (also indexed by data.gov.my)",
     "steward": "Department of Statistics Malaysia"
   },
@@ -2298,12 +2298,12 @@
     "schema": "record-evidence/v1"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-10/cpi_core_inflation.json",
-    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/cpi_core_inflation.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/cpi_core_inflation.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:af3b0321cd033172cf94654fa20826f1514a8516513247c396533ee446ad9bb7",
+      "receipt_digest": "sha256:8740f5860acf0558cb915f62e2d08e87810504ad3e4830ea773bb6013cb22652",
       "sigstore_path": "data/cpi_core_inflation.receipt.sigstore.json",
       "statement_path": "data/cpi_core_inflation.receipt.statement.json"
     },

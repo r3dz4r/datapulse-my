@@ -13,6 +13,7 @@ Working agreement for AI agents (Hermes, Codex, Claude Code) operating inside th
 1. **Do not write/edit/refactor code.** Dispatch `codex-run` (with a tight brief). You may edit `.gitignore`, commit messages, and markdown files under `docs/` — those are operator-owned. **A dispatched worker is the exception and must write the scoped code itself:** this rule addresses the Hermes orchestrator, not the worker, and it does not authorise a worker to dispatch another agent. A worker that stops because it read this rule as applying to itself has misread it — report any other conflict, but not this one.
 2. **No `--yolo`, no bypassing preflight gates.** The deterministic-safety-net job in `.github/workflows/ci.yml` must stay green. If it fails, fix the gate (or the brief that fed into it) — don't silence the failure.
 3. **Push requires explicit "push".** "Proceed" / "go" / "dispatch codex" authorises only the *immediately preceding, clearly scoped* action. "Push" must be literal.
+   - **Exception — the health-automation publish lane merges itself (operator decision 2026-10-23).** `.github/workflows/health-automation-merge.yml` merges `health-automation` into `main` on green, using the `datapulse-release` App, with `autoMerge=true`. Measured on PR #2629: merged 2026-10-23T13:29:37Z by `app/datapulse-release` **before** any operator word was given. The gate on that path is the required checks — `deterministic-safety-net` and the isolated preview — not a human message, so **no agent should ask for "push" to release a health-automation publish**; asking after the fact is how a completed merge gets reported as pending. The literal word still governs every other push: operator commits, source changes, release-please, attestation appends, and anything merged by hand.
 4. **Never silently rotate credentials, edit firewall rules, or stop `systemd` services** on the public-facing VPS (`https://data-pulse.my`). These are always-ask.
 5. **No upstream mutations.** Datapulse MY is read-only by design. New code must NOT write to `data.gov.my`, `BNM`, `DOSM`, or any other upstream. If a use case requires writes, that's a different product — not this repo.
 6. **The 10-status taxonomy is stable.** Adding a status requires changing `gen_health_methodology.py`, `embed_dashboard_data.py`, `gen_changelog.py`, the dashboard hero, `mcp/server.py`, AND the public-facing methodology page. If you think you need an 11th status, surface it to the operator first.
@@ -50,7 +51,7 @@ datapulse-my/
 │   ├── trust-layer-notebook.AGENTS.md
 │   └── ...
 │
-├── scripts/                   # 129 Python files driving the pipeline
+├── scripts/                   # 132 Python files driving the pipeline
 │   ├── gen_*.py               # generators (regenerate artifacts from sources)
 │   ├── verify_*.py            # invariants (release-blocking)
 │   ├── validate_*.py          # schema + content validators

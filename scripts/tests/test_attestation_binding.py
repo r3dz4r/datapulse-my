@@ -45,23 +45,31 @@ def dump(path: Path, value: object) -> None:
     path.write_text(json.dumps(value) + "\n", encoding="utf-8")
 
 
-def test_latest_pipeline_scores_can_advance_but_chain_head_cannot_diverge(tmp_path: Path) -> None:
+def test_latest_scores_must_match_frozen_bytes_and_chain_head_cannot_diverge(tmp_path: Path) -> None:
     root = generated_root(tmp_path)
     directory = selected_directory(root)
     score_path = root / "attestations/latest/scores.json"
+    frozen_scores = root / directory / "scores.json"
+    assert score_path.read_bytes() == frozen_scores.read_bytes()
+    assert selected_directory(root) == directory
+    score_path.write_bytes(frozen_scores.read_bytes() + b" ")
+    with pytest.raises(ContractError, match="latest projection is stale or mixed"):
+        selected_directory(root)
+    score_path.write_bytes(frozen_scores.read_bytes())
     scores = load(score_path)
     scores["generated_at"] = "2026-08-15T02:00:00Z"
     dump(score_path, scores)
-    assert score_path.read_bytes() != (root / directory / "scores.json").read_bytes()
-    assert selected_directory(root) == directory
+    assert score_path.read_bytes() != frozen_scores.read_bytes()
+    with pytest.raises(ContractError, match="latest projection is stale or mixed"):
+        selected_directory(root)
 
     scores["generated_at"] = "2026-08-15T00:00:00Z"
     dump(score_path, scores)
     with pytest.raises(ContractError, match="latest projection is stale or mixed"):
         selected_directory(root)
 
-    scores["generated_at"] = "2026-08-15T02:00:00Z"
-    dump(score_path, scores)
+    score_path.write_bytes(frozen_scores.read_bytes())
+    assert selected_directory(root) == directory
     head_path = root / "attestations/latest/chain_head.json"
     head_path.write_bytes(head_path.read_bytes() + b" ")
     with pytest.raises(ContractError, match="latest projection is stale or mixed"):

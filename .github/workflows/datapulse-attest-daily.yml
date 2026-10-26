@@ -188,10 +188,6 @@ jobs:
           fi
           python3 scripts/verify_attestation_append.py --base HEAD
 
-      - name: Remove ephemeral Ed25519 attestation key
-        if: always()
-        run: rm -f -- "$RUNNER_TEMP/datapulse-attestation-key.json"
-
       - uses: actions/create-github-app-token@v1
         id: app-token
         with:
@@ -202,3 +198,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: bash scripts/submit_attestation_append.sh
+
+      - name: Remove ephemeral Ed25519 attestation key
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/datapulse-attestation-key.json"

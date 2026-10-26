@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 182.0,
+        "latest_days": 24.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-17T11:55:36Z",
-    "record_count": 1006,
+    "last_checked": "2026-10-24T12:04:39Z",
+    "record_count": 1182,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:985570debd771f745e36115ac3898272e3d567d2b21d8d391804e1a61fcfa9f4"
     },
-    "status": "stale"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=government_apps_reviews",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Transactional Data: User Reviews of Government Mobile Applications",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-17T11:55:36Z",
+    "observed_verified_at": "2026-10-24T12:04:39Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "National Digital Department and Ministry of Digital"
   },
@@ -946,12 +946,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-10/government_apps_reviews.json",
-    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/government_apps_reviews.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/government_apps_reviews.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:1103dad4161fbfe24a16943759d380c91fbd9656ad805b9ea42f507006499bed",
+      "receipt_digest": "sha256:90583863083e7336a0c6208d3de07c3bba06ee41dc1fb0c6cfc1ff465b1785d7",
       "sigstore_path": "data/government_apps_reviews.receipt.sigstore.json",
       "statement_path": "data/government_apps_reviews.receipt.statement.json"
     },

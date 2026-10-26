@@ -277,10 +277,10 @@ def test_one_build_identity_reaches_signing_and_download_without_latest_name_loo
     production = _step(PUBLISH, "deploy", "Deploy canonical Cloudflare Pages artifact")["run"]
     assert '--commit-hash="$PROMOTION_SOURCE_SHA"' in production
     assert classify["permissions"]["actions"] == deploy["permissions"]["actions"] == "read"
-    preflight = _step(PUBLISH, "classify", "Require available verified build before preparing any append")
+    preflight = _step(PUBLISH, "classify", "Require available verified build before signing")
     assert "if" not in preflight
     assert preflight["with"]["run-id"] == "${{ steps.build.outputs.run_id }}"
-    assert "if" not in _step(PUBLISH, "classify", "Verify build handoff before preparing any append")
+    assert "if" not in _step(PUBLISH, "classify", "Verify build handoff before signing")
     checkout = next(step for step in classify["steps"] if step.get("uses") == "actions/checkout@v4")
     assert checkout["with"]["fetch-depth"] == 0
     assert "filter" not in checkout["with"], "Explicit filter overrides sparse checkout"
@@ -330,16 +330,14 @@ def test_signing_bounds_and_served_gates_survive_the_split() -> None:
     assert workflow["env"] == {
         "PROMOTION_SETTLED_QUIET_SECONDS": 300,
         "PROMOTION_SETTLED_MAX_WAIT_SECONDS": 900,
-        "APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS": 1185,
-        "APPEND_ACCEPTANCE_PATIENCE_SECONDS": 1485,
+        "PUBLICATION_CHAIN_MAX_DEPTH": 3,
     }
     jobs = workflow["jobs"]
-    assert [jobs[name]["timeout-minutes"] for name in ("classify", "sign_health", "deploy")] == [20, 132, 30]
+    assert [jobs[name]["timeout-minutes"] for name in ("classify", "sign_health", "deploy")] == [20, 142, 30]
     sign_steps = jobs["sign_health"]["steps"]
-    assert [step["timeout-minutes"] for step in sign_steps if "timeout-minutes" in step] == [32, 40, 51]
-    acceptance = _step(PUBLISH, "sign_health", "Require authoritative acceptance before signing publication")["run"]
-    for unchanged in ("timeout -k 5s 3000s bash", "named_timeout()", "refuse_acceptance()", "deterministic-safety-net"):
-        assert unchanged in acceptance
+    assert [step["timeout-minutes"] for step in sign_steps if "timeout-minutes" in step] == [40]
+    guard = next(step for step in sign_steps if step.get("id") == "accepted_head")
+    assert 'verify_contract(root, require_rekor=True, allow_newer_health=False)' in guard["run"]
     assert "--max-files 18000" in _step(PUBLISH, "deploy", "Keep verifier-reachable attestation history")["run"]
     for gate in ("Verify isolated Pages preview before production promotion", "Verify canonical served surface", "Verify local versus served parity after publication"):
         assert "if" not in _step(PUBLISH, "deploy", gate)

@@ -269,7 +269,9 @@ def request_bytes(
         response = connection.getresponse()
         payload = response.read()
         if not 200 <= response.status < 300 and response.status not in allowed_statuses:
-            raise PublishError(f"HTTP {response.status}")
+            raise PublishError(
+                f"HTTP {response.status}", retryable=response.status in {429, 500, 502, 503, 504}
+            )
         return response.status, payload
     except RequestDeadlineExceeded:
         raise PublishError("total timeout", retryable=True) from None
@@ -431,7 +433,7 @@ def health_payloads(health_path: Path) -> dict[str, bytes]:
         if name == "history_daily.json":
             payload = _published_daily_history(payload)
         artifacts[f"health/{name}"] = _bounded_kv_payload(f"health/{name}", payload)
-    payloads = {KEY: _bounded_kv_payload(KEY, build_projection(health_path, artifacts)), **artifacts}
+    payloads = {**artifacts, KEY: _bounded_kv_payload(KEY, build_projection(health_path, artifacts))}
     return payloads
 
 
@@ -453,13 +455,14 @@ def _is_retryable_error(exc: BaseException) -> bool:
     return (
         isinstance(exc, (TimeoutError, OSError, http.client.HTTPException))
         or isinstance(exc, PublishError) and exc.retryable
+        or isinstance(exc, PublishError) and re.fullmatch(r"HTTP (?:429|500|502|503|504)", str(exc)) is not None
     )
 
 
 def publish_unchanged_aware_with_retry(
     api_base: str, token: str, payloads: dict[str, bytes]
 ) -> tuple[int, int]:
-    """Publish once, retrying a transport failure only inside the total budget."""
+    """Publish once, retrying transient failures only inside the total budget."""
     started = time.monotonic()
     for attempt in range(MAX_PUBLISH_ATTEMPTS):
         try:
@@ -469,7 +472,7 @@ def publish_unchanged_aware_with_retry(
             if (
                 attempt + 1 >= MAX_PUBLISH_ATTEMPTS
                 or not _is_retryable_error(exc)
-                or elapsed >= TOTAL_TIMEOUT_SECONDS / 2
+                or elapsed >= TOTAL_TIMEOUT_SECONDS
             ):
                 raise
     raise AssertionError("unreachable retry loop")

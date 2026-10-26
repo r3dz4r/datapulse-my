@@ -8,11 +8,11 @@ sources:
   - {"id": "ktmb","resource": "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_monthly.csv","title": "Keretapi Tanah Melayu Berhad"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:04:39Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Malayan Railways Limited, Ministry of Transport"
-datapulse:real_status: "fresh"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/ridership_ktmb_monthly.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 290
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-Monthly KTMB Ridership is published by Keretapi Tanah Melayu Berhad and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Monthly KTMB Ridership is published by Keretapi Tanah Melayu Berhad and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 

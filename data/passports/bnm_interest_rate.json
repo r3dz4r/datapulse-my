@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 4.0,
+        "latest_days": 3.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,14 +20,14 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-18T03:46:44Z",
+    "last_checked": "2026-10-25T08:07:37Z",
     "record_count": 3,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
       "column_count": 8,
       "content_shape_changed": false,
-      "first_row_hash": "shape-v1:6f8ffe650be3f5da4ec5d9e7c6c5c5f4c78a921d6d46b94ae181263dd4e79ab1"
+      "first_row_hash": "shape-v1:37c5dd363ab3362335db9e13dce971632b379fe85c6538c4ddd15f5c84e36050"
     },
     "status": "fresh"
   },
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Interest Rates: Banking Institutions",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-18T03:46:44Z",
+    "observed_verified_at": "2026-10-25T08:07:37Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1124,12 +1124,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-10/bnm_interest_rate.json",
-    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/bnm_interest_rate.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/bnm_interest_rate.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:8400b70db1dc7387a2a6bb9770c0565dc066f2ce2b2e55112798c5f625d8ab67",
+      "receipt_digest": "sha256:0c31ff8db1b0e5f08b9dfebf13e49ba9ea297581f2846950dc04da2f6e90732e",
       "sigstore_path": "data/bnm_interest_rate.receipt.sigstore.json",
       "statement_path": "data/bnm_interest_rate.receipt.statement.json"
     },

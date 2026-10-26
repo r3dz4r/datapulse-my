@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=cpi_state_inflation","title": "dosm"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-13T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T14:12:13Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T19:10:14Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/cpi_state_inflation.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-09-16T12:00:00Z"
+stale_after: "2026-10-17T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -27,8 +27,8 @@ Monthly CPI Inflation by State & Division (2-digit) is published by dosm and tra
 # Schema
 
 - `column_count`: `5`
-- `first_row_hash`: `shape-v1:97d01a3b8ddf8fa498f52e6f75aad3a773661d06fcb4b1c39eeffe2a6fa0c9dc`
-- `record_count`: `44576`
+- `first_row_hash`: `shape-v1:d2c0ba82de6406c679c5b42ae0fa39e1ef85283668a85a1c5aca82fa5c7fd4ca`
+- `record_count`: `44800`
 
 # Quirks
 

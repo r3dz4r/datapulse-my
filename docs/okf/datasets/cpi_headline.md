@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=cpi_headline","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:04:39Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/cpi_headline.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 7812
-stale_after: "2026-09-16T12:00:00Z"
+stale_after: "2026-10-17T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Monthly CPI by Division (2-digit) is published by Department of Statistics Malay
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:a8537ad92b7a2cebc1eb6986d90512023847f85c60286ae639790c750fba513d`
-- `record_count`: `7840`
+- `record_count`: `7854`
 
 # Quirks
 

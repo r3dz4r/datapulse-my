@@ -25,6 +25,19 @@ SIBLINGS = (
 )
 
 
+def _disable_git(root: Path) -> None:
+    git_dir = root / ".git"
+    if git_dir.exists():
+        git_dir.rename(root / ".git-disabled")
+
+
+def test_disable_git_is_idempotent_and_leaves_no_git_directory(tmp_path: Path) -> None:
+    root, _ = fixture_root(tmp_path)
+    _disable_git(root)
+    _disable_git(root)
+    assert not (root / ".git").exists()
+
+
 def test_accepted_files_stream_object_ids_instead_of_ledger_bytes(tmp_path: Path) -> None:
     root, key = fixture_root(tmp_path)
     ga.generate(root, key, NOW)
@@ -192,7 +205,7 @@ def test_undecidable_fork_fails_closed(tmp_path: Path, unavailable: str) -> None
         git(tmp_path, "clone", "--depth=1", root.as_uri(), str(clone))
         root = clone
     elif unavailable == "no_git":
-        shutil.rmtree(root / ".git")
+        _disable_git(root)
     with pytest.raises(ContractError, match="fork or disconnected accepted forward head"):
         discovery(root)
     if unavailable != "no_git":
