@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 3.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-23T21:55:09Z",
+    "last_checked": "2026-10-25T22:53:18Z",
     "record_count": 1257,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:44548003c1b51e35d27dc7f574a6f33a8706abe8d2c5b8558a3250699558a4d6"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_directdebit",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily DirectDebit Transactions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-23T21:55:09Z",
+    "observed_verified_at": "2026-10-25T22:53:18Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "Payments Network Malaysia and Bank Negara Malaysia"
   },
@@ -868,12 +868,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4/trnsc_daily_directdebit.json",
-    "chain_reference": "attestations/2026-10-24/revisions/d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/trnsc_daily_directdebit.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/trnsc_daily_directdebit.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:4817b09a294bae952ca5348837b0bc4d75b146c178981fba4681242be2b5325a",
+      "receipt_digest": "sha256:d69c549b4f24fc8248edc9edccab3423daf68ab081a116d5982de808bc66bf28",
       "sigstore_path": "data/trnsc_daily_directdebit.receipt.sigstore.json",
       "statement_path": "data/trnsc_daily_directdebit.receipt.statement.json"
     },

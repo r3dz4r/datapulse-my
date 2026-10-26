@@ -14,6 +14,69 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.58.5](https://github.com/r3dz4r/datapulse-my/compare/v3.58.4...v3.58.5) (2026-10-26)
+
+
+### Bug Fixes
+
+* **deploy:** sign main's accepted head and delete the append waits ([#2778](https://github.com/r3dz4r/datapulse-my/issues/2778)) ([d4271ef](https://github.com/r3dz4r/datapulse-my/commit/d4271ef2149a95afc12c1613d0540d2f7e94c25e))
+
+## [3.58.4](https://github.com/r3dz4r/datapulse-my/compare/v3.58.3...v3.58.4) (2026-10-26)
+
+
+### Bug Fixes
+
+* **deploy:** mint a token per phase so append submission and acceptance can exceed 60 minutes ([#2775](https://github.com/r3dz4r/datapulse-my/issues/2775)) ([0fdd3a2](https://github.com/r3dz4r/datapulse-my/commit/0fdd3a2747f84be5de8b334b2fbc842b2689afa9))
+
+## [3.58.3](https://github.com/r3dz4r/datapulse-my/compare/v3.58.2...v3.58.3) (2026-10-26)
+
+
+### Bug Fixes
+
+* **attestations:** make a second append child of one parent unmergeable ([#2774](https://github.com/r3dz4r/datapulse-my/issues/2774)) ([a8dba49](https://github.com/r3dz4r/datapulse-my/commit/a8dba49732e3bd705291bad56b4bb116f92a2163))
+
+## [3.58.2](https://github.com/r3dz4r/datapulse-my/compare/v3.58.1...v3.58.2) (2026-10-26)
+
+
+### Bug Fixes
+
+* classify gzipped attestation revisions as append-only ([#2769](https://github.com/r3dz4r/datapulse-my/issues/2769)) ([aa37673](https://github.com/r3dz4r/datapulse-my/commit/aa37673332bb17c4a539a3e9d4dd3280da3b2fac))
+
+## [3.58.1](https://github.com/r3dz4r/datapulse-my/compare/v3.58.0...v3.58.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **attestations:** refuse stale Rekor witness on append rebuild ([#2761](https://github.com/r3dz4r/datapulse-my/issues/2761)) ([a3e1315](https://github.com/r3dz4r/datapulse-my/commit/a3e13157c5fe72e8584a3788e3db273ffacee176))
+
+## [3.58.0](https://github.com/r3dz4r/datapulse-my/compare/v3.57.15...v3.58.0) (2026-10-25)
+
+
+### Features
+
+* **health:** dry-run snapshot publisher (migration step 3) ([#2738](https://github.com/r3dz4r/datapulse-my/issues/2738)) ([ccc5643](https://github.com/r3dz4r/datapulse-my/commit/ccc5643bc084db1d99e17bc5500deb7e4d2ec075))
+
+## [3.57.15](https://github.com/r3dz4r/datapulse-my/compare/v3.57.14...v3.57.15) (2026-10-25)
+
+
+### Bug Fixes
+
+* **pages:** give the publication cycle room to load — 24h freshness bound and measured wait budgets ([#2704](https://github.com/r3dz4r/datapulse-my/issues/2704)) ([e342572](https://github.com/r3dz4r/datapulse-my/commit/e3425721e10a238ebe75bec2267c0a9111c8fd21))
+
+## [3.57.14](https://github.com/r3dz4r/datapulse-my/compare/v3.57.13...v3.57.14) (2026-10-25)
+
+
+### Bug Fixes
+
+* **ci:** judge the merge ref against the base it contains ([#2691](https://github.com/r3dz4r/datapulse-my/issues/2691)) ([29219bb](https://github.com/r3dz4r/datapulse-my/commit/29219bb42048588c0f881e67fc55b0af5ec4394f))
+
+## [3.57.13](https://github.com/r3dz4r/datapulse-my/compare/v3.57.12...v3.57.13) (2026-10-25)
+
+
+### Bug Fixes
+
+* **attestations:** require byte equality for the scores projection ([#2679](https://github.com/r3dz4r/datapulse-my/issues/2679)) ([28f7e71](https://github.com/r3dz4r/datapulse-my/commit/28f7e71ef452a976ceb87346ab8a095a7cd82b7e))
+
 ## [3.57.12](https://github.com/r3dz4r/datapulse-my/compare/v3.57.11...v3.57.12) (2026-10-23)
 
 

@@ -15,17 +15,18 @@ ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
 
 
-def _run() -> str:
+def _run(name: str = "Require authoritative acceptance before signing publication") -> str:
     workflow = yaml.safe_load(WORKFLOW.read_text())
     return next(step["run"] for step in workflow["jobs"]["sign_health"]["steps"]
-                if step.get("name") == "Require authoritative acceptance before signing publication")
+                if step.get("name") == name)
 
 
 def _exercise(
     tmp_path: Path, *, pr_number: int = 99, pr_branch: str = "attestation/append-candidate",
+    cap_step: str | None = None,
     **settings: str,
 ) -> tuple[subprocess.CompletedProcess[str], list[str]]:
-    """Keep real shell/jq parsing; replace GitHub, Git, verifier and cap expiry."""
+    """Run both shipped steps; replace GitHub, Git, verifier and cap expiry."""
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     scripts = tmp_path / "scripts"
@@ -33,6 +34,8 @@ def _exercise(
     (scripts / "submit_attestation_append.sh").write_text(
         'echo submit >> "$CALL_LOG"\n'
         'if [[ "${1:-}" == --rebuild ]]; then exit 1; fi\n'
+        'if [[ "$SUBMISSION_NOOP" == 1 ]]; then echo "noop head-sha 0" > "$APPEND_SUBMISSION_RESULT"; fi\n'
+        'if [[ "$SUBMISSION_REBUILT" == 1 ]]; then echo "$BRANCH head-sha 1" > "$APPEND_SUBMISSION_RESULT"; fi\n'
     )
     (scripts / "close_superseded_appends.sh").write_text('echo close >> "$CALL_LOG"\n')
     mocks = {
@@ -46,6 +49,7 @@ case "$*" in
   *--require-committed*) key=committed ;;
   *--wait-for-acceptance*) key=decision ;;
   'bash scripts/submit_attestation_append.sh') key=submit ;;
+  'bash scripts/submit_attestation_append.sh --rebuild '*) key=rebuild ;;
   'gh pr list '*) key=list ;;
   'gh pr view attestation/'*) key=view ;;
   'gh pr view 99 '*) key=poll ;;
@@ -113,17 +117,44 @@ esac
         "GITHUB_OUTPUT": str(tmp_path / "outputs"),
         "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
         "APPEND_ACCEPTANCE_PATIENCE_SECONDS": "30", "CALL_LOG": str(log),
+        "APPEND_PREP_STATE": "ready", "APPEND_BRANCH": pr_branch,
+        "APPEND_HEAD_SHA": "head-sha",
         "CAP_MARKER": str(tmp_path / "cap-fired"), "CAP_TARGET": "none", "CAP_ALWAYS": "0",
         "CAP_STATUS": "124", "PROOF_STATUS": "0", "COMMITTED_STATUS": "1",
         "PREFLIGHT_STATUS": "0", "ARM_STATUS": "0", "MISSING": "0", "OPEN_PRS": "[]",
+        "SUBMISSION_NOOP": "0", "SUBMISSION_REBUILT": "0",
         "BRANCH": "attestation/append-candidate", "INITIAL_PR": json.dumps(initial),
         "POLLED_PR": json.dumps(polled), **settings,
     }
-    # Advance only the shell clock to exercise production deadline arithmetic.
-    shell = re.sub(r'^\s*sleep .*$', 'SECONDS=$((SECONDS + 15))', _run(), flags=re.MULTILINE)
-    result = subprocess.run(["bash", "-c", shell], cwd=tmp_path, env=env,
-                            text=True, capture_output=True, timeout=10)
-    return result, log.read_text().splitlines()
+    target = env["CAP_TARGET"]
+    cap_step = cap_step or ("prepare" if target in {"preflight", "committed", "list", "git", "jq", "submit"}
+                            else "acceptance")
+    output = tmp_path / "outputs"
+    results = []
+    for step, name in (
+        ("prepare", "Prepare append candidate for acceptance"),
+        ("acceptance", "Require authoritative acceptance before signing publication"),
+    ):
+        env["CAP_TARGET"] = target if step == cap_step else "none"
+        # Advance only the shell clock to exercise production deadline arithmetic.
+        shell = re.sub(r'^\s*sleep .*$', 'SECONDS=$((SECONDS + 15))', _run(name), flags=re.MULTILINE)
+        result = subprocess.run(["bash", "-c", shell], cwd=tmp_path, env=env,
+                                text=True, capture_output=True, timeout=10)
+        results.append(result)
+        if result.returncode != 0 or step == "acceptance":
+            break
+        prepared = dict(line.split("=", 1) for line in output.read_text().splitlines())
+        if prepared["state"] != "ready":
+            break
+        env.update(APPEND_PREP_STATE=prepared["state"], APPEND_BRANCH=prepared["branch"],
+                   APPEND_HEAD_SHA=prepared["head_sha"])
+        output.unlink()
+    combined = subprocess.CompletedProcess(
+        results[-1].args, results[-1].returncode,
+        "".join(result.stdout for result in results),
+        "".join(result.stderr for result in results),
+    )
+    return combined, log.read_text().splitlines()
 
 
 @pytest.mark.parametrize(("target", "cap"), [
@@ -138,6 +169,27 @@ def test_safe_cap_hit_is_named_and_retried(tmp_path: Path, target: str, cap: int
     assert "partial output" not in result.stdout
     assert calls.count("submit") == 1
     assert any("--wait-for-acceptance 0" in call for call in calls)
+
+
+def test_acceptance_parser_cap_is_named_and_retried(tmp_path: Path) -> None:
+    result, calls = _exercise(tmp_path, CAP_TARGET="jq", cap_step="acceptance")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "exceeded 10s (exit 124)" in result.stderr
+    assert "Retrying capped safe call" in result.stderr
+    assert "partial output" not in result.stdout
+    assert calls.count("submit") == 1
+    assert any("--wait-for-acceptance 0" in call for call in calls)
+
+
+def test_preparation_rebuilt_pr_lookup_cap_is_retried(tmp_path: Path) -> None:
+    result, calls = _exercise(tmp_path, CAP_TARGET="view", cap_step="prepare",
+                              SUBMISSION_REBUILT="1")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "exceeded 20s (exit 124)" in result.stderr
+    assert "Retrying capped safe call" in result.stderr
+    assert "partial output" not in result.stdout
+    assert calls.count("submit") == 1
+    assert (tmp_path / "outputs").read_text() == "state=append-deferred\n"
 
 
 def test_parser_retry_cannot_hide_an_existing_append_pr(tmp_path: Path) -> None:
@@ -156,7 +208,7 @@ def test_parser_retry_cannot_hide_an_existing_append_pr(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(("target", "cap", "command"), [
-    ("submit", 360, "bash scripts/submit_attestation_append.sh"),
+    ("submit", 900, "bash scripts/submit_attestation_append.sh"),
     ("decision", 240, "python3 scripts/verify_attestation_append.py"),
 ])
 def test_submission_and_decision_caps_defer_without_retry(
@@ -177,6 +229,28 @@ def test_submission_and_decision_caps_defer_without_retry(
         assert "PR #99 (attestation/append-candidate)" in result.stdout
         assert "deterministic-safety-net: COMPLETED/SUCCESS" in result.stdout
         assert "patience 30s" in result.stdout
+
+
+def test_preparation_noop_proof_cap_defers_without_retry(tmp_path: Path) -> None:
+    result, calls = _exercise(tmp_path, CAP_TARGET="decision", cap_step="prepare",
+                              SUBMISSION_NOOP="1")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "exceeded 240s (exit 124)" in result.stderr
+    assert "Retrying" not in result.stderr
+    assert calls.count("submit") == 1
+    assert calls.count("cap 240s decision") == 1
+    assert (tmp_path / "outputs").read_text() == "state=append-deferred\n"
+    assert "append-deferred" in (tmp_path / "summary").read_text()
+
+
+def test_acceptance_rebuild_cap_cannot_accept(tmp_path: Path) -> None:
+    result, calls = _exercise(tmp_path, CAP_TARGET="rebuild", initial_check="FAILURE")
+    assert result.returncode != 0
+    assert "exceeded 300s (exit 124)" in result.stderr
+    assert "Retrying" not in result.stderr
+    assert calls.count("submit") == 1
+    assert calls.count("cap 300s rebuild") == 1
+    assert not (tmp_path / "outputs").exists()
 
 
 @pytest.mark.parametrize("settings", [
@@ -248,11 +322,15 @@ def test_production_bounds_and_newest_wins_deploy_concurrency() -> None:
     workflow = yaml.safe_load(WORKFLOW.read_text())
     assert workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"] == 1485
     assert workflow["env"]["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"] == 1185
-    assert workflow["jobs"]["sign_health"]["timeout-minutes"] == 132
+    assert workflow["jobs"]["sign_health"]["timeout-minutes"] == 142
     assert 'timeout -k 5s "${cap}s" "$@"' in _run()
-    assert "timeout -k 5s 3000s bash -Eeuo pipefail" in _run()
+    assert "timeout -k 5s 1800s bash -Eeuo pipefail" in _run()
     step = next(step for step in workflow["jobs"]["sign_health"]["steps"] if step.get("run") == _run())
-    assert step["timeout-minutes"] == 51
+    assert step["timeout-minutes"] == 31
+    prepare = next(step for step in workflow["jobs"]["sign_health"]["steps"]
+                   if step.get("name") == "Prepare append candidate for acceptance")
+    assert prepare["timeout-minutes"] == 30
+    assert "timeout -k 5s 1770s bash -Eeuo pipefail" in prepare["run"]
     # Replace superseded pending deploys while preserving the active promotion.
     assert workflow["concurrency"] == {
         "group": "cloudflare-pages-deploy",

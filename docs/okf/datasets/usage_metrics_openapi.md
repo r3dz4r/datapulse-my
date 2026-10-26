@@ -8,27 +8,27 @@ sources:
   - {"id": "jdn","resource": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi","title": "National Digital Department and Ministry of Digital"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-22T21:50:28Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T22:24:46Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Jabatan Digital Negara, Ministry of Digital"
-datapulse:real_status: "aging"
+datapulse:real_status: "fresh"
 datapulse:health_report: "/data/usage_metrics_openapi.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 10000
-stale_after: "2026-10-22T12:00:00Z"
+stale_after: "2026-10-25T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Daily OpenAPI Hits by Endpoint is published by National Digital Department and Ministry of Digital and tracked by DataPulse. The latest published probe classifies it as `aging`.
+Daily OpenAPI Hits by Endpoint is published by National Digital Department and Ministry of Digital and tracked by DataPulse. The latest published probe classifies it as `fresh`.
 
 # Schema
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:d5df8abf7e9c872c8d891c1e3db178f5de0c461a175c3b6f080405b8176543e5`
-- `record_count`: `19965`
+- `record_count`: `20349`
 
 # Quirks
 

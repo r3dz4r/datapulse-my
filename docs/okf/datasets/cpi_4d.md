@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/cpi/cpi_4d.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-17T11:55:36Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:04:39Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/cpi_4d.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 19998
-stale_after: "2026-09-16T12:00:00Z"
+stale_after: "2026-10-17T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Monthly CPI by Class is published by Department of Statistics Malaysia and track
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:a86bc2f10220430e8ed8bcb9f2f37a98b541e6fa7c480bb9c2864665d1ded00a`
-- `record_count`: `20200`
+- `record_count`: `20301`
 
 # Quirks
 

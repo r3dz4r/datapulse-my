@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 3.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-23T21:55:09Z",
+    "last_checked": "2026-10-25T22:53:18Z",
     "record_count": 1,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:e42cf47c3841aad22c4e97c748f9e6e40a3a1a5dca549a6547346e57673a6369"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/my-overnight-rate",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Malaysia Overnight Rate (MYOR)",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-23T21:55:09Z",
+    "observed_verified_at": "2026-10-25T22:53:18Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1124,12 +1124,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4/bnm_myor.json",
-    "chain_reference": "attestations/2026-10-24/revisions/d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/bnm_myor.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/bnm_myor.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:d3f6e4e0be7e85d1fdb12bd91724a4769ce94aaaa9d6d090b05bb6372140f3a7",
+      "receipt_digest": "sha256:d29c8ab712225d7a7f59f5e66098b15b0c1b7930a749d575ba78a80d9ae11d49",
       "sigstore_path": "data/bnm_myor.receipt.sigstore.json",
       "statement_path": "data/bnm_myor.receipt.statement.json"
     },

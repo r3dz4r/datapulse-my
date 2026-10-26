@@ -8,7 +8,7 @@ sources:
   - {"id": "sg-datagov","resource": "https://api.data.gov.sg/v1/transport/taxi-availability","title": "Singapore Government"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-07T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-22T21:50:28Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T22:24:46Z"}
 status: "stable"
 datapulse:licence: "Singapore Open Data Licence v1.0 (attribution required)"
 datapulse:attribution: "Contains information from Land Transport Authority, Singapore Open Data Licence v1.0; accessed 2026-09-07"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/sg_datagov_taxi_availability.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-10-24T09:46:51Z"
+stale_after: "2026-10-26T10:20:51Z"
 datapulse:stale_after_basis: "cadence"
 ---
 

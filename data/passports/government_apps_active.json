@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 206.0,
+        "latest_days": 25.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-17T11:55:36Z",
-    "record_count": 137,
+    "last_checked": "2026-10-24T12:04:39Z",
+    "record_count": 143,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:880181f291857c8955da6d56c35fe5c764944cfa1826d77ef7becde61d00ef75"
     },
-    "status": "stale"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=government_apps_active",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Number of Active Government Mobile Applications",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-17T11:55:36Z",
+    "observed_verified_at": "2026-10-24T12:04:39Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "National Digital Department and Ministry of Digital"
   },
@@ -946,12 +946,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4/government_apps_active.json",
-    "chain_reference": "attestations/2026-10-24/revisions/d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/government_apps_active.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/government_apps_active.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:b224654cc221f9e6ed13d7c6e11bd1c87cb6c4b870bef96b535b921bbe637d61",
+      "receipt_digest": "sha256:fc73770faf802c20b4a287654bb567f254077a975aa1abb377923430d9c38c80",
       "sigstore_path": "data/government_apps_active.receipt.sigstore.json",
       "statement_path": "data/government_apps_active.receipt.statement.json"
     },

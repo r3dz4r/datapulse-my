@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1757.0,
+        "latest_days": 663.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-09-26T02:49:53Z",
-    "record_count": 198,
+    "last_checked": "2026-10-26T03:45:06Z",
+    "record_count": 225,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:a5ba001e93005aea76feb094e568ec07c395f1b1cdccdd3911cdb12214d8cbd4"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=employment_sector",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Employment by MSIC Sector and Sex",
     "namespace": "economy",
-    "observed_verified_at": "2026-09-26T02:49:53Z",
+    "observed_verified_at": "2026-10-26T03:45:06Z",
     "source": "data.gov.my",
     "steward": "dosm"
   },
@@ -1180,12 +1180,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4/employment_sector.json",
-    "chain_reference": "attestations/2026-10-24/revisions/d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/employment_sector.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/employment_sector.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:298b2ea741925209d4f664b283446fbd845dc2237b7e62b74f88113d9bbeb770",
+      "receipt_digest": "sha256:c4d07e8c5de33dad9de4e1cc3f98f7cbb45dd9f0977992f7556320ba78044d02",
       "sigstore_path": "data/employment_sector.receipt.sigstore.json",
       "statement_path": "data/employment_sector.receipt.statement.json"
     },

@@ -2,43 +2,45 @@
   "schema": "datapulse/v1/attestation-binding-envelope",
   "payload": {
     "schema": "datapulse/v1/attestation-binding",
-    "date": "2026-10-24",
-    "published_at": "2026-10-24T11:09:40Z",
+    "date": "2026-10-26",
+    "published_at": "2026-10-26T04:30:31Z",
     "freshness": {
       "max_age_seconds": 129600
     },
     "health": {
       "artifact_ref": "health/latest.json",
-      "artifact_sha256": "4add132e78c125f69b2b2e44ffb2b7d54c71e80c2d17562483701ba2ac189ee8",
+      "artifact_sha256": "044d0ba5d3391dd01e97be329fc3b374f0e35667dbcbda7abb2c8c6647788a05",
       "dataset_count": 440,
       "dataset_ids_sha256": "50d2b243aeee23470db89defc80ecfe5a776f40d4fc556163529311ccbc266e1",
-      "observed_at": "2026-10-24T10:16:37Z"
+      "observed_at": "2026-10-26T03:34:36Z"
     },
     "ed25519": {
-      "chain_head_ref": "attestations/2026-10-24/revisions/cb533727c821ce82e1e9be5de89cf694e511ffe27c6d1f00e5cd382896c99b67/chain_head.json",
-      "chain_head": "cb533727c821ce82e1e9be5de89cf694e511ffe27c6d1f00e5cd382896c99b67",
+      "chain_head_ref": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
+      "chain_head": "1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c",
       "key_id": "ed25519-a829715828ba0f88",
       "key_status": "active"
     },
     "correction": {
       "schema": "datapulse/v1/attestation-correction",
-      "revision_id": "07c7daf949cd9328109cb94ea6d9afa1c0b15a93d953abb688f024b07f8592c8",
+      "revision_id": "2b16408702121df34abaeb5503b5f48235087ed5a9f139e6f3acc7627bae8abf",
       "reason": "health artifact bytes changed",
-      "original_chain_head": "c5272829277743c8f604147fc4a902190ffa7045b67d0d81114dc4ad6d99c09b",
-      "supersedes_chain_head": "d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4",
-      "previous_health_sha256": "b3294a8dbfc80ff909cdf6ca574099a8f6ec1ba9e808126e71728a77d2350f5e",
-      "health_sha256": "4add132e78c125f69b2b2e44ffb2b7d54c71e80c2d17562483701ba2ac189ee8",
-      "health_snapshot_ref": "attestations/2026-10-24/revisions/07c7daf949cd9328109cb94ea6d9afa1c0b15a93d953abb688f024b07f8592c8/health.json.gz"
+      "original_chain_head": "b31b778592ae53b8cac87f5b67843cd16d5f08ff451b18f8bd9b255c81627a0f",
+      "supersedes_chain_head": "f92c51453c1495e7a1890fdf63c36425342fdb94f29129720fcb211e14b87c3a",
+      "previous_health_sha256": "044d0ba5d3391dd01e97be329fc3b374f0e35667dbcbda7abb2c8c6647788a05",
+      "health_sha256": "044d0ba5d3391dd01e97be329fc3b374f0e35667dbcbda7abb2c8c6647788a05",
+      "health_snapshot_ref": "attestations/2026-10-26/revisions/2b16408702121df34abaeb5503b5f48235087ed5a9f139e6f3acc7627bae8abf/health.json.gz"
     }
   },
-  "signature_base64": "gGJjW15KmNVOf13nFv+QMZso0Z5olQmUV01qevXiy6lyR5sOoFGXqgnRDEP22u4qva04d9cQmG027Hf83p+bDg==",
+  "signature_base64": "xsfCBEf9CU60huLXc+Inu571v2JSZZovr0j5jedo1n0jBV2+fOY0FCA+2wW7m0MMQ/csE4jXfzV2rgZNSZyKCA==",
   "claims": {
     "artifact_signed": true,
     "rekor_witnessed": true,
     "source_truth_verified": false
   },
   "rekor": {
-    "reference_ref": "attestations/rekor/2026-10-24/reference.e42da4c72e2f3b2a672a199d9b1280969b5f351b95b97e12f993c3eb71c5e48e.json",
-    "bundle_ref": "attestations/rekor/2026-10-24/health.e42da4c72e2f3b2a672a199d9b1280969b5f351b95b97e12f993c3eb71c5e48e.sigstore.bundle.json"
+    "reference_ref": "attestations/rekor/2026-10-26/reference.cd8b94dfa2497650ad0324945abffa152f463e41f1b56a676bc974a5e1135286.json",
+    "bundle_ref": "attestations/rekor/2026-10-26/health.cd8b94dfa2497650ad0324945abffa152f463e41f1b56a676bc974a5e1135286.sigstore.bundle.json",
+    "historical_reference_ref": "attestations/rekor/2026-10-26/reference.cd8b94dfa2497650ad0324945abffa152f463e41f1b56a676bc974a5e1135286.json",
+    "historical_bundle_ref": "attestations/rekor/2026-10-26/health.cd8b94dfa2497650ad0324945abffa152f463e41f1b56a676bc974a5e1135286.sigstore.bundle.json"
   }
 }

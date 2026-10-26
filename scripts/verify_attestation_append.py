@@ -22,7 +22,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.attestation_fetch_refs import SNAPSHOT_FILES
 from scripts.attestation_sets import (
     FILES,
-    PIPELINE_OWNED_PROJECTIONS,
     SET_REF,
     assert_head_extends_base,
     correction_record,
@@ -676,6 +675,15 @@ def _verified_append_paths(root: Path, base: str, require_committed: bool = Fals
             cursor = None
     if set(new["heads"]) - set(old["heads"]) != seen:
         raise ValueError("candidate contains a sibling or unaccepted head")
+    # Check staged candidate bytes before projection comparisons so tampering
+    # is reported as immutable evidence failure, even when it also breaks a
+    # projection that includes the same file.
+    paths = _append_paths(root, old, new)
+    if check_delta_index:
+        for path in paths:
+            digest = _file_object_id(root / path, algorithm)
+            if path in indexed and digest != indexed[path]:
+                raise ValueError(f"immutable evidence changed or deleted: {path}")
     head = _load(root / new["heads"][new["current_head"]], "current head")
     projection_matches_current = False
     if "append_content_sha256" not in head["payload"]:
@@ -710,11 +718,7 @@ def _verified_append_paths(root: Path, base: str, require_committed: bool = Fals
                 frozen = root / candidate_directory / filename
                 if not latest.is_file() or not frozen.is_file():
                     raise ContractError("latest projection is stale or mixed")
-                if filename in PIPELINE_OWNED_PROJECTIONS:
-                    if _parse_time(_load(latest, "latest scores").get("generated_at"), "latest scores time") < _parse_time(
-                            _load(frozen, "frozen scores").get("generated_at"), "frozen scores time"):
-                        raise ContractError("latest projection is stale or mixed")
-                elif latest.read_bytes() != frozen.read_bytes():
+                if latest.read_bytes() != frozen.read_bytes():
                     raise ContractError("latest projection is stale or mixed")
             verify_legacy_mirror(root, new, candidate_directory)
             projection_matches_current = True
@@ -750,25 +754,14 @@ def _verified_append_paths(root: Path, base: str, require_committed: bool = Fals
                     for filename in FILES:
                         latest = root / "attestations/latest" / filename
                         frozen = root / projected_directory / filename
-                        if filename in PIPELINE_OWNED_PROJECTIONS:
-                            if _parse_time(_load(latest, "latest scores").get("generated_at"), "latest scores time") < _parse_time(
-                                    _load(frozen, "frozen scores").get("generated_at"), "frozen scores time"):
-                                raise ContractError("latest projection is stale or mixed")
-                        elif latest.read_bytes() != frozen.read_bytes():
+                        if latest.read_bytes() != frozen.read_bytes():
                             raise ContractError("latest projection is stale or mixed")
     if require_committed:
         for digest in seen:
             raise ValueError(f"candidate head {digest} must be accepted in authoritative Git before publication")
         if not projection_matches_current:
             raise ContractError("latest projection is stale or mixed")
-    # The index records the exact bytes to submit, including already committed
-    # local appends. Untracked candidates still receive signed discovery checks.
-    paths = _append_paths(root, old, new)
-    if check_delta_index:
-        for path in paths:
-            digest = _file_object_id(root / path, algorithm)
-            if path in indexed and digest != indexed[path]:
-                raise ValueError(f"immutable evidence changed or deleted: {path}")
+    # Untracked candidates still receive signed discovery checks.
     return paths
 
 

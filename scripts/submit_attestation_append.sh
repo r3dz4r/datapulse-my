@@ -22,9 +22,23 @@ write_noop_result() {
   fi
 }
 
+write_successor_record() {
+  local parent="$1" child="$2" path temporary
+  [[ "$parent" =~ ^[0-9a-f]{64}$ && "$child" =~ ^[0-9a-f]{64}$ ]] || {
+    echo 'Refusing successor record with an invalid parent or child head.' >&2
+    return 1
+  }
+  path="attestations/successors/$parent.json"
+  mkdir -p -- attestations/successors
+  temporary="$(mktemp "${path}.tmp.XXXXXXXX")"
+  printf '{"parent":"%s","child":"%s"}\n' "$parent" "$child" > "$temporary"
+  mv -- "$temporary" "$path"
+  printf '%s\n' "$path"
+}
+
 rebuild_from_main() {
   local old_parent="$1" new_base="$2" old_parent_head="$3" new_parent_head="$4"
-  local binding="$5" reference published_at path current_pr
+  local binding="$5" reference published_at path current_pr witnessed_digest accepted_digest
   local -a old_paths=("${@:6}") witness_paths=() generation
   published_at="$(jq -er '.payload.published_at' <<<"$binding")"
   reference="$(jq -r '.rekor.reference_ref // empty' <<<"$binding")"
@@ -63,6 +77,18 @@ rebuild_from_main() {
         cp -a --parents -- "${witness_paths[@]}" "$rebuild_dir"
       else
         git -C "$rebuild_dir" restore --source="$old_sha" --worktree -- "${witness_paths[@]}"
+      fi
+    fi
+    if [[ -n "$reference" ]]; then
+      witnessed_digest="$(jq -er '.artifact_sha256 | select(type == "string" and test("^[0-9a-f]{64}$"))' "$rebuild_dir/$reference")" || {
+        echo "Refusing append rebuild: witnessed health digest is missing or invalid in $reference." >&2
+        exit 1
+      }
+      accepted_digest="$(sha256sum "$rebuild_dir/health/latest.json")"
+      accepted_digest="${accepted_digest%% *}"
+      if [[ "$witnessed_digest" != "$accepted_digest" ]]; then
+        echo "Refusing append rebuild: health artifact changed since this candidate was witnessed; resubmit (witnessed $witnessed_digest, accepted health $accepted_digest)." >&2
+        exit 1
       fi
     fi
     generation=(python3 scripts/gen_attestations.py --root . --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" --now "$published_at" --force-append)
@@ -182,6 +208,9 @@ path_output="$(python3 scripts/verify_attestation_append.py --base origin/main -
 [[ -n "$path_output" ]] || { write_noop_result; exit 0; }
 readarray -t paths <<<"$path_output"
 (( ${#paths[@]} )) || { write_noop_result; exit 0; }
+parent_head="$(git show "$new_base:attestations/chain-index.json" | jq -er '.current_head | select(type == "string" and test("^[0-9a-f]{64}$"))')"
+successor_path="$(write_successor_record "$parent_head" "$head")"
+paths+=("$successor_path")
 git config user.name github-actions[bot]
 git config user.email 41898282+github-actions[bot]@users.noreply.github.com
 git switch -c "$branch"

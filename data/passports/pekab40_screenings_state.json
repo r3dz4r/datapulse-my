@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-23T21:55:09Z",
-    "record_count": 43952,
+    "last_checked": "2026-10-25T22:53:18Z",
+    "record_count": 43984,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:0729d7fe69db87c03f3de8115043309de3d614c914bd15080fb8d1b44232c43a"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/healthcare/pekab40_screenings_state.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia (16 state-level areas)",
     "name": "data.gov.my Daily PeKaB40 Health Screenings by State",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-23T21:55:09Z",
+    "observed_verified_at": "2026-10-25T22:53:18Z",
     "source": "data.gov.my (storage.data.gov.my)",
     "steward": "ProtectHealth Corporation and Ministry of Health Malaysia"
   },
@@ -841,12 +841,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-24/revisions/d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4/pekab40_screenings_state.json",
-    "chain_reference": "attestations/2026-10-24/revisions/d9f7d3f42a27ac63f21ca0696fa857041d58a4c07b1a31c9ed607d18ae8dd4a4/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/pekab40_screenings_state.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/pekab40_screenings_state.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:e6fdec2d3b4ded5e43a75eb40dd5b3fb88f9bd25a427fcd44ba340b3dcc68a1a",
+      "receipt_digest": "sha256:e89e4c1ef2e5d47aa777e4f0b0de2670268cda8bf4f3fd77556efc6e447a836a",
       "sigstore_path": "data/pekab40_screenings_state.receipt.sigstore.json",
       "statement_path": "data/pekab40_screenings_state.receipt.statement.json"
     },
