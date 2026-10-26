@@ -113,6 +113,8 @@ esac
         "GITHUB_OUTPUT": str(tmp_path / "outputs"),
         "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
         "APPEND_ACCEPTANCE_PATIENCE_SECONDS": "30", "CALL_LOG": str(log),
+        "APPEND_PREP_STATE": "ready", "APPEND_BRANCH": pr_branch,
+        "APPEND_HEAD_SHA": "head-sha",
         "CAP_MARKER": str(tmp_path / "cap-fired"), "CAP_TARGET": "none", "CAP_ALWAYS": "0",
         "CAP_STATUS": "124", "PROOF_STATUS": "0", "COMMITTED_STATUS": "1",
         "PREFLIGHT_STATUS": "0", "ARM_STATUS": "0", "MISSING": "0", "OPEN_PRS": "[]",

@@ -338,7 +338,10 @@ def test_signing_bounds_and_served_gates_survive_the_split() -> None:
     assert [jobs[name]["timeout-minutes"] for name in ("classify", "sign_health", "deploy")] == [20, 132, 30]
     sign_steps = jobs["sign_health"]["steps"]
     assert [step["timeout-minutes"] for step in sign_steps if "timeout-minutes" in step] == [32, 40, 51]
-    acceptance = _step(PUBLISH, "sign_health", "Require authoritative acceptance before signing publication")["run"]
+    acceptance_step = _step(PUBLISH, "sign_health", "Require authoritative acceptance before signing publication")
+    acceptance = acceptance_step["run"]
+    for output in ("state", "branch", "head_sha"):
+        assert f"steps.append_submission.outputs.{output}" in str(acceptance_step["env"])
     for unchanged in ("timeout -k 5s 3000s bash", "named_timeout()", "refuse_acceptance()", "deterministic-safety-net"):
         assert unchanged in acceptance
     assert "--max-files 18000" in _step(PUBLISH, "deploy", "Keep verifier-reachable attestation history")["run"]

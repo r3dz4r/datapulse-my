@@ -96,6 +96,8 @@ def run_wait(
     env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
            "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
            "GITHUB_REPOSITORY": "example/test", "PROMOTION_SOURCE_SHA": "a" * 40,
+           "APPEND_PREP_STATE": "ready", "APPEND_BRANCH": "attestation/append-test",
+           "APPEND_HEAD_SHA": "a" * 40,
            "APPEND_ACCEPTANCE_PATIENCE_SECONDS": str(patience), "CALL_LOG": str(log),
            "CHECK": check, "MERGE_LATER": str(int(merged)), "PROOF": str(proof),
            "OUTER_TIMEOUT": str(int(outer_timeout)), "LOOKUP_STATUS": str(lookup_status),

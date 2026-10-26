@@ -344,6 +344,8 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
         env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
              **{key: str(value) for key, value in yaml.safe_load(pages)["env"].items()},
              "GITHUB_SHA": "b" * 40, "PROMOTION_SOURCE_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse",
+             "APPEND_PREP_STATE": "ready", "APPEND_BRANCH": "attestation/append-contract",
+             "APPEND_HEAD_SHA": git(root, "rev-parse", "HEAD"),
              "PR_STATE": "MERGED" if accepted else "OPEN", "GITHUB_OUTPUT": str(output),
              "GITHUB_STEP_SUMMARY": str(summary)},
         text=True, capture_output=True,
