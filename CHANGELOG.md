@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.58.3](https://github.com/r3dz4r/datapulse-my/compare/v3.58.2...v3.58.3) (2026-10-26)
+
+
+### Bug Fixes
+
+* **attestations:** make a second append child of one parent unmergeable ([#2774](https://github.com/r3dz4r/datapulse-my/issues/2774)) ([a8dba49](https://github.com/r3dz4r/datapulse-my/commit/a8dba49732e3bd705291bad56b4bb116f92a2163))
+
 ## [3.58.2](https://github.com/r3dz4r/datapulse-my/compare/v3.58.1...v3.58.2) (2026-10-26)
 
 
