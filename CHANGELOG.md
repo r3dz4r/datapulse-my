@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.58.4](https://github.com/r3dz4r/datapulse-my/compare/v3.58.3...v3.58.4) (2026-10-26)
+
+
+### Bug Fixes
+
+* **deploy:** mint a token per phase so append submission and acceptance can exceed 60 minutes ([#2775](https://github.com/r3dz4r/datapulse-my/issues/2775)) ([0fdd3a2](https://github.com/r3dz4r/datapulse-my/commit/0fdd3a2747f84be5de8b334b2fbc842b2689afa9))
+
 ## [3.58.3](https://github.com/r3dz4r/datapulse-my/compare/v3.58.2...v3.58.3) (2026-10-26)
 
 
