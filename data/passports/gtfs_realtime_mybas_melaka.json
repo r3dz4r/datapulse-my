@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.0010879629629629629,
+        "latest_days": 0.0008680555555555555,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-25T14:24:19Z",
-    "record_count": 8,
+    "last_checked": "2026-10-25T23:20:30Z",
+    "record_count": 23,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-melaka",
@@ -39,7 +39,7 @@
     "geography": "Melaka",
     "name": "GTFS Realtime — BAS.MY Melaka Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-25T14:24:19Z",
+    "observed_verified_at": "2026-10-25T23:20:30Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Agensi Pengangkutan Awam Darat (APAD)"
   },
@@ -1076,12 +1076,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-25/revisions/4e4d42d4c5c36bfccff7a670041f95d70ea3eedf19bc610361dd34aba109dd52/gtfs_realtime_mybas_melaka.json",
-    "chain_reference": "attestations/2026-10-25/revisions/4e4d42d4c5c36bfccff7a670041f95d70ea3eedf19bc610361dd34aba109dd52/chain_head.json",
+    "attestation": "attestations/2026-10-25/revisions/9038e3b2983c3b6b33f2e80faaf2caaf908806f60a6db80e6ed84cc6994ef3ad/gtfs_realtime_mybas_melaka.json",
+    "chain_reference": "attestations/2026-10-25/revisions/9038e3b2983c3b6b33f2e80faaf2caaf908806f60a6db80e6ed84cc6994ef3ad/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_mybas_melaka.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:b822ca37ab3c1c02c06cd80bc7c0691a4e48a42ae229ac1eba373655e3687992",
+      "receipt_digest": "sha256:1d5417548d740d634b9e1cea4b77c7d6bd510808624a46615bfd7ce434065333",
       "sigstore_path": "data/gtfs_realtime_mybas_melaka.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_mybas_melaka.receipt.statement.json"
     },

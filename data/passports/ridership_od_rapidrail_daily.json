@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-24T22:24:46Z",
-    "record_count": 5119430,
+    "last_checked": "2026-10-25T22:53:18Z",
+    "record_count": 5154138,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:f6ebe9551c362a442e16beb8d9cca909ddab62b32a404ec781e71751f7cc1e8e"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/transportation/rail/rapidrail_2026_daily.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily Origin-Destination Ridership: Rapid Rail (KV)",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-24T22:24:46Z",
+    "observed_verified_at": "2026-10-25T22:53:18Z",
     "source": "data.gov.my (storage)",
     "steward": "Prasarana Malaysia Berhad and Ministry of Transport"
   },
@@ -842,12 +842,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-25/revisions/4e4d42d4c5c36bfccff7a670041f95d70ea3eedf19bc610361dd34aba109dd52/ridership_od_rapidrail_daily.json",
-    "chain_reference": "attestations/2026-10-25/revisions/4e4d42d4c5c36bfccff7a670041f95d70ea3eedf19bc610361dd34aba109dd52/chain_head.json",
+    "attestation": "attestations/2026-10-25/revisions/9038e3b2983c3b6b33f2e80faaf2caaf908806f60a6db80e6ed84cc6994ef3ad/ridership_od_rapidrail_daily.json",
+    "chain_reference": "attestations/2026-10-25/revisions/9038e3b2983c3b6b33f2e80faaf2caaf908806f60a6db80e6ed84cc6994ef3ad/chain_head.json",
     "receipt": {
       "evidence_path": "data/ridership_od_rapidrail_daily.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:fe4798ee7520195e07a09b8310755cac54e2f419d88db270bdecb95d47d3e3d7",
+      "receipt_digest": "sha256:e0c56fc2381d9227732edacf581d8f52af6a9ddb7c2dcd863c4a8fd218e8be77",
       "sigstore_path": "data/ridership_od_rapidrail_daily.receipt.sigstore.json",
       "statement_path": "data/ridership_od_rapidrail_daily.receipt.statement.json"
     },
