@@ -337,15 +337,26 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
     output = tmp_path / "guard-output"
     summary = tmp_path / "guard-summary"
     guard_run = textwrap.dedent(guard.split("        run: |\n", 1)[1])
+    prepare = next(step for step in re.split(r"(?=^      - )", pages, flags=re.MULTILINE)
+                   if "- name: Prepare append candidate for acceptance\n" in step)
+    prepare_run = textwrap.dedent(prepare.split("        run: |\n", 1)[1])
     if not accepted:
         guard_run = re.sub(r"^\s*sleep .*$", "              SECONDS=$deadline", guard_run, flags=re.MULTILINE)
-    result = subprocess.run(
-        ["bash", "-c", guard_run], cwd=root,
-        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
              **{key: str(value) for key, value in yaml.safe_load(pages)["env"].items()},
              "GITHUB_SHA": "b" * 40, "PROMOTION_SOURCE_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse",
              "PR_STATE": "MERGED" if accepted else "OPEN", "GITHUB_OUTPUT": str(output),
-             "GITHUB_STEP_SUMMARY": str(summary)},
+             "GITHUB_STEP_SUMMARY": str(summary)}
+    prepared = subprocess.run(["bash", "-c", prepare_run], cwd=root, env=env,
+                              text=True, capture_output=True)
+    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+    prep_output = dict(line.split("=", 1) for line in output.read_text().splitlines())
+    assert prep_output["state"] == "ready"
+    env.update(APPEND_PREP_STATE=prep_output["state"], APPEND_BRANCH=prep_output["branch"],
+               APPEND_HEAD_SHA=prep_output["head_sha"])
+    output.unlink()
+    result = subprocess.run(
+        ["bash", "-c", guard_run], cwd=root, env=env,
         text=True, capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
