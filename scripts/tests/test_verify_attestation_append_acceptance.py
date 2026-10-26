@@ -84,7 +84,7 @@ def run_wait(
                'rev-parse) printf "%040d\\n" 0 | tr 0 a;; esac\n',
         "sleep": '#!/bin/sh\necho "sleep $*" >> "$CALL_LOG"\n',
         "timeout": '#!/bin/bash\nshift 2\ncap="$1"; shift\n'
-                   'if [[ "$OUTER_TIMEOUT" == 1 && ( "$cap" == 3000s || "$cap" == 1900s ) ]]; then exit 124; fi\n'
+                   'if [[ "$OUTER_TIMEOUT" == 1 && ( "$cap" == 1800s || "$cap" == 1900s ) ]]; then exit 124; fi\n'
                    'exec "$@"\n',
     }
     for name, body in programs.items():
@@ -102,6 +102,16 @@ def run_wait(
            "CHECK": check, "MERGE_LATER": str(int(merged)), "PROOF": str(proof),
            "OUTER_TIMEOUT": str(int(outer_timeout)), "LOOKUP_STATUS": str(lookup_status),
            "NEW_SUBMISSION": str(int(new_submission)), "MERGE_AT": str(merge_at)}
+    if new_submission and not early:
+        prepare = next(item for item in steps if item.get("name") == "Prepare append candidate for acceptance")
+        prepared = subprocess.run(["bash", "-c", prepare["run"]], cwd=tmp_path, env=env,
+                                  capture_output=True, text=True, timeout=10)
+        assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+        prep_output = dict(line.split("=", 1) for line in output.read_text().splitlines())
+        assert prep_output["state"] == "ready"
+        env.update(APPEND_PREP_STATE=prep_output["state"], APPEND_BRANCH=prep_output["branch"],
+                   APPEND_HEAD_SHA=prep_output["head_sha"])
+        output.unlink()
     result = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, env=env,
                             capture_output=True, text=True, timeout=10)
     return result, output.read_text() if output.exists() else "", log.read_text() if log.exists() else ""
