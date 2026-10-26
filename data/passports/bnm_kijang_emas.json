@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.0,
+        "latest_days": 3.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-20T04:57:20Z",
+    "last_checked": "2026-10-25T22:53:18Z",
     "record_count": 2,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:2376f3ea9cbdd776f08ebe34e7d78084c8dd520a7f10e465c4b337a9801f7bb8"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/kijang-emas",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Kijang Emas (Gold Reference Price)",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-20T04:57:20Z",
+    "observed_verified_at": "2026-10-25T22:53:18Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1124,12 +1124,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-10/bnm_kijang_emas.json",
-    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/bnm_kijang_emas.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/bnm_kijang_emas.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:3872bd03c4540f4cb098a9bbf34825784b45d8e84eb67a69aef8bed71d0c2596",
+      "receipt_digest": "sha256:27f932f7b5fc64615c178d6f6f881d33ec62cdc5e37c73fa50b42548c5ccffcd",
       "sigstore_path": "data/bnm_kijang_emas.receipt.sigstore.json",
       "statement_path": "data/bnm_kijang_emas.receipt.statement.json"
     },

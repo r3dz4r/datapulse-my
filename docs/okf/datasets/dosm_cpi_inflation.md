@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/cpi/cpi_2d_inflation.csv","title": "DOSM Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-10T11:37:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:04:39Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/dosm_cpi_inflation.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-09-16T12:00:00Z"
+stale_after: "2026-10-17T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ OpenDOSM Monthly CPI Inflation by Division is published by DOSM Malaysia and tra
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:4df27604fe443770c1c21819b12eb2363292aef62e8d746c030c6b3e53790154`
-- `record_count`: `7826`
+- `record_count`: `7840`
 
 # Quirks
 

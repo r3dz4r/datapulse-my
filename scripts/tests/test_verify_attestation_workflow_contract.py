@@ -1,4 +1,4 @@
-"""Focused tests for the shared daily and Pages Sigstore workflow contract."""
+"""Focused tests for attestation signing and CI acceptance workflow contracts."""
 
 from __future__ import annotations
 
@@ -23,6 +23,126 @@ from scripts.verify_attestation_append import append_paths, verify_append
 ROOT = Path(__file__).resolve().parents[2]
 DAILY = ROOT / ".github/workflows/datapulse-attest-daily.yml"
 PAGES = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
+CI = ROOT / ".github/workflows/ci.yml"
+
+
+def _ci_workflow() -> dict:
+    # BaseLoader preserves the Actions `on` key instead of treating it as a boolean.
+    return yaml.load(CI.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+
+
+def _ci_step(job: str) -> dict:
+    steps = _ci_workflow()["jobs"][job]["steps"]
+    if job == "classify":
+        return next(step for step in steps if step.get("id") == "classify")
+    return next(step for step in steps if step.get("name") ==
+                "Verify immutable attestation append against accepted base")
+
+
+def test_ci_jobs_do_not_derive_bases_from_event_payloads() -> None:
+    for name, job in _ci_workflow()["jobs"].items():
+        contents = yaml.dump(job)
+        for frozen_base in ("github.event.pull_request.base.sha", "github.event.merge_group.base_sha"):
+            assert frozen_base not in contents, f"{name} uses a frozen event base"
+
+
+def test_ci_push_trigger_accepts_only_main() -> None:
+    triggers = _ci_workflow()["on"]
+    assert {"pull_request", "merge_group", "workflow_dispatch"} <= triggers.keys()
+    assert triggers["push"] == {"branches": ["main"]}, "branch and tag pushes must not duplicate PR CI"
+
+
+@pytest.fixture
+def ci_merge_checkout(tmp_path: Path) -> tuple[Path, str, str, str]:
+    root = tmp_path / "checkout"
+    (root / "scripts").mkdir(parents=True)
+    (root / "scripts/classify_change.py").write_text(
+        (ROOT / "scripts/classify_change.py").read_text(encoding="utf-8"), encoding="utf-8",
+    )
+    # Record the workflow's verifier argument; verifier semantics have separate tests.
+    (root / "scripts/verify_attestation_append.py").write_text(
+        'import os, sys\nfrom pathlib import Path\n'
+        'assert sys.argv[1] == "--base"\n'
+        'Path(os.environ["BASE_RECORD"]).write_text(sys.argv[2])\n', encoding="utf-8",
+    )
+    git(root, "init", "-b", "main")
+    git(root, "config", "user.name", "Test")
+    git(root, "config", "user.email", "test@example.test")
+    git(root, "add", ".")
+    git(root, "commit", "-m", "event base")
+    event_base = git(root, "rev-parse", "HEAD")
+    git(root, "switch", "-c", "candidate")
+    (root / "health").mkdir()
+    (root / "health/latest.json").write_text("{}\n", encoding="utf-8")
+    git(root, "add", ".")
+    git(root, "commit", "-m", "candidate")
+    candidate = git(root, "rev-parse", "HEAD")
+    git(root, "switch", "main")
+    (root / "scripts/base-only.py").write_text("# base advanced\n", encoding="utf-8")
+    git(root, "add", ".")
+    git(root, "commit", "-m", "base advanced after event")
+    checkout_base = git(root, "rev-parse", "HEAD")
+    git(root, "merge", "--no-ff", "--no-commit", "candidate")
+    # A merge-only path proves classification reads the merge tree, not the PR head.
+    (root / "health/trends.json").write_text("{}\n", encoding="utf-8")
+    git(root, "add", ".")
+    git(root, "commit", "-m", "merge ref")
+    return root, event_base, checkout_base, candidate
+
+
+def _run_ci_step(job: str, root: Path, event: str, event_base: str, candidate: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["bash", "-e", "-o", "pipefail", "-c", _ci_step(job)["run"]], cwd=root,
+        env={**os.environ, "PATH": f"{Path(sys.executable).parent}:{os.environ['PATH']}",
+             "GITHUB_EVENT_NAME": event, "GITHUB_OUTPUT": str(root / "step-output"),
+             "BASE_RECORD": str(root / "base-record"),
+             "BASE_SHA": event_base, "ACCEPTED_BASE": event_base, "HEAD_SHA": candidate},
+        text=True, capture_output=True,
+    )
+
+
+@pytest.mark.parametrize("event", ["pull_request", "merge_group"])
+def test_ci_append_verification_passes_base_derived_from_checkout(
+    ci_merge_checkout: tuple[Path, str, str, str], event: str,
+) -> None:
+    root, event_base, checkout_base, candidate = ci_merge_checkout
+    step = _ci_step("deterministic-safety-net")
+    assert "pull_request" in step["if"] and "merge_group" in step["if"]
+    assert "continue-on-error" not in step
+    result = _run_ci_step("deterministic-safety-net", root, event, event_base, candidate)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (root / "base-record").read_text() == checkout_base
+
+
+@pytest.mark.parametrize("event", ["pull_request", "merge_group"])
+def test_ci_classify_uses_checkout_base_and_merge_tree(
+    ci_merge_checkout: tuple[Path, str, str, str], event: str,
+) -> None:
+    root, event_base, _, candidate = ci_merge_checkout
+    result = _run_ci_step("classify", root, event, event_base, candidate)
+    assert result.returncode == 0, result.stdout + result.stderr
+    outputs = (root / "step-output").read_text().splitlines()
+    assert "changed_paths=health/latest.json, health/trends.json" in outputs
+    assert "health_only=true" in outputs
+
+
+@pytest.mark.parametrize("job", ["classify", "deterministic-safety-net"])
+@pytest.mark.parametrize("event", ["pull_request", "merge_group"])
+@pytest.mark.parametrize("missing_parent", ["root", "shallow"])
+def test_ci_missing_checkout_base_fails_loudly(
+    ci_merge_checkout: tuple[Path, str, str, str], job: str, event: str, missing_parent: str,
+) -> None:
+    root, event_base, _, candidate = ci_merge_checkout
+    if missing_parent == "root":
+        git(root, "switch", "--detach", event_base)
+    else:
+        shallow = root.parent / "shallow"
+        git(root, "clone", "--depth=1", root.as_uri(), str(shallow))
+        root = shallow
+    result = _run_ci_step(job, root, event, event_base, candidate)
+    assert result.returncode != 0, "missing checkout parent must break the gate"
+    assert "::error::" in result.stderr and "base" in result.stderr.lower()
+    assert not (root / "base-record").exists(), "verifier must not run with a fallback base"
 
 
 def _workflow_pair(tmp_path: Path) -> tuple[Path, Path]:
@@ -217,15 +337,26 @@ def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
     output = tmp_path / "guard-output"
     summary = tmp_path / "guard-summary"
     guard_run = textwrap.dedent(guard.split("        run: |\n", 1)[1])
+    prepare = next(step for step in re.split(r"(?=^      - )", pages, flags=re.MULTILINE)
+                   if "- name: Prepare append candidate for acceptance\n" in step)
+    prepare_run = textwrap.dedent(prepare.split("        run: |\n", 1)[1])
     if not accepted:
         guard_run = re.sub(r"^\s*sleep .*$", "              SECONDS=$deadline", guard_run, flags=re.MULTILINE)
-    result = subprocess.run(
-        ["bash", "-c", guard_run], cwd=root,
-        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
              **{key: str(value) for key, value in yaml.safe_load(pages)["env"].items()},
              "GITHUB_SHA": "b" * 40, "PROMOTION_SOURCE_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse",
              "PR_STATE": "MERGED" if accepted else "OPEN", "GITHUB_OUTPUT": str(output),
-             "GITHUB_STEP_SUMMARY": str(summary)},
+             "GITHUB_STEP_SUMMARY": str(summary)}
+    prepared = subprocess.run(["bash", "-c", prepare_run], cwd=root, env=env,
+                              text=True, capture_output=True)
+    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+    prep_output = dict(line.split("=", 1) for line in output.read_text().splitlines())
+    assert prep_output["state"] == "ready"
+    env.update(APPEND_PREP_STATE=prep_output["state"], APPEND_BRANCH=prep_output["branch"],
+               APPEND_HEAD_SHA=prep_output["head_sha"])
+    output.unlink()
+    result = subprocess.run(
+        ["bash", "-c", guard_run], cwd=root, env=env,
         text=True, capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr

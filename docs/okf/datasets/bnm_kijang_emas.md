@@ -8,21 +8,21 @@ sources:
   - {"id": "bnm","resource": "https://api.bnm.gov.my/public/kijang-emas","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-12T18:33:27Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T22:24:46Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Bank Negara Malaysia"
-datapulse:real_status: "fresh"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/bnm_kijang_emas.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2
-stale_after: "2026-10-13T12:00:00Z"
+stale_after: "2026-10-24T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Kijang Emas (Gold Reference Price) is published by Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Kijang Emas (Gold Reference Price) is published by Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 

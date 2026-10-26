@@ -332,13 +332,20 @@ def test_signing_bounds_and_served_gates_survive_the_split() -> None:
         "PROMOTION_SETTLED_MAX_WAIT_SECONDS": 900,
         "APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS": 1185,
         "APPEND_ACCEPTANCE_PATIENCE_SECONDS": 1485,
+        "PUBLICATION_CHAIN_MAX_DEPTH": 3,
     }
     jobs = workflow["jobs"]
-    assert [jobs[name]["timeout-minutes"] for name in ("classify", "sign_health", "deploy")] == [20, 132, 30]
+    assert [jobs[name]["timeout-minutes"] for name in ("classify", "sign_health", "deploy")] == [20, sum((32, 40, 30, 31, 9)), 30]
     sign_steps = jobs["sign_health"]["steps"]
-    assert [step["timeout-minutes"] for step in sign_steps if "timeout-minutes" in step] == [32, 40, 51]
-    acceptance = _step(PUBLISH, "sign_health", "Require authoritative acceptance before signing publication")["run"]
-    for unchanged in ("timeout -k 5s 3000s bash", "named_timeout()", "refuse_acceptance()", "deterministic-safety-net"):
+    assert [step["timeout-minutes"] for step in sign_steps if "timeout-minutes" in step] == [32, 40, 30, 31]
+    preparation = _step(PUBLISH, "sign_health", "Prepare append candidate for acceptance")["run"]
+    acceptance_step = _step(PUBLISH, "sign_health", "Require authoritative acceptance before signing publication")
+    acceptance = acceptance_step["run"]
+    assert "timeout -k 5s 1770s bash" in preparation
+    assert "timeout -k 5s 1800s bash" in acceptance
+    for output in ("state", "branch", "head_sha"):
+        assert f"steps.append_submission.outputs.{output}" in str(acceptance_step["env"])
+    for unchanged in ("named_timeout()", "refuse_acceptance()", "deterministic-safety-net"):
         assert unchanged in acceptance
     assert "--max-files 18000" in _step(PUBLISH, "deploy", "Keep verifier-reachable attestation history")["run"]
     for gate in ("Verify isolated Pages preview before production promotion", "Verify canonical served surface", "Verify local versus served parity after publication"):

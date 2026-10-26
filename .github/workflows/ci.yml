@@ -1,9 +1,13 @@
 name: Pull request CI
 
 on:
+  # Gate main pushes; branch pushes are covered by pull_request, avoiding duplicate suites.
   push:
+    branches: [main]
+  # Gate PR merge refs and prospective merge-group trees independently of main pushes.
   pull_request:
   merge_group:
+  # Preserve explicit operator runs.
   workflow_dispatch:
 
 permissions:
@@ -32,10 +36,8 @@ jobs:
           sparse-checkout-cone-mode: false
       - id: classify
         env:
+          # A push's before SHA bounds the changed range; it is not an accepted merge base.
           BEFORE_SHA: ${{ github.event.before }}
-          AFTER_SHA: ${{ github.sha }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -Eeuo pipefail
           echo "health_only=false" >> "$GITHUB_OUTPUT"
@@ -44,14 +46,17 @@ jobs:
           echo "changed_paths=(diff unavailable)" >> "$GITHUB_OUTPUT"
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
             if ! git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
-              echo "::error::Push diff unavailable: before commit ${BEFORE_SHA} is absent from checkout" >&2
-              exit 1
+              echo "::warning::Push diff unavailable: before commit ${BEFORE_SHA} is absent from checkout; running full verification" >&2
+              exit 0
             fi
-            diff_args=("$BEFORE_SHA" "$AFTER_SHA")
-          elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null || exit 0
-            git cat-file -e "${HEAD_SHA}^{commit}" 2>/dev/null || exit 0
-            diff_args=("$BASE_SHA...$HEAD_SHA")
+            diff_args=("$BEFORE_SHA" HEAD)
+          elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" || "${GITHUB_EVENT_NAME}" == "merge_group" ]]; then
+            # A gate judges the checkout tree against its own base, never a frozen event base.
+            BASE_SHA=$(git rev-parse --verify 'HEAD^1^{commit}') || {
+              echo "::error::Cannot resolve the checked-out merge tree's base (HEAD^1)" >&2
+              exit 1
+            }
+            diff_args=("$BASE_SHA" HEAD)
           else
             exit 0
           fi
@@ -95,7 +100,8 @@ jobs:
 
   deterministic-safety-net:
     needs: classify
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || (github.event_name == 'push' && needs.classify.outputs.health_only != 'true')
+    # A skipped required check satisfies branch protection, so only main pushes may skip.
+    if: always() && !(github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.classify.result == 'success' && needs.classify.outputs.health_only == 'true')
     runs-on: ubuntu-latest
     # 40, not 25: the suite grew past the old ceiling. The append-fork regression file alone
     # walks the 65k-file attestation chain and takes ~8 minutes, so two runs were killed at the
@@ -243,9 +249,14 @@ jobs:
 
       - name: Verify immutable attestation append against accepted base
         if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && env.ARTIFACT_ONLY_FAST_PATH != 'true'
-        env:
-          ACCEPTED_BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
-        run: python3 scripts/verify_attestation_append.py --base "$ACCEPTED_BASE"
+        run: |
+          set -Eeuo pipefail
+          # A gate judges the checkout tree against its own base, never a frozen event base.
+          ACCEPTED_BASE=$(git rev-parse --verify 'HEAD^1^{commit}') || {
+            echo "::error::Cannot resolve the checked-out merge tree's base (HEAD^1)" >&2
+            exit 1
+          }
+          python3 scripts/verify_attestation_append.py --base "$ACCEPTED_BASE"
 
       - name: Verify attestation workflow contract
         if: env.ARTIFACT_ONLY_FAST_PATH != 'true'

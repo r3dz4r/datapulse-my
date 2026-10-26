@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 32.0,
+        "latest_days": 7.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-17T11:55:36Z",
-    "record_count": 44576,
+    "last_checked": "2026-10-24T12:04:39Z",
+    "record_count": 44800,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -39,7 +39,7 @@
     "geography": "Malaysia (13 states + W.P. Kuala Lumpur + W.P. Labuan + W.P. Putrajaya)",
     "name": "OpenDOSM Monthly CPI Inflation by State and Division",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-17T11:55:36Z",
+    "observed_verified_at": "2026-10-24T12:04:39Z",
     "source": "OpenDOSM (storage.dosm.gov.my)",
     "steward": "DOSM Malaysia"
   },
@@ -1240,12 +1240,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-10/dosm_cpi_state_inflation.json",
-    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/dosm_cpi_state_inflation.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/dosm_cpi_state_inflation.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:227a4971b5d9fba67bc4c00d0782b10e6625223799a22ebcda75f1a74edaea3a",
+      "receipt_digest": "sha256:72f449a0106a7405d3c3af5a43564df73a27a169b4af2bb2a49e9cf5f2c1190f",
       "sigstore_path": "data/dosm_cpi_state_inflation.receipt.sigstore.json",
       "statement_path": "data/dosm_cpi_state_inflation.receipt.statement.json"
     },

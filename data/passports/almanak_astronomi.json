@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-19T23:58:17Z",
+    "last_checked": "2026-10-25T22:53:18Z",
     "record_count": 538,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:3857068c199298de39c3e02f44c734cc4db70d8777dd2cf49e6c6d2569d90edc"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=almanak_astronomi",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Astronomy Almanac",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-19T23:58:17Z",
+    "observed_verified_at": "2026-10-25T22:53:18Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "Malaysian Meteorological Department"
   },
@@ -828,12 +828,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-10/almanak_astronomi.json",
-    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/almanak_astronomi.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/almanak_astronomi.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:98e2c18c6906ac81126e4bc7b55684197889c8b5862865a8985999b32e133c02",
+      "receipt_digest": "sha256:6dd784c53120ba116845ac616bfa58b01fa22edab5245fe76ab0d65f64dcf2ce",
       "sigstore_path": "data/almanak_astronomi.receipt.sigstore.json",
       "statement_path": "data/almanak_astronomi.receipt.statement.json"
     },

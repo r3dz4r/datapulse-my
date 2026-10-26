@@ -5,13 +5,15 @@ from __future__ import annotations
 import json
 import ast
 import builtins
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import re
 import os
 from pathlib import Path
 import subprocess
 import tempfile
 import textwrap
+import shutil
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -19,6 +21,8 @@ import yaml
 
 from scripts.classify_change import is_health_only_change
 from scripts.attestation_fetch_refs import fetch_refs
+from scripts.tests.test_attestation_projections import accepted_root
+from scripts.tests.test_attestations import fixture_root
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -53,6 +57,447 @@ def test_pages_passes_explicit_full_revision_depth_without_raising_guard() -> No
     run = _deploy_step("Keep verifier-reachable attestation history")["run"]
     assert "--full-revisions-per-day 1" in run
     assert "--max-files 18000" in run
+
+
+def test_pages_rejects_projections_different_from_accepted_main_before_publication() -> None:
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    names = [step.get("name") for step in steps]
+    guard = _deploy_step("Require served projections from committed main")
+    run = guard["run"]
+    assert names.index("Keep verifier-reachable attestation history") < names.index(guard["name"])
+    assert names.index(guard["name"]) < names.index("Deploy isolated Cloudflare Pages preview artifact")
+    assert "python3 scripts/gen_attestation_projections.py --root \"$accepted_root\" --check" in run
+    assert "served projections must match the committed tree" in run
+    assert "served_head=" in run and "committed_head=" in run
+    for path in (
+        "attestations/latest/index.json",
+        "attestations/latest/chain_head.json",
+        "attestations/latest/scores.json",
+        "attestations/chain-index.json",
+        ".attestations/chain_head.json",
+    ):
+        assert path in run
+
+
+def test_projection_checkout_covers_committed_heads_revisions(tmp_path: Path) -> None:
+    run = _deploy_step("Require served projections from committed main")["run"]
+    match = re.search(r'projection_paths="\$\(python3 - "\$accepted_root" <<\'PY\'\n(?P<body>.*?)\nPY\n\)"', run, re.S)
+    assert match is not None
+    assert "accepted_discovery(root, \"HEAD\")" in match.group("body")
+    assert "set_directory(document[\"heads\"][head])" in match.group("body")
+    assert "PROJECTIONS, REGISTRY" in match.group("body")
+    assert "for name in FILES" in match.group("body")
+    assert "sparse-checkout set --no-cone --stdin" in run
+    assert '"/$set_dir/"' not in run and ' /attestations/' not in run
+
+    from scripts import attestation_sets, gen_attestation_projections
+    from scripts.verify_attestation_append import accepted_discovery
+
+    root, key = accepted_root(tmp_path)
+    from scripts import gen_attestations as ga
+    ga.generate(root, key, datetime(2026, 8, 15, 2, tzinfo=timezone.utc), force_append=True)
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "accepted revision"], cwd=root,
+                   check=True, capture_output=True)
+    document = accepted_discovery(root, "HEAD")
+    head = document["current_head"]
+    directory = attestation_sets.set_directory(document["heads"][head])
+    revision_head = f"{directory}/revisions/{head}/chain_head.json"
+    if subprocess.run(["git", "cat-file", "-e", f"HEAD:{revision_head}"], cwd=root,
+                      capture_output=True).returncode == 0:
+        directory = attestation_sets.set_directory(revision_head)
+    selected = set(gen_attestation_projections.PROJECTIONS) | {gen_attestation_projections.REGISTRY}
+    selected.update(f"{directory}/{name}" for name in attestation_sets.FILES)
+    assert len(selected) == 11
+    assert "attestations" not in selected
+    assert all(not path.endswith("/") for path in selected)
+    result = subprocess.run([sys.executable, "-c", match.group("body"), str(root)], cwd=ROOT,
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert set(result.stdout.splitlines()) == {"/" + path for path in selected}
+
+
+def test_projection_checkout_set_is_pointer_derived_and_bounded() -> None:
+    run = _deploy_step("Require served projections from committed main")["run"]
+    checkout = next(line for line in run.splitlines() if "sparse-checkout set" in line)
+    assert '--stdin <<< "$projection_paths"' in checkout
+    assert "attestations/" not in checkout and "revisions/" not in checkout
+    assert '"/$set_dir/"' not in _workflow()
+    match = re.search(
+        r'projection_paths="\$\(python3 - "\$accepted_root" <<\'PY\'\n(?P<body>.*?)\nPY\n\)"',
+        run, re.S,
+    )
+    assert match is not None
+    body = match.group("body")
+    assert 'accepted_discovery(root, "HEAD")' in body
+    assert 'head = document["current_head"]' in body
+    assert 'directory = set_directory(document["heads"][head])' in body
+    assert 'set_directory(revision_head)' in body
+    assert 'paths = {*PROJECTIONS, REGISTRY, *(f"{directory}/{name}" for name in FILES)}' in body
+    assert 'print("\\n".join("/" + path for path in sorted(paths)))' in body
+
+
+@pytest.mark.parametrize(
+    ("pass_on", "check_status"),
+    [(100, 1), (1, 1), (3, 1), (100, 2)],
+    ids=["refresh-timeout", "already-fresh", "refresh-passes", "invalid-evidence"],
+)
+def test_deploy_waits_for_committed_projection_refresh_before_refusing(
+    tmp_path: Path, pass_on: int, check_status: int,
+) -> None:
+    root, _ = accepted_root(tmp_path)
+    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
+    site = root / "_site"
+    for path in (
+        "attestations/latest/index.json", "attestations/latest/chain_head.json",
+        "attestations/latest/binding.json", "attestations/latest/scores.json",
+        "attestations/chain-index.json", ".attestations/chain_head.json",
+    ):
+        target = site / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / path, target)
+    head = json.loads((site / "attestations/chain-index.json").read_text())["current_head"]
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "python3").write_text(
+        f'#!{sys.executable}\n'
+        'import os, pathlib, sys\n'
+        'if sys.argv[1] == "-":\n'
+        f'    os.execv({sys.executable!r}, [{sys.executable!r}, *sys.argv[1:]])\n'
+        'counter = pathlib.Path(os.environ["CHECK_COUNT"])\n'
+        'count = int(counter.read_text()) + 1 if counter.exists() else 1\n'
+        'counter.write_text(str(count))\n'
+        'if count >= int(os.environ["PASS_ON"]):\n'
+        '    print("OK: accepted attestation projections match evidence")\n'
+        '    sys.exit(0)\n'
+        'print("STALE attestations/chain-index.json committed=old derived=new"\n'
+        '      if os.environ["CHECK_STATUS"] == "1" else "REFUSED: invalid evidence")\n'
+        'sys.exit(int(os.environ["CHECK_STATUS"]))\n'
+    )
+    (bin_dir / "gh").write_text(
+        '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\n'
+        'exit 2\n'
+    )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\nprintf "git %s\\n" "$*" >> "$CALL_LOG"\n'
+        f'exec "{shutil.which("git")}" "$@"\n'
+    )
+    for stub in bin_dir.iterdir():
+        stub.chmod(0o755)
+    runner_temp = tmp_path / "runner"
+    runner_temp.mkdir()
+    count_file = tmp_path / "count"
+    calls_file = tmp_path / "calls"
+    run = _deploy_step("Require served projections from committed main")["run"]
+    assert "gh pr " not in run
+    # Advance Bash's clock in the parent shell; exercise the real 600s bound.
+    harness = 'sleep() { printf "sleep %s\\n" "$*" >> "$CALL_LOG"; SECONDS=$((SECONDS + $1)); }\n'
+    result = subprocess.run(
+        ["bash", "-c", harness + run], cwd=root,
+        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+             "PYTHONPATH": str(ROOT), "RUNNER_TEMP": str(runner_temp),
+             "CHECK_COUNT": str(count_file), "CALL_LOG": str(calls_file),
+             "PASS_ON": str(pass_on),
+             "CHECK_STATUS": str(check_status)},
+        capture_output=True, text=True, timeout=30,
+    )
+    count = int(count_file.read_text())
+    calls = calls_file.read_text().splitlines() if calls_file.exists() else []
+    notices = result.stdout + result.stderr
+    assert count <= 32
+    assert not any(call.startswith("gh ") for call in calls)
+    assert sum("fetch --no-tags origin refs/heads/main:refs/remotes/origin/main" in call
+               for call in calls) == count
+    refusal = "served projections must match the committed tree"
+    if result.returncode == 1:
+        assert (
+            "::error title=Attestation projection mismatch::"
+            f"{refusal}: served_head={head} committed_head={head} (committed projections are stale)"
+        ) in result.stderr.splitlines()
+    # An unchanged remote ref must not trigger repeated worktree resets.
+    assert sum("reset --hard HEAD" in call for call in calls) == 1
+    if pass_on == 1:
+        assert result.returncode == 0, notices
+        assert count == 1
+        assert "Projections pending refresh" not in notices
+        assert not any(call.startswith("sleep ") for call in calls)
+    elif check_status != 1:
+        assert result.returncode == 1
+        assert refusal in result.stderr
+        assert count == 1
+        assert "Projections pending refresh" not in notices
+        assert not any(call.startswith("sleep ") for call in calls)
+    elif pass_on == 100:
+        assert result.returncode == 1
+        assert refusal in result.stderr
+        assert count > 1
+        assert notices.count("::notice title=Projections pending refresh::") == 1
+        assert notices.count("::notice title=Projections pending refresh timed out::") == 1
+        assert f"served_head={head} committed_head={head}" in notices
+        assert sum(call == "sleep 20" for call in calls) <= 30
+    else:
+        assert result.returncode == 0, notices
+        assert count == pass_on
+        assert refusal not in result.stderr
+        assert result.stdout.index("Projections pending refresh") < result.stdout.index("OK:")
+    assert all(call == "sleep 20" for call in calls if call.startswith("sleep "))
+
+
+def test_projection_refresh_materializes_moved_main_before_rechecking(tmp_path: Path) -> None:
+    from scripts.tests.test_attestation_projections import accept_next_day
+
+    root, key = accepted_root(tmp_path)
+    accept_next_day(root, key)
+    stale_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts/gen_attestation_projections.py"), "--root", str(root)],
+        cwd=ROOT, check=True, capture_output=True,
+    )
+    subprocess.run(["git", "add", "-u"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "refresh accepted projections"], cwd=root,
+                   check=True, capture_output=True)
+    refresh_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    site = root / "_site"
+    from scripts.gen_attestation_projections import PROJECTIONS
+    for path in PROJECTIONS:
+        target = site / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / path, target)
+    subprocess.run(["git", "reset", "--hard", stale_sha], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "python3").write_text(
+        f'#!{sys.executable}\n'
+        'import os, sys\n'
+        'args = sys.argv[1:]\n'
+        'if args[0] != "-":\n'
+        '    with open(os.environ["CALL_LOG"], "a") as log:\n'
+        '        log.write("check\\n")\n'
+        f'    args[0] = {str(ROOT / "scripts/gen_attestation_projections.py")!r}\n'
+        f'os.execv({sys.executable!r}, [{sys.executable!r}, *args])\n'
+    )
+    (bin_dir / "gh").write_text(
+        '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\nexit 2\n'
+    )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\nprintf "git %s\\n" "$*" >> "$CALL_LOG"\n'
+        f'exec "{shutil.which("git")}" "$@"\n'
+    )
+    for stub in bin_dir.iterdir():
+        stub.chmod(0o755)
+    runner_temp = tmp_path / "runner"
+    runner_temp.mkdir()
+    calls_file = tmp_path / "calls"
+    harness = (
+        'sleep() { SECONDS=$((SECONDS + $1)); '
+        'command git update-ref refs/heads/main "$REFRESH_SHA"; }\n'
+    )
+    result = subprocess.run(
+        ["bash", "-c", harness + _deploy_step("Require served projections from committed main")["run"]],
+        cwd=root, env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
+                       "PYTHONPATH": str(ROOT), "RUNNER_TEMP": str(runner_temp),
+                       "GITHUB_REPOSITORY": "example/data-pulse", "CALL_LOG": str(calls_file),
+                       "REFRESH_SHA": refresh_sha}, capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.index("Projections pending refresh") < result.stdout.index("OK:")
+    accepted = runner_temp / "accepted-projections"
+    assert subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=accepted, text=True).strip() == refresh_sha
+    for path in PROJECTIONS:
+        assert (accepted / path).read_bytes() == (site / path).read_bytes()
+    calls = calls_file.read_text().splitlines()
+    assert not any(call.startswith("gh ") for call in calls)
+    assert calls.count("check") == 2
+    assert sum("reset --hard HEAD" in call for call in calls) == 2
+    selected = subprocess.check_output(["git", "ls-files", "-t"], cwd=accepted, text=True).splitlines()
+    assert sum(line.startswith("H ") for line in selected) == 11
+
+
+@pytest.mark.parametrize(
+    "observed_branch", ["", "main", "attestation/append-contract"],
+    ids=["detached", "non-append", "attached"],
+)
+def test_missing_submission_result_never_claims_no_append_pr_from_detached_head(
+    tmp_path: Path, observed_branch: str,
+) -> None:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "submit_attestation_append.sh").write_text('rm -f "$APPEND_SUBMISSION_RESULT"\n')
+    (bin_dir / "python3").write_text(
+        '#!/bin/bash\n[[ "$*" != *--require-committed* ]]\n'
+    )
+    (bin_dir / "git").write_text(
+        '#!/bin/bash\ncase "$*" in\n'
+        '"branch --show-current") printf "%s\\n" "$OBSERVED_BRANCH" ;;\n'
+        '"rev-parse HEAD") printf "%040d\\n" 1 ;;\n'
+        '*) exit 2 ;;\nesac\n'
+    )
+    (bin_dir / "gh").write_text(
+        f'#!{sys.executable}\n'
+        'import json, os, sys\n'
+        'with open(os.environ["CALL_LOG"], "a") as log:\n'
+        '    log.write(json.dumps(sys.argv[1:]) + "\\n")\n'
+        'if sys.argv[1:3] == ["pr", "list"]:\n'
+        '    print("[]")\n'
+        'else:\n'
+        '    sys.exit(1)\n'
+    )
+    for stub in bin_dir.iterdir():
+        stub.chmod(0o755)
+    calls_file = tmp_path / "calls"
+    result = subprocess.run(
+        ["bash", "-c", _append_acceptance_harness()], cwd=tmp_path,
+        env={**os.environ, **{key: str(value) for key, value in yaml.safe_load(_workflow())["env"].items()},
+             "PATH": f"{bin_dir}:{os.environ['PATH']}", "RUNNER_TEMP": str(tmp_path),
+             "GITHUB_REPOSITORY": "example/data-pulse", "GITHUB_OUTPUT": str(tmp_path / "output"),
+             "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"), "CALL_LOG": str(calls_file),
+             "OBSERVED_BRANCH": observed_branch},
+        capture_output=True, text=True, timeout=15,
+    )
+    calls = [json.loads(line) for line in calls_file.read_text().splitlines()]
+    assert result.returncode != 0
+    assert "::error" in result.stderr
+    assert all("" not in call for call in calls)
+    views = [call for call in calls if call[:2] == ["pr", "view"]]
+    if observed_branch.startswith("attestation/append-"):
+        assert views and all(call[2] == observed_branch for call in views)
+        assert "Append PR lookup failed" in result.stderr
+    else:
+        assert f"expected an attestation append branch, got {observed_branch}::" in result.stderr
+        assert "no submission result was produced" in result.stderr
+        assert f"local branch='{observed_branch}'" in result.stderr
+        assert "PR #unknown" in result.stderr
+        assert "PR existence unverified" in result.stderr
+        assert not views
+        assert "no append PR" not in result.stderr
+
+
+@pytest.mark.parametrize("proof_status", [0, 75, 1, 124, 137])
+def test_noop_submission_reaches_accepted_state_without_pr_refusal(
+    tmp_path: Path, proof_status: int,
+) -> None:
+    run = _append_preparation_step()["run"]
+    arm_start = run.index('if [[ "$branch" == noop ]]; then')
+    arm_end = run.index('if [[ "$branch" != attestation/append-* ]]', arm_start)
+    arm = run[arm_start:arm_end].rstrip()
+    output = tmp_path / "outputs"
+    calls_file = tmp_path / "calls"
+    harness = f'''
+calls_file="{calls_file}"
+named_timeout() {{ shift; "$@"; }}
+python3() {{ printf '%s\\n' "$*" >> "$calls_file"; return "$PROOF_STATUS"; }}
+retry_timeout() {{ printf 'retry %s\\n' "$*" >> "$calls_file"; "$@"; }}
+defer_append() {{ echo "state=append-deferred" >> "$GITHUB_OUTPUT"; exit 0; }}
+refuse_acceptance() {{ echo "$1" >&2; exit 1; }}
+git() {{ printf 'git %s\\n' "$*" >> "$calls_file"; }}
+gh() {{ printf 'gh %s\\n' "$*" >> "$calls_file"; }}
+branch=noop
+'''
+    script = harness + arm
+    result = subprocess.run(
+        ["bash", "-c", script],
+        env={**os.environ, "GITHUB_OUTPUT": str(output), "PROOF_STATUS": str(proof_status),
+             "PROMOTION_SOURCE_SHA": "source-sha"},
+        capture_output=True, text=True,
+    )
+    calls = calls_file.read_text().splitlines() if calls_file.exists() else []
+    output_text = output.read_text() if output.exists() else ""
+    expected_state = (
+        "accepted" if proof_status == 0
+        else "append-deferred" if proof_status in (75, 124, 137)
+        else None
+    )
+    assert result.returncode == (0 if expected_state else 1)
+    assert output_text == (f"state={expected_state}\n" if expected_state else "")
+    assert any("--base source-sha --wait-for-acceptance 0" in call for call in calls)
+    assert ("::notice title=Append submission no-op" in result.stdout) == (proof_status == 0)
+    assert not any(call.startswith("git ") for call in calls)
+    assert not any(call.startswith("gh pr view ") for call in calls)
+    if proof_status == 1:
+        assert "Append acceptance proof failed" in result.stderr
+    assert arm_start < run.index('if [[ "$branch" != attestation/append-* ]]')
+    assert "head_sha=''" in run
+    assert 'branch="$(retry_timeout 10 git branch --show-current)"' in run
+    assert 'if [[ "$branch" == attestation/append-* ]]; then' in run
+    assert 'head_sha="$(retry_timeout 10 git rev-parse HEAD)"' in run
+    assert 'gh pr view "$branch"' in run and '--wait-for-acceptance 0' in run
+
+
+@pytest.mark.parametrize("mismatch", [False, True])
+def test_pages_projection_guard_checks_assembled_bytes(tmp_path: Path, mismatch: bool) -> None:
+    root, _ = accepted_root(tmp_path)
+    (root / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
+    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
+    site = root / "_site"
+    for path in (
+        "attestations/latest/index.json",
+        "attestations/latest/chain_head.json",
+        "attestations/latest/binding.json",
+        "attestations/latest/scores.json",
+        "attestations/chain-index.json",
+        ".attestations/chain_head.json",
+    ):
+        target = site / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / path, target)
+    committed_head = json.loads((root / "attestations/chain-index.json").read_text())["current_head"]
+    if mismatch:
+        index = site / "attestations/chain-index.json"
+        document = json.loads(index.read_text())
+        document["current_head"] = "f" * 64
+        index.write_text(json.dumps(document))
+    runner_temp = tmp_path / "runner"
+    runner_temp.mkdir()
+    result = subprocess.run(
+        ["bash", "-c", _deploy_step("Require served projections from committed main")["run"]],
+        cwd=root, env={**os.environ, "RUNNER_TEMP": str(runner_temp)},
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == (1 if mismatch else 0), result.stdout + result.stderr
+    if mismatch:
+        assert "served projections must match the committed tree" in result.stderr
+        assert f"served_head={'f' * 64}" in result.stderr
+        assert f"committed_head={committed_head}" in result.stderr
+
+
+def test_pages_reuses_valid_accepted_day_without_rewriting_projections(tmp_path: Path) -> None:
+    from scripts import gen_attestations as ga
+
+    root, key = fixture_root(tmp_path)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    health = root / "health/latest.json"
+    snapshot = json.loads(health.read_text())
+    observed = (now - timedelta(seconds=30)).isoformat().replace("+00:00", "Z")
+    snapshot["checked_at"] = observed
+    snapshot["datasets"][0]["last_checked"] = observed
+    health.write_text(json.dumps(snapshot))
+    subprocess.run(["git", "init", "-b", "main"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.test"], cwd=root, check=True)
+    (root / ".gitignore").write_text("private.json\n")
+    ga.generate(root, key, now)
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-m", "accepted day"], cwd=root, check=True, capture_output=True)
+    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
+    subprocess.run(["git", "fetch", "origin", "main"], cwd=root, check=True, capture_output=True)
+    (root / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
+    paths = (
+        "attestations/latest/index.json",
+        "attestations/latest/chain_head.json",
+        "attestations/latest/scores.json",
+        "attestations/chain-index.json",
+        ".attestations/chain_head.json",
+    )
+    before = {path: ((root / path).read_bytes(), (root / path).stat().st_mtime_ns) for path in paths}
+    refresh = next(step for step in yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+                   if step.get("name") == "Refresh legacy chain head before signing")
+    source = refresh["run"].split("if python3 - <<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
+    result = subprocess.run([sys.executable, "-c", source], cwd=root, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert before == {path: ((root / path).read_bytes(), (root / path).stat().st_mtime_ns) for path in paths}
 
 
 @pytest.mark.parametrize(("omitted", "present", "status", "expected"), [
@@ -179,6 +624,32 @@ def _append_acceptance_step() -> dict:
     )
 
 
+def _append_preparation_step() -> dict:
+    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+    return next(step for step in steps if step.get("id") == "append_submission")
+
+
+def _append_acceptance_harness() -> str:
+    """Run both workflow phases with their step outputs carried across."""
+    return (
+        'APPEND_FINAL_OUTPUT="$GITHUB_OUTPUT"\n'
+        'GITHUB_OUTPUT="${RUNNER_TEMP:-$PWD}/append-prep-output"\n'
+        ': > "$GITHUB_OUTPUT"\n'
+        + _append_preparation_step()["run"]
+        + '\nAPPEND_PREP_STATE="" APPEND_BRANCH="" APPEND_HEAD_SHA=""\n'
+        + 'while IFS="=" read -r key value; do\n'
+        + '  case "$key" in\n'
+        + '    state) APPEND_PREP_STATE="$value" ;;\n'
+        + '    branch) APPEND_BRANCH="$value" ;;\n'
+        + '    head_sha) APPEND_HEAD_SHA="$value" ;;\n'
+        + '  esac\n'
+        + 'done < "$GITHUB_OUTPUT"\n'
+        + 'GITHUB_OUTPUT="$APPEND_FINAL_OUTPUT"\n'
+        + 'export APPEND_PREP_STATE APPEND_BRANCH APPEND_HEAD_SHA GITHUB_OUTPUT\n'
+        + _append_acceptance_step()["run"]
+    )
+
+
 def test_append_deferred_skips_signing_and_full_release_deployment() -> None:
     workflow = yaml.safe_load(_workflow())
     signing = workflow["jobs"]["sign_health"]
@@ -292,29 +763,41 @@ def _assert_append_time_bounds(workflow: dict) -> None:
     patience = int(workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
     job = workflow["jobs"]["sign_health"]
     steps = {step.get("name"): step for step in job["steps"]}
-    waits = [steps[name] for name in (
-        "Wait for an existing append before generating a candidate",
-        "Require authoritative acceptance before signing publication",
-    )]
+    existing = steps["Wait for an existing append before generating a candidate"]
+    preparation = steps["Prepare append candidate for acceptance"]
+    acceptance = steps["Require authoritative acceptance before signing publication"]
     assert 0 < worst < patience
     assert patience - worst >= 300, "keep at least five minutes of measured-check margin"
-    for step in waits:
+    for step in (existing, preparation, acceptance):
         wrapper = re.search(r"timeout -k (\d+)s (\d+)s bash", step["run"])
         assert wrapper is not None
         kill_after, duration = map(int, wrapper.groups())
-        assert patience < duration < duration + kill_after < step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
-        assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in step["run"]
-    acceptance = waits[1]
-    tokens = [step for step in job["steps"] if step.get("uses") == "actions/create-github-app-token@v1"]
-    assert len(tokens) == 2
-    assert tokens[1]["with"] == tokens[0]["with"]
-    assert job["steps"].index(tokens[1]) + 1 == job["steps"].index(acceptance)
-    assert acceptance["env"]["GH_TOKEN"] == "${{ steps.acceptance-append-token.outputs.token }}"
-    assert acceptance["timeout-minutes"] < 60, "fresh App token must outlive acceptance"
+        assert duration < duration + kill_after < step["timeout-minutes"] * 60 < 3600
+        assert step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
+    assert patience < 1900 < 1920
+    assert patience < 1800 < 1860
+    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in existing["run"]
+    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in acceptance["run"]
+    assert "named_timeout 900 bash scripts/submit_attestation_append.sh" in preparation["run"]
+    assert "named_timeout 300 bash scripts/submit_attestation_append.sh" in acceptance["run"]
+    assert preparation["timeout-minutes"] == 30
+    assert acceptance["timeout-minutes"] == 31
+    assert 1725 + patience + 260 == 3470 < 1770 + 1800 == 3570
+    assert 3570 < 1775 + 1805 == 3580 < (30 + 31) * 60 == 3660
+    for consumer, token_id in ((existing, "append-token"),
+                               (preparation, "submission-append-token"),
+                               (acceptance, "acceptance-wait-token")):
+        index = job["steps"].index(consumer)
+        mint = job["steps"][index - 1]
+        assert mint.get("uses") == "actions/create-github-app-token@v1"
+        assert mint.get("id") == token_id
+        assert mint["with"] == job["steps"][1]["with"]
+        assert consumer["env"]["GH_TOKEN"] == f"${{{{ steps.{token_id}.outputs.token }}}}"
+        assert consumer["timeout-minutes"] < 60
     # Jobs time all their sequential steps, not just the longest step. Reserve
-    # nine minutes for checkout, candidate preparation, witnessing and signing.
+    # nine minutes for checkout, setup, witnessing and signing.
     bounded_minutes = sum(step.get("timeout-minutes", 0) for step in job["steps"])
-    assert bounded_minutes + 9 <= job["timeout-minutes"] <= 132
+    assert bounded_minutes + 9 == job["timeout-minutes"] == 142
     # deploy starts after sign_health; its independent bound excludes that wait.
     deploy = workflow["jobs"]["deploy"]
     assert "sign_health" in deploy["needs"]
@@ -342,7 +825,7 @@ def test_attestation_restore_timeouts_cover_measured_cold_restore() -> None:
     )
 
 
-@pytest.mark.parametrize("moved", ["worst", "patience", "wrapper", "step", "job"])
+@pytest.mark.parametrize("moved", ["worst", "patience", "wrapper", "step", "job", "token"])
 def test_publication_append_time_bounds_reject_isolated_ordering_drift(moved: str) -> None:
     workflow = yaml.safe_load(_workflow())
     _assert_append_time_bounds(workflow)
@@ -358,9 +841,12 @@ def test_publication_append_time_bounds_reject_isolated_ordering_drift(moved: st
         step["run"] = re.sub(r"(timeout -k \d+s )\d+s bash",
                              rf"\g<1>{step['timeout-minutes'] * 60}s bash", step["run"], count=1)
     elif moved == "step":
-        step["timeout-minutes"] = job["timeout-minutes"]
-    else:
+        step["timeout-minutes"] = 60
+    elif moved == "job":
         job["timeout-minutes"] = step["timeout-minutes"]
+    else:
+        token = next(item for item in job["steps"] if item.get("id") == "acceptance-wait-token")
+        job["steps"].remove(token)
     with pytest.raises(AssertionError):
         _assert_append_time_bounds(workflow)
 
@@ -380,8 +866,9 @@ def test_append_acceptance_inner_wait_fits_hard_wrapper() -> None:
     assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in run
 
 
-def test_append_acceptance_bounds_every_external_call_and_total_budget() -> None:
-    step = _append_acceptance_step()
+@pytest.mark.parametrize("phase", ["preparation", "acceptance"])
+def test_append_acceptance_bounds_every_external_call_and_total_budget(phase: str) -> None:
+    step = _append_preparation_step() if phase == "preparation" else _append_acceptance_step()
     run = step["run"]
     commands = "\n".join(line for line in run.splitlines() if not line.lstrip().startswith("#"))
     # The retry helper's parser discriminator is a shell comparison, not a call.
@@ -398,31 +885,46 @@ def test_append_acceptance_bounds_every_external_call_and_total_budget() -> None
         bounded_calls.append((call.start(), duration + kill_after))
     # A process-group watchdog also caps shell overhead and any future calls.
     whole_step = bounded_calls.pop(0)[1]
-    assert "bash -Eeuo pipefail <<'ACCEPTANCE'" in run
-    assert run.rstrip().endswith("ACCEPTANCE")
+    marker = "PREPARE" if phase == "preparation" else "ACCEPTANCE"
+    assert f"bash -Eeuo pipefail <<'{marker}'" in run
+    assert run.rstrip().endswith(marker)
     job = yaml.safe_load(_workflow())["jobs"]["sign_health"]
     patience = int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
     def budget_between(start: int, end: int) -> int:
         return sum(cap for position, cap in bounded_calls if start <= position < end)
 
-    # Poll calls consume patience. The committed, already-open, and submitted
-    # branches cannot all execute, nor can both post-acceptance cleanup calls.
-    open_branch = commands.index('if [[ -n "$open_append" ]]')
-    submit_branch = commands.index('named_timeout 360 bash scripts/submit_attestation_append.sh')
-    after_submit = commands.index('if pr_json="$(retry_timeout 20 gh pr view', submit_branch)
-    poll_start = commands.rindex('while :; do')
-    proof_start = commands.index('if [[ "$state" == MERGED ||', poll_start)
-    cleanup_caps = [cap for position, cap in bounded_calls
-                    if commands[position:].startswith('bash scripts/close_superseded_appends.sh')]
-    assert len(cleanup_caps) == 3
-    fixed_budget = (
-        sum(cap for _, cap in bounded_calls)
-        - cleanup_caps[0]
-        - min(budget_between(open_branch, submit_branch), budget_between(submit_branch, after_submit))
-        - budget_between(poll_start, proof_start)
-        - min(cleanup_caps[1:])
-    )
-    assert patience + fixed_budget < whole_step < step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
+    if phase == "preparation":
+        open_branch = commands.index('if [[ -n "$open_append" ]]')
+        submit_branch = commands.index('APPEND_SUBMISSION_RESULT="$submission_result" named_timeout 900')
+        noop_branch = commands.index('if [[ "$branch" == noop ]]', submit_branch)
+        rebuilt_branch = commands.index('if [[ "$rebuilt" == 1 ]]', noop_branch)
+        preflight_and_lookup = sum(cap for position, cap in bounded_calls
+                                   if position < open_branch and
+                                   not commands[position:].startswith('bash scripts/close_superseded_appends.sh'))
+        already_open = budget_between(open_branch, submit_branch)
+        submitted = budget_between(submit_branch, noop_branch)
+        noop_proof = budget_between(noop_branch, rebuilt_branch)
+        rebuilt_lookup = sum(cap for position, cap in bounded_calls if position >= rebuilt_branch)
+        assert submitted >= 905
+        worst_path = preflight_and_lookup + max(already_open,
+                                                submitted + max(noop_proof, rebuilt_lookup))
+        assert worst_path == 1725 < 1770 < whole_step == 1775 < 1800
+    else:
+        poll_start = commands.rindex('while :; do')
+        proof_start = commands.index('if [[ "$state" == MERGED ||', poll_start)
+        cleanup_caps = [cap for position, cap in bounded_calls
+                        if commands[position:].startswith('bash scripts/close_superseded_appends.sh')]
+        rebuild_caps = [cap for position, cap in bounded_calls
+                        if commands[position:].startswith('bash scripts/submit_attestation_append.sh')
+                        and '--rebuild' in commands[position:position + 120]]
+        assert cleanup_caps == [125, 125]
+        assert rebuild_caps == [305, 305]
+        fixed_budget = (sum(cap for _, cap in bounded_calls)
+                        - budget_between(poll_start, proof_start)
+                        - min(cleanup_caps) - sum(rebuild_caps))
+        assert fixed_budget == 260
+        assert patience + fixed_budget == 1745 < 1800 < whole_step == 1805 < 1860
+    assert step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
     assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
 
 
@@ -566,7 +1068,7 @@ def test_existing_append_command_timeout_is_attributed_and_fails(
 ])
 def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scenario: str) -> None:
     """Exercise both real shell loops with bounded API stubs and a virtual clock."""
-    step = _append_existing_step() if existing else _append_acceptance_step()
+    run_script = _append_existing_step()["run"] if existing else _append_acceptance_harness()
     head = "d" * 40
     initial = {"number": 99, "headRefName": "attestation/append-contract", "headRefOid": head,
                "baseRefName": "main", "state": "OPEN", "isCrossRepository": False,
@@ -597,7 +1099,10 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     (tmp_path / "scripts").mkdir()
-    (tmp_path / "scripts/submit_attestation_append.sh").write_text('echo submit >> "$CALL_LOG"\n')
+    (tmp_path / "scripts/submit_attestation_append.sh").write_text(
+        'echo submit >> "$CALL_LOG"\n'
+        'if [[ "${1:-}" == --rebuild ]]; then exit 1; fi\n'
+    )
     (tmp_path / "scripts/close_superseded_appends.sh").write_text('echo close >> "$CALL_LOG"\n')
     (tmp_path / "scripts/restore_attestations.sh").write_bytes(
         (ROOT / "scripts/restore_attestations.sh").read_bytes()
@@ -651,7 +1156,7 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
     # undecided cases advance to the configured patience without accepting.
     advance = f"started + {worst_observed}" if scenario == "pending_merge" else "deadline"
     run = re.sub(r'^\s*sleep .*$', f'echo slept >> "$CALL_LOG"; SECONDS=$(({advance}))',
-                 step["run"], flags=re.MULTILINE)
+                 run_script, flags=re.MULTILINE)
     result = subprocess.run(["bash", "-c", run], cwd=tmp_path, env=env,
                             capture_output=True, text=True, timeout=10)
     calls = log.read_text().splitlines()
@@ -755,7 +1260,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     arm_status: int,
 ) -> None:
     step = _append_acceptance_step()
-    assert step["env"]["GH_TOKEN"] == "${{ steps.acceptance-append-token.outputs.token }}"
+    assert step["env"]["GH_TOKEN"] == "${{ steps.acceptance-wait-token.outputs.token }}"
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     (tmp_path / "scripts").mkdir()
@@ -844,7 +1349,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         output.write_text("")
         summary.write_text("")
         result = subprocess.run(
-            ["/bin/bash", "-c", re.sub(r'^\s*sleep .*$', '              SECONDS=$deadline', step["run"], flags=re.MULTILINE)],
+            ["/bin/bash", "-c", re.sub(r'^\s*sleep .*$', '              SECONDS=$deadline', _append_acceptance_harness(), flags=re.MULTILINE)],
             cwd=tmp_path, env=env, capture_output=True, text=True, check=False,
         )
         calls = log.read_text().splitlines()
@@ -2031,6 +2536,10 @@ def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manife
         index for index, step in enumerate(steps)
         if step.get("name") == "Keep verifier-reachable attestation history"
     )
+    projection_guard_index = next(
+        index for index, step in enumerate(steps)
+        if step.get("name") == "Require served projections from committed main"
+    )
     ceiling_guard_index = next(
         index for index, step in enumerate(steps)
         if step.get("name") == "Guard Cloudflare Pages file ceiling"
@@ -2039,7 +2548,8 @@ def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manife
         index for index, step in enumerate(steps)
         if step.get("name") == "Assemble canonical Pages artifact"
     ) + 1
-    assert asset_guard_index == selection_index + 1
+    assert projection_guard_index == selection_index + 1
+    assert asset_guard_index == projection_guard_index + 1
     assert ceiling_guard_index == asset_guard_index + 1
     assert manifest_create_index == ceiling_guard_index + 1
     assert "set -Eeuo pipefail" in steps[asset_guard_index]["run"]
@@ -2120,6 +2630,9 @@ def test_sign_health_refreshes_chain_head_before_signing() -> None:
 
     assert "if: needs.sign_health.outputs.health_only != 'true'" not in refresh_step
     assert "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}" in refresh_step
+    assert 'accepted_discovery(root, "origin/main")' in refresh_step
+    assert "ga.agrees(root, directory, manifest, ga.health_binding(root, health), registry, None)" in refresh_step
+    assert "Reusing accepted same-day envelope; projections remain unchanged." in refresh_step
     assert "bash scripts/refresh_chain_head.sh" in refresh_step
 
 

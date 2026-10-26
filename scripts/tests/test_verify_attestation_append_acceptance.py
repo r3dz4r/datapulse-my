@@ -6,6 +6,7 @@ from datetime import timedelta
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -44,7 +45,10 @@ def run_wait(
     scripts = tmp_path / "scripts"
     scripts.mkdir()
     for name in ("submit_attestation_append.sh", "close_superseded_appends.sh", "restore_attestations.sh"):
-        (scripts / name).write_text('echo "$0 $*" >> "$CALL_LOG"\n')
+        body = 'echo "$0 $*" >> "$CALL_LOG"\n'
+        if name == "submit_attestation_append.sh":
+            body += 'if [[ "${1:-}" == --rebuild ]]; then exit 1; fi\n'
+        (scripts / name).write_text(body)
     gh = f"#!{sys.executable}\n" + textwrap.dedent('''\
         import json, os, pathlib, sys
         args = sys.argv[1:]
@@ -80,7 +84,7 @@ def run_wait(
                'rev-parse) printf "%040d\\n" 0 | tr 0 a;; esac\n',
         "sleep": '#!/bin/sh\necho "sleep $*" >> "$CALL_LOG"\n',
         "timeout": '#!/bin/bash\nshift 2\ncap="$1"; shift\n'
-                   'if [[ "$OUTER_TIMEOUT" == 1 && ( "$cap" == 3000s || "$cap" == 1900s ) ]]; then exit 124; fi\n'
+                   'if [[ "$OUTER_TIMEOUT" == 1 && ( "$cap" == 1800s || "$cap" == 1900s ) ]]; then exit 124; fi\n'
                    'exec "$@"\n',
     }
     for name, body in programs.items():
@@ -92,10 +96,22 @@ def run_wait(
     env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
            "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
            "GITHUB_REPOSITORY": "example/test", "PROMOTION_SOURCE_SHA": "a" * 40,
+           "APPEND_PREP_STATE": "ready", "APPEND_BRANCH": "attestation/append-test",
+           "APPEND_HEAD_SHA": "a" * 40,
            "APPEND_ACCEPTANCE_PATIENCE_SECONDS": str(patience), "CALL_LOG": str(log),
            "CHECK": check, "MERGE_LATER": str(int(merged)), "PROOF": str(proof),
            "OUTER_TIMEOUT": str(int(outer_timeout)), "LOOKUP_STATUS": str(lookup_status),
            "NEW_SUBMISSION": str(int(new_submission)), "MERGE_AT": str(merge_at)}
+    if new_submission and not early:
+        prepare = next(item for item in steps if item.get("name") == "Prepare append candidate for acceptance")
+        prepared = subprocess.run(["bash", "-c", prepare["run"]], cwd=tmp_path, env=env,
+                                  capture_output=True, text=True, timeout=10)
+        assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+        prep_output = dict(line.split("=", 1) for line in output.read_text().splitlines())
+        assert prep_output["state"] == "ready"
+        env.update(APPEND_PREP_STATE=prep_output["state"], APPEND_BRANCH=prep_output["branch"],
+                   APPEND_HEAD_SHA=prep_output["head_sha"])
+        output.unlink()
     result = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, env=env,
                             capture_output=True, text=True, timeout=10)
     return result, output.read_text() if output.exists() else "", log.read_text() if log.exists() else ""
@@ -237,6 +253,198 @@ def candidate(tmp_path: Path) -> tuple[Path, str, Path, Path, list[str]]:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes((root / path).read_bytes())
     return root, source, authority, origin, paths
+
+
+def test_append_with_mixed_previous_head_projection_is_rejected(
+    candidate: tuple[Path, str, Path, Path, list[str]],
+) -> None:
+    root, source, _, _, _ = candidate
+    candidate_binding = (root / "attestations/latest/binding.json").read_bytes()
+    for path in ("attestations/chain-index.json", "attestations/latest/index.json",
+                 "attestations/latest/chain_head.json", ".attestations/chain_head.json"):
+        (root / path).write_bytes(verifier.git_bytes(root, source, path))
+    assert (root / "attestations/latest/binding.json").read_bytes() == candidate_binding
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/verify_attestation_append.py"),
+         "--root", str(root), "--base", source],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 1
+    assert "attestation append: latest projection is stale or mixed" in result.stderr
+
+
+def test_append_latest_is_judged_against_own_head(
+    candidate: tuple[Path, str, Path, Path, list[str]],
+) -> None:
+    root, source, _, _, _ = candidate
+    (root / "attestations/chain-index.json").write_bytes(
+        verifier.git_bytes(root, source, "attestations/chain-index.json")
+    )
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/verify_attestation_append.py"),
+         "--root", str(root), "--base", source],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "append judged against its own head" in result.stderr
+
+
+def test_append_with_own_head_binding_disagreement_is_rejected(
+    candidate: tuple[Path, str, Path, Path, list[str]],
+) -> None:
+    root, source, _, _, _ = candidate
+    binding = root / "attestations/latest/binding.json"
+    binding.write_bytes(binding.read_bytes() + b" ")
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/verify_attestation_append.py"),
+         "--root", str(root), "--base", source],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 1
+    assert "attestation append: latest projection is stale or mixed" in result.stderr
+    assert "append judged against its own head" not in result.stderr
+
+
+def test_append_missing_own_frozen_directory_is_rejected(
+    candidate: tuple[Path, str, Path, Path, list[str]],
+) -> None:
+    root, source, _, _, _ = candidate
+    directory = verifier.accepted_day_directory(root, ga.load(root / "attestations/chain-index.json"))
+    shutil.rmtree(root / directory)
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/verify_attestation_append.py"),
+         "--root", str(root), "--base", source],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 1
+    assert "attestation append:" in result.stderr
+    assert "append judged against its own head" not in result.stderr
+
+
+def projection_candidate(tmp_path: Path) -> tuple[Path, str, bytes, bytes]:
+    """Accept a new evidence set, then refresh only its four projections."""
+    root, key = fixture_root(tmp_path)
+    (root / ".gitignore").write_text("private.json\n")
+    ga.generate(root, key, NOW)
+    git(root, "init", "-b", "main")
+    git(root, "config", "user.name", "Test")
+    git(root, "config", "user.email", "test@example.test")
+    git(root, "add", ".gitignore")
+    accept(root)
+    old_head = (root / "attestations/latest/chain_head.json").read_bytes()
+    old_mirror = (root / ".attestations/chain_head.json").read_bytes()
+    ga.generate(root, key, NOW + timedelta(days=1))
+    git(root, "restore", "--", "attestations/latest", "attestations/chain-index.json",
+        ".attestations/chain_head.json", "datapulse.json")
+    git(root, "add", "attestations/2026-08-16")
+    git(root, "commit", "-m", "accepted evidence only")
+    base = git(root, "rev-parse", "HEAD")
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/gen_attestation_projections.py"), "--root", str(root)],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    return root, base, old_head, old_mirror
+
+
+def test_projection_ahead_without_new_evidence_is_accepted(tmp_path: Path) -> None:
+    root, base, old_head, _ = projection_candidate(tmp_path)
+    assert (root / "attestations/latest/chain_head.json").read_bytes() != old_head
+    verifier.verify_append(root, base)
+    verifier.verify_append(root, base, require_committed=True)
+
+
+def test_projection_ahead_with_modified_envelope_is_rejected(tmp_path: Path) -> None:
+    root, base, _, _ = projection_candidate(tmp_path)
+    envelope = root / "attestations/latest/binding.json"
+    envelope.write_bytes(envelope.read_bytes() + b" ")
+    with pytest.raises(verifier.ContractError, match="latest projection is stale or mixed") as error:
+        verifier.verify_append(root, base)
+    assert str(error.value) == "latest projection is stale or mixed"
+
+
+def test_projection_only_backward_move_is_rejected(tmp_path: Path) -> None:
+    root, base, old_head, old_mirror = projection_candidate(tmp_path)
+    base = accept(root)
+    (root / "attestations/latest/chain_head.json").write_bytes(old_head)
+    (root / ".attestations/chain_head.json").write_bytes(old_mirror)
+    with pytest.raises(verifier.ContractError, match="latest projection is stale or mixed") as error:
+        verifier.verify_append(root, base)
+    assert str(error.value) == "latest projection is stale or mixed"
+
+
+def test_projection_only_mirror_disagreement_is_rejected(tmp_path: Path) -> None:
+    root, base, _, old_mirror = projection_candidate(tmp_path)
+    (root / ".attestations/chain_head.json").write_bytes(old_mirror)
+    with pytest.raises(verifier.ContractError, match="legacy mirror disagrees with current head") as error:
+        verifier.verify_append(root, base)
+    assert str(error.value).startswith("legacy mirror disagrees with current head")
+
+
+@pytest.mark.parametrize("binding_only", [False, True])
+def test_complete_projection_refresh_enforces_frozen_agreement(
+    tmp_path: Path, binding_only: bool,
+) -> None:
+    root, _, _, old_mirror = projection_candidate(tmp_path)
+    latest_index = json.loads((root / "attestations/latest/index.json").read_bytes())
+    directory = Path(latest_index["binding_ref"]).parent
+    expected_binding = (root / directory / "binding.json").read_bytes()
+    expected_scores = (root / directory / "scores.json").read_bytes()
+    if not binding_only:
+        git(root, "restore", "--", "attestations/latest", "attestations/chain-index.json",
+            ".attestations/chain_head.json")
+    # Accept the pipeline score first, then the projection writer must project
+    # the frozen score belonging to the selected revision.
+    scores = root / "attestations/latest/scores.json"
+    scores.write_text('{"generated_at":"2000-01-01T00:00:00Z"}\n', encoding="utf-8")
+    base = accept(root)
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/gen_attestation_projections.py"), "--root", str(root)],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    expected_paths = {"attestations/latest/scores.json"}
+    if not binding_only:
+        expected_paths.update({
+            "attestations/latest/index.json", "attestations/latest/chain_head.json",
+            "attestations/latest/binding.json",
+            "attestations/chain-index.json", ".attestations/chain_head.json",
+        })
+    assert set(git(root, "diff", "--name-only", base).splitlines()) == expected_paths
+    binding = root / "attestations/latest/binding.json"
+    assert binding.read_bytes() == expected_binding
+    assert scores.read_bytes() == expected_scores
+    verifier.verify_append(root, base)
+    verifier.verify_append(root, base, require_committed=True)
+    assert verifier.append_paths(root, base) == []
+
+    binding.write_bytes(expected_binding + b" ")
+    with pytest.raises(verifier.ContractError, match="^latest projection is stale or mixed$"):
+        verifier.verify_append(root, base)
+    binding.write_bytes(expected_binding)
+    (root / ".attestations/chain_head.json").write_bytes(old_mirror)
+    with pytest.raises(verifier.ContractError, match="^legacy mirror disagrees with current head"):
+        verifier.verify_append(root, base)
+
+
+def test_complete_projection_refresh_with_stale_scores_is_rejected(tmp_path: Path) -> None:
+    root, base, _, _ = projection_candidate(tmp_path)
+    scores_document = json.loads((root / "attestations/latest/scores.json").read_bytes())
+    scores_document["generated_at"] = "2000-01-01T00:00:00Z"
+    scores = (json.dumps(scores_document, ensure_ascii=False, indent=2) + "\n").encode()
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/gen_attestation_projections.py"), "--root", str(root)],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    latest_index = json.loads((root / "attestations/latest/index.json").read_bytes())
+    binding = root / "attestations/latest/binding.json"
+    assert binding.read_bytes() == (root / latest_index["binding_ref"]).read_bytes()
+    frozen_scores = root / Path(latest_index["binding_ref"]).with_name("scores.json")
+    assert json.loads(scores)["generated_at"] < json.loads(frozen_scores.read_bytes())["generated_at"]
+    (root / "attestations/latest/scores.json").write_bytes(scores)
+    with pytest.raises(verifier.ContractError, match="^latest projection is stale or mixed$"):
+        verifier.verify_append(root, base)
 
 
 def merge_append(authority: Path, origin: Path) -> None:

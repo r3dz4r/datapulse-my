@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 3.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": true,
-    "last_checked": "2026-10-17T12:24:45Z",
-    "record_count": 5055,
+    "last_checked": "2026-10-24T12:33:09Z",
+    "record_count": 9427,
     "record_count_estimated": true,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -39,7 +39,7 @@
     "geography": "national",
     "name": "PriceCatcher (Grocery Prices)",
     "namespace": "other",
-    "observed_verified_at": "2026-10-17T12:24:45Z",
+    "observed_verified_at": "2026-10-24T12:33:09Z",
     "source": "data.gov.my (KPDN)",
     "steward": "KPDN"
   },
@@ -828,12 +828,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-10/pricecatcher.json",
-    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/pricecatcher.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/pricecatcher.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:5bb46c285294819e036824c58cb1e28c0536431dd525b60aa2b0fd86d5082753",
+      "receipt_digest": "sha256:c7b2b9f0b6bc5fa9344300d8d5f38fe821df67188f358ddeb9919fccf1feec71",
       "sigstore_path": "data/pricecatcher.receipt.sigstore.json",
       "statement_path": "data/pricecatcher.receipt.statement.json"
     },

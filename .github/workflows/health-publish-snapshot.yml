@@ -1,0 +1,34 @@
+name: Health snapshot publisher dry run
+
+on:
+  push:
+    branches:
+      - health-snapshots
+      - main
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: health-publish
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Fetch current publish inputs
+        run: git fetch origin +refs/heads/main:refs/remotes/origin/main +refs/heads/health-snapshots:refs/remotes/origin/health-snapshots
+      - name: Compute dry-run decision
+        shell: bash
+        run: |
+          decision="$(python3 scripts/snapshot_publisher.py --dry-run --repo .)"
+          printf '%s\n' "$decision"
+          printf '%s\n' "$decision" >> "$GITHUB_STEP_SUMMARY"

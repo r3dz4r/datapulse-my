@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 4.0,
+        "latest_days": 3.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,14 +20,14 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-18T09:12:40Z",
+    "last_checked": "2026-10-25T15:30:25Z",
     "record_count": 3,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
       "column_count": 9,
       "content_shape_changed": false,
-      "first_row_hash": "shape-v1:3a96e911e43192d8fcb6ece4b72e377ef579d2eebdec507eaf7155fd9e3ee7b7"
+      "first_row_hash": "shape-v1:9974ba13e8600a645ec5fcbec868c7cac6279f934e7e528227a89e0de4aef732"
     },
     "status": "fresh"
   },
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Interest Volume: Banking Institutions",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-18T09:12:40Z",
+    "observed_verified_at": "2026-10-25T15:30:25Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1124,12 +1124,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-10/bnm_interest_volume.json",
-    "chain_reference": "attestations/2026-10-10/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/bnm_interest_volume.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/bnm_interest_volume.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:11caaed2fd1813fe4768674e332edeaf7e135caec106c61ca4eba56c2020eb40",
+      "receipt_digest": "sha256:cdf1f010cf1b26e1dafb001d86411b38aefc41feb02c5fb2f79a5ca28d6d06ff",
       "sigstore_path": "data/bnm_interest_volume.receipt.sigstore.json",
       "statement_path": "data/bnm_interest_volume.receipt.statement.json"
     },

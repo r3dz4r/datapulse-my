@@ -6,6 +6,12 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      chain_depth:
+        description: Successor depth (0 for a new publication chain)
+        type: string
+        required: true
+        default: '0'
 permissions:
   contents: read
 
@@ -18,6 +24,8 @@ env:
   # Existing-append ordering: 1185 < 1485 < 1905 < 1920 < 7920.
   APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS: 1185
   APPEND_ACCEPTANCE_PATIENCE_SECONDS: 1485
+  # At most three successors per root run; malformed/exhausted depths stop.
+  PUBLICATION_CHAIN_MAX_DEPTH: 3
 
 concurrency:
   # Keep deploy candidates separate from the never-evict daily append producer.
@@ -224,10 +232,13 @@ jobs:
     name: Sign current health with public Sigstore
     runs-on: ubuntu-latest
     environment: production
-    # Sequential budgets: existing append 32m + re-settle 40m + acceptance 51m
-    # + 9m for checkout, candidate preparation, witnessing and signing = 132m.
+    # Existing append: 1185 < 1485 < 1900 < 1905 < 1920s (32m).
+    # Candidate: 1725 < 1770 < 1775 < 1800s (30m); acceptance:
+    # 1485 + 260 = 1745 < 1800 < 1805 < 1860s (31m).
+    # Combined: 3470 < 3570 wrappers < 3580 with grace < 3660s of steps.
+    # Sequential steps: 32m + re-settle 40m + 30m + 31m + 9m reserve = 142m.
     # Terminal append failures refuse on observation rather than using this cap.
-    timeout-minutes: 132
+    timeout-minutes: 142
     permissions:
       contents: read
       id-token: write
@@ -418,7 +429,11 @@ jobs:
           bounded timeout -k 5s 10s git merge-base --is-ancestor "$PROMOTION_SOURCE_SHA" origin/main
           # Import accepted evidence while keeping the source checkout at
           # PROMOTION_SOURCE_SHA, shared by signing and deployment for health.
-          bounded timeout -k 5s 60s bash scripts/restore_attestations.sh --source origin/main
+          # 240s, not 60s: computing the delta is itself O(tree) (74,618 files,
+          # 2.0 GB) and a fresh CI index has no stat cache, so run 39453880072
+          # was killed at 60s with 67s elapsed. Revert once the signing job stops
+          # materialising the attestation tree at all.
+          bounded timeout -k 5s 140s bash scripts/restore_attestations.sh --source origin/main
           echo "state=ready" >> "$GITHUB_OUTPUT"
           EXISTING_APPEND
 
@@ -498,7 +513,7 @@ jobs:
             fi
             # Discard only the accepted-evidence overlay imported above; the
             # newer main checkout carries that evidence with its own source.
-            timeout -k 5s 60s bash scripts/restore_attestations.sh --source HEAD
+            timeout -k 5s 140s bash scripts/restore_attestations.sh --source HEAD
             timeout -k 5s 30s git checkout --detach "$settled_sha"
             [[ "$(timeout -k 5s 10s git rev-parse HEAD)" == "$settled_sha" ]]
             echo "Re-settled promotion revision: $PROMOTION_SOURCE_SHA -> $settled_sha ($settlement_reason)"
@@ -531,7 +546,44 @@ jobs:
             echo "::error title=Chain head refresh requires DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE::the Sigstore signing step requires a fresh chain head, but the private key secret is not configured for this workflow run. Refusing to fall back silently."
             exit 1
           fi
-          bash scripts/refresh_chain_head.sh
+          # Reuse a valid same-day accepted envelope without rewriting selectors.
+          if python3 - <<'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          from scripts import gen_attestations as ga
+          from scripts.attestation_sets import set_directory
+          from scripts.verify_attestation_append import accepted_discovery
+          from scripts.verify_attestation_binding import ContractError, verify_contract
+
+          root = Path.cwd()
+          now = datetime.now(timezone.utc)
+          try:
+              accepted = accepted_discovery(root, "origin/main")
+              head = accepted["current_head"]
+              if not head or ga.load(root / "attestations/chain-index.json")["current_head"] != head:
+                  raise ValueError("accepted head changed")
+              directory = set_directory(accepted["heads"][head])
+              revision = root / directory / "revisions" / head
+              if (revision / "chain_head.json").is_file():
+                  directory = revision.relative_to(root).as_posix()
+              if ga.load(root / "attestations/latest/index.json")["date"] != now.date().isoformat():
+                  raise ValueError("a new daily envelope is needed")
+              manifest, health, _, _, _ = ga.load_score_inputs(root)
+              registry = ga.load(root / "docs/.well-known/datapulse-probe-keys.json")
+              if not ga.agrees(root, directory, manifest, ga.health_binding(root, health), registry, None):
+                  raise ValueError("accepted envelope does not match current inputs")
+              verify_contract(root, now=now)
+              if (root / "attestations/latest/chain_head.json").read_bytes() != (root / ".attestations/chain_head.json").read_bytes():
+                  raise ValueError("legacy mirror disagrees with accepted head")
+          except (ContractError, OSError, KeyError, TypeError, ValueError):
+              raise SystemExit(1)
+          PY
+          then
+            echo 'Reusing accepted same-day envelope; projections remain unchanged.'
+          else
+            bash scripts/refresh_chain_head.sh
+          fi
 
       - name: Decide whether today's Rekor witness is needed
         if: steps.existing_append.outputs.state == 'ready'
@@ -665,23 +717,22 @@ jobs:
             --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" \
             --rekor-reference "$DATAPULSE_REKOR_REFERENCE"
 
-      # App installation tokens expire after 60m. Waiting for an existing append
-      # and re-settling can consume that lifetime; issue the same App a fresh
-      # token here so the entire 51m acceptance step fits its credential budget.
-      - name: Refresh append token before the acceptance budget
+      # Each App token is minted immediately before its own bounded consumer.
+      # Candidate preparation and acceptance polling have separate sub-hour caps.
+      - name: Refresh append token before candidate preparation
         if: steps.existing_append.outputs.state == 'ready'
         uses: actions/create-github-app-token@v1
-        id: acceptance-append-token
+        id: submission-append-token
         with:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
-      - name: Require authoritative acceptance before signing publication
+      - name: Prepare append candidate for acceptance
         if: steps.existing_append.outputs.state == 'ready'
-        id: append_acceptance
-        timeout-minutes: 51
+        id: append_submission
+        timeout-minutes: 30
         env:
-          GH_TOKEN: ${{ steps.acceptance-append-token.outputs.token }}
+          GH_TOKEN: ${{ steps.submission-append-token.outputs.token }}
           GIT_TERMINAL_PROMPT: "0"
         run: |
           set -Eeuo pipefail
@@ -691,16 +742,10 @@ jobs:
             echo "append-deferred: bounded append operation timed out; signing and deploy skipped. Next run retries automatically." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi; exit "$status"' ERR
-          # Bound the process group independently of runner cancellation. Each
-          # call escalates TERM to KILL. Patience plus fixed calls and one final
-          # acceptance proof fit 3000s + 5s kill grace < 51m step < 132m job.
-          # The extra 1515s covers preflight/submission, lookups and byte proof;
-          # it is not additional patience for an undecided required check.
-          # append-deferred exits successfully; signing and deploy require accepted.
-          timeout -k 5s 3000s bash -Eeuo pipefail <<'ACCEPTANCE'
-          # Safe calls may be repeated after a cap hit; decisions and the
-          # mutating submission must preserve failure instead of being retried.
-          call_deadline=$((SECONDS + 3000))
+          # The 1770s wrapper covers preflight, one 900s submission, and its
+          # bounded no-op proof; the 5s kill grace fits the 30m step.
+          timeout -k 5s 1770s bash -Eeuo pipefail <<'PREPARE'
+          call_deadline=$((SECONDS + 1770))
           named_timeout() {
             local cap="$1" status
             shift
@@ -771,6 +816,8 @@ jobs:
           retry_timeout 240 python3 scripts/verify_attestation_append.py --base HEAD
           if retry_timeout 240 python3 scripts/verify_attestation_append.py --base HEAD --require-committed; then
             named_timeout 120 bash scripts/close_superseded_appends.sh
+            echo "state=accepted" >> "$GITHUB_OUTPUT"
+            exit 0
           else
             status=$?
             # An exhausted cap is not evidence that the candidate needs submission.
@@ -793,17 +840,166 @@ jobs:
               age_seconds="$(( $(date -u +%s) - $(date -ud "$created_at" +%s) ))"
               echo "Already-open append PR #$pr_number ($branch); age ${age_seconds}s; waiting for acceptance."
             else
-              named_timeout 360 bash scripts/submit_attestation_append.sh
-              branch="$(retry_timeout 10 git branch --show-current)"
+              submission_result="${RUNNER_TEMP:-$PWD}/append-submission-result"
+              : > "$submission_result"
+              APPEND_SUBMISSION_RESULT="$submission_result" named_timeout 900 bash scripts/submit_attestation_append.sh
+              if [[ -s "$submission_result" ]]; then
+                read -r branch head_sha rebuilt < "$submission_result"
+                submission_state='submission result received'
+              else
+                submission_state='no submission result was produced'
+                branch="$(retry_timeout 10 git branch --show-current)"
+                head_sha=''
+                rebuilt=0
+                # Only an attached append branch supplies fallback identity.
+                if [[ "$branch" == attestation/append-* ]]; then
+                  head_sha="$(retry_timeout 10 git rev-parse HEAD)"
+                fi
+              fi
+              if [[ "$branch" == noop ]]; then
+                # A no-op is a submission outcome, never an acceptance proof.
+                if named_timeout 240 python3 scripts/verify_attestation_append.py --base "$PROMOTION_SOURCE_SHA" --wait-for-acceptance 0; then
+                  echo '::notice title=Append submission no-op::Frozen evidence is accepted on main; continuing publication.'
+                  echo "state=accepted" >> "$GITHUB_OUTPUT"
+                  exit 0
+                else
+                  status=$?
+                fi
+                if [[ "$status" == 75 || "$status" == 124 || "$status" == 137 ]]; then
+                  defer_append
+                fi
+                refuse_acceptance 'Append acceptance proof failed'
+              fi
               if [[ "$branch" != attestation/append-* ]]; then
-                state='no append PR'
+                pr_number=unknown
+                state="unknown ($submission_state; local branch='$branch'; PR existence unverified)"
                 refuse_acceptance "Append submission failed: expected an attestation append branch, got $branch"
               fi
-              head_sha="$(retry_timeout 10 git rev-parse HEAD)"
+              if [[ "$rebuilt" == 1 ]]; then
+                pr_number="$(retry_timeout 20 gh pr view "$branch" --repo "$GITHUB_REPOSITORY" --json number --jq .number)"
+                state='replacement filed'
+                check_state='pending'
+                defer_append
+              fi
               # Submission has a separate fixed budget; patience starts at polling.
               started=$SECONDS
               deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))
             fi
+            echo "branch=$branch" >> "$GITHUB_OUTPUT"
+            echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
+            echo "state=ready" >> "$GITHUB_OUTPUT"
+          fi
+          PREPARE
+
+      - name: Refresh append token before acceptance polling
+        if: steps.existing_append.outputs.state == 'ready'
+        uses: actions/create-github-app-token@v1
+        id: acceptance-wait-token
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Require authoritative acceptance before signing publication
+        if: steps.existing_append.outputs.state == 'ready'
+        id: append_acceptance
+        timeout-minutes: 31
+        env:
+          GH_TOKEN: ${{ steps.acceptance-wait-token.outputs.token }}
+          GIT_TERMINAL_PROMPT: "0"
+          APPEND_PREP_STATE: ${{ steps.append_submission.outputs.state }}
+          APPEND_BRANCH: ${{ steps.append_submission.outputs.branch }}
+          APPEND_HEAD_SHA: ${{ steps.append_submission.outputs.head_sha }}
+        run: |
+          set -Eeuo pipefail
+          trap 'status=$?; if [[ "$status" == 124 || "$status" == 137 ]]; then
+            echo "state=append-deferred" >> "$GITHUB_OUTPUT"
+            echo "::notice title=append-deferred::Bounded append operation timed out; publication deferred to the next run."
+            echo "append-deferred: bounded append operation timed out; signing and deploy skipped. Next run retries automatically." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi; exit "$status"' ERR
+          # The 1800s wrapper covers the unchanged 1485s polling patience,
+          # bounded PR identity checks, and fetched-main byte proof.
+          timeout -k 5s 1800s bash -Eeuo pipefail <<'ACCEPTANCE'
+          call_deadline=$((SECONDS + 1800))
+          named_timeout() {
+            local cap="$1" status
+            shift
+            if timeout -k 5s "${cap}s" "$@"; then
+              return 0
+            else
+              status=$?
+            fi
+            if [[ "$status" == 124 || "$status" == 137 ]]; then
+              printf '::warning title=Append call timed out::' >&2
+              printf '%q ' "$@" >&2
+              printf 'exceeded %ss (exit %s)\n' "$cap" "$status" >&2
+            fi
+            return "$status"
+          }
+          retry_timeout() {
+            local cap="$1" status retry_until remaining output stdin_buffer
+            shift
+            if [[ "$1" == jq ]]; then
+              # A capped parser may have consumed stdin; replay the same JSON.
+              IFS= read -r -d '' stdin_buffer || :
+            fi
+            while :; do
+              # Discard a timed-out call's partial stdout before retrying JSON.
+              if output="$(
+                if [[ "$1" == jq ]]; then
+                  named_timeout "$cap" "$@" <<< "$stdin_buffer"
+                else
+                  named_timeout "$cap" "$@"
+                fi
+              )"; then
+                printf '%s\n' "$output"
+                return 0
+              else
+                status=$?
+              fi
+              if [[ "$status" != 124 && "$status" != 137 ]]; then
+                printf '%s\n' "$output"
+                return "$status"
+              fi
+              retry_until=${deadline:-$call_deadline}
+              remaining=$((retry_until - SECONDS))
+              if (( remaining <= 0 )); then
+                echo "::warning title=Append call retry exhausted::No time remains for a safe retry; elapsed $((SECONDS - ${started:-0}))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+                return "$status"
+              fi
+              echo "Retrying capped safe call within the existing deadline (${remaining}s remaining)." >&2
+              sleep "$((remaining < 15 ? remaining : 15))"
+              if (( SECONDS >= retry_until )); then
+                echo "::warning title=Append call retry exhausted::Existing deadline reached (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+                return "$status"
+              fi
+            done
+          }
+          refusal_started=$SECONDS
+          refuse_acceptance() {
+            local reason="$1"
+            echo "::error title=$reason::PR #${pr_number:-none} (${branch:-candidate}) is ${state:-unavailable}; deterministic-safety-net: ${check_state:-unavailable}; elapsed $((SECONDS - ${started:-$refusal_started}))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+            exit 1
+          }
+          defer_append() {
+            echo "state=append-deferred" >> "$GITHUB_OUTPUT"
+            evidence="PR #${pr_number:-none} (${branch:-candidate}); age ${age_seconds:-unknown}s; deterministic-safety-net: ${check_state:-unavailable}; elapsed $((SECONDS - started))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)"
+            echo "::notice title=append-deferred::$evidence; publication deferred to the next run."
+            echo "append-deferred: $evidence. Signing and deploy skipped; next run retries automatically." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
+          case "$APPEND_PREP_STATE" in
+            accepted|append-deferred)
+              echo "state=$APPEND_PREP_STATE" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+            ready) ;;
+            *) echo "::error title=Append preparation missing::No candidate state was produced" >&2; exit 1 ;;
+          esac
+          branch="$APPEND_BRANCH"
+          head_sha="$APPEND_HEAD_SHA"
+          started=$SECONDS
+          deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))
             if pr_json="$(retry_timeout 20 gh pr view "$branch" --repo "$GITHUB_REPOSITORY" \
               --json number,headRefName,headRefOid,baseRefName,isCrossRepository,state,createdAt,autoMergeRequest,statusCheckRollup)"; then
               :
@@ -856,6 +1052,12 @@ jobs:
               refuse_acceptance "Append PR mismatch: submitted branch $branch at $head_sha has no matching open PR targeting main"
             fi
             if [[ "$check_state" =~ (FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE) ]]; then
+              if [[ "$state" == OPEN ]] && named_timeout 300 bash scripts/submit_attestation_append.sh \
+                --rebuild "$pr_number" "$branch" "$head_sha"; then
+                state='replacement filed'
+                check_state='new append PR'
+                defer_append
+              fi
               refuse_acceptance 'Append required check failed'
             fi
             if [[ "$state" == OPEN && "$(retry_timeout 10 jq -r '.autoMergeRequest == null' <<< "$check_json")" == true ]]; then
@@ -892,6 +1094,12 @@ jobs:
                 refuse_acceptance 'Append PR closed'
               fi
               if [[ "$check_state" =~ (FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE) ]]; then
+                if [[ "$state" == OPEN ]] && named_timeout 300 bash scripts/submit_attestation_append.sh \
+                  --rebuild "$pr_number" "$branch" "$head_sha"; then
+                  state='replacement filed'
+                  check_state='new append PR'
+                  defer_append
+                fi
                 refuse_acceptance 'Append required check failed'
               fi
               if [[ "$state" == MERGED || "$SECONDS" -ge "$deadline" ]]; then
@@ -916,7 +1124,6 @@ jobs:
               remaining=$((deadline - SECONDS))
               sleep "$((remaining > 0 ? (remaining < 15 ? remaining : 15) : 0))"
             done
-          fi
           echo "state=accepted" >> "$GITHUB_OUTPUT"
           ACCEPTANCE
 
@@ -1494,6 +1701,107 @@ jobs:
       - name: Keep verifier-reachable attestation history
         run: python3 scripts/select_served_attestations.py --apply --root . --site _site --full-revisions-per-day 1 --max-files 18000
 
+      - name: Require served projections from committed main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
+          accepted_root="$RUNNER_TEMP/accepted-projections"
+          git worktree add --detach --no-checkout "$accepted_root" origin/main
+          committed_head="$(git -C "$accepted_root" show HEAD:attestations/chain-index.json | jq -er '.current_head')"
+          materialize_projections() {
+          # Discovery reads the signed spine from Git. Only the selected
+          # projection source files need a filesystem checkout.
+          projection_paths="$(python3 - "$accepted_root" <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          from scripts.attestation_sets import FILES, set_directory
+          from scripts.gen_attestation_projections import PROJECTIONS, REGISTRY
+          from scripts.verify_attestation_append import accepted_discovery
+
+          root = Path(sys.argv[1])
+          document = accepted_discovery(root, "HEAD")
+          head = document["current_head"]
+          directory = set_directory(document["heads"][head])
+          revision_head = f"{directory}/revisions/{head}/chain_head.json"
+          listed = subprocess.check_output(
+              ["git", "-C", str(root), "ls-tree", "--name-only", "HEAD", "--", revision_head],
+              text=True,
+          ).splitlines()
+          if revision_head in listed:
+              directory = set_directory(revision_head)
+          paths = {*PROJECTIONS, REGISTRY, *(f"{directory}/{name}" for name in FILES)}
+          print("\n".join("/" + path for path in sorted(paths)))
+          PY
+          )"
+          git -C "$accepted_root" sparse-checkout set --no-cone --stdin <<< "$projection_paths"
+          }
+          materialize_projections
+          git -C "$accepted_root" reset --hard HEAD >/dev/null
+          if served_head="$(jq -er '.current_head | select(type == "string")' _site/attestations/chain-index.json)"; then
+            :
+          else
+            served_head=invalid
+          fi
+          # The accepted writer checks the Git-selected chain without modifying it.
+          if python3 scripts/gen_attestation_projections.py --root "$accepted_root" --check; then
+            projection_status=0
+          else
+            projection_status=$?
+          fi
+          if [[ "$projection_status" == 1 ]]; then
+            refresh_deadline=$((SECONDS + 600))
+            # Every blocking call shares the wall-clock budget, without kill grace.
+            refresh_call() {
+              local remaining=$((refresh_deadline - SECONDS))
+              (( remaining > 0 )) || return 124
+              timeout --signal=KILL "${remaining}s" "$@"
+            }
+            echo "::notice title=Projections pending refresh::served_head=$served_head committed_head=$committed_head"
+            export -f materialize_projections
+            export accepted_root
+            for ((attempt=0; attempt<30; attempt++)); do
+              (( refresh_deadline - SECONDS >= 20 )) || break
+              sleep 20
+              (( SECONDS < refresh_deadline )) || break
+              main_before="$(refresh_call git rev-parse origin/main)" || break
+              refresh_call git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main || break
+              main_after="$(refresh_call git rev-parse origin/main)" || break
+              if [[ "$main_after" != "$main_before" ]]; then
+                # Fetch moves the remote ref, not the detached worktree's HEAD.
+                refresh_call git -C "$accepted_root" update-ref --no-deref HEAD "$main_after" || break
+                refresh_call bash -Eeuo pipefail -c materialize_projections || break
+                refresh_call git -C "$accepted_root" reset --hard HEAD >/dev/null || break
+                committed_head="$(refresh_call git -C "$accepted_root" show HEAD:attestations/chain-index.json | refresh_call jq -er '.current_head')" || break
+              fi
+              if refresh_call python3 scripts/gen_attestation_projections.py --root "$accepted_root" --check; then
+                projection_status=0
+                break
+              else
+                projection_status=$?
+              fi
+              [[ "$projection_status" == 1 ]] || break
+            done
+            if [[ "$projection_status" != 0 ]]; then
+              echo "::notice title=Projections pending refresh timed out::served_head=$served_head committed_head=$committed_head"
+            fi
+          fi
+          if [[ "$projection_status" != 0 ]]; then
+            echo "::error title=Attestation projection mismatch::served projections must match the committed tree: served_head=$served_head committed_head=$committed_head (committed projections are stale)" >&2
+            exit 1
+          fi
+          for path in attestations/latest/index.json attestations/latest/chain_head.json \
+            attestations/latest/binding.json attestations/latest/scores.json attestations/chain-index.json \
+            .attestations/chain_head.json; do
+            if [[ ! -f "_site/$path" ]] || ! cmp -s "$accepted_root/$path" "_site/$path"; then
+              echo "::error title=Attestation projection mismatch::served projections must match the committed tree: $path served_head=$served_head committed_head=$committed_head" >&2
+              exit 1
+            fi
+          done
+
       - name: Exclude oversized Pages assets before upload
         run: |
           set -Eeuo pipefail
@@ -1729,10 +2037,95 @@ jobs:
             fi
           fi
           status=0
-          verdict="$(python3 scripts/publication_freshness_gate.py --timestamp "$timestamp" --max-age-hours 6)" || status=$?
+          verdict="$(python3 scripts/publication_freshness_gate.py --timestamp "$timestamp" --max-age-hours 24)" || status=$?
           case "$status" in
             0) echo "$verdict" ;;
             1) echo "::error title=Stalled production publication::$verdict"; exit 1 ;;
             2) echo "::warning title=Production publication freshness unknown::$verdict; Pages API credentials or deployment metadata may be unavailable. Freshness is not verified." ;;
             *) echo "::error title=Publication freshness gate failed::Unexpected gate exit $status"; exit "$status" ;;
           esac
+
+  publication_chain:
+    name: Decide bounded publication successor
+    needs: [classify, sign_health, deploy, publication_freshness]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/publication_chain.py
+          sparse-checkout-cone-mode: false
+      - name: Decide whether a newer main needs publication
+        id: chain
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLICATION_RESULT: ${{ needs.deploy.result == 'success' && needs.publication_freshness.result == 'success' && 'success' || 'failure' }}
+          PUBLISHED_SHA: ${{ needs.sign_health.outputs.settled_sha }}
+          CHAIN_DEPTH: ${{ github.event.inputs.chain_depth }}
+        run: |
+          set -Eeuo pipefail
+          # Only workflow_run lacks the dispatch input; never repair bad dispatch input.
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            CHAIN_DEPTH=0
+          fi
+          main_sha=""
+          if [[ "$PUBLICATION_RESULT" == "success" ]]; then
+            if ! main_sha="$(timeout -k 5s 60s gh api \
+              "repos/$GITHUB_REPOSITORY/commits/refs/heads/main" \
+              --header "Cache-Control: no-cache" --jq '.sha')"; then
+              main_sha=""
+            fi
+          fi
+          # This only detects movement. The successor reuses classify + settlement
+          # inside the unchanged lock; no SHA is selected or passed here.
+          if ! verdict="$(jq -n \
+            --arg publication_result "$PUBLICATION_RESULT" \
+            --arg published_sha "$PUBLISHED_SHA" --arg main_sha "$main_sha" \
+            --arg chain_depth "$CHAIN_DEPTH" --arg max_depth "$PUBLICATION_CHAIN_MAX_DEPTH" \
+            '{publication_result: $publication_result, published_sha: $published_sha,
+              main_sha: $main_sha, chain_depth: $chain_depth, max_depth: $max_depth}' \
+            | python3 scripts/publication_chain.py)"; then
+            verdict='{"decision":"stop","reason":"decision_unavailable","next_depth":null}'
+          fi
+          echo "$verdict"
+          jq -r '"decision=\(.decision)\nreason=\(.reason)\nnext_depth=\(.next_depth // "")"' \
+            <<< "$verdict" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch one bounded successor
+        id: successor
+        if: success() && !cancelled() && steps.chain.outputs.decision == 'chain' && needs.deploy.result == 'success' && needs.publication_freshness.result == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT_DEPTH: ${{ steps.chain.outputs.next_depth }}
+        run: |
+          set -Eeuo pipefail
+          # One request, no retries: an ambiguous response must not duplicate work.
+          # workflow_dispatch still shares the single pending slot with arrivals.
+          timeout -k 5s 60s gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-cloudflare-pages.yml/dispatches" \
+            -f ref=main -f "inputs[chain_depth]=$NEXT_DEPTH"
+
+      - name: Summarize publication successor
+        if: always()
+        env:
+          DECISION: ${{ steps.chain.outputs.decision }}
+          REASON: ${{ steps.chain.outputs.reason }}
+          NEXT_DEPTH: ${{ steps.chain.outputs.next_depth }}
+          DISPATCH_OUTCOME: ${{ steps.successor.outcome }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$DECISION" == "chain" && "$DISPATCH_OUTCOME" == "success" ]]; then
+            printf 'Publication successor: chain (%s); dispatched depth %s.\n' \
+              "$REASON" "$NEXT_DEPTH" >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "$DECISION" == "chain" ]]; then
+            printf 'Publication successor: stop (dispatch_%s); no retry.\n' \
+              "${DISPATCH_OUTCOME:-unavailable}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'Publication successor: stop (%s).\n' \
+              "${REASON:-decision_unavailable}" >> "$GITHUB_STEP_SUMMARY"
+          fi

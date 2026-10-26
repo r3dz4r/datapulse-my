@@ -8,7 +8,7 @@ sources:
   - {"id": "kkm","resource": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/covidnow_01_timeseries.parquet","title": "Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-12T18:33:27Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T22:24:46Z"}
 status: "stable"
 datapulse:licence: "MIT License"
 datapulse:attribution: "Source: Ministry of Health Malaysia (Kementerian Kesihatan Malaysia)"

@@ -8,7 +8,7 @@ sources:
   - {"id": "sg-datagov","resource": "https://api-production.data.gov.sg/v2/public/api/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/metadata","title": "Singapore Government"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-07T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-12T06:50:17Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-19T06:57:34Z"}
 status: "stable"
 datapulse:licence: "Singapore Open Data Licence v1.0 (attribution required)"
 datapulse:attribution: "Contains information from Housing & Development Board, Singapore Open Data Licence v1.0; accessed 2026-09-07"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/sg_datagov_hdb_metadata.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-11-27T06:10:19Z"
+stale_after: "2026-12-04T06:10:17Z"
 datapulse:stale_after_basis: "cadence"
 ---
 

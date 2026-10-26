@@ -11,6 +11,8 @@ import pytest
 
 import yaml
 
+from scripts.tests.test_ci_required_gate_contract import _job_runs
+
 
 ROOT = Path(__file__).resolve().parents[2]
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
@@ -22,13 +24,10 @@ def _workflow() -> dict[str, object]:
 
 
 def test_required_context_runs_for_classified_pushes() -> None:
-    job = _workflow()["jobs"][REQUIRED_JOB]
-    condition = job["if"]
-
-    assert "github.event_name == 'push'" in condition
     # Fail-safe default: anything that is not the health-only fast path gets the full suite,
     # so a source, release or append push can never land unverified.
-    assert "health_only != 'true'" in condition
+    for ref in ("refs/heads/main", "refs/heads/some-branch"):
+        assert _job_runs("push", ref, "success", "false")
 
 
 def test_required_context_is_produced_for_merge_queue_events() -> None:
@@ -41,13 +40,8 @@ def test_required_context_is_produced_for_merge_queue_events() -> None:
     }
 
     job = workflow["jobs"][REQUIRED_JOB]
-    assert job["if"] == (
-        "github.event_name == 'pull_request' || "
-        "github.event_name == 'workflow_dispatch' || "
-        "github.event_name == 'merge_group' || "
-        "(github.event_name == 'push' && "
-        "needs.classify.outputs.health_only != 'true')"
-    )
+    for result in ("success", "failure"):
+        assert _job_runs("merge_group", "refs/heads/gh-readonly-queue/main/pr-42", result, "")
 
     append_step = next(
         step for step in job["steps"]
@@ -57,9 +51,11 @@ def test_required_context_is_produced_for_merge_queue_events() -> None:
         "(github.event_name == 'pull_request' || github.event_name == 'merge_group') "
         "&& env.ARTIFACT_ONLY_FAST_PATH != 'true'"
     )
-    assert append_step["env"]["ACCEPTED_BASE"] == (
-        "${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}"
-    )
+    append_script = append_step["run"]
+    assert "git rev-parse --verify 'HEAD^1^{commit}'" in append_script
+    assert "|| {" in append_script
+    assert "exit 1" in append_script
+    assert "github.event" not in append_script
 
 
 def test_every_ci_job_declares_a_timeout() -> None:
@@ -267,7 +263,7 @@ def test_ci_classify_call_sites_use_separate_profiles() -> None:
     assert invocations[2].endswith("python3 scripts/classify_change.py --release-only; then")
 
 
-def test_push_without_available_base_fails_classification(tmp_path: Path) -> None:
+def test_push_without_available_base_defaults_to_full_verification(tmp_path: Path) -> None:
     script = _workflow()["jobs"]["classify"]["steps"][1]["run"]
     output = tmp_path / "github-output"
     environment = os.environ | {
@@ -281,8 +277,12 @@ def test_push_without_available_base_fails_classification(tmp_path: Path) -> Non
     result = subprocess.run(
         ["bash", "-c", script], cwd=ROOT, env=environment, capture_output=True, text=True
     )
-    assert result.returncode != 0
+    assert result.returncode == 0
     assert "diff unavailable" in result.stderr
+    assert output.read_text().splitlines() == [
+        "health_only=false", "append_only=false", "release_only=false",
+        "changed_paths=(diff unavailable)",
+    ]
 
 
 @pytest.mark.parametrize(
