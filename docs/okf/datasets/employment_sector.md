@@ -8,27 +8,27 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=employment_sector","title": "dosm"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-13T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-09-26T02:49:53Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-26T02:57:40Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
-datapulse:real_status: "stale"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/employment_sector.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2023-07-02T12:00:00Z"
+stale_after: "2026-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Employment by MSIC Sector and Sex is published by dosm and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Employment by MSIC Sector and Sex is published by dosm and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:a5ba001e93005aea76feb094e568ec07c395f1b1cdccdd3911cdb12214d8cbd4`
-- `record_count`: `198`
+- `record_count`: `225`
 
 # Quirks
 
