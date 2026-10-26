@@ -1,21 +1,21 @@
 {
   "schema": "record-evidence/v1",
   "dataset_id": "pharmaceutical_products",
-  "observed_at": "2026-10-26T00:10:53Z",
+  "observed_at": "2026-10-26T01:02:15Z",
   "run_date": "2026-10-26",
   "source_url": "https://storage.data.gov.my/healthcare/pharmaceutical_products.csv",
-  "source_sha256": "f0c2376e0a2bfa6df71244b65bc3a117d3a4cea87667ce706eeea1b61861344d",
-  "record_count": 28327,
-  "schema_valid_count": 28327,
+  "source_sha256": "7d54cfa8817cd067c33620f7a9bc479fc7f6f7d3e13b6eae327ba0dffbdca33d",
+  "record_count": 28302,
+  "schema_valid_count": 28302,
   "freshness": {
-    "source_last_modified": "2026-10-20T21:36:25Z",
-    "age_days": 6,
-    "status": "stale"
+    "source_last_modified": "2026-10-26T00:31:46Z",
+    "age_days": 0,
+    "status": "fresh"
   },
   "status_distribution": {
-    "fresh": 0,
+    "fresh": 28302,
     "aging": 0,
-    "stale": 28327,
+    "stale": 0,
     "discontinued": 0,
     "degraded": 0,
     "browser-dependent": 0,
@@ -27,11 +27,11 @@
   "records": [
     {
       "record_id": "reg_no:MAL15120003TC",
-      "status": "stale",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -52,15 +52,15 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:7af1467dc1b3bb534e6be6657b788cb39060ce208e060c1c27d99c6962cc0839"
+      "evidence_digest": "sha256:6b3ff54b1fb99174ae683489e014ff3adbe0737221a0a09e34299ce96ebdb691"
     },
     {
       "record_id": "reg_no:MAL21046105T",
-      "status": "stale",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -81,15 +81,44 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:8e758f4b69b7800e1afb7bca26153169697755eb6214d95179f9f456e33b7c9a"
+      "evidence_digest": "sha256:0603692d1ff644cb4dca7466d463639789c98075c88c6f9b9f901aca1d63ab0f"
+    },
+    {
+      "record_id": "reg_no:MAL06041490T",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:4535"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1019703"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:3196cfd759f2478ebb1db2e657704da1a309c2182b8075c246ae9e032fbda884"
     },
     {
       "record_id": "reg_no:MAL11065007TC",
-      "status": "stale",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -110,81 +139,15 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:e5f21f0d790e5570101058cce3d7adae6e0ed39229c620cf53958605c40849cb"
-    },
-    {
-      "record_id": "reg_no:MAL19961083T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1176"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:74492"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:55872.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:3e57f70800cbfac6ebeef41d6bab382a2d5a8951d73f33a877403b0e1debe92f"
-    },
-    {
-      "record_id": "reg_no:MAL19961082T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1176"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1017669"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:55872.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:107a21aff08c49ad6633db83d04415df952d3f8456373ec6c6589081bbcf5737"
+      "evidence_digest": "sha256:97690c4b222a07a9ccf3fac5ba6e853f9c24f6be5bd84756c42b5e106f1ba0f8"
     },
     {
       "record_id": "reg_no:MAL11085022T",
-      "status": "stale",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -209,743 +172,15 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:12d5226cbc62c6e9106d53da6604c009bf80265541974e6736445a299d5bfa06"
-    },
-    {
-      "record_id": "reg_no:MAL06100594T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:55910"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1319092"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:a65722235312b1da201fdf03fda03b96d92e8be1b8a0293f150faf60d82efed1"
-    },
-    {
-      "record_id": "reg_no:MAL06100635X",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:946340"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1023006"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:1110919.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:da7f25611fc7b6c3f308e13a82d1ec44406ee488985d7d33336ec275c936c1a5"
-    },
-    {
-      "record_id": "reg_no:MAL20020453TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1253"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:75242"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:5beea522f38d7441231f809775ffea3d802b00bdfb4b2878af112966621d3165"
-    },
-    {
-      "record_id": "reg_no:MAL06100599T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:55910"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1319092"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:a65722235312b1da201fdf03fda03b96d92e8be1b8a0293f150faf60d82efed1"
-    },
-    {
-      "record_id": "reg_no:MAL06100645TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:7261"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:2040"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:92c2de34f438508dfee845e0f35683c3ffa5ed76b8980cd3215ee76cfb59c8e2"
-    },
-    {
-      "record_id": "reg_no:MAL06100586X",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1273863"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1018372"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:934710.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:ea85d03b45a6b33a1815461597e506a505ad55115b9bfa26989fd5ae29878551"
-    },
-    {
-      "record_id": "reg_no:MAL06100611T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:5284"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1019729"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:af096fc7f4a400c8c807bceb42acbda92b66c84fbe86c7c1b8cf6ad6e0fa50db"
-    },
-    {
-      "record_id": "reg_no:MAL06100620T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:55910"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1319092"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:a65722235312b1da201fdf03fda03b96d92e8be1b8a0293f150faf60d82efed1"
-    },
-    {
-      "record_id": "reg_no:MAL20020434TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1272691"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:4481"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:937546783647c7dae27f387c5e043dcbcb018181c5503b6af4480f6ce36762ee"
-    },
-    {
-      "record_id": "reg_no:MAL06100585X",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1273863"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1018372"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:934710.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:ea85d03b45a6b33a1815461597e506a505ad55115b9bfa26989fd5ae29878551"
-    },
-    {
-      "record_id": "reg_no:MAL06100598T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:55910"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1319092"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:a65722235312b1da201fdf03fda03b96d92e8be1b8a0293f150faf60d82efed1"
-    },
-    {
-      "record_id": "reg_no:MAL06100660T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:2160"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1144472"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:1c5f8efac393b6745c2c24e38913adfd918852c19d4659d774a22dfe61bb7265"
-    },
-    {
-      "record_id": "reg_no:MAL06100661T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:2160"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1144472"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:1c5f8efac393b6745c2c24e38913adfd918852c19d4659d774a22dfe61bb7265"
-    },
-    {
-      "record_id": "reg_no:MAL06100569ACZ",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:782"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:4923"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:1133955.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:e35f8fca007eb875b825a06c029fc189d7ddeb1e7bcc44b7720aa2b7a4cb188e"
-    },
-    {
-      "record_id": "reg_no:MAL06100668T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:3197"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:3196"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:eb5b117551495fa0c1e5b562b9f9d8826649f519c6351df90bd6869f172ef9f5"
-    },
-    {
-      "record_id": "reg_no:MAL06100696T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:8375"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1019837"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:0566f02d3f4e85e03743c209c039e7c3938cb387ec007e3eafbb65fc74ecd316"
-    },
-    {
-      "record_id": "reg_no:MAL06100554ACZ",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:950198"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1179327"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:1131344.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:4410488331e1eb8181a6163d03286b40da66384ae65319d517131281f868577f"
-    },
-    {
-      "record_id": "reg_no:MAL21106051TCR",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:24555"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:939619"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:939617.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:dbe6b32bf62df2ca4a53e22653848b08b51ce35e13bf9bae8c976cdd92d86dd3"
-    },
-    {
-      "record_id": "reg_no:MAL21106050T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:24555"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1274"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:acab77bcade642d083c4f42b8be4009a97ed6bc4d85bc7f60f7d202b747ac132"
-    },
-    {
-      "record_id": "reg_no:MAL21106049TCZ",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:24555"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1109827"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:1959.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:cb3af8bb6e3b649342e9e20b9ab090c26b72e409982b15844396548775f96298"
-    },
-    {
-      "record_id": "reg_no:MAL21106048TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:24555"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:12646"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:ecadbb99017cc0d085c4e676538df578f6ae3b6403d6cb9977aba328e335720b"
-    },
-    {
-      "record_id": "reg_no:MAL20061595XCRE",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1101"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1018023"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:1033477.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:8c56522e5b5e056da6c2c3082829e72e7ef35692aae22b0fedb9d55cdcc4a0da"
-    },
-    {
-      "record_id": "reg_no:MAL19962770T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:604"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1105865"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:911a7a8ef4bacb950c9f2fb0048501ff18688d72c224bcf6471f75349ab756ce"
-    },
-    {
-      "record_id": "reg_no:MAL19962690TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:3421"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1023105"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:b3bbbc1dc4ccadb28e6eb99e844668b426de9166ec57fdf4cbda25f21aae126d"
+      "evidence_digest": "sha256:d6ddc04c0d7977dff702515733f941085ed27642c1903f6ab5b249e0c5df6f6d"
     },
     {
       "record_id": "reg_no:MAL11105035N",
-      "status": "stale",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -970,15 +205,15 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:ee3e990ec3101fdb5ad456ec44f9ebec1b1b8145b48dfe266a80ae1353f65f8a"
+      "evidence_digest": "sha256:b7bc70844efd88e51840c07e5f26ba165e32b64bf05b075776c2e8531e2e6903"
     },
     {
       "record_id": "reg_no:MAL11100025XCZ",
-      "status": "stale",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -1003,15 +238,15 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:eca02405450e62abbb0a97ab9e19d74a63d75cf5f942c4f04cf061c03c21ad53"
+      "evidence_digest": "sha256:4e6ff810973232c3382b27cac1b8a0da2c0c96e16961337674dd536c93692b39"
     },
     {
-      "record_id": "reg_no:MAL21106154TC",
-      "status": "stale",
+      "record_id": "reg_no:MAL21106148TC",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -1032,193 +267,15 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:17794815e5d0a002b6bd065501e87f132a13047c2fb6c5071603bf1d5ab65207"
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
     },
     {
-      "record_id": "reg_no:MAL21106170TC",
-      "status": "stale",
+      "record_id": "reg_no:MAL21106114TC",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1159686"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1019855"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:70d3c0d3400028d5501bc89e822f936d3a6b2d6b0eba2b72f38df330cc35a536"
-    },
-    {
-      "record_id": "reg_no:MAL21106099T",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:943163"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1000157"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:1318080.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:8da807e6dd25f66aad955a928f22f6cd8d7c56c1dbb4792426c6e3999579b0bc"
-    },
-    {
-      "record_id": "reg_no:MAL21106085NC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:931232"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1274"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:14b5a402e9a26efbb158d50b200fb3597ab09fb0d79570041f37d6d5ab511b53"
-    },
-    {
-      "record_id": "reg_no:MAL21106122TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1142239"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:7921"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:d8489eb2f2bd4bc7cd91fdd0d6ebe7813443879ce41109f75855bfb4c634baa9"
-    },
-    {
-      "record_id": "reg_no:MAL21106165TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:73235"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:12646"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:eedb3d8f5b8ee46b62b1d2b6d4ff5f80d3522d3d091ca4b52f3502d3d4d0623b"
-    },
-    {
-      "record_id": "reg_no:MAL21106151TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:936959"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:951354"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:ed4af9f25ede1dd8d74563c232a7afcadda172366e515dfd6fed5ddd49a3a85b"
-    },
-    {
-      "record_id": "reg_no:MAL21106105TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -1239,15 +296,15 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:17794815e5d0a002b6bd065501e87f132a13047c2fb6c5071603bf1d5ab65207"
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
     },
     {
-      "record_id": "reg_no:MAL21106153TC",
-      "status": "stale",
+      "record_id": "reg_no:MAL21106121TC",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -1257,26 +314,26 @@
           "linked_to": [
             {
               "kind": "held_by",
-              "to": "osa_code:1039186"
+              "to": "osa_code:1158946"
             },
             {
               "kind": "manufactured_by",
-              "to": "osa_code:1104842"
+              "to": "osa_code:1019647"
             }
           ],
           "unmatched": []
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:17794815e5d0a002b6bd065501e87f132a13047c2fb6c5071603bf1d5ab65207"
+      "evidence_digest": "sha256:817381764e29845aafbd299177d025535d598517f59cb161e8ac631dc0550326"
     },
     {
-      "record_id": "reg_no:MAL21106143TC",
-      "status": "stale",
+      "record_id": "reg_no:MAL21106080NC",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -1286,26 +343,26 @@
           "linked_to": [
             {
               "kind": "held_by",
-              "to": "osa_code:1039186"
+              "to": "osa_code:1180620"
             },
             {
               "kind": "manufactured_by",
-              "to": "osa_code:1104842"
+              "to": "osa_code:2040"
             }
           ],
           "unmatched": []
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:17794815e5d0a002b6bd065501e87f132a13047c2fb6c5071603bf1d5ab65207"
+      "evidence_digest": "sha256:d8ce254ecdbd3aa870af9328d155a583281984214be5f928b7def47a0cc0055f"
     },
     {
-      "record_id": "reg_no:MAL21106174TC",
-      "status": "stale",
+      "record_id": "reg_no:MAL21106104T",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -1315,117 +372,26 @@
           "linked_to": [
             {
               "kind": "held_by",
-              "to": "osa_code:50924"
+              "to": "osa_code:51081"
             },
             {
               "kind": "manufactured_by",
-              "to": "osa_code:1105163"
+              "to": "osa_code:1020112"
             }
           ],
           "unmatched": []
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:62c7f03082642f43d09b28a1971ad4166fdaaf3e501284cbb07770c36713586e"
-    },
-    {
-      "record_id": "reg_no:MAL21106098NC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1115992"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1118096"
-            },
-            {
-              "kind": "imported_by",
-              "to": "osa_code:1316643.0"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:40d38c914c470ac5422edb2051ca198d42f5ab30ec4b3b0eb50e7621479fdaab"
-    },
-    {
-      "record_id": "reg_no:MAL21106152TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1039186"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1104842"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:17794815e5d0a002b6bd065501e87f132a13047c2fb6c5071603bf1d5ab65207"
-    },
-    {
-      "record_id": "reg_no:MAL21106156TC",
-      "status": "stale",
-      "explanation": {
-        "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
-        },
-        "structural": {
-          "schema_ok": true,
-          "missing_required_fields": []
-        },
-        "linkage": {
-          "linked_to": [
-            {
-              "kind": "held_by",
-              "to": "osa_code:1039186"
-            },
-            {
-              "kind": "manufactured_by",
-              "to": "osa_code:1104842"
-            }
-          ],
-          "unmatched": []
-        },
-        "alternatives": []
-      },
-      "evidence_digest": "sha256:17794815e5d0a002b6bd065501e87f132a13047c2fb6c5071603bf1d5ab65207"
+      "evidence_digest": "sha256:d52af9321468c5560c0321ad76eba8fa5ac39ee9729e53f6ebab9231719853b0"
     },
     {
       "record_id": "reg_no:MAL21106107TC",
-      "status": "stale",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -1446,15 +412,48 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:17794815e5d0a002b6bd065501e87f132a13047c2fb6c5071603bf1d5ab65207"
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
     },
     {
-      "record_id": "reg_no:MAL21106139TC",
-      "status": "stale",
+      "record_id": "reg_no:MAL11105038NCR",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:3397"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:8606"
+            },
+            {
+              "kind": "imported_by",
+              "to": "osa_code:1123882.0"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:fb01b4ae5c078c7f2d253fe0f4a76dd13a3bd6da751395d0ead64fd5568edb7e"
+    },
+    {
+      "record_id": "reg_no:MAL21106156TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -1475,15 +474,131 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:17794815e5d0a002b6bd065501e87f132a13047c2fb6c5071603bf1d5ab65207"
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
+    },
+    {
+      "record_id": "reg_no:MAL21106163TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1139695"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1000081"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:af40fc582ac60d5d15b58cab76ceb26ce3875d09bd837156c6420162d0032784"
+    },
+    {
+      "record_id": "reg_no:MAL21106149TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1039186"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1104842"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
+    },
+    {
+      "record_id": "reg_no:MAL21106097N",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:3146"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:75242"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:e72c660194e64064ebaaf02400e54ee275ba49023cdee839888191248e314887"
+    },
+    {
+      "record_id": "reg_no:MAL21106150TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1161677"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1147607"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:f4a56c227ed269629fdd1d62ff7389a63932bae05662743e3793c0466a5ab26b"
     },
     {
       "record_id": "reg_no:MAL21106094NC",
-      "status": "stale",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -1508,15 +623,131 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:68666074186b596edc5c712c7ea273999ef176136a785f6aa31414c07901221f"
+      "evidence_digest": "sha256:87fbca8f2532ffcf5b38da45c6b3a37e708f567ed46eea9eb4f65ae877b4be0b"
+    },
+    {
+      "record_id": "reg_no:MAL21106165TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:73235"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:12646"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:1addea8ed1cb2f97c6f549570cf63047e2478b3b54d91a0d24dfec9d6d9865a7"
+    },
+    {
+      "record_id": "reg_no:MAL21106152TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1039186"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1104842"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
+    },
+    {
+      "record_id": "reg_no:MAL21106153TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1039186"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1104842"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
+    },
+    {
+      "record_id": "reg_no:MAL21106136TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1160195"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:10543"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:690ded5659793695b2bb0c1c1c4f060e3a7ced0bb938412818b6bd3a4c9671c9"
     },
     {
       "record_id": "reg_no:MAL21106127T",
-      "status": "stale",
+      "status": "fresh",
       "explanation": {
         "freshness": {
-          "source_last_modified": "2026-10-20T21:36:25Z",
-          "age_days": 6
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
         },
         "structural": {
           "schema_ok": true,
@@ -1537,7 +768,752 @@
         },
         "alternatives": []
       },
-      "evidence_digest": "sha256:b2f81dd074c7a0454647af04c09d56adb5432bb0e2c05ce2744d04b8ebea3e3c"
+      "evidence_digest": "sha256:b3252a8eb55b5bfdabb28fea03c8be3ba13749f5669109dfa8d54c61488d18b9"
+    },
+    {
+      "record_id": "reg_no:MAL21106085NC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:931232"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1274"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:109c54c3f700abc5c42f4c565c37973107398df10515cbf791088f06a8a67070"
+    },
+    {
+      "record_id": "reg_no:MAL21106086NC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1180931"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1114057"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:42f3e9bd0ceb25bbeea74286a53f7a1be5efd4b856aab774daa81dcd5f9b46fd"
+    },
+    {
+      "record_id": "reg_no:MAL21106122TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1142239"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:7921"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:c828e5a903f0d5d08831b351d16653e1d5842ea41884a8b9d254a1f1562c487f"
+    },
+    {
+      "record_id": "reg_no:MAL21106154TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1039186"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1104842"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
+    },
+    {
+      "record_id": "reg_no:MAL21106139TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1039186"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1104842"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
+    },
+    {
+      "record_id": "reg_no:MAL21106146TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1039186"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1104842"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
+    },
+    {
+      "record_id": "reg_no:MAL06061374XC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:6811"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1017482"
+            },
+            {
+              "kind": "imported_by",
+              "to": "osa_code:56119.0"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:3bdebf39a40e50ec7d73fde27df64ec6d68b18aa5348daac8713187dc301e314"
+    },
+    {
+      "record_id": "reg_no:MAL21106056N",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1182364"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1159787"
+            },
+            {
+              "kind": "imported_by",
+              "to": "osa_code:1192388.0"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:629e030d22a21391aa294aa7fd0e6a258f1ad34a9aff185ec995dd27e12e9769"
+    },
+    {
+      "record_id": "reg_no:MAL21106151TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:936959"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:951354"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:6d74138bb4a5ccb3da80392359c91368c75a80abcf339a33ec04e5a0901b459b"
+    },
+    {
+      "record_id": "reg_no:MAL21106079NC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1204259"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1114057"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:34c67d8eab3ffd369d6f1784e383d1f9bae842724c4513cf9f51e0d3e8d178a2"
+    },
+    {
+      "record_id": "reg_no:MAL11105039N",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:92528"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:50372"
+            },
+            {
+              "kind": "imported_by",
+              "to": "osa_code:1154722.0"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:16a4a4372d2b04f4131bbdb5f933a01c89a01b6b08e43d35d7ba41f826b2352c"
+    },
+    {
+      "record_id": "reg_no:MAL21106113TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1039186"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1104842"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
+    },
+    {
+      "record_id": "reg_no:MAL21106160TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1181537"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:951354"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:311d526c39947cdc48967112852e948d74015b22cece11d26f051e368042dbb7"
+    },
+    {
+      "record_id": "reg_no:MAL21106125TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1039186"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1104842"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:1b414ffbec7c5e72d702037ec7eb4e4a3240176e5214f037908700606f77e03d"
+    },
+    {
+      "record_id": "reg_no:MAL21106112TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1181993"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1020222"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:5d3796a1d076917f8ae23a349148d0f2ee6730bd589744dbc5e3c94c9fb56c4f"
+    },
+    {
+      "record_id": "reg_no:MAL21106161TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1183475"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1020110"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:f04c531167a8817c17c0e6bfe362b756e96a2141227d1294c50fa846f41fae43"
+    },
+    {
+      "record_id": "reg_no:MAL21106099T",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:943163"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1000157"
+            },
+            {
+              "kind": "imported_by",
+              "to": "osa_code:1318080.0"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:03aed9f80e1f0b5ec5cd411bf7a4e6dad5eec729f17164c3b2da1fc8cdf97943"
+    },
+    {
+      "record_id": "reg_no:MAL21106088NC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:754"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1124635"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:4e2f18080376cc980071f2ce8cb02f095e891723fe828e24e2e11a2c72c0b8fc"
+    },
+    {
+      "record_id": "reg_no:MAL21106126TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1178828"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1019486"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:8612752fbd066e5beb032857045ba868147276ca588ced4a9439b603dfc9a26f"
+    },
+    {
+      "record_id": "reg_no:MAL21106083NZ",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:2468"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:2467"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:af1c161f264341e6ffd46a8fdc0344a91aed845ecc17c80fe119a01afedfe5e3"
+    },
+    {
+      "record_id": "reg_no:MAL21106084NZ",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:2468"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:2467"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:af1c161f264341e6ffd46a8fdc0344a91aed845ecc17c80fe119a01afedfe5e3"
+    },
+    {
+      "record_id": "reg_no:MAL21106098NC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1115992"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1118096"
+            },
+            {
+              "kind": "imported_by",
+              "to": "osa_code:1316643.0"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:e1ffc1e1a9ed9f8766c75581f697b9e26384ff775607560f50c3a451f7ef2623"
+    },
+    {
+      "record_id": "reg_no:MAL21106134TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1187867"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1159065"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:317e8b70781aaa56938bdb4c650942d1db06e97297770bfd5b2f70f8c791088b"
+    },
+    {
+      "record_id": "reg_no:MAL21106170TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1159686"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1019855"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:e04eb3ab001ac3e9b766e6dd9f15fa735269ee3b740316647ccdd05389117e79"
+    },
+    {
+      "record_id": "reg_no:MAL21106101TC",
+      "status": "fresh",
+      "explanation": {
+        "freshness": {
+          "source_last_modified": "2026-10-26T00:31:46Z",
+          "age_days": 0
+        },
+        "structural": {
+          "schema_ok": true,
+          "missing_required_fields": []
+        },
+        "linkage": {
+          "linked_to": [
+            {
+              "kind": "held_by",
+              "to": "osa_code:1178828"
+            },
+            {
+              "kind": "manufactured_by",
+              "to": "osa_code:1019486"
+            }
+          ],
+          "unmatched": []
+        },
+        "alternatives": []
+      },
+      "evidence_digest": "sha256:8612752fbd066e5beb032857045ba868147276ca588ced4a9439b603dfc9a26f"
     }
   ]
 }
