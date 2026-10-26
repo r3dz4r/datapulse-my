@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 3.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-26T02:57:40Z",
-    "record_count": 11492,
+    "last_checked": "2026-10-26T12:49:17Z",
+    "record_count": 11494,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:8c790169bb5a7705e5c117a3dcd11032133a892a7b04df5a273507a454489bc4"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130",
@@ -39,7 +39,7 @@
     "geography": "national (BNM reference rates)",
     "name": "BNM Daily Exchange Rates (1130)",
     "namespace": "other",
-    "observed_verified_at": "2026-10-26T02:57:40Z",
+    "observed_verified_at": "2026-10-26T12:49:17Z",
     "source": "data.gov.my (BNM)",
     "steward": "BNM"
   },
@@ -868,12 +868,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-26/revisions/fc7cf19eae3679ca75ff1dea4f149d4c0147586bc42d3c5a583a823ae50d30c5/exchangerates_daily_1130.json",
-    "chain_reference": "attestations/2026-10-26/revisions/fc7cf19eae3679ca75ff1dea4f149d4c0147586bc42d3c5a583a823ae50d30c5/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/exchangerates_daily_1130.json",
+    "chain_reference": "attestations/2026-10-26/revisions/1be8b0ee8e2b152a9b1d4f75d1c8b09f2ef263e2ecfeef1bfa9b1ec1fe77546c/chain_head.json",
     "receipt": {
       "evidence_path": "data/exchangerates_daily_1130.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:7f9489173bf47fb9b20f6407839a5e356ec1114e6d6c7754e81dafc6b698461b",
+      "receipt_digest": "sha256:df13e5f65994d74501a61c12aece79065a8aa568c316710fe03c067e02e959f4",
       "sigstore_path": "data/exchangerates_daily_1130.receipt.sigstore.json",
       "statement_path": "data/exchangerates_daily_1130.receipt.statement.json"
     },
