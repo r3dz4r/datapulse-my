@@ -24,7 +24,7 @@ write_noop_result() {
 
 rebuild_from_main() {
   local old_parent="$1" new_base="$2" old_parent_head="$3" new_parent_head="$4"
-  local binding="$5" reference published_at path current_pr
+  local binding="$5" reference published_at path current_pr witnessed_digest accepted_digest
   local -a old_paths=("${@:6}") witness_paths=() generation
   published_at="$(jq -er '.payload.published_at' <<<"$binding")"
   reference="$(jq -r '.rekor.reference_ref // empty' <<<"$binding")"
@@ -63,6 +63,18 @@ rebuild_from_main() {
         cp -a --parents -- "${witness_paths[@]}" "$rebuild_dir"
       else
         git -C "$rebuild_dir" restore --source="$old_sha" --worktree -- "${witness_paths[@]}"
+      fi
+    fi
+    if [[ -n "$reference" ]]; then
+      witnessed_digest="$(jq -er '.artifact_sha256 | select(type == "string" and test("^[0-9a-f]{64}$"))' "$rebuild_dir/$reference")" || {
+        echo "Refusing append rebuild: witnessed health digest is missing or invalid in $reference." >&2
+        exit 1
+      }
+      accepted_digest="$(sha256sum "$rebuild_dir/health/latest.json")"
+      accepted_digest="${accepted_digest%% *}"
+      if [[ "$witnessed_digest" != "$accepted_digest" ]]; then
+        echo "Refusing append rebuild: health artifact changed since this candidate was witnessed; resubmit (witnessed $witnessed_digest, accepted health $accepted_digest)." >&2
+        exit 1
       fi
     fi
     generation=(python3 scripts/gen_attestations.py --root . --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" --now "$published_at" --force-append)
