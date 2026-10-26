@@ -128,6 +128,8 @@ def is_append_output(path: str) -> bool:
         return False
     if path in APPEND_PROJECTIONS:
         return True
+    if re.fullmatch(r"attestations/successors/[0-9a-f]{64}\.json", path):
+        return True
     match = re.fullmatch(
         r"attestations/(\d{4}-\d{2}-\d{2})/(?:revisions/[0-9a-f]{64}/)?[A-Za-z0-9_-]+\.json(?:\.gz)?",
         path,
