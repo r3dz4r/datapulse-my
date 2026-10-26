@@ -8,7 +8,7 @@ sources:
   - {"id": "protecthealth","resource": "https://api.data.gov.my/data-catalogue?id=pekab40_screenings","title": "ProtectHealth Corporation and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-25T22:41:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-24T22:24:46Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "ProtectHealth Corporation, Ministry of Health Malaysia"
