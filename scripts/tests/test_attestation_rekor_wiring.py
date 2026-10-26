@@ -328,7 +328,17 @@ def test_submission_checks_moved_base_without_staging_projections(tmp_path: Path
     # The append does not merge/rebase the source or write shared projections.
     assert len(_git(published, "rev-list", "--parents", "-n", "1", "HEAD").split()) == 2
     changed = _git(published, "diff", "--name-only", "HEAD~1", "HEAD").splitlines()
-    assert changed and all("/revisions/" in path for path in changed)
+    assert changed and all(
+        "/revisions/" in path
+        or (
+            path.count("/") == 2
+            and path.split("/")[:2] == ["attestations", "successors"]
+            and path.split("/")[-1].endswith(".json")
+            and len(path.split("/")[-1]) == 64 + len(".json")
+            and all(char in "0123456789abcdef" for char in path.split("/")[-1][:-5])
+        )
+        for path in changed
+    )
     from scripts.attestation_sets import discovery, selected_directory
     index = discovery(published)
     assert index["current_head"] == head
