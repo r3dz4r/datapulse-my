@@ -22,6 +22,20 @@ write_noop_result() {
   fi
 }
 
+write_successor_record() {
+  local parent="$1" child="$2" path temporary
+  [[ "$parent" =~ ^[0-9a-f]{64}$ && "$child" =~ ^[0-9a-f]{64}$ ]] || {
+    echo 'Refusing successor record with an invalid parent or child head.' >&2
+    return 1
+  }
+  path="attestations/successors/$parent.json"
+  mkdir -p -- attestations/successors
+  temporary="$(mktemp "${path}.tmp.XXXXXXXX")"
+  printf '{"parent":"%s","child":"%s"}\n' "$parent" "$child" > "$temporary"
+  mv -- "$temporary" "$path"
+  printf '%s\n' "$path"
+}
+
 rebuild_from_main() {
   local old_parent="$1" new_base="$2" old_parent_head="$3" new_parent_head="$4"
   local binding="$5" reference published_at path current_pr witnessed_digest accepted_digest
@@ -194,6 +208,9 @@ path_output="$(python3 scripts/verify_attestation_append.py --base origin/main -
 [[ -n "$path_output" ]] || { write_noop_result; exit 0; }
 readarray -t paths <<<"$path_output"
 (( ${#paths[@]} )) || { write_noop_result; exit 0; }
+parent_head="$(git show "$new_base:attestations/chain-index.json" | jq -er '.current_head | select(type == "string" and test("^[0-9a-f]{64}$"))')"
+successor_path="$(write_successor_record "$parent_head" "$head")"
+paths+=("$successor_path")
 git config user.name github-actions[bot]
 git config user.email 41898282+github-actions[bot]@users.noreply.github.com
 git switch -c "$branch"
