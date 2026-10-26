@@ -358,3 +358,119 @@ def test_submission_stages_the_immutable_path_enumerator_only() -> None:
     assert 'promote(' not in script
     assert 'git commit --amend' not in script
     assert 'git merge --no-edit' not in script
+
+
+def _moved_head_rebuild(tmp_path: Path, *, witnessed: bool, changed_health: bool) -> tuple[
+    subprocess.CompletedProcess[str], str, str, Path
+]:
+    """Rebuild a filed candidate after main accepts a competing chain head."""
+    root, key = fixture_root(tmp_path / "repo")
+    scripts = root / "scripts"
+    scripts.mkdir()
+    for name in (
+        "verify_attestation_append.py", "attestation_fetch_refs.py", "attestation_sets.py",
+        "verify_attestation_binding.py", "attestation_commit_back.py", "gen_attestations.py",
+    ):
+        shutil.copyfile(ROOT / "scripts" / name, scripts / name)
+    ga.generate(root, key, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+    _git(root, "init", "-b", "main")
+    _git(root, "config", "user.name", "Test")
+    _git(root, "config", "user.email", "test@example.test")
+    _git(root, "add", "attestations", ".attestations", "docs", "scripts", "datapulse.json", "health")
+    _git(root, "commit", "-m", "accepted fixture")
+    remote = tmp_path / "origin.git"
+    _git(tmp_path, "clone", "--bare", str(root), str(remote))
+    _git(root, "remote", "add", "origin", str(remote))
+
+    reference = fixture_rekor_reference(root, "rekor/2026-08-16") if witnessed else None
+    witnessed_digest = hashlib.sha256((root / "health/latest.json").read_bytes()).hexdigest()
+    ga.generate(root, key, datetime(2026, 8, 16, 1, tzinfo=timezone.utc), reference)
+    head = ga.load(root / "attestations/chain-index.json")["current_head"]
+    old_branch = f"attestation/append-{head}"
+    _git(root, "switch", "-c", old_branch)
+    _git(root, "add", "attestations")
+    _git(root, "commit", "-m", "file candidate")
+    old_sha = _git(root, "rev-parse", "HEAD")
+    _git(root, "push", "origin", old_branch)
+
+    advance = tmp_path / "advance"
+    _git(tmp_path, "clone", str(remote), str(advance))
+    _git(advance, "config", "user.name", "Test")
+    _git(advance, "config", "user.email", "test@example.test")
+    if changed_health:
+        health = ga.load(advance / "health/latest.json")
+        health["checked_at"] = "2026-08-15T02:00:00Z"
+        health["datasets"][0]["last_checked"] = "2026-08-15T02:00:00Z"
+        ga.dump(advance / "health/latest.json", health)
+    ga.generate(advance, key, datetime(2026, 8, 15, 2, tzinfo=timezone.utc), force_append=True)
+    _git(advance, "add", "attestations", ".attestations", "health")
+    _git(advance, "commit", "-m", "advance accepted head")
+    _git(advance, "push", "origin", "main")
+    accepted_digest = hashlib.sha256((advance / "health/latest.json").read_bytes()).hexdigest()
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    gh = bin_dir / "gh"
+    gh.write_text(
+        f"#!{sys.executable}\n"
+        "import json, os, sys\n"
+        "args = sys.argv[1:]\n"
+        "with open(os.environ['GH_CALLS'], 'a') as log: log.write(' '.join(args) + '\\n')\n"
+        "if args[:2] == ['pr', 'view']:\n"
+        " print(json.dumps({'number': 7, 'headRefName': os.environ['OLD_BRANCH'],"
+        " 'headRefOid': os.environ['OLD_SHA'], 'baseRefName': 'main', 'state': 'OPEN'}))\n",
+        encoding="utf-8",
+    )
+    gh.chmod(0o755)
+    if not witnessed:
+        key.write_text("invalid signing key\n", encoding="utf-8")
+    env = {
+        **os.environ,
+        "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
+        "GH_CALLS": str(tmp_path / "gh-calls"),
+        "OLD_BRANCH": old_branch,
+        "OLD_SHA": old_sha,
+        "DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE": str(key),
+        "DATAPULSE_ALLOW_UNWITNESSED_PUBLICATION": "1",
+    }
+    result = subprocess.run(
+        ["bash", str(ROOT / "scripts/submit_attestation_append.sh"),
+         "--rebuild", "7", old_branch, old_sha],
+        cwd=root, env=env, capture_output=True, text=True, check=False,
+    )
+    return result, witnessed_digest, accepted_digest, remote
+
+
+def test_rebuild_reuses_witness_when_health_digest_matches(tmp_path: Path) -> None:
+    result, witnessed_digest, accepted_digest, remote = _moved_head_rebuild(
+        tmp_path, witnessed=True, changed_health=False,
+    )
+    assert witnessed_digest == accepted_digest
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "append rebased onto the accepted head" in result.stdout
+    assert "health artifact changed since this candidate was witnessed" not in result.stderr
+    assert "pr close 7" in (tmp_path / "gh-calls").read_text()
+    assert len(_git(remote, "branch", "--list", "attestation/append-*").splitlines()) == 2
+
+
+def test_rebuild_refuses_stale_witness_with_both_digests(tmp_path: Path) -> None:
+    result, witnessed_digest, accepted_digest, remote = _moved_head_rebuild(
+        tmp_path, witnessed=True, changed_health=True,
+    )
+    assert witnessed_digest != accepted_digest
+    assert result.returncode != 0
+    refusal = (
+        "Refusing append rebuild: health artifact changed since this candidate was witnessed; "
+        f"resubmit (witnessed {witnessed_digest}, accepted health {accepted_digest})."
+    )
+    assert refusal in result.stderr.splitlines()
+    assert "could not extend" not in result.stderr
+    assert "pr close" not in (tmp_path / "gh-calls").read_text()
+    assert len(_git(remote, "branch", "--list", "attestation/append-*").splitlines()) == 1
+
+
+def test_rebuild_without_reference_keeps_generic_generation_failure(tmp_path: Path) -> None:
+    result, _, _, _ = _moved_head_rebuild(tmp_path, witnessed=False, changed_health=True)
+    assert result.returncode != 0
+    assert "could not extend accepted head" in result.stderr
+    assert "health artifact changed since this candidate was witnessed" not in result.stderr
