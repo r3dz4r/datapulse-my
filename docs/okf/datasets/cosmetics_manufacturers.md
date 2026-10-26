@@ -8,7 +8,7 @@ sources:
   - {"id": "npra","resource": "https://storage.data.gov.my/healthcare/cosmetic_manufacturers.csv","title": "National Pharmaceutical Regulatory Agency and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-24T22:24:46Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-25T22:41:25Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Pharmaceutical Regulatory Agency, Ministry of Health Malaysia"
