@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0008333333333333334,
+        "latest_days": 0.0010763888888888889,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-26T02:47:47Z",
+    "last_checked": "2026-10-26T03:34:36Z",
     "record_count": 0,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/ktmb",
@@ -39,7 +39,7 @@
     "geography": "national",
     "name": "GTFS Realtime — KTMB Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-26T02:47:47Z",
+    "observed_verified_at": "2026-10-26T03:34:36Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Keretapi Tanah Melayu Berhad (KTMB)"
   },
@@ -842,12 +842,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-26/revisions/b31b778592ae53b8cac87f5b67843cd16d5f08ff451b18f8bd9b255c81627a0f/gtfs_realtime_ktmb.json",
-    "chain_reference": "attestations/2026-10-26/revisions/b31b778592ae53b8cac87f5b67843cd16d5f08ff451b18f8bd9b255c81627a0f/chain_head.json",
+    "attestation": "attestations/2026-10-26/revisions/fc7cf19eae3679ca75ff1dea4f149d4c0147586bc42d3c5a583a823ae50d30c5/gtfs_realtime_ktmb.json",
+    "chain_reference": "attestations/2026-10-26/revisions/fc7cf19eae3679ca75ff1dea4f149d4c0147586bc42d3c5a583a823ae50d30c5/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_ktmb.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:edb1c8a21d6e8bec45ff290f39fbbc458e925b103839ad0ccf69e87f18eedce6",
+      "receipt_digest": "sha256:78b33d44100f70828418a66391fd72f37429713712a9b0ab3a9b4d6964e6fdf3",
       "sigstore_path": "data/gtfs_realtime_ktmb.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_ktmb.receipt.statement.json"
     },
