@@ -349,7 +349,7 @@ def test_missing_submission_result_never_claims_no_append_pr_from_detached_head(
         stub.chmod(0o755)
     calls_file = tmp_path / "calls"
     result = subprocess.run(
-        ["bash", "-c", _append_acceptance_step()["run"]], cwd=tmp_path,
+        ["bash", "-c", _append_acceptance_harness()], cwd=tmp_path,
         env={**os.environ, **{key: str(value) for key, value in yaml.safe_load(_workflow())["env"].items()},
              "PATH": f"{bin_dir}:{os.environ['PATH']}", "RUNNER_TEMP": str(tmp_path),
              "GITHUB_REPOSITORY": "example/data-pulse", "GITHUB_OUTPUT": str(tmp_path / "output"),
@@ -379,7 +379,7 @@ def test_missing_submission_result_never_claims_no_append_pr_from_detached_head(
 def test_noop_submission_reaches_accepted_state_without_pr_refusal(
     tmp_path: Path, proof_status: int,
 ) -> None:
-    run = _append_acceptance_step()["run"]
+    run = _append_preparation_step()["run"]
     arm_start = run.index('if [[ "$branch" == noop ]]; then')
     arm_end = run.index('if [[ "$branch" != attestation/append-* ]]', arm_start)
     arm = run[arm_start:arm_end].rstrip()
@@ -624,6 +624,32 @@ def _append_acceptance_step() -> dict:
     )
 
 
+def _append_preparation_step() -> dict:
+    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+    return next(step for step in steps if step.get("id") == "append_submission")
+
+
+def _append_acceptance_harness() -> str:
+    """Run both workflow phases with their step outputs carried across."""
+    return (
+        'APPEND_FINAL_OUTPUT="$GITHUB_OUTPUT"\n'
+        'GITHUB_OUTPUT="${RUNNER_TEMP:-$PWD}/append-prep-output"\n'
+        ': > "$GITHUB_OUTPUT"\n'
+        + _append_preparation_step()["run"]
+        + '\nAPPEND_PREP_STATE="" APPEND_BRANCH="" APPEND_HEAD_SHA=""\n'
+        + 'while IFS="=" read -r key value; do\n'
+        + '  case "$key" in\n'
+        + '    state) APPEND_PREP_STATE="$value" ;;\n'
+        + '    branch) APPEND_BRANCH="$value" ;;\n'
+        + '    head_sha) APPEND_HEAD_SHA="$value" ;;\n'
+        + '  esac\n'
+        + 'done < "$GITHUB_OUTPUT"\n'
+        + 'GITHUB_OUTPUT="$APPEND_FINAL_OUTPUT"\n'
+        + 'export APPEND_PREP_STATE APPEND_BRANCH APPEND_HEAD_SHA GITHUB_OUTPUT\n'
+        + _append_acceptance_step()["run"]
+    )
+
+
 def test_append_deferred_skips_signing_and_full_release_deployment() -> None:
     workflow = yaml.safe_load(_workflow())
     signing = workflow["jobs"]["sign_health"]
@@ -737,29 +763,41 @@ def _assert_append_time_bounds(workflow: dict) -> None:
     patience = int(workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
     job = workflow["jobs"]["sign_health"]
     steps = {step.get("name"): step for step in job["steps"]}
-    waits = [steps[name] for name in (
-        "Wait for an existing append before generating a candidate",
-        "Require authoritative acceptance before signing publication",
-    )]
+    existing = steps["Wait for an existing append before generating a candidate"]
+    preparation = steps["Prepare append candidate for acceptance"]
+    acceptance = steps["Require authoritative acceptance before signing publication"]
     assert 0 < worst < patience
     assert patience - worst >= 300, "keep at least five minutes of measured-check margin"
-    for step in waits:
+    for step in (existing, preparation, acceptance):
         wrapper = re.search(r"timeout -k (\d+)s (\d+)s bash", step["run"])
         assert wrapper is not None
         kill_after, duration = map(int, wrapper.groups())
-        assert patience < duration < duration + kill_after < step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
-        assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in step["run"]
-    acceptance = waits[1]
-    tokens = [step for step in job["steps"] if step.get("uses") == "actions/create-github-app-token@v1"]
-    assert len(tokens) == 2
-    assert tokens[1]["with"] == tokens[0]["with"]
-    assert job["steps"].index(tokens[1]) + 1 == job["steps"].index(acceptance)
-    assert acceptance["env"]["GH_TOKEN"] == "${{ steps.acceptance-append-token.outputs.token }}"
-    assert acceptance["timeout-minutes"] < 60, "fresh App token must outlive acceptance"
+        assert duration < duration + kill_after < step["timeout-minutes"] * 60 < 3600
+        assert step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
+    assert patience < 1900 < 1920
+    assert patience < 1800 < 1860
+    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in existing["run"]
+    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in acceptance["run"]
+    assert "named_timeout 900 bash scripts/submit_attestation_append.sh" in preparation["run"]
+    assert "named_timeout 300 bash scripts/submit_attestation_append.sh" in acceptance["run"]
+    assert preparation["timeout-minutes"] == 30
+    assert acceptance["timeout-minutes"] == 31
+    assert 1725 + patience + 260 == 3470 < 1770 + 1800 == 3570
+    assert 3570 < 1775 + 1805 == 3580 < (30 + 31) * 60 == 3660
+    for consumer, token_id in ((existing, "append-token"),
+                               (preparation, "submission-append-token"),
+                               (acceptance, "acceptance-wait-token")):
+        index = job["steps"].index(consumer)
+        mint = job["steps"][index - 1]
+        assert mint.get("uses") == "actions/create-github-app-token@v1"
+        assert mint.get("id") == token_id
+        assert mint["with"] == job["steps"][1]["with"]
+        assert consumer["env"]["GH_TOKEN"] == f"${{{{ steps.{token_id}.outputs.token }}}}"
+        assert consumer["timeout-minutes"] < 60
     # Jobs time all their sequential steps, not just the longest step. Reserve
-    # nine minutes for checkout, candidate preparation, witnessing and signing.
+    # nine minutes for checkout, setup, witnessing and signing.
     bounded_minutes = sum(step.get("timeout-minutes", 0) for step in job["steps"])
-    assert bounded_minutes + 9 <= job["timeout-minutes"] <= 132
+    assert bounded_minutes + 9 == job["timeout-minutes"] == 142
     # deploy starts after sign_health; its independent bound excludes that wait.
     deploy = workflow["jobs"]["deploy"]
     assert "sign_health" in deploy["needs"]
@@ -787,7 +825,7 @@ def test_attestation_restore_timeouts_cover_measured_cold_restore() -> None:
     )
 
 
-@pytest.mark.parametrize("moved", ["worst", "patience", "wrapper", "step", "job"])
+@pytest.mark.parametrize("moved", ["worst", "patience", "wrapper", "step", "job", "token"])
 def test_publication_append_time_bounds_reject_isolated_ordering_drift(moved: str) -> None:
     workflow = yaml.safe_load(_workflow())
     _assert_append_time_bounds(workflow)
@@ -803,9 +841,12 @@ def test_publication_append_time_bounds_reject_isolated_ordering_drift(moved: st
         step["run"] = re.sub(r"(timeout -k \d+s )\d+s bash",
                              rf"\g<1>{step['timeout-minutes'] * 60}s bash", step["run"], count=1)
     elif moved == "step":
-        step["timeout-minutes"] = job["timeout-minutes"]
-    else:
+        step["timeout-minutes"] = 60
+    elif moved == "job":
         job["timeout-minutes"] = step["timeout-minutes"]
+    else:
+        token = next(item for item in job["steps"] if item.get("id") == "acceptance-wait-token")
+        job["steps"].remove(token)
     with pytest.raises(AssertionError):
         _assert_append_time_bounds(workflow)
 
@@ -825,8 +866,9 @@ def test_append_acceptance_inner_wait_fits_hard_wrapper() -> None:
     assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in run
 
 
-def test_append_acceptance_bounds_every_external_call_and_total_budget() -> None:
-    step = _append_acceptance_step()
+@pytest.mark.parametrize("phase", ["preparation", "acceptance"])
+def test_append_acceptance_bounds_every_external_call_and_total_budget(phase: str) -> None:
+    step = _append_preparation_step() if phase == "preparation" else _append_acceptance_step()
     run = step["run"]
     commands = "\n".join(line for line in run.splitlines() if not line.lstrip().startswith("#"))
     # The retry helper's parser discriminator is a shell comparison, not a call.
@@ -843,37 +885,46 @@ def test_append_acceptance_bounds_every_external_call_and_total_budget() -> None
         bounded_calls.append((call.start(), duration + kill_after))
     # A process-group watchdog also caps shell overhead and any future calls.
     whole_step = bounded_calls.pop(0)[1]
-    assert "bash -Eeuo pipefail <<'ACCEPTANCE'" in run
-    assert run.rstrip().endswith("ACCEPTANCE")
+    marker = "PREPARE" if phase == "preparation" else "ACCEPTANCE"
+    assert f"bash -Eeuo pipefail <<'{marker}'" in run
+    assert run.rstrip().endswith(marker)
     job = yaml.safe_load(_workflow())["jobs"]["sign_health"]
     patience = int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
     def budget_between(start: int, end: int) -> int:
         return sum(cap for position, cap in bounded_calls if start <= position < end)
 
-    # Poll calls consume patience. The committed, already-open, and submitted
-    # branches cannot all execute, nor can both post-acceptance cleanup calls.
-    open_branch = commands.index('if [[ -n "$open_append" ]]')
-    submit_branch = commands.index('named_timeout 360 bash scripts/submit_attestation_append.sh')
-    after_submit = commands.index('if pr_json="$(retry_timeout 20 gh pr view', submit_branch)
-    poll_start = commands.rindex('while :; do')
-    proof_start = commands.index('if [[ "$state" == MERGED ||', poll_start)
-    cleanup_caps = [cap for position, cap in bounded_calls
-                    if commands[position:].startswith('bash scripts/close_superseded_appends.sh')]
-    assert len(cleanup_caps) == 3
-    rebuild_caps = [cap for position, cap in bounded_calls
-                    if commands[position:].startswith('bash scripts/submit_attestation_append.sh')
-                    and '--rebuild' in commands[position:position + 120]]
-    assert len(rebuild_caps) == 2
-    assert max(rebuild_caps) < whole_step
-    fixed_budget = (
-        sum(cap for _, cap in bounded_calls)
-        - cleanup_caps[0]
-        - min(budget_between(open_branch, submit_branch), budget_between(submit_branch, after_submit))
-        - budget_between(poll_start, proof_start)
-        - min(cleanup_caps[1:])
-        - sum(rebuild_caps)  # Each failed-check path exits after its one rebuild.
-    )
-    assert patience + fixed_budget < whole_step < step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
+    if phase == "preparation":
+        open_branch = commands.index('if [[ -n "$open_append" ]]')
+        submit_branch = commands.index('APPEND_SUBMISSION_RESULT="$submission_result" named_timeout 900')
+        noop_branch = commands.index('if [[ "$branch" == noop ]]', submit_branch)
+        rebuilt_branch = commands.index('if [[ "$rebuilt" == 1 ]]', noop_branch)
+        preflight_and_lookup = sum(cap for position, cap in bounded_calls
+                                   if position < open_branch and
+                                   not commands[position:].startswith('bash scripts/close_superseded_appends.sh'))
+        already_open = budget_between(open_branch, submit_branch)
+        submitted = budget_between(submit_branch, noop_branch)
+        noop_proof = budget_between(noop_branch, rebuilt_branch)
+        rebuilt_lookup = sum(cap for position, cap in bounded_calls if position >= rebuilt_branch)
+        assert submitted >= 905
+        worst_path = preflight_and_lookup + max(already_open,
+                                                submitted + max(noop_proof, rebuilt_lookup))
+        assert worst_path == 1725 < 1770 < whole_step == 1775 < 1800
+    else:
+        poll_start = commands.rindex('while :; do')
+        proof_start = commands.index('if [[ "$state" == MERGED ||', poll_start)
+        cleanup_caps = [cap for position, cap in bounded_calls
+                        if commands[position:].startswith('bash scripts/close_superseded_appends.sh')]
+        rebuild_caps = [cap for position, cap in bounded_calls
+                        if commands[position:].startswith('bash scripts/submit_attestation_append.sh')
+                        and '--rebuild' in commands[position:position + 120]]
+        assert cleanup_caps == [125, 125]
+        assert rebuild_caps == [305, 305]
+        fixed_budget = (sum(cap for _, cap in bounded_calls)
+                        - budget_between(poll_start, proof_start)
+                        - min(cleanup_caps) - sum(rebuild_caps))
+        assert fixed_budget == 260
+        assert patience + fixed_budget == 1745 < 1800 < whole_step == 1805 < 1860
+    assert step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
     assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
 
 
@@ -1017,7 +1068,7 @@ def test_existing_append_command_timeout_is_attributed_and_fails(
 ])
 def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scenario: str) -> None:
     """Exercise both real shell loops with bounded API stubs and a virtual clock."""
-    step = _append_existing_step() if existing else _append_acceptance_step()
+    run_script = _append_existing_step()["run"] if existing else _append_acceptance_harness()
     head = "d" * 40
     initial = {"number": 99, "headRefName": "attestation/append-contract", "headRefOid": head,
                "baseRefName": "main", "state": "OPEN", "isCrossRepository": False,
@@ -1105,7 +1156,7 @@ def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scena
     # undecided cases advance to the configured patience without accepting.
     advance = f"started + {worst_observed}" if scenario == "pending_merge" else "deadline"
     run = re.sub(r'^\s*sleep .*$', f'echo slept >> "$CALL_LOG"; SECONDS=$(({advance}))',
-                 step["run"], flags=re.MULTILINE)
+                 run_script, flags=re.MULTILINE)
     result = subprocess.run(["bash", "-c", run], cwd=tmp_path, env=env,
                             capture_output=True, text=True, timeout=10)
     calls = log.read_text().splitlines()
@@ -1209,7 +1260,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
     arm_status: int,
 ) -> None:
     step = _append_acceptance_step()
-    assert step["env"]["GH_TOKEN"] == "${{ steps.acceptance-append-token.outputs.token }}"
+    assert step["env"]["GH_TOKEN"] == "${{ steps.acceptance-wait-token.outputs.token }}"
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     (tmp_path / "scripts").mkdir()
@@ -1298,7 +1349,7 @@ def test_append_acceptance_guard_is_fail_closed_and_deterministic(
         output.write_text("")
         summary.write_text("")
         result = subprocess.run(
-            ["/bin/bash", "-c", re.sub(r'^\s*sleep .*$', '              SECONDS=$deadline', step["run"], flags=re.MULTILINE)],
+            ["/bin/bash", "-c", re.sub(r'^\s*sleep .*$', '              SECONDS=$deadline', _append_acceptance_harness(), flags=re.MULTILINE)],
             cwd=tmp_path, env=env, capture_output=True, text=True, check=False,
         )
         calls = log.read_text().splitlines()

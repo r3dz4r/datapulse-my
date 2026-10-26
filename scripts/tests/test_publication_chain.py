@@ -19,6 +19,30 @@ SCRIPT = ROOT / "scripts/publication_chain.py"
 WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
 
 
+def test_append_publication_chain_uses_phase_outputs_after_fresh_tokens() -> None:
+    signing = workflow()["jobs"]["sign_health"]
+    steps = signing["steps"]
+    by_id = {step.get("id"): step for step in steps}
+    for consumer_id, mint_id in (
+        ("existing_append", "append-token"),
+        ("append_submission", "submission-append-token"),
+        ("append_acceptance", "acceptance-wait-token"),
+    ):
+        consumer = by_id[consumer_id]
+        mint = steps[steps.index(consumer) - 1]
+        assert mint["id"] == mint_id
+        assert mint["uses"] == "actions/create-github-app-token@v1"
+        assert consumer["env"]["GH_TOKEN"] == f"${{{{ steps.{mint_id}.outputs.token }}}}"
+        assert consumer["timeout-minutes"] < 60
+    assert by_id["append_acceptance"]["env"]["APPEND_PREP_STATE"] == (
+        "${{ steps.append_submission.outputs.state }}"
+    )
+    assert signing["outputs"]["append_state"] == (
+        "${{ steps.existing_append.outputs.state == 'append-deferred' && 'append-deferred' "
+        "|| steps.append_acceptance.outputs.state }}"
+    )
+
+
 def inputs(**overrides: object) -> dict[str, object]:
     return {
         "publication_result": "success", "published_sha": "a" * 40,

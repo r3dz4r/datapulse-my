@@ -232,10 +232,13 @@ jobs:
     name: Sign current health with public Sigstore
     runs-on: ubuntu-latest
     environment: production
-    # Sequential budgets: existing append 32m + re-settle 40m + acceptance 51m
-    # + 9m for checkout, candidate preparation, witnessing and signing = 132m.
+    # Existing append: 1185 < 1485 < 1900 < 1905 < 1920s (32m).
+    # Candidate: 1725 < 1770 < 1775 < 1800s (30m); acceptance:
+    # 1485 + 260 = 1745 < 1800 < 1805 < 1860s (31m).
+    # Combined: 3470 < 3570 wrappers < 3580 with grace < 3660s of steps.
+    # Sequential steps: 32m + re-settle 40m + 30m + 31m + 9m reserve = 142m.
     # Terminal append failures refuse on observation rather than using this cap.
-    timeout-minutes: 132
+    timeout-minutes: 142
     permissions:
       contents: read
       id-token: write
@@ -714,23 +717,22 @@ jobs:
             --private-key "$DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" \
             --rekor-reference "$DATAPULSE_REKOR_REFERENCE"
 
-      # App installation tokens expire after 60m. Waiting for an existing append
-      # and re-settling can consume that lifetime; issue the same App a fresh
-      # token here so the entire 51m acceptance step fits its credential budget.
-      - name: Refresh append token before the acceptance budget
+      # Each App token is minted immediately before its own bounded consumer.
+      # Candidate preparation and acceptance polling have separate sub-hour caps.
+      - name: Refresh append token before candidate preparation
         if: steps.existing_append.outputs.state == 'ready'
         uses: actions/create-github-app-token@v1
-        id: acceptance-append-token
+        id: submission-append-token
         with:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
-      - name: Require authoritative acceptance before signing publication
+      - name: Prepare append candidate for acceptance
         if: steps.existing_append.outputs.state == 'ready'
-        id: append_acceptance
-        timeout-minutes: 51
+        id: append_submission
+        timeout-minutes: 30
         env:
-          GH_TOKEN: ${{ steps.acceptance-append-token.outputs.token }}
+          GH_TOKEN: ${{ steps.submission-append-token.outputs.token }}
           GIT_TERMINAL_PROMPT: "0"
         run: |
           set -Eeuo pipefail
@@ -740,16 +742,10 @@ jobs:
             echo "append-deferred: bounded append operation timed out; signing and deploy skipped. Next run retries automatically." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi; exit "$status"' ERR
-          # Bound the process group independently of runner cancellation. Each
-          # call escalates TERM to KILL. Patience plus fixed calls and one final
-          # acceptance proof fit 3000s + 5s kill grace < 51m step < 132m job.
-          # The extra 1515s covers preflight/submission, lookups and byte proof;
-          # it is not additional patience for an undecided required check.
-          # append-deferred exits successfully; signing and deploy require accepted.
-          timeout -k 5s 3000s bash -Eeuo pipefail <<'ACCEPTANCE'
-          # Safe calls may be repeated after a cap hit; decisions and the
-          # mutating submission must preserve failure instead of being retried.
-          call_deadline=$((SECONDS + 3000))
+          # The 1770s wrapper covers preflight, one 900s submission, and its
+          # bounded no-op proof; the 5s kill grace fits the 30m step.
+          timeout -k 5s 1770s bash -Eeuo pipefail <<'PREPARE'
+          call_deadline=$((SECONDS + 1770))
           named_timeout() {
             local cap="$1" status
             shift
@@ -820,6 +816,8 @@ jobs:
           retry_timeout 240 python3 scripts/verify_attestation_append.py --base HEAD
           if retry_timeout 240 python3 scripts/verify_attestation_append.py --base HEAD --require-committed; then
             named_timeout 120 bash scripts/close_superseded_appends.sh
+            echo "state=accepted" >> "$GITHUB_OUTPUT"
+            exit 0
           else
             status=$?
             # An exhausted cap is not evidence that the candidate needs submission.
@@ -844,7 +842,7 @@ jobs:
             else
               submission_result="${RUNNER_TEMP:-$PWD}/append-submission-result"
               : > "$submission_result"
-              APPEND_SUBMISSION_RESULT="$submission_result" named_timeout 360 bash scripts/submit_attestation_append.sh
+              APPEND_SUBMISSION_RESULT="$submission_result" named_timeout 900 bash scripts/submit_attestation_append.sh
               if [[ -s "$submission_result" ]]; then
                 read -r branch head_sha rebuilt < "$submission_result"
                 submission_state='submission result received'
@@ -887,6 +885,121 @@ jobs:
               started=$SECONDS
               deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))
             fi
+            echo "branch=$branch" >> "$GITHUB_OUTPUT"
+            echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
+            echo "state=ready" >> "$GITHUB_OUTPUT"
+          fi
+          PREPARE
+
+      - name: Refresh append token before acceptance polling
+        if: steps.existing_append.outputs.state == 'ready'
+        uses: actions/create-github-app-token@v1
+        id: acceptance-wait-token
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Require authoritative acceptance before signing publication
+        if: steps.existing_append.outputs.state == 'ready'
+        id: append_acceptance
+        timeout-minutes: 31
+        env:
+          GH_TOKEN: ${{ steps.acceptance-wait-token.outputs.token }}
+          GIT_TERMINAL_PROMPT: "0"
+          APPEND_PREP_STATE: ${{ steps.append_submission.outputs.state }}
+          APPEND_BRANCH: ${{ steps.append_submission.outputs.branch }}
+          APPEND_HEAD_SHA: ${{ steps.append_submission.outputs.head_sha }}
+        run: |
+          set -Eeuo pipefail
+          trap 'status=$?; if [[ "$status" == 124 || "$status" == 137 ]]; then
+            echo "state=append-deferred" >> "$GITHUB_OUTPUT"
+            echo "::notice title=append-deferred::Bounded append operation timed out; publication deferred to the next run."
+            echo "append-deferred: bounded append operation timed out; signing and deploy skipped. Next run retries automatically." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi; exit "$status"' ERR
+          # The 1800s wrapper covers the unchanged 1485s polling patience,
+          # bounded PR identity checks, and fetched-main byte proof.
+          timeout -k 5s 1800s bash -Eeuo pipefail <<'ACCEPTANCE'
+          call_deadline=$((SECONDS + 1800))
+          named_timeout() {
+            local cap="$1" status
+            shift
+            if timeout -k 5s "${cap}s" "$@"; then
+              return 0
+            else
+              status=$?
+            fi
+            if [[ "$status" == 124 || "$status" == 137 ]]; then
+              printf '::warning title=Append call timed out::' >&2
+              printf '%q ' "$@" >&2
+              printf 'exceeded %ss (exit %s)\n' "$cap" "$status" >&2
+            fi
+            return "$status"
+          }
+          retry_timeout() {
+            local cap="$1" status retry_until remaining output stdin_buffer
+            shift
+            if [[ "$1" == jq ]]; then
+              # A capped parser may have consumed stdin; replay the same JSON.
+              IFS= read -r -d '' stdin_buffer || :
+            fi
+            while :; do
+              # Discard a timed-out call's partial stdout before retrying JSON.
+              if output="$(
+                if [[ "$1" == jq ]]; then
+                  named_timeout "$cap" "$@" <<< "$stdin_buffer"
+                else
+                  named_timeout "$cap" "$@"
+                fi
+              )"; then
+                printf '%s\n' "$output"
+                return 0
+              else
+                status=$?
+              fi
+              if [[ "$status" != 124 && "$status" != 137 ]]; then
+                printf '%s\n' "$output"
+                return "$status"
+              fi
+              retry_until=${deadline:-$call_deadline}
+              remaining=$((retry_until - SECONDS))
+              if (( remaining <= 0 )); then
+                echo "::warning title=Append call retry exhausted::No time remains for a safe retry; elapsed $((SECONDS - ${started:-0}))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+                return "$status"
+              fi
+              echo "Retrying capped safe call within the existing deadline (${remaining}s remaining)." >&2
+              sleep "$((remaining < 15 ? remaining : 15))"
+              if (( SECONDS >= retry_until )); then
+                echo "::warning title=Append call retry exhausted::Existing deadline reached (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+                return "$status"
+              fi
+            done
+          }
+          refusal_started=$SECONDS
+          refuse_acceptance() {
+            local reason="$1"
+            echo "::error title=$reason::PR #${pr_number:-none} (${branch:-candidate}) is ${state:-unavailable}; deterministic-safety-net: ${check_state:-unavailable}; elapsed $((SECONDS - ${started:-$refusal_started}))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)" >&2
+            exit 1
+          }
+          defer_append() {
+            echo "state=append-deferred" >> "$GITHUB_OUTPUT"
+            evidence="PR #${pr_number:-none} (${branch:-candidate}); age ${age_seconds:-unknown}s; deterministic-safety-net: ${check_state:-unavailable}; elapsed $((SECONDS - started))s (patience ${APPEND_ACCEPTANCE_PATIENCE_SECONDS}s)"
+            echo "::notice title=append-deferred::$evidence; publication deferred to the next run."
+            echo "append-deferred: $evidence. Signing and deploy skipped; next run retries automatically." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
+          case "$APPEND_PREP_STATE" in
+            accepted|append-deferred)
+              echo "state=$APPEND_PREP_STATE" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+            ready) ;;
+            *) echo "::error title=Append preparation missing::No candidate state was produced" >&2; exit 1 ;;
+          esac
+          branch="$APPEND_BRANCH"
+          head_sha="$APPEND_HEAD_SHA"
+          started=$SECONDS
+          deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))
             if pr_json="$(retry_timeout 20 gh pr view "$branch" --repo "$GITHUB_REPOSITORY" \
               --json number,headRefName,headRefOid,baseRefName,isCrossRepository,state,createdAt,autoMergeRequest,statusCheckRollup)"; then
               :
@@ -1011,7 +1124,6 @@ jobs:
               remaining=$((deadline - SECONDS))
               sleep "$((remaining > 0 ? (remaining < 15 ? remaining : 15) : 0))"
             done
-          fi
           echo "state=accepted" >> "$GITHUB_OUTPUT"
           ACCEPTANCE
 
