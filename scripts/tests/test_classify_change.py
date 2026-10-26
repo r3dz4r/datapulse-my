@@ -87,6 +87,14 @@ def test_append_only_change_accepts_immutable_revision_and_chain_heads() -> None
     assert not is_health_only_change(APPEND_PATHS)
 
 
+def test_append_only_change_accepts_gzipped_revision_health() -> None:
+    gzipped_health = (
+        "attestations/2026-10-26/revisions/"
+        "1e2e5f0df6466afb96b09fa372f0a518788e0690979c34f3917ca1b22c93b8bc/health.json.gz"
+    )
+    assert is_append_only_change((APPEND_PATHS[0], gzipped_health))
+
+
 @pytest.mark.parametrize(
     "outside_path",
     (
@@ -97,6 +105,13 @@ def test_append_only_change_accepts_immutable_revision_and_chain_heads() -> None
         f"attestations/2026-10-09/revisions/{REVISION}/nested/binding.json",
         "attestations/2026-10-09/revisions/not-a-digest/binding.json",
         "attestations/2026-10-09/revisions/../binding.json",
+        "attestations/2026-10-09/health.json.gz",
+        "attestations/2026-10-09/revisions/not-a-digest/health.json.gz",
+        f"attestations/2026-10-09/revisions/{REVISION}/health.txt.gz",
+        f"attestations/2026-13-09/revisions/{REVISION}/health.json.gz",
+        "data/health.json.gz",
+        "docs/health.json.gz",
+        "health/health.json.gz",
         "attestations/rekor/2026-10-09/reference.json",
         f"attestations/rekor/2026-10-09/arbitrary.{REVISION}.json",
     ),
