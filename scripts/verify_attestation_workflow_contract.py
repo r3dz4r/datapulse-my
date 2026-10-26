@@ -156,6 +156,37 @@ def _require_pages_boundaries(workflow: str) -> None:
                 _require(match.group(1), "Pages workflow sign_health", fragment)
 
 
+def _require_pages_accepted_head(workflow: str) -> None:
+    for forbidden in (
+        "APPEND_", "submit_attestation_append.sh", "--wait-for-acceptance",
+        "wait_for_acceptance", "existing_append", "append_submission",
+        "append_acceptance", "refresh_chain_head.sh", "bind_candidate_witness.py",
+        "gh pr ",
+    ):
+        if forbidden in workflow:
+            raise ContractError(f"Pages workflow: candidate submission or append wait forbidden: {forbidden!r}")
+    for fragment in (
+        "id: accepted_head",
+        "git fetch origin refs/heads/main:refs/remotes/origin/main",
+        'git rev-parse refs/remotes/origin/main',
+        'git merge-base --is-ancestor "$PROMOTION_SOURCE_SHA" "$accepted_main"',
+        'bash scripts/restore_attestations.sh --source "$accepted_main"',
+        'accepted = accepted_discovery(root, revision)',
+        'index = json.loads(git_bytes(root, revision, "attestations/chain-index.json"))',
+        'if not head or head != accepted["current_head"] or head not in index["heads"]:',
+        'if index["heads"][head] != accepted["heads"][head]:',
+        'verify_append(root, revision, require_committed=True)',
+        'if mirror.get("chain_head") != head:',
+        'if not ga.agrees(root, directory, manifest, ga.health_binding(root, health), registry, None):',
+        'verify_contract(root, require_rekor=True, allow_newer_health=False)',
+        "steps.accepted_head.outputs.state == 'accepted'",
+        "if: needs.sign_health.outputs.accepted_head_state == 'accepted'",
+    ):
+        _require(workflow, "Pages workflow accepted head", fragment)
+    if workflow.index("id: accepted_head") > workflow.index("python3 scripts/gen_sigstore_bundle.py"):
+        raise ContractError("Pages workflow: accepted head verification must precede signing")
+
+
 def verify_workflows(daily_path: Path, pages_path: Path) -> None:
     """Verify both workflow files preserve the shared Sigstore signing contract."""
     daily = _read_workflow(daily_path)
@@ -185,8 +216,7 @@ def verify_workflows(daily_path: Path, pages_path: Path) -> None:
     pages_group = _concurrency_group(pages_concurrency, "Pages workflow")
     if daily_group.casefold() == pages_group.casefold():
         raise ContractError("daily and Pages workflows must use separate concurrency groups")
-    _require(pages, "Pages workflow", "--require-committed")
-    _require(pages, "Pages workflow", "bash scripts/submit_attestation_append.sh")
+    _require_pages_accepted_head(pages)
     if daily.index("bash scripts/refresh_chain_head.sh") > daily.index("python3 scripts/gen_sigstore_bundle.py"):
         raise ContractError("daily workflow: candidate head must precede DSSE")
     if 'rm -rf -- "$rekor_dir"' in daily:
