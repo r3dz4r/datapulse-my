@@ -8,7 +8,7 @@ sources:
   - {"id": "sg-datagov","resource": "https://data.gov.sg/api/action/datastore_search?resource_id=d_69b3380ad7e51aff3a7dcc84eba52b8a","title": "Singapore Government"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-07T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-19T06:57:34Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-26T13:03:23Z"}
 status: "stable"
 datapulse:licence: "Singapore Open Data Licence v1.0 (attribution required)"
 datapulse:attribution: "Contains information from Land Transport Authority, Singapore Open Data Licence v1.0; accessed 2026-09-07"
