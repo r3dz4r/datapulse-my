@@ -321,22 +321,27 @@ dataset_count="$(
 )"
 
 if ! $local_mode; then
-"$python_bin" - "$work_dir/release-verification.md" "$work_dir/health.json" "$work_dir/mcp.json" <<'PY'
+"$python_bin" - "$work_dir/release-verification.md" "$work_dir/health.json" "$work_dir/mcp.json" "$work_dir/attestation-binding.json" <<'PY'
 import json
 import subprocess
 import sys
 from pathlib import Path
 
-proof_path, health_path, mcp_path = map(Path, sys.argv[1:])
-health = json.loads(health_path.read_text(encoding="utf-8"))
+from datetime import datetime, timezone
+from scripts.select_accepted_health import report_age
+
+proof_path, health_path, mcp_path, binding_path = map(Path, sys.argv[1:])
+# The report is older than its publishing code build. Its signed digest and
+# 36-hour age policy replace any ordering between those independent clocks.
+age = report_age(health_path, binding_path, datetime.now(timezone.utc))
+print("Report age: " + json.dumps(age, sort_keys=True))
+assert age["report_age_status"] == "current", "accepted report exceeds 36-hour signed policy"
 tools = json.loads(mcp_path.read_text(encoding="utf-8"))["tools"]
 source_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
 required = (
     "<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->",
     "- Status: `current generated release proof`",
     f"- Source SHA: `{source_sha}`",
-    f"- Health checked at: `{health['checked_at']}`",
-    f"- Dataset count: `{len(health['datasets'])}`",
     f"- MCP tool count: `{len(tools)}`",
     "- Protocol result: `byte-identical isolated release-build runs`",
 )

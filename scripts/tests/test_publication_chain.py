@@ -19,28 +19,25 @@ SCRIPT = ROOT / "scripts/publication_chain.py"
 WORKFLOW = ROOT / ".github/workflows/deploy-cloudflare-pages.yml"
 
 
-def test_append_publication_chain_uses_phase_outputs_after_fresh_tokens() -> None:
+def test_pages_publication_has_no_acceptance_token_phases() -> None:
     signing = workflow()["jobs"]["sign_health"]
     steps = signing["steps"]
-    by_id = {step.get("id"): step for step in steps}
-    for consumer_id, mint_id in (
-        ("existing_append", "append-token"),
-        ("append_submission", "submission-append-token"),
-        ("append_acceptance", "acceptance-wait-token"),
-    ):
-        consumer = by_id[consumer_id]
-        mint = steps[steps.index(consumer) - 1]
-        assert mint["id"] == mint_id
-        assert mint["uses"] == "actions/create-github-app-token@v1"
-        assert consumer["env"]["GH_TOKEN"] == f"${{{{ steps.{mint_id}.outputs.token }}}}"
-        assert consumer["timeout-minutes"] < 60
-    assert by_id["append_acceptance"]["env"]["APPEND_PREP_STATE"] == (
-        "${{ steps.append_submission.outputs.state }}"
-    )
-    assert signing["outputs"]["append_state"] == (
-        "${{ steps.existing_append.outputs.state == 'append-deferred' && 'append-deferred' "
-        "|| steps.append_acceptance.outputs.state }}"
-    )
+    assert not any(step.get("uses") == "actions/create-github-app-token@v1" for step in steps)
+    assert signing["outputs"]["report_state"] == "${{ steps.select_accepted_health.outputs.state }}"
+    assert "append_state" not in signing["outputs"]
+    assert not any(step.get("id") in {"existing_append", "append_submission", "append_acceptance"} for step in steps)
+
+
+def test_producer_mints_fresh_submission_token_and_retains_successor_lease() -> None:
+    daily = yaml.safe_load((ROOT / ".github/workflows/datapulse-attest-daily.yml").read_text())
+    steps = daily["jobs"]["attest-and-commit"]["steps"]
+    submission = next(step for step in steps if step.get("run") == "bash scripts/submit_attestation_append.sh")
+    mint = steps[steps.index(submission) - 1]
+    assert mint["uses"] == "actions/create-github-app-token@v1"
+    assert submission["env"]["GH_TOKEN"] == f"${{{{ steps.{mint['id']}.outputs.token }}}}"
+    producer = (ROOT / "scripts/submit_attestation_append.sh").read_text()
+    assert 'successor_path="$(write_successor_record "$parent_head" "$head")"' in producer
+    assert 'paths+=("$successor_path")' in producer
 
 
 def inputs(**overrides: object) -> dict[str, object]:

@@ -148,10 +148,8 @@ def _require_pages_boundaries(workflow: str) -> None:
         if job == "sign_health":
             for fragment in (
                 "settled_sha: ${{ steps.settled_main.outputs.settled_sha }}",
-                "main moved; re-settling",
-                'export PROMOTION_SOURCE_SHA="$settled_sha"',
-                'echo "PROMOTION_SOURCE_SHA=$PROMOTION_SOURCE_SHA" >> "$GITHUB_ENV"',
                 'echo "settled_sha=$PROMOTION_SOURCE_SHA" >> "$GITHUB_OUTPUT"',
+                '[[ "$(git rev-parse HEAD)" == "$PROMOTION_SOURCE_SHA" ]]',
             ):
                 _require(match.group(1), "Pages workflow sign_health", fragment)
 
@@ -185,8 +183,29 @@ def verify_workflows(daily_path: Path, pages_path: Path) -> None:
     pages_group = _concurrency_group(pages_concurrency, "Pages workflow")
     if daily_group.casefold() == pages_group.casefold():
         raise ContractError("daily and Pages workflows must use separate concurrency groups")
-    _require(pages, "Pages workflow", "--require-committed")
-    _require(pages, "Pages workflow", "bash scripts/submit_attestation_append.sh")
+    for forbidden in (
+        "existing_append", "append_submission", "append_acceptance", "APPEND_",
+        "submit_attestation_append.sh", "refresh_chain_head.sh", "bind_candidate_witness.py",
+        "produce_rekor_witness", "create-github-app-token", "gh pr", "refresh_deadline",
+        "scripts/generate.sh release-build", "scripts/gen_attestations.py", "--wait-for-acceptance",
+    ):
+        if forbidden in pages:
+            raise ContractError(f"Pages workflow: forbidden acceptance machinery {forbidden!r}")
+    for required in (
+        "id: select_accepted_health",
+        "python3 scripts/select_accepted_health.py --root .",
+        'cp "$publication/health/latest.json" health/latest.json',
+        'cmp health/latest.json "$publication/health/latest.json"',
+        '--revision "$PROMOTION_SOURCE_SHA" --out "$publication"',
+        "needs.sign_health.outputs.report_state == 'accepted'",
+        "Verify accepted report identity and disclose observation time",
+        "publication-identity.json", "ACCEPTED_OBSERVED_AT",
+        "Measure canonical production report age", "--measure-age",
+        "Measure canonical production deployment age", "--max-age-hours 24",
+    ):
+        _require(pages, "Pages workflow", required)
+    if pages.index('id: select_accepted_health') > pages.index('python3 scripts/gen_sigstore_bundle.py'):
+        raise ContractError("Pages workflow: accepted report must precede DSSE")
     if daily.index("bash scripts/refresh_chain_head.sh") > daily.index("python3 scripts/gen_sigstore_bundle.py"):
         raise ContractError("daily workflow: candidate head must precede DSSE")
     if 'rm -rf -- "$rekor_dir"' in daily:

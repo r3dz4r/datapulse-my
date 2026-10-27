@@ -5,9 +5,9 @@ set -Eeuo pipefail
 
 usage() {
   echo "usage: $0 --base-url URL --site DIR --sigstore-signed true|false --health-only true|false --source-commit SHA [--sigstore-publication DIR] [--cosign PATH] [--kv-surfaces-published-elsewhere]" >&2
-  echo "  --sigstore-publication is required only when --sigstore-signed true" >&2
+  echo "  --sigstore-publication is required for accepted reports and when --sigstore-signed true" >&2
   echo "  --kv-surfaces-published-elsewhere skips served /health/ namespace checks" >&2
-  echo "    and the release-proof health cross-check; the default remains strict" >&2
+  echo "    for unsigned build previews; accepted reports always require exact health bytes" >&2
   exit 64
 }
 
@@ -52,6 +52,17 @@ fail() { echo "::error title=Cloudflare Pages contract failed::$1"; exit 1; }
 # imply the served surface is signed when it is not.
 if [[ "$sigstore_signed" == true && -z "$publication_dir" ]]; then
   fail "missing staged signing inputs"
+fi
+accepted_report=false
+if [[ -n "$publication_dir" || -f "$site_dir/publication-identity.json" ]]; then
+  accepted_report=true
+  [[ -n "$publication_dir" && -s "$publication_dir/publication-identity.json" ]] || fail "missing staged accepted report identity"
+  cmp -s "$publication_dir/publication-identity.json" "$site_dir/publication-identity.json" || fail "assembled accepted report identity differs from staged artifact"
+  # The code build and the accepted observation have independent clocks. Keep
+  # the entire assembled byte inventory pinned to the selected code revision.
+  python3 scripts/verify_release_artifact.py verify --site "$site_dir" \
+    --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
+    --source-commit "$source_commit" || fail "accepted publication build identity drift"
 fi
 smoke_dir="$(mktemp -d)"
 trap 'rm -rf "$smoke_dir"' EXIT
@@ -203,17 +214,45 @@ grep -Fq "'/health/index.json'" "$smoke_dir/index.html" || fail "origin root doe
 observed_register_rows="$(grep -o '<article class="register-row' "$smoke_dir/index.html" | wc -l)"; [[ "$observed_register_rows" -eq "$expected_dataset_count" ]] || fail "origin root register rows mismatch: expected $expected_dataset_count, observed $observed_register_rows"
 grep -q 'DataPulse MY' "$smoke_dir/index.html" && fail "origin root retains the retired product-name alias"
 fetch_alias landing.html "$base_url/landing.html" /; fetch_alias landing "$base_url/landing" /; fetch_alias dashboard "$base_url/dashboard" /; fetch_alias register "$base_url/register" /
-if [[ "$kv_surfaces_published_elsewhere" != true ]]; then
+if [[ "$kv_surfaces_published_elsewhere" != true || "$accepted_report" == true ]]; then
 fetch "health snapshot" "$base_url/health/latest.json" "$smoke_dir/health/latest.json"
 python3 - "$site_dir/health/latest.json" "$smoke_dir/health/latest.json" <<'PY'
-import json,sys
+import hashlib,sys
 from pathlib import Path
-built, served = (json.loads(Path(path).read_text(encoding='utf-8')) for path in sys.argv[1:])
-if not (built.get('checked_at') and served.get('checked_at')) or served['checked_at'] < built['checked_at']:
- raise SystemExit('served health snapshot is older than the assembled snapshot')
-if not isinstance(served.get('datasets'), list) or len(served['datasets']) != len(built.get('datasets', [])):
- raise SystemExit('served health snapshot dataset count differs from the assembled snapshot')
+digests = [hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in sys.argv[1:]]
+if digests[0] != digests[1]:
+ raise SystemExit('served health digest differs from the accepted report bytes')
 PY
+fi
+if [[ "$accepted_report" == true ]]; then
+  fetch "accepted publication identity" "$base_url/publication-identity.json" "$smoke_dir/publication-identity.json"
+  cmp -s "$publication_dir/publication-identity.json" "$smoke_dir/publication-identity.json" || fail "served accepted report identity differs from staged artifact"
+  fetch "accepted report binding" "$base_url/attestations/latest/binding.json" "$smoke_dir/report-binding.json"
+  cmp -s "$publication_dir/attestations/latest/binding.json" "$smoke_dir/report-binding.json" || fail "served accepted report binding differs from staged artifact"
+  python3 - "$smoke_dir" "$source_commit" <<'PY'
+import json,sys
+from datetime import datetime, timezone
+from pathlib import Path
+from scripts.select_accepted_health import report_age
+
+served = Path(sys.argv[1])
+identity = json.loads((served / 'publication-identity.json').read_bytes())
+binding = json.loads((served / 'report-binding.json').read_bytes())['payload']
+age = report_age(served / 'health/latest.json', served / 'report-binding.json', datetime.now(timezone.utc))
+if (identity['accepted_main_commit'] != sys.argv[2]
+        or identity['health_sha256'] != binding['health']['artifact_sha256']
+        or identity['dataset_count'] != binding['health']['dataset_count']
+        or identity['accepted_chain_head'] != binding['ed25519']['chain_head']
+        or identity['observed_at'] != age['observed_at']
+        or identity['published_at'] != age['published_at']
+        or identity['max_age_seconds'] != age['max_age_seconds']):
+ raise SystemExit('accepted report identity drift')
+print('Report age: ' + json.dumps(age, sort_keys=True))
+if age['report_age_status'] != 'current':
+ raise SystemExit('accepted report exceeds 36-hour signed policy or has future timestamps')
+PY
+fi
+if [[ "$kv_surfaces_published_elsewhere" != true ]]; then
 fetch "dashboard health projection" "$base_url/health/index.json" "$smoke_dir/health/index.json"
 fi
 sigstore_path="signatures/health.latest.sigstore.json"
@@ -229,28 +268,17 @@ else
 fi
 if [[ "$health_only" == true ]]; then staged_proof="$RUNNER_TEMP/preserved-release-proof/release-verification.md"; else staged_proof="docs/release-verification.md"; fi
 test -s "$staged_proof" || fail "staged release proof is missing"; fetch "release reproducibility proof" "$base_url/release-verification.md" "$smoke_dir/release-verification.md"; cmp -s "$staged_proof" "$smoke_dir/release-verification.md" || fail "served release proof differs from staged artifact"
-python3 - "$smoke_dir/release-verification.md" "$source_commit" "$smoke_dir/health/latest.json" mcp.json "$health_only" "$kv_surfaces_published_elsewhere" <<'PY'
+python3 - "$smoke_dir/release-verification.md" "$source_commit" mcp.json "$health_only" <<'PY'
 import json,re,sys
 from pathlib import Path
-proof, sha, health_path, mcp_path, health_only, kv_excluded=sys.argv[1:]; contents=Path(proof).read_text(encoding='utf-8')
+proof, sha, mcp_path, health_only=sys.argv[1:]; contents=Path(proof).read_text(encoding='utf-8')
 if health_only == 'true':
  required={'release-proof title':r'^# Release reproducibility verification$','verification timestamp':r'^- (?:Generated|Verified) at: `[^`\\n]+`$','Source SHA':r'^- Source SHA: `[0-9a-f]{7,64}`$','Profile result':r'^- Profile result: .+$','Total files built':r'^- Total files built: .+$','hash table':r'^\\| Path category \\| File count \\| First-run hash \\| Second-run hash \\| Match\\? \\|$','hash table category row':r'^\\| (?![-: ]+\\|)[^|]+ \\| \\d+ \\|','Reproduction section':r'^## Reproduction$'}; missing=[k for k,v in required.items() if not re.search(v,contents,re.M)]
 else:
  tools=json.loads(Path(mcp_path).read_text())['tools']; required=('<!-- generated: scripts/verify_release_reproducible.py; do not hand-edit -->','- Status: `current generated release proof`',f'- Source SHA: `{sha}`',f'- MCP tool count: `{len(tools)}`','- Protocol result: `byte-identical isolated release-build runs`'); missing=[v for v in required if v not in contents]
-# The served health snapshot is the edge copy, refreshed by the pipeline every few minutes; the
-# proof is pinned to the deployed commit. They share a clock only at build time, so the proof's
-# stamp must not be NEWER than what is served -- an equality check here fails for the rest of the
-# deploy's life, and a stale proof goes unnoticed while it does. The preview lane excludes these
-# two cross-checks by name: the served health snapshot is published by another lane on its own
-# cadence, but the proof's static identity above is still compared byte-for-value.
-if kv_excluded != 'true':
- health=json.loads(Path(health_path).read_text())
- m=re.search(r'^- Health checked at: `([^`]+)`$', contents, re.M)
- if not m: missing.append('- Health checked at: `<timestamp>`')
- elif not health.get('checked_at') or m.group(1) > health['checked_at']: missing.append(f'- Health checked at: `{m.group(1)}` (not at or before served health {health.get("checked_at")})')
- m=re.search(r'^- Dataset count: `(\d+)`$', contents, re.M)
- if not m: missing.append('- Dataset count: `<n>`')
- elif len(health.get('datasets', [])) < int(m.group(1)): missing.append(f'- Dataset count: `{m.group(1)}` (exceeds served {len(health.get("datasets", []))})')
+# A build may be newer and have a different dataset count than the accepted
+# observation it publishes. Report digest, membership and signed age are checked
+# above; this proof independently identifies the reproducible code build.
 if missing: raise SystemExit('release proof drift: '+'; '.join(missing))
 PY
 mapfile -t pages < <(jq -er '.pages[]' config/public-surfaces.json); mapfile -t artifacts < <(jq -er '.artifacts[]' config/public-surfaces.json)
@@ -273,7 +301,7 @@ for path in "${pages[@]}" "${artifacts[@]}"; do
 done
 if [[ "$kv_surfaces_published_elsewhere" == true ]]; then
   excluded_health_list="$(printf '%s, ' "${excluded_health_paths[@]}")"
-  echo "::warning title=KV-backed health surfaces published elsewhere::KV-backed surfaces published by another lane on its own cadence were not fetched or compared: ${excluded_health_list%, }; the release-proof health freshness and dataset-count cross-check was not performed; all non-/health/ declared public surfaces retain their served checks"
+  echo "::warning title=KV-backed health surfaces published elsewhere::KV-backed surfaces published by another lane on its own cadence were not fetched or compared: ${excluded_health_list%, }; all non-/health/ declared public surfaces retain their served checks; accepted report digest and signed age checks remain mandatory"
 fi
 verify_attestation_plane
 if [[ "$kv_surfaces_published_elsewhere" != true ]]; then

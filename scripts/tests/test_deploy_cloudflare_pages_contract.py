@@ -59,447 +59,6 @@ def test_pages_passes_explicit_full_revision_depth_without_raising_guard() -> No
     assert "--max-files 18000" in run
 
 
-def test_pages_rejects_projections_different_from_accepted_main_before_publication() -> None:
-    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
-    names = [step.get("name") for step in steps]
-    guard = _deploy_step("Require served projections from committed main")
-    run = guard["run"]
-    assert names.index("Keep verifier-reachable attestation history") < names.index(guard["name"])
-    assert names.index(guard["name"]) < names.index("Deploy isolated Cloudflare Pages preview artifact")
-    assert "python3 scripts/gen_attestation_projections.py --root \"$accepted_root\" --check" in run
-    assert "served projections must match the committed tree" in run
-    assert "served_head=" in run and "committed_head=" in run
-    for path in (
-        "attestations/latest/index.json",
-        "attestations/latest/chain_head.json",
-        "attestations/latest/scores.json",
-        "attestations/chain-index.json",
-        ".attestations/chain_head.json",
-    ):
-        assert path in run
-
-
-def test_projection_checkout_covers_committed_heads_revisions(tmp_path: Path) -> None:
-    run = _deploy_step("Require served projections from committed main")["run"]
-    match = re.search(r'projection_paths="\$\(python3 - "\$accepted_root" <<\'PY\'\n(?P<body>.*?)\nPY\n\)"', run, re.S)
-    assert match is not None
-    assert "accepted_discovery(root, \"HEAD\")" in match.group("body")
-    assert "set_directory(document[\"heads\"][head])" in match.group("body")
-    assert "PROJECTIONS, REGISTRY" in match.group("body")
-    assert "for name in FILES" in match.group("body")
-    assert "sparse-checkout set --no-cone --stdin" in run
-    assert '"/$set_dir/"' not in run and ' /attestations/' not in run
-
-    from scripts import attestation_sets, gen_attestation_projections
-    from scripts.verify_attestation_append import accepted_discovery
-
-    root, key = accepted_root(tmp_path)
-    from scripts import gen_attestations as ga
-    ga.generate(root, key, datetime(2026, 8, 15, 2, tzinfo=timezone.utc), force_append=True)
-    subprocess.run(["git", "add", "-A"], cwd=root, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "accepted revision"], cwd=root,
-                   check=True, capture_output=True)
-    document = accepted_discovery(root, "HEAD")
-    head = document["current_head"]
-    directory = attestation_sets.set_directory(document["heads"][head])
-    revision_head = f"{directory}/revisions/{head}/chain_head.json"
-    if subprocess.run(["git", "cat-file", "-e", f"HEAD:{revision_head}"], cwd=root,
-                      capture_output=True).returncode == 0:
-        directory = attestation_sets.set_directory(revision_head)
-    selected = set(gen_attestation_projections.PROJECTIONS) | {gen_attestation_projections.REGISTRY}
-    selected.update(f"{directory}/{name}" for name in attestation_sets.FILES)
-    assert len(selected) == 11
-    assert "attestations" not in selected
-    assert all(not path.endswith("/") for path in selected)
-    result = subprocess.run([sys.executable, "-c", match.group("body"), str(root)], cwd=ROOT,
-                            capture_output=True, text=True)
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert set(result.stdout.splitlines()) == {"/" + path for path in selected}
-
-
-def test_projection_checkout_set_is_pointer_derived_and_bounded() -> None:
-    run = _deploy_step("Require served projections from committed main")["run"]
-    checkout = next(line for line in run.splitlines() if "sparse-checkout set" in line)
-    assert '--stdin <<< "$projection_paths"' in checkout
-    assert "attestations/" not in checkout and "revisions/" not in checkout
-    assert '"/$set_dir/"' not in _workflow()
-    match = re.search(
-        r'projection_paths="\$\(python3 - "\$accepted_root" <<\'PY\'\n(?P<body>.*?)\nPY\n\)"',
-        run, re.S,
-    )
-    assert match is not None
-    body = match.group("body")
-    assert 'accepted_discovery(root, "HEAD")' in body
-    assert 'head = document["current_head"]' in body
-    assert 'directory = set_directory(document["heads"][head])' in body
-    assert 'set_directory(revision_head)' in body
-    assert 'paths = {*PROJECTIONS, REGISTRY, *(f"{directory}/{name}" for name in FILES)}' in body
-    assert 'print("\\n".join("/" + path for path in sorted(paths)))' in body
-
-
-@pytest.mark.parametrize(
-    ("pass_on", "check_status"),
-    [(100, 1), (1, 1), (3, 1), (100, 2)],
-    ids=["refresh-timeout", "already-fresh", "refresh-passes", "invalid-evidence"],
-)
-def test_deploy_waits_for_committed_projection_refresh_before_refusing(
-    tmp_path: Path, pass_on: int, check_status: int,
-) -> None:
-    root, _ = accepted_root(tmp_path)
-    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
-    site = root / "_site"
-    for path in (
-        "attestations/latest/index.json", "attestations/latest/chain_head.json",
-        "attestations/latest/binding.json", "attestations/latest/scores.json",
-        "attestations/chain-index.json", ".attestations/chain_head.json",
-    ):
-        target = site / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(root / path, target)
-    head = json.loads((site / "attestations/chain-index.json").read_text())["current_head"]
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    (bin_dir / "python3").write_text(
-        f'#!{sys.executable}\n'
-        'import os, pathlib, sys\n'
-        'if sys.argv[1] == "-":\n'
-        f'    os.execv({sys.executable!r}, [{sys.executable!r}, *sys.argv[1:]])\n'
-        'counter = pathlib.Path(os.environ["CHECK_COUNT"])\n'
-        'count = int(counter.read_text()) + 1 if counter.exists() else 1\n'
-        'counter.write_text(str(count))\n'
-        'if count >= int(os.environ["PASS_ON"]):\n'
-        '    print("OK: accepted attestation projections match evidence")\n'
-        '    sys.exit(0)\n'
-        'print("STALE attestations/chain-index.json committed=old derived=new"\n'
-        '      if os.environ["CHECK_STATUS"] == "1" else "REFUSED: invalid evidence")\n'
-        'sys.exit(int(os.environ["CHECK_STATUS"]))\n'
-    )
-    (bin_dir / "gh").write_text(
-        '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\n'
-        'exit 2\n'
-    )
-    (bin_dir / "git").write_text(
-        '#!/bin/bash\nprintf "git %s\\n" "$*" >> "$CALL_LOG"\n'
-        f'exec "{shutil.which("git")}" "$@"\n'
-    )
-    for stub in bin_dir.iterdir():
-        stub.chmod(0o755)
-    runner_temp = tmp_path / "runner"
-    runner_temp.mkdir()
-    count_file = tmp_path / "count"
-    calls_file = tmp_path / "calls"
-    run = _deploy_step("Require served projections from committed main")["run"]
-    assert "gh pr " not in run
-    # Advance Bash's clock in the parent shell; exercise the real 600s bound.
-    harness = 'sleep() { printf "sleep %s\\n" "$*" >> "$CALL_LOG"; SECONDS=$((SECONDS + $1)); }\n'
-    result = subprocess.run(
-        ["bash", "-c", harness + run], cwd=root,
-        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
-             "PYTHONPATH": str(ROOT), "RUNNER_TEMP": str(runner_temp),
-             "CHECK_COUNT": str(count_file), "CALL_LOG": str(calls_file),
-             "PASS_ON": str(pass_on),
-             "CHECK_STATUS": str(check_status)},
-        capture_output=True, text=True, timeout=30,
-    )
-    count = int(count_file.read_text())
-    calls = calls_file.read_text().splitlines() if calls_file.exists() else []
-    notices = result.stdout + result.stderr
-    assert count <= 32
-    assert not any(call.startswith("gh ") for call in calls)
-    assert sum("fetch --no-tags origin refs/heads/main:refs/remotes/origin/main" in call
-               for call in calls) == count
-    refusal = "served projections must match the committed tree"
-    if result.returncode == 1:
-        assert (
-            "::error title=Attestation projection mismatch::"
-            f"{refusal}: served_head={head} committed_head={head} (committed projections are stale)"
-        ) in result.stderr.splitlines()
-    # An unchanged remote ref must not trigger repeated worktree resets.
-    assert sum("reset --hard HEAD" in call for call in calls) == 1
-    if pass_on == 1:
-        assert result.returncode == 0, notices
-        assert count == 1
-        assert "Projections pending refresh" not in notices
-        assert not any(call.startswith("sleep ") for call in calls)
-    elif check_status != 1:
-        assert result.returncode == 1
-        assert refusal in result.stderr
-        assert count == 1
-        assert "Projections pending refresh" not in notices
-        assert not any(call.startswith("sleep ") for call in calls)
-    elif pass_on == 100:
-        assert result.returncode == 1
-        assert refusal in result.stderr
-        assert count > 1
-        assert notices.count("::notice title=Projections pending refresh::") == 1
-        assert notices.count("::notice title=Projections pending refresh timed out::") == 1
-        assert f"served_head={head} committed_head={head}" in notices
-        assert sum(call == "sleep 20" for call in calls) <= 30
-    else:
-        assert result.returncode == 0, notices
-        assert count == pass_on
-        assert refusal not in result.stderr
-        assert result.stdout.index("Projections pending refresh") < result.stdout.index("OK:")
-    assert all(call == "sleep 20" for call in calls if call.startswith("sleep "))
-
-
-def test_projection_refresh_materializes_moved_main_before_rechecking(tmp_path: Path) -> None:
-    from scripts.tests.test_attestation_projections import accept_next_day
-
-    root, key = accepted_root(tmp_path)
-    accept_next_day(root, key)
-    stale_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts/gen_attestation_projections.py"), "--root", str(root)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
-    subprocess.run(["git", "add", "-u"], cwd=root, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "refresh accepted projections"], cwd=root,
-                   check=True, capture_output=True)
-    refresh_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
-    site = root / "_site"
-    from scripts.gen_attestation_projections import PROJECTIONS
-    for path in PROJECTIONS:
-        target = site / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(root / path, target)
-    subprocess.run(["git", "reset", "--hard", stale_sha], cwd=root, check=True, capture_output=True)
-    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    (bin_dir / "python3").write_text(
-        f'#!{sys.executable}\n'
-        'import os, sys\n'
-        'args = sys.argv[1:]\n'
-        'if args[0] != "-":\n'
-        '    with open(os.environ["CALL_LOG"], "a") as log:\n'
-        '        log.write("check\\n")\n'
-        f'    args[0] = {str(ROOT / "scripts/gen_attestation_projections.py")!r}\n'
-        f'os.execv({sys.executable!r}, [{sys.executable!r}, *args])\n'
-    )
-    (bin_dir / "gh").write_text(
-        '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\nexit 2\n'
-    )
-    (bin_dir / "git").write_text(
-        '#!/bin/bash\nprintf "git %s\\n" "$*" >> "$CALL_LOG"\n'
-        f'exec "{shutil.which("git")}" "$@"\n'
-    )
-    for stub in bin_dir.iterdir():
-        stub.chmod(0o755)
-    runner_temp = tmp_path / "runner"
-    runner_temp.mkdir()
-    calls_file = tmp_path / "calls"
-    harness = (
-        'sleep() { SECONDS=$((SECONDS + $1)); '
-        'command git update-ref refs/heads/main "$REFRESH_SHA"; }\n'
-    )
-    result = subprocess.run(
-        ["bash", "-c", harness + _deploy_step("Require served projections from committed main")["run"]],
-        cwd=root, env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
-                       "PYTHONPATH": str(ROOT), "RUNNER_TEMP": str(runner_temp),
-                       "GITHUB_REPOSITORY": "example/data-pulse", "CALL_LOG": str(calls_file),
-                       "REFRESH_SHA": refresh_sha}, capture_output=True, text=True, timeout=30,
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert result.stdout.index("Projections pending refresh") < result.stdout.index("OK:")
-    accepted = runner_temp / "accepted-projections"
-    assert subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=accepted, text=True).strip() == refresh_sha
-    for path in PROJECTIONS:
-        assert (accepted / path).read_bytes() == (site / path).read_bytes()
-    calls = calls_file.read_text().splitlines()
-    assert not any(call.startswith("gh ") for call in calls)
-    assert calls.count("check") == 2
-    assert sum("reset --hard HEAD" in call for call in calls) == 2
-    selected = subprocess.check_output(["git", "ls-files", "-t"], cwd=accepted, text=True).splitlines()
-    assert sum(line.startswith("H ") for line in selected) == 11
-
-
-@pytest.mark.parametrize(
-    "observed_branch", ["", "main", "attestation/append-contract"],
-    ids=["detached", "non-append", "attached"],
-)
-def test_missing_submission_result_never_claims_no_append_pr_from_detached_head(
-    tmp_path: Path, observed_branch: str,
-) -> None:
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    scripts = tmp_path / "scripts"
-    scripts.mkdir()
-    (scripts / "submit_attestation_append.sh").write_text('rm -f "$APPEND_SUBMISSION_RESULT"\n')
-    (bin_dir / "python3").write_text(
-        '#!/bin/bash\n[[ "$*" != *--require-committed* ]]\n'
-    )
-    (bin_dir / "git").write_text(
-        '#!/bin/bash\ncase "$*" in\n'
-        '"branch --show-current") printf "%s\\n" "$OBSERVED_BRANCH" ;;\n'
-        '"rev-parse HEAD") printf "%040d\\n" 1 ;;\n'
-        '*) exit 2 ;;\nesac\n'
-    )
-    (bin_dir / "gh").write_text(
-        f'#!{sys.executable}\n'
-        'import json, os, sys\n'
-        'with open(os.environ["CALL_LOG"], "a") as log:\n'
-        '    log.write(json.dumps(sys.argv[1:]) + "\\n")\n'
-        'if sys.argv[1:3] == ["pr", "list"]:\n'
-        '    print("[]")\n'
-        'else:\n'
-        '    sys.exit(1)\n'
-    )
-    for stub in bin_dir.iterdir():
-        stub.chmod(0o755)
-    calls_file = tmp_path / "calls"
-    result = subprocess.run(
-        ["bash", "-c", _append_acceptance_harness()], cwd=tmp_path,
-        env={**os.environ, **{key: str(value) for key, value in yaml.safe_load(_workflow())["env"].items()},
-             "PATH": f"{bin_dir}:{os.environ['PATH']}", "RUNNER_TEMP": str(tmp_path),
-             "GITHUB_REPOSITORY": "example/data-pulse", "GITHUB_OUTPUT": str(tmp_path / "output"),
-             "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"), "CALL_LOG": str(calls_file),
-             "OBSERVED_BRANCH": observed_branch},
-        capture_output=True, text=True, timeout=15,
-    )
-    calls = [json.loads(line) for line in calls_file.read_text().splitlines()]
-    assert result.returncode != 0
-    assert "::error" in result.stderr
-    assert all("" not in call for call in calls)
-    views = [call for call in calls if call[:2] == ["pr", "view"]]
-    if observed_branch.startswith("attestation/append-"):
-        assert views and all(call[2] == observed_branch for call in views)
-        assert "Append PR lookup failed" in result.stderr
-    else:
-        assert f"expected an attestation append branch, got {observed_branch}::" in result.stderr
-        assert "no submission result was produced" in result.stderr
-        assert f"local branch='{observed_branch}'" in result.stderr
-        assert "PR #unknown" in result.stderr
-        assert "PR existence unverified" in result.stderr
-        assert not views
-        assert "no append PR" not in result.stderr
-
-
-@pytest.mark.parametrize("proof_status", [0, 75, 1, 124, 137])
-def test_noop_submission_reaches_accepted_state_without_pr_refusal(
-    tmp_path: Path, proof_status: int,
-) -> None:
-    run = _append_preparation_step()["run"]
-    arm_start = run.index('if [[ "$branch" == noop ]]; then')
-    arm_end = run.index('if [[ "$branch" != attestation/append-* ]]', arm_start)
-    arm = run[arm_start:arm_end].rstrip()
-    output = tmp_path / "outputs"
-    calls_file = tmp_path / "calls"
-    harness = f'''
-calls_file="{calls_file}"
-named_timeout() {{ shift; "$@"; }}
-python3() {{ printf '%s\\n' "$*" >> "$calls_file"; return "$PROOF_STATUS"; }}
-retry_timeout() {{ printf 'retry %s\\n' "$*" >> "$calls_file"; "$@"; }}
-defer_append() {{ echo "state=append-deferred" >> "$GITHUB_OUTPUT"; exit 0; }}
-refuse_acceptance() {{ echo "$1" >&2; exit 1; }}
-git() {{ printf 'git %s\\n' "$*" >> "$calls_file"; }}
-gh() {{ printf 'gh %s\\n' "$*" >> "$calls_file"; }}
-branch=noop
-'''
-    script = harness + arm
-    result = subprocess.run(
-        ["bash", "-c", script],
-        env={**os.environ, "GITHUB_OUTPUT": str(output), "PROOF_STATUS": str(proof_status),
-             "PROMOTION_SOURCE_SHA": "source-sha"},
-        capture_output=True, text=True,
-    )
-    calls = calls_file.read_text().splitlines() if calls_file.exists() else []
-    output_text = output.read_text() if output.exists() else ""
-    expected_state = (
-        "accepted" if proof_status == 0
-        else "append-deferred" if proof_status in (75, 124, 137)
-        else None
-    )
-    assert result.returncode == (0 if expected_state else 1)
-    assert output_text == (f"state={expected_state}\n" if expected_state else "")
-    assert any("--base source-sha --wait-for-acceptance 0" in call for call in calls)
-    assert ("::notice title=Append submission no-op" in result.stdout) == (proof_status == 0)
-    assert not any(call.startswith("git ") for call in calls)
-    assert not any(call.startswith("gh pr view ") for call in calls)
-    if proof_status == 1:
-        assert "Append acceptance proof failed" in result.stderr
-    assert arm_start < run.index('if [[ "$branch" != attestation/append-* ]]')
-    assert "head_sha=''" in run
-    assert 'branch="$(retry_timeout 10 git branch --show-current)"' in run
-    assert 'if [[ "$branch" == attestation/append-* ]]; then' in run
-    assert 'head_sha="$(retry_timeout 10 git rev-parse HEAD)"' in run
-    assert 'gh pr view "$branch"' in run and '--wait-for-acceptance 0' in run
-
-
-@pytest.mark.parametrize("mismatch", [False, True])
-def test_pages_projection_guard_checks_assembled_bytes(tmp_path: Path, mismatch: bool) -> None:
-    root, _ = accepted_root(tmp_path)
-    (root / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
-    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
-    site = root / "_site"
-    for path in (
-        "attestations/latest/index.json",
-        "attestations/latest/chain_head.json",
-        "attestations/latest/binding.json",
-        "attestations/latest/scores.json",
-        "attestations/chain-index.json",
-        ".attestations/chain_head.json",
-    ):
-        target = site / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(root / path, target)
-    committed_head = json.loads((root / "attestations/chain-index.json").read_text())["current_head"]
-    if mismatch:
-        index = site / "attestations/chain-index.json"
-        document = json.loads(index.read_text())
-        document["current_head"] = "f" * 64
-        index.write_text(json.dumps(document))
-    runner_temp = tmp_path / "runner"
-    runner_temp.mkdir()
-    result = subprocess.run(
-        ["bash", "-c", _deploy_step("Require served projections from committed main")["run"]],
-        cwd=root, env={**os.environ, "RUNNER_TEMP": str(runner_temp)},
-        capture_output=True, text=True, check=False,
-    )
-    assert result.returncode == (1 if mismatch else 0), result.stdout + result.stderr
-    if mismatch:
-        assert "served projections must match the committed tree" in result.stderr
-        assert f"served_head={'f' * 64}" in result.stderr
-        assert f"committed_head={committed_head}" in result.stderr
-
-
-def test_pages_reuses_valid_accepted_day_without_rewriting_projections(tmp_path: Path) -> None:
-    from scripts import gen_attestations as ga
-
-    root, key = fixture_root(tmp_path)
-    now = datetime.now(timezone.utc).replace(microsecond=0)
-    health = root / "health/latest.json"
-    snapshot = json.loads(health.read_text())
-    observed = (now - timedelta(seconds=30)).isoformat().replace("+00:00", "Z")
-    snapshot["checked_at"] = observed
-    snapshot["datasets"][0]["last_checked"] = observed
-    health.write_text(json.dumps(snapshot))
-    subprocess.run(["git", "init", "-b", "main"], cwd=root, check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
-    subprocess.run(["git", "config", "user.email", "test@example.test"], cwd=root, check=True)
-    (root / ".gitignore").write_text("private.json\n")
-    ga.generate(root, key, now)
-    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
-    subprocess.run(["git", "commit", "-m", "accepted day"], cwd=root, check=True, capture_output=True)
-    subprocess.run(["git", "remote", "add", "origin", str(root)], cwd=root, check=True)
-    subprocess.run(["git", "fetch", "origin", "main"], cwd=root, check=True, capture_output=True)
-    (root / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
-    paths = (
-        "attestations/latest/index.json",
-        "attestations/latest/chain_head.json",
-        "attestations/latest/scores.json",
-        "attestations/chain-index.json",
-        ".attestations/chain_head.json",
-    )
-    before = {path: ((root / path).read_bytes(), (root / path).stat().st_mtime_ns) for path in paths}
-    refresh = next(step for step in yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
-                   if step.get("name") == "Refresh legacy chain head before signing")
-    source = refresh["run"].split("if python3 - <<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
-    result = subprocess.run([sys.executable, "-c", source], cwd=root, capture_output=True, text=True)
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert before == {path: ((root / path).read_bytes(), (root / path).stat().st_mtime_ns) for path in paths}
-
-
 @pytest.mark.parametrize(("omitted", "present", "status", "expected"), [
     (True, False, "404", 0),
     (False, False, "404", 1),
@@ -614,792 +173,6 @@ def test_pages_file_count_guard_reports_count_and_largest_directory(tmp_path: Pa
     assert failing.returncode != 0
     assert "artifact has 6 files" in failing.stderr
     assert "largest directory attestations: 5 files" in failing.stderr
-
-
-def _append_acceptance_step() -> dict:
-    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
-    return next(
-        step for step in steps
-        if step.get("name") == "Require authoritative acceptance before signing publication"
-    )
-
-
-def _append_preparation_step() -> dict:
-    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
-    return next(step for step in steps if step.get("id") == "append_submission")
-
-
-def _append_acceptance_harness() -> str:
-    """Run both workflow phases with their step outputs carried across."""
-    return (
-        'APPEND_FINAL_OUTPUT="$GITHUB_OUTPUT"\n'
-        'GITHUB_OUTPUT="${RUNNER_TEMP:-$PWD}/append-prep-output"\n'
-        ': > "$GITHUB_OUTPUT"\n'
-        + _append_preparation_step()["run"]
-        + '\nAPPEND_PREP_STATE="" APPEND_BRANCH="" APPEND_HEAD_SHA=""\n'
-        + 'while IFS="=" read -r key value; do\n'
-        + '  case "$key" in\n'
-        + '    state) APPEND_PREP_STATE="$value" ;;\n'
-        + '    branch) APPEND_BRANCH="$value" ;;\n'
-        + '    head_sha) APPEND_HEAD_SHA="$value" ;;\n'
-        + '  esac\n'
-        + 'done < "$GITHUB_OUTPUT"\n'
-        + 'GITHUB_OUTPUT="$APPEND_FINAL_OUTPUT"\n'
-        + 'export APPEND_PREP_STATE APPEND_BRANCH APPEND_HEAD_SHA GITHUB_OUTPUT\n'
-        + _append_acceptance_step()["run"]
-    )
-
-
-def test_append_deferred_skips_signing_and_full_release_deployment() -> None:
-    workflow = yaml.safe_load(_workflow())
-    signing = workflow["jobs"]["sign_health"]
-    steps = {step.get("name"): step for step in signing["steps"]}
-    assert signing["outputs"]["append_state"] == (
-        "${{ steps.existing_append.outputs.state == 'append-deferred' && 'append-deferred' "
-        "|| steps.append_acceptance.outputs.state }}"
-    )
-    assert steps["Generate deterministic health attestation statement"]["if"] == (
-        "steps.append_acceptance.outputs.state == 'accepted'"
-    )
-    assert steps["Attempt pinned Cosign signer installation for health-only degradation"]["if"] == (
-        "steps.append_acceptance.outputs.state == 'accepted'"
-    )
-    assert steps["Sign and verify current health DSSE bundle"]["if"] == (
-        "steps.install_cosign.outcome == 'success' && "
-        "steps.append_acceptance.outputs.state == 'accepted'"
-    )
-    assert steps["Stage statement into Sigstore publication"]["if"] == (
-        "steps.sign_current_health.outputs.state == 'signed' && "
-        "steps.append_acceptance.outputs.state == 'accepted'"
-    )
-    assert steps["Generate per-dataset evidence statements"]["if"] == (
-        "steps.append_acceptance.outputs.state == 'accepted'"
-    )
-    assert steps["Sign per-dataset evidence statements"]["if"] == (
-        "steps.sign_current_health.outputs.state == 'signed' && "
-        "steps.append_acceptance.outputs.state == 'accepted'"
-    )
-    assert steps["Record per-dataset receipt result"]["if"] == (
-        "always() && steps.append_acceptance.outputs.state == 'accepted'"
-    )
-    assert steps["Upload verified Sigstore bundle"]["if"] == (
-        "steps.sign_current_health.outputs.state == 'signed' && "
-        "steps.append_acceptance.outputs.state == 'accepted'"
-    )
-    assert steps["Record explicit attestation state"]["if"] == (
-        "always() && steps.append_acceptance.outputs.state == 'accepted'"
-    )
-    assert steps["Record Sigstore result"]["if"] == (
-        "always() && steps.append_acceptance.outputs.state == 'accepted'"
-    )
-    assert workflow["jobs"]["deploy"]["if"] == (
-        "needs.sign_health.outputs.health_only == 'true' || "
-        "needs.sign_health.outputs.append_state == 'accepted'"
-    )
-
-
-@pytest.mark.parametrize("health_only", ["true", "false", ""])
-@pytest.mark.parametrize("append_state", ["accepted", "append-deferred", ""])
-def test_deploy_gate_reaches_health_publication_without_bypassing_full_release_append(
-    health_only: str, append_state: str,
-) -> None:
-    deploy = yaml.safe_load(_workflow())["jobs"]["deploy"]
-    assert deploy["needs"] == ["classify", "sign_health"]
-    condition = deploy["if"].replace(
-        "needs.sign_health.outputs.health_only", repr(health_only),
-    ).replace("needs.sign_health.outputs.append_state", repr(append_state))
-    # Exercise the workflow's comparison/OR expression, rather than a duplicate
-    # predicate. Neither always() nor a failed dependency may enable promotion.
-    result = subprocess.run(["bash", "-c", f"[[ {condition} ]]"], capture_output=True, text=True)
-    assert result.returncode in (0, 1), result.stderr
-    assert (result.returncode == 0) == (health_only == "true" or append_state == "accepted")
-
-
-def test_deferred_health_publication_keeps_verified_source_and_preserves_trust_plane() -> None:
-    workflow = yaml.safe_load(_workflow())
-    signing = workflow["jobs"]["sign_health"]
-    outputs = signing["outputs"]
-    assert outputs["settled_sha"] == "${{ steps.settled_main.outputs.settled_sha }}"
-    assert outputs["health_only"] == "${{ steps.settled_main.outputs.health_only }}"
-    assert outputs["attestation_state"] == "${{ steps.attestation_result.outputs.state }}"
-    assert outputs["signed"] == "${{ steps.sigstore_result.outputs.signed }}"
-    settled = next(step for step in signing["steps"] if step.get("id") == "settled_main")
-    assert settled["if"] == (
-        "steps.existing_append.outputs.state == 'ready' || "
-        "(steps.existing_append.outputs.state == 'append-deferred' && "
-        "needs.classify.outputs.health_only == 'true')"
-    )
-    preserve = _deploy_step("Preserve served attestation plane (health-only path)")
-    assert preserve["if"] == (
-        "needs.sign_health.outputs.health_only == 'true' && "
-        "needs.sign_health.outputs.attestation_state == 'signer_down'"
-    )
-    deferred = _deploy_step("Preserve served attestation plane (deferred health path)")
-    assert deferred["if"] == (
-        "needs.sign_health.outputs.health_only == 'true' && "
-        "needs.sign_health.outputs.append_state == 'append-deferred'"
-    )
-    assert deferred["run"] == preserve["run"]
-    assert 'python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root"' in preserve["run"]
-    assemble = _deploy_step("Assemble canonical Pages artifact")
-    summary_copy = next(line for line in assemble["run"].splitlines() if "cp " in line and "datapulse_summary.json" in line)
-    assert summary_copy.strip().endswith(" _site/")
-    assert "if" not in assemble
-    assert "rm -f _site/attestations/latest/binding.json" in assemble["run"]
-    build = yaml.safe_load((ROOT / ".github/workflows/publish-publication.yml").read_text())
-    staging = next(step for step in build["jobs"]["build"]["steps"]
-                   if step.get("name") == "Stage only generated publication inputs")
-    assert 'datapulse_summary.json' in staging["run"]
-
-
-def _append_existing_step() -> dict:
-    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
-    return next(step for step in steps
-                if step.get("name") == "Wait for an existing append before generating a candidate")
-
-
-def _assert_append_time_bounds(workflow: dict) -> None:
-    worst = int(workflow["env"]["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"])
-    patience = int(workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
-    job = workflow["jobs"]["sign_health"]
-    steps = {step.get("name"): step for step in job["steps"]}
-    existing = steps["Wait for an existing append before generating a candidate"]
-    preparation = steps["Prepare append candidate for acceptance"]
-    acceptance = steps["Require authoritative acceptance before signing publication"]
-    assert 0 < worst < patience
-    assert patience - worst >= 300, "keep at least five minutes of measured-check margin"
-    for step in (existing, preparation, acceptance):
-        wrapper = re.search(r"timeout -k (\d+)s (\d+)s bash", step["run"])
-        assert wrapper is not None
-        kill_after, duration = map(int, wrapper.groups())
-        assert duration < duration + kill_after < step["timeout-minutes"] * 60 < 3600
-        assert step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
-    assert patience < 1900 < 1920
-    assert patience < 1800 < 1860
-    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in existing["run"]
-    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in acceptance["run"]
-    assert "named_timeout 900 bash scripts/submit_attestation_append.sh" in preparation["run"]
-    assert "named_timeout 300 bash scripts/submit_attestation_append.sh" in acceptance["run"]
-    assert preparation["timeout-minutes"] == 30
-    assert acceptance["timeout-minutes"] == 31
-    assert 1725 + patience + 260 == 3470 < 1770 + 1800 == 3570
-    assert 3570 < 1775 + 1805 == 3580 < (30 + 31) * 60 == 3660
-    for consumer, token_id in ((existing, "append-token"),
-                               (preparation, "submission-append-token"),
-                               (acceptance, "acceptance-wait-token")):
-        index = job["steps"].index(consumer)
-        mint = job["steps"][index - 1]
-        assert mint.get("uses") == "actions/create-github-app-token@v1"
-        assert mint.get("id") == token_id
-        assert mint["with"] == job["steps"][1]["with"]
-        assert consumer["env"]["GH_TOKEN"] == f"${{{{ steps.{token_id}.outputs.token }}}}"
-        assert consumer["timeout-minutes"] < 60
-    # Jobs time all their sequential steps, not just the longest step. Reserve
-    # nine minutes for checkout, setup, witnessing and signing.
-    bounded_minutes = sum(step.get("timeout-minutes", 0) for step in job["steps"])
-    assert bounded_minutes + 9 == job["timeout-minutes"] == 142
-    # deploy starts after sign_health; its independent bound excludes that wait.
-    deploy = workflow["jobs"]["deploy"]
-    assert "sign_health" in deploy["needs"]
-    assert 0 < deploy["timeout-minutes"] <= 30
-
-
-def test_publication_append_time_bounds_contract() -> None:
-    _assert_append_time_bounds(yaml.safe_load(_workflow()))
-
-
-def test_attestation_restore_timeouts_cover_measured_cold_restore() -> None:
-    restores = re.findall(
-        r"timeout -k 5s (\d+)s bash scripts/restore_attestations\.sh"
-        r" --source (?:origin/main|HEAD)",
-        _workflow(),
-    )
-    assert len(restores) == 2
-    assert all(int(seconds) >= 60 for seconds in restores)
-    # The delta-only helper keeps the budget; a whole-tree restore must not
-    # creep back in beside it.
-    assert not re.search(
-        r"git restore --source (?:origin/main|HEAD) --worktree"
-        r" -- attestations \.attestations/chain_head\.json",
-        _workflow(),
-    )
-
-
-@pytest.mark.parametrize("moved", ["worst", "patience", "wrapper", "step", "job", "token"])
-def test_publication_append_time_bounds_reject_isolated_ordering_drift(moved: str) -> None:
-    workflow = yaml.safe_load(_workflow())
-    _assert_append_time_bounds(workflow)
-    job = workflow["jobs"]["sign_health"]
-    step = next(step for step in job["steps"]
-                if step.get("name") == "Require authoritative acceptance before signing publication")
-    patience = int(workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
-    if moved == "worst":
-        workflow["env"]["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"] = patience
-    elif moved == "patience":
-        workflow["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"] = step["timeout-minutes"] * 60
-    elif moved == "wrapper":
-        step["run"] = re.sub(r"(timeout -k \d+s )\d+s bash",
-                             rf"\g<1>{step['timeout-minutes'] * 60}s bash", step["run"], count=1)
-    elif moved == "step":
-        step["timeout-minutes"] = 60
-    elif moved == "job":
-        job["timeout-minutes"] = step["timeout-minutes"]
-    else:
-        token = next(item for item in job["steps"] if item.get("id") == "acceptance-wait-token")
-        job["steps"].remove(token)
-    with pytest.raises(AssertionError):
-        _assert_append_time_bounds(workflow)
-
-
-def test_append_acceptance_inner_wait_fits_hard_wrapper() -> None:
-    run = _append_acceptance_step()["run"]
-    wait = re.search(
-        r"named_timeout (\d+) python3 scripts/verify_attestation_append.py "
-        r'--base "\$PROMOTION_SOURCE_SHA" --wait-for-acceptance (\d+)',
-        run,
-    )
-    assert wait is not None
-    outer, inner = map(int, wait.groups())
-    # The shell now owns the pending-PR wait. The verifier gets one bounded
-    # fetched-main probe after merge or at the patience deadline.
-    assert inner == 0 < outer
-    assert "deadline=$((started + APPEND_ACCEPTANCE_PATIENCE_SECONDS))" in run
-
-
-@pytest.mark.parametrize("phase", ["preparation", "acceptance"])
-def test_append_acceptance_bounds_every_external_call_and_total_budget(phase: str) -> None:
-    step = _append_preparation_step() if phase == "preparation" else _append_acceptance_step()
-    run = step["run"]
-    commands = "\n".join(line for line in run.splitlines() if not line.lstrip().startswith("#"))
-    # The retry helper's parser discriminator is a shell comparison, not a call.
-    commands = commands.replace('[[ "$1" == jq ]]', '[[ parser_call ]]')
-    calls = list(re.finditer(r"(?<![\w-])(?:python3|bash|git|jq|gh)\b", commands))
-    assert calls
-    bounded_calls = []
-    for call in calls:
-        bound = re.search(r"timeout -k (\d+)s (\d+)s $", commands[:call.start()])
-        helper = re.search(r"(?:named_timeout|retry_timeout) (\d+) $", commands[:call.start()])
-        assert bound is not None or helper is not None, f"unbounded call: {commands[call.start():].splitlines()[0]}"
-        kill_after, duration = map(int, bound.groups()) if bound else (5, int(helper.group(1)))
-        assert kill_after > 0 and duration > 0
-        bounded_calls.append((call.start(), duration + kill_after))
-    # A process-group watchdog also caps shell overhead and any future calls.
-    whole_step = bounded_calls.pop(0)[1]
-    marker = "PREPARE" if phase == "preparation" else "ACCEPTANCE"
-    assert f"bash -Eeuo pipefail <<'{marker}'" in run
-    assert run.rstrip().endswith(marker)
-    job = yaml.safe_load(_workflow())["jobs"]["sign_health"]
-    patience = int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
-    def budget_between(start: int, end: int) -> int:
-        return sum(cap for position, cap in bounded_calls if start <= position < end)
-
-    if phase == "preparation":
-        open_branch = commands.index('if [[ -n "$open_append" ]]')
-        submit_branch = commands.index('APPEND_SUBMISSION_RESULT="$submission_result" named_timeout 900')
-        noop_branch = commands.index('if [[ "$branch" == noop ]]', submit_branch)
-        rebuilt_branch = commands.index('if [[ "$rebuilt" == 1 ]]', noop_branch)
-        preflight_and_lookup = sum(cap for position, cap in bounded_calls
-                                   if position < open_branch and
-                                   not commands[position:].startswith('bash scripts/close_superseded_appends.sh'))
-        already_open = budget_between(open_branch, submit_branch)
-        submitted = budget_between(submit_branch, noop_branch)
-        noop_proof = budget_between(noop_branch, rebuilt_branch)
-        rebuilt_lookup = sum(cap for position, cap in bounded_calls if position >= rebuilt_branch)
-        assert submitted >= 905
-        worst_path = preflight_and_lookup + max(already_open,
-                                                submitted + max(noop_proof, rebuilt_lookup))
-        assert worst_path == 1725 < 1770 < whole_step == 1775 < 1800
-    else:
-        poll_start = commands.rindex('while :; do')
-        proof_start = commands.index('if [[ "$state" == MERGED ||', poll_start)
-        cleanup_caps = [cap for position, cap in bounded_calls
-                        if commands[position:].startswith('bash scripts/close_superseded_appends.sh')]
-        rebuild_caps = [cap for position, cap in bounded_calls
-                        if commands[position:].startswith('bash scripts/submit_attestation_append.sh')
-                        and '--rebuild' in commands[position:position + 120]]
-        assert cleanup_caps == [125, 125]
-        assert rebuild_caps == [305, 305]
-        fixed_budget = (sum(cap for _, cap in bounded_calls)
-                        - budget_between(poll_start, proof_start)
-                        - min(cleanup_caps) - sum(rebuild_caps))
-        assert fixed_budget == 260
-        assert patience + fixed_budget == 1745 < 1800 < whole_step == 1805 < 1860
-    assert step["timeout-minutes"] * 60 < job["timeout-minutes"] * 60
-    assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
-
-
-def test_existing_append_bounds_every_call_and_total_budget() -> None:
-    step = _append_existing_step()
-    commands = "\n".join(line for line in step["run"].splitlines()
-                         if not line.lstrip().startswith("#"))
-    bounded_calls = []
-    for call in re.finditer(r"(?<![\w-])(?:python3|bash|git|jq|gh)\b", commands):
-        bound = re.search(r"timeout -k (\d+)s (\d+)s $", commands[:call.start()])
-        assert bound is not None, f"unbounded call: {commands[call.start():].splitlines()[0]}"
-        kill_after, duration = map(int, bound.groups())
-        assert kill_after > 0 and duration > 0
-        bounded_calls.append((call.start(), duration + kill_after))
-    whole_step = bounded_calls.pop(0)[1]
-    patience = int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
-    loop_start = commands.index("while :; do")
-    final_fetch = commands.rindex("timeout -k 5s 30s git fetch")
-    # Every call is bounded above; only preflight and the final import sit
-    # outside the shared patience clock for already-open append polling.
-    fixed_budget = sum(cap for position, cap in bounded_calls
-                       if position < loop_start or position >= final_fetch)
-    assert patience + fixed_budget < whole_step < step["timeout-minutes"] * 60
-    assert "bash -Eeuo pipefail <<'EXISTING_APPEND'" in step["run"]
-    assert step["run"].rstrip().endswith("EXISTING_APPEND")
-    assert step["env"]["GIT_TERMINAL_PROMPT"] == "0"
-
-
-def test_existing_append_defers_only_at_patience_expiry() -> None:
-    step = _append_existing_step()
-    run = step["run"]
-    assert step["timeout-minutes"] == 32
-    assert int(yaml.safe_load(_workflow())["env"]["APPEND_ACCEPTANCE_PATIENCE_SECONDS"]) == 1485
-    assert run.count('echo "state=append-deferred"') == 1
-    assert len(re.findall(r'^\s+defer_append$', run, re.MULTILINE)) == 1
-    assert re.search(r'if \[\[ "\$SECONDS" -ge "\$deadline" \]\]; then\n\s+defer_append\n', run)
-    assert '"$BASH_COMMAND"' in run
-
-
-@pytest.mark.parametrize("status", [124, 137])
-@pytest.mark.parametrize("command,occurrence", [
-    ("bash -Eeuo pipefail", 1),
-    ("bash scripts/close_superseded_appends.sh", 1),
-    ("gh pr list", 1), ("jq length", 1), ("jq -c", 1),
-    ("jq -er .number", 1), ("jq -er .headRefName", 1),
-    ("jq -er .headRefOid", 1), ("jq -er .createdAt", 1),
-    ("date -u +%s", 1), ("date -ud", 1),
-    ("gh pr view", 1), ("jq -e --arg branch", 1),
-    ("jq -r [.statusCheckRollup", 1),
-    ('jq -r .state == "OPEN"', 1), ("gh pr merge", 1),
-    ("gh pr view", 2), ("jq -r [.statusCheckRollup", 2),
-    ("jq -r .state", 2), ("jq -r .headRefOid", 1),
-    ("git fetch", 1), ("git merge-base", 1),
-    ("bash scripts/close_superseded_appends.sh", 2),
-    ("gh pr list", 2), ("jq length", 2), ("jq -c", 2),
-    ("git fetch", 2), ("git merge-base", 2),
-    ("bash scripts/restore_attestations.sh", 1),
-    ("sleep", 1),
-])
-def test_existing_append_command_timeout_is_attributed_and_fails(
-    tmp_path: Path, status: int, command: str, occurrence: int,
-) -> None:
-    """Fault each bounded call and ERR fallback in the real step's child shell."""
-    head = "d" * 40
-    initial = {"number": 99, "headRefName": "attestation/append-contract", "headRefOid": head,
-               "baseRefName": "main", "state": "OPEN", "isCrossRepository": False,
-               "createdAt": "2026-10-15T00:00:00Z", "autoMergeRequest": None,
-               "statusCheckRollup": [{"name": "deterministic-safety-net", "status": "COMPLETED",
-                                      "conclusion": "SUCCESS"}]}
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    # Stub the timeout boundary, retaining the real child shell and JSON parser.
-    # A timed-out read deliberately emits partial stdout to catch swallowed failures.
-    stub = bin_dir / "timeout"
-    stub.write_text(textwrap.dedent('''\
-        #!/bin/bash
-        set -eu
-        if [[ "${0##*/}" == timeout ]]; then shift 3; else set -- "${0##*/}" "$@"; fi
-        if [[ "$*" == "$FAIL_COMMAND"* ]]; then
-          count=0
-          if [[ -f "$COUNT_FILE" ]]; then read -r count < "$COUNT_FILE"; fi
-          count=$((count + 1))
-          echo "$count" > "$COUNT_FILE"
-          if [[ "$count" == "$FAIL_OCCURRENCE" ]]; then
-            printf '%q ' "$@" > "$FAILED_COMMAND_FILE"
-            echo partial-json
-            exit "$FAIL_STATUS"
-          fi
-        fi
-        case "$1 $2" in
-          "bash -Eeuo") exec "$@" ;;
-          "bash scripts/close_superseded_appends.sh")
-            if [[ "$#" -gt 2 ]]; then touch "$MERGED_MARKER"; fi ;;
-          "gh pr")
-            case "$3" in
-              list) if [[ -f "$MERGED_MARKER" ]]; then echo '[]'; else echo "[$INITIAL_PR]"; fi ;;
-              view) if [[ "$*" == *autoMergeRequest* || "$FAIL_COMMAND" == sleep ]]; then echo "$INITIAL_PR"; else echo "$MERGED_PR"; fi ;;
-              merge) : ;;
-              *) exit 2 ;;
-            esac ;;
-          "jq "*) exec "$@" ;;
-          "date "*) exec /usr/bin/date "${@:2}" ;;
-          "bash scripts/restore_attestations.sh") : ;;
-          "git "*) : ;;
-          *) exit 2 ;;
-        esac
-        '''))
-    stub.chmod(0o755)
-    for name in ("date", "sleep"):
-        (bin_dir / name).symlink_to(stub)
-    workflow_env = yaml.safe_load(_workflow())["env"]
-    env = {**os.environ, **{key: str(value) for key, value in workflow_env.items()},
-           "PATH": f"{bin_dir}:{os.environ['PATH']}", "GITHUB_REPOSITORY": "fixture/datapulse",
-           "PROMOTION_SOURCE_SHA": "c" * 40, "INITIAL_PR": json.dumps(initial),
-           "MERGED_PR": json.dumps({**initial, "state": "MERGED"}),
-           "FAIL_COMMAND": command, "FAIL_OCCURRENCE": str(occurrence), "FAIL_STATUS": str(status),
-           "COUNT_FILE": str(tmp_path / "count"), "FAILED_COMMAND_FILE": str(tmp_path / "failed"),
-           "MERGED_MARKER": str(tmp_path / "merged"), "GITHUB_OUTPUT": str(tmp_path / "outputs"),
-           "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
-    result = subprocess.run(["bash", "-c", _append_existing_step()["run"]], cwd=tmp_path, env=env,
-                            capture_output=True, text=True, timeout=10)
-    failed_command = (tmp_path / "failed").read_text().strip()
-    expected_command = command if command.startswith(("date", "sleep")) else failed_command
-    assert result.returncode == status, result.stdout + result.stderr
-    assert set((tmp_path / "outputs").read_text().splitlines()) == {"state=append-wait-failed"}
-    summary = (tmp_path / "summary").read_text()
-    for evidence in (result.stderr, summary):
-        assert expected_command in evidence
-        assert f"status {status}" in evidence
-        elapsed = re.search(r"elapsed (\d+)s", evidence)
-        assert elapsed is not None and int(elapsed[1]) < 1485, evidence
-        assert "patience 1485s" in evidence
-        assert "append-deferred" not in evidence
-    assert "::notice title=append-wait-failed::" in result.stderr
-
-
-@pytest.mark.parametrize("existing", [False, True], ids=["submitted", "already-open"])
-@pytest.mark.parametrize("scenario", [
-    "closed", "failure", "cancelled", "timed_out", "force_push", "merged_force_push",
-    "lookup_failed", "pending_merge", "exhausted", "not_reported", "legacy_failure", "proof_failed",
-])
-def test_append_waits_only_while_undecided(tmp_path: Path, existing: bool, scenario: str) -> None:
-    """Exercise both real shell loops with bounded API stubs and a virtual clock."""
-    run_script = _append_existing_step()["run"] if existing else _append_acceptance_harness()
-    head = "d" * 40
-    initial = {"number": 99, "headRefName": "attestation/append-contract", "headRefOid": head,
-               "baseRefName": "main", "state": "OPEN", "isCrossRepository": False,
-               "createdAt": "2026-10-15T00:00:00Z", "autoMergeRequest": None, "statusCheckRollup": []}
-    required = {"name": "deterministic-safety-net", "status": "IN_PROGRESS", "conclusion": ""}
-    polled = {**initial, "statusCheckRollup": [required]}
-    if scenario == "closed":
-        polled["state"] = "CLOSED"
-    elif scenario in {"failure", "cancelled", "timed_out"}:
-        required.update(status="COMPLETED", conclusion=scenario.upper())
-    elif scenario == "legacy_failure":
-        polled["statusCheckRollup"] = [{"context": "deterministic-safety-net", "state": "FAILURE"}]
-    elif scenario in {"force_push", "merged_force_push"}:
-        polled["headRefOid"] = "e" * 40
-        if scenario == "merged_force_push":
-            polled["state"] = "MERGED"
-    elif scenario == "not_reported":
-        polled["statusCheckRollup"] = []
-    elif scenario == "proof_failed":
-        polled["state"] = "MERGED"
-        required.update(status="COMPLETED", conclusion="SUCCESS")
-    # An unrelated failing check must not abort the pending required check.
-    if scenario == "pending_merge":
-        polled["statusCheckRollup"].append({"name": "other", "status": "COMPLETED", "conclusion": "FAILURE"})
-    merged = {**initial, "state": "MERGED", "statusCheckRollup": [
-        {"name": "deterministic-safety-net", "status": "COMPLETED", "conclusion": "SUCCESS"},
-    ]}
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    (tmp_path / "scripts").mkdir()
-    (tmp_path / "scripts/submit_attestation_append.sh").write_text(
-        'echo submit >> "$CALL_LOG"\n'
-        'if [[ "${1:-}" == --rebuild ]]; then exit 1; fi\n'
-    )
-    (tmp_path / "scripts/close_superseded_appends.sh").write_text('echo close >> "$CALL_LOG"\n')
-    (tmp_path / "scripts/restore_attestations.sh").write_bytes(
-        (ROOT / "scripts/restore_attestations.sh").read_bytes()
-    )
-    (bin_dir / "gh").write_text(
-        '#!/bin/bash\necho "gh $*" >> "$CALL_LOG"\n'
-        'case "$1 $2" in\n'
-        ' "pr list") if [[ "$EXISTING" == 1 && ! -f "$MERGED_MARKER" ]]; then echo "$OPEN_PRS"; else echo "[]"; fi ;;\n'
-        ' "pr merge") : ;;\n'
-        ' "pr view")\n'
-        '   if [[ "$*" != *statusCheckRollup* || "$*" == *autoMergeRequest* || "$*" == *headRefName* ]]; then echo "$INITIAL_PR";\n'
-        '   elif [[ "$SCENARIO" == lookup_failed ]]; then exit 124;\n'
-        '   elif [[ "$SCENARIO" == pending_merge && -f "$POLL_MARKER" ]]; then echo "$MERGED_PR"; touch "$MERGED_MARKER";\n'
-        '   else echo "$POLLED_PR"; touch "$POLL_MARKER"; fi ;;\n'
-        ' *) exit 2 ;;\nesac\n'
-    )
-    (bin_dir / "python3").write_text(
-        '#!/bin/bash\necho "verify $*" >> "$CALL_LOG"\n'
-        'if [[ "$*" == *--require-committed* ]]; then exit 1; fi\n'
-        'if [[ "$*" == *--wait-for-acceptance* ]]; then\n'
-        '  [[ "$SCENARIO" == pending_merge ]] && exit 0\n'
-        '  [[ "$SCENARIO" == proof_failed ]] && exit 1\n'
-        '  exit 75\n'
-        'fi\n'
-    )
-    (bin_dir / "git").write_text(
-        '#!/bin/bash\necho "git $*" >> "$CALL_LOG"\n'
-        'case "$*" in\n'
-        ' "branch --show-current") echo attestation/append-contract ;;\n'
-        ' "rev-parse HEAD") echo "$APPEND_SHA" ;;\n'
-        ' "rev-parse --show-toplevel") printf "%s\\n" "$PWD" ;;\n'
-        ' "rev-parse --verify --quiet "*) printf "%s\\n" "$PROMOTION_SOURCE_SHA" ;;\n'
-        ' "merge-base "*) [[ "$SCENARIO" != proof_failed ]] ;;\n'
-        ' "fetch "*|"restore "*|"diff "*) : ;;\n'
-        ' *) exit 2 ;;\nesac\n'
-    )
-    for stub in bin_dir.iterdir():
-        stub.chmod(0o755)
-    log = tmp_path / "calls.log"
-    workflow_env = yaml.safe_load(_workflow())["env"]
-    patience = int(workflow_env["APPEND_ACCEPTANCE_PATIENCE_SECONDS"])
-    worst_observed = int(workflow_env["APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS"])
-    env = {**os.environ, **{key: str(value) for key, value in workflow_env.items()},
-           "PATH": f"{bin_dir}:{os.environ['PATH']}", "GITHUB_REPOSITORY": "fixture/datapulse",
-           "PROMOTION_SOURCE_SHA": "c" * 40, "APPEND_SHA": head, "EXISTING": str(int(existing)),
-           "SCENARIO": scenario, "CALL_LOG": str(log), "INITIAL_PR": json.dumps(initial),
-           "OPEN_PRS": json.dumps([initial]), "POLLED_PR": json.dumps(polled), "MERGED_PR": json.dumps(merged),
-           "POLL_MARKER": str(tmp_path / "polled"), "MERGED_MARKER": str(tmp_path / "merged"),
-           "GITHUB_OUTPUT": str(tmp_path / "outputs"), "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
-    # Skip real sleeping. A successful check takes the measured worst-observed duration, while
-    # undecided cases advance to the configured patience without accepting.
-    advance = f"started + {worst_observed}" if scenario == "pending_merge" else "deadline"
-    run = re.sub(r'^\s*sleep .*$', f'echo slept >> "$CALL_LOG"; SECONDS=$(({advance}))',
-                 run_script, flags=re.MULTILINE)
-    result = subprocess.run(["bash", "-c", run], cwd=tmp_path, env=env,
-                            capture_output=True, text=True, timeout=10)
-    calls = log.read_text().splitlines()
-    read_timeout = existing and scenario == "lookup_failed"
-    deferred = scenario in {"exhausted", "not_reported"} or (scenario == "lookup_failed" and not existing)
-    assert (result.returncode == 0) is (scenario == "pending_merge" or deferred), result.stdout + result.stderr
-    assert ("slept" in calls) is (scenario in {"pending_merge", "exhausted", "not_reported"}
-                                  or (scenario == "lookup_failed" and not existing))
-    if read_timeout:
-        assert result.returncode == 124
-        assert "gh pr view 99" in result.stderr
-        assert set((tmp_path / "outputs").read_text().splitlines()) == {"state=append-wait-failed"}
-    elif scenario != "pending_merge" and not deferred:
-        assert "PR #99" in result.stderr
-        assert "(attestation/append-contract)" in result.stderr
-        assert "deterministic-safety-net:" in result.stderr
-    if deferred:
-        assert (tmp_path / "outputs").read_text() == "state=append-deferred\n"
-        assert "signing and deploy skipped" in (tmp_path / "summary").read_text().lower()
-    if scenario in {"exhausted", "not_reported"}:
-        summary = (tmp_path / "summary").read_text()
-        elapsed_match = re.search(r"elapsed (\d+)s", summary)
-        assert elapsed_match is not None, summary
-        assert patience <= int(elapsed_match.group(1)) <= patience + 1, summary
-        assert f"patience {patience}s" in summary
-        assert ("not reported" if scenario == "not_reported" else "IN_PROGRESS/") in summary
-    if scenario in {"failure", "cancelled", "timed_out", "legacy_failure"}:
-        assert "Append required check failed" in result.stderr
-    if scenario in {"force_push", "merged_force_push"}:
-        assert "Append head changed" in result.stderr
-    if not existing and scenario not in {"pending_merge", "exhausted", "not_reported", "proof_failed"}:
-        assert not any("--wait-for-acceptance" in call for call in calls)
-
-
-def test_append_acceptance_wrapper_kills_term_resistant_children(tmp_path: Path) -> None:
-    run = _append_acceptance_step()["run"]
-    wait = next(line.strip().removeprefix("if ! ").removesuffix("; then")
-                for line in run.splitlines() if "--wait-for-acceptance 0; then" in line)
-    # Exercise the actual wrapper without waiting for its production budget.
-    wait = wait.removeprefix("if ")
-    helpers = run.split("named_timeout()", 1)
-    wrapper = "named_timeout()" + helpers[1].split("retry_timeout()", 1)[0]
-    wrapper = wrapper.replace('timeout -k 5s "${cap}s"', 'timeout -k 0.1s "${cap}s"')
-    wait = wrapper + "\n" + wait.replace("named_timeout 240 ", "named_timeout 1 ")
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    verifier = bin_dir / "python3"
-    verifier.write_text('#!/bin/bash\ntrap "" TERM\nsleep 30 &\nwait\n')
-    verifier.chmod(0o755)
-    result = subprocess.run(
-        ["bash", "-c", wait + '\nstatus=$?\nexit "$status"'],
-        cwd=tmp_path,
-        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "PROMOTION_SOURCE_SHA": "c" * 40},
-        capture_output=True, text=True, timeout=5,
-    )
-    # Captured pipes must close too: killing only the verifier would leave its
-    # TERM-resistant child holding them open and exhaust the five-second bound.
-    assert result.returncode == 137, result.stdout + result.stderr
-
-
-@pytest.mark.parametrize(
-    ("committed", "pulls", "gh_status", "expected_submit", "expected_append"),
-    [
-        (True, [], 0, False, None),
-        (False, [], 0, True, None),
-        (False, [{"number": 12, "headRefName": "feature/other"}], 0, True, None),
-        (False, [{"number": 998, "headRefName": "attestation/append-abc123"}], 0, False, "#998 (attestation/append-abc123)"),
-        (False, [
-            {"number": 12, "headRefName": "feature/other"},
-            {"number": 996, "headRefName": "attestation/append-def456"},
-        ], 0, False, "#996 (attestation/append-def456)"),
-        (False, [
-            {"number": number, "headRefName": f"feature/{number}"}
-            for number in range(1000)
-        ], 0, False, None),
-        (False, [], 2, False, None),
-    ],
-)
-@pytest.mark.parametrize(
-    ("wait_accepted", "pr_state", "recheck_status", "check_status"),
-    [
-        (True, "MERGED", 0, 0),
-        (False, "MERGED", 1, 0),
-        (False, "OPEN", 1, 0),
-        (False, "OPEN", 137, 124),
-        (True, "OPEN", 0, 0),  # The exact candidate merged at the deadline.
-    ],
-)
-@pytest.mark.parametrize("arm_status", [0, 1])
-def test_append_acceptance_guard_is_fail_closed_and_deterministic(
-    tmp_path: Path,
-    committed: bool,
-    pulls: list[dict],
-    gh_status: int,
-    expected_submit: bool,
-    expected_append: str | None,
-    wait_accepted: bool,
-    pr_state: str,
-    recheck_status: int,
-    check_status: int,
-    arm_status: int,
-) -> None:
-    step = _append_acceptance_step()
-    assert step["env"]["GH_TOKEN"] == "${{ steps.acceptance-wait-token.outputs.token }}"
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    (tmp_path / "scripts").mkdir()
-    (bin_dir / "python3").write_text(
-        '#!/bin/bash\nprintf "verify %s\\n" "$*" >> "$CALL_LOG"\n'
-        'if [[ "$*" == *"--wait-for-acceptance 0" ]]; then exit "$RECHECK_STATUS"; fi\n'
-        '[[ "$*" != *--require-committed* ]] || [[ "$COMMITTED" == 1 ]]\n'
-    )
-    (bin_dir / "git").write_text(
-        '#!/bin/bash\n'
-        'case "$*" in\n'
-        '  "branch --show-current") printf "attestation/append-contract\\n" ;;\n'
-        '  "rev-parse HEAD") printf "%s\\n" "$APPEND_SHA" ;;\n'
-        '  *) exit 2 ;;\n'
-        'esac\n'
-    )
-    (bin_dir / "gh").write_text(
-        '#!/bin/bash\nprintf "gh %s\\n" "$*" >> "$CALL_LOG"\n'
-        'case "$1 $2" in\n'
-        '  "pr list") printf "%s\\n" "$OPEN_PRS"; exit "$GH_STATUS" ;;\n'
-        '  "pr view")\n'
-        '    if [[ "$*" == *statusCheckRollup* && "$*" != *headRefName* ]]; then printf "%s\\n" "$POLLED_PR"; exit "$CHECK_STATUS";\n'
-        '    else printf "{\\"number\\":%s,\\"headRefName\\":\\"%s\\",'
-        '\\"headRefOid\\":\\"%s\\",\\"baseRefName\\":\\"main\\",'
-        '\\"isCrossRepository\\":false,\\"state\\":\\"OPEN\\",'
-        '\\"createdAt\\":\\"2026-10-15T00:00:00Z\\",\\"autoMergeRequest\\":null,'
-        '\\"statusCheckRollup\\":[{\\"name\\":\\"deterministic-safety-net\\",'
-        '\\"status\\":\\"COMPLETED\\",\\"conclusion\\":\\"SUCCESS\\"}]}\\n" '
-        '"$PR_NUMBER" "$PR_BRANCH" "$APPEND_SHA"; fi ;;\n'
-        '  "pr merge") exit "$ARM_STATUS" ;;\n'
-        '  *) exit 2 ;;\n'
-        'esac\n'
-    )
-    (tmp_path / "scripts/submit_attestation_append.sh").write_text(
-        'printf "submit\\n" >> "$CALL_LOG"\n'
-    )
-    (tmp_path / "scripts/close_superseded_appends.sh").write_text(
-        'printf "close\\n" >> "$CALL_LOG"\n'
-    )
-    for stub in (bin_dir / "python3", bin_dir / "git", bin_dir / "gh"):
-        stub.chmod(0o755)
-    log = tmp_path / "calls.log"
-    output = tmp_path / "outputs"
-    summary = tmp_path / "summary"
-    pulls = [({"baseRefName": "main", "headRefOid": "d" * 40,
-               "createdAt": "2026-10-15T00:00:00Z", **pull}
-              if pull["headRefName"].startswith("attestation/append-") else pull)
-             for pull in pulls]
-    open_append = next((pull for pull in pulls if pull["headRefName"].startswith("attestation/append-")), None)
-    env = {
-        **os.environ,
-        **{key: str(value) for key, value in yaml.safe_load(_workflow())["env"].items()},
-        "PATH": f"{bin_dir}:{os.environ['PATH']}",
-        "GITHUB_REPOSITORY": "example/data-pulse",
-        "GITHUB_SHA": "b" * 40,
-        "PROMOTION_SOURCE_SHA": "c" * 40,
-        "GH_TOKEN": "test-token",
-        "CALL_LOG": str(log),
-        "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(summary),
-        "COMMITTED": "1" if committed else "0",
-        "OPEN_PRS": json.dumps(pulls),
-        "PR_NUMBER": str(open_append["number"] if open_append else 99),
-        "PR_BRANCH": open_append["headRefName"] if open_append else "attestation/append-contract",
-        "GH_STATUS": str(gh_status),
-        "ARM_STATUS": str(arm_status),
-        "APPEND_SHA": "d" * 40,
-        "RECHECK_STATUS": str(recheck_status),
-        "CHECK_STATUS": str(check_status),
-        "POLLED_PR": json.dumps({
-            "headRefOid": "d" * 40,
-            "state": pr_state,
-            "statusCheckRollup": [{"name": "deterministic-safety-net", "status": "COMPLETED", "conclusion": "SUCCESS"}],
-        }),
-    }
-    outputs = []
-    expected_state = None
-    if committed:
-        expected_state = "accepted"
-    elif gh_status == 0 and len(pulls) < 1000 and arm_status == 0:
-        if check_status in {124, 137} or recheck_status in {124, 137}:
-            expected_state = "append-deferred"
-        elif check_status == 0 and recheck_status == 0:
-            expected_state = "accepted"
-    for _ in range(2):
-        log.write_text("")
-        output.write_text("")
-        summary.write_text("")
-        result = subprocess.run(
-            ["/bin/bash", "-c", re.sub(r'^\s*sleep .*$', '              SECONDS=$deadline', _append_acceptance_harness(), flags=re.MULTILINE)],
-            cwd=tmp_path, env=env, capture_output=True, text=True, check=False,
-        )
-        calls = log.read_text().splitlines()
-        # Elapsed wall time is deliberately reported, so normalize only that
-        # measurement when comparing two otherwise identical executions.
-        measured_stderr = re.sub(r"elapsed \d+s", "elapsed <measured>s", result.stderr)
-        measured_stderr = re.sub(r"\d+s remaining", "<measured>s remaining", measured_stderr)
-        outputs.append((result.returncode, re.sub(r"age \d+s", "age <measured>s", result.stdout),
-                        measured_stderr,
-                        output.read_text(), calls))
-        assert ("submit" in calls) is expected_submit
-        assert "verify scripts/verify_attestation_append.py --base HEAD" in calls
-        assert "verify scripts/verify_attestation_append.py --base HEAD --require-committed" in calls
-        if not committed:
-            assert (
-                "gh pr list --repo example/data-pulse --state open --limit 1000 "
-                "--json number,headRefName,headRefOid,baseRefName,createdAt"
-            ) in calls
-        else:
-            assert not any(call.startswith("gh ") for call in calls)
-        if expected_append:
-            assert expected_append in result.stdout
-            assert "Already-open append PR" in result.stdout
-        if len(pulls) == 1000:
-            assert "list reached 1000" in result.stderr
-        if expected_submit:
-            assert (
-                "gh pr view attestation/append-contract --repo example/data-pulse "
-                "--json number,headRefName,headRefOid,baseRefName,isCrossRepository,state,createdAt,autoMergeRequest,statusCheckRollup"
-            ) in calls
-            assert f"gh pr merge --auto --merge 99 --repo example/data-pulse --match-head-commit {'d' * 40}" in calls
-            wait_call = f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 0"
-            assert (wait_call in calls) is (arm_status == 0 and check_status == 0)
-            if arm_status:
-                assert "Could not arm merge-on-green for PR #99" in result.stderr
-            elif not wait_accepted:
-                if expected_state == "append-deferred":
-                    assert "append-deferred" in summary.read_text()
-                    assert "signing and deploy skipped" in summary.read_text().lower()
-                else:
-                    assert "::error title=Append acceptance proof failed::" in result.stderr
-                    assert "PR #99" in result.stderr
-                    assert "deterministic-safety-net:" in result.stderr
-                    assert "COMPLETED/SUCCESS" in result.stderr
-                    assert "elapsed " in result.stderr
-            if arm_status == 0 and not check_status:
-                assert f"verify scripts/verify_attestation_append.py --base {'c' * 40} --wait-for-acceptance 0" in calls
-        assert (result.returncode == 0) is (expected_state is not None), result.stdout + result.stderr
-        assert output.read_text() == (f"state={expected_state}\n" if expected_state else "")
-    assert outputs[0] == outputs[1]
 
 
 def _served_verifier() -> str:
@@ -1699,8 +472,7 @@ def test_health_only_path_is_selected_only_by_the_generated_output_classifier() 
     assert "if: needs.sign_health.outputs.health_only != 'true'" in workflow
     deploy_job = workflow.split("  deploy:\n", 1)[1].split("    steps:\n", 1)[0]
     assert (
-        "if: needs.sign_health.outputs.health_only == 'true' || "
-        "needs.sign_health.outputs.append_state == 'accepted'"
+        "if: needs.sign_health.outputs.report_state == 'accepted'"
     ) in deploy_job
     assert "Deploy canonical Cloudflare Pages artifact" in workflow
 
@@ -1715,7 +487,7 @@ def test_publication_classifier_invocations_pass_no_profile_flags() -> None:
         for line in step.get("run", "").splitlines()
         if re.search(r"\bpython3\s+scripts/classify_change\.py\b", line)
     ]
-    assert len(invocations) == 2
+    assert len(invocations) == 1
     assert all(line.endswith("python3 scripts/classify_change.py; then") for line in invocations)
 
 
@@ -1732,31 +504,14 @@ def test_pages_concurrency_keeps_one_pending_deploy_candidate() -> None:
     assert "concurrency" not in workflow["jobs"]["deploy"]
 
 
-def test_pages_resettlement_reuses_wait_and_exports_one_downstream_revision() -> None:
-    workflow = yaml.safe_load(_workflow())
-    jobs = workflow["jobs"]
-    settlement = next(step for step in jobs["classify"]["steps"] if step.get("id") == "settled_main")
-    guard = next(step for step in jobs["sign_health"]["steps"]
-                 if step.get("name") == "Require settled main before signing")
-    assert "main moved; re-settling" in guard["run"]
-    assert guard["env"]["PROMOTION_SETTLE_RUN"] == settlement["run"]
-    assert "max_attempts=2" in guard["run"]
-    assert '"$attempts" -ge "$max_attempts"' in guard["run"]
-    assert "attempts exhausted after $attempts attempts" in guard["run"]
-    assert 'export PROMOTION_SOURCE_SHA="$settled_sha"' in guard["run"]
-    assert 'git checkout --detach "$settled_sha"' in guard["run"]
-    assert '"$GITHUB_ENV"' in guard["run"] and '"$GITHUB_OUTPUT"' in guard["run"]
-    # Two complete waits, all three head reads, two verified checkouts, and
-    # classification fit inside the watchdog, including each kill grace.
-    ceiling = workflow["env"]["PROMOTION_SETTLED_MAX_WAIT_SECONDS"]
-    assert 2 * (ceiling + 10 + 65 + 15 + 15 + 15 + 35 + 15) + 3 * 35 + 35 < guard["timeout-minutes"] * 60
-    selected = "${{ needs.sign_health.outputs.settled_sha }}"
-    assert jobs["sign_health"]["outputs"]["settled_sha"] == (
-        "${{ steps.settled_main.outputs.settled_sha }}"
-    )
-    assert jobs["deploy"]["env"]["PROMOTION_SOURCE_SHA"] == selected
-    checkout = next(step for step in jobs["deploy"]["steps"] if step.get("uses") == "actions/checkout@v4")
-    assert checkout["with"]["ref"] == selected
+def test_pages_signing_pins_the_code_build_without_reselecting_main() -> None:
+    jobs = yaml.safe_load(_workflow())["jobs"]
+    guard = next(step for step in jobs["sign_health"]["steps"] if step.get("id") == "settled_main")
+    assert '$(git rev-parse HEAD)' in guard["run"]
+    assert "gh api" not in guard["run"] and "git checkout" not in guard["run"]
+    assert jobs["sign_health"]["outputs"]["settled_sha"] == "${{ steps.settled_main.outputs.settled_sha }}"
+    assert jobs["deploy"]["env"]["PROMOTION_SOURCE_SHA"] == "${{ needs.sign_health.outputs.settled_sha }}"
+
 
 
 @pytest.mark.parametrize(("sha", "reason"), [("a" * 40, "quiet"), ("b" * 40, "ceiling"), ("", "")])
@@ -1831,11 +586,11 @@ def test_pages_settlement_is_bounded_and_pins_the_promoted_revision() -> None:
     assert classifier["env"]["AFTER_SHA"] == "${{ steps.settled_main.outputs.settled_sha }}"
     guard = next(step for step in jobs["sign_health"]["steps"]
                  if step.get("name") == "Require settled main before signing")
-    assert 'timeout -k 5s 30s gh api' in guard["run"]
-    assert '"$current_sha" != "$PROMOTION_SOURCE_SHA"' in guard["run"]
+    assert '$(git rev-parse HEAD)' in guard["run"]
+    assert "gh api" not in guard["run"]
     assert jobs["sign_health"]["steps"].index(guard) < next(
         i for i, step in enumerate(jobs["sign_health"]["steps"])
-        if step.get("name") == "Refresh legacy chain head before signing"
+        if step.get("id") == "select_accepted_health"
     )
 
 
@@ -1906,23 +661,9 @@ def test_pages_settlement_poll_exercises_quiet_ceiling_and_head_changes(
     exec(compile(source, str(WORKFLOW), "exec"), namespace)
     outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
     assert outputs["settled_sha"] == calls[-1][1]
-    # Exercise the actual producer output through both YAML references into
-    # the guard's shell, rather than injecting an unrelated fixture SHA.
     jobs = yaml.safe_load(_workflow())["jobs"]
-    sha_reference = "${{ steps.settled_main.outputs.settled_sha }}"
-    job_reference = "${{ needs.classify.outputs.settled_sha }}"
-    references = {sha_reference: outputs["settled_sha"]}
-    references[job_reference] = references[jobs["classify"]["outputs"]["settled_sha"]]
-    guard = next(step for step in jobs["sign_health"]["steps"] if step.get("id") == "settled_main")
-    selected_reference = guard["env"].get(
-        "PROMOTION_SOURCE_SHA", jobs["sign_health"]["env"]["PROMOTION_SOURCE_SHA"],
-    )
-    result = subprocess.run(
-        ["bash", "-c", guard["run"].split('initial_sha="$PROMOTION_SOURCE_SHA"', 1)[0]],
-        capture_output=True, text=True,
-        env={**os.environ, "PROMOTION_SOURCE_SHA": references[selected_reference]},
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
+    assert jobs["classify"]["outputs"]["settled_sha"] == "${{ steps.settled_main.outputs.settled_sha }}"
+    assert jobs["sign_health"]["env"]["PROMOTION_SOURCE_SHA"] == "${{ needs.classify.outputs.settled_sha }}"
     if scenario == "busy":
         assert clock[0] == 900
         assert outputs["settled_sha"] == f"{int(clock[0] // 31):040x}"
@@ -1941,158 +682,37 @@ def test_pages_settlement_poll_exercises_quiet_ceiling_and_head_changes(
             assert clock[0] >= 300 and outputs["settled_sha"] == "b" * 40
 
 
-@pytest.mark.parametrize("scenario", [
-    "stable", "once_health", "once_code", "repeated", "ceiling",
-    "unreadable", "empty", "malformed", "settle_failure", "unidentified_settle", "missing_commit",
-    "selected_empty", "selected_malformed", "history_rewrite",
-])
-def test_pages_resettlement_guard_exercises_recovery_and_fail_closed(
-    tmp_path: Path, scenario: str,
-) -> None:
-    workflow = yaml.safe_load(_workflow())
-    guard = next(step for step in workflow["jobs"]["sign_health"]["steps"]
-                 if step.get("name") == "Require settled main before signing")
-    remote = tmp_path / "remote"
-    remote.mkdir()
-
-    def git(*args: str, cwd: Path = remote) -> str:
-        return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
-
-    git("init", "-q", "-b", "fixture")
-    git("config", "user.name", "Fixture")
-    git("config", "user.email", "fixture@example.invalid")
-    for path in ("attestations/index.json", ".attestations/chain_head.json", "health/latest.json"):
-        target = remote / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text("{}")
-    (remote / "scripts").mkdir()
-    (remote / "scripts/classify_change.py").write_bytes((ROOT / "scripts/classify_change.py").read_bytes())
-    (remote / "scripts/restore_attestations.sh").write_bytes(
-        (ROOT / "scripts/restore_attestations.sh").read_bytes()
-    )
-    shas = []
-    for index in range(4):
-        if index == 1 and scenario == "history_rewrite":
-            git("checkout", "-q", "--orphan", "rewritten")
-        (remote / "health/latest.json").write_text(json.dumps({"revision": index}))
-        if index == 1 and scenario == "once_code":
-            (remote / "source.py").write_text("# source change\n")
-        git("add", ".")
-        git("commit", "-qm", f"fixture {index}")
-        shas.append(git("rev-parse", "HEAD"))
-    checkout = tmp_path / "checkout"
-    git("clone", "-q", str(remote), str(checkout))
-    git("checkout", "-q", "--detach", shas[0], cwd=checkout)
-    # Exercise replacing the earlier step's accepted-evidence overlay too.
-    (checkout / "attestations/index.json").write_text('{"imported": true}')
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    gh = bin_dir / "gh"
-    gh.write_text(textwrap.dedent("""\
-        #!/usr/bin/env python3
-        import json, os, pathlib, sys
-        scenario = os.environ['GUARD_SCENARIO']
-        heads = json.loads(os.environ['GUARD_HEADS'])
-        counter = pathlib.Path(os.environ['GUARD_COUNTER'])
-        reads = int(counter.read_text()) if counter.exists() else 0
-        endpoint = sys.argv[2]
-        if '/git/ref/' in endpoint:
-            if scenario == 'unreadable':
-                sys.exit(1)
-            head = heads[min(reads, len(heads) - 1)]
-            counter.write_text(str(reads + 1))
-            print(head)
-        else:
-            if scenario == 'settle_failure':
-                sys.exit(1)
-            head = heads[min(max(0, reads - 1), len(heads) - 1)]
-            print(json.dumps({'sha': head, 'commit': {'committer': {'date': '2000-01-01T00:00:00Z'}}}))
-        """))
-    gh.chmod(0o755)
-    heads = [shas[0]] if scenario == "stable" else [shas[1]]
-    if scenario == "repeated":
-        heads = shas[1:]
-    elif scenario in ("empty", "malformed", "missing_commit"):
-        heads = [{"empty": "", "malformed": "not-a-sha", "missing_commit": "f" * 40}[scenario]]
-    wait = guard["env"]["PROMOTION_SETTLE_RUN"]
-    if scenario in ("ceiling", "unidentified_settle"):
-        sha = shas[1] if scenario == "ceiling" else "invalid"
-        reason = "ceiling" if scenario == "ceiling" else "quiet"
-        wait = f'printf "settled_sha={sha}\\nsettlement_reason={reason}\\n" >> "$GITHUB_OUTPUT"'
-    output, environment = tmp_path / "output", tmp_path / "environment"
-    selected = {"selected_empty": "", "selected_malformed": "invalid"}.get(scenario, shas[0])
-    result = subprocess.run(
-        ["bash", "-c", guard["run"]], cwd=checkout, capture_output=True, text=True, timeout=15,
-        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
-             "GITHUB_REPOSITORY": "fixture/datapulse", "PROMOTION_SOURCE_SHA": selected,
-             "PROMOTION_HEALTH_ONLY": "true", "PROMOTION_SETTLE_RUN": wait,
-             "PROMOTION_SETTLED_QUIET_SECONDS": "1", "PROMOTION_SETTLED_MAX_WAIT_SECONDS": "3",
-             "GITHUB_OUTPUT": str(output), "GITHUB_ENV": str(environment), "RUNNER_TEMP": str(tmp_path),
-             "GUARD_SCENARIO": scenario, "GUARD_HEADS": json.dumps(heads),
-             "GUARD_COUNTER": str(tmp_path / "reads")},
-    )
-    if scenario in ("stable", "once_health", "once_code"):
-        assert result.returncode == 0, result.stdout + result.stderr
-        expected = shas[0] if scenario == "stable" else shas[1]
-        outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
-        assert outputs == {"settled_sha": expected, "health_only": "false" if scenario == "once_code" else "true"}
-        assert environment.read_text() == f"PROMOTION_SOURCE_SHA={expected}\n"
-        assert git("rev-parse", "HEAD", cwd=checkout) == expected
-        if scenario == "stable":
-            assert "re-settling" not in result.stdout
-            assert "after 0 re-settle attempts" in result.stdout
-        else:
-            assert f"main moved; re-settling {shas[0]} -> {shas[1]}" in result.stdout
-            assert f"Re-settled promotion revision: {shas[0]} -> {shas[1]}" in result.stdout
-            assert "after 1 re-settle attempts" in result.stdout
-            assert json.loads((checkout / "health/latest.json").read_text()) == {"revision": 1}
-            assert (checkout / "attestations/index.json").read_text() == "{}"
+@pytest.mark.parametrize("matching", [True, False])
+def test_signing_revision_guard_refuses_unbuilt_revision(tmp_path: Path, matching: bool) -> None:
+    step = next(step for step in yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"] if step.get("id") == "settled_main")
+    sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    output = tmp_path / "output"
+    result = subprocess.run(["bash", "-c", step["run"]], cwd=ROOT, env=os.environ | {
+        "PROMOTION_SOURCE_SHA": sha if matching else "a" * 40, "PROMOTION_HEALTH_ONLY": "true",
+        "GITHUB_OUTPUT": str(output),
+    }, capture_output=True, text=True)
+    assert (result.returncode == 0) == matching
+    if matching:
+        assert f"settled_sha={sha}" in output.read_text()
     else:
-        assert result.returncode != 0, result.stdout + result.stderr
-        assert not output.exists() and not environment.exists()
-        if scenario in ("repeated", "ceiling"):
-            assert "attempts exhausted after 2 attempts" in result.stderr
-            assert result.stdout.count("main moved; re-settling") == 2
-        elif scenario in ("unreadable", "empty", "malformed"):
-            assert "Unidentified main revision" in result.stderr
-        elif scenario == "settle_failure":
-            assert "Main re-settlement failed" in result.stderr
-        elif scenario == "unidentified_settle":
-            assert "Unidentified re-settled revision" in result.stderr
-        elif scenario in ("selected_empty", "selected_malformed"):
-            assert "Unidentified promotion revision" in result.stderr
-        elif scenario in ("missing_commit", "history_rewrite"):
-            assert "Unverified main revision" in result.stderr
+        assert not output.exists()
 
 
-def test_attestation_state_machine_fails_closed_outside_health_only_signer_degradation() -> None:
-    """Unsigned health publication preserves verified served attestations."""
+
+def test_attestation_state_machine_preserves_the_accepted_report_during_signer_outage() -> None:
     workflow = _workflow()
     parsed = yaml.safe_load(workflow)
-    sign_job = parsed["jobs"]["sign_health"]
-    deploy_steps = parsed["jobs"]["deploy"]["steps"]
-
-    assert sign_job["outputs"]["attestation_state"] == "${{ steps.attestation_result.outputs.state }}"
-    assert "DATAPULSE_ALLOW_UNATTESTED_HEALTH" not in workflow
-    assert "--allow-unattested-health" not in workflow
     assert workflow.count("continue-on-error: true") == 1
-    assert "Attempt pinned Cosign signer installation for health-only degradation" in workflow
-    assert "Require signed attestation for full release" in workflow
-    full_release_gate = next(
-        step for step in deploy_steps if step.get("name") == "Require signed attestation for full release"
-    )
-    assert full_release_gate["if"] == (
-        "needs.sign_health.outputs.health_only != 'true' && "
-        "needs.sign_health.outputs.attestation_state != 'signed'"
-    )
-    assert "signer_down" in full_release_gate["run"]
-    preserve = next(
-        step for step in deploy_steps if step.get("name") == "Preserve served attestation plane (health-only path)"
-    )
-    assert preserve["if"] == (
-        "needs.sign_health.outputs.health_only == 'true' && "
-        "needs.sign_health.outputs.attestation_state == 'signer_down'"
-    )
+    assert "--allow-unattested-health" not in workflow
+    steps = parsed["jobs"]["deploy"]["steps"]
+    gate = next(step for step in steps if step.get("name") == "Require signed attestation for full release")
+    assert gate["if"] == "needs.sign_health.outputs.health_only != 'true' && needs.sign_health.outputs.attestation_state != 'signed'"
+    overlay = next(step for step in steps if step.get("name") == "Bind built dashboard to accepted sign-time trust plane")
+    assert "if" not in overlay
+    assert 'cp "$publication/health/latest.json" health/latest.json' in overlay["run"]
+    assert "verify_attestation_binding.py --root ." in overlay["run"]
+    assert "preserved-attestations" not in workflow
+
 
 
 def test_health_cycle_classifier_accepts_verified_multifile_commit_c9a2b943() -> None:
@@ -2159,7 +779,7 @@ def test_health_cycle_classifier_fails_closed_outside_generated_ownership(disall
 def test_native_pages_uses_only_canonical_health_input_and_regenerates_embed() -> None:
     workflow = _workflow()
     fast_path = workflow.split("      - name: Embed canonical health dashboard (health-only path)\n", 1)[1].split(
-        "      - name: Run release-build generation profile (non-health path)\n", 1
+        "      - name: Consume verified release build (non-health path)\n", 1
     )[0]
 
     assert "python3 scripts/embed_dashboard_data.py --health health/latest.json" in fast_path
@@ -2172,7 +792,7 @@ def test_native_pages_uses_only_canonical_health_input_and_regenerates_embed() -
 def test_native_pages_preserves_full_release_build_and_surface_contract() -> None:
     workflow = _workflow()
 
-    assert "bash scripts/generate.sh release-build" in workflow
+    assert 'cp -R "$VERIFIED_PAGES_BUILD/." .' in workflow
     assert "python3 scripts/verify_release_reproducible.py" in workflow
     assert "bash scripts/verify_release_invariants.sh" in workflow
     for copy in (
@@ -2266,53 +886,26 @@ def test_final_health_only_release_proof_check_accepts_both_timestamp_forms_fail
         assert re.search(pattern, malformed, re.MULTILINE) is None
 
 
-def test_health_only_signed_sigstore_bundle_skips_legacy_plane_preservation() -> None:
-    """A fresh verified bundle must not be blocked by a stale served plane."""
-    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
-    preserve = next(
-        step for step in steps if step.get("name") == "Preserve served attestation plane (health-only path)"
-    )
-    download = next(step for step in steps if step.get("name") == "Download verified optional Sigstore bundle")
-    assemble = next(step for step in steps if step.get("name") == "Assemble canonical Pages artifact")
-
-    assert preserve["if"] == (
-        "needs.sign_health.outputs.health_only == 'true' && "
-        "needs.sign_health.outputs.attestation_state == 'signer_down'"
-    )
-    assert download["if"] == (
-        "needs.sign_health.outputs.signed == 'true' || "
-        "needs.sign_health.outputs.receipts_signed == 'true'"
-    )
-    for artifact in (
-        "health.latest.sigstore.json",
-        "health.latest.statement.json",
-        "chain_head.json",
-        "datapulse.json",
-    ):
-        assert f'test -s "$RUNNER_TEMP/sigstore-publication/{artifact}"' in assemble["run"]
-        assert f'cp "$RUNNER_TEMP/sigstore-publication/{artifact}" _site/signatures/' in assemble["run"]
+def test_selected_report_artifact_is_transported_even_when_sigstore_is_down() -> None:
+    jobs = yaml.safe_load(_workflow())["jobs"]
+    upload = next(step for step in jobs["sign_health"]["steps"] if step.get("id") == "upload_sigstore")
+    assert upload["if"] == "steps.select_accepted_health.outputs.state == 'accepted'"
+    download = _deploy_step("Download accepted report and optional Sigstore bundle")
+    assert "if" not in download
+    assert upload["with"]["include-hidden-files"] is True
 
 
-def test_health_only_signer_down_path_preserves_only_a_verified_served_plane() -> None:
-    """Absent a fresh bundle, corrupt served evidence must remain deployment-blocking."""
-    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
-    preserve = next(
-        step for step in steps if step.get("name") == "Preserve served attestation plane (health-only path)"
-    )
-    assemble = next(step for step in steps if step.get("name") == "Assemble canonical Pages artifact")
 
-    assert "python3 scripts/verify_attestation_plane_state.py --planedir \"$preserved_root\"" in preserve["run"]
-    assert "served health/binding plane is inconsistent" in preserve["run"]
-    assert "rm -f _site/attestations/latest/binding.json" in assemble["run"]
+def test_report_overlay_cannot_inherit_a_different_served_binding() -> None:
+    run = _deploy_step("Bind built dashboard to accepted sign-time trust plane")["run"]
+    assert "rm -rf attestations .attestations" in run
+    assert 'cp -R "$publication/attestations" "$publication/.attestations" .' in run
+    assert 'cp "$publication/docs/.well-known/datapulse-probe-keys.json" docs/.well-known/' in run
+    assert "curl" not in run
+
 
 
 def test_served_rekor_references_are_limited_to_the_binding_day_directory(tmp_path: Path) -> None:
-    """Preservation accepts the documented Rekor layout without widening fetches."""
-    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
-    preserve = next(
-        step for step in steps if step.get("name") == "Preserve served attestation plane (health-only path)"
-    )
-    assert 'python3 scripts/attestation_fetch_refs.py --root "$preserved_root" --proofs' in preserve["run"]
     directory = "attestations/2026-09-15"
     (tmp_path / "attestations/latest").mkdir(parents=True)
     (tmp_path / directory).mkdir()
@@ -2337,7 +930,6 @@ def test_served_rekor_references_are_limited_to_the_binding_day_directory(tmp_pa
         with pytest.raises(ValueError, match="unsafe Rekor proof reference"):
             fetch_refs(tmp_path, proofs=True)
 
-
 def test_native_pages_installs_release_dependencies_before_generation() -> None:
     parsed = yaml.safe_load(_workflow())
     steps = parsed["jobs"]["deploy"]["steps"]
@@ -2345,7 +937,7 @@ def test_native_pages_installs_release_dependencies_before_generation() -> None:
         index for index, step in enumerate(steps) if step.get("name") == "Install release verification dependencies"
     )
     release_build_index = next(
-        index for index, step in enumerate(steps) if step.get("name") == "Run release-build generation profile (non-health path)"
+        index for index, step in enumerate(steps) if step.get("name") == "Consume verified release build (non-health path)"
     )
     install_step = steps[install_index]
 
@@ -2375,7 +967,7 @@ def test_native_pages_installs_pinned_pandoc_before_non_health_release_build() -
     release_build_index = next(
         index
         for index, step in enumerate(steps)
-        if step.get("name") == "Run release-build generation profile (non-health path)"
+        if step.get("name") == "Consume verified release build (non-health path)"
     )
     pandoc_step = steps[pandoc_index]
 
@@ -2388,53 +980,14 @@ def test_native_pages_installs_pinned_pandoc_before_non_health_release_build() -
     ]
 
 
-def test_native_pages_scopes_attestation_key_setup_to_non_health_release_build() -> None:
-    parsed = yaml.safe_load(_workflow())
-    steps = parsed["jobs"]["deploy"]["steps"]
-    health_step = next(
-        step for step in steps if step.get("name") == "Embed canonical health dashboard (health-only path)"
-    )
-    release_step = next(
-        step for step in steps if step.get("name") == "Run release-build generation profile (non-health path)"
-    )
-    verify_step = next(
-        step for step in steps if step.get("name") == "Verify full release contract (non-health path)"
-    )
+def test_pages_cannot_generate_a_private_substitute_for_an_accepted_report() -> None:
+    workflow = _workflow()
+    assert "DATAPULSE_ATTESTATION_PRIVATE_KEY" not in workflow
+    assert "scripts/generate.sh release-build" not in workflow
+    run = _deploy_step("Consume verified release build (non-health path)")["run"]
+    assert 'test -n "$VERIFIED_PAGES_BUILD"' in run
+    assert 'cp -R "$VERIFIED_PAGES_BUILD/." .' in run
 
-    secret_expression = "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}"
-    release_run = release_step["run"]
-    verify_run = verify_step["run"]
-    assert release_step["if"] == "needs.sign_health.outputs.health_only != 'true'"
-    assert verify_step["if"] == "needs.sign_health.outputs.health_only != 'true'"
-    assert release_step["env"] == {
-        "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT": secret_expression,
-    }
-    assert verify_step["env"] == {
-        "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT": secret_expression,
-    }
-    assert secret_expression not in release_run
-    assert secret_expression not in verify_run
-    assert secret_expression not in health_step.get("run", "")
-    assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" not in health_step
-    assert _workflow().count(secret_expression) == 3
-
-    setup = (
-        'if [[ -n "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" ]]; then',
-        'echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json',
-        "chmod 600 /tmp/datapulse-attestation-key.json",
-        "export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json",
-    )
-    positions = [release_run.index(line) for line in setup]
-    assert positions == sorted(positions)
-    assert release_run.index("bash scripts/generate.sh release-build") > positions[-1]
-    verify_positions = [verify_run.index(line) for line in setup]
-    assert verify_positions == sorted(verify_positions)
-    invocations = (
-        "python3 scripts/verify_release_reproducible.py",
-        "bash scripts/verify_release_invariants.sh --local",
-    )
-    assert all(verify_run.index(invocation) > verify_positions[-1] for invocation in invocations)
-    assert "-----BEGIN" not in _workflow()
 
 
 def test_native_pages_uses_only_cloudflare_secrets_and_project() -> None:
@@ -2447,7 +1000,7 @@ def test_native_pages_uses_only_cloudflare_secrets_and_project() -> None:
     assert "pages deploy _site --project-name=datapulse-p4b-preview --branch=main" in workflow
     assert "secrets.CLOUDFLARE_API_TOKEN" in workflow
     assert "secrets.CLOUDFLARE_ACCOUNT_ID" in workflow
-    assert "secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" in workflow
+    assert "secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" not in workflow
     assert "actions/deploy-pages" not in workflow
     assert "pages: write" not in workflow
 
@@ -2538,7 +1091,7 @@ def test_native_pages_binds_preview_and_promotion_to_one_release_artifact_manife
     )
     projection_guard_index = next(
         index for index, step in enumerate(steps)
-        if step.get("name") == "Require served projections from committed main"
+        if step.get("name") == "Verify accepted report identity and disclose observation time"
     )
     ceiling_guard_index = next(
         index for index, step in enumerate(steps)
@@ -2612,28 +1165,16 @@ def test_post_deploy_verification_rejects_timestamp_count_and_surface_drift() ->
     assert "projection['checked_at'] < health['checked_at']" in verify
 
 
-def test_sign_health_refreshes_chain_head_before_signing() -> None:
-    """The Sigstore statement must be generated from a freshly refreshed chain head."""
-    workflow = _workflow()
-    sign_health = workflow.split("  sign_health:\n", 1)[1].split("\n  deploy:\n", 1)[0]
+def test_sign_health_selects_accepted_inputs_before_signing() -> None:
+    steps = yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
+    select = next(step for step in steps if step.get("id") == "select_accepted_health")
+    generate = next(step for step in steps if step.get("name") == "Generate deterministic health attestation statement")
+    assert steps.index(select) < steps.index(generate)
+    assert '--revision "$PROMOTION_SOURCE_SHA"' in select["run"]
+    assert '--health health/latest.json' in generate["run"]
+    assert '--manifest datapulse.json' in generate["run"]
+    assert '--legacy-chain-head .attestations/chain_head.json' in generate["run"]
 
-    assert "Refresh legacy chain head before signing" in sign_health
-    assert "bash scripts/refresh_chain_head.sh" in sign_health
-    assert "Generate deterministic health attestation statement" in sign_health
-    assert (
-        sign_health.index("Refresh legacy chain head before signing")
-        < sign_health.index("Generate deterministic health attestation statement")
-    )
-    refresh_step = sign_health.split(
-        "      - name: Refresh legacy chain head before signing\n", 1
-    )[1].split("      - name: Generate deterministic health attestation statement\n", 1)[0]
-
-    assert "if: needs.sign_health.outputs.health_only != 'true'" not in refresh_step
-    assert "${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}" in refresh_step
-    assert 'accepted_discovery(root, "origin/main")' in refresh_step
-    assert "ga.agrees(root, directory, manifest, ga.health_binding(root, health), registry, None)" in refresh_step
-    assert "Reusing accepted same-day envelope; projections remain unchanged." in refresh_step
-    assert "bash scripts/refresh_chain_head.sh" in refresh_step
 
 
 def test_health_only_signed_artifact_carries_and_overlays_the_generated_attestation_plane() -> None:
@@ -2643,23 +1184,17 @@ def test_health_only_signed_artifact_carries_and_overlays_the_generated_attestat
     upload = next(
         step
         for step in yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"]
-        if step.get("name") == "Upload verified Sigstore bundle"
+        if step.get("name") == "Upload accepted report and optional Sigstore bundle"
     )
-    sign_step = sign_health.split("      - name: Sign and verify current health DSSE bundle\n", 1)[1].split(
+    sign_step = sign_health.split("      - name: Sign and verify accepted health DSSE bundle\n", 1)[1].split(
         "      - name: Stage statement into Sigstore publication\n", 1
     )[0]
     assemble = workflow.split("      - name: Assemble canonical Pages artifact\n", 1)[1].split(
         "      - name: Deploy canonical Cloudflare Pages artifact\n", 1
     )[0]
 
-    assert 'test -s attestations/latest/chain_head.json' in sign_step
-    assert 'test -s attestations/latest/index.json' in sign_step
-    assert 'test -s attestations/latest/scores.json' in sign_step
-    assert 'test -s attestations/latest/binding.json' in sign_step
-    assert 'test -s .attestations/chain_head.json' in sign_step
-    assert 'test -s "$publication/datapulse.json"' in sign_step
-    assert 'cp -R attestations "$publication/attestations"' in sign_step
-    assert 'cp -R .attestations "$publication/.attestations"' in sign_step
+    assert 'cmp health/latest.json "$publication/health/latest.json"' in sign_step
+    assert 'cmp datapulse.json "$publication/datapulse.json"' in sign_step
     assert upload["with"]["include-hidden-files"] is True
 
     # Full releases also publish the accepted sign-time head and manifest.
@@ -2689,3 +1224,335 @@ def test_refresh_chain_head_script_fails_closed_without_a_signing_key() -> None:
     assert result.returncode != 0
     assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" in result.stderr
     assert "gen_attestations" not in result.stdout
+
+
+def test_pages_never_creates_or_waits_for_acceptance() -> None:
+    workflow = _workflow()
+    for forbidden in ("existing_append", "append_submission", "append_acceptance", "APPEND_",
+                      "submit_attestation_append.sh", "refresh_chain_head.sh", "bind_candidate_witness.py"):
+        assert forbidden not in workflow
+    assert "select_accepted_health.py" in workflow
+    assert yaml.safe_load(workflow)["jobs"]["deploy"]["if"] == "needs.sign_health.outputs.report_state == 'accepted'"
+
+
+def _accepted_workflow_case(tmp_path: Path) -> tuple[Path, str, bytes, dict[str, str]]:
+    """A real accepted H0 with a newer H1 on main, without a candidate producer."""
+    from scripts import gen_attestations as ga
+    from scripts.tests.test_attestation_projections import git
+
+    root, key = fixture_root(tmp_path / 'repo')
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    document = json.loads((root / 'health/latest.json').read_bytes())
+    document['checked_at'] = (now - timedelta(hours=2)).isoformat().replace('+00:00', 'Z')
+    document['datasets'][0]['last_checked'] = document['checked_at']
+    _write_site_json(root, 'health/latest.json', document)
+    git(root, 'init', '-b', 'main')
+    git(root, 'config', 'user.name', 'Test')
+    git(root, 'config', 'user.email', 'test@example.test')
+    (root / '.gitignore').write_text('private.json\n')
+    ga.generate(root, key, now - timedelta(hours=1))
+    h0 = (root / 'health/latest.json').read_bytes()
+    git(root, 'add', '-A')
+    git(root, 'commit', '-m', 'accepted H0')
+    document['checked_at'] = now.isoformat().replace('+00:00', 'Z')
+    _write_site_json(root, 'health/latest.json', document)
+    git(root, 'add', 'health/latest.json')
+    git(root, 'commit', '-m', 'main has newer H1')
+    revision = git(root, 'rev-parse', 'HEAD')
+    (root / 'scripts').symlink_to(ROOT / 'scripts', target_is_directory=True)
+    runner = tmp_path / 'runner'
+    runner.mkdir()
+    env = os.environ | {
+        'PATH': f'{Path(sys.executable).parent}:{os.environ["PATH"]}',
+        'RUNNER_TEMP': str(runner), 'GITHUB_OUTPUT': str(tmp_path / 'output'),
+        'GITHUB_STEP_SUMMARY': str(tmp_path / 'summary'), 'PROMOTION_SOURCE_SHA': revision,
+    }
+    return root, revision, h0, env
+
+
+def _select_step() -> dict:
+    return next(step for step in yaml.safe_load(_workflow())['jobs']['sign_health']['steps']
+                if step.get('id') == 'select_accepted_health')
+
+
+def test_frozen_main_h1_publishes_accepted_h0_with_its_observation_time(tmp_path: Path) -> None:
+    root, revision, h0, env = _accepted_workflow_case(tmp_path)
+    h1 = (root / 'health/latest.json').read_bytes()
+    assert h1 != h0
+    result = subprocess.run(['bash', '-c', _select_step()['run']], cwd=root, env=env,
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    # Assert on the workflow's own decision, not just the selector function.
+    outputs = dict(line.split('=', 1) for line in Path(env['GITHUB_OUTPUT']).read_text().splitlines())
+    assert outputs == {'state': 'accepted', 'observed_at': json.loads(h0)['checked_at']}
+    assert (root / 'health/latest.json').read_bytes() == h0
+    publication = Path(env['RUNNER_TEMP']) / 'sigstore-publication'
+    assert (publication / 'health/latest.json').read_bytes() == h0
+    identity = json.loads((publication / 'publication-identity.json').read_bytes())
+    assert identity['accepted_main_commit'] == revision
+    assert identity['observed_at'] == outputs['observed_at']
+    assert 'report_age_status' not in identity
+    assert '"report_age_status": "current"' in result.stdout
+    assert outputs['observed_at'] in Path(env['GITHUB_STEP_SUMMARY']).read_text()
+    assert 'Report age:' in result.stdout
+    assert yaml.safe_load(_workflow())['jobs']['deploy']['if'] == "needs.sign_health.outputs.report_state == 'accepted'"
+
+
+@pytest.mark.parametrize('damage', ['snapshot', 'membership', 'url', 'head', 'missing_snapshot'])
+def test_workflow_refuses_unrecoverable_or_mismatched_accepted_inputs(tmp_path: Path, damage: str) -> None:
+    import gzip
+    from scripts.tests.test_attestation_projections import git
+
+    root, _, _, env = _accepted_workflow_case(tmp_path)
+    chain = json.loads((root / 'attestations/chain-index.json').read_bytes())
+    directory = root / Path(chain['heads'][chain['current_head']]).parent
+    if damage in ('snapshot', 'missing_snapshot'):
+        snapshot = next(path for path in directory.glob('health.json*'))
+        if damage == 'snapshot':
+            snapshot.write_bytes(gzip.compress(b'{}'))
+        else:
+            snapshot.unlink()
+    elif damage in ('membership', 'url'):
+        manifest = json.loads((root / 'datapulse.json').read_bytes())
+        manifest['datasets'][0]['id' if damage == 'membership' else 'url'] = 'wrong'
+        _write_site_json(root, 'datapulse.json', manifest)
+    else:
+        head = json.loads((directory / 'chain_head.json').read_bytes())
+        head['chain_head'] = 'a' * 64
+        _write_site_json(directory, 'chain_head.json', head)
+    git(root, 'add', '-A')
+    git(root, 'commit', '-m', 'broken accepted input')
+    env['PROMOTION_SOURCE_SHA'] = git(root, 'rev-parse', 'HEAD')
+    result = subprocess.run(['bash', '-c', _select_step()['run']], cwd=root, env=env,
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode != 0, result.stdout
+    assert not Path(env['GITHUB_OUTPUT']).exists()
+
+
+@pytest.mark.parametrize('clock', ['observation', 'publication'])
+@pytest.mark.parametrize('age_hours,expected', [(35, 0), (36, 0), (37, 1)])
+def test_report_age_is_independent_of_a_fresh_deploy(
+    tmp_path: Path, clock: str, age_hours: int, expected: int,
+) -> None:
+    from scripts.gen_attestations import health_binding
+    root, _ = fixture_root(tmp_path)
+    now = datetime(2026, 8, 17, tzinfo=timezone.utc)
+    health = json.loads((root / 'health/latest.json').read_bytes())
+    observed = now - timedelta(hours=age_hours if clock == 'observation' else 1)
+    health['checked_at'] = observed.isoformat().replace('+00:00', 'Z')
+    _write_site_json(root, 'health/latest.json', health)
+    published = now - timedelta(hours=age_hours if clock == 'publication' else 1)
+    _write_site_json(root, 'attestations/latest/binding.json', {'payload': {
+        'health': health_binding(root, health), 'published_at': published.isoformat(),
+        'freshness': {'max_age_seconds': 129600},
+        'ed25519': {'chain_head': 'a' * 64},
+    }})
+    import hashlib
+    _write_site_json(root, 'identity.json', {
+        'health_snapshot_ref': 'attestations/2026-08-15/health.json.gz',
+        'health_sha256': hashlib.sha256((root / 'health/latest.json').read_bytes()).hexdigest(),
+        'accepted_chain_head': 'a' * 64, 'observed_at': health['checked_at'],
+        'published_at': published.isoformat(),
+    })
+    (root / 'scripts').symlink_to(ROOT / 'scripts', target_is_directory=True)
+    runner = root / 'runner'
+    runner.mkdir()
+    # Only the transport is stubbed; execute both workflow age steps and real gates.
+    bin_dir = root / 'bin'
+    bin_dir.mkdir()
+    curl = bin_dir / 'curl'
+    curl.write_text('#!/bin/bash\nif [[ "$*" == *api.cloudflare.com* ]]; then\n'
+                    '  printf \'%s\\n\' "$DEPLOYMENT_RESPONSE"\nelse\n'
+                    '  compressed=false\n'
+                    '  if [[ "$*" == *binding.json* ]]; then source="$AGE_ROOT/attestations/latest/binding.json"; '
+                    'elif [[ "$*" == *publication-identity.json* ]]; then source="$AGE_ROOT/identity.json"; '
+                    'else source="$AGE_ROOT/health/latest.json"; compressed=true; fi\n'
+                    '  while [[ "$1" != -o ]]; do shift; done\n'
+                    '  if $compressed; then gzip -c "$source" > "$2"; else cp "$source" "$2"; fi\nfi\n')
+    curl.chmod(0o755)
+    env = os.environ | {'PATH': f'{bin_dir}:{Path(sys.executable).parent}:{os.environ["PATH"]}',
+        'RUNNER_TEMP': str(runner), 'AGE_ROOT': str(root), 'GITHUB_STEP_SUMMARY': str(root / 'summary'),
+        'CLOUDFLARE_API_TOKEN': 'test', 'CLOUDFLARE_ACCOUNT_ID': 'test',
+        'DEPLOYMENT_RESPONSE': json.dumps({'success': True, 'result': {'canonical_deployment': {
+            'environment': 'production', 'latest_stage': {'name': 'deploy', 'status': 'success'},
+            'created_on': now.isoformat()}}}),
+    }
+    steps = yaml.safe_load(_workflow())['jobs']['publication_freshness']['steps']
+    age_steps = [step for step in steps if step.get('name', '').startswith('Measure canonical production')]
+    assert len(age_steps) == 2 and all(step['if'] == 'always()' for step in age_steps)
+    results = []
+    for step in age_steps:
+        command = step['run'].replace('scripts/publication_freshness_gate.py',
+            f'scripts/publication_freshness_gate.py --now {now.isoformat()}').replace(
+            'scripts/select_accepted_health.py', f'scripts/select_accepted_health.py --now {now.isoformat()}')
+        results.append(subprocess.run(['bash', '-c', command], cwd=root, env=env,
+                                     capture_output=True, text=True, timeout=10))
+    assert results[0].returncode == 0, results[0].stdout + results[0].stderr
+    assert results[1].returncode == expected, results[1].stdout + results[1].stderr
+    summary = (root / 'summary').read_text()
+    assert 'Deployment age (24h policy): fresh' in summary
+    assert ('expired' if expected else 'current') in summary
+    assert '36h' in summary and health['checked_at'] in summary
+
+
+def test_assembled_report_discloses_exact_observation_time_and_identity(tmp_path: Path) -> None:
+    root, revision, h0, env = _accepted_workflow_case(tmp_path)
+    selected = subprocess.run(['bash', '-c', _select_step()['run']], cwd=root, env=env,
+                              capture_output=True, text=True, timeout=30)
+    assert selected.returncode == 0, selected.stdout + selected.stderr
+    site = root / '_site'
+    site.mkdir()
+    for path in ('health', 'attestations', '.attestations'):
+        shutil.copytree(root / path, site / path)
+    shutil.copy2(root / 'datapulse.json', site / 'datapulse.json')
+    (site / 'index.html').write_text('<html><body><main>Status: fresh</main></body></html>')
+    step = _deploy_step('Verify accepted report identity and disclose observation time')
+    env |= {'ACCEPTED_MAIN_COMMIT': revision, 'ACCEPTED_OBSERVED_AT': json.loads(h0)['checked_at']}
+    result = subprocess.run(['bash', '-c', step['run']], cwd=root, env=env,
+                            capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, result.stdout + result.stderr
+    html = (site / 'index.html').read_text()
+    assert html.index('Accepted health report observed at') < html.index('Status: fresh')
+    assert f'<time datetime="{env["ACCEPTED_OBSERVED_AT"]}">' in html
+    assert json.loads((site / 'publication-identity.json').read_bytes())['observed_at'] == env['ACCEPTED_OBSERVED_AT']
+    assert env['ACCEPTED_OBSERVED_AT'] in result.stdout
+
+
+@pytest.mark.parametrize('forbidden', ['submit_attestation_append.sh', 'refresh_chain_head.sh',
+    'bind_candidate_witness.py', 'append_acceptance', 'APPEND_ACCEPTANCE_PATIENCE_SECONDS', 'gh pr view'])
+def test_workflow_contract_forbids_resurrection(tmp_path: Path, forbidden: str) -> None:
+    from scripts.verify_attestation_workflow_contract import ContractError, verify_workflows
+    pages = tmp_path / 'pages.yml'
+    pages.write_text(_workflow() + f'\n# {forbidden}\n')
+    with pytest.raises(ContractError, match='forbidden acceptance machinery'):
+        verify_workflows(ROOT / '.github/workflows/datapulse-attest-daily.yml', pages)
+
+
+def test_selection_pins_git_inputs_and_ignores_stale_latest_pointers(tmp_path: Path) -> None:
+    from scripts.tests.test_attestation_projections import git
+    root, _, h0, env = _accepted_workflow_case(tmp_path)
+    # Main's derived selectors may lag the immutable ledger. Neither they nor
+    # a dirty local health file are selection authorities.
+    for path in ('attestations/latest/index.json', 'attestations/latest/binding.json',
+                 'attestations/latest/chain_head.json'):
+        _write_site_json(root, path, {'current_head': 'a' * 64})
+    git(root, 'add', 'attestations')
+    git(root, 'commit', '-m', 'stale selectors')
+    env['PROMOTION_SOURCE_SHA'] = git(root, 'rev-parse', 'HEAD')
+    _write_site_json(root, 'datapulse.json', {'datasets': []})
+    result = subprocess.run(['bash', '-c', _select_step()['run']], cwd=root, env=env,
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert 'state=accepted' in Path(env['GITHUB_OUTPUT']).read_text()
+    assert (root / 'health/latest.json').read_bytes() == h0
+
+
+@pytest.mark.parametrize('field,value', [
+    ('artifact_sha256', 'a' * 64), ('dataset_count', 2), ('dataset_count', True),
+    ('dataset_ids_sha256', 'b' * 64), ('observed_at', '2026-08-15T00:00:01Z'),
+])
+def test_report_measurement_requires_exact_health_claim(tmp_path: Path, field: str, value: object) -> None:
+    from scripts.gen_attestations import health_binding
+    from scripts.select_accepted_health import SelectionError, report_age
+    root, _ = fixture_root(tmp_path)
+    health = json.loads((root / 'health/latest.json').read_bytes())
+    claim = health_binding(root, health)
+    claim[field] = value
+    binding = root / 'binding.json'
+    binding.write_text(json.dumps({'payload': {'health': claim, 'published_at': health['checked_at'],
+                                              'freshness': {'max_age_seconds': 129600}}}))
+    with pytest.raises(SelectionError, match='digest/count/ids/observation'):
+        report_age(root / 'health/latest.json', binding, datetime(2026, 8, 15, 1, tzinfo=timezone.utc))
+
+
+@pytest.mark.parametrize('step_name,origin', [
+    ('Verify isolated Pages preview before production promotion', 'preview_origin'),
+    ('Verify canonical served surface', 'website_origin'),
+])
+@pytest.mark.parametrize('damage', ['none', 'identity', 'disclosure'])
+def test_served_observation_check_refuses_wrong_identity_or_missing_disclosure(
+    tmp_path: Path, step_name: str, origin: str, damage: str,
+) -> None:
+    # Isolate the added checks; the existing served verifier has its own parity tests.
+    run = _deploy_step(step_name)['run']
+    command = 'set -Eeuo pipefail\n' + run[run.index('observed_at="$(jq'):]
+    observed = '2026-10-26T18:15:45Z'
+    site = tmp_path / '_site'
+    site.mkdir()
+    identity = {'observed_at': observed, 'accepted_main_commit': 'a' * 40}
+    _write_site_json(site, 'publication-identity.json', identity)
+    served = tmp_path / 'served'
+    served.mkdir()
+    remote = identity | ({'observed_at': '2026-10-27T00:00:00Z'} if damage == 'identity' else {})
+    _write_site_json(served, 'publication-identity.json', remote)
+    (served / 'index.html').write_text('<body>' + ('' if damage == 'disclosure' else
+        f'Accepted health report observed at <time datetime="{observed}">{observed}</time>.') + '</body>')
+    curl = tmp_path / 'curl'
+    curl.write_text('#!/bin/bash\nsource="$SERVED/index.html"\n'
+                    '[[ "$*" != *publication-identity.json* ]] || source="$SERVED/publication-identity.json"\n'
+                    'while [[ "$1" != -o ]]; do shift; done\ncp "$source" "$2"\n')
+    curl.chmod(0o755)
+    env = os.environ | {'PATH': f'{tmp_path}:{os.environ["PATH"]}', 'SERVED': str(served),
+                        'RUNNER_TEMP': str(tmp_path), origin: 'https://test.invalid'}
+    result = subprocess.run(['bash', '-c', command], cwd=tmp_path, env=env,
+                            capture_output=True, text=True, timeout=5)
+    assert (result.returncode == 0) == (damage == 'none'), result.stdout + result.stderr
+
+
+def test_accepted_report_retains_pinned_git_order_for_historical_siblings(tmp_path: Path) -> None:
+    from scripts import gen_attestations as ga
+    from scripts.select_accepted_health import select_report
+    from scripts.tests.test_append_set_isolation import NOW
+    from scripts.tests.test_attestation_projections import git
+
+    root, key = accepted_root(tmp_path / 'accepted')
+    base = git(root, 'rev-parse', 'HEAD')
+    sibling = tmp_path / 'sibling'
+    shutil.copytree(root, sibling)
+    ga.generate(root, key, NOW + timedelta(days=1))
+    older = next((root / 'attestations/2026-08-16/revisions').glob('*/chain_head.json'))
+    accepted_head = json.loads(older.read_bytes())['chain_head']
+    git(root, 'restore', '.')
+    git(root, 'switch', '-c', 'older')
+    git(root, 'add', 'attestations/2026-08-16')
+    git(root, 'commit', '-m', 'older signed child')
+    ga.generate(sibling, sibling / key.name, NOW + timedelta(days=2))
+    newer = next((sibling / 'attestations/2026-08-17/revisions').glob('*/chain_head.json'))
+    git(root, 'switch', '-c', 'newer', base)
+    shutil.copytree(newer.parent, root / newer.parent.relative_to(sibling))
+    git(root, 'add', 'attestations/2026-08-17')
+    git(root, 'commit', '-m', 'newer signed sibling')
+    git(root, 'switch', 'main')
+    git(root, 'merge', '--no-ff', '-m', 'accept older child', 'older')
+    git(root, 'merge', '--no-ff', '-m', 'retain newer sibling', 'newer')
+    revision = git(root, 'rev-parse', 'HEAD')
+    out = tmp_path / 'report'
+    result = select_report(root, revision, out, NOW + timedelta(days=1, hours=1))
+    assert result['accepted_chain_head'] == accepted_head
+    assert git(out, 'rev-parse', 'HEAD') == revision
+    assert result['report_age_status'] == 'current'
+    upload = next(step for step in yaml.safe_load(_workflow())['jobs']['sign_health']['steps']
+                  if step.get('id') == 'upload_sigstore')
+    assert '!${{ runner.temp }}/sigstore-publication/.git' in upload['with']['path']
+
+
+def test_published_report_identity_is_stable_while_run_age_is_measured_again(tmp_path: Path) -> None:
+    from scripts.select_accepted_health import select_report
+    from scripts.tests.test_append_set_isolation import NOW
+    from scripts.tests.test_attestation_projections import git
+    root, _ = accepted_root(tmp_path / 'accepted')
+    revision = git(root, 'rev-parse', 'HEAD')
+    first = select_report(root, revision, tmp_path / 'first', NOW + timedelta(hours=1))
+    second = select_report(root, revision, tmp_path / 'second', NOW + timedelta(hours=2))
+    assert first['observation_age_seconds'] + 3600 == second['observation_age_seconds']
+    assert (tmp_path / 'first/publication-identity.json').read_bytes() == (
+        tmp_path / 'second/publication-identity.json').read_bytes()
+
+
+def test_frozen_report_can_pass_the_inverted_release_proof_health_guard(tmp_path: Path) -> None:
+    """Exercise the served verifier with H0 older and smaller than the code build."""
+    from scripts.tests.test_preview_served_verification import _stage_accepted_fixture, _run_verifier
+    root, built, served, publication = _stage_accepted_fixture(tmp_path)
+    result = _run_verifier(tmp_path, root, built, served, publication=publication)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert 'Report age:' in result.stdout

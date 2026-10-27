@@ -380,7 +380,10 @@ def test_served_gate_keeps_release_proof_drift_validation_strict() -> None:
     validation = proof_validation.group(0)
     assert '"- Status: `current generated release proof`"' in validation
     assert 'f"- Source SHA: `{source_sha}`"' in validation
-    assert 'f"- Health checked at: `{health[\'checked_at\']}`"' in validation
+    assert "report_age(health_path, binding_path" in validation
+    assert 'age["report_age_status"] == "current"' in validation
+    assert "- Health checked at:" not in validation
+    assert "- Dataset count:" not in validation
     assert 'f"- MCP tool count: `{len(tools)}`"' in validation
     assert '"release proof drift: "' in validation
 
@@ -687,3 +690,32 @@ def test_unsurface_gate_rejects_successful_served_routes() -> None:
             check=False,
         )
         assert (result.returncode == 0) is allowed, (code, result.stderr)
+
+
+@pytest.mark.parametrize("damage,refusal", [
+    ("none", None), ("health", "health digest/count/ids/observation"),
+    ("age", "accepted report exceeds 36-hour signed policy"), ("code", "release proof drift"),
+])
+def test_served_invariant_uses_report_binding_instead_of_build_clock(
+    tmp_path: Path, damage: str, refusal: str | None,
+) -> None:
+    from scripts.tests.test_preview_served_verification import _stage_accepted_fixture, SOURCE_COMMIT
+    root, built, served, _ = _stage_accepted_fixture(tmp_path, age_hours=37 if damage == "age" else 2)
+    proof = root / "docs/release-verification.md"
+    sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    proof.write_text(proof.read_text().replace(SOURCE_COMMIT, sha if damage != "code" else "c" * 40))
+    if damage == "health":
+        health = built / "health/latest.json"
+        health.write_bytes(health.read_bytes() + b" ")
+    script = VERIFY_SCRIPT.read_text()
+    match = re.search(r'(?ms)^if ! \$local_mode; then\n"\$python_bin" - "\$work_dir/release-verification\.md"[^\n]*<<\'PY\'\n(.*?)^PY\n^fi', script)
+    assert match is not None
+    result = subprocess.run([sys.executable, "-", str(proof), str(built / "health/latest.json"),
+                             str(root / "mcp.json"), str(built / "attestations/latest/binding.json")],
+                            cwd=ROOT, input=match[1], capture_output=True, text=True, timeout=10)
+    if refusal is None:
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "Report age:" in result.stdout
+    else:
+        assert result.returncode != 0
+        assert refusal in result.stdout + result.stderr

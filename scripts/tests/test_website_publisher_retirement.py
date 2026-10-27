@@ -43,16 +43,17 @@ def test_cloudflare_pages_is_the_only_website_publisher() -> None:
     assert "deploy-pages.yml" not in workflow
 
 
-def test_cloudflare_health_only_path_preserves_served_trust_artifacts() -> None:
+def test_cloudflare_health_only_path_preserves_code_proof_and_selects_accepted_report() -> None:
     workflow = CANONICAL_WORKFLOW.read_text(encoding="utf-8")
 
     assert "Preserve served release proof (health-only path)" in workflow
-    assert "Preserve served attestation plane (health-only path)" in workflow
+    assert "Preserve served attestation plane (health-only path)" not in workflow
+    assert "Select and verify pinned accepted health report" in workflow
     assert 'website_origin="$(jq -er' in workflow
-    assert 'python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root"' in workflow
+    assert "python3 scripts/verify_attestation_binding.py --root ." in workflow
     assert 'cp "$RUNNER_TEMP/preserved-release-proof/release-verification.md" _site/release-verification.md' in workflow
-    assert 'cp -R "$RUNNER_TEMP/preserved-attestations/attestations" _site/' in workflow
-    assert "rm -f _site/attestations/latest/binding.json" in workflow
+    assert 'cp -R "$publication/attestations" "$publication/.attestations" .' in workflow
+    assert "rm -f _site/attestations/latest/binding.json" not in workflow
 
 
 def test_active_workflows_and_operational_docs_do_not_route_to_github_pages() -> None:

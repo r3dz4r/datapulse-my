@@ -115,10 +115,12 @@ def test_workflow_api_verdict_mapping(
     python.chmod(0o755)
     env = {**os.environ, "PATH": f"{bin_path}:{os.environ['PATH']}",
            "API_RESPONSE": json.dumps(response), "CURL_CODE": str(curl_code),
+           "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
            "CLOUDFLARE_API_TOKEN": "fixture" if credentials else "",
            "CLOUDFLARE_ACCOUNT_ID": "fixture" if credentials else ""}
     result = subprocess.run(["bash", "-c", step["run"]], cwd=ROOT,
                             env=env, text=True, capture_output=True, check=False)
     assert result.returncode == expected_code, result.stdout + result.stderr
     assert f"{verdict}: production deployment age " in result.stdout
+    assert f"Deployment age (24h policy): {verdict}:" in (tmp_path / "summary").read_text()
     assert ("::warning" in result.stdout) == (verdict == "unknown")
