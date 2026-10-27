@@ -15,7 +15,7 @@ from scripts import gen_attestations as ga
 from scripts.attestation_sets import verify_legacy_mirror
 from scripts.tests.test_append_set_isolation import NOW
 from scripts.tests.test_attestations import fixture_root
-from scripts.verify_attestation_append import accepted_discovery
+from scripts.verify_attestation_append import accepted_discovery, append_paths
 
 SCRIPT = Path(__file__).resolve().parents[1] / "gen_attestation_projections.py"
 PROJECTIONS = (
@@ -72,6 +72,86 @@ def test_one_accepted_chain_and_check(tmp_path: Path) -> None:
     check(result.returncode == 0, f"one accepted chain refresh: {result.stderr}")
     result = run(root, "--check")
     check(result.returncode == 0, f"one accepted chain check: {result.stdout} {result.stderr}")
+
+
+def test_daily_alias_materialization_with_one_accepted_revision(tmp_path: Path) -> None:
+    producer, key = accepted_root(tmp_path / "producer")
+    base = git(producer, "rev-parse", "HEAD")
+    now = NOW + timedelta(days=1)
+    day = now.date().isoformat()
+    ga.generate(producer, key, now)
+    head = index(producer)["current_head"]
+    directory = Path("attestations") / day / "revisions" / head
+    candidate = {path.name: path.read_bytes() for path in (producer / directory).iterdir()}
+    paths = append_paths(producer, base)
+    assert paths and all(Path(path).parent == directory for path in paths)
+    git(producer, "restore", "--", "attestations/latest", "attestations/chain-index.json",
+        ".attestations/chain_head.json", "datapulse.json")
+    git(producer, "add", "--", *paths)
+    git(producer, "commit", "-m", "accept immutable revision only")
+    root = tmp_path / "accepted"
+    git(producer, "clone", "--no-local", str(producer), str(root))
+    result = run(root)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert index(root)["days"][day] == [head]
+    assert index(root)["heads"][head] == (directory / "chain_head.json").as_posix()
+    assert not any(path.is_file() for path in (root / "attestations" / day).iterdir())
+
+    ga.generate(root, key, now)
+
+    for name in ga.FILES:
+        assert (root / "attestations/latest" / name).read_bytes() == candidate[name]
+    assert (root / ".attestations/chain_head.json").read_bytes() == candidate["chain_head.json"]
+    assert {path.name: path.read_bytes() for path in (root / directory).iterdir()} == candidate
+    assert not any(path.is_file() for path in (root / "attestations" / day).iterdir())
+
+
+def test_daily_alias_materialization_matches_staged_bytes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, key = accepted_root(tmp_path)
+    now = NOW + timedelta(days=1)
+    day = Path("attestations") / now.date().isoformat()
+    candidate: dict[str, bytes] = {}
+    generate_candidate = ga._generate
+
+    def capture(staging: Path, *args, **kwargs) -> None:
+        generate_candidate(staging, *args, **kwargs)
+        candidate.update({path.name: path.read_bytes() for path in (staging / day).iterdir()
+                          if path.is_file()})
+
+    monkeypatch.setattr(ga, "_generate", capture)
+    ga.generate(root, key, now)
+
+    assert set(candidate) == {*ga.FILES, "health.json.gz", "sample.json"}
+    assert {path.name: path.read_bytes() for path in (root / day).iterdir()
+            if path.is_file()} == candidate
+
+
+@pytest.mark.parametrize("target, message", [
+    ("chain_head.json", "original daily attestation cannot be overwritten"),
+    ("sample.json", "legacy dataset attestation cannot be overwritten"),
+    ("revision", "immutable destination cannot be overwritten"),
+])
+def test_daily_alias_materialization_preserves_overwrite_guards(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, target: str, message: str,
+) -> None:
+    root, key = accepted_root(tmp_path)
+    day = Path("attestations") / NOW.date().isoformat()
+    before = {path.relative_to(root): path.read_bytes() for path in (root / day).rglob("*")
+              if path.is_file()}
+    generate_candidate = ga._generate
+
+    def conflict(staging: Path, *args, **kwargs) -> None:
+        generate_candidate(staging, *args, **kwargs)
+        path = (next((staging / day / "revisions").glob("*/chain_head.json"))
+                if target == "revision" else staging / day / target)
+        path.write_bytes(path.read_bytes() + b" ")
+
+    monkeypatch.setattr(ga, "_generate", conflict)
+    with pytest.raises(ValueError, match=message):
+        ga.generate(root, key, NOW)
+    assert {path: (root / path).read_bytes() for path in before} == before
 
 
 def test_second_revision_advances_head_and_day_count(tmp_path: Path) -> None:

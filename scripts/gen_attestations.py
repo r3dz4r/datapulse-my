@@ -480,7 +480,10 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
                 os.rename(staging / directory, destination)
             elif any((destination / name).read_bytes() != (staging / directory / name).read_bytes() for name in FILES):
                 raise ValueError("immutable destination cannot be overwritten")
-            if len(candidate["days"][day]) == 1:
+            # Immutable-only accepted appends have no staged daily aliases;
+            # same-day reuse promotes their revision bytes directly to latest.
+            daily_head_ref = f"attestations/{day}/chain_head.json"
+            if len(candidate["days"][day]) == 1 and candidate["heads"][candidate["current_head"]] == daily_head_ref:
                 for name in (*FILES, "health.json.gz", "rekor-reference.json", "rekor-bundle.json"):
                     source_alias = staging / "attestations" / day / name
                     if name.startswith("rekor-") and not source_alias.is_file():
