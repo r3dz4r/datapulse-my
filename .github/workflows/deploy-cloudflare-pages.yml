@@ -948,8 +948,26 @@ jobs:
           set -Eeuo pipefail
           report="$RUNNER_TEMP/served-report"
           mkdir -p "$report"
-          curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
-            https://www.data-pulse.my/publication-identity.json -o "$report/identity.json"
+          if http_status="$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
+            --write-out '%{http_code}' -o "$report/identity.json" \
+            https://www.data-pulse.my/publication-identity.json)"; then
+            :
+          else
+            echo "::error title=Accepted report identity unavailable::Identity request failed"
+            exit 1
+          fi
+          case "$http_status" in
+            200) ;;
+            404)
+              echo "::warning title=Accepted report bootstrap::first accepted publication; no served report age to measure"
+              printf 'Report age (36h policy): first accepted publication; no served report age to measure.\n' >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+              ;;
+            *)
+              echo "::error title=Accepted report identity unavailable::Identity request returned HTTP $http_status"
+              exit 1
+              ;;
+          esac
           snapshot_ref="$(jq -er '.health_snapshot_ref' "$report/identity.json")"
           [[ "$snapshot_ref" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}(/revisions/[0-9a-f]{64})?/health\.json(\.gz)?$ ]]
           curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \

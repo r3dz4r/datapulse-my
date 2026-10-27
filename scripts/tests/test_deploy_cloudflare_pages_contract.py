@@ -1361,14 +1361,17 @@ def test_report_age_is_independent_of_a_fresh_deploy(
     bin_dir = root / 'bin'
     bin_dir.mkdir()
     curl = bin_dir / 'curl'
-    curl.write_text('#!/bin/bash\nif [[ "$*" == *api.cloudflare.com* ]]; then\n'
+    curl.write_text('#!/bin/bash\nwrite_out=false\n'
+                    '[[ "$*" != *--write-out* ]] || write_out=true\n'
+                    'if [[ "$*" == *api.cloudflare.com* ]]; then\n'
                     '  printf \'%s\\n\' "$DEPLOYMENT_RESPONSE"\nelse\n'
                     '  compressed=false\n'
                     '  if [[ "$*" == *binding.json* ]]; then source="$AGE_ROOT/attestations/latest/binding.json"; '
                     'elif [[ "$*" == *publication-identity.json* ]]; then source="$AGE_ROOT/identity.json"; '
                     'else source="$AGE_ROOT/health/latest.json"; compressed=true; fi\n'
                     '  while [[ "$1" != -o ]]; do shift; done\n'
-                    '  if $compressed; then gzip -c "$source" > "$2"; else cp "$source" "$2"; fi\nfi\n')
+                    '  if $compressed; then gzip -c "$source" > "$2"; else cp "$source" "$2"; fi\n'
+                    '  if $write_out; then printf 200; fi\nfi\n')
     curl.chmod(0o755)
     env = os.environ | {'PATH': f'{bin_dir}:{Path(sys.executable).parent}:{os.environ["PATH"]}',
         'RUNNER_TEMP': str(runner), 'AGE_ROOT': str(root), 'GITHUB_STEP_SUMMARY': str(root / 'summary'),
@@ -1488,9 +1491,12 @@ def test_served_observation_check_refuses_wrong_identity_or_missing_disclosure(
     (served / 'index.html').write_text('<body>' + ('' if damage == 'disclosure' else
         f'Accepted health report observed at <time datetime="{observed}">{observed}</time>.') + '</body>')
     curl = tmp_path / 'curl'
-    curl.write_text('#!/bin/bash\nsource="$SERVED/index.html"\n'
+    curl.write_text('#!/bin/bash\nwrite_out=false\n'
+                    '[[ "$*" != *--write-out* ]] || write_out=true\n'
+                    'source="$SERVED/index.html"\n'
                     '[[ "$*" != *publication-identity.json* ]] || source="$SERVED/publication-identity.json"\n'
-                    'while [[ "$1" != -o ]]; do shift; done\ncp "$source" "$2"\n')
+                    'while [[ "$1" != -o ]]; do shift; done\ncp "$source" "$2"\n'
+                    'if $write_out; then printf 200; fi\n')
     curl.chmod(0o755)
     env = os.environ | {'PATH': f'{tmp_path}:{os.environ["PATH"]}', 'SERVED': str(served),
                         'RUNNER_TEMP': str(tmp_path), origin: 'https://test.invalid'}
