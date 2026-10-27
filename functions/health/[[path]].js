@@ -36,9 +36,25 @@ export async function onRequest(context) {
   const binding = context.env.DATAPULSE_HEALTH_INDEX;
   if (!binding || typeof binding.get !== "function") return unavailable("KV binding missing");
 
+  if (name === "latest.json" && context.env.ASSETS && typeof context.env.ASSETS.fetch === "function") {
+    try {
+      const asset = await staticAsset(context);
+      if (asset.ok) {
+        return new Response(asset.body, {
+          status: 200,
+          headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=60", "Content-Type": "application/json" },
+        });
+      }
+    } catch (_) {
+      // KV remains available when Pages cannot serve the assembled asset.
+    }
+  }
+
   try {
     const bytes = await binding.get(`${HEALTH_PREFIX}${name}`, "arrayBuffer");
-    if (!(bytes instanceof ArrayBuffer) || bytes.byteLength === 0) return staticAsset(context);
+    if (!(bytes instanceof ArrayBuffer) || bytes.byteLength === 0) {
+      return name === "latest.json" ? unavailable("static asset and KV value missing") : staticAsset(context);
+    }
     return new Response(bytes, {
       status: 200,
       headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=60", "Content-Type": "application/json" },

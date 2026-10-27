@@ -18,6 +18,22 @@ export async function onRequest(context) {
   }
 
   try {
+    const assetUrl = new URL("/health/latest.json", context.request.url);
+    const asset = await context.env.ASSETS?.fetch(assetUrl);
+    if (asset?.ok) {
+      return new Response(asset.body, {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
+          "Content-Type": "application/json",
+        },
+      });
+    }
+  } catch (_) {
+    // Keep the dashboard available through KV when the accepted asset is absent.
+  }
+
+  try {
     const bytes = await binding.get(HEALTH_INDEX_KEY, "arrayBuffer");
     if (!(bytes instanceof ArrayBuffer) || bytes.byteLength === 0) {
       return unavailable("KV value missing or empty");
