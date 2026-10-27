@@ -209,6 +209,7 @@ def _stage_build(root: Path) -> Path:
         (root / directory).mkdir()
         (root / directory / "fixture.json").write_text('{"fixture":true}\n')
     (root / "docs/.hidden").write_bytes(b"hidden bytes\n")
+    (root / "docs/release-verification.md").write_text("fixture proof\n")
     stage = _step(BUILD, "build", "Stage only generated publication inputs")["run"]
     # Populate the explicit root-file list, without allowing the fixture to
     # manufacture a successful verifier or alter the staging implementation.
@@ -250,7 +251,7 @@ def test_real_build_inventory_rejects_corruption_missing_bytes_and_wrong_source(
         # generator (the fixture has no generate.sh and no signing key).
         (tmp_path / "docs/obsolete-page.html").write_text("removed by release generation")
         restore = _run(
-            _step(PUBLISH, "deploy", "Run release-build generation profile (non-health path)")["run"],
+            _step(PUBLISH, "deploy", "Consume verified release build (non-health path)")["run"],
             tmp_path, VERIFIED_PAGES_BUILD=str(build / "workspace"),
         )
         assert restore.returncode == 0, restore.stderr
@@ -266,10 +267,10 @@ def test_one_build_identity_reaches_signing_and_download_without_latest_name_loo
     jobs = _workflow(PUBLISH)["jobs"]
     classify, sign, deploy = (jobs[name] for name in ("classify", "sign_health", "deploy"))
     assert classify["outputs"]["build_run_id"] == "${{ steps.build.outputs.run_id }}"
-    assert sign["env"]["PROMOTION_BUILT_SHA"] == "${{ needs.classify.outputs.settled_sha }}"
+    assert sign["env"]["PROMOTION_SOURCE_SHA"] == "${{ needs.classify.outputs.settled_sha }}"
     guard = _step(PUBLISH, "sign_health", "Require settled main before signing")["run"]
-    assert 'git merge-base --is-ancestor "$PROMOTION_BUILT_SHA" "$current_sha"' in guard
-    assert 'current_sha="$PROMOTION_BUILT_SHA"' in guard
+    assert '[[ "$(git rev-parse HEAD)" == "$PROMOTION_SOURCE_SHA" ]]' in guard
+    assert "gh api" not in guard and "git checkout" not in guard
     download = _step(PUBLISH, "deploy", "Download verified per-commit release build")["with"]
     assert download["run-id"] == "${{ needs.classify.outputs.build_run_id }}"
     assert download["name"] == "pages-build-${{ needs.classify.outputs.build_run_id }}-${{ needs.classify.outputs.build_attempt }}"
@@ -277,10 +278,10 @@ def test_one_build_identity_reaches_signing_and_download_without_latest_name_loo
     production = _step(PUBLISH, "deploy", "Deploy canonical Cloudflare Pages artifact")["run"]
     assert '--commit-hash="$PROMOTION_SOURCE_SHA"' in production
     assert classify["permissions"]["actions"] == deploy["permissions"]["actions"] == "read"
-    preflight = _step(PUBLISH, "classify", "Require available verified build before preparing any append")
+    preflight = _step(PUBLISH, "classify", "Require available verified build before selecting the accepted report")
     assert "if" not in preflight
     assert preflight["with"]["run-id"] == "${{ steps.build.outputs.run_id }}"
-    assert "if" not in _step(PUBLISH, "classify", "Verify build handoff before preparing any append")
+    assert "if" not in _step(PUBLISH, "classify", "Verify build handoff before selecting the accepted report")
     checkout = next(step for step in classify["steps"] if step.get("uses") == "actions/checkout@v4")
     assert checkout["with"]["fetch-depth"] == 0
     assert "filter" not in checkout["with"], "Explicit filter overrides sparse checkout"
@@ -301,11 +302,21 @@ def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advance
         (parent / "datapulse.json").write_text("accepted" if parent == publication else "private-build")
         (parent / "attestations/latest/binding.json").write_text("accepted" if parent == publication else "private-build")
     (root / "attestations/private-candidate.json").write_text("must not survive")
-    (root / "docs").mkdir()
+    (root / "docs/.well-known").mkdir(parents=True)
+    (publication / "docs/.well-known").mkdir(parents=True)
+    (publication / "docs/.well-known/datapulse-probe-keys.json").write_text("accepted")
+    (publication / "health").mkdir()
+    (publication / "health/latest.json").write_text("accepted")
+    (root / "health").mkdir()
     (root / "docs/index.html").write_text("private-build")
     (root / "scripts").mkdir()
     # These stubs verify orchestration inputs/order. Generator/binding behavior
     # has its own tests; neither stub can create a candidate or submit an append.
+    (root / "scripts/verify_attestation_binding.py").write_text(
+        'from pathlib import Path\n'
+        'assert Path("health/latest.json").read_text() == "accepted"\n'
+        'assert Path("attestations/latest/binding.json").read_text() == "accepted"\n'
+    )
     (root / "scripts/embed_dashboard_data.py").write_text(
         'from pathlib import Path\n'
         'assert Path("attestations/latest/binding.json").read_text() == "accepted"\n'
@@ -317,12 +328,12 @@ def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advance
         '[[ "$(cat docs/index.html)" == accepted ]]\n'
     )
     step = _step(PUBLISH, "deploy", "Bind built dashboard to accepted sign-time trust plane")
-    assert step["if"] == "needs.sign_health.outputs.health_only != 'true'"
+    assert "if" not in step
     result = _run(step["run"], root, RUNNER_TEMP=str(runner))
     assert result.returncode == 0, result.stderr
     assert (root / "docs/index.html").read_text() == "accepted"
     names = [step.get("name") for step in _workflow(PUBLISH)["jobs"]["deploy"]["steps"]]
-    assert names.index("Download verified optional Sigstore bundle") < names.index(step["name"]) < names.index("Assemble canonical Pages artifact")
+    assert names.index("Download accepted report and optional Sigstore bundle") < names.index(step["name"]) < names.index("Assemble canonical Pages artifact")
 
 
 def test_signing_bounds_and_served_gates_survive_the_split() -> None:
@@ -330,23 +341,15 @@ def test_signing_bounds_and_served_gates_survive_the_split() -> None:
     assert workflow["env"] == {
         "PROMOTION_SETTLED_QUIET_SECONDS": 300,
         "PROMOTION_SETTLED_MAX_WAIT_SECONDS": 900,
-        "APPEND_REQUIRED_CHECK_WORST_OBSERVED_SECONDS": 1185,
-        "APPEND_ACCEPTANCE_PATIENCE_SECONDS": 1485,
         "PUBLICATION_CHAIN_MAX_DEPTH": 3,
     }
     jobs = workflow["jobs"]
-    assert [jobs[name]["timeout-minutes"] for name in ("classify", "sign_health", "deploy")] == [20, sum((32, 40, 30, 31, 9)), 30]
+    assert [jobs[name]["timeout-minutes"] for name in ("classify", "sign_health", "deploy")] == [20, 30, 30]
     sign_steps = jobs["sign_health"]["steps"]
-    assert [step["timeout-minutes"] for step in sign_steps if "timeout-minutes" in step] == [32, 40, 30, 31]
-    preparation = _step(PUBLISH, "sign_health", "Prepare append candidate for acceptance")["run"]
-    acceptance_step = _step(PUBLISH, "sign_health", "Require authoritative acceptance before signing publication")
-    acceptance = acceptance_step["run"]
-    assert "timeout -k 5s 1770s bash" in preparation
-    assert "timeout -k 5s 1800s bash" in acceptance
-    for output in ("state", "branch", "head_sha"):
-        assert f"steps.append_submission.outputs.{output}" in str(acceptance_step["env"])
-    for unchanged in ("named_timeout()", "refuse_acceptance()", "deterministic-safety-net"):
-        assert unchanged in acceptance
+    assert not any(step.get("id") in {"existing_append", "append_submission", "append_acceptance"} for step in sign_steps)
+    select = _step(PUBLISH, "sign_health", "Select and verify pinned accepted health report")
+    assert '--revision "$PROMOTION_SOURCE_SHA" --out "$publication"' in select["run"]
+    assert jobs["sign_health"]["outputs"]["report_state"] == "${{ steps.select_accepted_health.outputs.state }}"
     assert "--max-files 18000" in _step(PUBLISH, "deploy", "Keep verifier-reachable attestation history")["run"]
     for gate in ("Verify isolated Pages preview before production promotion", "Verify canonical served surface", "Verify local versus served parity after publication"):
         assert "if" not in _step(PUBLISH, "deploy", gate)

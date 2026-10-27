@@ -8,16 +8,13 @@ import os
 import re
 import subprocess
 import sys
-import textwrap
 
 import pytest
 import yaml
 
 from scripts.verify_attestation_workflow_contract import ContractError, verify_workflows
 from scripts import gen_attestations as ga
-from scripts.tests.test_append_set_isolation import NOW, accept, git
-from scripts.tests.test_attestations import fixture_root
-from scripts.verify_attestation_append import append_paths, verify_append
+from scripts.tests.test_append_set_isolation import NOW, git
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -164,28 +161,23 @@ def _step(workflow: str, step_id: str) -> str:
     )
 
 
-def test_pages_reuses_daily_witness_mechanism_before_submission() -> None:
+def test_pages_signs_accepted_report_while_daily_retains_witness_production() -> None:
     daily = DAILY.read_text(encoding="utf-8")
-    pages = re.split(r"^  [a-z_]+:\n", PAGES.read_text(encoding="utf-8").split("  sign_health:\n", 1)[1], maxsplit=1, flags=re.MULTILINE)[0]
-    guard = _step(pages, "rekor_guard")
-    producer = _step(pages, "produce_rekor_witness")
-    assert guard.split("        run: |\n", 1)[1] == _step(daily, "rekor_guard").split("        run: |\n", 1)[1]
-    # Pages promotes its settled main revision; daily signs its triggering revision.
-    assert producer.split("        run: |\n", 1)[1].replace(
-        '"$PROMOTION_SOURCE_SHA"', '"$GITHUB_SHA"'
-    ) == _step(daily, "produce_rekor_witness").split("        run: |\n", 1)[1]
-    assert "continue-on-error:" not in producer
-    assert "deploy-cloudflare-pages.yml@refs/heads/main" in producer
+    pages = PAGES.read_text(encoding="utf-8")
+    assert "id: produce_rekor_witness" in daily
+    assert "python3 scripts/bind_candidate_witness.py" in daily
+    assert "bash scripts/submit_attestation_append.sh" in daily
+    for forbidden in ("rekor_guard", "produce_rekor_witness", "bind_candidate_witness.py", "submit_attestation_append.sh"):
+        assert forbidden not in pages
+    steps = yaml.safe_load(pages)["jobs"]["sign_health"]["steps"]
+    select = next(step for step in steps if step.get("id") == "select_accepted_health")
+    signer = next(step for step in steps if step.get("id") == "sign_current_health")
+    installer = next(step for step in steps if step.get("id") == "install_cosign")
+    assert steps.index(select) < steps.index(installer) < steps.index(signer)
+    assert installer["with"]["cosign-release"] == "v3.1.3"
     assert "id-token: write" in pages
-    installer_id = re.search(r"steps\.([a-z_]+)\.outcome == 'success'", producer)[1]
-    installer = _step(pages, installer_id)
-    assert "continue-on-error:" not in installer
-    assert "cosign-release: v3.1.3" in installer
-    assert pages.index(f"id: {installer_id}") < pages.index("id: produce_rekor_witness")
-    assert pages.index("id: produce_rekor_witness") < pages.index("python3 scripts/bind_candidate_witness.py") < pages.index("bash scripts/submit_attestation_append.sh")
-    assert '--rekor-reference "$DATAPULSE_REKOR_REFERENCE"' in pages
-    assert 'DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=%s\\n' in pages
-    assert "DATAPULSE_ALLOW_UNWITNESSED_PUBLICATION" not in pages
+    assert 'cmp health/latest.json "$publication/health/latest.json"' in signer["run"]
+    assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" not in pages
 
 
 @pytest.mark.parametrize(
@@ -198,7 +190,8 @@ def test_pages_reuses_daily_witness_mechanism_before_submission() -> None:
         ("pages", "PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}", "PROMOTION_SOURCE_SHA: ${{ github.sha }}", "PROMOTION_SOURCE_SHA"),
         ("pages", "PROMOTION_SOURCE_SHA: ${{ needs.sign_health.outputs.settled_sha }}", "PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}", "PROMOTION_SOURCE_SHA"),
         ("pages", "ref: ${{ needs.sign_health.outputs.settled_sha }}", "ref: ${{ needs.classify.outputs.settled_sha }}", "ref:"),
-        ("pages", 'export PROMOTION_SOURCE_SHA="$settled_sha"', 'export PROMOTION_SOURCE_SHA="$initial_sha"', "PROMOTION_SOURCE_SHA"),
+        ("pages", '[[ "$(git rev-parse HEAD)" == "$PROMOTION_SOURCE_SHA" ]]', '[[ true ]]', "PROMOTION_SOURCE_SHA"),
+        ("pages", '--revision "$PROMOTION_SOURCE_SHA" --out "$publication"', '--revision "$initial_sha" --out "$publication"', "revision"),
         ("pages", 'echo "settled_sha=$PROMOTION_SOURCE_SHA" >> "$GITHUB_OUTPUT"', 'echo "settled_sha=$initial_sha" >> "$GITHUB_OUTPUT"', "settled_sha="),
         (
             "daily",
@@ -266,107 +259,20 @@ def test_contract_rejects_concurrency_lane_regressions(
 
 
 @pytest.mark.parametrize("accepted", [True, False])
-def test_pages_publishes_frozen_candidate_only_after_authoritative_acceptance(
-    tmp_path: Path, accepted: bool,
-) -> None:
-    """Execute the real guard across an immutable-only merge and health drift."""
-    root, key = fixture_root(tmp_path / "candidate")
-    ga.generate(root, key, NOW)
-    source = accept(root)
-    origin = tmp_path / "origin.git"
-    git(root, "clone", "--bare", str(root), str(origin))
-    git(root, "remote", "add", "origin", str(origin))
-    authority = tmp_path / "authority"
-    git(root, "clone", str(origin), str(authority))
-    git(authority, "config", "user.name", "Test")
-    git(authority, "config", "user.email", "test@example.test")
+def test_pages_selects_only_committed_accepted_history(tmp_path: Path, accepted: bool) -> None:
+    """A pending local set cannot replace the accepted set at the pinned commit."""
+    from scripts.select_accepted_health import select_report
+    from scripts.tests.test_attestation_projections import accepted_root
+    root, key = accepted_root(tmp_path / "accepted")
     ga.generate(root, key, NOW + timedelta(hours=1), force_append=True)
-    paths = append_paths(root, source)
-    frozen = {path: (root / path).read_bytes() for path in paths}
-    health = (root / "health/latest.json").read_bytes()
-    head = (root / ".attestations/chain_head.json").read_bytes()
-    scripts = root / "scripts"
-    scripts.mkdir()
-    # Submission commits locally in both cases. That commit is never acceptance.
-    submission = 'set -Eeuo pipefail\ngit switch -c attestation/append-contract\n'
-    submission += 'git add -- ' + ' '.join(paths) + '\ngit commit -m "append contract"\n'
+    pending_head = (root / ".attestations/chain_head.json").read_bytes()
     if accepted:
-        for path, data in frozen.items():
-            target = authority / path
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(data)
-        submission += f'git -C "{authority}" add attestations\n'
-        submission += f'git -C "{authority}" commit -m "accept immutable append"\n'
-        # A newer health push must not replace the bytes this run witnessed.
-        submission += f'printf "\\n" >> "{authority}/health/latest.json"\n'
-        submission += f'git -C "{authority}" commit -am "new health observation"\n'
-        submission += f'git --git-dir="{origin}" fetch "{authority}" main:main\n'
-    (scripts / "submit_attestation_append.sh").write_text(submission)
-    (scripts / "close_superseded_appends.sh").write_text("#!/bin/bash\nexit 0\n")
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    verifier = ROOT / "scripts/verify_attestation_append.py"
-    (bin_dir / "python3").write_text(
-        '#!/bin/bash\nset -Eeuo pipefail\nshift\nargs=("$@")\n'
-        # Bound a non-acceptance test to one real remote probe, without sleeping.
-        'for i in "${!args[@]}"; do\n'
-        '  [[ "${args[$i]}" != --wait-for-acceptance ]] || args[$((i + 1))]=0\n'
-        'done\n'
-        f'exec "{sys.executable}" "{verifier}" --root "{root}" "${{args[@]}}"\n'
-    )
-    (bin_dir / "gh").write_text(
-        '#!/bin/bash\n'
-        'case "$1 $2" in\n'
-        '  "pr list") printf "[]\\n" ;;\n'
-        '  "pr view")\n'
-        '    printf \'{"number":99,"headRefName":"%s","headRefOid":"%s",'
-        '"baseRefName":"main","isCrossRepository":false,"state":"%s",'
-        '"createdAt":"2026-08-15T00:00:00Z","autoMergeRequest":{},'
-        '"statusCheckRollup":[{"name":"deterministic-safety-net",'
-        '"status":"COMPLETED","conclusion":"SUCCESS"}]}\\n\' '
-        '"$(git branch --show-current)" "$(git rev-parse HEAD)" "$PR_STATE" ;;\n'
-        '  "pr merge") : ;;\n'
-        '  *) exit 2 ;;\n'
-        'esac\n'
-    )
-    for path in bin_dir.iterdir():
-        path.chmod(0o755)
-    pages = PAGES.read_text(encoding="utf-8")
-    guard = next(step for step in re.split(r"(?=^      - )", pages, flags=re.MULTILINE)
-                 if "- name: Require authoritative acceptance before signing publication\n" in step)
-    output = tmp_path / "guard-output"
-    summary = tmp_path / "guard-summary"
-    guard_run = textwrap.dedent(guard.split("        run: |\n", 1)[1])
-    prepare = next(step for step in re.split(r"(?=^      - )", pages, flags=re.MULTILINE)
-                   if "- name: Prepare append candidate for acceptance\n" in step)
-    prepare_run = textwrap.dedent(prepare.split("        run: |\n", 1)[1])
-    if not accepted:
-        guard_run = re.sub(r"^\s*sleep .*$", "              SECONDS=$deadline", guard_run, flags=re.MULTILINE)
-    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
-             **{key: str(value) for key, value in yaml.safe_load(pages)["env"].items()},
-             "GITHUB_SHA": "b" * 40, "PROMOTION_SOURCE_SHA": source, "GITHUB_REPOSITORY": "fixture/datapulse",
-             "PR_STATE": "MERGED" if accepted else "OPEN", "GITHUB_OUTPUT": str(output),
-             "GITHUB_STEP_SUMMARY": str(summary)}
-    prepared = subprocess.run(["bash", "-c", prepare_run], cwd=root, env=env,
-                              text=True, capture_output=True)
-    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
-    prep_output = dict(line.split("=", 1) for line in output.read_text().splitlines())
-    assert prep_output["state"] == "ready"
-    env.update(APPEND_PREP_STATE=prep_output["state"], APPEND_BRANCH=prep_output["branch"],
-               APPEND_HEAD_SHA=prep_output["head_sha"])
-    output.unlink()
-    result = subprocess.run(
-        ["bash", "-c", guard_run], cwd=root, env=env,
-        text=True, capture_output=True,
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert output.read_text() == ("state=accepted\n" if accepted else "state=append-deferred\n")
-    assert git(root, "branch", "--show-current") == "attestation/append-contract"
-    assert (root / "health/latest.json").read_bytes() == health
-    assert (root / ".attestations/chain_head.json").read_bytes() == head
-    assert {path: (root / path).read_bytes() for path in paths} == frozen
-    if accepted:
-        verify_append(root, "origin/main", require_committed=True)
-        assert git(root, "rev-parse", "origin/main") != source
-    else:
-        assert "append-deferred" in summary.read_text()
+        git(root, "add", "attestations", ".attestations")
+        git(root, "commit", "-m", "accept next immutable set")
+    source = git(root, "rev-parse", "HEAD")
+    publication = tmp_path / "publication"
+    select_report(root, source, publication, NOW + timedelta(hours=2))
+    selected_head = (publication / ".attestations/chain_head.json").read_bytes()
+    assert (selected_head == pending_head) is accepted
+    assert git(root, "rev-parse", "HEAD") == source
+    assert (root / ".attestations/chain_head.json").read_bytes() == pending_head

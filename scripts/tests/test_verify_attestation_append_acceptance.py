@@ -29,209 +29,34 @@ def workflow() -> dict:
     return yaml.safe_load(WORKFLOW.read_text())
 
 
-def run_wait(
-    tmp_path: Path, *, early: bool = False, check: str = "SUCCESS",
-    merged: bool = False, proof: int = 75, outer_timeout: bool = False,
-    lookup_status: int = 0, new_submission: bool = False, merge_at: int = 2,
-    patience: int = 0,
-) -> tuple[subprocess.CompletedProcess[str], str, str]:
-    """Run the shipped shell; replace only network, Git and expensive proofs."""
-    steps = workflow()["jobs"]["sign_health"]["steps"]
-    name = ("Wait for an existing append before generating a candidate" if early else
-            "Require authoritative acceptance before signing publication")
-    step = next(step for step in steps if step.get("name") == name)
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    scripts = tmp_path / "scripts"
-    scripts.mkdir()
-    for name in ("submit_attestation_append.sh", "close_superseded_appends.sh", "restore_attestations.sh"):
-        body = 'echo "$0 $*" >> "$CALL_LOG"\n'
-        if name == "submit_attestation_append.sh":
-            body += 'if [[ "${1:-}" == --rebuild ]]; then exit 1; fi\n'
-        (scripts / name).write_text(body)
-    gh = f"#!{sys.executable}\n" + textwrap.dedent('''\
-        import json, os, pathlib, sys
-        args = sys.argv[1:]
-        with open(os.environ["CALL_LOG"], "a") as log:
-            log.write("gh " + " ".join(args) + "\\n")
-        pr = dict(number=42, headRefName="attestation/append-test", headRefOid="a" * 40,
-                  baseRefName="main", isCrossRepository=False, state="OPEN",
-                  createdAt="2026-10-14T00:00:00Z", autoMergeRequest={"enabledAt": "now"},
-                  statusCheckRollup=[dict(name="deterministic-safety-net", status="COMPLETED",
-                                          conclusion=os.environ["CHECK"])])
-        if args[:2] == ["pr", "list"]:
-            print(json.dumps([] if pathlib.Path("merged").exists() or os.environ["NEW_SUBMISSION"] == "1" else [pr]))
-        elif args[:2] == ["pr", "view"]:
-            count = pathlib.Path("views")
-            n = int(count.read_text()) + 1 if count.exists() else 1
-            count.write_text(str(n))
-            if n >= 2 and os.environ["LOOKUP_STATUS"] != "0":
-                sys.exit(int(os.environ["LOOKUP_STATUS"]))
-            if os.environ["MERGE_LATER"] == "1" and n >= int(os.environ["MERGE_AT"]):
-                pr["state"] = "MERGED"
-                pathlib.Path("merged").touch()
-            print(json.dumps(pr))
-        elif args[:2] != ["pr", "merge"]:
-            sys.exit("unexpected GitHub call: " + repr(args))
-    ''')
-    programs = {
-        "gh": gh,
-        "python3": '#!/bin/bash\necho "python3 $*" >> "$CALL_LOG"\n'
-                   'if [[ "$*" == *--wait-for-acceptance* ]]; then exit "$PROOF"; fi\n'
-                   'if [[ "$*" == *--require-committed* ]]; then exit 1; fi\n',
-        "git": '#!/bin/bash\necho "git $*" >> "$CALL_LOG"\n'
-               'case "$1" in branch) echo attestation/append-test;; '
-               'rev-parse) printf "%040d\\n" 0 | tr 0 a;; esac\n',
-        "sleep": '#!/bin/sh\necho "sleep $*" >> "$CALL_LOG"\n',
-        "timeout": '#!/bin/bash\nshift 2\ncap="$1"; shift\n'
-                   'if [[ "$OUTER_TIMEOUT" == 1 && ( "$cap" == 1800s || "$cap" == 1900s ) ]]; then exit 124; fi\n'
-                   'exec "$@"\n',
-    }
-    for name, body in programs.items():
-        path = bin_dir / name
-        path.write_text(body)
-        path.chmod(0o755)
-    output = tmp_path / "output"
-    log = tmp_path / "calls"
-    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}",
-           "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
-           "GITHUB_REPOSITORY": "example/test", "PROMOTION_SOURCE_SHA": "a" * 40,
-           "APPEND_PREP_STATE": "ready", "APPEND_BRANCH": "attestation/append-test",
-           "APPEND_HEAD_SHA": "a" * 40,
-           "APPEND_ACCEPTANCE_PATIENCE_SECONDS": str(patience), "CALL_LOG": str(log),
-           "CHECK": check, "MERGE_LATER": str(int(merged)), "PROOF": str(proof),
-           "OUTER_TIMEOUT": str(int(outer_timeout)), "LOOKUP_STATUS": str(lookup_status),
-           "NEW_SUBMISSION": str(int(new_submission)), "MERGE_AT": str(merge_at)}
-    if new_submission and not early:
-        prepare = next(item for item in steps if item.get("name") == "Prepare append candidate for acceptance")
-        prepared = subprocess.run(["bash", "-c", prepare["run"]], cwd=tmp_path, env=env,
-                                  capture_output=True, text=True, timeout=10)
-        assert prepared.returncode == 0, prepared.stdout + prepared.stderr
-        prep_output = dict(line.split("=", 1) for line in output.read_text().splitlines())
-        assert prep_output["state"] == "ready"
-        env.update(APPEND_PREP_STATE=prep_output["state"], APPEND_BRANCH=prep_output["branch"],
-                   APPEND_HEAD_SHA=prep_output["head_sha"])
-        output.unlink()
-    result = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, env=env,
-                            capture_output=True, text=True, timeout=10)
-    return result, output.read_text() if output.exists() else "", log.read_text() if log.exists() else ""
-
-
-@pytest.mark.parametrize("early", [False, True])
-def test_open_passed_armed_append_defers_without_acceptance(tmp_path: Path, early: bool) -> None:
-    result, output, calls = run_wait(tmp_path, early=early)
-    assert result.returncode == 0, result.stderr
-    assert "state=append-deferred" in output
-    assert "state=accepted" not in output
-    assert "append-deferred" in result.stdout + result.stderr
-    assert "#42" in result.stdout + result.stderr
-    assert "age" in result.stdout + result.stderr
-    assert "submit_attestation_append.sh" not in calls
-    assert "gh pr merge" not in calls  # Already armed: do not submit/arm twice.
-    assert "append-deferred" in (tmp_path / "summary").read_text()
-
-
-@pytest.mark.parametrize("early", [False, True])
-def test_failed_required_check_refuses_without_deferral(tmp_path: Path, early: bool) -> None:
-    result, output, _ = run_wait(tmp_path, early=early, check="FAILURE")
-    assert result.returncode != 0
-    assert "required check failed" in result.stderr
-    assert "append-deferred" not in output + result.stdout + result.stderr
-    assert "state=accepted" not in output
-
-
-@pytest.mark.parametrize("early", [False, True])
-def test_process_timeout_defers_without_acceptance(tmp_path: Path, early: bool) -> None:
-    result, output, _ = run_wait(tmp_path, early=early, outer_timeout=True)
-    assert result.returncode == 0, result.stderr
-    assert "state=append-deferred" in output
-    assert "state=accepted" not in output
-
-
-@pytest.mark.parametrize("early", [False, True])
-@pytest.mark.parametrize("status", [64, 124, 137])
-def test_lookup_failure_preserves_refusal_or_timeout_attribution(
-    tmp_path: Path, early: bool, status: int,
-) -> None:
-    result, output, _ = run_wait(tmp_path, early=early, lookup_status=status,
-                                 patience=60 if early else 0)
-    assert "state=accepted" not in output
-    if status in (124, 137):
-        if early:
-            assert result.returncode != 0
-            assert output == "state=append-wait-failed\n"
-            assert "timeout -k 5s 20s gh pr view 42" in result.stderr
-            assert f"status {status}" in result.stderr
-        else:
-            assert result.returncode == 0, result.stderr
-            assert "state=append-deferred" in output
-    else:
-        assert result.returncode != 0
-        assert "append-deferred" not in output + result.stdout + result.stderr
-
-
-def test_early_lookup_timeout_before_patience_is_attributed(tmp_path: Path) -> None:
-    result, output, _ = run_wait(tmp_path, early=True, lookup_status=124, patience=60)
-    assert result.returncode != 0
-    assert output == "state=append-wait-failed\n"
-    assert "timeout -k 5s 20s gh pr view 42" in result.stderr
-    assert "status 124" in result.stderr
-    assert "elapsed " in result.stderr
-    assert "patience 60s" in result.stderr
-
-
-def test_lookup_timeout_after_patience_defers_from_enclosing_wait(tmp_path: Path) -> None:
-    result, output, _ = run_wait(tmp_path, early=True, lookup_status=124, patience=0)
-    assert result.returncode == 0, result.stderr
-    assert output == "state=append-deferred\n"
-    assert "state=append-wait-failed" not in output
-    assert "state=accepted" not in output
-
-
-@pytest.mark.parametrize("merged", [False, True])
-def test_new_submission_uses_the_same_acceptance_gate(tmp_path: Path, merged: bool) -> None:
-    result, output, calls = run_wait(tmp_path, new_submission=True, merged=merged,
-                                     proof=0 if merged else 75)
-    assert result.returncode == 0, result.stderr
-    assert "submit_attestation_append.sh" in calls
-    assert output == ("state=accepted\n" if merged else "state=append-deferred\n")
-
-
-@pytest.mark.parametrize("early", [False, True])
-def test_merge_between_list_and_view_is_accepted(tmp_path: Path, early: bool) -> None:
-    result, output, _ = run_wait(tmp_path, early=early, merged=True, merge_at=1, proof=0)
-    assert result.returncode == 0, result.stderr
-    assert output == ("state=ready\n" if early else "state=accepted\n")
-
-
-@pytest.mark.parametrize("early", [False, True])
-def test_merge_and_exact_proof_accept_without_deferral(tmp_path: Path, early: bool) -> None:
-    result, output, calls = run_wait(tmp_path, early=early, merged=True, proof=0,
-                                    merge_at=3, patience=60)
-    assert result.returncode == 0, result.stderr
-    assert output == ("state=ready\n" if early else "state=accepted\n")
-    assert "append-deferred" not in result.stdout + result.stderr
-    assert "sleep 15" in calls
-
-
-def test_merged_append_with_invalid_proof_still_refuses(tmp_path: Path) -> None:
-    result, output, _ = run_wait(tmp_path, merged=True, proof=1)
-    assert result.returncode != 0
-    assert "state=accepted" not in output
-    assert "append-deferred" not in output + result.stdout + result.stderr
-
-
-def test_deferral_gates_candidate_signing_and_deploy() -> None:
+def test_pages_selects_only_already_accepted_health_without_pr_waits() -> None:
     jobs = workflow()["jobs"]
     steps = jobs["sign_health"]["steps"]
-    early = next(i for i, step in enumerate(steps) if step.get("id") == "existing_append")
-    acceptance = next(i for i, step in enumerate(steps) if step.get("id") == "append_acceptance")
-    for step in steps[early + 1:acceptance + 1]:
-        assert "steps.existing_append.outputs.state == 'ready'" in step["if"], step["name"]
-    for step in steps[acceptance + 1:]:
-        assert "steps.append_acceptance.outputs.state == 'accepted'" in step["if"], step["name"]
-    assert "needs.sign_health.outputs.append_state == 'accepted'" in jobs["deploy"]["if"]
-    assert "append-deferred" in jobs["sign_health"]["outputs"]["append_state"]
+    selection = next(step for step in steps if step.get("id") == "select_accepted_health")
+    assert "continue-on-error" not in selection
+    assert '--revision "$PROMOTION_SOURCE_SHA"' in selection["run"]
+    assert jobs["deploy"]["if"] == "needs.sign_health.outputs.report_state == 'accepted'"
+    for forbidden in ("existing_append", "append_submission", "append_acceptance", "APPEND_",
+                      "gh pr", "submit_attestation_append.sh", "--wait-for-acceptance"):
+        assert forbidden not in WORKFLOW.read_text()
+
+
+@pytest.mark.parametrize("pending", [False, True])
+def test_pending_local_candidate_never_becomes_the_publication_authority(tmp_path: Path, pending: bool) -> None:
+    from scripts.select_accepted_health import select_report
+    from scripts.tests.test_attestation_projections import accepted_root
+    root, key = accepted_root(tmp_path / "accepted")
+    source = git(root, "rev-parse", "HEAD")
+    accepted_health = (root / "health/latest.json").read_bytes()
+    accepted_head = json.loads((root / "attestations/latest/chain_head.json").read_bytes())["chain_head"]
+    if pending:
+        ga.generate(root, key, NOW + timedelta(hours=1), force_append=True)
+        assert json.loads((root / "attestations/latest/chain_head.json").read_bytes())["chain_head"] != accepted_head
+    selected = tmp_path / "publication"
+    result = select_report(root, source, selected, NOW + timedelta(hours=2))
+    assert result["accepted_chain_head"] == accepted_head
+    assert (selected / "health/latest.json").read_bytes() == accepted_health
+    assert git(root, "rev-parse", "HEAD") == source
 
 
 @pytest.fixture

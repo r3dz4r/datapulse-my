@@ -7,7 +7,7 @@ import os
 import re
 import shutil
 import subprocess
-import textwrap
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -18,7 +18,6 @@ from scripts.classify_change import is_health_only_change
 
 from scripts import gen_attestations as ga
 from scripts.tests.test_attestations import fixture_rekor_reference, fixture_root, write
-from scripts.verify_attestation_binding import verify_contract
 
 ROOT = Path(__file__).resolve().parents[2]
 SYSTEMD_UNIT = ROOT / "deploy/systemd/datapulse-health.service"
@@ -209,7 +208,8 @@ def test_cloudflare_workflow_uses_release_build_and_declared_inputs() -> None:
     paths_block = build.split("    paths:\n", 1)[1].split("  workflow_dispatch:", 1)[0]
 
     assert "bash scripts/generate.sh release-build" in build
-    assert "bash scripts/generate.sh release-build" in deploy
+    assert "bash scripts/generate.sh release-build" not in deploy
+    assert "Consume verified release build (non-health path)" in deploy
     assert '"scripts/**"' in paths_block
     assert '"health/**"' not in paths_block
     assert "npx --yes wrangler@3.90.0 pages deploy _site --project-name=datapulse-p4b-preview --branch=main" in deploy
@@ -217,21 +217,16 @@ def test_cloudflare_workflow_uses_release_build_and_declared_inputs() -> None:
     assert "actions/deploy-pages" not in deploy
 
 
-def test_cloudflare_release_and_proof_steps_keep_protected_attestation_key_setup() -> None:
+def test_cloudflare_release_and_proof_steps_consume_verified_inputs_without_private_key() -> None:
     workflow = _read(DEPLOY_WORKFLOW)
-    setup_lines = (
-        'DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT: ${{ secrets.DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE }}',
-        'echo "$DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" > /tmp/datapulse-attestation-key.json',
-        "chmod 600 /tmp/datapulse-attestation-key.json",
-        "export DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE=/tmp/datapulse-attestation-key.json",
-    )
-    release_step = workflow.split("      - name: Run release-build generation profile (non-health path)\n", 1)[1].split("      - name: Verify full release contract (non-health path)\n", 1)[0]
-    proof_step = workflow.split("      - name: Verify full release contract (non-health path)\n", 1)[1].split("      - name: Preserve served release proof (health-only path)\n", 1)[0]
-
-    for line in setup_lines:
-        assert line in release_step
-        assert line in proof_step
-    assert "--verify-proof docs/release-verification.md" in proof_step
+    assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_CONTENT" not in workflow
+    assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" not in workflow
+    steps = yaml.safe_load(workflow)["jobs"]["deploy"]["steps"]
+    consume = next(step for step in steps if step.get("name") == "Consume verified release build (non-health path)")
+    proof = next(step for step in steps if step.get("name") == "Verify full release contract (non-health path)")
+    assert 'cp -R "$VERIFIED_PAGES_BUILD/." .' in consume["run"]
+    assert "verify_release_artifact.py verify" in proof["run"]
+    assert "--verify-proof docs/release-verification.md" in proof["run"]
 
 
 def test_cloudflare_workflow_permissions_and_concurrency_are_not_broadened() -> None:
@@ -297,7 +292,7 @@ def test_sigstore_signer_down_is_explicit_and_partial_outputs_are_cleaned_up() -
     assert "continue-on-error" not in upload
     assert sign["if"] == (
         "steps.install_cosign.outcome == 'success' && "
-        "steps.append_acceptance.outputs.state == 'accepted'"
+        "steps.select_accepted_health.outputs.state == 'accepted'"
     )
     assert ".health.latest.sigstore.json.tmp" in sign["run"]
     assert "state=signer_down" in sign["run"]
@@ -305,18 +300,15 @@ def test_sigstore_signer_down_is_explicit_and_partial_outputs_are_cleaned_up() -
     assert sign["run"].index("verify_sigstore_bundle.py") < sign["run"].index(
         'mv "$bundle_tmp" "$publication/health.latest.sigstore.json"'
     )
-    assert upload["if"] == (
-        "steps.sign_current_health.outputs.state == 'signed' && "
-        "steps.append_acceptance.outputs.state == 'accepted'"
-    )
+    assert upload["if"] == "steps.select_accepted_health.outputs.state == 'accepted'"
     assert parsed["jobs"]["sign_health"]["outputs"]["attestation_state"] == (
         "${{ steps.attestation_result.outputs.state }}"
     )
-    assert attestation["if"] == "always() && steps.append_acceptance.outputs.state == 'accepted'"
+    assert attestation["if"] == "always() && steps.select_accepted_health.outputs.state == 'accepted'"
     assert "state=signer_down" in attestation["run"]
     assert "state=signed" in attestation["run"]
     assert "Signer output, verification, or publication was incomplete." in attestation["run"]
-    assert result["if"] == "always() && steps.append_acceptance.outputs.state == 'accepted'"
+    assert result["if"] == "always() && steps.select_accepted_health.outputs.state == 'accepted'"
     assert "rm -f \"$RUNNER_TEMP/sigstore-publication/.health.latest.sigstore.json.tmp\"" in result["run"]
     assert "signed=false" in result["run"]
     assert "signed=true" in result["run"]
@@ -333,10 +325,10 @@ def test_per_dataset_receipts_are_generated_signed_and_staged_for_every_deployme
         if step.get("name") == "Assemble canonical Pages artifact"
     )
 
-    assert generate["if"] == "steps.append_acceptance.outputs.state == 'accepted'"
+    assert generate["if"] == "steps.select_accepted_health.outputs.state == 'accepted'"
     assert sign["if"] == (
         "steps.sign_current_health.outputs.state == 'signed' && "
-        "steps.append_acceptance.outputs.state == 'accepted'"
+        "steps.select_accepted_health.outputs.state == 'accepted'"
     )
     assert "python3 scripts/gen_per_dataset_receipt.py" in generate["run"]
     assert "python3 scripts/sign_per_dataset_receipts.py" in sign["run"]
@@ -344,7 +336,7 @@ def test_per_dataset_receipts_are_generated_signed_and_staged_for_every_deployme
     assert "--certificate-identity \"$SIGSTORE_IDENTITY\"" in sign["run"]
     assert "continue-on-error" not in sign
     assert "mkdir -p \"$publication/data\"" in sign["run"]
-    assert result["if"] == "always() && steps.append_acceptance.outputs.state == 'accepted'"
+    assert result["if"] == "always() && steps.select_accepted_health.outputs.state == 'accepted'"
     assert "steps.sign_current_health.outputs.state" in result["run"]
     assert "steps.sign_per_dataset.outcome" in result["run"]
     assert "rm -rf \"$RUNNER_TEMP/sigstore-publication/data\"" in result["run"]
@@ -353,36 +345,21 @@ def test_per_dataset_receipts_are_generated_signed_and_staged_for_every_deployme
         assert f'cp "$RUNNER_TEMP/sigstore-publication/data/"*.receipt.{suffix} _site/data/' in assemble["run"]
 
 
-def test_attestation_state_fails_closed_for_full_releases_and_preserves_valid_served_plane() -> None:
+def test_attestation_state_fails_closed_for_full_releases_and_keeps_accepted_report() -> None:
     parsed = yaml.safe_load(_read(DEPLOY_WORKFLOW))
     steps = parsed["jobs"]["deploy"]["steps"]
-    full_release_gate = next(
-        step for step in steps
-        if step.get("name") == "Require signed attestation for full release"
-    )
-    preservation = next(
-        step for step in steps
-        if step.get("name") == "Preserve served attestation plane (health-only path)"
-    )
-    assemble_index = next(
-        index for index, step in enumerate(steps)
-        if step.get("name") == "Assemble canonical Pages artifact"
-    )
-
+    full_release_gate = next(step for step in steps if step.get("name") == "Require signed attestation for full release")
     assert full_release_gate["if"] == (
         "needs.sign_health.outputs.health_only != 'true' && "
         "needs.sign_health.outputs.attestation_state != 'signed'"
     )
     assert "Full releases require attestation_state=signed" in full_release_gate["run"]
     assert "exit 1" in full_release_gate["run"]
-    assert preservation["if"] == (
-        "needs.sign_health.outputs.health_only == 'true' && "
-        "needs.sign_health.outputs.attestation_state == 'signer_down'"
-    )
-    assert steps.index(preservation) < assemble_index
-    assert "verify_attestation_plane_state.py" in preservation["run"]
-    assert "served health/binding plane is inconsistent" in preservation["run"]
-    assert "exit 1" in preservation["run"]
+    overlay = next(step for step in steps if step.get("name") == "Bind built dashboard to accepted sign-time trust plane")
+    assert "if" not in overlay
+    assert 'cp "$publication/health/latest.json" health/latest.json' in overlay["run"]
+    assert "python3 scripts/verify_attestation_binding.py --root ." in overlay["run"]
+    assert "Preserve served attestation plane" not in _read(DEPLOY_WORKFLOW)
 
 
 def test_cloudflare_publishes_only_a_current_verified_optional_bundle() -> None:
@@ -415,7 +392,8 @@ def test_generate_sh_release_profile_matches_cloudflare_workflow() -> None:
         check=True,
     )
     assert "Profile: release-build" in listed.stdout
-    assert "bash scripts/generate.sh release-build" in _read(DEPLOY_WORKFLOW)
+    assert "bash scripts/generate.sh release-build" in _read(BUILD_WORKFLOW)
+    assert "bash scripts/generate.sh release-build" not in _read(DEPLOY_WORKFLOW)
 
 
 def test_canonical_pipeline_stages_and_validates_record_evidence() -> None:
@@ -428,216 +406,112 @@ def test_canonical_pipeline_stages_and_validates_record_evidence() -> None:
     assert "validate_record_evidence(envelope, full=False)" in pipeline
 
 
-def _fast_path_preservation_script() -> str:
-    workflow = _read(DEPLOY_WORKFLOW)
-    match = re.search(
-        r"(?ms)^      - name: Preserve served attestation plane \(health-only path\)\n"
-        r".*?^        run: \|\n(.*?)(?=^      - name: (?:Download verified optional Sigstore bundle|Assemble canonical Pages artifact))",
-        workflow,
-    )
-    assert match is not None, "fast path must preserve the served attestation plane"
-    return match.group(1)
+def _accepted_selection_script() -> str:
+    steps = yaml.safe_load(_read(DEPLOY_WORKFLOW))["jobs"]["sign_health"]["steps"]
+    return next(step["run"] for step in steps if step.get("id") == "select_accepted_health")
+
+
+def _select_plane(tmp_path: Path, source_root: Path, *, label: str) -> tuple[subprocess.CompletedProcess[str], Path]:
+    """Run the actual selection step against committed, signed fixture evidence."""
+    checkout = tmp_path / f"checkout-{label}"
+    shutil.copytree(source_root, checkout)
+    subprocess.run(["git", "init", "-b", "main"], cwd=checkout, check=True, capture_output=True)
+    for key, value in (("user.name", "Test"), ("user.email", "test@example.test")):
+        subprocess.run(["git", "config", key, value], cwd=checkout, check=True)
+    subprocess.run(["git", "add", "datapulse.json", "docs", "health", "attestations", ".attestations"], cwd=checkout, check=True)
+    subprocess.run(["git", "commit", "-m", "accepted evidence"], cwd=checkout, check=True, capture_output=True)
+    revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=checkout, text=True).strip()
+    (checkout / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
+    runner = tmp_path / f"runner-{label}"
+    runner.mkdir()
+    environment = os.environ | {
+        "PATH": f"{Path(sys.executable).parent}:{os.environ['PATH']}",
+        "RUNNER_TEMP": str(runner), "PROMOTION_SOURCE_SHA": revision,
+        "GITHUB_OUTPUT": str(runner / "output"), "GITHUB_STEP_SUMMARY": str(runner / "summary"),
+    }
+    completed = subprocess.run(["bash", "-c", _accepted_selection_script()], cwd=checkout, env=environment,
+                               capture_output=True, text=True, check=False, timeout=30)
+    return completed, runner / "sigstore-publication"
 
 
 @pytest.mark.parametrize("append_revision", [False, True])
-def test_cloudflare_fast_path_preserves_valid_served_attestation_plane(tmp_path: Path, append_revision: bool) -> None:
-    """A health-only artifact reads the served P1 plane, not checkout evidence."""
-    served_root, key = fixture_root(tmp_path / "served")
+def test_cloudflare_fast_path_selects_accepted_plane_without_served_fallback(tmp_path: Path, append_revision: bool) -> None:
+    source, key = fixture_root(tmp_path / "accepted")
     now = datetime.now(timezone.utc).replace(microsecond=0)
     day = now.date().isoformat()
-    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
-    health["checked_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    health = json.loads((source / "health/latest.json").read_bytes())
+    health["checked_at"] = now.isoformat().replace("+00:00", "Z")
     health["datasets"][0]["last_checked"] = health["checked_at"]
-    write(served_root / "health/latest.json", health)
-    ga.generate(served_root, key, now, fixture_rekor_reference(served_root, f"rekor/{day}"))
+    write(source / "health/latest.json", health)
+    reference = fixture_rekor_reference(source, f"rekor/{day}")
+    ga.generate(source, key, now, reference)
     if append_revision:
-        manifest = json.loads((served_root / "datapulse.json").read_text(encoding="utf-8"))
+        manifest = json.loads((source / "datapulse.json").read_bytes())
         manifest["datasets"][0]["url"] = "https://example.test/revised"
-        write(served_root / "datapulse.json", manifest)
-        ga.generate(served_root, key, now, served_root / f"attestations/rekor/{day}/reference.json")
-    assert verify_contract(served_root, now=now + timedelta(hours=1))["claims"]["artifact_signed"] is True
-
-    checkout = tmp_path / "checkout"
-    shutil.copytree(served_root, checkout)
-    (checkout / "scripts").mkdir()
-    for script in (
-        "verify_attestation_binding.py", "verify_attestation_plane_state.py",
-        "attestation_fetch_refs.py", "attestation_sets.py",
-    ):
-        shutil.copy2(ROOT / "scripts" / script, checkout / "scripts")
-    (checkout / "config").mkdir()
-    shutil.copy2(ROOT / "config/public-surfaces.json", checkout / "config")
-    stale = checkout / "attestations/latest/binding.json"
-    stale.write_text("{}\n", encoding="utf-8")
-    fake_bin = tmp_path / "bin"
-    fake_bin.mkdir()
-    fake_curl = fake_bin / "curl"
-    fake_curl.write_text(
-        """#!/usr/bin/env bash
-set -Eeuo pipefail
-output=""; url=""
-while (( $# > 0 )); do case "$1" in --output) output="$2"; shift 2 ;; *) url="$1"; shift ;; esac; done
-path="${url#https://www.data-pulse.my/}"
-[[ "$path" == .well-known/* ]] && path="docs/$path"
-[[ "$path" != "$url" && -f "${MOCK_SERVED_ROOT:?}/$path" ]] || exit 22
-mkdir -p "$(dirname "$output")"; cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
-""",
-        encoding="utf-8",
-    )
-    fake_curl.chmod(0o755)
-    environment = os.environ.copy()
-    environment.update(PATH=f"{fake_bin}:{environment['PATH']}", MOCK_SERVED_ROOT=str(served_root), RUNNER_TEMP=str(tmp_path / "runner-temp"))
-    completed = subprocess.run(["bash", "-c", _fast_path_preservation_script()], cwd=checkout, env=environment, capture_output=True, text=True, check=False)
-
-    assert completed.returncode == 0, completed.stderr
-    preserved = tmp_path / "runner-temp/preserved-attestations"
-    assert (preserved / "attestations/latest/binding.json").read_bytes() == (served_root / "attestations/latest/binding.json").read_bytes()
-    if append_revision:
-        historical_envelope = served_root / f"attestations/{day}/sample.json"
-        envelope = json.loads(historical_envelope.read_text(encoding="utf-8"))
-        envelope["payload"]["last_status"] = "stale"
-        write(historical_envelope, envelope)
-        refused = subprocess.run(["bash", "-c", _fast_path_preservation_script()], cwd=checkout, env=environment, capture_output=True, text=True, check=False)
-        assert refused.returncode != 0, "preserved a lineage with a corrupt historical dataset envelope"
-        assert "served health/binding plane is inconsistent" in refused.stdout
+        write(source / "datapulse.json", manifest)
+        ga.generate(source, key, now, reference)
+    result, selected = _select_plane(tmp_path, source, label="valid")
+    assert result.returncode == 0, result.stdout + result.stderr
+    for path in ("health/latest.json", "attestations/latest/binding.json", ".attestations/chain_head.json"):
+        assert (selected / path).read_bytes() == (source / path).read_bytes()
+    assert "curl" not in _accepted_selection_script()
 
 
-def _preserve_served_plane(
-    tmp_path: Path, served_root: Path, *, label: str
-) -> tuple[subprocess.CompletedProcess[str], Path]:
-    """Run the extracted health-only fast path against a served-plane fixture."""
-    checkout = tmp_path / f"checkout-{label}"
-    shutil.copytree(served_root, checkout)
-    (checkout / "scripts").mkdir()
-    # The merged fast path verifies the whole append-only lineage, so the
-    # checkout needs the branch's discovery helpers alongside the verifier.
-    for script in (
-        "verify_attestation_binding.py", "verify_attestation_plane_state.py",
-        "attestation_fetch_refs.py", "attestation_sets.py",
-    ):
-        shutil.copy2(ROOT / "scripts" / script, checkout / "scripts")
-    (checkout / "config").mkdir()
-    shutil.copy2(ROOT / "config/public-surfaces.json", checkout / "config")
-    (checkout / "attestations/latest/binding.json").write_text("{}\n", encoding="utf-8")
-    fake_bin = tmp_path / f"bin-{label}"
-    fake_bin.mkdir()
-    fake_curl = fake_bin / "curl"
-    fake_curl.write_text(
-        """#!/usr/bin/env bash
-set -Eeuo pipefail
-output=""; url=""
-while (( $# > 0 )); do case "$1" in --output) output="$2"; shift 2 ;; *) url="$1"; shift ;; esac; done
-path="${url#https://www.data-pulse.my/}"
-[[ "$path" == .well-known/* ]] && path="docs/$path"
-[[ "$path" != "$url" && -f "${MOCK_SERVED_ROOT:?}/$path" ]] || exit 22
-mkdir -p "$(dirname "$output")"; cp "${MOCK_SERVED_ROOT:?}/$path" "$output"
-""",
-        encoding="utf-8",
-    )
-    fake_curl.chmod(0o755)
-    runner_temp = tmp_path / f"runner-temp-{label}"
-    environment = os.environ.copy()
-    environment.update(
-        PATH=f"{fake_bin}:{environment['PATH']}",
-        MOCK_SERVED_ROOT=str(served_root),
-        RUNNER_TEMP=str(runner_temp),
-    )
-    completed = subprocess.run(
-        ["bash", "-c", _fast_path_preservation_script()],
-        cwd=checkout,
-        env=environment,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return completed, runner_temp / "preserved-attestations"
-
-
-def test_cloudflare_fast_path_preserves_corrected_plane(tmp_path: Path) -> None:
-    """A health-only artifact preserves a served plane carrying a same-day correction."""
-    served_root, key = fixture_root(tmp_path / "served")
+def test_cloudflare_fast_path_selects_correction_and_refuses_corruption(tmp_path: Path) -> None:
+    source, key = fixture_root(tmp_path / "accepted")
     now = datetime.now(timezone.utc).replace(microsecond=0)
     day = now.date().isoformat()
-    original_at = now - timedelta(seconds=2)
-    corrected_at = now - timedelta(seconds=1)
-    health = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
-    health["checked_at"] = original_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+    health = json.loads((source / "health/latest.json").read_bytes())
+    health["checked_at"] = (now - timedelta(seconds=2)).isoformat().replace("+00:00", "Z")
     health["datasets"][0]["last_checked"] = health["checked_at"]
-    write(served_root / "health/latest.json", health)
-    ga.generate(served_root, key, original_at, fixture_rekor_reference(served_root, f"rekor/{day}"))
-
-    # A same-day correction changes the health bytes; the generator appends a
-    # content-addressed revision under attestations/<day>/revisions/<id>/.
-    corrected = json.loads((served_root / "health/latest.json").read_text(encoding="utf-8"))
-    corrected["datasets"][0]["status"] = "stale"
-    write(served_root / "health/latest.json", corrected)
-    ga.generate(
-        served_root,
-        key,
-        corrected_at,
-        fixture_rekor_reference(served_root, f"rekor/{day}/correction"),
-    )
-
-    index = json.loads((served_root / "attestations/latest/index.json").read_text(encoding="utf-8"))
+    write(source / "health/latest.json", health)
+    reference = fixture_rekor_reference(source, f"rekor/{day}")
+    ga.generate(source, key, now - timedelta(seconds=2), reference)
+    health["datasets"][0]["status"] = "stale"
+    write(source / "health/latest.json", health)
+    ga.generate(source, key, now - timedelta(seconds=1),
+                fixture_rekor_reference(source, f"rekor/{day}/correction"))
+    result, selected = _select_plane(tmp_path, source, label="corrected")
+    assert result.returncode == 0, result.stdout + result.stderr
+    index = json.loads((source / "attestations/latest/index.json").read_bytes())
+    revision = Path(index["chain_head_ref"]).parent
     assert "/revisions/" in index["chain_head_ref"]
-    assert verify_contract(served_root, now=corrected_at + timedelta(hours=1))["claims"]["artifact_signed"] is True
-    revision = (served_root / index["chain_head_ref"]).parent.relative_to(served_root)
-
-    completed, preserved = _preserve_served_plane(tmp_path, served_root, label="corrected")
-    assert completed.returncode == 0, completed.stderr
-    assert (preserved / "attestations/latest/binding.json").read_bytes() == (
-        served_root / "attestations/latest/binding.json"
-    ).read_bytes()
-    assert (preserved / revision / "chain_head.json").read_bytes() == (
-        served_root / revision / "chain_head.json"
-    ).read_bytes()
-    assert (preserved / revision / "health.json.gz").read_bytes() == (
-        served_root / revision / "health.json.gz"
-    ).read_bytes()
-    assert (preserved / f"attestations/rekor/{day}/reference.json").read_bytes() == (
-        served_root / f"attestations/rekor/{day}/reference.json"
-    ).read_bytes()
-
-    # A genuinely corrupt correction must still fail closed, not be preserved.
-    corrupt_root = tmp_path / "corrupt"
-    shutil.copytree(served_root, corrupt_root)
-    (corrupt_root / revision / "health.json.gz").write_bytes(b"{}\n")
-    corrupt, _ = _preserve_served_plane(tmp_path, corrupt_root, label="corrupt")
-    assert corrupt.returncode != 0
-    assert "refusing to preserve the served plane" in corrupt.stdout
+    assert (selected / revision / "health.json.gz").read_bytes() == (source / revision / "health.json.gz").read_bytes()
+    (source / revision / "health.json.gz").write_bytes(b"{}")
+    refused, _ = _select_plane(tmp_path, source, label="corrupt")
+    assert refused.returncode != 0
+    assert "REFUSED" in refused.stdout + refused.stderr
 
 
-def test_cloudflare_fast_path_uses_p6_classifier_and_carries_fail_closed_plane() -> None:
-    script = _fast_path_preservation_script()
-
-    assert 'attestation_plane_state="$(python3 scripts/verify_attestation_plane_state.py --planedir "$preserved_root")"' in script
-    assert "Signer lane down (P6); attestation failed-closed" in script
-    assert "preserving it unchanged" in script
-    assert "Run a full release-build deployment to heal the public trust plane." in script
-
-
-def test_cloudflare_fast_path_refuses_inconsistent_served_plane() -> None:
-    script = _fast_path_preservation_script()
-
-    assert 'fail "served health/binding plane is inconsistent; Run a full release-build deployment to heal the public trust plane."' in script
-    assert 'python3 scripts/verify_attestation_binding.py --root "$preserved_root"' in script
-
-
-def test_cloudflare_fast_path_overwrites_checkout_attestations_after_broad_copies() -> None:
+def test_cloudflare_fast_path_keeps_classifier_scoped_degradation() -> None:
     workflow = _read(DEPLOY_WORKFLOW)
+    assert "signer_down is permitted only for classifier-scoped health-only publication" in workflow
+    assert "Health-only publication retains the selected accepted Ed25519 report" in workflow
+    assert "preserved-attestations" not in workflow
 
+
+def test_cloudflare_fast_path_requires_verified_binding_before_assembly() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
+    bind = workflow.index("Bind built dashboard to accepted sign-time trust plane")
+    assert bind < workflow.index("Assemble canonical Pages artifact")
+    run = next(step["run"] for step in yaml.safe_load(workflow)["jobs"]["deploy"]["steps"]
+               if step.get("name") == "Bind built dashboard to accepted sign-time trust plane")
+    assert run.index('cp -R "$publication/attestations"') < run.index("verify_attestation_binding.py")
+    assert run.index("verify_attestation_binding.py") < run.index("embed_dashboard_data.py")
+
+
+def test_cloudflare_fast_path_overwrites_checkout_attestations_before_broad_copies() -> None:
+    workflow = _read(DEPLOY_WORKFLOW)
     assert "cp -R health deltas record-evidence badges samples data _site/" in workflow
-    assert "if [ -d observation-receipts ]; then cp -R observation-receipts _site/; fi" in workflow
-    assert "cp -R attestations _site/" in workflow
-    assert "rm -rf _site/attestations" in workflow
-    assert 'cp -R "$RUNNER_TEMP/preserved-attestations/attestations" _site/' in workflow
-    assert "rm -f _site/attestations/latest/binding.json" in workflow
-    assert workflow.index("Preserve served attestation plane (health-only path)") < workflow.index("Assemble canonical Pages artifact")
+    bind = workflow.index("Bind built dashboard to accepted sign-time trust plane")
+    assert bind < workflow.index("Assemble canonical Pages artifact")
+    assert 'cp -R "$publication/attestations" "$publication/.attestations" .' in workflow
+    assert 'cp -R "$RUNNER_TEMP/sigstore-publication/attestations" _site/' in workflow
 
 
 def test_cloudflare_fast_path_overwrites_checkout_release_proof_after_docs_copy() -> None:
     workflow = _read(DEPLOY_WORKFLOW)
-    proof_step = workflow.split("      - name: Preserve served release proof (health-only path)\n", 1)[1].split("      - name: Preserve served attestation plane (health-only path)\n", 1)[0]
+    proof_step = workflow.split("      - name: Preserve served release proof (health-only path)\n", 1)[1].split("      - name: Download accepted report and optional Sigstore bundle\n", 1)[0]
     assembly = workflow.split("      - name: Assemble canonical Pages artifact\n", 1)[1].split("      - name: Deploy canonical Cloudflare Pages artifact\n", 1)[0]
 
     assert '"${website_origin}/release-verification.md" --output "$preserved_proof"' in proof_step
@@ -721,7 +595,8 @@ def test_cloudflare_full_release_keeps_fresh_cryptographic_verification() -> Non
 
     assert "python3 scripts/verify_release_reproducible.py" in release_step
     assert "--verify-proof docs/release-verification.md" in release_step
-    assert "bash scripts/verify_release_invariants.sh --local" in release_step
+    assert "verify_release_artifact.py verify" in release_step
+    assert "bash scripts/verify_release_invariants.sh --local" in _read(DEPLOY_WORKFLOW)
 
 
 def test_cloudflare_workflow_retains_dynamic_public_artifact_contracts() -> None:

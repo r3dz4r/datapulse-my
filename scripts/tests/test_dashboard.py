@@ -405,15 +405,19 @@ def test_register_labels_the_canonical_ten_status_taxonomy() -> None:
 
 def test_release_build_generates_and_embeds_dashboard_data_before_deploy() -> None:
     generate = (ROOT / "scripts/generate.sh").read_text(encoding="utf-8")
-    workflow = (ROOT / ".github/workflows/deploy-cloudflare-pages.yml").read_text(encoding="utf-8")
+    build_workflow = (ROOT / ".github/workflows" / ("publish-" + "publication.yml")).read_text(encoding="utf-8")
+    deploy_workflow = (ROOT / ".github/workflows/deploy-cloudflare-pages.yml").read_text(encoding="utf-8")
 
     sections = generate.index('"gen_dashboard_sections.py"')
     filters = generate.index('"gen_dashboard_filters.py"')
     injector = generate.index('"embed_dashboard_data.py"')
     assert sections < injector
     assert filters < injector
-    assert "bash scripts/generate.sh release-build" in workflow
-    assert "Inject embedded data" not in workflow
+    assert "bash scripts/generate.sh release-build" in build_workflow
+    assert "bash scripts/generate.sh release-build" not in deploy_workflow
+    assert "actions/download-artifact@" in deploy_workflow
+    assert "python3 scripts/verify_release_artifact.py verify" in deploy_workflow
+    assert "Inject embedded data" not in deploy_workflow
 
 
 def test_dashboard_markers_and_retained_npra_template_are_owned() -> None:

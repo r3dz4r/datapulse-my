@@ -27,12 +27,14 @@ contacted.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from datetime import datetime, timedelta, timezone
 
 import pytest
 import yaml
@@ -45,7 +47,7 @@ SERVED_VERIFIER = ROOT / "scripts/verify_served_release.sh"
 PUBLIC_SURFACES = ROOT / "config/public-surfaces.json"
 
 BASE_URL = "https://preview.example.test"
-SOURCE_COMMIT = "abc1234def5678"
+SOURCE_COMMIT = "a" * 40
 HEALTH_CHECKED_AT = "2026-10-01T00:00:00Z"
 STALE_SERVED_CHECKED_AT = "2025-01-01T00:00:00Z"
 STALER_PROJECTION_CHECKED_AT = "2024-01-01T00:00:00Z"
@@ -373,6 +375,7 @@ def _run_verifier(
     environment["FIXTURE_SERVED_ROOT"] = str(served)
     environment["FIXTURE_SLEEP_LOG"] = str(tmp_path / "sleep.log")
     environment["TMPDIR"] = str(tmpdir)
+    environment["RUNNER_TEMP"] = str(root / "runner")
     command = [
         "bash",
         "scripts/verify_served_release.sh",
@@ -528,7 +531,7 @@ def test_default_still_fails_on_a_stale_served_health_snapshot(tmp_path: Path) -
     combined = result.stdout + result.stderr
 
     assert result.returncode != 0
-    assert "served health snapshot is older than the assembled snapshot" in combined
+    assert "served health digest differs from the accepted report bytes" in combined
     assert "published by another lane on its own cadence" not in combined
 
 
@@ -542,7 +545,7 @@ def test_environment_cannot_enable_kv_surface_exclusion(tmp_path: Path, monkeypa
     combined = result.stdout + result.stderr
 
     assert result.returncode != 0
-    assert "served health snapshot is older than the assembled snapshot" in combined
+    assert "served health digest differs from the accepted report bytes" in combined
     assert "published by another lane on its own cadence" not in combined
 
 
@@ -564,8 +567,7 @@ def test_option_skips_the_kv_backed_surfaces_and_names_them(tmp_path: Path) -> N
     # One loud line, naming every excluded surface and the reason.
     assert len(notices) == 1
     assert "/health/latest.json" in notices[0]
-    assert "dataset-count" in notices[0]
-    assert "release-proof health" in notices[0]
+    assert "accepted report digest and signed age checks remain mandatory" in notices[0]
     assert "/health/index.json" in notices[0]
     # The static surfaces were still fetched and compared under the option.
     assert "served surface=dataset register" in result.stdout
@@ -723,3 +725,82 @@ def test_production_deploy_workflow_does_not_pass_the_exclusion() -> None:
 
     assert "bash scripts/verify_served_release.sh" in workflow
     assert KV_EXCLUSION_FLAG not in workflow
+
+
+def _stage_accepted_fixture(tmp_path: Path, *, age_hours: int = 2) -> tuple[Path, Path, Path, Path]:
+    """An accepted observation predates a newer, differently sized code build."""
+    from scripts.gen_attestations import health_binding
+    from scripts.verify_release_artifact import create_manifest
+
+    root, built, served = _stage_fixture(tmp_path)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    observed = (now - timedelta(hours=age_hours)).isoformat()
+    health = {"checked_at": observed, "datasets": [{"dataset_id": "alpha"}, {"dataset_id": "beta"}]}
+    for directory in (built, served):
+        _write(directory / "health/latest.json", json.dumps(health))
+    _write(served / "health/index.json", json.dumps(health))
+    head = "b" * 64
+    payload = {"health": health_binding(built, health), "published_at": (now - timedelta(hours=1)).isoformat(),
+               "freshness": {"max_age_seconds": 129600}, "ed25519": {"chain_head": head}}
+    binding = {"schema": "datapulse/v1/attestation-binding-envelope", "payload": payload}
+    identity = {"accepted_main_commit": SOURCE_COMMIT, "accepted_chain_head": head,
+                "health_sha256": payload["health"]["artifact_sha256"], "dataset_count": 2,
+                "observed_at": observed, "published_at": payload["published_at"], "max_age_seconds": 129600}
+    publication = root / "runner/sigstore-publication"
+    for directory in (built, served, publication):
+        _write(directory / "publication-identity.json", json.dumps(identity))
+        _write(directory / "attestations/latest/binding.json", json.dumps(binding))
+    # A code build's health clock/count describe its own inputs, not this report.
+    proof = _proof(1, 99, SOURCE_COMMIT).replace(HEALTH_CHECKED_AT, now.isoformat())
+    _write(root / "docs/release-verification.md", proof)
+    _write(served / "release-verification.md", proof)
+    for name in ("select_accepted_health.py", "verify_release_artifact.py"):
+        shutil.copy2(ROOT / "scripts" / name, root / "scripts" / name)
+    create_manifest(built, root / "runner/release-artifact-manifest.json", SOURCE_COMMIT)
+    return root, built, served, publication
+
+
+def test_accepted_report_passes_newer_build_proof_and_uses_report_count(tmp_path: Path) -> None:
+    root, built, served, publication = _stage_accepted_fixture(tmp_path)
+    result = _run_verifier(tmp_path, root, built, served, publication=publication)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert 'Report age:' in result.stdout
+    assert '"report_age_status": "current"' in result.stdout
+
+
+@pytest.mark.parametrize("damage,refusal", [
+    ("health", "served health digest differs from the accepted report bytes"),
+    ("age", "accepted report exceeds 36-hour signed policy"),
+    ("code", "release proof drift:"),
+    ("manifest", "source commit mismatch"),
+    ("inventory", "accepted publication build identity drift"),
+])
+def test_accepted_report_mutations_refuse_publication(tmp_path: Path, damage: str, refusal: str) -> None:
+    root, built, served, publication = _stage_accepted_fixture(tmp_path, age_hours=37 if damage == "age" else 2)
+    if damage == "health":
+        path = served / "health/latest.json"
+        health = json.loads(path.read_bytes())
+        health["datasets"][0]["status"] = "stale"  # Same clock and membership; different bytes.
+        _write(path, json.dumps(health))
+    elif damage == "code":
+        for path in (root / "docs/release-verification.md", served / "release-verification.md"):
+            _write(path, path.read_text().replace(SOURCE_COMMIT, "c" * 40))
+    elif damage == "manifest":
+        path = root / "runner/release-artifact-manifest.json"
+        manifest = json.loads(path.read_bytes())
+        manifest["source_commit"] = "c" * 40
+        _write(path, json.dumps(manifest))
+    elif damage == "inventory":
+        (built / "okf/index.md").write_text("tampered build")
+    result = _run_verifier(tmp_path, root, built, served, publication=publication)
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert refusal in result.stdout + result.stderr
+
+
+def test_existing_kv_option_cannot_bypass_accepted_report_digest(tmp_path: Path) -> None:
+    root, built, served, publication = _stage_accepted_fixture(tmp_path)
+    _stale_served_health(served)
+    result = _run_verifier(tmp_path, root, built, served, publication=publication,
+                           kv_surfaces_published_elsewhere=True)
+    assert result.returncode != 0
+    assert "served health digest differs from the accepted report bytes" in result.stderr
