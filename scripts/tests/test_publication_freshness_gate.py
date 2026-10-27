@@ -2,11 +2,13 @@
 """Production age must remain visible even when publication is skipped."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 import yaml
@@ -124,3 +126,103 @@ def test_workflow_api_verdict_mapping(
     assert f"{verdict}: production deployment age " in result.stdout
     assert f"Deployment age (24h policy): {verdict}:" in (tmp_path / "summary").read_text()
     assert ("::warning" in result.stdout) == (verdict == "unknown")
+
+
+@pytest.mark.parametrize(
+    "identity_status, age_hours, expected_code, expected_state",
+    [
+        ("404", 1, 0, "first accepted publication"),
+        ("200", 1, 0, "current"),
+        ("200", 37, 1, "expired"),
+        ("503", 1, 1, "error"),
+        ("transport", 1, 1, "error"),
+        ("malformed", 1, 1, "error"),
+    ],
+)
+def test_served_report_freshness_step(
+    tmp_path: Path, identity_status: str, age_hours: int,
+    expected_code: int, expected_state: str,
+) -> None:
+    step = next(s for s in _freshness_job()["steps"]
+                if s.get("name") == "Measure canonical production report age")
+    assert "--write-out" in step["run"] and ' -o "$report/identity.json"' in step["run"]
+    report_time = (datetime.fromisoformat(NOW.replace("Z", "+00:00"))
+                   - timedelta(hours=age_hours)).isoformat().replace("+00:00", "Z")
+    health = {"checked_at": report_time, "datasets": [{"dataset_id": "fixture"}]}
+    health_bytes = json.dumps(health).encode()
+    (tmp_path / "health.json").write_bytes(health_bytes)
+    published = report_time
+    binding = {"payload": {
+        "health": {"artifact_ref": "health/latest.json",
+                   "artifact_sha256": hashlib.sha256(health_bytes).hexdigest(),
+                   "dataset_count": 1,
+                   "dataset_ids_sha256": hashlib.sha256(
+                       json.dumps(["fixture"], ensure_ascii=False, sort_keys=True,
+                                  separators=(",", ":")).encode()).hexdigest(),
+                   "observed_at": report_time},
+        "published_at": published,
+        "freshness": {"max_age_seconds": 129600},
+        "ed25519": {"chain_head": "a" * 64},
+    }}
+    (tmp_path / "binding.json").write_text(json.dumps(binding))
+    (tmp_path / "identity.json").write_text(json.dumps({
+        "health_snapshot_ref": "attestations/2026-10-18/health.json",
+        "health_sha256": hashlib.sha256(health_bytes).hexdigest(),
+        "accepted_chain_head": "a" * 64,
+        "observed_at": report_time,
+        "published_at": published,
+    }))
+    (tmp_path / "malformed.json").write_text("{invalid json")
+    bin_path = tmp_path / "bin"
+    bin_path.mkdir()
+    curl = bin_path / "curl"
+    curl.write_text('''#!/bin/bash
+url=""; output=""
+while (($#)); do
+  case "$1" in
+    --output|-o) output="$2"; shift 2 ;;
+    https://*) url="$1"; shift ;;
+    *) shift ;;
+  esac
+done
+printf '%s\\n' "$url" >> "$REQUEST_LOG"
+case "$url" in
+  */publication-identity.json)
+    if [[ "$IDENTITY_STATUS" == 200 ]]; then cp "$FIXTURE/identity.json" "$output"; fi
+    if [[ "$IDENTITY_STATUS" == malformed ]]; then cp "$FIXTURE/malformed.json" "$output"; printf 200; exit; fi
+    if [[ "$IDENTITY_STATUS" == transport ]]; then printf 000; exit 7; fi
+    printf '%s' "$IDENTITY_STATUS" ;;
+  */binding.json) cp "$FIXTURE/binding.json" "$output" ;;
+  */health.json) cp "$FIXTURE/health.json" "$output" ;;
+  *) exit 99 ;;
+esac
+''')
+    curl.chmod(0o755)
+    runner = tmp_path / "runner"
+    runner.mkdir()
+    env = {**os.environ, "PATH": f"{bin_path}:{os.environ['PATH']}",
+           "FIXTURE": str(tmp_path), "IDENTITY_STATUS": identity_status,
+           "REQUEST_LOG": str(tmp_path / "requests"), "RUNNER_TEMP": str(runner),
+           "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
+    command = step["run"].replace("scripts/select_accepted_health.py",
+                                   f"scripts/select_accepted_health.py --now {NOW}")
+    result = subprocess.run(["bash", "-c", command], cwd=ROOT, env=env,
+                            text=True, capture_output=True, check=False)
+    if expected_code:
+        assert result.returncode != 0, result.stdout + result.stderr
+    else:
+        assert result.returncode == 0, result.stdout + result.stderr
+    requests = (tmp_path / "requests").read_text().splitlines()
+    if identity_status == "404":
+        assert "first accepted publication" in result.stdout
+        assert "first accepted publication" in (tmp_path / "summary").read_text()
+        assert len(requests) == 1
+        assert "Report age:" not in result.stdout
+    elif identity_status == "200":
+        assert expected_state in result.stdout
+        assert f'"observation_age_seconds": {age_hours * 3600}.0' in result.stdout
+        assert "Report age:" in (tmp_path / "summary").read_text()
+        assert len(requests) == 3
+    else:
+        assert "first accepted publication" not in result.stdout
+        assert len(requests) == 1
