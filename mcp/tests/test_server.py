@@ -1540,8 +1540,13 @@ async def test_find_stale_matches_live_health(live_data: tuple[dict, dict]) -> N
         item["id"]
         for item in manifest["datasets"]
         if item["id"] not in health_by_id
-        or health_by_id[item["id"]].get("status") in {"aging", "stale", "degraded"}
-        or snapshot_age > 24 * 3600
+        or (
+            health_by_id[item["id"]].get("status") != "reference"
+            and (
+                health_by_id[item["id"]].get("status") in {"aging", "stale", "degraded"}
+                or snapshot_age > 24 * 3600
+            )
+        )
     }
 
     async with Client(server.mcp) as client:
