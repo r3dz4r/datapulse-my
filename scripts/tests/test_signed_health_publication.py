@@ -393,6 +393,67 @@ def test_existing_unsigned_publisher_cannot_target_verified_layout() -> None:
     assert all(not ("health/" + name).startswith(shp.PREFIX) for name in HEALTH_ARTIFACTS)
 
 
+@pytest.mark.parametrize("route,handler,kv_key", [
+    ("/health/latest.json", "[[path]].js", "health/latest.json"),
+    ("/health/index.json", "index.json.js", "health-index.json"),
+])
+def test_canonical_report_precedence_and_kv_only_fallback(
+    material: dict[str, Any], route: str, handler: str, kv_key: str,
+) -> None:
+    accepted = material["raw"]
+    newer_kv = accepted.replace(b"00:00:00Z", b"00:00:30Z")
+    assert newer_kv != accepted
+    harness = r'''
+import {readFileSync} from "node:fs";
+const input = JSON.parse(readFileSync(0, "utf8"));
+const {onRequest} = await import(input.handler);
+const accepted = Buffer.from(input.accepted, "base64");
+const newer = Buffer.from(input.newer, "base64");
+const assetPaths = [], kvKeys = [];
+let staticAvailable = true;
+const context = {request: new Request(`https://fixture.invalid${input.route}`), env: {
+  ASSETS: {fetch: async request => {
+    assetPaths.push(new URL(request instanceof Request ? request.url : request).pathname);
+    return staticAvailable
+      ? new Response(accepted, {headers: {"Content-Type": "application/json"}})
+      : new Response("Not found", {status: 404});
+  }},
+  DATAPULSE_HEALTH_INDEX: {get: async (key, type) => {
+    kvKeys.push([key, type]);
+    return newer.buffer.slice(newer.byteOffset, newer.byteOffset + newer.byteLength);
+  }},
+}};
+const served = await onRequest(context);
+const first = {status: served.status, contentType: served.headers.get("Content-Type"),
+  cacheControl: served.headers.get("Cache-Control"), body: Buffer.from(await served.arrayBuffer()).toString("base64")};
+staticAvailable = false;
+const fallback = await onRequest(context);
+const second = {status: fallback.status, contentType: fallback.headers.get("Content-Type"),
+  cacheControl: fallback.headers.get("Cache-Control"), body: Buffer.from(await fallback.arrayBuffer()).toString("base64")};
+process.stdout.write(JSON.stringify({first, second, assetPaths, kvKeys}));
+'''
+    data = {
+        "handler": (ROOT / "functions/health" / handler).as_uri(),
+        "route": route,
+        "accepted": shp.b64(accepted),
+        "newer": shp.b64(newer_kv),
+    }
+    result = subprocess.run(
+        ["node", "--experimental-default-type=module", "--input-type=module", "-e", harness],
+        input=shp.canonical(data), capture_output=True, timeout=20,
+    )
+    assert result.returncode == 0, result.stderr
+    output = json.loads(result.stdout)
+    assert output["first"]["status"] == output["second"]["status"] == 200
+    assert output["first"]["body"] == shp.b64(accepted)
+    assert output["second"]["body"] == shp.b64(newer_kv)
+    assert output["assetPaths"] == ["/health/latest.json", "/health/latest.json"]
+    assert output["kvKeys"] == [[kv_key, "arrayBuffer"]]
+    for response in (output["first"], output["second"]):
+        assert response["contentType"] == "application/json"
+        assert response["cacheControl"] == "public, max-age=300, stale-while-revalidate=60"
+
+
 def test_freshness_boundaries_and_fractional_timestamps(material: dict[str, Any]) -> None:
     assert verify(material, now="2026-10-02T12:00:00Z")["age_seconds"] == shp.MAX_AGE_SECONDS
     assert_rejected(material, material["package"], now="2026-10-02T12:00:00.001Z")

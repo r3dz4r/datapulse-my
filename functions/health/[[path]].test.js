@@ -8,11 +8,11 @@ const request = (path, binding, assets) => onRequest({
   env: { DATAPULSE_HEALTH_INDEX: binding, ASSETS: assets },
 });
 
-test("health artifact returns exact KV bytes by URL-mirrored key", async () => {
+test("other health artifact returns exact KV bytes by URL-mirrored key", async () => {
   const expected = new TextEncoder().encode('{"datasets":[]}').buffer;
-  const response = await request("/health/latest.json", {
+  const response = await request("/health/drift.json", {
     get: async (key, type) => {
-      assert.equal(key, "health/latest.json");
+      assert.equal(key, "health/drift.json");
       assert.equal(type, "arrayBuffer");
       return expected;
     },
@@ -22,6 +22,46 @@ test("health artifact returns exact KV bytes by URL-mirrored key", async () => {
   assert.equal(response.headers.get("Content-Type"), "application/json");
   assert.equal(response.headers.get("Cache-Control"), "public, max-age=300, stale-while-revalidate=60");
   assert.deepEqual(await response.arrayBuffer(), expected);
+});
+
+test("latest returns accepted static bytes ahead of newer KV", async () => {
+  const accepted = '{"checked_at":"accepted"}';
+  const response = await request("/health/latest.json", {
+    get: async () => { throw new Error("KV must not be read"); },
+  }, {
+    fetch: async request => {
+      assert.equal(new URL(request.url).pathname, "/health/latest.json");
+      return new Response(accepted);
+    },
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Content-Type"), "application/json");
+  assert.equal(response.headers.get("Cache-Control"), "public, max-age=300, stale-while-revalidate=60");
+  assert.equal(await response.text(), accepted);
+});
+
+test("latest falls back to KV when the static asset is absent", async () => {
+  const expected = '{"checked_at":"kv"}';
+  const response = await request("/health/latest.json", {
+    get: async key => {
+      assert.equal(key, "health/latest.json");
+      return new TextEncoder().encode(expected).buffer;
+    },
+  }, { fetch: async () => new Response("Not found", { status: 404 }) });
+
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), expected);
+});
+
+test("latest returns unavailable when static and KV are absent", async () => {
+  const response = await request("/health/latest.json", { get: async () => null }, {
+    fetch: async () => new Response("Not found", { status: 404 }),
+  });
+
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+  assert.equal(await response.text(), '{"error":"health index unavailable"}');
 });
 
 test("missing KV value falls back to the matching static asset", async () => {
