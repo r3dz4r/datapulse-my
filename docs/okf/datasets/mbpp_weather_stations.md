@@ -8,7 +8,7 @@ sources:
   - {"id": "mbpp","resource": "https://vip.mbpp.gov.my/vipserver/rest/services/Weather_Station/FeatureServer/50","title": "Majlis Bandaraya Pulau Pinang (MBPP)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-06T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-28T15:21:35Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-26T14:33:51Z"}
 status: "stable"
 datapulse:licence: "MBPP Government Open Data Terms (attribution required)"
 datapulse:attribution: "Majlis Bandaraya Pulau Pinang (MBPP), Government Open Data Terms: https://www.mbpp.gov.my/en/terma-penggunaan-data-terbuka"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/mbpp_weather_stations.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 28
-stale_after: "2026-10-30T03:18:26Z"
+stale_after: "2026-10-28T02:31:26Z"
 datapulse:stale_after_basis: "cadence"
 ---
 

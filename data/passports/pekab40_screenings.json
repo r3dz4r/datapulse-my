@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 22.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-27T23:19:59Z",
-    "record_count": 2732,
+    "last_checked": "2026-10-28T16:22:34Z",
+    "record_count": 2753,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:5dd3fbce4794ce4cbc3d09f1a4d5a9240b5c9fe0b491944d6e225a949ea644a6"
     },
-    "status": "stale"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=pekab40_screenings",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily PeKaB40 Health Screenings",
     "namespace": "healthcare",
-    "observed_verified_at": "2026-10-27T23:19:59Z",
+    "observed_verified_at": "2026-10-28T16:22:34Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "ProtectHealth Corporation and Ministry of Health Malaysia"
   },
@@ -846,7 +846,7 @@
     "receipt": {
       "evidence_path": "data/pekab40_screenings.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:3e83a41d5c1a7590c4ce9e6c891a84c8219dad831c5964c61274be2f7cfad3c4",
+      "receipt_digest": "sha256:a24cf1bb3a52aaf590e9ad44bef53f1d8d8c38092e23f04b91e0f734f73d2162",
       "sigstore_path": "data/pekab40_screenings.receipt.sigstore.json",
       "statement_path": "data/pekab40_screenings.receipt.statement.json"
     },

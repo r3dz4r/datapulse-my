@@ -8,7 +8,7 @@ sources:
   - {"id": "kkm","resource": "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pekab40_01_timeseries.parquet","title": "Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-27T23:19:59Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-25T22:41:25Z"}
 status: "stable"
 datapulse:licence: "MIT License"
 datapulse:attribution: "Source: Ministry of Health Malaysia (Kementerian Kesihatan Malaysia)"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/kkmnow_pekab40.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-10-27T12:00:00Z"
+stale_after: "2026-10-25T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -26,7 +26,7 @@ KKMNOW PeKa B40 Daily Health Screenings by State is published by Ministry of Hea
 
 # Schema
 
-- `record_count`: `1228`
+- `record_count`: `1233`
 
 # Quirks
 
