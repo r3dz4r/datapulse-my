@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.59.3](https://github.com/r3dz4r/datapulse-my/compare/v3.59.2...v3.59.3) (2026-10-29)
+
+
+### Bug Fixes
+
+* bound daily-history KV publication to 4 MiB ([#2822](https://github.com/r3dz4r/datapulse-my/issues/2822)) ([9b4f986](https://github.com/r3dz4r/datapulse-my/commit/9b4f9864ad0112fef4e420abd479af8de59d346b))
+* **deploy:** sign main's accepted chain head without an append wait ([#2823](https://github.com/r3dz4r/datapulse-my/issues/2823)) ([e2ca513](https://github.com/r3dz4r/datapulse-my/commit/e2ca513168dffb95ff107237bd669f0a46840976))
+* **health:** serve accepted report on canonical routes ([#2807](https://github.com/r3dz4r/datapulse-my/issues/2807)) ([32b2aae](https://github.com/r3dz4r/datapulse-my/commit/32b2aae9016e748fafb5287895898a09cb76a515))
+
 ## [3.59.2](https://github.com/r3dz4r/datapulse-my/compare/v3.59.1...v3.59.2) (2026-10-28)
 
 
