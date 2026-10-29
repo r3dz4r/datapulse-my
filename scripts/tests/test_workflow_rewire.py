@@ -198,8 +198,13 @@ def test_systemd_unit_emits_lock_skip_telemetry() -> None:
     if not CANONICAL_SYSTEMD_UNIT.exists():
         pytest.skip(f"dotfiles not co-located: {CANONICAL_SYSTEMD_UNIT}")
     unit = _read(CANONICAL_SYSTEMD_UNIT)
-    assert "--status skipped" in unit
-    assert "lock_busy" in unit
+    pipeline = _read(CANONICAL_PIPELINE)
+
+    assert "--produce" in unit
+    assert re.search(
+        r"telemetry\s+lock\s+0\s+skipped\s+'\{\"reason\":\"lock_busy\"\}'",
+        pipeline,
+    )
 
 
 def test_cloudflare_workflow_uses_release_build_and_declared_inputs() -> None:

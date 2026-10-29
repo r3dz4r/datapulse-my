@@ -286,6 +286,9 @@ excluded_health_paths=(/health/latest.json /health/index.json)
 declare -A excluded_health_seen=([/health/latest.json]=1 [/health/index.json]=1)
 for path in "${pages[@]}" "${artifacts[@]}"; do
   [[ "$path" == / || "$path" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "unsafe declared public path: $path"
+  # Resolve collections before excluding the path we would fetch. Declared
+  # health collections remain excludable even when absent from the local site.
+  if [[ "$path" == */ && ( "$kv_surfaces_published_elsewhere" != true || "$path" != /health/* ) ]]; then declared_file="$(find "$site_dir${path}" -type f -print -quit)" || fail "declared collection is missing: $path"; [[ -n "$declared_file" ]] || fail "declared collection is empty: $path"; path="/${declared_file#"$site_dir/"}"; fi
   # A preview does not own the served /health/ namespace, including paths
   # added to the declaration after this verifier was written.
   if [[ "$kv_surfaces_published_elsewhere" == true && "$path" == /health/* ]]; then
@@ -295,7 +298,6 @@ for path in "${pages[@]}" "${artifacts[@]}"; do
     fi
     continue
   fi
-  if [[ "$path" == */ ]]; then declared_file="$(find "$site_dir${path}" -type f -print -quit)" || fail "declared collection is missing: $path"; [[ -n "$declared_file" ]] || fail "declared collection is empty: $path"; path="/${declared_file#"$site_dir/"}"; fi
   fetch "declared public surface $path" "$base_url$path" "$smoke_dir/surfaces${path%/}/index"
   verify_declared_surface_content "$path" "$smoke_dir/surfaces${path%/}/index"
 done
