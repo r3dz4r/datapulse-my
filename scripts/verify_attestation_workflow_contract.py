@@ -152,6 +152,24 @@ def _require_pages_boundaries(workflow: str) -> None:
                 '[[ "$(git rev-parse HEAD)" == "$PROMOTION_SOURCE_SHA" ]]',
             ):
                 _require(match.group(1), "Pages workflow sign_health", fragment)
+            signing = match.group(1)
+            _require(signing, "Pages workflow sign_health", "if ! cosign attest-blob")
+            before_cosign = signing.split("if ! cosign attest-blob", 1)[0]
+            for fragment in (
+                'accepted = accepted_discovery(root, revision)',
+                'revision = os.environ["PROMOTION_SOURCE_SHA"]',
+                'head = accepted.get("current_head")',
+                'if not head or head not in accepted["heads"]:',
+                'if statement != expected or statement["predicate"]["legacyEd25519"]["chainHead"] != head:',
+                'binding_ref = accepted["envelopes"][head]["binding_ref"]',
+                'binding = json.loads(subprocess.check_output(["git", "show", f"{revision}:{binding_ref}"]))["payload"]',
+                'if (binding["ed25519"]["chain_head"] != head',
+                'or statement["subject"][0]["digest"]["sha256"] != binding["health"]["artifact_sha256"]):',
+                'raise SystemExit("Main has no accepted chain head")',
+                'raise SystemExit("Signing statement differs from main\'s accepted chain head or inputs")',
+                'raise SystemExit("Health binding differs from main\'s accepted chain head")',
+            ):
+                _require(before_cosign, "Pages workflow pre-sign acceptance guard", fragment)
 
 
 def verify_workflows(daily_path: Path, pages_path: Path) -> None:

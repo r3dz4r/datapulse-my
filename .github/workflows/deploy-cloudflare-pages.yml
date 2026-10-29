@@ -311,6 +311,35 @@ jobs:
           publication="$RUNNER_TEMP/sigstore-publication"
           mkdir -p "$publication"
           bundle_tmp="$publication/.health.latest.sigstore.json.tmp"
+          # Reject changed signing inputs before an outage can become signer_down.
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+
+          from scripts.gen_sigstore_bundle import generate_statement
+          from scripts.verify_attestation_append import accepted_discovery
+
+          root = Path(".")
+          revision = os.environ["PROMOTION_SOURCE_SHA"]
+          accepted = accepted_discovery(root, revision)
+          head = accepted.get("current_head")
+          if not head or head not in accepted["heads"]:
+              raise SystemExit("Main has no accepted chain head")
+          statement = json.loads((Path(os.environ["RUNNER_TEMP"]) / "health.latest.statement.json").read_bytes())
+          expected = generate_statement(root / "health/latest.json", root / "datapulse.json",
+                                        root / ".attestations/chain_head.json", revision)
+          if statement != expected or statement["predicate"]["legacyEd25519"]["chainHead"] != head:
+              raise SystemExit("Signing statement differs from main's accepted chain head or inputs")
+          binding_ref = accepted["envelopes"][head]["binding_ref"]
+          binding = json.loads(subprocess.check_output(["git", "show", f"{revision}:{binding_ref}"]))["payload"]
+          if (binding["ed25519"]["chain_head"] != head
+                  or statement["subject"][0]["digest"]["sha256"] != binding["health"]["artifact_sha256"]):
+              raise SystemExit("Health binding differs from main's accepted chain head")
+          PY
           if ! cosign attest-blob \
             --yes \
             --statement "$RUNNER_TEMP/health.latest.statement.json" \

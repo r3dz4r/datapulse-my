@@ -1422,12 +1422,89 @@ def test_assembled_report_discloses_exact_observation_time_and_identity(tmp_path
 
 
 @pytest.mark.parametrize('forbidden', ['submit_attestation_append.sh', 'refresh_chain_head.sh',
-    'bind_candidate_witness.py', 'append_acceptance', 'APPEND_ACCEPTANCE_PATIENCE_SECONDS', 'gh pr view'])
+    'bind_candidate_witness.py', 'append_acceptance', 'APPEND_RESURRECTED_BOUND', 'gh pr view',
+    '--wait-for-acceptance'])
 def test_workflow_contract_forbids_resurrection(tmp_path: Path, forbidden: str) -> None:
     from scripts.verify_attestation_workflow_contract import ContractError, verify_workflows
     pages = tmp_path / 'pages.yml'
     pages.write_text(_workflow() + f'\n# {forbidden}\n')
     with pytest.raises(ContractError, match='forbidden acceptance machinery'):
+        verify_workflows(ROOT / '.github/workflows/datapulse-attest-daily.yml', pages)
+
+
+@pytest.mark.parametrize('damage', ['none', 'statement', 'unaccepted_head', 'missing_head', 'health'])
+def test_cosign_receives_only_main_accepted_head_and_bound_health(tmp_path: Path, damage: str) -> None:
+    """Exercise the actual workflow up to Cosign; invalid inputs must never reach it."""
+    root, revision, _, env = _accepted_workflow_case(tmp_path)
+    steps = yaml.safe_load(_workflow())['jobs']['sign_health']['steps']
+    generate = next(step for step in steps if step.get('name') == 'Generate deterministic health attestation statement')
+    signer = next(step for step in steps if step.get('id') == 'sign_current_health')
+    selected = subprocess.run(['bash', '-c', _select_step()['run']], cwd=root, env=env,
+                              capture_output=True, text=True, timeout=30)
+    assert selected.returncode == 0, selected.stdout + selected.stderr
+    chain = json.loads(subprocess.check_output(
+        ['git', 'show', f'{revision}:attestations/chain-index.json'], cwd=root, text=True))
+    accepted_head = chain['current_head']
+    assert accepted_head in chain['heads']
+    if damage in ('unaccepted_head', 'missing_head'):
+        head = json.loads((root / '.attestations/chain_head.json').read_bytes())
+        head['chain_head'] = 'f' * 64 if damage == 'unaccepted_head' else None
+        assert head['chain_head'] not in chain['heads']
+        _write_site_json(root, '.attestations/chain_head.json', head)
+    elif damage == 'health':
+        # Regenerate a structurally valid statement for bytes the binding did not accept.
+        with (root / 'health/latest.json').open('ab') as output:
+            output.write(b' ')
+    generated = subprocess.run(['bash', '-c', generate['run']], cwd=root, env=env,
+                               capture_output=True, text=True, timeout=30)
+    if damage == 'missing_head':
+        assert generated.returncode != 0
+        assert 'legacy chain_head' in generated.stdout + generated.stderr
+        return
+    assert generated.returncode == 0, generated.stdout + generated.stderr
+    statement_path = Path(env['RUNNER_TEMP']) / 'health.latest.statement.json'
+    statement = json.loads(statement_path.read_bytes())
+    if damage == 'statement':
+        statement['predicate']['legacyEd25519']['chainHead'] = 'f' * 64
+        statement_path.write_text(json.dumps(statement))
+    if damage == 'none':
+        assert statement['predicate']['legacyEd25519']['chainHead'] == accepted_head
+    bin_dir = tmp_path / 'bin'
+    bin_dir.mkdir()
+    cosign = bin_dir / 'cosign'
+    # No OIDC or external write: record the signer's input and model an outage.
+    marker = tmp_path / 'cosign-input.json'
+    cosign.write_text('#!/bin/bash\ncp "$RUNNER_TEMP/health.latest.statement.json" "$COSIGN_INPUT"\nexit 1\n')
+    cosign.chmod(0o755)
+    env |= {'PATH': f'{bin_dir}:{env["PATH"]}', 'COSIGN_INPUT': str(marker)}
+    result = subprocess.run(['bash', '-c', signer['run']], cwd=root, env=env,
+                            capture_output=True, text=True, timeout=30)
+    if damage == 'none':
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert json.loads(marker.read_bytes()) == statement
+        assert 'state=signer_down' in Path(env['GITHUB_OUTPUT']).read_text()
+    else:
+        assert not marker.exists(), 'invalid statement reached Cosign'
+        assert result.returncode != 0, result.stdout + result.stderr
+        assert 'state=signer_down' not in Path(env['GITHUB_OUTPUT']).read_text()
+
+
+@pytest.mark.parametrize('fragment', [
+    'accepted = accepted_discovery(root, revision)',
+    'if not head or head not in accepted["heads"]:',
+    'if statement != expected or statement["predicate"]["legacyEd25519"]["chainHead"] != head:',
+    'binding_ref = accepted["envelopes"][head]["binding_ref"]',
+    'if (binding["ed25519"]["chain_head"] != head',
+    'or statement["subject"][0]["digest"]["sha256"] != binding["health"]["artifact_sha256"]):',
+])
+def test_workflow_contract_requires_pre_sign_acceptance_guard(tmp_path: Path, fragment: str) -> None:
+    from scripts.verify_attestation_workflow_contract import ContractError, verify_workflows
+
+    pages = tmp_path / 'pages.yml'
+    contents = _workflow()
+    assert fragment in contents
+    pages.write_text(contents.replace(fragment, 'pass # removed acceptance guard', 1))
+    with pytest.raises(ContractError, match='pre-sign acceptance guard'):
         verify_workflows(ROOT / '.github/workflows/datapulse-attest-daily.yml', pages)
 
 
