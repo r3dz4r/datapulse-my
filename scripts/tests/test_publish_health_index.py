@@ -106,7 +106,7 @@ def test_daily_history_keeps_newest_complete_days_within_target(
     }
     source = tmp_path / "history_daily.json"
     source.write_text(json.dumps(history, indent=2), encoding="utf-8")
-    monkeypatch.setattr(module, "TARGET_KV_VALUE_BYTES", 1200)
+    monkeypatch.setattr(module, "DAILY_HISTORY_TARGET_BYTES", 1200)
 
     payloads = module.health_payloads(health)
     published = json.loads(payloads["health/history_daily.json"])
@@ -120,6 +120,70 @@ def test_daily_history_keeps_newest_complete_days_within_target(
         "sha256": hashlib.sha256(payloads["health/history_daily.json"]).hexdigest(),
         "bytes": len(payloads["health/history_daily.json"]),
     }
+
+
+@pytest.mark.parametrize("dates", [
+    ["2026-10-01", "2026-10-03", "2026-10-02", "2026-10-04", "2026-10-05", "2026-10-06"],
+    ["2026-10-06", "2026-10-05", "2026-10-04", "2026-10-02", "2026-10-03", "2026-10-01"],
+])
+def test_large_daily_history_fits_four_mib_with_only_newest_complete_days(dates: list[str]) -> None:
+    module = _module()
+    history = {
+        "schema": "datapulse/v1/health-history-daily",
+        "retention_days": 7,
+        "compacted_cycles": [f"{day}T{hour}:00" for day in dates for hour in ("00", "12")],
+        "aggregates": [
+            {"dataset_id": dataset, "date": day, "evidence": "x" * (512 * 1024)}
+            for dataset in ("alpha", "beta") for day in dates
+        ],
+    }
+    payload = json.dumps(history).encode()
+    assert len(payload) > 6 * 1024 * 1024
+
+    result = module._published_daily_history(payload)
+
+    assert len(result) <= 4 * 1024 * 1024
+    published = json.loads(result)
+    retained = {"2026-10-04", "2026-10-05", "2026-10-06"}
+    assert published == {
+        **history,
+        "aggregates": [row for row in history["aggregates"] if row["date"] in retained],
+        "compacted_cycles": [cycle for cycle in history["compacted_cycles"] if cycle[:10] in retained],
+    }
+
+
+def test_daily_history_below_four_mib_is_returned_byte_for_byte() -> None:
+    module = _module()
+    history = {
+        "schema": "datapulse/v1/health-history-daily",
+        "compacted_cycles": ["2026-10-29T12:00"],
+        "aggregates": [{"date": "2026-10-29", "evidence": "x" * 1024}],
+    }
+    payload = json.dumps(history, indent=2).encode() + b"\n"
+
+    assert module._published_daily_history(payload) == payload
+
+
+def test_newest_daily_history_over_four_mib_reports_day_and_size() -> None:
+    module = _module()
+    newest_day = {
+        "schema": "datapulse/v1/health-history-daily",
+        "compacted_cycles": ["2026-10-29T12:00"],
+        "aggregates": [{"date": "2026-10-29", "evidence": "x" * (4 * 1024 * 1024)}],
+    }
+    newest_size = len(json.dumps(newest_day, separators=(",", ":")).encode())
+    history = {
+        **newest_day,
+        "compacted_cycles": ["2026-10-28T12:00", *newest_day["compacted_cycles"]],
+        "aggregates": [{"date": "2026-10-28"}, *newest_day["aggregates"]],
+    }
+
+    with pytest.raises(module.PublishError) as error:
+        module._published_daily_history(json.dumps(history).encode())
+
+    assert "2026-10-29" in str(error.value)
+    assert f"{newest_size} bytes" in str(error.value)
+    assert "4194304-byte KV target" in str(error.value)
 
 
 def test_target_guard_reports_key_size_and_margin_before_hard_limit(
@@ -154,7 +218,7 @@ def test_single_daily_group_over_target_fails_instead_of_dropping_newest_day(
         "compacted_cycles": ["2026-09-03T12:00"],
         "aggregates": [{"date": "2026-09-03", "evidence": "x" * 2000}],
     }))
-    monkeypatch.setattr(module, "TARGET_KV_VALUE_BYTES", 1500)
+    monkeypatch.setattr(module, "DAILY_HISTORY_TARGET_BYTES", 1500)
 
     with pytest.raises(module.PublishError, match="health/history_daily.json is .* exceeds 1500-byte KV target"):
         module.health_payloads(health)

@@ -38,6 +38,9 @@ MAX_KV_VALUE_BYTES = 25 * 1024 * 1024
 # A 20 MiB publication target leaves 5 MiB before KV's ceiling, about five
 # days at the observed 1 MiB/day growth rate of the daily archive.
 TARGET_KV_VALUE_BYTES = 20 * 1024 * 1024
+# A ~19.56 MiB single-value write timed out at 90 s and hit SSL EOF at 180 s,
+# while ~100 KB keys succeeded in the same run. Bound daily history separately.
+DAILY_HISTORY_TARGET_BYTES = 4 * 1024 * 1024
 VERIFY_KEY = "health-index.test.json"
 HEALTH_ARTIFACTS = (
     "latest.json",
@@ -348,7 +351,7 @@ def _compact_json(value: Any) -> bytes:
 
 def _published_daily_history(payload: bytes) -> bytes:
     """Keep the newest complete days that fit the KV target, including their cycles."""
-    if len(payload) <= TARGET_KV_VALUE_BYTES:
+    if len(payload) <= DAILY_HISTORY_TARGET_BYTES:
         return payload
     history = json.loads(payload)
     if not isinstance(history, dict) or history.get("schema") != "datapulse/v1/health-history-daily":
@@ -385,12 +388,12 @@ def _published_daily_history(payload: bytes) -> bytes:
             added += new_aggregates - 1 + bool(aggregate_count)
         if new_cycles:
             added += new_cycles - 1 + bool(cycle_count)
-        if size + added > TARGET_KV_VALUE_BYTES:
+        if size + added > DAILY_HISTORY_TARGET_BYTES:
             if not retained:
                 raise PublishError(
-                    f"health/history_daily.json is {size + added} bytes for its newest day, "
-                    f"exceeds {TARGET_KV_VALUE_BYTES}-byte KV target "
-                    f"(target margin {TARGET_KV_VALUE_BYTES - size - added} bytes)"
+                    f"health/history_daily.json is {size + added} bytes for its newest day {day}, "
+                    f"exceeds {DAILY_HISTORY_TARGET_BYTES}-byte KV target "
+                    f"(target margin {DAILY_HISTORY_TARGET_BYTES - size - added} bytes)"
                 )
             break
         retained.add(day)
