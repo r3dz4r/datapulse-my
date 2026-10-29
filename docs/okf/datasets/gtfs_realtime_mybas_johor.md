@@ -8,25 +8,23 @@ sources:
   - {"id": "apad","resource": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-johor","title": "Agensi Pengangkutan Awam Darat (APAD)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-26T14:33:51Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-29T14:43:02Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "BAS.MY"
-datapulse:real_status: "stale"
+datapulse:real_status: "unreachable"
 datapulse:health_report: "/data/gtfs_realtime_mybas_johor.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-10-26T14:43:51Z"
-datapulse:stale_after_basis: "realtime"
 ---
 
 # Summary
 
-GTFS Realtime — BAS.MY Johor Vehicle Positions is published by Agensi Pengangkutan Awam Darat (APAD) and tracked by DataPulse. The latest published probe classifies it as `stale`.
+GTFS Realtime — BAS.MY Johor Vehicle Positions is published by Agensi Pengangkutan Awam Darat (APAD) and tracked by DataPulse. The latest published probe classifies it as `unreachable`.
 
 # Schema
 
-- `record_count`: `63`
+No structural fingerprint was recorded by the latest probe.
 
 # Quirks
 

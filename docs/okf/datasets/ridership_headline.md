@@ -8,7 +8,7 @@ sources:
   - {"id": "mot","resource": "https://storage.data.gov.my/transportation/ridership_headline.csv","title": "Ministry of Transport Malaysia and public transport operators"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-25T22:41:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-28T16:22:34Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Prasarana Malaysia, Ministry of Transport"
