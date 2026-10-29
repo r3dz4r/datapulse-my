@@ -603,6 +603,44 @@ def test_kv_backed_fetches_are_opt_in_excluded_when_origin_is_missing(
         assert "not fetched or compared" not in combined
 
 
+def test_kv_exclusion_applies_to_a_root_collection_resolving_to_health(tmp_path: Path) -> None:
+    root, built, served = _stage_fixture(tmp_path)
+    _write(root / "config/public-surfaces.json", json.dumps({"pages": ["/"], "artifacts": []}))
+    for name in ("okf", "badges"):
+        shutil.rmtree(built / name)
+
+    # find -type f ignores symlinks; leave only the health file eligible so
+    # resolving the root collection cannot depend on filesystem traversal order.
+    health_latest = built / "health/latest.json"
+    parked = root / "parked-site-files"
+    for path in list(built.rglob("*")):
+        if not path.is_file() or path.is_symlink() or path == health_latest:
+            continue
+        destination = parked / path.relative_to(built)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(path), str(destination))
+        path.symlink_to(destination)
+    assert [path for path in built.rglob("*") if path.is_file() and not path.is_symlink()] == [health_latest]
+    (served / "health/latest.json").unlink()
+    (served / "health/index.json").unlink()
+
+    result = _run_verifier(
+        tmp_path, root, built, served, kv_surfaces_published_elsewhere=True
+    )
+    combined = result.stdout + result.stderr
+
+    assert result.returncode == 0, combined
+    notices = [line for line in result.stdout.splitlines() if "::warning" in line]
+    assert len(notices) == 1
+    assert "not fetched or compared" in notices[0]
+    for path in ("/health/latest.json", "/health/index.json"):
+        assert notices[0].count(path) == 1
+        assert f"served surface=declared public surface {path}" not in combined
+    assert "served surface=health snapshot" not in combined
+    assert "served surface=dashboard health projection" not in combined
+    assert "served surface=release reproducibility proof" in combined
+
+
 def test_strict_mode_still_rejects_a_wrong_served_trends_count(tmp_path: Path) -> None:
     root, built, served = _stage_fixture(tmp_path)
     trends_path = served / "health/trends.json"
