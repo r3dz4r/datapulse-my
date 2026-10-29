@@ -44,7 +44,6 @@ fail() { echo "::error title=Cloudflare Pages contract failed::$1"; exit 1; }
 [[ "$sigstore_signed" == true || "$sigstore_signed" == false ]] || fail "invalid Sigstore signing result"
 [[ "$health_only" == true || "$health_only" == false ]] || fail "invalid health-only mode"
 [[ "$kv_surfaces_published_elsewhere" == true || "$kv_surfaces_published_elsewhere" == false ]] || fail "invalid KV surface exclusion"
-echo "::notice title=kv-exclusion-diagnostic::parsed_kv_excluded=$kv_surfaces_published_elsewhere remaining_args=$* base_url=$base_url"
 [[ -n "$source_commit" ]] || fail "missing staged signing inputs"
 # The publication directory stages the signed bundle and manifest this verifier
 # compares the served bytes against. It is a signing input, so require it when
