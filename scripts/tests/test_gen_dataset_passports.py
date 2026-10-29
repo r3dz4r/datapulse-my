@@ -99,6 +99,21 @@ def test_passport_projects_current_health_status_and_timestamp() -> None:
     assert passport["identity"]["observed_verified_at"] == health["last_checked"]
 
 
+def test_passport_http_status_accepts_no_response_and_rejects_above_maximum() -> None:
+    manifest, snapshot, graph, attestations = _inputs()
+    entry = next(row for row in manifest["datasets"] if row["id"] == "fuelprice")
+    health = next(row for row in snapshot["datasets"] if row["dataset_id"] == entry["id"]).copy()
+    health["http_status"] = 0
+    passport = build_passport(ROOT, entry, health, graph, attestations)
+    schema = json.loads((ROOT / "passport.schema.json").read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    assert passport["health_evidence"]["http_status"] == 0
+    assert not list(validator.iter_errors(passport))
+    health["http_status"] = 600
+    passport = build_passport(ROOT, entry, health, graph, attestations)
+    assert any(error.validator == "maximum" and list(error.absolute_path) == ["health_evidence", "http_status"] for error in validator.iter_errors(passport))
+
+
 def test_record_evidence_cohort_resolves_and_lineage_is_not_transformation_claim(tmp_path: Path) -> None:
     pilot = _passport("pharmaceutical_products")
     manifest, snapshot, graph, attestations = _inputs()
