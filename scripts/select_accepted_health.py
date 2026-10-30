@@ -8,9 +8,11 @@ import json
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -19,6 +21,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 LOGGER = logging.getLogger(__name__)
 MAX_AGE_SECONDS = 36 * 60 * 60
+# Restore the observation build as a unit, including nested metadata and retained
+# evidence. Code, templates, discovery and the independent release proof stay at
+# the pinned publishing revision; the dashboard is rendered from those sources.
+OBSERVATION_BUILD_PATHS = (
+    'health', 'data', 'badges', 'deltas', 'record-evidence', 'feed.xml',
+    'changelog.json', 'catalog-snapshot.json', 'catalog-graph.json',
+    'datapulse_summary.json', 'docs/okf', 'docs/datasets', 'observation-receipts',
+)
 
 
 class SelectionError(ValueError):
@@ -67,19 +77,9 @@ def report_age(health: Path, binding: Path, now: datetime) -> dict[str, Any]:
     }
 
 
-def _export(root: Path, revision: str, out: Path) -> None:
-    # Export only committed, regular source inputs; never trust a dirty checkout
-    # or an untracked candidate, nor follow symlinks during materialisation.
-    if out.exists():
-        raise SelectionError("accepted report output must not already exist")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    # Historical sibling selection needs first-parent merge order. Keep HEAD at
-    # the pinned main commit so the unmodified verifier can prove that order.
-    subprocess.run(['git', 'worktree', 'add', '--detach', '--no-checkout', str(out), revision],
-                   cwd=root, check=True, capture_output=True)
+def _archive_files(root: Path, revision: str, out: Path, paths: tuple[str, ...]) -> None:
     with subprocess.Popen([
-        'git', 'archive', revision, 'attestations', 'datapulse.json',
-        'docs/.well-known/datapulse-probe-keys.json',
+        'git', 'archive', revision, *paths,
     ], cwd=root, stdout=subprocess.PIPE) as process:
         try:
             with tarfile.open(fileobj=process.stdout, mode='r|') as archive:
@@ -102,6 +102,81 @@ def _export(root: Path, revision: str, out: Path) -> None:
             raise
         if process.wait():
             raise SelectionError("git archive failed for pinned accepted inputs")
+
+
+def _export(root: Path, revision: str, out: Path) -> None:
+    # Export only committed, regular source inputs; never trust a dirty checkout
+    # or an untracked candidate, nor follow symlinks during materialisation.
+    if out.exists():
+        raise SelectionError("accepted report output must not already exist")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    # Historical sibling selection needs first-parent merge order. Keep HEAD at
+    # the pinned main commit so the unmodified verifier can prove that order.
+    subprocess.run(['git', 'worktree', 'add', '--detach', '--no-checkout', str(out), revision],
+                   cwd=root, check=True, capture_output=True)
+    _archive_files(root, revision, out, (
+        'attestations', 'datapulse.json', 'docs/.well-known/datapulse-probe-keys.json',
+    ))
+
+
+def restore_observation_build(root: Path, revision: str, publication: Path) -> str:
+    """Recover the build whose committed health bytes the accepted report signs."""
+    identity_path = publication / 'publication-identity.json'
+    identity = json.loads(identity_path.read_bytes())
+    health_bytes = (publication / 'health/latest.json').read_bytes()
+    if (re.fullmatch(r'[0-9a-f]{40}', revision) is None
+            or identity['accepted_main_commit'] != revision
+            or hashlib.sha256(health_bytes).hexdigest() != identity['health_sha256']):
+        raise SelectionError('accepted observation build identity differs from pinned report')
+    blob = subprocess.check_output(['git', 'hash-object', '--stdin'], input=health_bytes, cwd=root).decode().strip()
+    # Follow only the pinned main ancestry. A candidate branch or a later main
+    # observation can never supply the published build, even if its date matches.
+    candidates = subprocess.check_output([
+        'git', 'log', '--first-parent', '--format=%H', revision, '--', 'health/latest.json',
+    ], cwd=root, text=True).splitlines()
+    source = None
+    for commit in candidates:
+        candidate = subprocess.check_output([
+            'git', 'rev-parse', f'{commit}:health/latest.json',
+        ], cwd=root, text=True).strip()
+        if candidate == blob:
+            source = commit
+            break
+    if source is None:
+        raise SelectionError('no committed observation build matches the exact accepted health bytes')
+    paths = tuple(subprocess.check_output([
+        'git', 'ls-tree', '--name-only', source, '--', *OBSERVATION_BUILD_PATHS,
+    ], cwd=root, text=True).splitlines())
+    required = set(OBSERVATION_BUILD_PATHS) - {'docs/okf', 'docs/datasets', 'observation-receipts'}
+    if not required <= set(paths):
+        raise SelectionError('accepted observation build is incomplete: ' + ', '.join(sorted(required - set(paths))))
+    with tempfile.TemporaryDirectory(prefix='accepted-build-', dir=publication.parent) as temporary:
+        build = Path(temporary)
+        _archive_files(root, source, build, paths)
+        if (build / 'health/latest.json').read_bytes() != health_bytes:
+            raise SelectionError('accepted observation build health bytes changed')
+        snapshot = json.loads((build / 'catalog-snapshot.json').read_bytes())
+        graph = json.loads((build / 'catalog-graph.json').read_bytes())
+        observed = identity['observed_at']
+        if not (snapshot['generated_at'] == snapshot['health']['checked_at']
+                == graph['generated_at'] == json.loads(health_bytes)['checked_at'] == observed):
+            raise SelectionError('accepted observation build contains inconsistent clocks')
+        for name in OBSERVATION_BUILD_PATHS:
+            target = root / name
+            if target.is_symlink() or target.is_file():
+                target.unlink()
+            elif target.exists():
+                shutil.rmtree(target)
+            origin = build / name
+            if origin.is_dir():
+                shutil.copytree(origin, target)
+            elif origin.is_file():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(origin, target)
+    identity['observation_build_commit'] = source
+    atomic_write(identity_path, (json.dumps(identity, sort_keys=True, indent=2) + '\n').encode())
+    LOGGER.info('Accepted observation build %s: health and catalogs observed at %s', source, observed)
+    return source
 
 
 def select_report(root: Path, revision: str, out: Path, now: datetime) -> dict[str, Any]:
@@ -172,6 +247,8 @@ def main() -> int:
     parser.add_argument('--revision')
     parser.add_argument('--out', type=Path)
     parser.add_argument('--measure-age', action='store_true')
+    parser.add_argument('--restore-observation-build', action='store_true')
+    parser.add_argument('--publication', type=Path)
     parser.add_argument('--health', type=Path, default=Path('health/latest.json'))
     parser.add_argument('--binding', type=Path, default=Path('attestations/latest/binding.json'))
     parser.add_argument('--now')
@@ -181,6 +258,11 @@ def main() -> int:
         now = datetime.fromisoformat(args.now.replace('Z', '+00:00')) if args.now else datetime.now(timezone.utc)
         if now.tzinfo is None:
             raise SelectionError('verification time must include a UTC offset')
+        if args.restore_observation_build:
+            if not args.revision or args.publication is None:
+                parser.error('--revision and --publication are required for build restoration')
+            restore_observation_build(args.root.resolve(), args.revision, args.publication.resolve())
+            return 0
         if args.measure_age:
             identity = report_age(args.health, args.binding, now)
         else:

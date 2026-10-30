@@ -311,9 +311,19 @@ def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advance
     (root / "docs/index.html").write_text("private-build")
     (root / "scripts").mkdir()
     # These stubs verify orchestration inputs/order. Generator/binding behavior
-    # has its own tests; neither stub can create a candidate or submit an append.
+    # has real Git/invariant coverage in test_accepted_health_clock_alignment.py.
+    # None of these stubs can create a candidate or submit an append.
+    (root / "scripts/select_accepted_health.py").write_text(
+        'import os, sys\nfrom pathlib import Path\n'
+        'assert sys.argv[1:] == ["--restore-observation-build", "--root", ".", '
+        '"--revision", "a" * 40, "--publication", '
+        'str(Path(os.environ["RUNNER_TEMP"]) / "sigstore-publication")]\n'
+        'assert Path("attestations/latest/binding.json").read_text() == "private-build"\n'
+        'Path("catalog-snapshot.json").write_text("accepted")\n'
+    )
     (root / "scripts/verify_attestation_binding.py").write_text(
         'from pathlib import Path\n'
+        'assert Path("catalog-snapshot.json").read_text() == "accepted"\n'
         'assert Path("health/latest.json").read_text() == "accepted"\n'
         'assert Path("attestations/latest/binding.json").read_text() == "accepted"\n'
     )
@@ -329,7 +339,7 @@ def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advance
     )
     step = _step(PUBLISH, "deploy", "Bind built dashboard to accepted sign-time trust plane")
     assert "if" not in step
-    result = _run(step["run"], root, RUNNER_TEMP=str(runner))
+    result = _run(step["run"], root, RUNNER_TEMP=str(runner), PROMOTION_SOURCE_SHA="a" * 40)
     assert result.returncode == 0, result.stderr
     assert (root / "docs/index.html").read_text() == "accepted"
     names = [step.get("name") for step in _workflow(PUBLISH)["jobs"]["deploy"]["steps"]]
