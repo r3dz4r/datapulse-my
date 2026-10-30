@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-29T11:51:41Z",
+    "last_checked": "2026-10-30T01:58:42Z",
     "record_count": 2,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
       "column_count": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "first_row_hash": "shape-v1:16b3d676d9f2b6cecf37f15202ee0f4f94b06a7f719e95a0cc8cb4dc206b4105"
     },
-    "status": "degraded"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/interbank-swap",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Interbank Swap",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-29T11:51:41Z",
+    "observed_verified_at": "2026-10-30T01:58:42Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1124,12 +1124,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-29/revisions/9886fb07ebb8a62e3ac310ef73c43271aa4a63f4c31c682747447cfe5a4d3800/bnm_interbank_swap.json",
-    "chain_reference": "attestations/2026-10-29/revisions/9886fb07ebb8a62e3ac310ef73c43271aa4a63f4c31c682747447cfe5a4d3800/chain_head.json",
+    "attestation": "attestations/2026-10-29/revisions/db28f7c321d62ae956a268241a3c7bda4060ebf27dcbca4f4776166ce8aa2fc8/bnm_interbank_swap.json",
+    "chain_reference": "attestations/2026-10-29/revisions/db28f7c321d62ae956a268241a3c7bda4060ebf27dcbca4f4776166ce8aa2fc8/chain_head.json",
     "receipt": {
       "evidence_path": "data/bnm_interbank_swap.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:749da7e1d517b54b711fd524e7efb45dd305b8d89d14a87a4b56d891d352d25f",
+      "receipt_digest": "sha256:002ea91f1eb62b2a31820fd4af2f5da88452ed247f59b228af61c0952e644c60",
       "sigstore_path": "data/bnm_interbank_swap.receipt.sigstore.json",
       "statement_path": "data/bnm_interbank_swap.receipt.statement.json"
     },
