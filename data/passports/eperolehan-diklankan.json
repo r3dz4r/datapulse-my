@@ -5,22 +5,22 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 0.0,
+        "latest_days": null,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "cadence_fallback",
+        "mode": "not_evaluated",
         "sample_days": 7,
         "stdev_days": null,
-        "threshold_days": 0.125,
+        "threshold_days": null,
         "window_days": 14
       }
     },
     "expected_record_count": null,
-    "freshness_signal": "content-date-parse",
-    "freshness_signal_source": "content_date_parse",
-    "http_status": 200,
+    "freshness_signal": "no-header",
+    "freshness_signal_source": "none",
+    "http_status": 503,
     "incomplete": false,
-    "last_checked": "2026-10-30T13:53:35Z",
+    "last_checked": "2026-10-30T14:14:00Z",
     "record_count": null,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "fresh"
+    "status": "unreachable"
   },
   "identity": {
     "canonical_url": "https://www.eperolehan.gov.my/quotation-tender-notice",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "ePerolehan Tender Notices (DIIKLANKAN)",
     "namespace": "other",
-    "observed_verified_at": "2026-10-30T13:53:35Z",
+    "observed_verified_at": "2026-10-30T14:14:00Z",
     "source": "ePerolehan",
     "steward": "Ministry of Finance Malaysia"
   },
@@ -336,9 +336,9 @@
               "Records one observed access signal; it does not promise continuing access."
             ],
             "reason_codes": [
-              "observed_access_signal_present"
+              "observed_access_unreachable"
             ],
-            "state": "pass"
+            "state": "fail"
           },
           {
             "check_id": "fair.shape_metadata",
@@ -388,9 +388,9 @@
         "coverage": {
           "applicable": 4,
           "evaluated": 3,
-          "failed": 0,
+          "failed": 1,
           "not_applicable": 0,
-          "passed": 3,
+          "passed": 2,
           "unknown": 1
         },
         "evidence_refs": [
@@ -441,11 +441,11 @@
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
           "catalogue_metadata_declared",
-          "observed_access_signal_present",
+          "observed_access_unreachable",
           "shape_metadata_missing",
           "reuse_metadata_declared"
         ],
-        "state": "unknown"
+        "state": "fail"
       },
       "governance": {
         "checks": [
@@ -880,7 +880,7 @@
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "indeterminate",
+    "overall": "not_ready",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },
@@ -894,7 +894,7 @@
     "receipt": {
       "evidence_path": "data/eperolehan-diklankan.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:9c8f39d2ebea3b8117d922561e90ffae6411a30dba31af73e3700b73fd5946c2",
+      "receipt_digest": "sha256:0064a9504490a709c9edb214a9caf440ca262413c6e6c0fbd8b10606dc9ab3a4",
       "sigstore_path": "data/eperolehan-diklankan.receipt.sigstore.json",
       "statement_path": "data/eperolehan-diklankan.receipt.statement.json"
     },
