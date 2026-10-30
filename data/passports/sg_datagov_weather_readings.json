@@ -9,7 +9,7 @@
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-29T11:51:41Z",
+    "last_checked": "2026-10-30T01:58:42Z",
     "record_count": 1,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
       "column_count": 2,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "first_row_hash": "shape-v1:ff460652b5269c9d7dc04f0703c8babd6d9021aa520bc059edd2f2a356923c9c"
     },
-    "status": "degraded"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.sg/v1/environment/air-temperature",
@@ -39,7 +39,7 @@
     "geography": "Singapore",
     "name": "Weather Readings real-time (SG)",
     "namespace": "weather",
-    "observed_verified_at": "2026-10-29T11:51:41Z",
+    "observed_verified_at": "2026-10-30T01:58:42Z",
     "source": "data.gov.sg",
     "steward": "Singapore Government"
   },
@@ -881,12 +881,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-29/revisions/9886fb07ebb8a62e3ac310ef73c43271aa4a63f4c31c682747447cfe5a4d3800/sg_datagov_weather_readings.json",
-    "chain_reference": "attestations/2026-10-29/revisions/9886fb07ebb8a62e3ac310ef73c43271aa4a63f4c31c682747447cfe5a4d3800/chain_head.json",
+    "attestation": "attestations/2026-10-29/revisions/db28f7c321d62ae956a268241a3c7bda4060ebf27dcbca4f4776166ce8aa2fc8/sg_datagov_weather_readings.json",
+    "chain_reference": "attestations/2026-10-29/revisions/db28f7c321d62ae956a268241a3c7bda4060ebf27dcbca4f4776166ce8aa2fc8/chain_head.json",
     "receipt": {
       "evidence_path": "data/sg_datagov_weather_readings.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:a75e85052a62162034e1081fec4a604cba3cd26b79394a5f1db4feff75d6e2b0",
+      "receipt_digest": "sha256:e95e33e17c53e2b9f085daeae7ac725b5293e19eaa2adb14b88abcc6fc7df92c",
       "sigstore_path": "data/sg_datagov_weather_readings.receipt.sigstore.json",
       "statement_path": "data/sg_datagov_weather_readings.receipt.statement.json"
     },
