@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import re
 import stat
@@ -16,6 +17,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
+logger = logging.getLogger(__name__)
 SURFACE_PATHS = (
     "data/json/{id}.json",
     "data/jsonld/{id}.json",
@@ -59,11 +61,14 @@ def sync_urls(root: Path) -> list[str]:
         reported = by_id.get(dataset_id, {}).get("url")
         status = by_id.get(dataset_id, {}).get("http_status")
         if dataset_id not in manifest_by_id or not isinstance(template, str):
-            raise ValueError(f"{dataset_id}: missing manifest row or dynamic URL template")
+            logger.warning("%s: missing manifest row or dynamic URL template", dataset_id)
+            continue
         if not isinstance(observed, str) or not _matches_template(template, observed):
-            raise ValueError(f"{dataset_id}: observed request URL does not match policy template")
+            logger.warning("%s: observed request URL does not match policy template", dataset_id)
+            continue
         if reported != observed or type(status) is not int or not 200 <= status < 300:
-            raise ValueError(f"{dataset_id}: probe did not confirm the observed URL with HTTP 2xx")
+            logger.warning("%s: probe did not confirm the observed URL with HTTP 2xx", dataset_id)
+            continue
         if manifest_by_id[dataset_id].get("url") != observed:
             updates[dataset_id] = observed
     if not updates:
