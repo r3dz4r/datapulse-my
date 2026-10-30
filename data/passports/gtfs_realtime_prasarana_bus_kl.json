@@ -3,25 +3,25 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": null,
+        "latest_days": 0.0012731481481481483,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "not_evaluated",
+        "mode": "cadence_fallback",
         "sample_days": 7,
         "stdev_days": null,
-        "threshold_days": null,
+        "threshold_days": 0.0010416666666666667,
         "window_days": 14
       }
     },
     "expected_record_count": null,
-    "freshness_signal": "no-header",
-    "freshness_signal_source": "none",
-    "http_status": 0,
+    "freshness_signal": "content-date-parse",
+    "freshness_signal_source": "content_date_parse",
+    "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-30T13:11:21Z",
-    "record_count": null,
+    "last_checked": "2026-10-30T13:34:18Z",
+    "record_count": 61,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "unreachable"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-kl",
@@ -39,7 +39,7 @@
     "geography": "Klang Valley",
     "name": "GTFS Realtime — Rapid KL Bus Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-30T13:11:21Z",
+    "observed_verified_at": "2026-10-30T13:34:18Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Prasarana Malaysia Berhad"
   },
@@ -367,9 +367,9 @@
               "Records one observed access signal; it does not promise continuing access."
             ],
             "reason_codes": [
-              "observed_access_unreachable"
+              "observed_access_signal_present"
             ],
-            "state": "fail"
+            "state": "pass"
           },
           {
             "check_id": "fair.shape_metadata",
@@ -419,9 +419,9 @@
         "coverage": {
           "applicable": 4,
           "evaluated": 3,
-          "failed": 1,
+          "failed": 0,
           "not_applicable": 0,
-          "passed": 2,
+          "passed": 3,
           "unknown": 1
         },
         "evidence_refs": [
@@ -472,11 +472,11 @@
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
           "catalogue_metadata_declared",
-          "observed_access_unreachable",
+          "observed_access_signal_present",
           "shape_metadata_missing",
           "reuse_metadata_declared"
         ],
-        "state": "fail"
+        "state": "unknown"
       },
       "governance": {
         "checks": [
@@ -832,9 +832,9 @@
               "A count is an observed or estimated measurement, not a completeness guarantee."
             ],
             "reason_codes": [
-              "record_count_missing"
+              "record_count_observed"
             ],
-            "state": "unknown"
+            "state": "pass"
           },
           {
             "check_id": "reproducibility.attestation_reference",
@@ -855,11 +855,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 2,
+          "evaluated": 3,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 2,
-          "unknown": 2
+          "passed": 3,
+          "unknown": 1
         },
         "evidence_refs": [
           {
@@ -902,7 +902,7 @@
         "reason_codes": [
           "shape_fingerprint_missing",
           "last_checked_declared",
-          "record_count_missing",
+          "record_count_observed",
           "attestation_ref_declared"
         ],
         "state": "unknown"
@@ -911,7 +911,7 @@
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "not_ready",
+    "overall": "indeterminate",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },
@@ -925,7 +925,7 @@
     "receipt": {
       "evidence_path": "data/gtfs_realtime_prasarana_bus_kl.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:0a686c7d822ba0795b102028ca2e37928afd00cac95a414ece1ad619629b5257",
+      "receipt_digest": "sha256:2ced3ed7dec7cf52e3a6e8b31f45846b8371d60ac97bdc94c7dceef099d2b876",
       "sigstore_path": "data/gtfs_realtime_prasarana_bus_kl.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_prasarana_bus_kl.receipt.statement.json"
     },
