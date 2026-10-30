@@ -455,7 +455,15 @@ def publish_unchanged_aware(api_base: str, token: str, payloads: dict[str, bytes
         if read_value(api_base, account_id, token, key) == payload:
             unchanged += 1
             continue
-        publish_value(api_base, account_id, token, key, payload)
+        started = time.perf_counter()
+        try:
+            publish_value(api_base, account_id, token, key, payload)
+        except Exception as exc:
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            raise PublishError(
+                f"write {key} ({len(payload)} bytes) failed after {elapsed_ms:.0f} ms: "
+                f"{type(exc).__name__}: {exc}", retryable=_is_retryable_error(exc)
+            ) from exc
         written += 1
     return written, unchanged
 
