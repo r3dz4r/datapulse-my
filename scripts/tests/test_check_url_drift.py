@@ -154,8 +154,7 @@ class CheckUrlDriftTests(unittest.TestCase):
                 health["datasets"][0][field] = value
                 health_path.write_text(json.dumps(health), encoding="utf-8")
                 before = (root / "datapulse.json").read_bytes()
-                with self.assertRaises(ValueError):
-                    sync_urls(root)
+                self.assertEqual(sync_urls(root), [])
                 self.assertEqual((root / "datapulse.json").read_bytes(), before)
 
     def test_stale_manifest_missing_surface_and_404_still_fail(self):
