@@ -407,6 +407,56 @@ def test_publish_retries_once_after_timeout_then_succeeds(monkeypatch: object) -
     assert attempts == 2
 
 
+@pytest.mark.parametrize("failure", ["timeout", "oserror", "http", "retryable", "nonretryable", "http_504"])
+def test_write_failure_identifies_attempt_and_preserves_retryability(
+    monkeypatch: pytest.MonkeyPatch, failure: str,
+) -> None:
+    module = _module()
+    errors = {
+        "timeout": TimeoutError("write timed out"),
+        "oserror": OSError("connection failed"),
+        "http": module.http.client.HTTPException("connection failed"),
+        "retryable": module.PublishError("transient", retryable=True),
+        "nonretryable": module.PublishError("permanent"),
+        "http_504": module.PublishError("HTTP 504"),
+    }
+    error = errors[failure]
+    monkeypatch.setattr(module, "resolve_account_id", lambda *_args: "account")
+    monkeypatch.setattr(module, "read_value", lambda *_args: None)
+    times = iter((10.0, 10.125))
+    monkeypatch.setattr(module.time, "perf_counter", lambda: next(times))
+
+    def fail_write(*_args: object) -> None:
+        raise error
+
+    monkeypatch.setattr(module, "publish_value", fail_write)
+    with pytest.raises(Exception) as caught:
+        module.publish_unchanged_aware("api", "token", {"health/latest.json": b"value"})
+
+    message = str(caught.value)
+    assert "health/latest.json" in message
+    assert "5 bytes" in message
+    assert "125" in message and "ms" in message
+    assert module._is_retryable_error(caught.value) is (failure != "nonretryable")
+
+
+def test_wrapped_write_timeout_retries_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    module = _module()
+    attempts = 0
+    monkeypatch.setattr(module, "resolve_account_id", lambda *_args: "account")
+    monkeypatch.setattr(module, "read_value", lambda *_args: None)
+
+    def write(*_args: object) -> None:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise TimeoutError("write timed out")
+
+    monkeypatch.setattr(module, "publish_value", write)
+    assert module.publish_unchanged_aware_with_retry("api", "token", {"key": b"value"}) == (1, 0)
+    assert attempts == 2
+
+
 def test_publish_retries_after_http_5xx(monkeypatch: object) -> None:
     module = _module()
     attempts = 0
