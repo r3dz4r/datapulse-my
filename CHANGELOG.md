@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.59.4](https://github.com/r3dz4r/datapulse-my/compare/v3.59.3...v3.59.4) (2026-10-30)
+
+
+### Bug Fixes
+
+* accept no-response status in dataset passports ([#2828](https://github.com/r3dz4r/datapulse-my/issues/2828)) ([d2ce29b](https://github.com/r3dz4r/datapulse-my/commit/d2ce29b69f6afc9183ba1f8abbe8bbe4da47e22d))
+
 ## [3.59.3](https://github.com/r3dz4r/datapulse-my/compare/v3.59.2...v3.59.3) (2026-10-29)
 
 
