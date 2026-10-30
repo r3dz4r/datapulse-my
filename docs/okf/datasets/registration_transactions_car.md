@@ -8,7 +8,7 @@ sources:
   - {"id": "jpj","resource": "https://storage.data.gov.my/transportation/cars_2026.csv","title": "Road Transport Department Malaysia and Ministry of Transport"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-25T22:41:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-28T16:22:34Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Road Transport Department, Ministry of Transport"
