@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": 1.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,8 +20,8 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-28T16:22:34Z",
-    "record_count": 9348,
+    "last_checked": "2026-10-30T01:58:42Z",
+    "record_count": 9358,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:9bdf663418ba68a63bd74b54c21c2783db259036ff7eb9f651ac70d1c3601f92"
     },
-    "status": "aging"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_daily.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Daily KTMB Ridership",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-28T16:22:34Z",
+    "observed_verified_at": "2026-10-30T01:58:42Z",
     "source": "data.gov.my",
     "steward": "Keretapi Tanah Melayu Berhad"
   },
@@ -919,12 +919,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-29/revisions/9886fb07ebb8a62e3ac310ef73c43271aa4a63f4c31c682747447cfe5a4d3800/ridership_ktmb_daily.json",
-    "chain_reference": "attestations/2026-10-29/revisions/9886fb07ebb8a62e3ac310ef73c43271aa4a63f4c31c682747447cfe5a4d3800/chain_head.json",
+    "attestation": "attestations/2026-10-29/revisions/db28f7c321d62ae956a268241a3c7bda4060ebf27dcbca4f4776166ce8aa2fc8/ridership_ktmb_daily.json",
+    "chain_reference": "attestations/2026-10-29/revisions/db28f7c321d62ae956a268241a3c7bda4060ebf27dcbca4f4776166ce8aa2fc8/chain_head.json",
     "receipt": {
       "evidence_path": "data/ridership_ktmb_daily.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:11278a545402052d00957c3177a8043fe2be5712ca7a4917d0c424fcbf7bf663",
+      "receipt_digest": "sha256:c8a3cbdcc75b1fcbe01b0a4789194410eb25a9fc3416139faffba9813108fffe",
       "sigstore_path": "data/ridership_ktmb_daily.receipt.sigstore.json",
       "statement_path": "data/ridership_ktmb_daily.receipt.statement.json"
     },
