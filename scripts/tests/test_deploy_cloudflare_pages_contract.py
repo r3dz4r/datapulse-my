@@ -989,6 +989,17 @@ def test_pages_cannot_generate_a_private_substitute_for_an_accepted_report() -> 
     assert 'cp -R "$VERIFIED_PAGES_BUILD/." .' in run
 
 
+def test_health_only_binding_gate_has_release_invariant_dependencies() -> None:
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    dependencies = next(step for step in steps
+                        if step.get("name") == "Install preview release invariant dependencies")
+    binding = next(step for step in steps
+                   if step.get("name") == "Bind built dashboard to accepted sign-time trust plane")
+    assert "if" not in dependencies
+    assert "jsonschema --requirement mcp/requirements.txt" in dependencies["run"]
+    assert steps.index(dependencies) < steps.index(binding)
+
+
 
 def test_native_pages_uses_only_cloudflare_secrets_and_project() -> None:
     workflow = _workflow()
