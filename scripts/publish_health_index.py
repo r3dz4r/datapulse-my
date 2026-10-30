@@ -433,7 +433,14 @@ def health_payloads(health_path: Path) -> dict[str, bytes]:
     artifacts = {}
     for name in HEALTH_ARTIFACTS:
         payload = (health_dir / name).read_bytes()
-        if name == "history_daily.json":
+        if name == "latest.json":
+            document = json.loads(payload)
+            document["datasets"] = [
+                {key: value for key, value in row.items() if key != "quality_profile"}
+                for row in document["datasets"]
+            ]
+            payload = _compact_json(document)
+        elif name == "history_daily.json":
             payload = _published_daily_history(payload)
         artifacts[f"health/{name}"] = _bounded_kv_payload(f"health/{name}", payload)
     payloads = {**artifacts, KEY: _bounded_kv_payload(KEY, build_projection(health_path, artifacts))}

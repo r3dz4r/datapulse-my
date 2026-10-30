@@ -63,14 +63,37 @@ def test_oversized_artifact_compacts_without_changing_data_or_keys(monkeypatch, 
     assert all(len(payload) <= 2048 for payload in payloads.values())
     for name in module.HEALTH_ARTIFACTS:
         original = (tmp_path / name).read_bytes()
-        assert json.loads(payloads[f"health/{name}"]) == json.loads(original)
-        if name != "history_daily.json":
+        expected = json.loads(original)
+        if name == "latest.json":
+            expected["datasets"] = [{k: v for k, v in row.items() if k != "quality_profile"} for row in expected["datasets"]]
+        assert json.loads(payloads[f"health/{name}"]) == expected
+        if name not in ("latest.json", "history_daily.json"):
             assert payloads[f"health/{name}"] == original
     compact = payloads["health/history_daily.json"]
     assert json.loads(payloads[module.KEY])[module.ARTIFACTS_FIELD]["health/history_daily.json"] == {
         "sha256": hashlib.sha256(compact).hexdigest(), "bytes": len(compact),
     }
     assert payloads == module.health_payloads(health)
+
+
+def test_latest_kv_projection_preserves_rows_and_metadata_without_quality_profiles() -> None:
+    module = _module()
+    health = ROOT / "health/latest.json"
+    original_bytes = health.read_bytes()
+    original = json.loads(original_bytes)
+
+    payload = module.health_payloads(health)["health/latest.json"]
+    published = json.loads(payload)
+
+    assert len(payload) < 4 * 1024 * 1024
+    assert len(published["datasets"]) == len(original["datasets"])
+    assert published == {
+        **original,
+        "datasets": [{k: v for k, v in row.items() if k != "quality_profile"} for row in original["datasets"]],
+    }
+    assert any("quality_profile" in row for row in original["datasets"])
+    assert health.read_bytes() == original_bytes
+    assert module.health_payloads(health)["health/latest.json"] == payload
 
 
 def test_artifact_still_over_kv_limit_fails_before_network(monkeypatch, tmp_path: Path, capsys) -> None:
@@ -279,7 +302,7 @@ def test_projection_artifact_digests_cover_every_published_health_file(tmp_path:
 
     assert set(projection[module.ARTIFACTS_FIELD]) == {f"health/{name}" for name in module.HEALTH_ARTIFACTS}
     for name in module.HEALTH_ARTIFACTS:
-        payload = (tmp_path / name).read_bytes()
+        payload = module.health_payloads(health)[f"health/{name}"]
         assert projection[module.ARTIFACTS_FIELD][f"health/{name}"] == {
             "sha256": hashlib.sha256(payload).hexdigest(),
             "bytes": len(payload),
