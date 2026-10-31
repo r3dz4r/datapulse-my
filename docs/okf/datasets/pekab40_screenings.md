@@ -8,7 +8,7 @@ sources:
   - {"id": "protecthealth","resource": "https://api.data.gov.my/data-catalogue?id=pekab40_screenings","title": "ProtectHealth Corporation and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-25T22:41:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-30T01:58:42Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "ProtectHealth Corporation, Ministry of Health Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "stale"
 datapulse:health_report: "/data/pekab40_screenings.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2667
-stale_after: "2026-10-07T12:00:00Z"
+stale_after: "2026-10-28T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Daily PeKaB40 Health Screenings is published by ProtectHealth Corporation and Mi
 
 - `column_count`: `2`
 - `first_row_hash`: `shape-v1:5dd3fbce4794ce4cbc3d09f1a4d5a9240b5c9fe0b491944d6e225a949ea644a6`
-- `record_count`: `2732`
+- `record_count`: `2753`
 
 # Quirks
 
