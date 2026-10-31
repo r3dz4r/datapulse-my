@@ -235,3 +235,181 @@ def test_cli_is_offline_and_emits_two_lines(repository: tuple[Path, str, str]) -
     assert git(repo, "status", "--porcelain") == ""
     assert git(repo, "show-ref") == before_refs
     assert git(repo, "rev-parse", "HEAD") == main
+
+
+RECORD_KEYS = {
+    "decision", "reason", "state_left", "ceiling_seconds", "successor",
+    "published_seq", "branch", "head",
+}
+
+
+@pytest.fixture
+def remote(repository: tuple[Path, str, str], tmp_path: Path) -> Path:
+    repo, _, _ = repository
+    bare = tmp_path / "remote.git"
+    git(tmp_path, "init", "-q", "--bare", str(bare))
+    git(repo, "remote", "add", "origin", str(bare))
+    git(repo, "push", "-q", "origin", "main", "health-snapshots")
+    return bare
+
+
+def run_apply(repo: Path, *extra: str) -> tuple[int, dict[str, object]]:
+    result = subprocess.run(
+        [sys.executable, str(Path(publisher.__file__)), "--apply", "--repo", str(repo), *extra],
+        capture_output=True, text=True, check=False,
+    )
+    lines = result.stdout.splitlines()
+    assert len(lines) == 1, result.stdout
+    record = json.loads(lines[0])
+    assert set(record) == RECORD_KEYS
+    return result.returncode, record
+
+
+def next_snapshot(repo: Path, parent: str, source: str, seq: int, content: str) -> str:
+    """Write a descendant snapshot commit without moving any ref."""
+    blob = git(repo, "hash-object", "-w", "--stdin", input_text=content)
+    tree = git(repo, "mktree", input_text=f"100644 blob {blob}\tlatest.json\n")
+    tree = git(repo, "mktree", input_text=f"040000 tree {tree}\thealth\n")
+    return git(
+        repo, "commit-tree", tree, "-p", parent,
+        input_text=f"snapshot\n\nSnapshot-Seq: {seq}\nSnapshot-Source: {source}\n",
+    )
+
+
+@pytest.mark.parametrize("modes", [["--dry-run", "--apply"], []])
+def test_apply_and_dry_run_are_mutually_exclusive(repository: tuple[Path, str, str], modes: list[str]) -> None:
+    repo, _, _ = repository
+    result = subprocess.run(
+        [sys.executable, str(Path(publisher.__file__)), *modes, "--repo", str(repo)],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 2
+    assert result.stdout == ""
+
+
+@pytest.mark.parametrize("branch", ["main", "refs/heads/main", "refs/heads/health-snapshots", "health-snapshots/x", ""])
+def test_push_target_other_than_health_snapshots_refused_before_git(
+    repository: tuple[Path, str, str], monkeypatch: pytest.MonkeyPatch, branch: str,
+) -> None:
+    repo, main, snapshot = repository
+    calls: list[object] = []
+    monkeypatch.setattr(publisher.subprocess, "run", lambda *a, **k: calls.append(a))
+    with pytest.raises(publisher.PublisherError, match="refusing push target"):
+        publisher.apply(repo, branch=branch)
+    with pytest.raises(publisher.PublisherError, match="refusing push target"):
+        publisher.push_with_lease(repo, branch, main, snapshot)
+    assert calls == []
+    assert publisher._push_target("health-snapshots") == "refs/heads/health-snapshots"
+
+
+@pytest.mark.parametrize("case", ["already-published", "in-flight", "superseded"])
+def test_apply_skips_match_dry_run_and_write_nothing(
+    repository: tuple[Path, str, str], remote: Path, case: str,
+) -> None:
+    repo, _, snapshot = repository
+    extra: list[str] = []
+    tree = git(repo, "rev-parse", f"{snapshot}^{{tree}}")
+    if case == "already-published":
+        write(repo, "health/snapshot.json", json.dumps({"seq": 1, "snapshot": snapshot, "tree": tree}))
+        commit(repo, "chore(health): publish snapshot")
+    elif case == "in-flight":
+        extra = ["--in-flight-pr", "42"]
+    else:
+        write(repo, "health/latest.json", '{"new":true}\n')
+        write(repo, "docs/index.html", "new dashboard\n")
+        write(repo, "health/snapshot.json", json.dumps({"seq": 0, "snapshot": snapshot, "tree": tree}))
+        commit(repo, "chore(health): publish snapshot")
+        write(repo, "health/latest.json", '{"foreign":true}\n')
+        commit(repo, "manual health correction")
+    dry = publisher.evaluate(repo, 42 if extra else None).line
+    assert dry.startswith("would-skip ")
+    before_local, before_remote = git(repo, "show-ref"), git(remote, "show-ref")
+    code, record = run_apply(repo, *extra)
+    assert code == 0
+    assert record["decision"] == "skip"
+    assert record["reason"] == dry
+    assert record["branch"] == "health-snapshots"
+    assert record["head"] == snapshot
+    assert record["successor"] == {"already-published": "published", "in-flight": "pr_open", "superseded": "idle"}[case]
+    assert git(repo, "show-ref") == before_local
+    assert git(remote, "show-ref") == before_remote
+
+
+def test_apply_refuses_to_rewrite_observation_chain_and_main_untouched(
+    repository: tuple[Path, str, str], remote: Path,
+) -> None:
+    repo, main, snapshot = repository
+    dry = publisher.evaluate(repo)
+    assert dry.line.startswith("would-apply ")
+    before = git(remote, "show-ref")
+    code, record = run_apply(repo)
+    assert code == 2
+    assert record["decision"] == "refused"
+    assert "non-fast-forward" in str(record["reason"])
+    assert f"{dry.sha} does not descend from leased head {snapshot}" in str(record["reason"])
+    assert git(remote, "show-ref") == before
+    assert git(remote, "rev-parse", "refs/heads/main") == main
+
+
+def test_lease_push_fast_forwards_health_snapshots_only(
+    repository: tuple[Path, str, str], remote: Path,
+) -> None:
+    repo, main, snapshot = repository
+    successor = next_snapshot(repo, snapshot, main, 2, '{"seq":2}\n')
+    head, moved = publisher.push_with_lease(repo, "health-snapshots", successor, snapshot)
+    assert (head, moved) == (successor, True)
+    assert git(remote, "rev-parse", "refs/heads/health-snapshots") == successor
+    assert git(remote, "rev-parse", "refs/heads/main") == main
+    assert git(remote, "for-each-ref", "--format=%(refname)") == "refs/heads/health-snapshots\nrefs/heads/main"
+
+
+def test_lease_push_is_idempotent(repository: tuple[Path, str, str], remote: Path) -> None:
+    repo, main, snapshot = repository
+    successor = next_snapshot(repo, snapshot, main, 2, '{"seq":2}\n')
+    publisher.push_with_lease(repo, "health-snapshots", successor, snapshot)
+    before = git(remote, "show-ref")
+    before_log = git(remote, "rev-list", "--all")
+    assert publisher.push_with_lease(repo, "health-snapshots", successor, snapshot) == (successor, False)
+    assert git(remote, "show-ref") == before
+    assert git(remote, "rev-list", "--all") == before_log
+
+
+def test_moved_lease_refuses_naming_both_shas(
+    repository: tuple[Path, str, str], remote: Path, tmp_path: Path,
+) -> None:
+    repo, main, snapshot = repository
+    other = tmp_path / "other"
+    git(tmp_path, "clone", "-q", str(remote), str(other))
+    moved = next_snapshot(other, snapshot, main, 2, '{"other":true}\n')
+    git(other, "push", "-q", "origin", f"{moved}:refs/heads/health-snapshots")
+    ours = next_snapshot(repo, snapshot, main, 2, '{"ours":true}\n')
+    before = git(remote, "show-ref")
+
+    with pytest.raises(publisher.PublisherError) as error:
+        publisher.push_with_lease(repo, "health-snapshots", ours, snapshot)
+    assert snapshot in str(error.value) and moved in str(error.value)
+    assert "lease moved" in str(error.value)
+    # The full apply path reads the same stale local head and refuses the same way.
+    code, record = run_apply(repo)
+    assert code == 2
+    assert snapshot in str(record["reason"]) and moved in str(record["reason"])
+    assert git(remote, "show-ref") == before
+
+
+def test_workflow_schedule_stays_dry_run_without_write(repository: tuple[Path, str, str]) -> None:
+    yaml = pytest.importorskip("yaml")
+    path = Path(publisher.__file__).resolve().parents[1] / ".github/workflows/health-publish-snapshot.yml"
+    workflow = yaml.safe_load(path.read_text())
+    triggers = workflow[True]
+    assert triggers["schedule"] == [{"cron": "7 * * * *"}]
+    assert triggers["workflow_dispatch"]["inputs"]["apply"] == {
+        "description": triggers["workflow_dispatch"]["inputs"]["apply"]["description"],
+        "type": "boolean", "default": False, "required": False,
+    }
+    assert workflow["permissions"] == {"contents": "read"}
+    dry, live = workflow["jobs"]["dry-run"], workflow["jobs"]["apply"]
+    assert "permissions" not in dry
+    assert "--dry-run" in dry["steps"][-1]["run"] and "--apply" not in dry["steps"][-1]["run"]
+    assert live["if"] == "github.event_name == 'workflow_dispatch' && inputs.apply"
+    assert live["permissions"] == {"contents": "write"}
+    assert "--apply" in live["steps"][-1]["run"]
