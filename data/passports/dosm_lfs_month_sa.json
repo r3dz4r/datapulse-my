@@ -3,13 +3,13 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 90.0,
+        "latest_days": 91.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 90,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:38e96d3cd969b27956b1a684654604aa6cd9b4a4a87d384a081ffc6d6e89625a"
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=lfs_month_sa",
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_lfs_month_sa.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:0ecc22ed9d1d8241c151b95fc3eb3941e5ac607765623b3885578647f630e748",
+      "receipt_digest": "sha256:25d85dc615e8879765a5078a9954be634626767f4d8aa198db5d36c071a33b80",
       "sigstore_path": "data/dosm_lfs_month_sa.receipt.sigstore.json",
       "statement_path": "data/dosm_lfs_month_sa.receipt.statement.json"
     },
