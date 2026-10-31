@@ -12,7 +12,7 @@ verified:
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
-datapulse:real_status: "aging"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/dosm_lfs_month_status.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 250
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-Monthly Employment by Status in Employment is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
+Monthly Employment by Status in Employment is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 
