@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:44548003c1b51e35d27dc7f574a6f33a8706abe8d2c5b8558a3250699558a4d6"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_jompay",
@@ -873,7 +873,7 @@
     "receipt": {
       "evidence_path": "data/trnsc_daily_jompay.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:18818ccb00b867e7f6ae61061d1b102fc6f2fce840700ec42690a41f0c655b59",
+      "receipt_digest": "sha256:667080f011fcbd4f65cc210d5eba7e831b715785dea4f19238d51165ee7c26de",
       "sigstore_path": "data/trnsc_daily_jompay.receipt.sigstore.json",
       "statement_path": "data/trnsc_daily_jompay.receipt.statement.json"
     },

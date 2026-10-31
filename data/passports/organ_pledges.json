@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:001e72ae81dbb3c79a071c2a38fbf7fdcdf4311f46d4248620a8d4b2053d497d"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=organ_pledges",
@@ -847,7 +847,7 @@
     "receipt": {
       "evidence_path": "data/organ_pledges.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:9bb45d20a5bfbca4197fdc1ac978ad1470903977774b645808c9460b69c27a61",
+      "receipt_digest": "sha256:744dd562f87068aad21ea0c8365ec9e5ee4e7b536f2989536f5a0c4be11cfa29",
       "sigstore_path": "data/organ_pledges.receipt.sigstore.json",
       "statement_path": "data/organ_pledges.receipt.statement.json"
     },
