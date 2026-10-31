@@ -8,25 +8,25 @@ sources:
   - {"id": "bnm","resource": "https://api.bnm.gov.my/public/interbank-swap","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-31T01:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-26T13:03:23Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Bank Negara Malaysia"
-datapulse:real_status: "fresh"
+datapulse:real_status: "degraded"
 datapulse:health_report: "/data/bnm_interbank_swap.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2
-stale_after: "2026-11-02T00:00:00Z"
+stale_after: "2026-10-27T00:00:00Z"
 datapulse:stale_after_basis: "weekday_cadence"
 ---
 
 # Summary
 
-Interbank Swap is published by Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Interbank Swap is published by Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `degraded`.
 
 # Schema
 
-- `first_row_hash`: `shape-v1:9c0237738803c0555ba520f0c49deb1906d05e1ffde441679169ab9a710ebcb8`
+- `first_row_hash`: `shape-v1:799d5de764660b8a3874c01bae0169ac792351282ecf8703dd3685866a549d6e`
 - `record_count`: `2`
 
 # Quirks

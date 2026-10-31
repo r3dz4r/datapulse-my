@@ -8,21 +8,19 @@ sources:
   - {"id": "met","resource": "https://api.data.gov.my/weather/forecast","title": "MET Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-30T01:58:42Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-25T22:41:25Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "MET Malaysia (Malaysian Meteorological Department)"
-datapulse:real_status: "fresh"
+datapulse:real_status: "unknown-freshness"
 datapulse:health_report: "/data/met_weather.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2520
-stale_after: "2026-10-31T12:00:00Z"
-datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-MET Malaysia Weather Forecast is published by MET Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+MET Malaysia Weather Forecast is published by MET Malaysia and tracked by DataPulse. The latest published probe classifies it as `unknown-freshness`.
 
 # Schema
 
