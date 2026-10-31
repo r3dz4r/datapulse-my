@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import json
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -10,6 +14,93 @@ from scripts.gen_json_envelope import generate as generate_envelopes
 
 
 class CheckUrlDriftTests(unittest.TestCase):
+    def run_audit(self, root: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(ROOT / "scripts/check_url_drift.py"), "--root", str(root)],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+
+    def matching_dynamic_fixture(self, root: Path) -> None:
+        self.dynamic_fixture(root)
+        health_path = root / "health/latest.json"
+        health = json.loads(health_path.read_text())
+        manifest_url = json.loads((root / "datapulse.json").read_text())["datasets"][0]["url"]
+        health["datasets"][0].update(url=manifest_url, request_url=manifest_url)
+        health_path.write_text(json.dumps(health), encoding="utf-8")
+
+    def add_fixture_dataset(
+        self, root: Path, dataset_id: str, status: int, *, dynamic: bool = True,
+    ) -> None:
+        for name in ("datapulse.json", "health/latest.json", "scripts/probe-policy.json"):
+            path = root / name
+            document = json.loads(path.read_text())
+            if name.endswith("probe-policy.json"):
+                if dynamic:
+                    document["datasets"][dataset_id] = document["datasets"]["pricecatcher"]
+            else:
+                row = dict(document["datasets"][0])
+                row["dataset_id" if name.startswith("health") else "id"] = dataset_id
+                if name.startswith("health"):
+                    row["http_status"] = status
+                document["datasets"].append(row)
+            path.write_text(json.dumps(document), encoding="utf-8")
+        for folder, key in (("json", "id"), ("jsonld", "identifier")):
+            row = json.loads((root / f"data/{folder}/pricecatcher.json").read_text())
+            row[key] = dataset_id
+            (root / f"data/{folder}/{dataset_id}.json").write_text(json.dumps(row), encoding="utf-8")
+
+    def test_availability_alone_does_not_fail_the_build(self) -> None:
+        for status in (None, 404, "200", True):
+            with self.subTest(status=status), TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.matching_dynamic_fixture(root)
+                # Keep one confirmed dynamic dataset so this is upstream availability,
+                # rather than a total failure of the probe/network.
+                self.add_fixture_dataset(root, "available", 206)
+                health_path = root / "health/latest.json"
+                health = json.loads(health_path.read_text())
+                health["datasets"][0].update(http_status=status, status="unreachable")
+                health_path.write_text(json.dumps(health), encoding="utf-8")
+
+                result = self.run_audit(root)
+
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn("Availability: 1", result.stderr)
+                self.assertIn("pricecatcher: observed URL has no confirmed HTTP 2xx", result.stderr)
+
+    def test_drift_still_fails_the_build(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.dynamic_fixture(root)
+            result = self.run_audit(root)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("pricecatcher: URL mismatch", result.stdout)
+
+    def test_all_dynamic_unavailable_fails_as_probe_broken(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.matching_dynamic_fixture(root)
+            self.add_fixture_dataset(root, "unavailable", 404)
+            self.add_fixture_dataset(root, "static_available", 200, dynamic=False)
+            health_path = root / "health/latest.json"
+            health = json.loads(health_path.read_text())
+            health["datasets"][0].update(http_status=None, status="unreachable")
+            health_path.write_text(json.dumps(health), encoding="utf-8")
+            result = self.run_audit(root)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("probe found no confirmed HTTP 2xx anywhere", result.stdout + result.stderr)
+            self.assertIn("our probe or our network is broken", result.stdout + result.stderr)
+            self.assertIn("Availability: 2", result.stderr)
+
+    def test_no_dynamic_datasets_does_not_claim_probe_broken(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.matching_dynamic_fixture(root)
+            (root / "scripts/probe-policy.json").write_text(json.dumps({"datasets": {}}))
+            result = self.run_audit(root)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("Availability: 0", result.stderr)
+
     def dynamic_fixture(self, root: Path) -> None:
         (root / "scripts").mkdir()
         (root / "health").mkdir()
@@ -95,10 +186,11 @@ class CheckUrlDriftTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            discrepancies, cadence = audit(root)
+            discrepancies, cadence, availability = audit(root)
 
         self.assertEqual(discrepancies, ["beta: missing health"])
         self.assertEqual(cadence, [])
+        self.assertEqual(availability, [])
 
     def test_monthly_roll_uses_confirmed_probe_url_and_is_idempotent(self):
         with TemporaryDirectory() as directory:
@@ -157,21 +249,23 @@ class CheckUrlDriftTests(unittest.TestCase):
                 self.assertEqual(sync_urls(root), [])
                 self.assertEqual((root / "datapulse.json").read_bytes(), before)
 
-    def test_stale_manifest_missing_surface_and_404_still_fail(self):
+    def test_stale_manifest_and_missing_surface_still_fail_with_404(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             self.dynamic_fixture(root)
-            discrepancies, _ = audit(root)
+            discrepancies, _, _ = audit(root)
             self.assertTrue(any("pricecatcher: URL mismatch" in item for item in discrepancies))
             (root / "data/json/pricecatcher.json").unlink()
-            discrepancies, _ = audit(root)
+            discrepancies, _, _ = audit(root)
             self.assertIn("pricecatcher: missing json envelope", discrepancies)
             health_path = root / "health/latest.json"
             health = json.loads(health_path.read_text())
             health["datasets"][0]["http_status"] = 404
             health_path.write_text(json.dumps(health), encoding="utf-8")
-            discrepancies, _ = audit(root)
-            self.assertTrue(any("status=404" in item for item in discrepancies))
+            discrepancies, _, availability = audit(root)
+            self.assertIn("pricecatcher: missing json envelope", discrepancies)
+            self.assertTrue(any("pricecatcher: URL mismatch" in item for item in discrepancies))
+            self.assertTrue(any("status=404" in item for item in availability))
 
     def test_scoped_envelope_regeneration_uses_manifest_url(self):
         with TemporaryDirectory() as directory:

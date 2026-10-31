@@ -63,7 +63,7 @@ def compare_urls(sources: dict[str, dict[str, str | None]]) -> list[str]:
     return discrepancies
 
 
-def audit(root: Path) -> tuple[list[str], list[str]]:
+def audit(root: Path) -> tuple[list[str], list[str], list[str]]:
     manifest = read_json(root / "datapulse.json")["datasets"]
     health = {row["dataset_id"]: row for row in read_json(root / "health/latest.json")["datasets"]}
     policy = read_json(root / "scripts/probe-policy.json")["datasets"]
@@ -90,6 +90,7 @@ def audit(root: Path) -> tuple[list[str], list[str]]:
     sources = {}
     cadence = []
     availability = []
+    dynamic_count = 0
     for entry in manifest:
         dataset_id = entry["id"]
         sources[dataset_id] = {
@@ -102,6 +103,7 @@ def audit(root: Path) -> tuple[list[str], list[str]]:
         if dataset_id.startswith(GTFS_PREFIX):
             sources[dataset_id].pop("json envelope")
         if dataset_id in dynamic_ids:
+            dynamic_count += 1
             sources[dataset_id]["observed request"] = url(health.get(dataset_id), "request_url")
             status = health.get(dataset_id, {}).get("http_status")
             if type(status) is not int or not 200 <= status < 300:
@@ -117,7 +119,13 @@ def audit(root: Path) -> tuple[list[str], list[str]]:
     html = (root / "docs/index.html").read_text(encoding="utf-8")
     if 'dataset.refresh_frequency ? `On its ${dataset.refresh_frequency} cadence`' not in html:
         cadence.append("dashboard: Next expected update is not derived from dataset.refresh_frequency")
-    return compare_urls(sources) + availability, cadence
+    discrepancies = compare_urls(sources)
+    if dynamic_count and len(availability) == dynamic_count:
+        discrepancies.append(
+            "probe found no confirmed HTTP 2xx anywhere across dynamic datasets; "
+            "our probe or our network is broken"
+        )
+    return discrepancies, cadence, availability
 
 
 def main() -> int:
@@ -125,10 +133,13 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     args = parser.parse_args()
     try:
-        discrepancies, cadence = audit(args.root.resolve())
+        discrepancies, cadence, availability = audit(args.root.resolve())
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
         print(f"URL drift audit error: {error}", file=sys.stderr)
         return 2
+    print(f"Availability: {len(availability)} upstream findings", file=sys.stderr)
+    for item in availability:
+        print(f"  AVAILABILITY {item}", file=sys.stderr)
     print(f"URL drift: {len(discrepancies)} discrepancies")
     for item in discrepancies:
         print(f"  ERROR {item}")
