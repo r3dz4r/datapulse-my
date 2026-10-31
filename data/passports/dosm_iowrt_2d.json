@@ -3,13 +3,13 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 90.0,
+        "latest_days": 91.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 90,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:a4aab30a03aa99aad5ea021c9cb6e69751ce826c78e35b3b00461cbc93d85662"
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=iowrt_2d",
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_iowrt_2d.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:05df8c5a74bf5abb9d5a8368e198d693f97733c0f7df8e76cd0c97a729a17048",
+      "receipt_digest": "sha256:8ff538ade16795a0dbfd9bef9e8ce994ba5be728ed34f1e64f5c552e7409e799",
       "sigstore_path": "data/dosm_iowrt_2d.receipt.sigstore.json",
       "statement_path": "data/dosm_iowrt_2d.receipt.statement.json"
     },

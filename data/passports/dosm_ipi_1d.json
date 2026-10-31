@@ -3,13 +3,13 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 90.0,
+        "latest_days": 91.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 90,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:bdf1ee2626258fabd21e5506a5c5f87eee5257890462fa6b150ca97cce172c97"
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=ipi_1d",
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_ipi_1d.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:f09741cc4e1f392802feee7af9c69aba125ed0d06254a2e83a1d0eb3bea8da60",
+      "receipt_digest": "sha256:55d0a757374cd149ce326cb2c59e760a551f86382d3df8bd744a3be6ac148f3e",
       "sigstore_path": "data/dosm_ipi_1d.receipt.sigstore.json",
       "statement_path": "data/dosm_ipi_1d.receipt.statement.json"
     },

@@ -3,13 +3,13 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 90.0,
+        "latest_days": 91.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 90,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:144e6b77ddb17df3f1ebd8a36abaf91ed2add355468b4eb41873bc9e1d743600"
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=arrivals",
@@ -859,7 +859,7 @@
     "receipt": {
       "evidence_path": "data/arrivals.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:30990c4c71670441ea3aaffb99917f3e8f0e5fd15a10ab89f912e15c89e3b895",
+      "receipt_digest": "sha256:415f1ab73e7616889d027fae615a56fb734d421893f7d12e8f4396834e4628e4",
       "sigstore_path": "data/arrivals.receipt.sigstore.json",
       "statement_path": "data/arrivals.receipt.statement.json"
     },
