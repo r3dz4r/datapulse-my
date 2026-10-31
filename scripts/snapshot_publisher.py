@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Compute a snapshot publish commit without changing repository state."""
+"""Compute a snapshot publish commit; with --apply, lease-push it to health-snapshots.
+
+--dry-run never changes repository state. --apply takes the same decision and
+may only ever write PUBLISH_BRANCH on the remote, under a lease on the head it
+read, and prints one JSON transition record.
+"""
 
 from __future__ import annotations
 
@@ -33,6 +38,14 @@ PUBLISH_SUBJECT = "chore(health): publish snapshot"
 IDENTITY_NAME = "DataPulse Snapshot Publisher"
 IDENTITY_EMAIL = "snapshot-publisher@data-pulse.my"
 SHA_RE = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
+# The only ref apply mode may write. _push_target() refuses every other name
+# before any Git command runs; main is never a push target.
+PUBLISH_BRANCH = "health-snapshots"
+PUBLISH_REMOTE = "origin"
+# notes/2026-10-31-publication-lane-adr.md §State machine, row "publish
+# candidate built": the ceiling and the state names the record reports.
+CANDIDATE_CEILING_SECONDS = 1500
+STATE_LEFT = "publish_candidate_built"
 
 
 class PublisherError(Exception):
@@ -45,6 +58,9 @@ class Decision:
     comparison: str
     tree: str | None = None
     sha: str | None = None
+    tip: str | None = None
+    seq: int | None = None
+    published_seq: int | None = None
 
 
 @dataclass(frozen=True)
@@ -280,8 +296,7 @@ def build_overlay(repo: Path, main: str, tip: str, seq: int, objects: OverlayObj
     return Overlay(tree, sha, changed)
 
 
-def evaluate(repo: Path, in_flight_pr: int | None = None) -> Decision:
-    """Return a dry-run decision and managed-tree comparison from local refs."""
+def _decide(repo: Path, in_flight_pr: int | None, objects: OverlayObjects) -> Decision:
     if in_flight_pr is not None and in_flight_pr < 1:
         raise PublisherError("in-flight PR number must be positive")
     tip = _ref(repo, "refs/heads/health-snapshots", "refs/remotes/origin/health-snapshots")
@@ -289,26 +304,133 @@ def evaluate(repo: Path, in_flight_pr: int | None = None) -> Decision:
     seq, source, _ = _snapshot(repo, tip)
     published_seq, watermark_tree = _watermark(repo, main)
     early = decide(seq, published_seq, in_flight_pr, None)
-    with overlay_objects(repo) as objects:
-        foreign = _foreign_write(repo, main, source, watermark_tree, objects) if early is None else None
-        skip = early or decide(seq, published_seq, in_flight_pr, foreign)
-        overlay = build_overlay(repo, main, tip, seq, objects)
-        comparison = _comparison(repo, main, source, overlay, objects)
+    foreign = _foreign_write(repo, main, source, watermark_tree, objects) if early is None else None
+    skip = early or decide(seq, published_seq, in_flight_pr, foreign)
+    overlay = build_overlay(repo, main, tip, seq, objects)
+    comparison = _comparison(repo, main, source, overlay, objects)
     if skip is not None:
-        return Decision(skip, comparison)
+        return Decision(skip, comparison, tip=tip, seq=seq, published_seq=published_seq)
     return Decision(
         f"would-apply" f" seq={seq} tree={overlay.tree} sha={overlay.sha} changed={overlay.changed}",
-        comparison, overlay.tree, overlay.sha,
+        comparison, overlay.tree, overlay.sha, tip, seq, published_seq,
     )
 
 
+def evaluate(repo: Path, in_flight_pr: int | None = None) -> Decision:
+    """Return a dry-run decision and managed-tree comparison from local refs."""
+    with overlay_objects(repo) as objects:
+        return _decide(repo, in_flight_pr, objects)
+
+
+def _push_target(branch: str) -> str:
+    """Return the one ref apply mode may write, refusing any other branch name."""
+    if branch != PUBLISH_BRANCH:
+        raise PublisherError(f"refusing push target {branch!r}: only {PUBLISH_BRANCH} is writable")
+    return "refs/heads/" + PUBLISH_BRANCH
+
+
+def _remote_head(repo: Path, remote: str, ref: str) -> str | None:
+    rows = git(repo, "ls-remote", "--refs", remote, ref).decode("ascii").splitlines()
+    heads = [row.split("\t", 1)[0] for row in rows if row.endswith("\t" + ref)]
+    if len(heads) > 1:
+        raise PublisherError(f"ambiguous remote ref {ref}")
+    return _sha(heads[0].encode()) if heads else None
+
+
+def push_with_lease(
+    repo: Path, branch: str, sha: str, lease: str, env: Mapping[str, str] | None = None,
+) -> tuple[str, bool]:
+    """Force-with-lease push sha to the publish branch; return (head, moved).
+
+    Refuses when the remote head differs from lease, and when sha does not
+    descend from lease: the branch is the forward-only observation chain
+    (2026-10-25 ADR invariant I1), so a lease never licenses a rewrite.
+    """
+    ref = _push_target(branch)
+    remote = PUBLISH_REMOTE
+    for value in (sha, lease):
+        if SHA_RE.fullmatch(value) is None:
+            raise PublisherError(f"invalid Git object ID: {value}")
+    current = _remote_head(repo, remote, ref)
+    if current == sha:
+        return sha, False
+    if current != lease:
+        raise PublisherError(f"lease moved on {ref}: read {lease}, remote now {current}")
+    ancestry = subprocess.run(
+        ["git", "-C", str(repo), "merge-base", "--is-ancestor", lease, sha],
+        capture_output=True, env=dict(env) if env is not None else None, check=False,
+    )
+    if ancestry.returncode == 1:
+        raise PublisherError(
+            f"refusing non-fast-forward push to {ref}: {sha} does not descend from leased head {lease}"
+        )
+    if ancestry.returncode:
+        raise PublisherError("could not check push ancestry")
+    try:
+        git(repo, "push", "--porcelain", "--no-verify", f"--force-with-lease={ref}:{lease}",
+            remote, f"{sha}:{ref}", env=env)
+    except PublisherError as error:
+        raise PublisherError(
+            f"lease push rejected on {ref}: read {lease}, remote now "
+            f"{_remote_head(repo, remote, ref)}: {error}"
+        ) from error
+    head = _remote_head(repo, remote, ref)
+    if head != sha:
+        raise PublisherError(f"push to {ref} did not land: expected {sha}, remote now {head}")
+    return head, True
+
+
+def _record(decision: str, reason: str, successor: str, published_seq: int | None,
+            branch: str, head: str | None) -> dict[str, object]:
+    return {
+        "decision": decision, "reason": reason, "state_left": STATE_LEFT,
+        "ceiling_seconds": CANDIDATE_CEILING_SECONDS, "successor": successor,
+        "published_seq": published_seq, "branch": branch, "head": head,
+    }
+
+
+SKIP_SUCCESSORS = (
+    ("would-skip already-published ", "published"),
+    ("would-skip in-flight ", "pr_open"),
+    ("would-skip superseded-by ", "idle"),
+)
+
+
+def apply(repo: Path, in_flight_pr: int | None = None, branch: str = PUBLISH_BRANCH) -> dict[str, object]:
+    """Take the dry-run decision and converge the publish branch to it."""
+    _push_target(branch)
+    with overlay_objects(repo) as objects:
+        decision = _decide(repo, in_flight_pr, objects)
+        if decision.sha is None:
+            successor = next(state for prefix, state in SKIP_SUCCESSORS if decision.line.startswith(prefix))
+            return _record("skip", decision.line, successor, decision.published_seq, branch, decision.tip)
+        if decision.tip is None:
+            raise PublisherError("decision carries no leased head")
+        head, moved = push_with_lease(repo, branch, decision.sha, decision.tip, objects.env)
+    if not moved:
+        return _record("no-op", decision.line, "published", decision.seq, branch, head)
+    return _record("applied", decision.line, "published", decision.seq, branch, head)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    """Read local refs and emit decision and comparison lines."""
+    """Emit dry-run decision and comparison lines, or one apply-mode JSON record."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path("."))
-    parser.add_argument("--dry-run", action="store_true", required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--dry-run", action="store_true")
+    mode.add_argument("--apply", action="store_true")
     parser.add_argument("--in-flight-pr", type=int)
     args = parser.parse_args(argv)
+    if args.apply:
+        try:
+            record = apply(args.repo, args.in_flight_pr)
+        except PublisherError as error:
+            LOGGER.error("snapshot publisher: %s", error)
+            record = _record("refused", str(error), STATE_LEFT, None, PUBLISH_BRANCH, None)
+            sys.stdout.write(json.dumps(record, sort_keys=True) + "\n")
+            return 2
+        sys.stdout.write(json.dumps(record, sort_keys=True) + "\n")
+        return 0
     try:
         decision = evaluate(args.repo, args.in_flight_pr)
     except PublisherError as error:

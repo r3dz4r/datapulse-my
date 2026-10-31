@@ -8,6 +8,12 @@ on:
   schedule:
     - cron: '7 * * * *'
   workflow_dispatch:
+    inputs:
+      apply:
+        description: Lease-push the decided commit to health-snapshots (never main)
+        type: boolean
+        default: false
+        required: false
 
 concurrency:
   group: health-publish
@@ -18,6 +24,7 @@ permissions:
 
 jobs:
   dry-run:
+    if: ${{ !inputs.apply }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,3 +39,26 @@ jobs:
           decision="$(python3 scripts/snapshot_publisher.py --dry-run --repo .)"
           printf '%s\n' "$decision"
           printf '%s\n' "$decision" >> "$GITHUB_STEP_SUMMARY"
+
+  # Write permission exists only on an operator dispatch with apply=true;
+  # schedule and push runs never reach this job.
+  apply:
+    if: github.event_name == 'workflow_dispatch' && inputs.apply
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Fetch current publish inputs
+        run: git fetch origin +refs/heads/main:refs/remotes/origin/main +refs/heads/health-snapshots:refs/remotes/origin/health-snapshots
+      - name: Apply publisher decision
+        shell: bash
+        run: |
+          status=0
+          record="$(python3 scripts/snapshot_publisher.py --apply --repo .)" || status=$?
+          printf '%s\n' "$record"
+          printf '%s\n' "$record" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
