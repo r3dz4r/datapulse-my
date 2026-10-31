@@ -12,7 +12,7 @@ verified:
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Immigration Department of Malaysia"
-datapulse:real_status: "aging"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/passports.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 5684
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-Monthly Passport Issuances by State and Branch is published by Immigration Department of Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
+Monthly Passport Issuances by State and Branch is published by Immigration Department of Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 
