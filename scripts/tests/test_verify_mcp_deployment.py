@@ -146,9 +146,15 @@ def test_provenance_workflow_audits_default_branch_without_pr_or_push_gate() -> 
     assert job["if"] == "github.ref == format('refs/heads/{0}', github.event.repository.default_branch)"
     assert job["timeout-minutes"] == 5
     assert job["permissions"] == {"contents": "read", "issues": "write"}
-    checkout, verify, notify = job["steps"]
+    checkout, verify, notify, report = job["steps"]
     assert checkout["with"]["ref"] == "${{ github.event.repository.default_branch }}"
     assert checkout["with"]["fetch-depth"] == 0
+    assert checkout["with"]["filter"] == "blob:none"
+    assert checkout["with"]["sparse-checkout"] == "scripts/verify_mcp_deployment.py"
+    assert checkout["with"]["sparse-checkout-cone-mode"] is False
+    assert [step["timeout-minutes"] for step in (checkout, verify, notify)] == [2, 1, 1]
+    assert sum(step["timeout-minutes"] for step in (checkout, verify, notify)) < job["timeout-minutes"]
+    assert report["if"] == "failure() || cancelled()"
     assert verify["id"] == "verify"
     assert verify["env"]["MCP_ENDPOINT"] == "https://mcp.data-pulse.my/mcp"
     assert verify["env"]["DEFAULT_BRANCH"] == "${{ github.event.repository.default_branch }}"
@@ -166,6 +172,18 @@ def test_provenance_workflow_audits_default_branch_without_pr_or_push_gate() -> 
     assert "github.rest.issues.update" in script
     assert "github.rest.issues.create" in script
     assert "actions/runs/${context.runId}" in script
+
+
+def test_provenance_failure_report_emits_error_and_fails() -> None:
+    report = _provenance_workflow()["jobs"]["provenance"]["steps"][-1]
+    result = subprocess.run(
+        ["bash", "-e", "-o", "pipefail", "-c", report["run"]],
+        capture_output=True, text=True, check=False, timeout=5,
+    )
+    assert result.returncode == 1
+    assert "::error" in result.stdout
+    assert "provenance" in result.stdout
+    assert "5 minutes" in result.stdout
 
 
 @pytest.mark.parametrize(
@@ -265,6 +283,52 @@ class TestExtractDeployedSha:
 
 
 class TestNewestMcpSha:
+    @pytest.mark.parametrize("runtime_path", [
+        "mcp/server.py",
+        "scripts/gen_per_dataset_receipt.py",
+        "scripts/verify_per_dataset_receipt.py",
+    ])
+    def test_blobless_sparse_history_preserves_runtime_revision(
+        self, tmp_path: Path, runtime_path: str,
+    ) -> None:
+        source = tmp_path / "source"
+        clone = tmp_path / "sparse"
+        source.mkdir()
+
+        def git(repo: Path, *args: str) -> str:
+            return subprocess.check_output(
+                ["git", "-C", str(repo), *args], text=True,
+            ).strip()
+
+        git(source, "init", "-q", "-b", "main")
+        git(source, "config", "user.email", "test@example.invalid")
+        git(source, "config", "user.name", "Test")
+        git(source, "config", "uploadpack.allowFilter", "true")
+        (source / "scripts").mkdir()
+        (source / "scripts/verify_mcp_deployment.py").write_bytes(VERIFY_SCRIPT.read_bytes())
+        git(source, "add", ".")
+        git(source, "commit", "-qm", "verifier")
+        runtime = source / runtime_path
+        runtime.parent.mkdir(exist_ok=True)
+        runtime.write_text("runtime revision\n", encoding="utf-8")
+        git(source, "add", ".")
+        git(source, "commit", "-qm", "runtime revision")
+        expected = git(source, "rev-parse", "HEAD")
+        (source / "mcp").mkdir(exist_ok=True)
+        (source / "mcp/README.md").write_text("not runtime\n", encoding="utf-8")
+        git(source, "add", ".")
+        git(source, "commit", "-qm", "non-runtime tip")
+        settings = _provenance_workflow()["jobs"]["provenance"]["steps"][0]["with"]
+        git(source, "clone", "-q", "--no-checkout", f"--filter={settings['filter']}",
+            source.as_uri(), str(clone))
+        git(clone, "sparse-checkout", "set", "--no-cone", settings["sparse-checkout"])
+        git(clone, "checkout", "-q", "main")
+
+        assert git(clone, "rev-parse", "--is-shallow-repository") == "false"
+        assert not (clone / runtime_path).exists()
+        assert (clone / "scripts/verify_mcp_deployment.py").exists()
+        assert newest_mcp_sha(clone, "main") == expected
+
     def test_reads_newest_mcp_commit_from_origin_default_branch(self) -> None:
         expected = subprocess.check_output(
             ["git", "log", "-1", "--format=%H", "origin/main", "--", "mcp/server.py", "scripts/gen_per_dataset_receipt.py", "scripts/verify_per_dataset_receipt.py"],

@@ -24,14 +24,21 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v4
+        timeout-minutes: 2
         with:
           ref: ${{ github.event.repository.default_branch }}
           # The expected revision is the newest deployed MCP code commit, which
           # may predate the checkout tip; a shallow history could produce a false match.
           fetch-depth: 0
+          # Keep all commit/tree history for path-scoped git log, but avoid
+          # downloading archive blobs or materializing the multi-GiB worktree.
+          filter: blob:none
+          sparse-checkout: scripts/verify_mcp_deployment.py
+          sparse-checkout-cone-mode: false
 
       - name: Compare expected and served MCP provenance
         id: verify
+        timeout-minutes: 1
         shell: bash
         env:
           MCP_ENDPOINT: https://mcp.data-pulse.my/mcp
@@ -71,6 +78,7 @@ jobs:
       # Existing scheduled audits have no in-tree notification hook. Keep one
       # open issue per incident and mention the owner when it is first created.
       - name: Notify repository owner of provenance mismatch
+        timeout-minutes: 1
         if: failure() && steps.verify.outputs.exit_code == '1'
         uses: actions/github-script@v7
         with:
@@ -100,6 +108,15 @@ jobs:
             } else {
               await github.rest.issues.create({ ...context.repo, title, body });
             }
+
+      # Step budgets leave time to report regressions before the job ceiling.
+      # A hard job cancellation may still prevent this best-effort annotation.
+      - name: Report provenance audit failure or cancellation
+        if: failure() || cancelled()
+        shell: bash
+        run: |
+          echo '::error title=MCP provenance audit failed::Job provenance failed or was cancelled; job ceiling is 5 minutes (checkout budget 2 minutes, comparison budget 1 minute, notification budget 1 minute). Inspect the failed step for the cause.'
+          exit 1
 
   url-drift:
     # Probe readings are refreshed by publication, so this audit runs after it
