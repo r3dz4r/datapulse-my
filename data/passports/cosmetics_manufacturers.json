@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-31T03:22:31Z",
+    "last_checked": "2026-10-31T02:31:24Z",
     "record_count": 635,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:ee26b4b00c9d9aeca18fd7c1123d6321341c51c7d2349b0a25cc1a772d158413"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/healthcare/cosmetic_manufacturers.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Approved Manufacturers of Cosmetic Products",
     "namespace": "healthcare",
-    "observed_verified_at": "2026-10-31T03:22:31Z",
+    "observed_verified_at": "2026-10-31T02:31:24Z",
     "source": "data.gov.my (storage)",
     "steward": "National Pharmaceutical Regulatory Agency and Ministry of Health Malaysia"
   },
@@ -833,7 +833,7 @@
     "receipt": {
       "evidence_path": "data/cosmetics_manufacturers.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:0d8cfc61a9f41198d0ed6a77bb1172de415f248f24f01ed8c912e85f05eb61d1",
+      "receipt_digest": "sha256:afd1b4888e527a37d8642e49b53e5811eadce75ea7a3515bf52a1cd1a3b7abe4",
       "sigstore_path": "data/cosmetics_manufacturers.receipt.sigstore.json",
       "statement_path": "data/cosmetics_manufacturers.receipt.statement.json"
     },
