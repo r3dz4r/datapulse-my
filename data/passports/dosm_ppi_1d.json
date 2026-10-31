@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 91.0,
+        "latest_days": 60.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-24T12:04:39Z",
-    "record_count": 2935,
+    "last_checked": "2026-10-31T12:28:24Z",
+    "record_count": 2950,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:04e8c5cca5f86aa8e2dbe734f351b1488f5a7461dd4649f217dd1b58f6e83a73"
     },
-    "status": "stale"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=ppi_1d",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Monthly PPI by Section (1 digit)",
     "namespace": "economy",
-    "observed_verified_at": "2026-10-24T12:04:39Z",
+    "observed_verified_at": "2026-10-31T12:28:24Z",
     "source": "DOSM via data.gov.my",
     "steward": "Department of Statistics Malaysia"
   },
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_ppi_1d.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:51f4fa6e4fa95a9b2956a9b14168e07231a7c7415e009dd4f7c4a2d12b04a60d",
+      "receipt_digest": "sha256:cdfe8c6d60ae2e5da34ebbdbfaefd7150bd6f7384c8d7df30c57ca0adf628244",
       "sigstore_path": "data/dosm_ppi_1d.receipt.sigstore.json",
       "statement_path": "data/dosm_ppi_1d.receipt.statement.json"
     },
