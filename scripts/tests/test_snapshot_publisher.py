@@ -380,6 +380,8 @@ def test_moved_lease_refuses_naming_both_shas(
     repo, main, snapshot = repository
     other = tmp_path / "other"
     git(tmp_path, "clone", "-q", str(remote), str(other))
+    git(other, "config", "user.name", "Fixture")
+    git(other, "config", "user.email", "fixture@example.test")
     moved = next_snapshot(other, snapshot, main, 2, '{"other":true}\n')
     git(other, "push", "-q", "origin", f"{moved}:refs/heads/health-snapshots")
     ours = next_snapshot(repo, snapshot, main, 2, '{"ours":true}\n')
