@@ -246,6 +246,28 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
         assert step["if"] == "env.FULL_VERIFICATION == 'true'", name
 
 
+def test_url_drift_audit_runs_after_publication_not_in_front_of_it() -> None:
+    # The audit reads probe readings that publication refreshes; gating the merge on it is a latch.
+    for job_name, job in _workflow()["jobs"].items():
+        for step in job.get("steps", []):
+            assert "check_url_drift" not in step.get("run", ""), job_name
+    alarm = yaml.load(
+        (ROOT / ".github/workflows/provenance-drift.yml").read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    assert set(alarm["on"]) == {"schedule", "workflow_dispatch"}
+    job = alarm["jobs"]["url-drift"]
+    assert job["if"] == "github.ref == format('refs/heads/{0}', github.event.repository.default_branch)"
+    assert job["permissions"] == {"contents": "read"}
+    checkout, audit = job["steps"]
+    assert checkout["with"]["ref"] == "${{ github.event.repository.default_branch }}"
+    assert audit["name"] == "Check URL drift and cadence"
+    assert "if" not in audit and "continue-on-error" not in audit
+    assert "python3 scripts/check_url_drift.py > " in audit["run"]
+    assert '>> "$GITHUB_STEP_SUMMARY"' in audit["run"]
+    assert audit["run"].rstrip().endswith('exit "$status"')
+
+
 def test_ci_profiles_keep_chain_head_ordering_check_and_its_dependencies() -> None:
     steps = {step["name"]: step for step in _workflow()["jobs"][REQUIRED_JOB]["steps"]}
     check = steps["Verify signed chain-head monotonicity"]

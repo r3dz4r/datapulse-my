@@ -272,10 +272,6 @@ jobs:
       - name: Verify OpenWiki source contract
         run: python3 scripts/verify_openwiki.py
 
-      - name: Check URL drift and cadence
-        if: env.FULL_VERIFICATION == 'true'
-        run: python3 scripts/check_url_drift.py
-
       - name: Verify local release invariants
         if: env.FULL_VERIFICATION == 'true'
         run: bash scripts/verify_release_invariants.sh --local
