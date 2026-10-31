@@ -12,7 +12,7 @@ verified:
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
-datapulse:real_status: "aging"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/ppi.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-Monthly Producer Price Index (PPI) is published by dosm and tracked by DataPulse. The latest published probe classifies it as `aging`.
+Monthly Producer Price Index (PPI) is published by dosm and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 
