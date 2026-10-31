@@ -12,7 +12,7 @@ verified:
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
-datapulse:real_status: "stale"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_ppi_1d.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2905
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-Monthly PPI by Section (1 digit) is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Monthly PPI by Section (1 digit) is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
