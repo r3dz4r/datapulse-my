@@ -129,9 +129,13 @@ if $due_mode; then
         else error("Unsupported refresh_frequency: \($frequency)")
         end;
 
-    def failure_cadence($status; $message; $default_minutes):
-      if (($status == "browser-dependent" and (($message // "") | test("unavailable|failed|error"; "i")))
-          or $status == "unreachable" or $status == "degraded")
+    def failure_cadence($status; $message; $default_minutes; $retry_limit):
+      # An outage must not park a dataset beyond its own refresh schedule,
+      # even when the operator supplies a longer retry or cadence override.
+      if $status == "unreachable"
+      then [$retry_cadence_minutes, $default_minutes, $retry_limit] | min
+      elif (($status == "browser-dependent" and (($message // "") | test("unavailable|failed|error"; "i")))
+          or $status == "degraded")
       then $retry_cadence_minutes
       else $default_minutes
       end;
@@ -140,9 +144,11 @@ if $due_mode; then
     | .datasets |= map(
         . as $entry
         | tier_and_cadence($entry.refresh_frequency) as $schedule
+        | (if ($entry.refresh_frequency | ascii_downcase) == "30 seconds"
+           then 0.5 else $schedule[1] end) as $retry_limit
         | (first($previous_rows[] | select(.dataset_id == $entry.id)) // {}) as $old
         | (if $cadence_override == "" then $schedule[1] else ($cadence_override | tonumber) end) as $cadence_minutes
-        | failure_cadence($old.status; $old.message; $cadence_minutes) as $effective_cadence
+        | failure_cadence($old.status; $old.message; $cadence_minutes; $retry_limit) as $effective_cadence
         | (try ($old.last_checked | fromdateiso8601) catch null) as $last_checked_epoch
         | select(($tier_filter == "" or $schedule[0] == $tier_filter)
             and ($last_checked_epoch == null or ($now_epoch - $last_checked_epoch) >= ($effective_cadence * 60)))
