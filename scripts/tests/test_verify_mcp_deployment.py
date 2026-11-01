@@ -416,20 +416,29 @@ class TestNewestMcpSha:
 
         assert newest_mcp_sha(clone) == expected
 
-    def test_uses_checked_out_history_when_origin_is_unavailable(self, tmp_path: Path) -> None:
-        clone = tmp_path / "no-origin-checkout"
-        subprocess.run(["git", "clone", "-q", str(ROOT), str(clone)], check=True)
-        subprocess.run(["git", "remote", "remove", "origin"], cwd=clone, check=True)
+    def test_refuses_to_use_head_when_default_branch_is_unavailable(
+        self, tmp_path: Path,
+    ) -> None:
+        repo = tmp_path / "no-default-branch"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", "-b", "feature"], cwd=repo, check=True)
         subprocess.run(
-            ["git", "update-ref", "--no-deref", "-d", "refs/remotes/origin/HEAD"],
-            cwd=clone,
-            check=True,
+            ["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True,
         )
-        assert subprocess.check_output(
-            ["git", "log", "-1", "--format=%H", "HEAD", "--", "mcp/server.py", "scripts/gen_per_dataset_receipt.py", "scripts/verify_per_dataset_receipt.py"],
-            cwd=clone,
-            text=True,
-        ).strip() == newest_mcp_sha(clone)
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+        (repo / "mcp").mkdir()
+        (repo / "mcp/server.py").write_text("pull request head\n", encoding="utf-8")
+        subprocess.run(["git", "add", "mcp/server.py"], cwd=repo, check=True)
+        subprocess.run(["git", "commit", "-qm", "pull request head"], cwd=repo, check=True)
+        tip = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
+
+        try:
+            derived = newest_mcp_sha(repo)
+        except RepositoryHistoryError as error:
+            assert "fetch the default branch ref" in str(error)
+            assert "origin's advertised default branch" in str(error)
+        else:
+            pytest.fail(f"newest_mcp_sha returned {derived}; HEAD tip was {tip}")
 
     def test_shallow_clone_cannot_derive_a_passing_expected_revision(
         self, tmp_path: Path,

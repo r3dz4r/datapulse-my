@@ -114,10 +114,11 @@ def newest_mcp_sha(repo_path: Path, default_branch: str | None = None) -> str:
         )
     try:
         ref = default_branch_ref(repo_path, default_branch)
-    except RepositoryHistoryError:
-        # A remote is useful for identifying its default branch, but it is not
-        # required when the checked-out history already contains the answer.
-        ref = "HEAD"
+    except RepositoryHistoryError as error:
+        branch = default_branch or "origin's advertised default branch"
+        raise RepositoryHistoryError(
+            f"cannot resolve default branch {branch!r}; fetch the default branch ref"
+        ) from error
     # Keep this list explicit: tests, docs, and future files under mcp/ do not
     # change the deployed source identity unless they become runtime inputs.
     sha = _git(
