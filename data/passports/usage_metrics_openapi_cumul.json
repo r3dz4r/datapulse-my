@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-31T03:22:31Z",
+    "last_checked": "2026-10-31T02:31:24Z",
     "record_count": 30,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:06f320a2e4d2434d076b040e6f26ad0162a7c8339c06926ffc857890944a9a94"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi_cumul",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Cumulative OpenAPI Hits by Endpoint",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-31T03:22:31Z",
+    "observed_verified_at": "2026-10-31T02:31:24Z",
     "source": "data.gov.my (OpenAPI)",
     "steward": "National Digital Department and Ministry of Digital"
   },
@@ -951,7 +951,7 @@
     "receipt": {
       "evidence_path": "data/usage_metrics_openapi_cumul.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:ef2fc5b5d70230278cb28ad65c03215130f23cc3a92c408a0bc74b3432427e4c",
+      "receipt_digest": "sha256:dec61e8e2fab75b39125a2d9bed5aeb9d3d862e357ee256251d4cebb3d683f0f",
       "sigstore_path": "data/usage_metrics_openapi_cumul.receipt.sigstore.json",
       "statement_path": "data/usage_metrics_openapi_cumul.receipt.statement.json"
     },

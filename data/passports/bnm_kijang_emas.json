@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-31T03:22:31Z",
+    "last_checked": "2026-10-31T02:31:24Z",
     "record_count": 2,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:2376f3ea9cbdd776f08ebe34e7d78084c8dd520a7f10e465c4b337a9801f7bb8"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/kijang-emas",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Kijang Emas (Gold Reference Price)",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-31T03:22:31Z",
+    "observed_verified_at": "2026-10-31T02:31:24Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1129,7 +1129,7 @@
     "receipt": {
       "evidence_path": "data/bnm_kijang_emas.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:776ed9203ccee7e0913de5a28aa03f376f29c7c073a8d19fa08618310e45b9a9",
+      "receipt_digest": "sha256:4f301205078f0ec6a5bd6e4db302c66f45a40ccdd54061a6869fdc55dead436f",
       "sigstore_path": "data/bnm_kijang_emas.receipt.sigstore.json",
       "statement_path": "data/bnm_kijang_emas.receipt.statement.json"
     },

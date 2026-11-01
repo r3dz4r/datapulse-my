@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,7 +20,7 @@
     "freshness_signal_source": "last_modified_header",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-31T03:22:31Z",
+    "last_checked": "2026-10-31T09:00:58Z",
     "record_count": 1469855,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:e31e5a55152ec3f528cedc488ce3207a71b3c095f1f64668ec6ecf7565f604b8"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/transportation/ktmb/komuter_2026.csv",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "KTMB Komuter Origin-Destination Ridership",
     "namespace": "transport",
-    "observed_verified_at": "2026-10-31T03:22:31Z",
+    "observed_verified_at": "2026-10-31T09:00:58Z",
     "source": "data.gov.my",
     "steward": "Keretapi Tanah Melayu Berhad"
   },
@@ -924,7 +924,7 @@
     "receipt": {
       "evidence_path": "data/ridership_od_komuter.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:aad76596bc02ea557634d51c5ab3c5abe52fb7345382557018aeaab1872b5daf",
+      "receipt_digest": "sha256:f253ec063b9098e4711d2c024cdf690a61933d9ce7437cf1a23adf88deec2ce4",
       "sigstore_path": "data/ridership_od_komuter.receipt.sigstore.json",
       "statement_path": "data/ridership_od_komuter.receipt.statement.json"
     },

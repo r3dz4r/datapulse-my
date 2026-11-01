@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-31T03:22:31Z",
+    "last_checked": "2026-10-31T02:31:24Z",
     "record_count": 1,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:e42cf47c3841aad22c4e97c748f9e6e40a3a1a5dca549a6547346e57673a6369"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/my-overnight-rate",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Malaysia Overnight Rate (MYOR)",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-31T03:22:31Z",
+    "observed_verified_at": "2026-10-31T02:31:24Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1129,7 +1129,7 @@
     "receipt": {
       "evidence_path": "data/bnm_myor.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:f62324c3fad451527790c3dce32b183fb7707f0b01dacc2c81df87eb8ea588d4",
+      "receipt_digest": "sha256:0bd10c712894753e42e326233fe7ccc9b4f8432ad88610a15b9ebf2054b62ba2",
       "sigstore_path": "data/bnm_myor.receipt.sigstore.json",
       "statement_path": "data/bnm_myor.receipt.statement.json"
     },

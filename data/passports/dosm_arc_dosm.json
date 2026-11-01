@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": true,
-    "last_checked": "2026-10-31T03:22:31Z",
+    "last_checked": "2026-10-31T02:31:24Z",
     "record_count": 311,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:5b98f9bb4a145f161b27303642090c11e5116c32581f5b2c3b6a8c2490e57864"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=arc_dosm",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "DOSM's Advance Release Calendar",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-31T03:22:31Z",
+    "observed_verified_at": "2026-10-31T02:31:24Z",
     "source": "DOSM via data.gov.my",
     "steward": "Department of Statistics Malaysia"
   },
@@ -2331,7 +2331,7 @@
     "receipt": {
       "evidence_path": "data/dosm_arc_dosm.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:1e4c4b30c253b02050568c74e8564f4d54a5c61374be173d0dc1d8c7ced50e4b",
+      "receipt_digest": "sha256:ad7860d258631fea02a488290d919fa2c350db25e4fece00fbb75e4f2cecee9f",
       "sigstore_path": "data/dosm_arc_dosm.receipt.sigstore.json",
       "statement_path": "data/dosm_arc_dosm.receipt.statement.json"
     },
