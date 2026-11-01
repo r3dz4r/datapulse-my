@@ -210,6 +210,18 @@ jobs:
         if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/gen_readme.py
 
+      - name: Fetch the default branch ref for source-identity derivation
+        if: env.FULL_VERIFICATION == 'true'
+        run: |
+          git fetch --no-tags origin "+refs/heads/${{ github.event.repository.default_branch }}:refs/remotes/origin/${{ github.event.repository.default_branch }}"
+          git remote set-head origin --auto
+          echo "--- derivation diagnostics"
+          echo "shallow: $(git rev-parse --is-shallow-repository)"
+          echo "default_ref_commit: $(git rev-parse --verify -q "refs/remotes/origin/${{ github.event.repository.default_branch }}^{commit}" || echo MISSING)"
+          echo "origin_head: $(git symbolic-ref -q refs/remotes/origin/HEAD || echo MISSING)"
+          echo "newest_mcp_touching: $(git log -1 --format=%H origin/${{ github.event.repository.default_branch }} -- mcp/server.py scripts/gen_per_dataset_receipt.py scripts/verify_per_dataset_receipt.py || echo NONE)"
+          echo "head: $(git rev-parse HEAD)"
+
       - name: Run repository-contract and MCP tests
         if: env.FULL_VERIFICATION == 'true'
         env:
