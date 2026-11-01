@@ -5,7 +5,7 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 9.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,16 +20,16 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-10-25T08:07:37Z",
+    "last_checked": "2026-11-01T08:22:37Z",
     "record_count": 3,
     "record_count_estimated": false,
     "record_count_within_tolerance": true,
     "schema_shape": {
       "column_count": 8,
-      "content_shape_changed": false,
-      "first_row_hash": "shape-v1:37c5dd363ab3362335db9e13dce971632b379fe85c6538c4ddd15f5c84e36050"
+      "content_shape_changed": true,
+      "first_row_hash": "shape-v1:8b51921b22fd807f5d1acd73c7f75e58b30434ef78142b04159e6198e6466275"
     },
-    "status": "fresh"
+    "status": "degraded"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/interest-rate",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Interest Rates: Banking Institutions",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-10-25T08:07:37Z",
+    "observed_verified_at": "2026-11-01T08:22:37Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -1129,7 +1129,7 @@
     "receipt": {
       "evidence_path": "data/bnm_interest_rate.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:0c31ff8db1b0e5f08b9dfebf13e49ba9ea297581f2846950dc04da2f6e90732e",
+      "receipt_digest": "sha256:a1c67953992239a9bfc603231ed6e332174a079cd5b5df707c95b59d76f24099",
       "sigstore_path": "data/bnm_interest_rate.receipt.sigstore.json",
       "statement_path": "data/bnm_interest_rate.receipt.statement.json"
     },
