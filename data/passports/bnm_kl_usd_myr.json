@@ -5,31 +5,31 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 2.0,
+        "latest_days": null,
         "mean_days": null,
         "metric": "freshness_delta_days",
-        "mode": "cadence_fallback",
+        "mode": "not_evaluated",
         "sample_days": 7,
         "stdev_days": null,
-        "threshold_days": 3,
+        "threshold_days": null,
         "window_days": 14
       }
     },
     "expected_record_count": 2,
-    "freshness_signal": "content-date-parse",
-    "freshness_signal_source": "content_date_parse",
-    "http_status": 200,
+    "freshness_signal": "no-header",
+    "freshness_signal_source": "none",
+    "http_status": 500,
     "incomplete": false,
-    "last_checked": "2026-11-01T04:57:08Z",
-    "record_count": 2,
+    "last_checked": "2026-11-01T05:27:51Z",
+    "record_count": null,
     "record_count_estimated": false,
-    "record_count_within_tolerance": true,
+    "record_count_within_tolerance": null,
     "schema_shape": {
       "column_count": null,
       "content_shape_changed": false,
-      "first_row_hash": "shape-v1:97f7c0f86ff1a2a9aeadf939bbeba9ac76f66ceb8dbf8c434c8db98606cdf9fa"
+      "first_row_hash": null
     },
-    "status": "aging"
+    "status": "unreachable"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/kl-usd-reference-rate",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "Kuala Lumpur USD/MYR Reference Rate",
     "namespace": "government_open_data",
-    "observed_verified_at": "2026-11-01T04:57:08Z",
+    "observed_verified_at": "2026-11-01T05:27:51Z",
     "source": "BNM Open API (apikijangportal.bnm.gov.my)",
     "steward": "Bank Negara Malaysia"
   },
@@ -571,9 +571,9 @@
               "Records one observed access signal; it does not promise continuing access."
             ],
             "reason_codes": [
-              "observed_access_signal_present"
+              "observed_access_unreachable"
             ],
-            "state": "pass"
+            "state": "fail"
           },
           {
             "check_id": "fair.shape_metadata",
@@ -595,9 +595,9 @@
               "Shape metadata is not a semantic interoperability assessment."
             ],
             "reason_codes": [
-              "shape_metadata_observed"
+              "shape_metadata_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           },
           {
             "check_id": "fair.reuse_metadata",
@@ -622,11 +622,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 4,
-          "failed": 0,
+          "evaluated": 3,
+          "failed": 1,
           "not_applicable": 0,
-          "passed": 4,
-          "unknown": 0
+          "passed": 2,
+          "unknown": 1
         },
         "evidence_refs": [
           {
@@ -676,11 +676,11 @@
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
           "catalogue_metadata_declared",
-          "observed_access_signal_present",
-          "shape_metadata_observed",
+          "observed_access_unreachable",
+          "shape_metadata_missing",
           "reuse_metadata_declared"
         ],
-        "state": "pass"
+        "state": "fail"
       },
       "governance": {
         "checks": [
@@ -996,9 +996,9 @@
               "Shape signals are bounded structural observations, not a complete reproducibility proof."
             ],
             "reason_codes": [
-              "shape_fingerprint_observed"
+              "shape_fingerprint_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           },
           {
             "check_id": "reproducibility.retrieval_timestamp",
@@ -1036,9 +1036,9 @@
               "A count is an observed or estimated measurement, not a completeness guarantee."
             ],
             "reason_codes": [
-              "record_count_observed"
+              "record_count_missing"
             ],
-            "state": "pass"
+            "state": "unknown"
           },
           {
             "check_id": "reproducibility.attestation_reference",
@@ -1059,11 +1059,11 @@
         ],
         "coverage": {
           "applicable": 4,
-          "evaluated": 4,
+          "evaluated": 2,
           "failed": 0,
           "not_applicable": 0,
-          "passed": 4,
-          "unknown": 0
+          "passed": 2,
+          "unknown": 2
         },
         "evidence_refs": [
           {
@@ -1104,18 +1104,18 @@
         ],
         "policy_basis": "datapulse-quality-readiness/v1",
         "reason_codes": [
-          "shape_fingerprint_observed",
+          "shape_fingerprint_missing",
           "last_checked_declared",
-          "record_count_observed",
+          "record_count_missing",
           "attestation_ref_declared"
         ],
-        "state": "pass"
+        "state": "unknown"
       }
     },
     "limitations": [
       "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
     ],
-    "overall": "ready",
+    "overall": "not_ready",
     "policy_id": "datapulse-quality-readiness/v1",
     "profile_version": "datapulse-quality-profile/v1"
   },
@@ -1129,7 +1129,7 @@
     "receipt": {
       "evidence_path": "data/bnm_kl_usd_myr.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:d819794b93ca63dbaa239ee56b6ffbf38be29755940fee91c99232f6f3bdf629",
+      "receipt_digest": "sha256:537731538009d92bb6fc90b717f18ac24a321e8e41be2d665844138f49bde635",
       "sigstore_path": "data/bnm_kl_usd_myr.receipt.sigstore.json",
       "statement_path": "data/bnm_kl_usd_myr.receipt.statement.json"
     },
