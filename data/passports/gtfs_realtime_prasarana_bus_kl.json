@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl",
     "anomaly_reliability": {
-      "anomaly_detected": false,
+      "anomaly_detected": true,
       "anomaly_detection": {
-        "latest_days": 0.0005902777777777778,
+        "latest_days": 0.0012037037037037038,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,8 +20,8 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-11-01T03:56:52Z",
-    "record_count": 68,
+    "last_checked": "2026-11-01T04:27:38Z",
+    "record_count": 73,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
     "schema_shape": {
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "aging"
+    "status": "stale"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-kl",
@@ -39,7 +39,7 @@
     "geography": "Klang Valley",
     "name": "GTFS Realtime — Rapid KL Bus Vehicle Positions",
     "namespace": "transport",
-    "observed_verified_at": "2026-11-01T03:56:52Z",
+    "observed_verified_at": "2026-11-01T04:27:38Z",
     "source": "data.gov.my (GTFS API)",
     "steward": "Prasarana Malaysia Berhad"
   },
@@ -920,12 +920,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-31/revisions/ba89110187abbc7f337d64b8bf1b8562b135768dfee9d0e322a1727269d49920/gtfs_realtime_prasarana_bus_kl.json",
-    "chain_reference": "attestations/2026-10-31/revisions/ba89110187abbc7f337d64b8bf1b8562b135768dfee9d0e322a1727269d49920/chain_head.json",
+    "attestation": "attestations/2026-11-01/revisions/5d9c9921a65443eaab2fa23f367a7b06bb1b805f1503d98fcd782e1ae5db9458/gtfs_realtime_prasarana_bus_kl.json",
+    "chain_reference": "attestations/2026-11-01/revisions/5d9c9921a65443eaab2fa23f367a7b06bb1b805f1503d98fcd782e1ae5db9458/chain_head.json",
     "receipt": {
       "evidence_path": "data/gtfs_realtime_prasarana_bus_kl.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:cb8ab5e092a1a1e303e5e7043d86061cbd67d91a8aed4fde87b9d8fabd4a64c2",
+      "receipt_digest": "sha256:2d10167a1c4c0af3a673e4eb9aedc1ba2739bce119efe88ea67fc2e3511c0a37",
       "sigstore_path": "data/gtfs_realtime_prasarana_bus_kl.receipt.sigstore.json",
       "statement_path": "data/gtfs_realtime_prasarana_bus_kl.receipt.statement.json"
     },
