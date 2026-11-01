@@ -8,11 +8,11 @@ sources:
   - {"id": "doe","resource": "https://eqms.doe.gov.my/RQIMS/conti_river","title": "Department of Environment Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-31T01:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-01T01:57:56Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Data and information are subject to the Malaysian Government Open Data Terms of Use 1.0"
-datapulse:real_status: "fresh"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/doe_rqims.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-DOE RQIMS River Water Quality (Continuous) is published by Department of Environment Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+DOE RQIMS River Water Quality (Continuous) is published by Department of Environment Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 

@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=cpi_state_inflation","title": "dosm"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-13T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-24T19:10:14Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-31T21:14:29Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"

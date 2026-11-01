@@ -8,7 +8,7 @@ sources:
   - {"id": "tnb","resource": "https://api.data.gov.my/data-catalogue?id=electricity_consumption","title": "Tenaga Nasional Berhad"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:04:39Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-31T13:12:59Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Tenaga Nasional Berhad, Sabah Electricity Sdn. Bhd., Sarawak Energy Berhad, Energy Commission of Malaysia, Department of Statistics Malaysia"
