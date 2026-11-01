@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts.gen_dataset_passports import generate
 from scripts.verify_series_registry import (
     RegistryParseError,
     RegistryUnavailableError,
@@ -112,6 +113,25 @@ def test_repository_registry_passes() -> None:
     assert result.returncode == 0, _combined(result)
     assert "series registry verified" in _combined(result)
     assert verify(ROOT) == []
+
+
+def test_repository_registry_passes_against_generated_passports(tmp_path: Path) -> None:
+    # data/passports/ is build output, not tracked, so the verifier would skip the
+    # passport check on a clean checkout. Generate the build's passports and check those.
+    root = tmp_path / "built-root"
+    (root / "config").mkdir(parents=True)
+    shutil.copy2(SCHEMA, root / "config/series-registry.schema.json")
+    shutil.copy2(REGISTRY, root / "config/series-registry.json")
+    shutil.copy2(ROOT / "datapulse.json", root / "datapulse.json")
+    count = generate(ROOT, root / "data/passports")
+    manifest = json.loads((ROOT / "datapulse.json").read_text(encoding="utf-8"))
+    assert count == len(manifest["datasets"])
+    assert len(list((root / "data/passports").glob("*.json"))) == count + 1
+
+    result = _run(root)
+
+    assert result.returncode == 0, _combined(result)
+    assert verify(root) == []
 
 
 def test_datasets_without_series_identity_are_not_failures(tmp_path: Path) -> None:

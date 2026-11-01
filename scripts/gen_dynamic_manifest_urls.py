@@ -25,6 +25,9 @@ SURFACE_PATHS = (
     "docs/datasets/{id}.html",
     "docs/okf/datasets/{id}.md",
 )
+# Generated during the Pages build and not tracked, so a clean checkout never has
+# them; regenerate() still rewrites them, but their absence is not staleness.
+BUILD_ONLY_SURFACE_PATHS = frozenset({"data/passports/{id}.json"})
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -97,7 +100,7 @@ def stale_surfaces(root: Path) -> list[str]:
         if "dynamic-url" not in settings:
             continue
         expected = by_id[dataset_id]["url"]
-        paths = (root / template.format(id=dataset_id) for template in SURFACE_PATHS)
+        paths = (root / template.format(id=dataset_id) for template in SURFACE_PATHS if template not in BUILD_ONLY_SURFACE_PATHS)
         if any(not path.is_file() or expected not in path.read_text(encoding="utf-8") for path in paths):
             stale.append(dataset_id)
     return stale

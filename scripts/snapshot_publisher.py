@@ -26,10 +26,12 @@ LOGGER = logging.getLogger(__name__)
 # Source: /home/redza/dotfiles/scripts/datapulse-pipeline.sh:63. That file is
 # outside this repository and unavailable in Actions, so this is the one local
 # declaration until the producer's path list has a shared source.
+# data/passports is deliberately absent: the Pages build generates it and git
+# ignores it, so the producer's copy of this list must drop it too.
 ARTIFACT_PATHS = (
     "health", "badges", "feed.xml", "changelog.json", "catalog-snapshot.json",
     "catalog-graph.json", "datapulse_summary.json", "README.md", "record-evidence",
-    "deltas", "data/passports", "docs/okf", "docs/datasets",
+    "deltas", "docs/okf", "docs/datasets",
     "observation-receipts", "datapulse.json", "data/json", "data/jsonld",
     "docs/index.html",
 )
