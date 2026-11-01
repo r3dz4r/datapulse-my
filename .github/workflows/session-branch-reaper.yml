@@ -1,0 +1,108 @@
+name: Session branch reaper
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Keep refs and print proposed deletions (false explicitly enables deletion)
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  reap:
+    # Closing a PR is not authority to delete arbitrary refs or a fork's branch.
+    # Scope the write-capable job before it starts; the shared guard checks again.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'closed' &&
+       github.event.pull_request.state == 'closed' &&
+       startsWith(github.event.pull_request.head.ref, 'session/') &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Reap only finished session refs
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            function deletionVerdict(branch, pulls, repository) {
+              const name = branch.name;
+              if (['main', 'health-automation', 'health-snapshots'].includes(name) ||
+                  name.startsWith('release-please--')) {
+                return {delete: false, reason: 'reserved ref'};
+              }
+              // A close event alone grants no ownership of publishing or other work refs.
+              if (!name.startsWith('session/') || name.length <= 'session/'.length) {
+                return {delete: false, reason: 'outside session/*'};
+              }
+              if (branch.protected !== false) {
+                return {delete: false, reason: 'protected or protection unknown'};
+              }
+              const related = pulls.filter(pr => pr.head.ref === name &&
+                pr.head.repo?.full_name === repository);
+              if (related.some(pr => pr.state === 'open')) {
+                return {delete: false, reason: 'open pull request'};
+              }
+              if (related.some(pr => pr.state !== 'closed')) {
+                return {delete: false, reason: 'unknown pull request state'};
+              }
+              // A reused branch or work pushed after closure must survive an old PR.
+              const closed = related.find(pr => pr.state === 'closed' &&
+                pr.head.sha === branch.commit.sha);
+              if (!closed) {
+                return {delete: false, reason: 'no closed PR for current tip'};
+              }
+              return {delete: true, reason: `${closed.merged_at ? 'merged' : 'abandoned'} PR #${closed.number}`};
+            }
+
+            const { owner, repo } = context.repo;
+            const repository = `${owner}/${repo}`;
+            const manual = context.eventName === 'workflow_dispatch';
+            // Missing or malformed dispatch input stays dry. Never interpolate PR data.
+            const dryRun = manual && context.payload.inputs?.dry_run !== 'false';
+            let names;
+            if (manual) {
+              const refs = await github.paginate(github.rest.git.listMatchingRefs, {
+                owner, repo, ref: 'heads/session/'
+              });
+              names = refs.map(ref => ref.ref.replace(/^refs\/heads\//, ''));
+            } else {
+              const pr = context.payload.pull_request;
+              if (context.eventName !== 'pull_request' || context.payload.action !== 'closed' ||
+                  pr?.state !== 'closed' || pr.head.repo?.full_name !== repository) {
+                core.info('KEEP: not a same-repository closed pull request');
+                return;
+              }
+              names = [pr.head.ref];
+            }
+            for (const name of names) {
+              let branch;
+              try {
+                ({ data: branch } = await github.rest.repos.getBranch({owner, repo, branch: name}));
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                core.info(`KEEP ${name}: ref already absent`);
+                continue;
+              }
+              // Public PR metadata is readable without pull-requests permission.
+              // Paginate every state and base, so another open PR cannot be overlooked.
+              const pulls = await github.paginate(github.rest.pulls.list, {
+                owner, repo, head: `${owner}:${name}`, state: 'all', per_page: 100
+              });
+              const verdict = deletionVerdict(branch, pulls, repository);
+              if (!verdict.delete || dryRun) {
+                core.info(`KEEP ${name}: ${dryRun && verdict.delete ? 'dry run; would delete; ' : ''}${verdict.reason}`);
+                continue;
+              }
+              // API errors fail the job; never weaken the guard or retry a refused delete.
+              await github.rest.git.deleteRef({owner, repo, ref: `heads/${branch.name}`});
+              core.info(`DELETED ${branch.name}: ${verdict.reason}`);
+            }
