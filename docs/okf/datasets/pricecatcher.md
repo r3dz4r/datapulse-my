@@ -8,7 +8,7 @@ sources:
   - {"id": "kpdn","resource": "https://storage.data.gov.my/pricecatcher/pricecatcher_2026-10.parquet","title": "KPDN"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:33:09Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-31T13:12:59Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Ministry of Domestic Trade, Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/pricecatcher.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-12-09T12:00:00Z"
+stale_after: "2026-12-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -26,7 +26,7 @@ PriceCatcher (Grocery Prices) is published by KPDN and tracked by DataPulse. The
 
 # Schema
 
-- `record_count`: `9427`
+- `record_count`: `15099`
 
 # Quirks
 

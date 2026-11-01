@@ -8,7 +8,7 @@ sources:
   - {"id": "jpj","resource": "https://storage.data.gov.my/transportation/registrations_type_fuel.csv","title": "Road Transport Department Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-24T12:04:39Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-31T13:12:59Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Road Transport Department, Ministry of Transport"
