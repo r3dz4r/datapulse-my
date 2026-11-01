@@ -628,6 +628,20 @@ jobs:
           python3 scripts/embed_dashboard_data.py --health health/latest.json
           bash scripts/verify_release_invariants.sh --local
 
+      - name: Generate dataset passports from the bound observation build
+        # data/passports/ is build output, not tracked. The restore above replaces
+        # data/ from Git, so generate the passports here from the bound inputs.
+        run: |
+          set -Eeuo pipefail
+          rm -rf data/passports
+          python3 scripts/gen_dataset_passports.py
+          expected="$(jq -er '.datasets | length' datapulse.json)"
+          actual="$(find data/passports -maxdepth 1 -type f -name '*.json' ! -name index.json | wc -l)"
+          if [[ "$actual" -ne "$expected" ]] || ! jq -e --argjson n "$expected" '.dataset_count == $n' data/passports/index.json >/dev/null; then
+            echo "::error title=Dataset passports incomplete::generated $actual passports for $expected manifest datasets"
+            exit 1
+          fi
+
       - name: Assemble canonical Pages artifact
         run: |
           set -Eeuo pipefail
@@ -678,6 +692,7 @@ jobs:
           grep -qxF '/okf/ /okf/index.md 301' _site/_redirects
           grep -qxF '/okf /okf/index.md 301' _site/_redirects
           test -s _site/health/latest.json
+          test -s _site/data/passports/index.json
 
       - name: Keep verifier-reachable attestation history
         run: python3 scripts/select_served_attestations.py --apply --root . --site _site --full-revisions-per-day 1 --max-files 18000
