@@ -8,11 +8,11 @@ sources:
   - {"id": "npra","resource": "https://storage.data.gov.my/healthcare/cosmetic_manufacturers.csv","title": "National Pharmaceutical Regulatory Agency and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-30T01:58:42Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-31T02:31:24Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Pharmaceutical Regulatory Agency, Ministry of Health Malaysia"
-datapulse:real_status: "fresh"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/cosmetics_manufacturers.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
@@ -20,7 +20,7 @@ datapulse:expected_record_count: null
 
 # Summary
 
-Approved Manufacturers of Cosmetic Products is published by National Pharmaceutical Regulatory Agency and Ministry of Health Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Approved Manufacturers of Cosmetic Products is published by National Pharmaceutical Regulatory Agency and Ministry of Health Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
