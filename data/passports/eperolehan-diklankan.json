@@ -3,9 +3,9 @@
     "access_dependency": "direct",
     "access_method": "direct curl GET",
     "anomaly_reliability": {
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 0.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
@@ -20,7 +20,7 @@
     "freshness_signal_source": "content_date_parse",
     "http_status": 200,
     "incomplete": false,
-    "last_checked": "2026-11-01T03:56:52Z",
+    "last_checked": "2026-11-01T04:27:38Z",
     "record_count": null,
     "record_count_estimated": false,
     "record_count_within_tolerance": null,
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": null
     },
-    "status": "stale"
+    "status": "fresh"
   },
   "identity": {
     "canonical_url": "https://www.eperolehan.gov.my/quotation-tender-notice",
@@ -39,7 +39,7 @@
     "geography": "Malaysia",
     "name": "ePerolehan Tender Notices (DIIKLANKAN)",
     "namespace": "other",
-    "observed_verified_at": "2026-11-01T03:56:52Z",
+    "observed_verified_at": "2026-11-01T04:27:38Z",
     "source": "ePerolehan",
     "steward": "Ministry of Finance Malaysia"
   },
@@ -889,12 +889,12 @@
     "state": "not_evaluated"
   },
   "reproducibility_and_evidence": {
-    "attestation": "attestations/2026-10-31/revisions/ba89110187abbc7f337d64b8bf1b8562b135768dfee9d0e322a1727269d49920/eperolehan-diklankan.json",
-    "chain_reference": "attestations/2026-10-31/revisions/ba89110187abbc7f337d64b8bf1b8562b135768dfee9d0e322a1727269d49920/chain_head.json",
+    "attestation": "attestations/2026-11-01/revisions/5d9c9921a65443eaab2fa23f367a7b06bb1b805f1503d98fcd782e1ae5db9458/eperolehan-diklankan.json",
+    "chain_reference": "attestations/2026-11-01/revisions/5d9c9921a65443eaab2fa23f367a7b06bb1b805f1503d98fcd782e1ae5db9458/chain_head.json",
     "receipt": {
       "evidence_path": "data/eperolehan-diklankan.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:8b9404741ca2817587aa216b58f21f7935e060b70b0f941686186ea95c1069ba",
+      "receipt_digest": "sha256:4f9753859ce34da756f7df4504b8574155799e11d34e81e96435a7b961519cbb",
       "sigstore_path": "data/eperolehan-diklankan.receipt.sigstore.json",
       "statement_path": "data/eperolehan-diklankan.receipt.statement.json"
     },
