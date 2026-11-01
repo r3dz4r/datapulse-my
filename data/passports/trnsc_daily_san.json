@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:eeadf31f118e6d5638bdb7130033424044985406a4f786af0cd0716de1f25301"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=trnsc_daily_san",
@@ -873,7 +873,7 @@
     "receipt": {
       "evidence_path": "data/trnsc_daily_san.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:96cf62a2bbc35a9a243cbf29ab51def86605487671e15296a221575b8e6c2e81",
+      "receipt_digest": "sha256:058edb2c6f1816240bb31a8e32ed1872a28855c7c2418bd3e61e8d269facfadd",
       "sigstore_path": "data/trnsc_daily_san.receipt.sigstore.json",
       "statement_path": "data/trnsc_daily_san.receipt.statement.json"
     },

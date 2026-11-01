@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:e42cf47c3841aad22c4e97c748f9e6e40a3a1a5dca549a6547346e57673a6369"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/my-overnight-rate",
@@ -1129,7 +1129,7 @@
     "receipt": {
       "evidence_path": "data/bnm_myor.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:0c0a72860c59a1b00f86bf7d14e3aec82bebcd190415abbc402775918f0256e8",
+      "receipt_digest": "sha256:0bd10c712894753e42e326233fe7ccc9b4f8432ad88610a15b9ebf2054b62ba2",
       "sigstore_path": "data/bnm_myor.receipt.sigstore.json",
       "statement_path": "data/bnm_myor.receipt.statement.json"
     },

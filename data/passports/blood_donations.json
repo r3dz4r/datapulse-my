@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:d03b0c9174a885656d7c0b69e9eed754073781d89ce0fd333378609089ad9bb2"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=blood_donations",
@@ -846,7 +846,7 @@
     "receipt": {
       "evidence_path": "data/blood_donations.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:3bc15414401e818f407b9ae3079a0370accf9e0fd273b49f88ab2216a138baec",
+      "receipt_digest": "sha256:998ea994f87398d1f4bf580b1baa0295db11d4558a6638ac65bcdc49705bf98f",
       "sigstore_path": "data/blood_donations.receipt.sigstore.json",
       "statement_path": "data/blood_donations.receipt.statement.json"
     },

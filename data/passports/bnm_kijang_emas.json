@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:2376f3ea9cbdd776f08ebe34e7d78084c8dd520a7f10e465c4b337a9801f7bb8"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.bnm.gov.my/public/kijang-emas",
@@ -1129,7 +1129,7 @@
     "receipt": {
       "evidence_path": "data/bnm_kijang_emas.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:953811cd56cd472fd66d22eb6efe2b7a1044bc82b7a17c3c703aaf3cd400b9e7",
+      "receipt_digest": "sha256:4f301205078f0ec6a5bd6e4db302c66f45a40ccdd54061a6869fdc55dead436f",
       "sigstore_path": "data/bnm_kijang_emas.receipt.sigstore.json",
       "statement_path": "data/bnm_kijang_emas.receipt.statement.json"
     },

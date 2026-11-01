@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:e31e5a55152ec3f528cedc488ce3207a71b3c095f1f64668ec6ecf7565f604b8"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://storage.data.gov.my/transportation/ktmb/intercity_2026.csv",
@@ -924,7 +924,7 @@
     "receipt": {
       "evidence_path": "data/ridership_od_intercity.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:6d7b02dee63d04b6eb2a75c055e65b02870a7336aba14ca7c3e0e22f6ac0784f",
+      "receipt_digest": "sha256:9d2cf8fee504353a78d69e5b5961268adfa7b914ea5c89f241f2b4f7ee22c38f",
       "sigstore_path": "data/ridership_od_intercity.receipt.sigstore.json",
       "statement_path": "data/ridership_od_intercity.receipt.statement.json"
     },

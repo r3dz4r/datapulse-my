@@ -5,11 +5,11 @@
     "anomaly_reliability": {
       "anomaly_detected": false,
       "anomaly_detection": {
-        "latest_days": 1.0,
+        "latest_days": 2.0,
         "mean_days": null,
         "metric": "freshness_delta_days",
         "mode": "cadence_fallback",
-        "sample_days": 7,
+        "sample_days": 8,
         "stdev_days": null,
         "threshold_days": 3,
         "window_days": 14
@@ -29,7 +29,7 @@
       "content_shape_changed": false,
       "first_row_hash": "shape-v1:06f320a2e4d2434d076b040e6f26ad0162a7c8339c06926ffc857890944a9a94"
     },
-    "status": "fresh"
+    "status": "aging"
   },
   "identity": {
     "canonical_url": "https://api.data.gov.my/data-catalogue?id=usage_metrics_openapi_cumul",
@@ -951,7 +951,7 @@
     "receipt": {
       "evidence_path": "data/usage_metrics_openapi_cumul.receipt.evidence.json",
       "predicateType": "https://www.data-pulse.my/predicates/per-dataset-evidence/v1",
-      "receipt_digest": "sha256:91a0784f695de9744fdcb8c4410d3f466b771c7120576d794b1740c460dabb32",
+      "receipt_digest": "sha256:dec61e8e2fab75b39125a2d9bed5aeb9d3d862e357ee256251d4cebb3d683f0f",
       "sigstore_path": "data/usage_metrics_openapi_cumul.receipt.sigstore.json",
       "statement_path": "data/usage_metrics_openapi_cumul.receipt.statement.json"
     },
