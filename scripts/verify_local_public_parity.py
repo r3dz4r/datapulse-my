@@ -265,6 +265,44 @@ def verify(root: Path, *, fetch: Callable[..., Response] = _fetch) -> tuple[list
     if not any("route_parity" in error for error in errors):
         passed.append("public_routes")
 
+    # 10. Every advertised Server Card is served under the media type its
+    # docs/ai-catalog.json entry declares. The AI Catalog discovery flow has a
+    # client select entries by `type: application/mcp-server-card+json` and then
+    # request that entry's URL expressing the media type in `Accept`, so a host
+    # answering with the extension-derived `application/json` returns a correct
+    # document under a label a strict client is entitled to reject. The declared
+    # `type` is the entry's discriminator, not decoration: dropping it would hide
+    # the card from discovery, so the serving side is what has to agree.
+    try:
+        catalog_entries = _read_json(root / "docs/ai-catalog.json")["entries"]
+        if not isinstance(catalog_entries, list):
+            raise ValueError("entries is not an array")
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        catalog_entries = []
+        errors.append(f"ERROR: card_media_type failure: unreadable docs/ai-catalog.json: {exc}")
+    for entry in catalog_entries:
+        url = entry.get("url") if isinstance(entry, dict) else None
+        declared = entry.get("type") if isinstance(entry, dict) else None
+        if not isinstance(url, str) or not isinstance(declared, str):
+            errors.append(f"ERROR: card_media_type failure: catalog entry declares no url/type: {entry!r}")
+            continue
+        try:
+            card_response = fetch(url)
+        except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+            errors.append(f"ERROR: card_media_type failure: {url} unavailable: {exc}")
+            continue
+        if card_response.status != 200:
+            errors.append(f"ERROR: card_media_type failure: {url} returned HTTP {card_response.status}")
+        elif card_response.content_type != declared:
+            # content_type is the parsed, parameter-stripped type, so a charset
+            # parameter does not read as a mismatch: only the type itself counts.
+            errors.append(
+                f"ERROR: card_media_type failure: {url} served content-type={card_response.content_type!r} "
+                f"but docs/ai-catalog.json declares type={declared!r}"
+            )
+    if not any("card_media_type" in error for error in errors):
+        passed.append("card_media_type")
+
     # Regen parity is intentionally NOT a dimension of this verifier. The
     # on-disk docs/index.html is produced by health-cycle commits which may be
     # one probe cycle behind the live `health/latest.json`, so a byte-exact

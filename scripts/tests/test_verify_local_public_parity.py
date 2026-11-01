@@ -38,7 +38,8 @@ def _fixture_root(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def _public_fetch(served_html: bytes, served_health: bytes, served_tools: set[str], *, index: bytes | None = None):
+def _public_fetch(served_html: bytes, served_health: bytes, served_tools: set[str], *, index: bytes | None = None,
+                  card_content_type: str = "application/mcp-server-card+json"):
     """Return a deterministic public-only substitute for the verifier's transport."""
     def fetch(url: str, *, method: str = "GET", body: bytes | None = None,
               headers: dict[str, str] | None = None) -> parity.Response:
@@ -61,6 +62,10 @@ def _public_fetch(served_html: bytes, served_health: bytes, served_tools: set[st
             else:
                 payload = {"result": {"sessionId": "fixture"}}
             return parity.Response(200, url, "application/json", json.dumps(payload).encode())
+        if url.startswith(parity.PUBLIC_ROOT + "/mcp/cards/"):
+            # Every advertised card, answered under the type the catalogue
+            # declares unless a test asks for the extension-derived default.
+            return parity.Response(200, url, card_content_type, b"{}")
         return parity.Response(200, url, "application/json", b"{}")
     return fetch
 
@@ -75,7 +80,40 @@ def _run_clean(root: Path = ROOT) -> tuple[list[str], list[str], list[str]]:
 def test_clean_state_passes() -> None:
     errors, _, passed = _run_clean()
     assert errors == []
-    assert {"dataset_count", "tool_count", "taxonomy"} <= set(passed)
+    assert {"dataset_count", "tool_count", "taxonomy", "card_media_type"} <= set(passed)
+
+
+def test_card_served_under_extension_default_fails() -> None:
+    """A card served as application/json contradicts the catalogue's declared type."""
+    errors, _, passed = parity.verify(
+        ROOT,
+        fetch=_public_fetch(SOURCE_INDEX, SOURCE_HEALTH, SOURCE_TOOLS, card_content_type="application/json"),
+    )
+
+    failure = next(error for error in errors if "card_media_type failure" in error)
+    assert "/mcp/cards/" in failure
+    assert "'application/json'" in failure
+    assert "'application/mcp-server-card+json'" in failure
+    # One error per advertised card, never a sample.
+    declared_cards = json.loads((ROOT / "docs/ai-catalog.json").read_text(encoding="utf-8"))["entries"]
+    assert sum(1 for error in errors if "card_media_type failure" in error) == len(declared_cards)
+    assert "card_media_type" not in passed
+
+
+def test_unavailable_card_fails_closed() -> None:
+    base = _public_fetch(SOURCE_INDEX, SOURCE_HEALTH, SOURCE_TOOLS)
+    missing = parity.PUBLIC_ROOT + "/mcp/cards/get_dataset.json"
+
+    def fetch(url: str, *, method: str = "GET", body: bytes | None = None,
+              headers: dict[str, str] | None = None) -> parity.Response:
+        if url == missing:
+            raise HTTPError(url, 404, "Not Found", {}, None)
+        return base(url, method=method, body=body, headers=headers)
+
+    errors, _, passed = parity.verify(ROOT, fetch=fetch)
+
+    assert any("card_media_type failure" in error and missing in error and "unavailable" in error for error in errors)
+    assert "card_media_type" not in passed
 
 
 def test_wrong_dataset_count_fails(tmp_path: Path) -> None:
