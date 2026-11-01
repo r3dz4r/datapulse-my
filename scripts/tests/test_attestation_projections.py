@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts import gen_attestation_projections as gap
 from scripts import gen_attestations as ga
 from scripts.attestation_sets import verify_legacy_mirror
 from scripts.tests.test_append_set_isolation import NOW
@@ -24,8 +25,8 @@ PROJECTIONS = (
     "attestations/chain-index.json",
     ".attestations/chain_head.json",
     "attestations/latest/binding.json",
-    "attestations/latest/scores.json",
 )
+WORKFLOW = Path(__file__).resolve().parents[2] / ".github/workflows/projection-refresh.yml"
 
 
 def git(root: Path, *args: str) -> str:
@@ -64,6 +65,30 @@ def accept_next_day(root: Path, key: Path) -> None:
 
 def index(root: Path) -> dict:
     return json.loads((root / "attestations/chain-index.json").read_text(encoding="utf-8"))
+
+
+def test_projection_set_is_exactly_five_paths() -> None:
+    assert gap.PROJECTIONS == PROJECTIONS
+    assert "attestations/latest/scores.json" not in gap.PROJECTIONS
+
+
+def test_derived_mapping_has_only_five_paths(tmp_path: Path) -> None:
+    root, _ = accepted_root(tmp_path)
+    derived = gap._derive(root, require_main=True)
+    assert len(derived) == 5
+    assert tuple(derived) == PROJECTIONS
+    assert "attestations/latest/scores.json" not in derived
+
+
+def test_workflow_refresh_lists_exact_five_paths() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    diff_line = next(line for line in text.splitlines() if "if git diff --quiet --" in line)
+    add_line = next(line for line in text.splitlines() if "git add --" in line)
+    diff_paths = diff_line.partition("if git diff --quiet -- ")[2].partition("; then")[0].split()
+    add_paths = add_line.partition("git add -- ")[2].split()
+    assert len(diff_paths) == len(add_paths) == 5
+    assert set(diff_paths) == set(add_paths) == set(PROJECTIONS)
+    assert "attestations/latest/scores.json" not in diff_paths + add_paths
 
 
 def test_one_accepted_chain_and_check(tmp_path: Path) -> None:
@@ -159,7 +184,8 @@ def test_second_revision_advances_head_and_day_count(tmp_path: Path) -> None:
     previous = index(root)
     accept_next_day(root, key)
     latest_scores = root / "attestations/latest/scores.json"
-    latest_scores.write_bytes(b'{"generated_at":"2000-01-01T00:00:00Z"}\n')
+    live_scores = b'{"generated_at":"2000-01-01T00:00:00Z"}\n'
+    latest_scores.write_bytes(live_scores)
     result = run(root)
     current = index(root)
     latest_head = json.loads((root / PROJECTIONS[1]).read_text(encoding="utf-8"))
@@ -173,7 +199,7 @@ def test_second_revision_advances_head_and_day_count(tmp_path: Path) -> None:
     binding = root / "attestations/latest/binding.json"
     assert binding.read_bytes() == (root / latest_index["binding_ref"]).read_bytes()
     assert json.loads(binding.read_bytes())["payload"]["ed25519"]["chain_head"] == current["current_head"]
-    assert latest_scores.read_bytes() == (root / Path(latest_index["binding_ref"]).with_name("scores.json")).read_bytes()
+    assert latest_scores.read_bytes() == live_scores
 
 
 def test_older_dated_first_merged_child_is_selected(tmp_path: Path) -> None:
@@ -292,7 +318,7 @@ def test_check_names_stale_file_and_values(tmp_path: Path) -> None:
     result = run(root, "--check")
     after = {path: (root / path).read_bytes() for path in PROJECTIONS}
     stale = [line for line in result.stdout.splitlines() if line.startswith("STALE ")]
-    check(result.returncode == 1 and len(stale) == 6
+    check(result.returncode == 1 and len(stale) == 5
           and all(path in result.stdout for path in PROJECTIONS)
           and old in result.stdout and "derived=" in result.stdout and before == after,
           f"stale check reports both values without writing: {result.stdout} {result.stderr}")
