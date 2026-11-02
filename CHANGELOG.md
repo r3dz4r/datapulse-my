@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.60.0](https://github.com/r3dz4r/datapulse-my/compare/v3.59.13...v3.60.0) (2026-11-02)
+
+
+### Features
+
+* **pipeline:** give the DataPulse pipeline script a home in this repo ([bf0b353](https://github.com/r3dz4r/datapulse-my/commit/bf0b35343d9967beafa6fb3c6029740f1d81c679))
+* **scripts:** bring pipeline script into datapulse repo ([5b4038d](https://github.com/r3dz4r/datapulse-my/commit/5b4038d1ce37235eb871b7c7cd000aab05b5738f))
+
 ## [3.59.13](https://github.com/r3dz4r/datapulse-my/compare/v3.59.12...v3.59.13) (2026-11-02)
 
 
