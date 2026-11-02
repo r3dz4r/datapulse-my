@@ -3429,13 +3429,47 @@ PY
   publisher_post_publish
 }
 
+restore_live_checkout() {
+  local status="$1" ref="$2" commit="$3" current_ref
+  current_ref="$(git_repo symbolic-ref --short -q HEAD || git_repo rev-parse HEAD)"
+  if [[ "$current_ref" != "$ref" || "$(git_repo rev-parse HEAD)" != "$commit" ]]; then
+    git_repo checkout -q "$ref" || return $?
+    log "publisher restored checkout $ref"
+  fi
+  return "$status"
+}
+
 publisher_post_publish() {
-  local artifact
+  local artifact checkout_ref checkout_commit checkout_traps checkout_exit_action
   artifact="$(<"$run_dir/.handoff/artifact-commit")"
   if ! git_repo merge-base --is-ancestor "$artifact" HEAD; then
     [[ "$(git_repo rev-parse HEAD)" == "$fetched_origin" ]] \
       || die 'publisher post-push recovery refused: checkout moved unexpectedly'
     assert_artifacts_clean
+    checkout_ref="$(git_repo symbolic-ref --short -q HEAD || git_repo rev-parse HEAD)"
+    checkout_commit="$(git_repo rev-parse HEAD)"
+    checkout_traps="$(trap -p EXIT RETURN HUP INT TERM)"
+    checkout_exit_action="$(trap -p EXIT)"
+    # Decode Bash's own quoted trap declaration so the original cleanup still
+    # sees the failing stage's status, after the checkout has been restored.
+    checkout_exit_action="${checkout_exit_action#trap -- }"
+    checkout_exit_action="${checkout_exit_action% EXIT}"
+    eval "checkout_exit_action=${checkout_exit_action:-\"''\"}"
+    # Errexit unwinds function locals before EXIT, so freeze the refs and the
+    # previous handler into the trap rather than looking them up at exit time.
+    printf -v checkout_exit_action 'if restore_live_checkout "$?" %q %q; then\n%s\nelse\n%s\nfi' \
+      "$checkout_ref" "$checkout_commit" "${checkout_exit_action:-:}" "${checkout_exit_action:-:}"
+    # shellcheck disable=SC2064 # Freeze locals before errexit unwinds them.
+    trap "$checkout_exit_action" EXIT
+    # RETURN covers normal completion and early returns without leaking these
+    # traps into the rest of the publisher. EXIT also covers die and errexit.
+    trap 'restore_live_checkout 0 "$checkout_ref" "$checkout_commit" \
+      || die "publisher checkout restore failed"
+      trap - EXIT RETURN HUP INT TERM
+      eval "$checkout_traps"' RETURN
+    trap 'exit 129' HUP
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
     git_repo checkout -q --detach "$artifact"
   fi
   # Evidence only: no reader or publication gate consults this ref.
