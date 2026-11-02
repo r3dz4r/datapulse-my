@@ -93,20 +93,66 @@ def _has_origin(repo_path: Path) -> bool:
     return True
 
 
+def _parse_ls_remote(output: str) -> tuple[dict[str, str], dict[str, str]]:
+    """Split ``ls-remote`` output into symref targets and object names by ref name."""
+    symrefs: dict[str, str] = {}
+    revisions: dict[str, str] = {}
+    for line in output.splitlines():
+        value, tab, name = line.partition("\t")
+        if not tab or not value or not name:
+            raise RepositoryHistoryError("origin default branch advertisement is malformed")
+        if value.startswith("ref: "):
+            symrefs[name] = value.removeprefix("ref: ")
+        else:
+            revisions[name] = value
+    return symrefs, revisions
+
+
+def _sole_head_at(repo_path: Path, advertised_sha: str) -> str:
+    """Name the default branch of an origin that sends no HEAD symref.
+
+    Only an origin advertising exactly one branch, whose tip is the advertised
+    HEAD, names its default branch unambiguously. Zero branches (a detached CI
+    checkout), several branches, or a lone branch elsewhere are refused: HEAD's
+    object name alone is a guess, not a branch.
+    """
+    _, heads = _parse_ls_remote(_git(repo_path, "ls-remote", "--heads", "origin"))
+    if len(heads) != 1:
+        raise RepositoryHistoryError(
+            f"origin did not advertise a default branch: HEAD is not a symref and "
+            f"{len(heads)} branches are advertised"
+        )
+    (branch_ref, branch_sha), = heads.items()
+    if branch_sha != advertised_sha:
+        raise RepositoryHistoryError(
+            f"origin did not advertise a default branch: HEAD is not a symref and "
+            f"its only branch {branch_ref!r} is not at HEAD"
+        )
+    return branch_ref
+
+
 def _remote_default_branch_revision(
     repo_path: Path, *, expected_ref: str | None = None,
 ) -> str:
-    """Resolve the remote's advertised default branch when its local symref is absent."""
-    advertised = _git(repo_path, "ls-remote", "--symref", "origin", "HEAD").splitlines()
-    try:
-        symbolic, revision = advertised[:2]
-        advertised_ref, symbolic_name = symbolic.removeprefix("ref: ").split("\t", 1)
-        advertised_sha, revision_name = revision.split("\t", 1)
-    except ValueError as error:
-        raise RepositoryHistoryError("origin did not advertise a default branch") from error
-    if symbolic_name != "HEAD" or revision_name != "HEAD":
+    """Resolve the remote's advertised default branch when its local symref is absent.
+
+    The pattern ``HEAD`` also matches refs such as ``refs/remotes/origin/HEAD``
+    on the remote, and a remote whose HEAD is detached (a CI checkout of a pull
+    request merge commit) sends no ``ref:`` line at all, so lines are matched by
+    name rather than by position.
+    """
+    symrefs, revisions = _parse_ls_remote(
+        _git(repo_path, "ls-remote", "--symref", "origin", "HEAD")
+    )
+    advertised_sha = revisions.get("HEAD")
+    if advertised_sha is None:
+        raise RepositoryHistoryError("origin did not advertise a default branch")
+    advertised_ref = symrefs.get("HEAD")
+    if advertised_ref is None:
+        advertised_ref = _sole_head_at(repo_path, advertised_sha)
+    if not advertised_ref.startswith("refs/heads/"):
         raise RepositoryHistoryError("origin default branch advertisement is malformed")
-    branch = advertised_ref.split("/", 2)[-1]
+    branch = advertised_ref.removeprefix("refs/heads/")
     ref = f"refs/remotes/origin/{branch}"
     if expected_ref is not None and ref != expected_ref:
         raise RepositoryHistoryError(
