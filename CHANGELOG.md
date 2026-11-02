@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.60.1](https://github.com/r3dz4r/datapulse-my/compare/v3.60.0...v3.60.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* **pipeline:** restore checkout and add atomic installer ([882b634](https://github.com/r3dz4r/datapulse-my/commit/882b63481b75ce5e49207b6ced713d87b6f21a30))
+* **pipeline:** restore the checkout after publish and install from the repo ([27f76cd](https://github.com/r3dz4r/datapulse-my/commit/27f76cd9838a6a8f4b5ed601e6baeff150052345))
+
 ## [3.60.0](https://github.com/r3dz4r/datapulse-my/compare/v3.59.13...v3.60.0) (2026-11-02)
 
 
