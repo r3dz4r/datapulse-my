@@ -615,16 +615,25 @@ if [[ "$initialize_ok" != true ]]; then
   fail "local endpoint did not initialize after restart: $endpoint — waited ${readiness_wait}s of ${readiness_budget_seconds}s readiness budget (override: DATAPULSE_MCP_READINESS_BUDGET_SECONDS)"
 fi
 
+# Identity is already proven here: the readiness loop only exits satisfied on
+# the HEAD marker. Whether the server issues a session is a transport choice,
+# not a deployment verdict — a stateless server answers initialize without
+# Mcp-Session-Id, and later calls must then go out without the header rather
+# than with an empty one.
 session_id="$(awk 'tolower($1)=="mcp-session-id:" {gsub("\r", "", $2); print $2}' "$work_dir/headers")"
-if [[ -z "$session_id" ]]; then
-  rollback
-  fail 'initialize response omitted Mcp-Session-Id'
+session_header=()
+if [[ -n "$session_id" ]]; then
+  session_mode=session
+  session_header=(-H "Mcp-Session-Id: $session_id")
+else
+  session_mode=stateless
 fi
+log "session_mode=$session_mode"
 awk '/^data: / {sub(/^data: /, ""); print; exit}' "$work_dir/initialize" > "$work_dir/initialize.json"
 
 if ! curl -fsS --connect-timeout 2 --max-time 5 "$endpoint" \
     -H "Accept: $ACCEPT" -H 'Content-Type: application/json' \
-    -H "Mcp-Session-Id: $session_id" \
+    "${session_header[@]}" \
     -d '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
     >/dev/null 2> "$work_dir/curl-error"; then
   rollback
@@ -632,7 +641,7 @@ if ! curl -fsS --connect-timeout 2 --max-time 5 "$endpoint" \
 fi
 if ! curl -fsS --connect-timeout 2 --max-time 5 "$endpoint" \
     -H "Accept: $ACCEPT" -H 'Content-Type: application/json' \
-    -H "Mcp-Session-Id: $session_id" \
+    "${session_header[@]}" \
     -d '{"jsonrpc":"2.0","method":"tools/list","id":2}' \
     > "$work_dir/tools" 2> "$work_dir/curl-error"; then
   rollback

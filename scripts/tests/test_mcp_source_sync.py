@@ -400,11 +400,18 @@ class _ReadinessStubHandler(BaseHTTPRequestHandler):
     stale_runtime_version: str | None = None
     switch_after_seconds: float | None = None
     first_initialize_at = 0.0
+    issue_session = True
+    # (method, Mcp-Session-Id or None) for every post-initialize request.
+    received_session_headers: list[tuple[str, str | None]] = []
 
     def do_POST(self) -> None:  # noqa: N802
         content_length = int(self.headers.get("Content-Length", "0"))
         request = json.loads(self.rfile.read(content_length))
         method = request["method"]
+        if method != "initialize":
+            type(self).received_session_headers.append(
+                (method, self.headers.get("Mcp-Session-Id"))
+            )
         if method == "initialize":
             if self.first_initialize_at == 0.0:
                 type(self).first_initialize_at = time.monotonic()
@@ -431,7 +438,8 @@ class _ReadinessStubHandler(BaseHTTPRequestHandler):
             )
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
-            self.send_header("Mcp-Session-Id", "sync-readiness-session")
+            if self.issue_session:
+                self.send_header("Mcp-Session-Id", "sync-readiness-session")
             encoded = f"data: {payload}\n\n".encode("utf-8")
         elif method == "notifications/initialized":
             self.send_response(202)
@@ -581,6 +589,7 @@ def _start_identity_readiness_stub(
     _ReadinessStubHandler.stale_runtime_version = stale_runtime_version
     _ReadinessStubHandler.switch_after_seconds = switch_after_seconds
     _ReadinessStubHandler.first_initialize_at = 0.0
+    _ReadinessStubHandler.received_session_headers = []
     server = HTTPServer(("127.0.0.1", 0), _ReadinessStubHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -593,6 +602,7 @@ def _stop_identity_readiness_stub(server: HTTPServer, thread: threading.Thread) 
     thread.join(timeout=5)
     _ReadinessStubHandler.stale_runtime_version = None
     _ReadinessStubHandler.switch_after_seconds = None
+    _ReadinessStubHandler.issue_session = True
 
 
 def test_readiness_waits_for_identity_not_first_response(tmp_path: Path) -> None:
@@ -693,6 +703,69 @@ def _run_sync_against_served_version(
     finally:
         _stop_identity_readiness_stub(server, thread)
         _ReadinessStubHandler.runtime_version = "v1.2.3+aaaaaaa"
+
+
+def _run_sync_with_session_issuance(
+    tmp_path: Path, issue_session: bool, served_version: str = "v1.2.3+aaaaaaa"
+) -> tuple[subprocess.CompletedProcess[str], list[tuple[str, str | None]]]:
+    source, deployed, env = _readiness_fixture(tmp_path)
+    server, thread = _start_identity_readiness_stub()
+    _ReadinessStubHandler.runtime_version = served_version
+    _ReadinessStubHandler.issue_session = issue_session
+    try:
+        result = _run_readiness_sync(
+            source,
+            deployed,
+            f"http://127.0.0.1:{server.server_port}/mcp",
+            env,
+            budget="2",
+            timeout=20,
+        )
+        received = list(_ReadinessStubHandler.received_session_headers)
+    finally:
+        _stop_identity_readiness_stub(server, thread)
+        _ReadinessStubHandler.runtime_version = "v1.2.3+aaaaaaa"
+    return result, received
+
+
+def test_stateless_initialize_with_matching_identity_deploys_without_header(
+    tmp_path: Path,
+) -> None:
+    result, received = _run_sync_with_session_issuance(tmp_path, issue_session=False)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.count("session_mode=") == 1
+    assert "session_mode=stateless" in result.stdout
+    assert "rolling back" not in result.stdout
+    assert "deployment complete" in result.stdout
+    assert received == [
+        ("notifications/initialized", None),
+        ("tools/list", None),
+    ]
+
+
+def test_session_initialize_still_sends_the_session_header(tmp_path: Path) -> None:
+    result, received = _run_sync_with_session_issuance(tmp_path, issue_session=True)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.count("session_mode=") == 1
+    assert "session_mode=session" in result.stdout
+    assert received == [
+        ("notifications/initialized", "sync-readiness-session"),
+        ("tools/list", "sync-readiness-session"),
+    ]
+
+
+def test_stateless_initialize_without_identity_still_fails(tmp_path: Path) -> None:
+    result, received = _run_sync_with_session_issuance(
+        tmp_path, issue_session=False, served_version="v1.2.3"
+    )
+
+    assert result.returncode != 0
+    assert "rolling back failed deployment" in result.stdout
+    assert "live identity mismatch: verdict=marker-absent:" in result.stderr
+    assert "session_mode=" not in result.stdout
+    assert received == []
 
 
 def test_identity_diagnosis_reports_absent_marker_not_a_mismatch(tmp_path: Path) -> None:
