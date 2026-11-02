@@ -1,12 +1,12 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "hansard_parliamentary_terms",
-  "status": "fresh",
+  "status": "unreachable",
   "last_checked": "2026-09-05T02:34:56Z",
-  "freshness_days": 61,
+  "freshness_days": null,
   "next_expected_update": null,
   "refresh_frequency": "as-required",
-  "record_count": 15,
+  "record_count": null,
   "date_range": null,
   "fields": [
     {
@@ -21,18 +21,18 @@
   "checks": [
     {
       "name": "file_reachable",
-      "status": "pass",
-      "method": "Probe received HTTP 200 via Hansard probe script"
+      "status": "fail",
+      "method": "Hansard probe script failed"
     },
     {
       "name": "row_count",
-      "status": "pass",
-      "method": "Probe measured 15 record(s)"
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
     },
     {
       "name": "freshness",
-      "status": "pass",
-      "method": "Health snapshot classifies the dataset as fresh"
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unreachable"
     },
     {
       "name": "schema_stable",
