@@ -19,6 +19,16 @@ ACCEPT = "application/json, text/event-stream"
 PROTOCOL_VERSION = "2025-03-26"
 VERSION_SHA_RE = re.compile(r"\+([0-9a-f]{7,40})$")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+# Keep this list explicit: tests, docs, and future files under mcp/ do not
+# change the deployed source identity unless they become runtime inputs.
+DEPLOYED_MCP_PATHS = (
+    "mcp/server.py",
+    "scripts/gen_per_dataset_receipt.py",
+    "scripts/verify_per_dataset_receipt.py",
+)
+EXIT_MISMATCH = 1
+EXIT_UNREACHABLE = 2
+EXIT_UNRESOLVED = 3
 
 
 class RepositoryHistoryError(ValueError):
@@ -75,20 +85,59 @@ def default_branch_ref(repo_path: Path, default_branch: str | None = None) -> st
     return ref
 
 
+def _has_origin(repo_path: Path) -> bool:
+    try:
+        _git(repo_path, "remote", "get-url", "origin")
+    except RepositoryHistoryError:
+        return False
+    return True
+
+
+def _parse_ls_remote(output: str) -> tuple[dict[str, str], dict[str, str]]:
+    """Split ``ls-remote`` output into symref targets and object names by ref name."""
+    symrefs: dict[str, str] = {}
+    revisions: dict[str, str] = {}
+    for line in output.splitlines():
+        value, tab, name = line.partition("\t")
+        if not tab or not value or not name:
+            raise RepositoryHistoryError("origin default branch advertisement is malformed")
+        if value.startswith("ref: "):
+            symrefs[name] = value.removeprefix("ref: ")
+        else:
+            revisions[name] = value
+    return symrefs, revisions
+
+
 def _remote_default_branch_revision(
     repo_path: Path, *, expected_ref: str | None = None,
 ) -> str:
-    """Resolve the remote's advertised default branch when its local symref is absent."""
-    advertised = _git(repo_path, "ls-remote", "--symref", "origin", "HEAD").splitlines()
-    try:
-        symbolic, revision = advertised[:2]
-        advertised_ref, symbolic_name = symbolic.removeprefix("ref: ").split("\t", 1)
-        advertised_sha, revision_name = revision.split("\t", 1)
-    except ValueError as error:
-        raise RepositoryHistoryError("origin did not advertise a default branch") from error
-    if symbolic_name != "HEAD" or revision_name != "HEAD":
+    """Resolve the remote's advertised default branch when its local symref is absent.
+
+    The pattern ``HEAD`` also matches refs such as ``refs/remotes/origin/HEAD``
+    on the remote, and a remote whose HEAD is detached (a CI checkout of a pull
+    request merge commit) sends no ``ref:`` line at all, so lines are matched by
+    name rather than by position.
+    """
+    symrefs, revisions = _parse_ls_remote(
+        _git(repo_path, "ls-remote", "--symref", "origin", "HEAD")
+    )
+    advertised_sha = revisions.get("HEAD")
+    if advertised_sha is None:
+        raise RepositoryHistoryError("origin did not advertise a default branch")
+    advertised_ref = symrefs.get("HEAD")
+    if advertised_ref is None:
+        # A detached CI checkout advertises its checked-out tip without a
+        # branch symref. That object ID is the origin's stated HEAD, not a
+        # branch inferred from local refs. Validate it as a commit before use;
+        # The former "Zero branches (a detached CI checkout)" refusal was
+        # incorrect: this advertised object ID is the usable search tip.
+        if not SHA_RE.fullmatch(advertised_sha):
+            raise RepositoryHistoryError("origin HEAD advertisement is malformed")
+        _git(repo_path, "rev-parse", "--verify", f"{advertised_sha}^{{commit}}")
+        return advertised_sha
+    if not advertised_ref.startswith("refs/heads/"):
         raise RepositoryHistoryError("origin default branch advertisement is malformed")
-    branch = advertised_ref.split("/", 2)[-1]
+    branch = advertised_ref.removeprefix("refs/heads/")
     ref = f"refs/remotes/origin/{branch}"
     if expected_ref is not None and ref != expected_ref:
         raise RepositoryHistoryError(
@@ -103,10 +152,11 @@ def _remote_default_branch_revision(
 
 
 def newest_mcp_sha(repo_path: Path, default_branch: str | None = None) -> str:
-    """Return the newest default-branch commit changing deployed MCP code.
+    """Return the newest origin-tip commit changing deployed MCP code.
 
     A shallow checkout can omit an older ``mcp/`` commit and would therefore
-    manufacture a false match. Refuse it rather than treating its tip as proof.
+    manufacture a false match. This guard is what prevents that false match;
+    an advertised detached HEAD commit remains a usable search tip.
     """
     if _git(repo_path, "rev-parse", "--is-shallow-repository") == "true":
         raise RepositoryHistoryError(
@@ -115,11 +165,16 @@ def newest_mcp_sha(repo_path: Path, default_branch: str | None = None) -> str:
     try:
         ref = default_branch_ref(repo_path, default_branch)
     except RepositoryHistoryError:
-        # A remote is useful for identifying its default branch, but it is not
-        # required when the checked-out history already contains the answer.
+        # Only a checkout with no origin at all (a tarball-style build) may
+        # answer from its checked-out history. A requested branch, or a
+        # configured origin whose default branch cannot be resolved, is refused:
+        # HEAD is then an unrelated guess, often a detached health commit.
+        if default_branch is not None or _has_origin(repo_path):
+            raise
         ref = "HEAD"
-    # Keep this list explicit: tests, docs, and future files under mcp/ do not
-    # change the deployed source identity unless they become runtime inputs.
+    # ":(top)" anchors each pathspec at the work-tree root. Without it git
+    # resolves them against --repo-path (default: the caller's cwd), so a run
+    # from scripts/ or mcp/ asked for scripts/mcp/server.py and found nothing.
     sha = _git(
         repo_path,
         "log",
@@ -127,9 +182,7 @@ def newest_mcp_sha(repo_path: Path, default_branch: str | None = None) -> str:
         "--format=%H",
         ref,
         "--",
-        "mcp/server.py",
-        "scripts/gen_per_dataset_receipt.py",
-        "scripts/verify_per_dataset_receipt.py",
+        *(f":(top){path}" for path in DEPLOYED_MCP_PATHS),
     )
     if not SHA_RE.fullmatch(sha):
         raise RepositoryHistoryError(
@@ -189,15 +242,18 @@ def deployed_source_sha(endpoint: str) -> str:
             "id": 1,
         },
     )
-    if not session_id:
-        raise ValueError("initialize response omitted Mcp-Session-Id")
     server_info = initialized.get("result", {}).get("serverInfo", {})
+    if not isinstance(server_info, dict) or not server_info:
+        raise ValueError("initialize response omitted serverInfo")
 
-    _post(
-        endpoint,
-        {"jsonrpc": "2.0", "method": "notifications/initialized"},
-        session_id=session_id,
-    )
+    # A stateless transport issues no Mcp-Session-Id and needs no initialized
+    # notification; tools/list must still answer, so serving is still proven.
+    if session_id:
+        _post(
+            endpoint,
+            {"jsonrpc": "2.0", "method": "notifications/initialized"},
+            session_id=session_id,
+        )
     tools, _ = _post(
         endpoint,
         {"jsonrpc": "2.0", "method": "tools/list", "id": 2},
@@ -230,11 +286,14 @@ def main() -> int:
         expected_sha = newest_mcp_sha(args.repo_path, args.default_branch)
         deployed_sha = deployed_source_sha(args.endpoint)
     except RepositoryHistoryError as error:
-        print(f"UNREACHABLE: cannot establish expected deployed MCP code revision: {error}")
-        return 2
+        # Not an outage and not drift: the checkout cannot name what should be
+        # served, so no comparison happened. Its own exit code keeps it from
+        # being read as either, or waved through as a transient unreachable.
+        print(f"UNRESOLVED: cannot establish expected deployed MCP code revision: {error}")
+        return EXIT_UNRESOLVED
     except (HTTPError, URLError, TimeoutError, OSError, ValueError) as error:
         print(f"UNREACHABLE: {error}")
-        return 2
+        return EXIT_UNREACHABLE
 
     if deployed_sha[:7] == expected_sha[:7]:
         print(
@@ -247,7 +306,7 @@ def main() -> int:
         f"MISMATCH: deployed={deployed_sha} expected deployed MCP code revision={expected_sha} "
         "on default branch"
     )
-    return 1
+    return EXIT_MISMATCH
 
 
 if __name__ == "__main__":
