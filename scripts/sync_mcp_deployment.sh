@@ -472,13 +472,86 @@ served_identity_surface() {
     "$1" 2>/dev/null
 }
 
+# Turn one served initialize response into an explicit verdict over the three
+# inputs the identity assertion compares: the served marker, the HEAD marker,
+# and the marker actually stamped into the deployed file right now. Prints
+#   <verdict>: served_short_sha=… head_short_sha=… deployed_marker=… … wrong_input=… — <attribution>
+# where <verdict> is marker-absent, marker-different, or marker-matching.
+# "Absent" (the response carries neither serverInfo.source_commit_sha nor a
+# +<sha> version suffix) is never folded into "different". For a different
+# marker, the pre-deploy marker of the deployed file and the unstamped literal
+# of the source name which input is wrong.
+served_identity_diagnosis() {
+  local json_file="$1" served_sha served_version served_marker="" marker_field=""
+  local current_deployed_marker verdict wrong_input attribution version_note=""
+
+  served_sha="$(jq -r '.result.serverInfo.source_commit_sha // "" | tostring' "$json_file" 2>/dev/null)" \
+    || served_sha='<invalid>'
+  served_version="$(jq -r '.result.serverInfo.version // "" | tostring' "$json_file" 2>/dev/null)" \
+    || served_version='<invalid>'
+  if [[ "$served_sha" =~ ^[0-9a-f]{7,40}$ ]]; then
+    served_marker="$served_sha"
+    marker_field='serverInfo.source_commit_sha'
+  elif [[ "$served_version" =~ \+([0-9a-f]{7,40})$ ]]; then
+    served_marker="${BASH_REMATCH[1]}"
+    marker_field='serverInfo.version'
+  fi
+  current_deployed_marker="$(read_source_markers "$deployed_path" 2>/dev/null | head -n 1)" || true
+  [[ -n "$current_deployed_marker" ]] || current_deployed_marker='<unreadable>'
+
+  # A marker is "the same commit" as a full sha when it is a >=7-char prefix of it.
+  marker_is() {
+    [[ -n "$1" && -n "$2" && ${#1} -ge 7 && "${2:0:${#1}}" == "$1" ]]
+  }
+
+  if [[ -z "$served_marker" ]]; then
+    verdict=marker-absent
+    wrong_input=served-response
+    attribution='the endpoint answered but its serverInfo carries no source marker (neither source_commit_sha nor a +<sha> version suffix); this is an absent marker, not a different one'
+  elif marker_is "$served_marker" "$head_sha"; then
+    verdict=marker-matching
+    wrong_input=none
+    attribution='the served marker is the HEAD marker'
+    if [[ "$served_version" != "$expected_source_version" ]]; then
+      wrong_input=served-version
+      version_note=" served_version=$served_version differs from expected_version=$expected_source_version"
+      attribution="the served marker is the HEAD marker but the version string is not the expected one"
+    fi
+  else
+    verdict=marker-different
+    if [[ "$current_deployed_marker" != "$head_sha" ]]; then
+      wrong_input=deployed-file
+      attribution="$deployed_path does not carry the HEAD marker"
+    elif marker_is "$served_marker" "$deployed_marker_sha" && marker_is "$served_marker" "$source_marker_sha"; then
+      wrong_input=served-process
+      attribution="the served marker equals both the pre-deploy marker of $deployed_path and the unstamped literal of $source_path: either the restart has not taken effect or the service executes a file other than $deployed_path"
+    elif marker_is "$served_marker" "$deployed_marker_sha"; then
+      wrong_input=served-process-restart
+      attribution="the served marker is the pre-deploy marker of $deployed_path: the served process predates this deploy (restart not taken effect)"
+    elif marker_is "$served_marker" "$source_marker_sha"; then
+      wrong_input=served-marker-source
+      attribution="$deployed_path carries HEAD but the served marker is the unstamped release literal of the source: the service executes a copy of the source other than $deployed_path (check its ExecStart)"
+    else
+      wrong_input=unknown
+      attribution='the served marker matches neither HEAD, the pre-deploy deployed marker, nor the source literal'
+    fi
+  fi
+  printf '%s: served_short_sha=%s head_short_sha=%s deployed_marker=%s served_marker_field=%s served_version=%s served_sha=%s expected_version=%s head_sha=%s%s wrong_input=%s — %s\n' \
+    "$verdict" "${served_marker:0:7}" "$head_short_sha" "$current_deployed_marker" \
+    "${marker_field:-<none>}" "${served_version:-<missing>}" "${served_sha:-<missing>}" \
+    "$expected_source_version" "$head_sha" "$version_note" "$wrong_input" "$attribution"
+}
+
 # Readiness is a wall-clock deadline, not an attempt count. In delegated mode
 # the old process can still answer while the path unit waits to restart it, so
 # reachability alone is not readiness: only the response carrying this copy's
-# stamped identity may end the wait.
+# stamped identity may end the wait. Every change in the served identity is
+# logged with its offset into the wait, so the log shows where the restart
+# boundary fell (old identity -> new identity) instead of only the total wait.
 initialize_ok=false
 identity_surface=""
 last_initialize_json=""
+last_observed_identity=""
 readiness_started=$SECONDS
 while (( SECONDS - readiness_started < readiness_budget_seconds )); do
   attempt_suffix="${SECONDS}.${RANDOM}"
@@ -490,6 +563,12 @@ while (( SECONDS - readiness_started < readiness_budget_seconds )); do
       -H "Accept: $ACCEPT" -H 'Content-Type: application/json' \
       -d "$initialize_payload" 2> "$work_dir/curl-error"; then
     awk '/^data: / {sub(/^data: /, ""); print; exit}' "$attempt_initialize" > "$attempt_initialize_json"
+    observed_identity="$(jq -r '"served_version=\(.result.serverInfo.version // "<missing>") served_sha=\(.result.serverInfo.source_commit_sha // "<missing>")"' \
+      "$attempt_initialize_json" 2>/dev/null)" || observed_identity='unparseable initialize response'
+    if [[ "$observed_identity" != "$last_observed_identity" ]]; then
+      log "readiness t=$(( SECONDS - readiness_started ))s endpoint answered $observed_identity"
+      last_observed_identity="$observed_identity"
+    fi
     if identity_surface="$(served_identity_surface "$attempt_initialize_json")"; then
       mv -f -- "$attempt_headers" "$work_dir/headers"
       mv -f -- "$attempt_initialize" "$work_dir/initialize"
@@ -505,13 +584,32 @@ readiness_wait=$(( SECONDS - readiness_started ))
 log "initialize readiness wait=${readiness_wait}s budget=${readiness_budget_seconds}s endpoint=$endpoint"
 if [[ "$initialize_ok" != true ]]; then
   if [[ -n "$last_initialize_json" && -f "$last_initialize_json" ]]; then
-    live_sha="$(jq -r '.result.serverInfo.source_commit_sha // "<missing>"' "$last_initialize_json" 2>/dev/null || printf '<invalid>')"
-    live_version="$(jq -r '.result.serverInfo.version // "<missing>"' "$last_initialize_json" 2>/dev/null || printf '<invalid>')"
-    live_short_sha="$live_sha"
-    [[ "$live_short_sha" != "<missing>" ]] || live_short_sha="${live_version##*+}"
-    live_short_sha="${live_short_sha:0:7}"
+    # Measured cause of the 2026-11-02 production mismatch (served 400a6b1,
+    # head def5579, served_sha=<missing>, wait=91s budget=90s), case (b):
+    #   - Not (a) a missed restart: datapulse-mcp-restart.service fired at
+    #     20:54:33, the user unit restarted at 20:54:34 and the new process
+    #     logged "Started server process" at 20:54:49 — 16s into a 90s budget.
+    #     It then answered 400a6b1 for the remaining ~75s; the 20:56:05 restart
+    #     was the rollback's own copy re-firing the path unit.
+    #   - Not (c) an absent field: served_sha is absent because FastMCP omits
+    #     source_commit_sha, but serverInfo.version carried a real, different
+    #     marker (v4.0.0b3+400a6b1), and served_identity_surface already reads it.
+    #   - (b): the user unit's operator drop-in override.conf replaces ExecStart
+    #     with /srv/datapulse-my/mcp/server.py (cwd /srv/datapulse-my), so the
+    #     restarted process never executes the stamped $deployed_path
+    #     (/srv/datapulse-mcp/server.py). That checkout file holds the unstamped
+    #     release literal 400a6b1. The same drop-in's static
+    #     DATAPULSE_MCP_SOURCE_SHA pin is removed by 99-source-marker.conf's
+    #     UnsetEnvironment (absent from /proc/<pid>/environ), so the literal wins.
+    #     The live endpoint still reports v4.0.0b3+400a6b1.
+    # The assertion stays: no HEAD marker from the endpoint, no deploy. The
+    # diagnosis names which input is wrong instead of a bare mismatch. The cure
+    # for (b) is the unit's ExecStart, which this unprivileged stage does not own.
+    diagnosis="$(served_identity_diagnosis "$last_initialize_json")"
+    verdict="${diagnosis%%:*}"
+    log "served identity verdict=$verdict"
     rollback
-    fail "live identity mismatch: served_short_sha=$live_short_sha does not match head_short_sha=$head_short_sha served_version=$live_version served_sha=$live_sha expected_version=$expected_source_version head_sha=$head_sha — the endpoint is not reporting the repository HEAD source marker"
+    fail "live identity mismatch: verdict=$diagnosis"
   fi
   rollback
   fail "local endpoint did not initialize after restart: $endpoint — waited ${readiness_wait}s of ${readiness_budget_seconds}s readiness budget (override: DATAPULSE_MCP_READINESS_BUDGET_SECONDS)"
@@ -557,4 +655,5 @@ tool_count="$(jq -r '.result.tools | length' "$work_dir/tools.json")"
 write_result deployed
 log "verified endpoint=$endpoint source_commit_sha=$expected_source_sha head_short_sha=$head_short_sha tools=$tool_count annotations=complete"
 log "identity surface=$identity_surface expected_version=$expected_source_version"
+log "served identity verdict=$(served_identity_diagnosis "$work_dir/initialize.json")"
 log 'deployment complete'

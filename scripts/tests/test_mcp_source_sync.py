@@ -668,6 +668,85 @@ def test_stale_identity_is_never_accepted(tmp_path: Path) -> None:
     assert deployed.read_text(encoding="utf-8") == "old deployed source\n"
 
 
+def _run_sync_against_served_version(
+    tmp_path: Path, served_version: str, pre_deploy_marker: str | None = None
+) -> subprocess.CompletedProcess[str]:
+    """Run the sync against an endpoint pinned to one served version. HEAD is
+    a*40 and the unstamped source literal is c*40 (see _readiness_fixture)."""
+    source, deployed, env = _readiness_fixture(tmp_path)
+    if pre_deploy_marker is not None:
+        deployed.write_text(
+            source.read_text(encoding="utf-8").replace("c" * 40, pre_deploy_marker),
+            encoding="utf-8",
+        )
+    server, thread = _start_identity_readiness_stub()
+    _ReadinessStubHandler.runtime_version = served_version
+    try:
+        return _run_readiness_sync(
+            source,
+            deployed,
+            f"http://127.0.0.1:{server.server_port}/mcp",
+            env,
+            budget="2",
+            timeout=20,
+        )
+    finally:
+        _stop_identity_readiness_stub(server, thread)
+        _ReadinessStubHandler.runtime_version = "v1.2.3+aaaaaaa"
+
+
+def test_identity_diagnosis_reports_absent_marker_not_a_mismatch(tmp_path: Path) -> None:
+    result = _run_sync_against_served_version(tmp_path, "v1.2.3")
+
+    assert result.returncode != 0
+    assert "rolling back failed deployment" in result.stdout
+    assert "served identity verdict=marker-absent" in result.stdout
+    assert "live identity mismatch: verdict=marker-absent:" in result.stderr
+    assert "served_short_sha= " in result.stderr
+    assert "served_marker_field=<none>" in result.stderr
+    assert "head_short_sha=aaaaaaa" in result.stderr
+    assert f"deployed_marker={'a' * 40}" in result.stderr
+    assert "wrong_input=served-response" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("served_version", "pre_deploy_marker", "wrong_input"),
+    [
+        # The 2026-11-02 production shape: the deployed file carries HEAD but
+        # the service executes an unstamped copy of the source.
+        ("v1.2.3+ccccccc", None, "served-marker-source"),
+        # The restart never took effect: the old process still answers.
+        ("v1.2.3+bbbbbbb", "b" * 40, "served-process-restart"),
+        ("v1.2.3+ddddddd", None, "unknown"),
+    ],
+)
+def test_identity_diagnosis_names_the_wrong_input_for_a_different_marker(
+    tmp_path: Path, served_version: str, pre_deploy_marker: str | None, wrong_input: str
+) -> None:
+    result = _run_sync_against_served_version(tmp_path, served_version, pre_deploy_marker)
+
+    assert result.returncode != 0
+    assert "rolling back failed deployment" in result.stdout
+    assert "served identity verdict=marker-different" in result.stdout
+    assert "live identity mismatch: verdict=marker-different:" in result.stderr
+    assert f"served_short_sha={served_version[-7:]}" in result.stderr
+    assert "served_marker_field=serverInfo.version" in result.stderr
+    assert "head_short_sha=aaaaaaa" in result.stderr
+    assert f"deployed_marker={'a' * 40}" in result.stderr
+    assert f"wrong_input={wrong_input} " in result.stderr
+
+
+def test_identity_diagnosis_reports_matching_marker_on_success(tmp_path: Path) -> None:
+    result = _run_sync_against_served_version(tmp_path, "v1.2.3+aaaaaaa")
+
+    assert result.returncode == 0, result.stderr
+    assert "readiness t=" in result.stdout
+    assert "endpoint answered served_version=v1.2.3+aaaaaaa" in result.stdout
+    assert "served identity verdict=marker-matching: served_short_sha=aaaaaaa" in result.stdout
+    assert "wrong_input=none" in result.stdout
+    assert "deployment complete" in result.stdout
+
+
 def test_sync_readiness_budget_outlasts_refused_port(tmp_path: Path) -> None:
     """A draining service keeps the port refused for longer than the retired
     poll's effective ~10s window; the budgeted deadline must wait it out,
