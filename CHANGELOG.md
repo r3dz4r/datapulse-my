@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.59.12](https://github.com/r3dz4r/datapulse-my/compare/v3.59.11...v3.59.12) (2026-11-02)
+
+
+### Bug Fixes
+
+* **mcp:** run HTTP transport statelessly ([a8e81e6](https://github.com/r3dz4r/datapulse-my/commit/a8e81e6bdec696f5c164e39cac203e417a273c35))
+
 ## [3.59.11](https://github.com/r3dz4r/datapulse-my/compare/v3.59.10...v3.59.11) (2026-11-02)
 
 
