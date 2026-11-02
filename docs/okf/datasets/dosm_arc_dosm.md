@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=arc_dosm","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-31T02:31:24Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-01T03:13:35Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
