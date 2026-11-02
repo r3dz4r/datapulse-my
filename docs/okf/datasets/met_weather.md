@@ -8,7 +8,7 @@ sources:
   - {"id": "met","resource": "https://api.data.gov.my/weather/forecast","title": "MET Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-31T02:31:24Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-01T03:13:35Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "MET Malaysia (Malaysian Meteorological Department)"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/met_weather.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2520
-stale_after: "2026-11-01T12:00:00Z"
+stale_after: "2026-11-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
