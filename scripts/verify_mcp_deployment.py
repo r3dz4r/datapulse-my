@@ -108,29 +108,6 @@ def _parse_ls_remote(output: str) -> tuple[dict[str, str], dict[str, str]]:
     return symrefs, revisions
 
 
-def _sole_head_at(repo_path: Path, advertised_sha: str) -> str:
-    """Name the default branch of an origin that sends no HEAD symref.
-
-    Only an origin advertising exactly one branch, whose tip is the advertised
-    HEAD, names its default branch unambiguously. Zero branches (a detached CI
-    checkout), several branches, or a lone branch elsewhere are refused: HEAD's
-    object name alone is a guess, not a branch.
-    """
-    _, heads = _parse_ls_remote(_git(repo_path, "ls-remote", "--heads", "origin"))
-    if len(heads) != 1:
-        raise RepositoryHistoryError(
-            f"origin did not advertise a default branch: HEAD is not a symref and "
-            f"{len(heads)} branches are advertised"
-        )
-    (branch_ref, branch_sha), = heads.items()
-    if branch_sha != advertised_sha:
-        raise RepositoryHistoryError(
-            f"origin did not advertise a default branch: HEAD is not a symref and "
-            f"its only branch {branch_ref!r} is not at HEAD"
-        )
-    return branch_ref
-
-
 def _remote_default_branch_revision(
     repo_path: Path, *, expected_ref: str | None = None,
 ) -> str:
@@ -149,7 +126,15 @@ def _remote_default_branch_revision(
         raise RepositoryHistoryError("origin did not advertise a default branch")
     advertised_ref = symrefs.get("HEAD")
     if advertised_ref is None:
-        advertised_ref = _sole_head_at(repo_path, advertised_sha)
+        # A detached CI checkout advertises its checked-out tip without a
+        # branch symref. That object ID is the origin's stated HEAD, not a
+        # branch inferred from local refs. Validate it as a commit before use;
+        # The former "Zero branches (a detached CI checkout)" refusal was
+        # incorrect: this advertised object ID is the usable search tip.
+        if not SHA_RE.fullmatch(advertised_sha):
+            raise RepositoryHistoryError("origin HEAD advertisement is malformed")
+        _git(repo_path, "rev-parse", "--verify", f"{advertised_sha}^{{commit}}")
+        return advertised_sha
     if not advertised_ref.startswith("refs/heads/"):
         raise RepositoryHistoryError("origin default branch advertisement is malformed")
     branch = advertised_ref.removeprefix("refs/heads/")
@@ -167,10 +152,11 @@ def _remote_default_branch_revision(
 
 
 def newest_mcp_sha(repo_path: Path, default_branch: str | None = None) -> str:
-    """Return the newest default-branch commit changing deployed MCP code.
+    """Return the newest origin-tip commit changing deployed MCP code.
 
     A shallow checkout can omit an older ``mcp/`` commit and would therefore
-    manufacture a false match. Refuse it rather than treating its tip as proof.
+    manufacture a false match. This guard is what prevents that false match;
+    an advertised detached HEAD commit remains a usable search tip.
     """
     if _git(repo_path, "rev-parse", "--is-shallow-repository") == "true":
         raise RepositoryHistoryError(
