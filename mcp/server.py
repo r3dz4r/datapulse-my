@@ -2875,9 +2875,15 @@ async def dataset_resource(dataset_id: str) -> str:
 
 
 if __name__ == "__main__":
+    # Stateless: this read-only server holds nothing per client, yet the SDK kept
+    # a session table capped at 10 000 that crawlers filled and never drained
+    # (they never send DELETE). It first hit the cap on 2026-10-30 and refused
+    # every new client with 503 "Too many open sessions" — 11 308 refusals in
+    # three days. A restart is a repair, not a fix; do not raise the cap instead.
     mcp.run(
         transport="http",
         host=MCP_HOST,
         port=MCP_PORT,
         middleware=HTTP_MIDDLEWARE,
+        stateless_http=True,
     )

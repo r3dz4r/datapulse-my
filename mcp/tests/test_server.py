@@ -2682,3 +2682,24 @@ async def test_get_freshness_summary_call_tool_matches_direct_handler():
     client_payload = via_client.data if hasattr(via_client, "data") else via_client
     assert client_payload["dataset_total"] == direct["dataset_total"]
     assert client_payload["checked_at"] == direct["checked_at"]
+
+
+def test_http_entrypoint_runs_stateless() -> None:
+    """The public endpoint must not keep a session table that crawlers can fill."""
+    import ast
+
+    tree = ast.parse((MCP_DIR / "server.py").read_text(encoding="utf-8"))
+    run_calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "run"
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "mcp"
+    ]
+    assert len(run_calls) == 1
+    keywords = {kw.arg: kw.value for kw in run_calls[0].keywords}
+    assert isinstance(keywords.get("stateless_http"), ast.Constant)
+    assert keywords["stateless_http"].value is True
+    assert "max_sessions" not in keywords
