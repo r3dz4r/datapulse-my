@@ -14,6 +14,16 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.59.13](https://github.com/r3dz4r/datapulse-my/compare/v3.59.12...v3.59.13) (2026-11-02)
+
+
+### Bug Fixes
+
+* **envelopes:** regenerate data/json and assert licence against the manifest ([60a0929](https://github.com/r3dz4r/datapulse-my/commit/60a0929ff6628fc43e280f5bbff436ee2ea6b2b9))
+* **envelopes:** regenerate data/json and assert licence against the manifest ([9172146](https://github.com/r3dz4r/datapulse-my/commit/917214607d7cbdbc614c1caac7858a57398d431c))
+* **jsonld:** regenerate the catalogue and assert licence against the manifest ([ec673c6](https://github.com/r3dz4r/datapulse-my/commit/ec673c6de4c8366b97b461a90cb57a7081e25073))
+* **jsonld:** regenerate the catalogue and assert licence against the manifest ([7f9ffaa](https://github.com/r3dz4r/datapulse-my/commit/7f9ffaae2612800d37758919f3d1d867c01c3bae))
+
 ## [3.59.12](https://github.com/r3dz4r/datapulse-my/compare/v3.59.11...v3.59.12) (2026-11-02)
 
 
