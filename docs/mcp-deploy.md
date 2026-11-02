@@ -211,8 +211,10 @@ user manager and restarts the service. The sync script derives `1001` with
 
 The pipeline records `mcp-sync` telemetry as `success` with result
 `no-change` or `deployed`. A sync error is recorded as `fail` with
-`non_fatal=true`, logged with the `datapulse-mcp:` prefix, and does not stop the
-health cycle or publication.
+`non_fatal=false`, logged with the `datapulse-mcp:`/`mcp-sync installer` prefix,
+and stops the enclosing health publication run. The run must not report a
+successful publication while the running MCP server still serves the previous
+source.
 
 To run the normal sync or the independent read-only HEAD check:
 
