@@ -283,6 +283,10 @@ def build_delta(
     }
 
 
+class ImmutableConflict(ValueError):
+    """A published delta exists for the cycle with different bytes."""
+
+
 def _immutable_write(path: Path, content: bytes) -> bool:
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -290,7 +294,9 @@ def _immutable_write(path: Path, content: bytes) -> bool:
     except FileExistsError:
         if path.read_bytes() == content:
             return False
-        raise ValueError(f"immutable delta already exists with different content: {path}")
+        raise ImmutableConflict(
+            f"immutable delta already exists with different content: {path}"
+        ) from None
     try:
         with os.fdopen(descriptor, "wb") as destination:
             destination.write(content)
@@ -303,6 +309,29 @@ def _immutable_write(path: Path, content: bytes) -> bool:
             pass
         raise
     return True
+
+
+def _input_drift(
+    path: Path, document: dict[str, Any]
+) -> list[tuple[str, Any, Any]]:
+    """Return the source digests that moved since ``path`` was published.
+
+    An empty result means the conflict is not explained by moved inputs, so the
+    caller must keep refusing it.
+    """
+    try:
+        published = _read_json(path, datasets=False)
+    except ValueError:
+        return []
+    old = published.get("source_artifacts")
+    if published.get("cycle") != document["cycle"] or not isinstance(old, dict):
+        return []
+    new = document["source_artifacts"]
+    return [
+        (name, old.get(name), new.get(name))
+        for name in sorted(set(old) | set(new))
+        if old.get(name) != new.get(name)
+    ]
 
 
 def parse_args() -> argparse.Namespace:
@@ -346,7 +375,20 @@ def main() -> None:
         )
         path = args.output_dir / f"{cycle}.json"
         content = (json.dumps(document, ensure_ascii=False, indent=2) + "\n").encode()
-        created = _immutable_write(path, content)
+        try:
+            created = _immutable_write(path, content)
+        except ImmutableConflict:
+            # The published delta is authoritative for its cycle; a later
+            # regeneration over moved inputs keeps it and names what moved.
+            drift = _input_drift(path, document)
+            if not drift:
+                raise
+            moved = "; ".join(f"{name} {old} -> {new}" for name, old, new in drift)
+            print(
+                f"Kept published delta {path} for cycle {cycle}; "
+                f"inputs moved since publication: {moved}"
+            )
+            return
     except (OSError, UnicodeError, KeyError, ValueError) as exc:
         raise SystemExit(f"dataset delta generation failed: {exc}") from exc
     action = "Generated" if created else "Verified existing"

@@ -340,14 +340,50 @@ def test_delta_file_is_idempotent_but_not_overwritable(tmp_path: Path) -> None:
     second = _run_delta(cycle, *paths)
     assert first.returncode == second.returncode == 0
 
-    health = paths[1]
-    payload = json.loads(health.read_text(encoding="utf-8"))
-    payload["datasets"][0]["status"] = "stale"
-    _write_json(health, payload)
+    # Same inputs, different published bytes: nothing explains the mismatch,
+    # so the generator must refuse rather than rewrite the file in place.
+    published = paths[3] / f"{cycle}.json"
+    tampered = json.loads(published.read_text(encoding="utf-8"))
+    tampered["summary"]["added"] = 1
+    _write_json(published, tampered)
+    before = published.read_bytes()
     conflict = _run_delta(cycle, *paths)
 
     assert conflict.returncode != 0
     assert "immutable" in conflict.stderr.lower()
+    assert published.read_bytes() == before
+
+
+def test_delta_cycle_republished_after_health_moved_keeps_published_bytes(
+    tmp_path: Path,
+) -> None:
+    cycle = "2026-08-12T18:00"
+    paths = _prepare(tmp_path, cycle=cycle, history=[_history_row("alpha", cycle)])
+    health = paths[1]
+    first = _run_delta(cycle, *paths)
+    assert first.returncode == 0, first.stderr
+    published = paths[3] / f"{cycle}.json"
+    before = published.read_bytes()
+    old_digest = hashlib.sha256(health.read_bytes()).hexdigest()
+
+    # The release profile rewrites health/latest.json before regenerating the
+    # already-published cycle.
+    payload = json.loads(health.read_text(encoding="utf-8"))
+    payload["datasets"][0]["status"] = "stale"
+    _write_json(health, payload)
+    new_digest = hashlib.sha256(health.read_bytes()).hexdigest()
+    runs = [_run_delta(cycle, *paths) for _ in range(2)]
+
+    expected = (
+        f"Kept published delta {published} for cycle {cycle}; "
+        f"inputs moved since publication: "
+        f"health_latest_sha256 {old_digest} -> {new_digest}\n"
+    )
+    for result in runs:
+        assert result.returncode == 0, result.stderr
+        assert result.stdout == expected
+    assert published.read_bytes() == before
+    assert sorted(path.name for path in paths[3].iterdir()) == [f"{cycle}.json"]
 
 
 def test_changelog_renamed(tmp_path: Path) -> None:
