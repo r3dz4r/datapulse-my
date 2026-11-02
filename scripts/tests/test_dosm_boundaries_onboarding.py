@@ -75,10 +75,8 @@ def test_boundary_contract_and_artifacts_are_source_honest() -> None:
         assert f"dataset_id: {dataset_id}" in report
         assert jsonld["identifier"] == dataset_id
         assert jsonld["sameAs"] == url
-        # data/jsonld still carries the short licence from the 2026-10-03
-        # onboarding; gen_jsonld_catalog.py now derives it from the manifest, so
-        # this pin trips when that family is regenerated.
-        assert jsonld["license"] == "Open Data License"
+        assert jsonld["license"]
+        assert jsonld["license"] == row["licence"]
         assert envelope["id"] == jsonld["identifier"] == dataset_id
         assert envelope["reproducibility"]["url"] == jsonld["sameAs"] == url
         assert envelope["licence"]
@@ -180,10 +178,8 @@ def test_lookup_contract_and_artifacts_are_source_honest() -> None:
         assert f"dataset_id: {dataset_id}" in report
         assert jsonld["identifier"] == dataset_id
         assert jsonld["sameAs"] == url
-        # data/jsonld still carries the short licence from the 2026-10-03
-        # onboarding; gen_jsonld_catalog.py now derives it from the manifest, so
-        # this pin trips when that family is regenerated.
-        assert jsonld["license"] == "Open Data License"
+        assert jsonld["license"]
+        assert jsonld["license"] == row["licence"]
         assert envelope["id"] == jsonld["identifier"] == dataset_id
         assert envelope["reproducibility"]["url"] == jsonld["sameAs"] == url
         assert envelope["licence"]
