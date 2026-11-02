@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.60.2](https://github.com/r3dz4r/datapulse-my/compare/v3.60.1...v3.60.2) (2026-11-02)
+
+
+### Bug Fixes
+
+* **mcp-sync:** diagnose served identity mismatch by verdict and wrong input ([5af8a70](https://github.com/r3dz4r/datapulse-my/commit/5af8a70e9c7bcafcad399b96d4fea4e8680f1a49))
+* **mcp-sync:** name the wrong input in a served-identity mismatch ([413d54f](https://github.com/r3dz4r/datapulse-my/commit/413d54ff1fed75d277c867c003c5599964a97540))
+
 ## [3.60.1](https://github.com/r3dz4r/datapulse-my/compare/v3.60.0...v3.60.1) (2026-11-02)
 
 
