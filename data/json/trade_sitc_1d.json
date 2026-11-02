@@ -1,12 +1,12 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "trade_sitc_1d",
-  "status": "stale",
-  "last_checked": "2026-10-03T10:36:37Z",
-  "freshness_days": 95,
+  "status": "aging",
+  "last_checked": "2026-10-31T17:30:43Z",
+  "freshness_days": 62,
   "next_expected_update": null,
   "refresh_frequency": "monthly",
-  "record_count": 3509,
+  "record_count": 4851,
   "date_range": null,
   "fields": [],
   "checks": [
@@ -18,12 +18,12 @@
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Probe measured 3509 record(s)"
+      "method": "Probe measured 4851 record(s)"
     },
     {
       "name": "freshness",
-      "status": "fail",
-      "method": "Health snapshot classifies the dataset as stale"
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as aging"
     },
     {
       "name": "schema_stable",
