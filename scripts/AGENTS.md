@@ -76,7 +76,7 @@ Scripts are **read-and-execute**: every commit triggers the deterministic-safety
 
 ## What is NOT in `scripts/`
 
-- **The pipeline state machine** — there's no orchestrator; the systemd timer invokes scripts in dependency order via `datapulse-pipeline.sh` (in dotfiles `system/`).
+- **The installed pipeline entrypoint** — `scripts/datapulse-pipeline.sh` is maintained here and deployed to `/usr/local/sbin/datapulse-pipeline.sh` by `scripts/install-pipeline.sh`. The service must not execute it from the checkout because each cycle checks out artifact commits in that same tree.
 - **The deploy flow** — `.github/workflows/deploy-cloudflare-pages.yml` (Cloudflare Pages; separate concern)
 - **The public MCP server code** — that's `mcp/server.py`, not scripts
 
