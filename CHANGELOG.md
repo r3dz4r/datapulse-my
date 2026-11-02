@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.59.11](https://github.com/r3dz4r/datapulse-my/compare/v3.59.10...v3.59.11) (2026-11-02)
+
+
+### Bug Fixes
+
+* **deltas:** keep a published cycle delta when release regeneration sees moved inputs ([#2969](https://github.com/r3dz4r/datapulse-my/issues/2969)) ([1ed00b8](https://github.com/r3dz4r/datapulse-my/commit/1ed00b875defc2e07278b400498cc6e1ea82baba))
+
 ## [3.59.10](https://github.com/r3dz4r/datapulse-my/compare/v3.59.9...v3.59.10) (2026-10-31)
 
 
