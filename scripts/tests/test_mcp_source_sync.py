@@ -468,30 +468,43 @@ def _free_scratch_port() -> int:
 
 class _DelayedMCPStub:
     """Keeps the port refused (nothing listening) for `delay` seconds, then
-    serves — the shape of a draining service whose replacement has not bound
-    the socket yet."""
+    serves — the shape of a draining service whose replacement has not started
+    listening yet."""
 
-    def __init__(self, port: int, delay: float) -> None:
+    def __init__(self, delay: float, probe_started: Path) -> None:
+        self.delay = delay
+        self._probe_started = probe_started
         self._server = HTTPServer(
-            ("127.0.0.1", port), _ReadinessStubHandler, bind_and_activate=False
+            ("127.0.0.1", 0), _ReadinessStubHandler, bind_and_activate=False
         )
-        self._activated = threading.Event()
-        self._timer = threading.Timer(delay, self._activate)
-
-    def _activate(self) -> None:
+        # Reserve an ephemeral port without listening: connects still refuse.
         self._server.server_bind()
-        self._server.server_activate()
-        self._activated.set()
-        self._server.serve_forever()
+        self.port = self._server.server_port
+        self._server.timeout = 0.1
+        self._stopped = threading.Event()
+        self._thread = threading.Thread(target=self._serve, daemon=True)
+
+    def _serve(self) -> None:
+        try:
+            while not self._probe_started.exists():
+                if self._stopped.wait(0.01):
+                    return
+            if self._stopped.wait(self.delay):
+                return
+            self._server.server_activate()
+            while not self._stopped.is_set():
+                self._server.handle_request()
+        finally:
+            self._server.server_close()
 
     def start(self) -> None:
-        self._timer.start()
+        self._thread.start()
 
     def close(self) -> None:
-        self._timer.cancel()
-        if self._activated.is_set():
-            self._server.shutdown()
-            self._server.server_close()
+        self._stopped.set()
+        self._thread.join(timeout=5)
+        assert not self._thread.is_alive()
+        assert self._server.socket.fileno() == -1
 
 
 class _SilentListener(threading.Thread):
@@ -705,13 +718,24 @@ def _run_sync_against_served_version(
         _ReadinessStubHandler.runtime_version = "v1.2.3+aaaaaaa"
 
 
-def _run_sync_with_session_issuance(
+def _run_sync_with_hermetic_stub(
     tmp_path: Path, issue_session: bool, served_version: str = "v1.2.3+aaaaaaa"
 ) -> tuple[subprocess.CompletedProcess[str], list[tuple[str, str | None]]]:
     source, deployed, env = _readiness_fixture(tmp_path)
-    server, thread = _start_identity_readiness_stub()
-    _ReadinessStubHandler.runtime_version = served_version
-    _ReadinessStubHandler.issue_session = issue_session
+
+    class HermeticStubHandler(_ReadinessStubHandler):
+        # The shared handler retained first_initialize_at and request history
+        # after shutdown. Give each test its own state, configured before serving.
+        runtime_version = served_version
+        stale_runtime_version = None
+        switch_after_seconds = None
+        first_initialize_at = 0.0
+        received_session_headers: list[tuple[str, str | None]] = []
+
+    HermeticStubHandler.issue_session = issue_session
+    server = HTTPServer(("127.0.0.1", 0), HermeticStubHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
     try:
         result = _run_readiness_sync(
             source,
@@ -721,17 +745,20 @@ def _run_sync_with_session_issuance(
             budget="2",
             timeout=20,
         )
-        received = list(_ReadinessStubHandler.received_session_headers)
+        received = list(HermeticStubHandler.received_session_headers)
     finally:
-        _stop_identity_readiness_stub(server, thread)
-        _ReadinessStubHandler.runtime_version = "v1.2.3+aaaaaaa"
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+        assert not thread.is_alive()
+        assert server.socket.fileno() == -1
     return result, received
 
 
 def test_stateless_initialize_with_matching_identity_deploys_without_header(
     tmp_path: Path,
 ) -> None:
-    result, received = _run_sync_with_session_issuance(tmp_path, issue_session=False)
+    result, received = _run_sync_with_hermetic_stub(tmp_path, issue_session=False)
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.count("session_mode=") == 1
@@ -745,7 +772,7 @@ def test_stateless_initialize_with_matching_identity_deploys_without_header(
 
 
 def test_session_initialize_still_sends_the_session_header(tmp_path: Path) -> None:
-    result, received = _run_sync_with_session_issuance(tmp_path, issue_session=True)
+    result, received = _run_sync_with_hermetic_stub(tmp_path, issue_session=True)
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.count("session_mode=") == 1
@@ -757,7 +784,7 @@ def test_session_initialize_still_sends_the_session_header(tmp_path: Path) -> No
 
 
 def test_stateless_initialize_without_identity_still_fails(tmp_path: Path) -> None:
-    result, received = _run_sync_with_session_issuance(
+    result, received = _run_sync_with_hermetic_stub(
         tmp_path, issue_session=False, served_version="v1.2.3"
     )
 
@@ -821,18 +848,32 @@ def test_identity_diagnosis_reports_matching_marker_on_success(tmp_path: Path) -
 
 
 def test_sync_readiness_budget_outlasts_refused_port(tmp_path: Path) -> None:
-    """A draining service keeps the port refused for longer than the retired
-    poll's effective ~10s window; the budgeted deadline must wait it out,
-    deploy, and report the measured wait so future resizes start from data."""
+    """The readiness budget, rather than the retired ten-attempt window,
+    permits deployment after 15s of real connection refusal during polling,
+    regardless of how long source preparation takes before the first probe."""
     source, deployed, env = _readiness_fixture(tmp_path)
-    port = _free_scratch_port()
-    stub = _DelayedMCPStub(port, delay=15.0)
+    probe_started = tmp_path / "readiness-probe-started"
+    real_curl = shutil.which("curl")
+    assert real_curl is not None
+    curl_wrapper = tmp_path / "bin" / "curl"
+    curl_wrapper.write_text(
+        '#!/usr/bin/env bash\n'
+        ': > "$READINESS_PROBE_STARTED"\n'
+        'exec "$REAL_CURL" "$@"\n',
+        encoding="utf-8",
+    )
+    curl_wrapper.chmod(0o755)
+    env.update(REAL_CURL=real_curl, READINESS_PROBE_STARTED=str(probe_started))
+    # Measured suite load consumed the old stub's 15s delay during source
+    # preparation, leaving only 8-10s on the readiness clock. Start refusal
+    # at the first real curl probe so setup cannot consume the tested wait.
+    stub = _DelayedMCPStub(delay=15.0, probe_started=probe_started)
     stub.start()
     try:
         result = _run_readiness_sync(
             source,
             deployed,
-            f"http://127.0.0.1:{port}/mcp",
+            f"http://127.0.0.1:{stub.port}/mcp",
             env,
             budget="30",
             timeout=90,
@@ -844,10 +885,11 @@ def test_sync_readiness_budget_outlasts_refused_port(tmp_path: Path) -> None:
     waited = re.search(r"readiness wait=(\d+)s budget=(\d+)s", result.stdout)
     assert waited is not None, result.stdout
     assert waited.group(2) == "30"
-    # The stub refused connections for 15s; the sync subprocess reaches the
-    # poll ~1s in, so the deadline must have absorbed >= 12s of refusal —
-    # beyond the old 10-attempt/1s window, which would have rolled back.
-    assert int(waited.group(1)) >= 12
+    # Bash reports whole seconds; allow one second of clock granularity,
+    # while preserving the original minimum and exceeding the old window.
+    minimum_wait = int(stub.delay) - 1
+    assert minimum_wait >= 12
+    assert minimum_wait <= int(waited.group(1)) < int(waited.group(2))
     assert deployed.read_text(encoding="utf-8") == (
         'import os\n'
         'FASTMCP_VERSION = "1.2.3"\n'
