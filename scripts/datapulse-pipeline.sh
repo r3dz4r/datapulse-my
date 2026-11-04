@@ -3443,7 +3443,10 @@ publisher_post_publish() {
   local artifact checkout_ref checkout_commit checkout_traps checkout_exit_action
   artifact="$(<"$run_dir/.handoff/artifact-commit")"
   if ! git_repo merge-base --is-ancestor "$artifact" HEAD; then
-    [[ "$(git_repo rev-parse HEAD)" == "$fetched_origin" ]] \
+    # preflight leaves HEAD behind origin/main while a publication is in
+    # flight, so a checkout that origin/main has since advanced past has not
+    # moved; reconcile_after_publish fast-forwards it after these stages.
+    git_repo merge-base --is-ancestor HEAD "$fetched_origin" \
       || die 'publisher post-push recovery refused: checkout moved unexpectedly'
     assert_artifacts_clean
     checkout_ref="$(git_repo symbolic-ref --short -q HEAD || git_repo rev-parse HEAD)"
