@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.60.5](https://github.com/r3dz4r/datapulse-my/compare/v3.60.4...v3.60.5) (2026-11-04)
+
+
+### Bug Fixes
+
+* **mcp-sync:** accept a stateless server's initialize without Mcp-Session-Id ([#3001](https://github.com/r3dz4r/datapulse-my/issues/3001)) ([f4f6538](https://github.com/r3dz4r/datapulse-my/commit/f4f653824ed41a3916eca7656deea3e9b04205a1))
+
 ## [3.60.4](https://github.com/r3dz4r/datapulse-my/compare/v3.60.3...v3.60.4) (2026-11-04)
 
 
