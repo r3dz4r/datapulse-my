@@ -615,16 +615,23 @@ if [[ "$initialize_ok" != true ]]; then
   fail "local endpoint did not initialize after restart: $endpoint — waited ${readiness_wait}s of ${readiness_budget_seconds}s readiness budget (override: DATAPULSE_MCP_READINESS_BUDGET_SECONDS)"
 fi
 
+# mcp/server.py runs stateless_http=True (def5579), and a stateless
+# streamable-HTTP server never issues Mcp-Session-Id, so its absence is not a
+# fault. Echo the id when a stateful server issues one; either way the
+# follow-up tools/list and its annotations are what prove the server healthy.
 session_id="$(awk 'tolower($1)=="mcp-session-id:" {gsub("\r", "", $2); print $2}' "$work_dir/headers")"
-if [[ -z "$session_id" ]]; then
-  rollback
-  fail 'initialize response omitted Mcp-Session-Id'
+session_header=()
+if [[ -n "$session_id" ]]; then
+  session_header=(-H "Mcp-Session-Id: $session_id")
+  log 'initialize issued Mcp-Session-Id (session=stateful)'
+else
+  log 'initialize issued no Mcp-Session-Id (session=stateless)'
 fi
 awk '/^data: / {sub(/^data: /, ""); print; exit}' "$work_dir/initialize" > "$work_dir/initialize.json"
 
 if ! curl -fsS --connect-timeout 2 --max-time 5 "$endpoint" \
     -H "Accept: $ACCEPT" -H 'Content-Type: application/json' \
-    -H "Mcp-Session-Id: $session_id" \
+    "${session_header[@]}" \
     -d '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
     >/dev/null 2> "$work_dir/curl-error"; then
   rollback
@@ -632,7 +639,7 @@ if ! curl -fsS --connect-timeout 2 --max-time 5 "$endpoint" \
 fi
 if ! curl -fsS --connect-timeout 2 --max-time 5 "$endpoint" \
     -H "Accept: $ACCEPT" -H 'Content-Type: application/json' \
-    -H "Mcp-Session-Id: $session_id" \
+    "${session_header[@]}" \
     -d '{"jsonrpc":"2.0","method":"tools/list","id":2}' \
     > "$work_dir/tools" 2> "$work_dir/curl-error"; then
   rollback
