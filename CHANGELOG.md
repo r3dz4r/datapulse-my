@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.60.7](https://github.com/r3dz4r/datapulse-my/compare/v3.60.6...v3.60.7) (2026-11-05)
+
+
+### Bug Fixes
+
+* **deploy:** measure accepted report age after publication ([#3027](https://github.com/r3dz4r/datapulse-my/issues/3027)) ([019502c](https://github.com/r3dz4r/datapulse-my/commit/019502c7a91a7d865b9e46bfa160f70be6548f3d))
+
 ## [3.60.6](https://github.com/r3dz4r/datapulse-my/compare/v3.60.5...v3.60.6) (2026-11-05)
 
 
