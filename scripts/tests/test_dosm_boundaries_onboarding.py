@@ -36,6 +36,87 @@ def _json(path: str) -> dict:
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
+def _assert_envelope_not_ahead_of_observation(
+    envelope: dict, observation: dict, dataset_id: str,
+) -> None:
+    instants = {}
+    for side, value in (("envelope", envelope), ("observation", observation)):
+        raw = value.get("last_checked")
+        message = f"{dataset_id}: {side}.last_checked must be an ISO 8601 instant; got {raw!r}"
+        assert isinstance(raw, str), message
+        try:
+            instant = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError as error:
+            raise AssertionError(message) from error
+        assert instant.utcoffset() is not None, message
+        instants[side] = instant.astimezone(timezone.utc)
+
+    # The envelope's last_checked may lag the observation's, and must never lead
+    # it, because the envelope is rewritten only when its source changes while
+    # the observation is refreshed every cycle.
+    assert instants["envelope"] <= instants["observation"], (
+        f"{dataset_id}: the envelope's last_checked ({instants['envelope'].isoformat()}) "
+        f"may lag the observation's ({instants['observation'].isoformat()}), and must never lead it, "
+        "because the envelope is rewritten only when its source changes while "
+        "the observation is refreshed every cycle"
+    )
+
+
+@pytest.mark.parametrize("envelope_checked, observation_checked", [
+    ("2026-11-05T03:33:58Z", "2026-11-05T03:33:57Z"),
+    ("2026-11-05T03:33:57Z", "2026-11-05T11:33:56+08:00"),
+])
+def test_envelope_ahead_of_observation_fails(
+    envelope_checked: str, observation_checked: str,
+) -> None:
+    dataset_id = "dosm_boundary_district_lookup"
+    with pytest.raises(AssertionError) as failure:
+        _assert_envelope_not_ahead_of_observation(
+            {"last_checked": envelope_checked},
+            {"last_checked": observation_checked}, dataset_id,
+        )
+    message = str(failure.value)
+    assert dataset_id in message
+    assert datetime.fromisoformat(envelope_checked.replace("Z", "+00:00")).astimezone(timezone.utc).isoformat() in message
+    assert datetime.fromisoformat(observation_checked.replace("Z", "+00:00")).astimezone(timezone.utc).isoformat() in message
+    assert "must never lead it" in message
+
+
+@pytest.mark.parametrize("envelope_checked, observation_checked", [
+    ("2026-10-03T11:10:24Z", "2026-11-05T03:33:57Z"),
+    ("2026-11-05T11:33:56+08:00", "2026-11-05T03:33:57Z"),
+    ("2026-11-05T03:33:57Z", "2026-11-05T03:33:57Z"),
+    ("2026-11-05T11:33:57+08:00", "2026-11-05T03:33:57Z"),
+])
+def test_envelope_not_ahead_of_observation_passes(
+    envelope_checked: str, observation_checked: str,
+) -> None:
+    _assert_envelope_not_ahead_of_observation(
+        {"last_checked": envelope_checked},
+        {"last_checked": observation_checked}, "dosm_boundary_district_lookup",
+    )
+
+
+@pytest.mark.parametrize("side", ["envelope", "observation"])
+@pytest.mark.parametrize("invalid", [
+    {}, {"last_checked": None}, {"last_checked": 42},
+    {"last_checked": ""}, {"last_checked": "not-an-instant"},
+    {"last_checked": "2026-11-05"},
+    {"last_checked": "2026-11-05T03:33:57"},
+])
+def test_envelope_observation_invalid_last_checked_fails(side: str, invalid: dict) -> None:
+    values = {
+        "envelope": {"last_checked": "2026-11-05T03:33:57Z"},
+        "observation": {"last_checked": "2026-11-05T03:33:57Z"},
+    }
+    values[side] = invalid
+    dataset_id = "dosm_boundary_district_lookup"
+    with pytest.raises(AssertionError, match=rf"{dataset_id}: {side}\.last_checked"):
+        _assert_envelope_not_ahead_of_observation(
+            values["envelope"], values["observation"], dataset_id,
+        )
+
+
 def test_boundary_contract_and_artifacts_are_source_honest() -> None:
     rows = {row["id"]: row for row in _json("datapulse.json")["datasets"]}
     policies = _json("scripts/probe-policy.json")["datasets"]
@@ -185,7 +266,7 @@ def test_lookup_contract_and_artifacts_are_source_honest() -> None:
         assert envelope["licence"]
         assert envelope["licence"] == row["licence"]
         assert envelope["status"] == observation["status"]
-        assert envelope["last_checked"] == observation["last_checked"]
+        _assert_envelope_not_ahead_of_observation(envelope, observation, dataset_id)
         assert envelope["record_count"] == observation["record_count"] == record_count
         assert envelope["date_range"] is None
         assert observation["status"] == "reference"
