@@ -8,31 +8,31 @@ sources:
   - {"id": "prisons","resource": "https://storage.data.gov.my/publicsafety/prisoners_state.csv","title": "Malaysian Prison Department"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T02:03:45Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Prison Department"
-datapulse:real_status: "aging"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/prisoners_state.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2025-07-01T12:00:00Z"
+stale_after: "2023-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-data.gov.my Prisoners by State and Sex is published by Malaysian Prison Department and tracked by DataPulse. The latest published probe classifies it as `aging`.
+data.gov.my Prisoners by State and Sex is published by Malaysian Prison Department and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:879bb759934320cc16371df5962ffacfc124dc30e8178511e76cc3ffa47872b7`
-- `record_count`: `312`
+- `record_count`: `234`
 
 # Quirks
 
-No probe quirks were recorded.
+publisher-likely-retired
 
 # Health
 

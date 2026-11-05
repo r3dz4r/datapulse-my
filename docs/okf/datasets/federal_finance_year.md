@@ -8,31 +8,31 @@ sources:
   - {"id": "agc","resource": "https://api.data.gov.my/data-catalogue?id=federal_finance_year","title": "Accountant General’s Department of Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T02:03:45Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Accountant-General's Department"
-datapulse:real_status: "aging"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/federal_finance_year.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 594
-stale_after: "2026-07-02T12:00:00Z"
+stale_after: "2024-07-01T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Annual Federal Government Finance is published by Accountant General’s Department of Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
+Annual Federal Government Finance is published by Accountant General’s Department of Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:f29e92166efabfccf3ef82e36a103dcf5b6b65eca76b4f4f440708122a086003`
-- `record_count`: `616`
+- `record_count`: `594`
 
 # Quirks
 
-No probe quirks were recorded.
+publisher-likely-retired
 
 # Health
 

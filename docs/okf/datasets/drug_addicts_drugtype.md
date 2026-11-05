@@ -8,31 +8,31 @@ sources:
   - {"id": "aadk","resource": "https://api.data.gov.my/data-catalogue?id=drug_addicts_drugtype","title": "National Anti-Drugs Agency and Ministry of Home Affairs"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T02:03:45Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Anti-Drugs Agency, Ministry of Home Affairs"
-datapulse:real_status: "degraded"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/drug_addicts_drugtype.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 93
-stale_after: "2026-07-02T12:00:00Z"
+stale_after: "2024-07-01T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Drug Addicts by State & Drug Type is published by National Anti-Drugs Agency and Ministry of Home Affairs and tracked by DataPulse. The latest published probe classifies it as `degraded`.
+Drug Addicts by State & Drug Type is published by National Anti-Drugs Agency and Ministry of Home Affairs and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 
-- `column_count`: `4`
-- `first_row_hash`: `shape-v1:1b3ed081146bc37fd615c7617d86ac8c7b3e8144190f72842ea726ca3eb2f9d7`
-- `record_count`: `709`
+- `column_count`: `11`
+- `first_row_hash`: `shape-v1:566d365735cbb1a717b6bebd22d192254dd828d69ea415b8f46fca0e66472b63`
+- `record_count`: `93`
 
 # Quirks
 
-No probe quirks were recorded.
+publisher-likely-retired
 
 # Health
 

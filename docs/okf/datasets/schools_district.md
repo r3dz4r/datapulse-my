@@ -8,7 +8,7 @@ sources:
   - {"id": "moe","resource": "https://storage.data.gov.my/education/schools_district.csv","title": "Ministry of Education Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T02:03:45Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Ministry of Education"
@@ -26,7 +26,7 @@ data.gov.my Public Education Institutions by District is published by Ministry o
 
 - `column_count`: `6`
 - `first_row_hash`: `shape-v1:0f8bd428b1f6364f80e985fab1f0d720a5700ed1bba7adcf54d3d2252556893e`
-- `record_count`: `4514`
+- `record_count`: `3977`
 
 # Quirks
 
