@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.60.6](https://github.com/r3dz4r/datapulse-my/compare/v3.60.5...v3.60.6) (2026-11-05)
+
+
+### Bug Fixes
+
+* **tests:** allow DOSM lookup envelopes to lag observations ([#3035](https://github.com/r3dz4r/datapulse-my/issues/3035)) ([779f839](https://github.com/r3dz4r/datapulse-my/commit/779f839044ff3af4f98053979820cbcad475bc9d))
+
 ## [3.60.5](https://github.com/r3dz4r/datapulse-my/compare/v3.60.4...v3.60.5) (2026-11-04)
 
 
