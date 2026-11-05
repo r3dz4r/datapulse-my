@@ -8,7 +8,7 @@ sources:
   - {"id": "jdn","resource": "https://api.data.gov.my/data-catalogue?id=currency_codes","title": "National Digital Department"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T02:03:45Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Jabatan Digital Negara"

@@ -8,31 +8,31 @@ sources:
   - {"id": "mohe","resource": "https://api.data.gov.my/data-catalogue?id=lecturers_uni","title": "Ministry of Higher Education Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T02:03:45Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Ministry of Higher Education"
-datapulse:real_status: "stale"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/lecturers_uni.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2250
-stale_after: "2024-07-01T12:00:00Z"
+stale_after: "2026-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Lecturers in Public Universities by Citizenship & Sex is published by Ministry of Higher Education Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Lecturers in Public Universities by Citizenship & Sex is published by Ministry of Higher Education Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `6`
 - `first_row_hash`: `shape-v1:e9d97a588ad50cc8a41bedae278724d77743090f58452b184c15cb514d03c88f`
-- `record_count`: `2250`
+- `record_count`: `2700`
 
 # Quirks
 
-publisher-likely-retired
+No probe quirks were recorded.
 
 # Health
 

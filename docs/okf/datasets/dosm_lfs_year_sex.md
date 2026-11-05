@@ -8,27 +8,27 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=lfs_year_sex","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T02:03:45Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
-datapulse:real_status: "stale"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_lfs_year_sex.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 120
-stale_after: "2024-07-01T12:00:00Z"
+stale_after: "2026-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Annual Principal Labour Force Statistics by Sex is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Annual Principal Labour Force Statistics by Sex is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `9`
 - `first_row_hash`: `shape-v1:8c1f469b1c2a65d655e1ca54e0be6afacf7ceb6ddaf8633969d07828b83d622f`
-- `record_count`: `120`
+- `record_count`: `126`
 
 # Quirks
 
