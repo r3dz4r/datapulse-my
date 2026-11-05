@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -128,21 +129,9 @@ def test_workflow_api_verdict_mapping(
     assert ("::warning" in result.stdout) == (verdict == "unknown")
 
 
-@pytest.mark.parametrize(
-    "identity_status, age_hours, expected_code, expected_state",
-    [
-        ("404", 1, 0, "first accepted publication"),
-        ("200", 1, 0, "current"),
-        ("200", 37, 1, "expired"),
-        ("503", 1, 1, "error"),
-        ("transport", 1, 1, "error"),
-        ("malformed", 1, 1, "error"),
-    ],
-)
-def test_served_report_freshness_step(
+def _served_report_case(
     tmp_path: Path, identity_status: str, age_hours: int,
-    expected_code: int, expected_state: str,
-) -> None:
+) -> tuple[dict[str, str], str]:
     step = next(s for s in _freshness_job()["steps"]
                 if s.get("name") == "Measure canonical production report age")
     assert "--write-out" in step["run"] and ' -o "$report/identity.json"' in step["run"]
@@ -206,6 +195,25 @@ esac
            "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
     command = step["run"].replace("scripts/select_accepted_health.py",
                                    f"scripts/select_accepted_health.py --now {NOW}")
+    return env, command
+
+
+@pytest.mark.parametrize(
+    "identity_status, age_hours, expected_code, expected_state",
+    [
+        ("404", 1, 0, "first accepted publication"),
+        ("200", 1, 0, "current"),
+        ("200", 37, 1, "expired"),
+        ("503", 1, 1, "error"),
+        ("transport", 1, 1, "error"),
+        ("malformed", 1, 1, "error"),
+    ],
+)
+def test_served_report_freshness_step(
+    tmp_path: Path, identity_status: str, age_hours: int,
+    expected_code: int, expected_state: str,
+) -> None:
+    env, command = _served_report_case(tmp_path, identity_status, age_hours)
     result = subprocess.run(["bash", "-c", command], cwd=ROOT, env=env,
                             text=True, capture_output=True, check=False)
     if expected_code:
@@ -226,3 +234,93 @@ esac
     else:
         assert "first accepted publication" not in result.stdout
         assert len(requests) == 1
+
+
+@pytest.mark.parametrize(
+    "identity_status, age_hours, expected_code, expected_state",
+    [("200", 37, 1, "expired"),
+     ("404", 1, 0, "first accepted publication"),
+     ("200", 1, 0, "current")],
+    ids=["expired-still-publishes-then-fails", "unpublished-publishes-and-passes",
+         "fresh-publishes-and-passes"],
+)
+def test_publication_precedes_age_verdict(
+    tmp_path: Path, identity_status: str, age_hours: int,
+    expected_code: int, expected_state: str,
+) -> None:
+    """Run real identity/age/deploy shell with signing and preview already successful.
+
+    Only upload, served transport, and the clock are fixtures. The expired case
+    also covers a signed report aging past the bound during the build.
+    """
+    env, served_command = _served_report_case(tmp_path, identity_status, age_hours)
+    (tmp_path / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
+    site = tmp_path / "_site"
+    for directory in ("health", "attestations/latest", ".attestations"):
+        (site / directory).mkdir(parents=True)
+    shutil.copy2(tmp_path / "health.json", site / "health/latest.json")
+    shutil.copy2(tmp_path / "binding.json", site / "attestations/latest/binding.json")
+    for path in ("attestations/latest/chain_head.json", ".attestations/chain_head.json"):
+        (site / path).write_text(json.dumps({"chain_head": "a" * 64}))
+    (site / "datapulse.json").write_text("{}")
+    (site / "index.html").write_text("<html><body>Fixture</body></html>")
+    identity = json.loads((tmp_path / "identity.json").read_text()) | {
+        "accepted_main_commit": "b" * 40,
+        "manifest_sha256": hashlib.sha256(b"{}").hexdigest(),
+    }
+    publication = Path(env["RUNNER_TEMP"]) / "sigstore-publication"
+    publication.mkdir()
+    (publication / "publication-identity.json").write_text(json.dumps(identity))
+    env |= {"ACCEPTED_MAIN_COMMIT": "b" * 40,
+            "ACCEPTED_OBSERVED_AT": identity["observed_at"],
+            "PROMOTION_SOURCE_SHA": "b" * 40,
+            "EVENT_LOG": str(tmp_path / "events")}
+    bin_path = tmp_path / "bin"
+    python = bin_path / "python3"
+    python.write_text(
+        '#!/bin/bash\nif [[ "$*" == *--measure-age* ]]; then\n'
+        '  printf "measure\\n" >> "$EVENT_LOG"\n'
+        f'  exec "{sys.executable}" "$@" --now {NOW}\nfi\n'
+        f'exec "{sys.executable}" "$@"\n')
+    python.chmod(0o755)
+    npx = bin_path / "npx"
+    npx.write_text('#!/bin/bash\nprintf "publish\\n" >> "$EVENT_LOG"\n')
+    npx.chmod(0o755)
+    workflow = yaml.safe_load((ROOT / ".github/workflows/deploy-cloudflare-pages.yml").read_text())
+    failed = False
+    for step in workflow["jobs"]["deploy"]["steps"]:
+        command = step.get("run", "")
+        if not (step.get("name") == "Verify accepted report identity and disclose observation time"
+                or step.get("id") == "deploy" or "--measure-age" in command):
+            continue
+        if failed and step.get("if") != "always()":
+            continue
+        result = subprocess.run(["bash", "-c", command], cwd=tmp_path, env=env,
+                                text=True, capture_output=True, check=False, timeout=10)
+        failed |= result.returncode != 0
+    served = subprocess.run(["bash", "-c", served_command], cwd=tmp_path, env=env,
+                            text=True, capture_output=True, check=False, timeout=10)
+    events = (tmp_path / "events").read_text().splitlines()
+    assert "publish" in events, "age refusal skipped canonical publication"
+    assert events[0] == "publish", "report age was measured before canonical publication"
+    assert served.returncode == expected_code, served.stdout + served.stderr
+    assert expected_state in served.stdout
+    assert (failed or served.returncode != 0) == bool(expected_code)
+
+
+def test_age_measurement_cannot_skip_canonical_deploy() -> None:
+    jobs = yaml.safe_load((ROOT / ".github/workflows/deploy-cloudflare-pages.yml").read_text())["jobs"]
+    deploy = jobs["deploy"]
+    steps = deploy["steps"]
+    publication_index = next(i for i, step in enumerate(steps) if step.get("id") == "deploy")
+    assert not any("--measure-age" in step.get("run", "")
+                   for step in steps[:publication_index]), "blocking age measurement precedes deploy"
+    gate = next(step for step in steps if step.get("id") == "publication_age_gate_after_deploy")
+    assert steps.index(gate) > publication_index
+    assert gate["if"] == "always()"
+    assert not gate.get("continue-on-error", False)
+    assert "--measure-age" in gate["run"]
+    assert "publication_freshness" not in deploy["needs"]
+    assert "publication_freshness" not in deploy["if"]
+    assert jobs["publication_freshness"]["needs"] == ["deploy"]
+    assert jobs["publication_freshness"]["if"] == "always()"

@@ -733,8 +733,6 @@ jobs:
           page.write_text(rendered)
           print(json.dumps(identity, sort_keys=True))
           PYCODE
-          python3 scripts/select_accepted_health.py --measure-age \
-            --health _site/health/latest.json --binding _site/attestations/latest/binding.json
 
       - name: Exclude oversized Pages assets before upload
         run: |
@@ -949,6 +947,16 @@ jobs:
 
       - name: Verify local versus served parity after publication
         run: python3 scripts/verify_local_public_parity.py --root .
+
+      - name: Measure published accepted report age
+        id: publication_age_gate_after_deploy
+        # Age can fail the run, but must never prevent the upload that clears it.
+        # Still measure when deployment or served verification fails.
+        if: always()
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/select_accepted_health.py --measure-age \
+            --health _site/health/latest.json --binding _site/attestations/latest/binding.json
 
   publication_freshness:
     name: Check production publication freshness
