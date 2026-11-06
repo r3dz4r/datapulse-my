@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://raw.githubusercontent.com/dosm-malaysia/data-open/main/datasets/geodata/state_district.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-10-03T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-03T11:10:24Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
 status: "stable"
 datapulse:licence: "Department of Statistics Malaysia Open Data License"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
