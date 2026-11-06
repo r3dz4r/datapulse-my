@@ -8,7 +8,7 @@ sources:
   - {"id": "span","resource": "https://api.data.gov.my/data-catalogue?id=water_consumption","title": "National Water Services Commission"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "The National Water Services Commission, Ministry of Natural Resources & Environmental Sustainability, Department of Statistics Malaysia"
@@ -32,7 +32,7 @@ Water Consumption by State and Sector is published by National Water Services Co
 
 # Quirks
 
-publisher-likely-retired
+No probe quirks were recorded.
 
 # Health
 
