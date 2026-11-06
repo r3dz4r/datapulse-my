@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://raw.githubusercontent.com/dosm-malaysia/data-open/main/datasets/geodata/electoral_0_parlimen.geojson","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-10-03T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-03T02:55:45Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-02T03:49:52Z"}
 status: "stable"
 datapulse:licence: "Department of Statistics Malaysia Open Data License"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
