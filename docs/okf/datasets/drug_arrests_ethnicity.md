@@ -8,7 +8,7 @@ sources:
   - {"id": "pdrm","resource": "https://api.data.gov.my/data-catalogue?id=drug_arrests_ethnicity","title": "Royal Malaysia Police and Ministry of Home Affairs"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Royal Malaysia Police, Ministry of Home Affairs"
