@@ -8,27 +8,27 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=lfs_year","title": "dosm"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-13T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
-datapulse:real_status: "stale"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/lfs_year.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2024-07-01T12:00:00Z"
+stale_after: "2026-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Annual Principal Labour Force Statistics is published by dosm and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Annual Principal Labour Force Statistics is published by dosm and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `8`
 - `first_row_hash`: `shape-v1:d2f09a833b28049ca34ddf2560c37894522a8b1dac18008c64c953769b3188b1`
-- `record_count`: `40`
+- `record_count`: `42`
 
 # Quirks
 
