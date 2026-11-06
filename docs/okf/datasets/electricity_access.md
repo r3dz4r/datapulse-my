@@ -8,31 +8,31 @@ sources:
   - {"id": "energy_commission","resource": "https://api.data.gov.my/data-catalogue?id=electricity_access","title": "Energy Commission and Malaysian electricity utilities"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Tenaga Nasional Berhad, Sabah Electricity Sdn. Bhd., Sarawak Energy Berhad, Energy Commission of Malaysia"
-datapulse:real_status: "stale"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/electricity_access.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 44
-stale_after: "2022-07-02T12:00:00Z"
+stale_after: "2025-07-01T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Households with Access to Electricity is published by Energy Commission and Malaysian electricity utilities and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Households with Access to Electricity is published by Energy Commission and Malaysian electricity utilities and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:c18c37a4ed55b4964d4f71ef8287343c03cff2bc3bf69cd92714dc9584a4151b`
-- `record_count`: `44`
+- `record_count`: `56`
 
 # Quirks
 
-publisher-likely-retired
+No probe quirks were recorded.
 
 # Health
 
