@@ -8,31 +8,31 @@ sources:
   - {"id": "mof","resource": "https://api.data.gov.my/data-catalogue?id=federal_budget_moe","title": "Ministry of Finance Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Ministry of Finance"
-datapulse:real_status: "fresh"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/federal_budget_moe.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 80
-stale_after: "2027-07-02T12:00:00Z"
+stale_after: "2025-07-01T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Annual Budget Allocation for the Ministry of Education is published by Ministry of Finance Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Annual Budget Allocation for the Ministry of Education is published by Ministry of Finance Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:3129439fdaee6762b2f6817571379fa583c680c7171b29a0082a402e6e2e2383`
-- `record_count`: `104`
+- `record_count`: `80`
 
 # Quirks
 
-No probe quirks were recorded.
+publisher-likely-retired
 
 # Health
 
