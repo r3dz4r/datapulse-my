@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/demography/death_district_sex.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_death_district_sex.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-07-02T12:00:00Z"
+stale_after: "2025-07-01T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ OpenDOSM Annual Deaths by District and Sex is published by Department of Statist
 
 - `column_count`: `6`
 - `first_row_hash`: `shape-v1:f785f7a345c0903b19e2fee5ec337e377676c7fe0eebc5af42a948ff5857944e`
-- `record_count`: `2859`
+- `record_count`: `2361`
 
 # Quirks
 

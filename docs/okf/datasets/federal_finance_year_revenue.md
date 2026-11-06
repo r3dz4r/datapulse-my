@@ -8,27 +8,27 @@ sources:
   - {"id": "mof","resource": "https://storage.data.gov.my/publicadmin/federal_finance_year_revenue.csv","title": "Ministry of Finance Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Accountant-General's Department"
-datapulse:real_status: "aging"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/federal_finance_year_revenue.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 1134
-stale_after: "2026-07-02T12:00:00Z"
+stale_after: "2024-07-01T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Annual Federal Government Revenue is published by Ministry of Finance Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
+Annual Federal Government Revenue is published by Ministry of Finance Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:bbc19ae5b40f0658b9ffb02e2b93a5e86f5e325e01cfbf10150cae2e4df9146c`
-- `record_count`: `1176`
+- `record_count`: `1134`
 
 # Quirks
 
