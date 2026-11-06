@@ -8,7 +8,7 @@ sources:
   - {"id": "energy_commission","resource": "https://myenergystats.st.gov.my/documents/d/guest/csv-senarai-lesen-ipp","title": "Suruhanjaya Tenaga (Malaysia Energy Commission)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-05T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
 status: "stable"
 datapulse:licence: "Publisher licence not stated; portal disclaimer applies"
 datapulse:attribution: "Suruhanjaya Tenaga (Malaysia Energy Commission) via MyEnergyStats"
