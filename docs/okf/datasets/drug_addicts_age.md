@@ -8,7 +8,7 @@ sources:
   - {"id": "aadk","resource": "https://storage.data.gov.my/publicsafety/drug_addicts_age.csv","title": "National Anti-Drugs Agency"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "National Anti-Drugs Agency, Ministry of Home Affairs"
@@ -26,7 +26,7 @@ data.gov.my Drug Addicts by State & Age Group is published by National Anti-Drug
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:fdde9e4fb1d00f6be2de1bb291694284bedf68360a3833e56655c4aac8aa48cc`
-- `record_count`: `1107`
+- `record_count`: `783`
 
 # Quirks
 
