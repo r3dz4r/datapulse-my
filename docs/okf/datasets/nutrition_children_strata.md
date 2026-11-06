@@ -8,7 +8,7 @@ sources:
   - {"id": "kkm","resource": "https://api.data.gov.my/data-catalogue?id=nutrition_children_strata","title": "Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Ministry of Health Malaysia (Kementerian Kesihatan Malaysia)"
@@ -16,7 +16,7 @@ datapulse:real_status: "stale"
 datapulse:health_report: "/data/nutrition_children_strata.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 30
-stale_after: "2023-07-02T12:00:00Z"
+stale_after: "2020-07-01T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,11 +28,11 @@ Nutritional Status of Children Under 5 by Strata is published by Ministry of Hea
 
 - `column_count`: `6`
 - `first_row_hash`: `shape-v1:3475a670e6490fa0c0116a2a908862f3afd191d3b1fcc8686c91d72512d34d22`
-- `record_count`: `84`
+- `record_count`: `30`
 
 # Quirks
 
-No probe quirks were recorded.
+publisher-likely-retired
 
 # Health
 
