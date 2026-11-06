@@ -8,7 +8,7 @@ sources:
   - {"id": "kpdn","resource": "https://storage.data.gov.my/pricecatcher/lookup_item.csv","title": "Ministry of Domestic Trade and Cost of Living and Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Ministry of Domestic Trade, Department of Statistics Malaysia"
