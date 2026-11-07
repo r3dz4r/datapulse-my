@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate signed daily probe attestations and unsigned trust scores."""
 from __future__ import annotations
-import argparse, base64, fcntl, gzip, hashlib, json, os, shutil, subprocess, sys, tempfile
+import argparse, base64, fcntl, gzip, hashlib, json, logging, os, shutil, subprocess, sys, tempfile
 from datetime import datetime, timedelta, timezone
 from contextlib import contextmanager
 from pathlib import Path
@@ -11,6 +11,8 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.verify_attestation_binding import ContractError
 from scripts.attestation_sets import discovery, verify_set, descriptor, validate_discovery, correction_record, set_directory, FILES, append_content_digest, rekor_content, external_rekor_paths
+
+logger = logging.getLogger(__name__)
 
 ZERO = "0" * 64
 ATTESTATION_MAX_AGE_SECONDS = 36 * 60 * 60
@@ -486,7 +488,8 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
             if len(candidate["days"][day]) == 1 and candidate["heads"][candidate["current_head"]] == daily_head_ref:
                 for name in (*FILES, "health.json.gz", "rekor-reference.json", "rekor-bundle.json"):
                     source_alias = staging / "attestations" / day / name
-                    if name.startswith("rekor-") and not source_alias.is_file():
+                    if not source_alias.is_file():
+                        logger.warning("Skipping absent staged daily alias: %s", source_alias.relative_to(staging))
                         continue
                     alias = root / "attestations" / day / name
                     if alias.exists():
@@ -497,6 +500,9 @@ def generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path | 
                 for reference in immutable_index["attestations"].values():
                     name = Path(reference).name
                     source_alias = staging / "attestations" / day / name
+                    if not source_alias.is_file():
+                        logger.warning("Skipping absent staged daily alias: %s", source_alias.relative_to(staging))
+                        continue
                     alias = root / "attestations" / day / name
                     if alias.exists():
                         if alias.read_bytes() != source_alias.read_bytes():
