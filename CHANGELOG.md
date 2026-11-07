@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.60.9](https://github.com/r3dz4r/datapulse-my/compare/v3.60.8...v3.60.9) (2026-11-07)
+
+
+### Bug Fixes
+
+* **append:** authenticate the policy API calls and require the token explicitly ([7dde220](https://github.com/r3dz4r/datapulse-my/commit/7dde22072f19948f1ca5c8fa77efbe732bddf760))
+
 ## [3.60.8](https://github.com/r3dz4r/datapulse-my/compare/v3.60.7...v3.60.8) (2026-11-07)
 
 
