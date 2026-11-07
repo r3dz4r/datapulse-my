@@ -8,7 +8,7 @@ sources:
   - {"id": "prasarana","resource": "https://api.data.gov.my/gtfs-static/prasarana?category=rapid-bus-penang","title": "Prasarana Malaysia Berhad"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Prasarana"
@@ -25,7 +25,7 @@ GTFS Static — Rapid Penang Bus Schedule is published by Prasarana Malaysia Ber
 # Schema
 
 - `first_row_hash`: `shape-v1:9535700b129a2267ecc86d24355ad2d835e2fa73d46d5a7369ca81d808c4e9a0`
-- `record_count`: `308673`
+- `record_count`: `308496`
 
 # Quirks
 
