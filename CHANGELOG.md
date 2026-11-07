@@ -14,6 +14,16 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.60.8](https://github.com/r3dz4r/datapulse-my/compare/v3.60.7...v3.60.8) (2026-11-07)
+
+
+### Bug Fixes
+
+* **attestations:** preserve head refresh when staged aliases are absent ([68aefcb](https://github.com/r3dz4r/datapulse-my/commit/68aefcb5dbb1ad0509f169469f62d0e328cf11aa))
+* **attestations:** preserve the head refresh when staged daily aliases are absent ([0d455a9](https://github.com/r3dz4r/datapulse-my/commit/0d455a9cf9c20a4feaf1b7bb57e56c6a3c3c80f5))
+* **mcp:** prove the installed bytes before reporting the deployment ([5995e2f](https://github.com/r3dz4r/datapulse-my/commit/5995e2faaeed1b26f6f79c9be94c2a3ce3f62f61))
+* **mcp:** verify installed bytes before reporting deployment ([5f1b2b6](https://github.com/r3dz4r/datapulse-my/commit/5f1b2b6576a619fd7a886729a61ad978b0e1618f))
+
 ## [3.60.7](https://github.com/r3dz4r/datapulse-my/compare/v3.60.6...v3.60.7) (2026-11-05)
 
 
