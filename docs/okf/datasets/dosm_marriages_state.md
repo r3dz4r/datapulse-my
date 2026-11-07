@@ -8,27 +8,27 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/demography/marriages_state.csv","title": "DOSM Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
-datapulse:real_status: "aging"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/dosm_marriages_state.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2025-07-01T12:00:00Z"
+stale_after: "2023-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-OpenDOSM Annual Marriages by State and Sex is published by DOSM Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
+OpenDOSM Annual Marriages by State and Sex is published by DOSM Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 
 - `column_count`: `5`
 - `first_row_hash`: `shape-v1:179f52d9f494166528d91b0e9d24c06edb0542443e530181585050bbfde5fdd2`
-- `record_count`: `256`
+- `record_count`: `192`
 
 # Quirks
 
