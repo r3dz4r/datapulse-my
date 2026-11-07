@@ -40,10 +40,11 @@ jobs:
         id: policy
         env:
           GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          environment="$(curl --fail-with-body --silent --show-error --max-time 10 "https://api.github.com/repos/${GH_REPO}/environments/production")"
-          policies="$(curl --fail-with-body --silent --show-error --max-time 10 "https://api.github.com/repos/${GH_REPO}/environments/production/deployment-branch-policies?per_page=100")"
+          environment="$(curl --fail-with-body --silent --show-error --max-time 10 -H "Authorization: Bearer ${GH_TOKEN}" "https://api.github.com/repos/${GH_REPO}/environments/production")"
+          policies="$(curl --fail-with-body --silent --show-error --max-time 10 -H "Authorization: Bearer ${GH_TOKEN}" "https://api.github.com/repos/${GH_REPO}/environments/production/deployment-branch-policies?per_page=100")"
           if ! jq -e '.deployment_branch_policy == {"protected_branches": false, "custom_branch_policies": true}' <<<"$environment" >/dev/null; then
             echo "::error title=Production policy changed::Cannot determine whether this ref can deploy to production."
             exit 1
