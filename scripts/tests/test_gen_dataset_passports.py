@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 import shutil
+import subprocess
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -265,3 +266,43 @@ def test_generator_is_atomic_schema_valid_and_byte_identical(tmp_path: Path) -> 
     for path in first.glob("*.json"):
         if path.name != "index.json":
             assert not list(validator.iter_errors(json.loads(path.read_text(encoding="utf-8")))), path
+
+
+@pytest.mark.parametrize("empty", [False, True], ids=["missing", "empty"])
+def test_passport_cli_degrades_missing_profile_and_removes_stale_output(tmp_path: Path, empty: bool) -> None:
+    root = tmp_path / "root"
+    shutil.copytree(ROOT / "scripts/tests/fixtures/passport_byte_identity/inputs", root)
+    for name in ("datapulse.schema.json", "health.schema.json", "passport.schema.json"):
+        shutil.copyfile(ROOT / name, root / name)
+    health_path = root / "health/latest.json"
+    health = json.loads(health_path.read_text(encoding="utf-8"))
+    row = health["datasets"][0]
+    dataset_id = row["dataset_id"]
+    if empty:
+        row["quality_profile"] = {}
+    else:
+        del row["quality_profile"]
+    health_path.write_text(json.dumps(health), encoding="utf-8")
+    output = tmp_path / "out"
+    output.mkdir()
+    (output / f"{dataset_id}.json").write_text('{"stale": true}', encoding="utf-8")
+    result = subprocess.run([sys.executable, str(ROOT / "scripts/gen_dataset_passports.py"), "--root", str(root), "--out", str(output)], capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
+    event = json.loads(result.stderr.strip())
+    degraded = [{"dataset_id": dataset_id, "reason": "missing_quality_profile"}]
+    assert event == {"event": "dataset_passports_degraded", "degraded": degraded}
+    index = json.loads((output / "index.json").read_text(encoding="utf-8"))
+    other_ids = sorted(row["dataset_id"] for row in health["datasets"] if row["dataset_id"] != dataset_id)
+    assert index["degraded"] == degraded
+    assert index["dataset_ids"] == other_ids
+    assert index["dataset_count"] == len(other_ids)
+    assert not (output / f"{dataset_id}.json").exists()
+    assert all((output / f"{other_id}.json").is_file() for other_id in other_ids)
+
+
+def test_passport_cli_rejects_corrupt_json(tmp_path: Path) -> None:
+    (tmp_path / "datapulse.json").write_text("{", encoding="utf-8")
+    result = subprocess.run([sys.executable, str(ROOT / "scripts/gen_dataset_passports.py"), "--root", str(tmp_path)], capture_output=True, text=True, check=False)
+    assert result.returncode != 0
+    assert "cannot load" in result.stderr
+    assert "datapulse.json" in result.stderr
