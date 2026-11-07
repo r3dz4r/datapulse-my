@@ -8,7 +8,7 @@ sources:
   - {"id": "moe","resource": "https://api.data.gov.my/data-catalogue?id=enrolment_school_district","title": "Ministry of Education Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Ministry of Education"
