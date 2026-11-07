@@ -8,7 +8,7 @@ sources:
   - {"id": "jpn","resource": "https://api.data.gov.my/data-catalogue?id=births_district_sex","title": "National Registration Department and Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "National Registration Department, Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_births_district_sex.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 2361
-stale_after: "2025-07-01T12:00:00Z"
+stale_after: "2026-07-02T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Annual Live Births by District & Sex is published by National Registration Depar
 
 - `column_count`: `6`
 - `first_row_hash`: `shape-v1:4a8daa26f041d1c17b817586bf6afb9e322b75fe634175fabbe7be36ea0e6826`
-- `record_count`: `2361`
+- `record_count`: `2859`
 
 # Quirks
 
