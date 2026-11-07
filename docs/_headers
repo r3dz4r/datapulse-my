@@ -4,5 +4,15 @@
 /health/latest.json*
   Cache-Control: public, max-age=300, stale-while-revalidate=60
 
+# AI Catalog clients select entries by the media type the catalogue declares
+# (`type: application/mcp-server-card+json`) and then request the card's URL
+# expressing that type in `Accept`; the host is expected to echo the negotiated
+# type back in `Content-Type`. Pages otherwise derives the type from the `.json`
+# extension and answers `application/json`, which contradicts every advertised
+# card's declaration in docs/ai-catalog.json. Set it explicitly for the card
+# directory so the served header and the declaration cannot disagree.
+/mcp/cards/*
+  Content-Type: application/mcp-server-card+json
+
 /*
   Link: </.well-known/ard.json>; rel="ard", </.well-known/ai-catalog.json>; rel="ai-catalog"
