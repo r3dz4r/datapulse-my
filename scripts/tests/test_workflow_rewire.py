@@ -684,6 +684,7 @@ def _run_append_policy_check(tmp_path: Path, ref: str, *, api_failure: bool = Fa
     environment = os.environ.copy()
     environment.update(
         PATH=f"{fake_bin}:{environment['PATH']}",
+        GH_TOKEN="test-token",
         GH_REPO="r3dz4r/datapulse-my",
         GITHUB_REF_NAME=ref,
         GITHUB_OUTPUT=str(tmp_path / "output"),

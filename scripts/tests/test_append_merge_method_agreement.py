@@ -45,3 +45,13 @@ def test_append_auto_merge_methods_agree_with_deploy_ancestry_check() -> None:
     deploy = (ROOT / ".github/workflows/deploy-cloudflare-pages.yml").read_text()
     assert 'git merge-base --is-ancestor "$deployed" "$SELECTED_SHA"' in deploy
     assert "submit_attestation_append.sh" not in deploy
+
+
+def test_append_production_policy_api_calls_are_authenticated() -> None:
+    workflow = yaml.safe_load(
+        (ROOT / ".github/workflows/attestation-append-merge.yml").read_text(encoding="utf-8")
+    )
+    policy_step = workflow["jobs"]["check_production_ref"]["steps"][0]
+    calls = re.findall(r'curl[^\n]*"https://api\.github\.com[^\"]*"', policy_step["run"])
+    assert len(calls) == 2, calls
+    assert all('-H "Authorization: Bearer ${GH_TOKEN}"' in call for call in calls), calls
