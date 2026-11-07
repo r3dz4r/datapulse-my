@@ -8,7 +8,7 @@ sources:
   - {"id": "national_audit","resource": "https://api.data.gov.my/data-catalogue?id=state_finance_expenditure","title": "National Audit Department Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-05T06:46:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-05T03:33:57Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Audit Department"
