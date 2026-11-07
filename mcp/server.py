@@ -38,6 +38,8 @@ from mcp.types import Icon, Implementation as MCPImplementation, ToolAnnotations
 from pydantic import Field
 from pydantic import ValidationError as PydanticValidationError
 from starlette.middleware import Middleware as StarletteMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 from fastmcp.tools import FunctionTool
 from typing_extensions import Annotated
 
@@ -63,6 +65,20 @@ SOURCE_VERSION_STRING = (
     if SOURCE_COMMIT_SHA != "dev"
     else f"v{FASTMCP_VERSION}-dev"
 )
+
+# Freeze the executing file's identity at import: a deployment may replace the
+# file before restarting this process, so request-time reads would misidentify it.
+ARTIFACT_FILE = Path(__file__).name
+try:
+    _executing_file_bytes = Path(__file__).read_bytes()
+    ARTIFACT_SHA256: str | None = hashlib.sha256(_executing_file_bytes).hexdigest()
+    ARTIFACT_BYTES: int | None = len(_executing_file_bytes)
+    del _executing_file_bytes
+except OSError:
+    # An unavailable file must not hide the loaded commit identity or stop import.
+    ARTIFACT_SHA256 = None
+    ARTIFACT_BYTES = None
+ARTIFACT_DIGEST_TAKEN_AT = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 DATA_BASE = os.getenv("DATA_BASE", "https://www.data-pulse.my").rstrip("/")
 MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
@@ -868,6 +884,29 @@ mcp = FastMCP(
     cache_ttl=300,
     cache_scope="public",
 )
+
+
+@mcp.custom_route("/version", methods=["GET"])
+async def version_endpoint(request: Request) -> JSONResponse:
+    """Report loaded source and executing-file identity without request-time I/O."""
+    return JSONResponse({
+        "schema": "datapulse/mcp-version/v1",
+        "server": "DataPulse",
+        "version": SOURCE_VERSION_STRING,
+        "source": {
+            "commit": SOURCE_COMMIT_SHA,
+            "commit_date": SOURCE_COMMIT_DATE,
+            "path": "mcp/server.py",
+        },
+        "artifact": {
+            "file": ARTIFACT_FILE,
+            "sha256": ARTIFACT_SHA256,
+            "bytes": ARTIFACT_BYTES,
+            "digest_taken_at": ARTIFACT_DIGEST_TAKEN_AT,
+        },
+        "process": {"loaded_at": PROCESS_LOADED_AT},
+    })
+
 
 READ_ONLY_TOOL_ANNOTATIONS = ToolAnnotations(
     readOnlyHint=True,
@@ -2872,6 +2911,11 @@ async def dataset_resource(dataset_id: str) -> str:
     if entry is None:
         raise ValueError(f"Unknown dataset id: {dataset_id}")
     return json.dumps(entry, ensure_ascii=False)
+
+
+# Capture completion after every route, tool and resource has been registered,
+# including when this module is executed directly and mcp.run() never returns.
+PROCESS_LOADED_AT = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 if __name__ == "__main__":
