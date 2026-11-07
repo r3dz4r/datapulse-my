@@ -1,0 +1,41 @@
+name: Branch reaper
+
+on:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Delete landed branches after writing the manifest
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: branch-reaper
+  cancel-in-progress: false
+
+jobs:
+  reap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Classify remote branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # No schedule can delete a branch: only an explicit dispatch can apply.
+          REAPER_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && 'apply' || 'report' }}
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/reap_landed_branches.py --mode "$REAPER_MODE" --json "$RUNNER_TEMP/branch-reaper-report.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: branch-reaper-report
+          path: ${{ runner.temp }}/branch-reaper-report.json
+          if-no-files-found: warn
