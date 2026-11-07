@@ -395,13 +395,25 @@ rollback() {
   fi
 }
 
+install_failure() {
+  local reason="$1" observed_sha256
+
+  observed_sha256="$(sha256sum "$deployed_path" | awk '{print $1}')" \
+    || observed_sha256='<unreadable>'
+  rollback
+  fail "install verification failed ($reason): source=$source_path deployed=$deployed_path source_sha256=$source_sha256 deployed_sha256=$observed_sha256"
+}
+
+work_dir="$(mktemp -d /tmp/datapulse-mcp-sync.XXXXXX)"
 if [[ "$copy_needed" == true || "$stamp_needed" == true ]]; then
+  expected_payload="$work_dir/server.py"
+  cp -- "$source_path" "$expected_payload" || install_failure 'source staging copy failed'
+  cmp -s -- "$source_path" "$expected_payload" || install_failure 'source staging bytes differ'
   source_tmp="$(mktemp "$(dirname "$deployed_path")/.server.py.sync.XXXXXX")"
-  cp -- "$source_path" "$source_tmp" || fail 'copy to deployment temporary file failed'
-  stamp_source_markers "$source_tmp" "$head_sha" "$head_date" \
+  stamp_source_markers "$expected_payload" "$head_sha" "$head_date" \
     || fail "stamping deployed copy with HEAD sha=$head_sha date=$head_date failed"
   # Read the stamp back: the deployed file must advertise HEAD, provably.
-  stamped_markers="$(read_source_markers "$source_tmp")" \
+  stamped_markers="$(read_source_markers "$expected_payload")" \
     || fail 'could not read back stamped markers from the deployment temporary file'
   stamped_marker_sha="${stamped_markers%%$'\n'*}"
   stamped_marker_date="${stamped_markers##*$'\n'}"
@@ -410,12 +422,16 @@ if [[ "$copy_needed" == true || "$stamp_needed" == true ]]; then
   # Copy integrity, honest about the stamp: normalise the two marker lines on
   # both sides and require every other byte to be identical. Both raw and
   # normalised digests are logged so a reader can see exactly what compared equal.
-  normalized_tmp_sha256="$(normalized_marker_sha256 "$source_tmp")" \
+  normalized_tmp_sha256="$(normalized_marker_sha256 "$expected_payload")" \
     || fail 'could not normalise the deployment temporary file for the copy-integrity digest'
   [[ "$normalized_tmp_sha256" == "$normalized_source_sha256" ]] \
     || fail "copy integrity failed before install: normalized_source=$normalized_source_sha256 normalized_copy=$normalized_tmp_sha256"
-  chmod --reference="$deployed_path" "$source_tmp" || fail 'preserving deployed mode failed'
-  mv -f -- "$source_tmp" "$deployed_path" || fail "install failed: $deployed_path"
+  cp -- "$expected_payload" "$source_tmp" || install_failure 'deployment staging copy failed'
+  chmod --reference="$deployed_path" "$source_tmp" || install_failure 'preserving deployed mode failed'
+  mv -f -- "$source_tmp" "$deployed_path" || install_failure 'rename failed'
+  # Keep an independent expected payload: a successful mv exit and a matching
+  # normalized body cannot prove that the stamped bytes reached the target.
+  cmp -s -- "$expected_payload" "$deployed_path" || install_failure 'installed bytes differ'
   source_tmp=""
   installed_sha256="$(sha256sum "$deployed_path" | awk '{print $1}')"
   installed_normalized_sha256="$(normalized_marker_sha256 "$deployed_path")" \
@@ -455,7 +471,6 @@ else
   log 'restart is delegated to the path unit (restart_mode=delegated)'
 fi
 
-work_dir="$(mktemp -d /tmp/datapulse-mcp-sync.XXXXXX)"
 initialize_payload='{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"datapulse-mcp-sync","version":"1"}},"id":1}'
 served_identity_surface() {
   jq -er \

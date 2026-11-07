@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -1003,3 +1004,73 @@ def test_sync_delegated_requires_an_explicit_deployment_target(tmp_path: Path) -
 
     assert result.returncode != 0
     assert "delegated mode requires --deployed-path or DATAPULSE_MCP_DEPLOYED_PATH" in result.stderr
+
+
+@pytest.mark.parametrize("install_action", ["no-op", "fail", "corrupt"])
+def test_stamp_requires_install(tmp_path: Path, install_action: str) -> None:
+    """An endpoint's matching stamp cannot excuse an uninstalled payload."""
+    source, deployed, env = _readiness_fixture(tmp_path)
+    # Only the markers need updating. A normalized-body check alone accepts
+    # a no-op rename even though the deployed file still has the old stamp.
+    old_payload = source.read_bytes()
+    deployed.write_bytes(old_payload)
+    result_file = tmp_path / "result"
+    fake_mv = tmp_path / "bin" / "mv"
+    fake_mv.write_text(
+        '#!/usr/bin/env bash\n'
+        'if [[ "${@: -1}" == "$DEPLOYED_TARGET" ]]; then\n'
+        '  case "$INSTALL_ACTION" in\n'
+        '    no-op) exit 0 ;;\n'
+        '    fail) exit 73 ;;\n'
+        '    corrupt)\n'
+        '      "$REAL_MV" "$@" || exit "$?"\n'
+        '      printf "# damaged install\\n" >> "$DEPLOYED_TARGET"\n'
+        '      exit 0 ;;\n'
+        '  esac\n'
+        'fi\n'
+        'exec "$REAL_MV" "$@"\n',
+        encoding="utf-8",
+    )
+    fake_mv.chmod(0o755)
+    server, thread = _start_identity_readiness_stub()
+    try:
+        result = subprocess.run(
+            [
+                str(SYNC_SCRIPT),
+                "--source", str(source),
+                "--deployed-path", str(deployed),
+                "--endpoint", f"http://127.0.0.1:{server.server_port}/mcp",
+                "--drop-in", str(tmp_path / "drop-in.conf"),
+                "--service", "sync-test.service",
+                "--result-file", str(result_file),
+            ],
+            cwd=ROOT,
+            env={
+                **env,
+                "DEPLOYED_TARGET": str(deployed),
+                "INSTALL_ACTION": install_action,
+                "REAL_MV": str(shutil.which("mv")),
+                "DATAPULSE_MCP_READINESS_BUDGET_SECONDS": "1",
+            },
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=20,
+        )
+    finally:
+        _stop_identity_readiness_stub(server, thread)
+
+    assert result.returncode != 0, result.stdout
+    assert result_file.read_text(encoding="utf-8") == "failed\n"
+    assert "datapulse-mcp: ERROR: install verification failed" in result.stderr
+    assert f"source={source}" in result.stderr
+    assert f"deployed={deployed}" in result.stderr
+    assert f"source_sha256={hashlib.sha256(old_payload).hexdigest()}" in result.stderr
+    installed_payload = old_payload
+    if install_action == "corrupt":
+        installed_payload = old_payload.replace(b"c" * 40, b"a" * 40).replace(
+            b"1999-12-31", b"2024-01-15"
+        ) + b"# damaged install\n"
+    assert f"deployed_sha256={hashlib.sha256(installed_payload).hexdigest()}" in result.stderr
+    assert deployed.read_bytes() == old_payload
+    assert "deployment complete" not in result.stdout
