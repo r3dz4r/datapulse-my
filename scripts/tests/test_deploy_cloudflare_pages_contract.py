@@ -683,17 +683,22 @@ def test_pages_settlement_poll_exercises_quiet_ceiling_and_head_changes(
 
 
 @pytest.mark.parametrize("matching", [True, False])
-def test_signing_revision_guard_refuses_unbuilt_revision(tmp_path: Path, matching: bool) -> None:
+@pytest.mark.parametrize("health_only", ["true", "false", "", "invalid"])
+def test_signing_revision_guard_refuses_unbuilt_revision(
+    tmp_path: Path, matching: bool, health_only: str,
+) -> None:
     step = next(step for step in yaml.safe_load(_workflow())["jobs"]["sign_health"]["steps"] if step.get("id") == "settled_main")
     sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     output = tmp_path / "output"
     result = subprocess.run(["bash", "-c", step["run"]], cwd=ROOT, env=os.environ | {
-        "PROMOTION_SOURCE_SHA": sha if matching else "a" * 40, "PROMOTION_HEALTH_ONLY": "true",
+        "PROMOTION_SOURCE_SHA": sha if matching else "a" * 40, "PROMOTION_HEALTH_ONLY": health_only,
         "GITHUB_OUTPUT": str(output),
     }, capture_output=True, text=True)
-    assert (result.returncode == 0) == matching
-    if matching:
+    permitted = matching and health_only in ("true", "false")
+    assert (result.returncode == 0) == permitted
+    if permitted:
         assert f"settled_sha={sha}" in output.read_text()
+        assert f"health_only={health_only}" in output.read_text()
     else:
         assert not output.exists()
 
@@ -712,6 +717,87 @@ def test_attestation_state_machine_preserves_the_accepted_report_during_signer_o
     assert 'cp "$publication/health/latest.json" health/latest.json' in overlay["run"]
     assert "verify_attestation_binding.py --root ." in overlay["run"]
     assert "preserved-attestations" not in workflow
+
+
+@pytest.mark.parametrize("health_only", ["true", "false"])
+@pytest.mark.parametrize("install,sign,upload,state", [
+    ("success", "signed", "success", "signed"),
+    ("success", "signer_down", "success", "signer_down"),
+    ("failure", "", "success", "signer_down"),
+    ("success", "", "success", None),
+    ("success", "signed", "failure", None),
+])
+def test_publication_mode_agreement_gates_signer_and_deploy(
+    tmp_path: Path, health_only: str, install: str, sign: str, upload: str,
+    state: str | None,
+) -> None:
+    jobs = yaml.safe_load(_workflow())["jobs"]
+    signing = jobs["sign_health"]
+    source = next(step for step in signing["steps"] if step.get("id") == "settled_main")
+    assert jobs["classify"]["outputs"]["health_only"] == "${{ steps.classify.outputs.health_only }}"
+    assert source["env"]["PROMOTION_HEALTH_ONLY"] == "${{ needs.classify.outputs.health_only }}"
+    assert 'echo "health_only=$PROMOTION_HEALTH_ONLY" >> "$GITHUB_OUTPUT"' in source["run"]
+    assert signing["outputs"]["health_only"] == "${{ steps.settled_main.outputs.health_only }}"
+    result_step = next(step for step in signing["steps"] if step.get("id") == "attestation_result")
+    values = {"install_cosign.outcome": install, "sign_current_health.outputs.state": sign,
+              "upload_sigstore.outcome": upload}
+    command = result_step["run"]
+    for key, value in values.items():
+        command = command.replace("${{ steps." + key + " }}", value)
+    output = tmp_path / "output"
+    result = subprocess.run(["bash", "-c", command], env=os.environ | {
+        "PROMOTION_HEALTH_ONLY": health_only, "GITHUB_OUTPUT": str(output),
+    }, capture_output=True, text=True, timeout=5)
+    permitted = state == "signed" or (health_only == "true" and state == "signer_down")
+    assert (result.returncode == 0) == permitted, result.stdout + result.stderr
+    if permitted:
+        assert output.read_text().strip() == f"state={state}"
+    else:
+        assert not output.exists()
+    assert result_step["env"]["PROMOTION_HEALTH_ONLY"] == signing["outputs"]["health_only"]
+    gate = _deploy_step("Require signed attestation for full release")
+    assert gate["if"] == "needs.sign_health.outputs.health_only != 'true' && needs.sign_health.outputs.attestation_state != 'signed'"
+
+
+@pytest.mark.parametrize("signed", ["true", "false"])
+def test_pages_assembly_excludes_inherited_sigstore_signatures(tmp_path: Path, signed: str) -> None:
+    step = _deploy_step("Assemble canonical Pages artifact")
+    for directory in ("docs/signatures", "functions", "health", "deltas", "record-evidence",
+                      "badges", "samples", "data/passports", "attestations", ".attestations",
+                      "docs/.well-known"):
+        (tmp_path / directory).mkdir(parents=True, exist_ok=True)
+    root_copy = next(line for line in step["run"].splitlines() if line.startswith("cp llms.txt"))
+    for filename in root_copy.split()[1:-1]:
+        (tmp_path / filename).write_text("{}")
+    for filename in ("index.html", "404.html", ".well-known/datapulse-probe-keys.json"):
+        (tmp_path / "docs" / filename).write_text("present")
+    (tmp_path / "docs/_redirects").write_text(
+        "/methodology /health-methodology 301\n/trust-contract /trust-contract.md 301\n"
+        "/okf/ /okf/index.md 301\n/okf /okf/index.md 301\n")
+    (tmp_path / "health/latest.json").write_text("{}")
+    (tmp_path / "data/passports/index.json").write_text("{}")
+    signature_files = ("health.latest.sigstore.json", "health.latest.statement.json",
+                       "chain_head.json", "datapulse.json")
+    for filename in signature_files:
+        (tmp_path / "docs/signatures" / filename).write_text("inherited")
+    publication = tmp_path / "runner/sigstore-publication"
+    (publication / "attestations/latest").mkdir(parents=True)
+    (publication / ".attestations").mkdir()
+    (publication / "attestations/latest/chain_head.json").write_text("current")
+    for filename in signature_files:
+        (publication / filename).write_text("current")
+    command = step["run"].replace("${{ needs.sign_health.outputs.signed }}", signed).replace(
+        "${{ needs.sign_health.outputs.receipts_signed }}", "false")
+    result = subprocess.run(["bash", "-c", command], cwd=tmp_path, env=os.environ | {
+        "RUNNER_TEMP": str(tmp_path / "runner"),
+    }, capture_output=True, text=True, timeout=5)
+    assert result.returncode == 0, result.stdout + result.stderr
+    signatures = tmp_path / "_site/signatures"
+    if signed == "true":
+        assert {path.name: path.read_text() for path in signatures.iterdir()} == {
+            filename: "current" for filename in signature_files}
+    else:
+        assert not signatures.exists()
 
 
 

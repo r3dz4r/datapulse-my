@@ -257,6 +257,7 @@ jobs:
           set -Eeuo pipefail
           [[ "$PROMOTION_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$(git rev-parse HEAD)" == "$PROMOTION_SOURCE_SHA" ]]
+          [[ "$PROMOTION_HEALTH_ONLY" == "true" || "$PROMOTION_HEALTH_ONLY" == "false" ]]
           echo "settled_sha=$PROMOTION_SOURCE_SHA" >> "$GITHUB_OUTPUT"
           echo "health_only=$PROMOTION_HEALTH_ONLY" >> "$GITHUB_OUTPUT"
 
@@ -424,19 +425,27 @@ jobs:
       - name: Record explicit attestation state
         id: attestation_result
         if: always() && steps.select_accepted_health.outputs.state == 'accepted'
+        env:
+          PROMOTION_HEALTH_ONLY: ${{ steps.settled_main.outputs.health_only }}
         run: |
           set -Eeuo pipefail
           if [[ "${{ steps.install_cosign.outcome }}" != "success" ]]; then
-            echo "state=signer_down" >> "$GITHUB_OUTPUT"
+            state=signer_down
           elif [[ "${{ steps.sign_current_health.outputs.state }}" == "signer_down" ]]; then
-            echo "state=signer_down" >> "$GITHUB_OUTPUT"
+            state=signer_down
           elif [[ "${{ steps.sign_current_health.outputs.state }}" == "signed" \
              && "${{ steps.upload_sigstore.outcome }}" == "success" ]]; then
-            echo "state=signed" >> "$GITHUB_OUTPUT"
+            state=signed
           else
             echo '::error title=Sigstore attestation invalid::Signer output, verification, or publication was incomplete.'
             exit 1
           fi
+          # Use the same classifier verdict exported to the deploy gate below.
+          if [[ "$PROMOTION_HEALTH_ONLY" != "true" && "$state" != "signed" ]]; then
+            echo '::error title=Sigstore full release blocked::Full releases require attestation_state=signed; signer_down is permitted only for classifier-scoped health-only publication.'
+            exit 1
+          fi
+          echo "state=$state" >> "$GITHUB_OUTPUT"
 
       - name: Record Sigstore result
         id: sigstore_result
@@ -648,6 +657,9 @@ jobs:
           rm -rf _site
           mkdir -p _site/.well-known
           cp -R docs/. _site/
+          # Observation builds can contain an older signature; only this run's
+          # verified signing publication may populate the current signature set.
+          rm -rf _site/signatures
           cp -R functions _site/
           if [[ -d "$RUNNER_TEMP/preserved-release-proof" ]]; then
             test -s "$RUNNER_TEMP/preserved-release-proof/release-verification.md"
