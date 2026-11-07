@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.60.10](https://github.com/r3dz4r/datapulse-my/compare/v3.60.9...v3.60.10) (2026-11-07)
+
+
+### Bug Fixes
+
+* **docs:** serve server cards under the declared mcp-server-card media type ([919c5ee](https://github.com/r3dz4r/datapulse-my/commit/919c5ee4d0932bdb2d6062e2684434ab857499bb))
+
 ## [3.60.9](https://github.com/r3dz4r/datapulse-my/compare/v3.60.8...v3.60.9) (2026-11-07)
 
 
