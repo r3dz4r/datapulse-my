@@ -211,7 +211,9 @@ def generate(root: Path, output: Path, *, quick_test: bool = False) -> int:
     if graph.get("node_count") != len(datasets):
         raise PassportError("catalogue graph node count does not match manifest")
     attestations = _load(root / "attestations/latest/index.json")
-    selected = sorted(datasets)[:2] if quick_test else sorted(datasets)
+    # Health profiles are optional, but passports require one; never invent scores.
+    eligible = sorted(dataset_id for dataset_id in datasets if "quality_profile" in health_rows[dataset_id])
+    selected = eligible[:2] if quick_test else eligible
     schema = _load(root / "passport.schema.json")
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     for dataset_id in selected:
