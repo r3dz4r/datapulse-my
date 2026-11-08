@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-11-08T13:12:05Z",
-  "node_count": 440,
-  "edge_count": 9363,
+  "generated_at": "2026-11-08T04:37:31Z",
+  "node_count": 447,
+  "edge_count": 9384,
   "edge_kinds": {
-    "same_steward": 4241,
+    "same_steward": 4262,
     "same_agency": 5120,
     "same_geography": 0,
     "canonical_series": 1,
@@ -11,7 +11,7 @@
     "shared_schema": 1
   },
   "coverage": {
-    "datasets_with_at_least_one_edge": 415,
+    "datasets_with_at_least_one_edge": 422,
     "isolated_datasets": [
       "almanak_astronomi",
       "cosmetics_manufacturers",
@@ -2157,6 +2157,48 @@
       "title": "Nutritional Status of Children Under 5 by Strata",
       "steward": "Ministry of Health Malaysia",
       "agency": "data.gov.my (OpenAPI)"
+    },
+    {
+      "dataset_id": "odin_categories",
+      "title": "ODIN Assessment Categories (latest edition)",
+      "steward": "Open Data Watch",
+      "agency": "Open Data Watch -- Open Data Inventory"
+    },
+    {
+      "dataset_id": "odin_continents",
+      "title": "ODIN Continent Reference",
+      "steward": "Open Data Watch",
+      "agency": "Open Data Watch -- Open Data Inventory"
+    },
+    {
+      "dataset_id": "odin_countries",
+      "title": "ODIN Country Reference",
+      "steward": "Open Data Watch",
+      "agency": "Open Data Watch -- Open Data Inventory"
+    },
+    {
+      "dataset_id": "odin_default_weights",
+      "title": "ODIN Default Assessment Weights (latest edition)",
+      "steward": "Open Data Watch",
+      "agency": "Open Data Watch -- Open Data Inventory"
+    },
+    {
+      "dataset_id": "odin_editions",
+      "title": "ODIN Assessment Editions",
+      "steward": "Open Data Watch",
+      "agency": "Open Data Watch -- Open Data Inventory"
+    },
+    {
+      "dataset_id": "odin_income_groups",
+      "title": "ODIN Income Group Reference",
+      "steward": "Open Data Watch",
+      "agency": "Open Data Watch -- Open Data Inventory"
+    },
+    {
+      "dataset_id": "odin_regions",
+      "title": "ODIN Region Reference",
+      "steward": "Open Data Watch",
+      "agency": "Open Data Watch -- Open Data Inventory"
     },
     {
       "dataset_id": "organ_pledges",
@@ -117587,6 +117629,279 @@
       "kind": "same_steward",
       "from": "nutrition_children_strata",
       "to": "vaxreg_covid",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_categories",
+      "to": "odin_continents",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_categories",
+      "to": "odin_countries",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_categories",
+      "to": "odin_default_weights",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_categories",
+      "to": "odin_editions",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_categories",
+      "to": "odin_income_groups",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_categories",
+      "to": "odin_regions",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_continents",
+      "to": "odin_countries",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_continents",
+      "to": "odin_default_weights",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_continents",
+      "to": "odin_editions",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_continents",
+      "to": "odin_income_groups",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_continents",
+      "to": "odin_regions",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_countries",
+      "to": "odin_default_weights",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_countries",
+      "to": "odin_editions",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_countries",
+      "to": "odin_income_groups",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_countries",
+      "to": "odin_regions",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_default_weights",
+      "to": "odin_editions",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_default_weights",
+      "to": "odin_income_groups",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_default_weights",
+      "to": "odin_regions",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_editions",
+      "to": "odin_income_groups",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_editions",
+      "to": "odin_regions",
+      "weight": 2,
+      "provenance": {
+        "matched_fields": [
+          "source",
+          "steward"
+        ],
+        "manifest_version": "https://www.data-pulse.my/datapulse.schema.json"
+      }
+    },
+    {
+      "kind": "same_steward",
+      "from": "odin_income_groups",
+      "to": "odin_regions",
       "weight": 2,
       "provenance": {
         "matched_fields": [
