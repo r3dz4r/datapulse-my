@@ -8,7 +8,7 @@ sources:
   - {"id": "ktmb","resource": "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_monthly.csv","title": "Keretapi Tanah Melayu Berhad"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-31T13:12:59Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:25:52Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Malayan Railways Limited, Ministry of Transport"
@@ -26,7 +26,7 @@ data.gov.my Monthly KTMB Ridership is published by Keretapi Tanah Melayu Berhad 
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:9bdf663418ba68a63bd74b54c21c2783db259036ff7eb9f651ac70d1c3601f92`
-- `record_count`: `300`
+- `record_count`: `305`
 
 # Quirks
 

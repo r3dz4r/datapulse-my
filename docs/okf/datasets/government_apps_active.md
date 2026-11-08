@@ -8,7 +8,7 @@ sources:
   - {"id": "jdn","resource": "https://api.data.gov.my/data-catalogue?id=government_apps_active","title": "National Digital Department and Ministry of Digital"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-31T13:12:59Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:25:52Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Jabatan Digital Negara, Ministry of Digital"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/government_apps_active.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 137
-stale_after: "2026-11-16T12:00:00Z"
+stale_after: "2026-12-17T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Number of Active Government Mobile Applications is published by National Digital
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:880181f291857c8955da6d56c35fe5c764944cfa1826d77ef7becde61d00ef75`
-- `record_count`: `143`
+- `record_count`: `144`
 
 # Quirks
 
