@@ -1,5 +1,8 @@
 __pycache__/
-.venv/
+# No trailing slash: a bare pattern also matches a symlink to a shared venv,
+# which `.venv/` (directory-only) misses — that gap made an untracked `?? .venv`
+# symlink read as worktree debt and refuse every lane launch.
+.venv
 node_modules/
 .wrangler/
 .cache/datapulse/metrics_dataset_cumul.json
