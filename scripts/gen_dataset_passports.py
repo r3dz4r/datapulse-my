@@ -23,6 +23,7 @@ else:
 
 ROOT = Path(__file__).resolve().parents[1]
 PASSPORT_SCHEMA = "datapulse/v1/dataset-passport"
+DEGRADED_MARKER = "missing_quality_profile"
 logger = logging.getLogger(__name__)
 LICENCE_URLS = {
     "Creative Commons Attribution 4.0": "https://creativecommons.org/licenses/by/4.0/",
@@ -202,7 +203,15 @@ def generate(root: Path, output: Path, *, quick_test: bool = False) -> int:
     manifest = _load(root / "datapulse.json")
     snapshot = _load(root / "health/latest.json")
     _validate(manifest, root / "datapulse.schema.json", "manifest")
-    _validate(snapshot, root / "health.schema.json", "health")
+    # Empty profiles mean missing evidence; validate every other field unchanged.
+    validation_snapshot = dict(snapshot)
+    if isinstance(snapshot.get("datasets"), list):
+        validation_snapshot["datasets"] = [
+            {key: value for key, value in row.items() if key != "quality_profile"}
+            if isinstance(row, dict) and row.get("quality_profile") == {} else row
+            for row in snapshot["datasets"]
+        ]
+    _validate(validation_snapshot, root / "health.schema.json", "health")
     datasets = _index(manifest.get("datasets"), "id", "manifest.datasets")
     health_rows = _index(snapshot.get("datasets"), "dataset_id", "health.datasets")
     if set(datasets) != set(health_rows):
@@ -212,16 +221,32 @@ def generate(root: Path, output: Path, *, quick_test: bool = False) -> int:
         raise PassportError("catalogue graph node count does not match manifest")
     attestations = _load(root / "attestations/latest/index.json")
     selected = sorted(datasets)[:2] if quick_test else sorted(datasets)
+    if not selected:
+        raise PassportError("dataset set is empty")
     schema = _load(root / "passport.schema.json")
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    degraded = []
+    completed = []
     for dataset_id in selected:
+        if "quality_profile" not in health_rows[dataset_id] or health_rows[dataset_id]["quality_profile"] == {}:
+            degraded.append({"dataset_id": dataset_id, "reason": DEGRADED_MARKER})
+            # Remove a previous run's passport so stale evidence cannot look current.
+            (output / f"{dataset_id}.json").unlink(missing_ok=True)
+            continue
+        # JSON and schema errors, ID or graph mismatches, empty datasets, and
+        # output write failures remain fatal; only absent profiles are softened.
         passport = build_passport(root, datasets[dataset_id], health_rows[dataset_id], graph, attestations)
         errors = sorted(validator.iter_errors(passport), key=lambda error: list(error.absolute_path))
         if errors:
             raise PassportError(f"{dataset_id}: passport schema validation failed: {errors[0].message}")
         _write_atomic(output / f"{dataset_id}.json", passport)
-    _write_atomic(output / "index.json", {"schema": "datapulse/v1/dataset-passport-index", "dataset_count": len(selected), "dataset_ids": selected})
-    return len(selected)
+        completed.append(dataset_id)
+    index = {"schema": "datapulse/v1/dataset-passport-index", "dataset_count": len(completed), "dataset_ids": completed}
+    if degraded:
+        index["degraded"] = degraded
+        logger.warning("%s", json.dumps({"event": "dataset_passports_degraded", "degraded": degraded}, sort_keys=True))
+    _write_atomic(output / "index.json", index)
+    return len(completed)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
