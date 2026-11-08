@@ -8,7 +8,7 @@ sources:
   - {"id": "thevesh","resource": "https://raw.githubusercontent.com/Thevesh/paper-meco-results/main/data/consol_stats.csv","title": "Thevesh Theva"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-10-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-08T14:33:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:25:52Z"}
 status: "stable"
 datapulse:licence: "CC0-1.0"
 datapulse:attribution: "Thevesh Theva via github.com/Thevesh/paper-meco-results"
@@ -26,7 +26,7 @@ MECo Consolidated Contest Statistics is published by Thevesh Theva and tracked b
 
 - `column_count`: `15`
 - `first_row_hash`: `shape-v1:2d94895b539eed6f96b0ae7bbce8eecf2be586d01265be80ce164051d52285f3`
-- `record_count`: `10092`
+- `record_count`: `10120`
 
 # Quirks
 

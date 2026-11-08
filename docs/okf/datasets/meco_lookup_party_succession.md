@@ -12,7 +12,7 @@ verified:
 status: "stable"
 datapulse:licence: "CC0-1.0"
 datapulse:attribution: "Thevesh Theva via github.com/Thevesh/paper-meco-results"
-datapulse:real_status: "reference"
+datapulse:real_status: "unreachable"
 datapulse:health_report: "/data/meco_lookup_party_succession.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 55
@@ -20,13 +20,11 @@ datapulse:expected_record_count: 55
 
 # Summary
 
-MECo Party Succession Lookup is published by Thevesh Theva and tracked by DataPulse. The latest published probe classifies it as `reference`.
+MECo Party Succession Lookup is published by Thevesh Theva and tracked by DataPulse. The latest published probe classifies it as `unreachable`.
 
 # Schema
 
-- `column_count`: `5`
-- `first_row_hash`: `shape-v1:d0ec2522a2ce90cf4415bcd23cb272a5ae4a3b6ad2989a112c125d1050820c48`
-- `record_count`: `55`
+No structural fingerprint was recorded by the latest probe.
 
 # Quirks
 
