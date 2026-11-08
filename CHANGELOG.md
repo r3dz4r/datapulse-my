@@ -14,6 +14,22 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.62.0](https://github.com/r3dz4r/datapulse-my/compare/v3.61.0...v3.62.0) (2026-11-08)
+
+
+### Features
+
+* **catalogue:** onboard the ODIN open-data assessment API (7 datasets) ([fe3c7a7](https://github.com/r3dz4r/datapulse-my/commit/fe3c7a70fdc72115c28d813a73db544a7d168a3e))
+* **catalogue:** onboard the ODIN open-data assessment API (7 datasets) ([e499211](https://github.com/r3dz4r/datapulse-my/commit/e4992115c2e0d91220e2add056d0a8fad0e16c17))
+
+
+### Bug Fixes
+
+* **contract:** exclude explicitly unprobed rows from the datacontract check by predicate ([234fb8c](https://github.com/r3dz4r/datapulse-my/commit/234fb8c60c3291fb2302c5d55976e3a585368191))
+* **deploy:** require verified publication for a green run ([#3133](https://github.com/r3dz4r/datapulse-my/issues/3133)) ([38822c0](https://github.com/r3dz4r/datapulse-my/commit/38822c06b863d730dfac687dabbef4238cf47d97))
+* **receipts:** skip an explicitly unprobed health row instead of aborting ([f5a281a](https://github.com/r3dz4r/datapulse-my/commit/f5a281a30eaa3d3fac58a2a27dba291a1052fc9e))
+* **release:** bring server.json's version back in line with the manifest and VERSION.txt ([e78905c](https://github.com/r3dz4r/datapulse-my/commit/e78905c5053052be30899a8b3759cf4220d1089c))
+
 ## [3.61.0](https://github.com/r3dz4r/datapulse-my/compare/v3.60.11...v3.61.0) (2026-11-08)
 
 
