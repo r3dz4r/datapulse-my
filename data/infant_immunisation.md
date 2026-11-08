@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_infant_immunisation
-last_checked: 2026-10-05T06:46:30Z
-status: stale
-freshness_delta: 1376 days
+last_checked: 2026-11-05T03:33:57Z
+status: aging
+freshness_delta: 1041 days
 next_expected_update: overdue
-record_count: 120
+record_count: 125
 date_range: 2000-01-01 to 2023-01-01
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 1376 days
+**Freshness:** 1041 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 2,683 bytes.
+The checked resource is 2,794 bytes.
 
 ## Provenance
 

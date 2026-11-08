@@ -1,7 +1,7 @@
 ---
 dataset_id: dosm_msic
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
 status: reference
 freshness_delta: unknown
 next_expected_update: as-required
@@ -26,7 +26,7 @@ HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 

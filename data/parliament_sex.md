@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_parliament_sex
-last_checked: 2026-10-05T06:46:30Z
-status: stale
-freshness_delta: 1741 days
+last_checked: 2026-11-05T03:33:57Z
+status: aging
+freshness_delta: 1041 days
 next_expected_update: overdue
-record_count: 14
+record_count: 18
 date_range: 2016-01-01 to 2022-01-01
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: Parliament of Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 1741 days
+**Freshness:** 1041 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 541 bytes.
+The checked resource is 689 bytes.
 
 ## Provenance
 

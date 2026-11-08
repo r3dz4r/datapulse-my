@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_ppi_sop
-last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-31T13:12:59Z
 status: fresh
 freshness_delta: 10 days
 next_expected_update: unknown
-record_count: 12271
+record_count: 12358
 date_range: unknown
 schema_version: 1.0
 schema_drift: unknown
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 
-The checked resource is 380,710 bytes.
+The checked resource is 383,422 bytes.
 
 ## Provenance
 

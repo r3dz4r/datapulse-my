@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_births_annual_sex_ethnic
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
 status: aging
-freshness_delta: 1011 days
+freshness_delta: 675 days
 next_expected_update: annual
-record_count: 525
+record_count: 546
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This data is derived based on births registered with JPN. Accordingly, if a birth is not registered with JPN (for instance, if a foreigner chooses to register their child in their home country, or if a resident in a remote area does not register the birth of their child), it will not count in this dataset."]
@@ -20,17 +20,17 @@ attribution: National Registration Department and Department of Statistics Malay
 
 **Status:** Aging
 
-**Freshness:** 1011 days
+**Freshness:** 675 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 50,587 bytes.
+The checked resource is 52,594 bytes.
 
 ## Provenance
 

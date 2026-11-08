@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_drug_arrests_ethnicity
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
 status: stale
-freshness_delta: 1376 days
+freshness_delta: 1406 days
 next_expected_update: annual
 record_count: 360
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Royal Malaysia Police and Ministry of Home Affairs via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 1376 days
+**Freshness:** 1406 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 

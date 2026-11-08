@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_drug_addicts_occupation
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
-status: stale
-freshness_delta: 1376 days
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
+status: unknown-freshness
+freshness_delta: unknown
 next_expected_update: annual
-record_count: 1440
+record_count: 1148
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The dataset may contain missing values for certain occupations or states due to data collection limitations. Additionally, the occupation categories are not exhaustive and may not cover all possible job roles. Users should exercise caution when interpreting trends or making comparisons across different regions or years."]
@@ -18,19 +18,19 @@ attribution: National Anti-Drugs Agency and Ministry of Home Affairs via data.go
 
 ## Status
 
-**Status:** Stale
+**Status:** Unknown freshness
 
-**Freshness:** 1376 days
+**Freshness:** unknown
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 120,110 bytes.
+The checked resource is 94,902 bytes.
 
 ## Provenance
 

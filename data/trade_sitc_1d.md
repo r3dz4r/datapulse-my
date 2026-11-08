@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_trade_sitc_1d
-last_checked: 2026-10-03T10:36:37Z
-status: stale
-freshness_delta: 99 days
+last_checked: 2026-10-31T17:30:43Z
+status: aging
+freshness_delta: 67 days
 next_expected_update: unknown
-record_count: 3509
+record_count: 4851
 date_range: unknown
 schema_version: 1.0
 schema_drift: unknown
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 99 days
+**Freshness:** 67 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 17:30:43 UTC.
 
 ## File size
 
-The checked resource is 318,013 bytes.
+The checked resource is 418,255 bytes.
 
 ## Provenance
 

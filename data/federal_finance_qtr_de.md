@@ -5,15 +5,15 @@ source_url: "https://storage.data.gov.my/publicadmin/federal_finance_qtr_de.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "quarterly"
-last_checked: 2026-10-03T10:36:37Z
-last_observed: 2024-01-01
-last_modified: 2024-06-05T08:42:08Z
-record_count: 1582
+last_checked: 2026-10-31T13:12:59Z
+last_observed: 2026-04-01
+last_modified: 2026-10-11T01:11:58Z
+record_count: 1708
 column_count: 4
-status: stale
+status: aging
 notes: "Tier-1 wave A already-active confirmation; HTTP 200 and CSV header verified."
 dataset_id: federal_finance_qtr_de
-freshness_delta: 1011 days
+freshness_delta: 220 days
 next_expected_update: "quarterly"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Ministry of Finance Malaysia via data.gov.my"
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 1011 days
+**Freshness:** 220 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 
-The checked resource is 48,404 bytes.
+The checked resource is 52,299 bytes.
 
 ## Provenance
 

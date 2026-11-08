@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_covid_cases_age
-last_checked: 2026-10-08T14:24:19Z
-last_checked: 2026-10-08T14:24:19Z
+last_checked: 2026-11-07T07:08:21Z
+last_checked: 2026-11-07T07:08:21Z
 status: stale
-freshness_delta: 495 days
+freshness_delta: 525 days
 next_expected_update: daily
 record_count: 33218
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 495 days
+**Freshness:** 525 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-11-07 at 07:08:21 UTC.
 
 ## File size
 

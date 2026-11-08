@@ -1,6 +1,6 @@
 ---
 dataset_id: gtfs_static_prasarana_rail_kl
-last_checked: 2026-10-08T14:24:19Z
+last_checked: 2026-11-07T09:43:52Z
 status: degraded
 freshness_delta: 0 days
 record_count: null
@@ -25,11 +25,11 @@ Invalid GTFS ZIP: 'utf-8' codec can't decode byte 0xcd in position 37: invalid c
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-11-07 at 09:43:52 UTC.
 
 ## File size
 
-The checked resource is 80,595 bytes.
+The checked resource is 80,479 bytes.
 
 ## Provenance
 

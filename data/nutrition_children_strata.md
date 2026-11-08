@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_nutrition_children_strata
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
 status: stale
-freshness_delta: 2837 days
+freshness_delta: 1771 days
 next_expected_update: annual
-record_count: 30
+record_count: 84
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: These figures are based on the 2019 NHMS. Changes due to the pandemic will only be reflected in data based on the 2023 NHMS."]
@@ -20,17 +20,17 @@ attribution: Ministry of Health Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 2837 days
+**Freshness:** 1771 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 3,863 bytes.
+The checked resource is 10,829 bytes.
 
 ## Provenance
 

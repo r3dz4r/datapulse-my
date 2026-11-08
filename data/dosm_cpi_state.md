@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_cpi_state
-last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-31T13:12:59Z
 status: fresh
-freshness_delta: 20 days
+freshness_delta: 19 days
 next_expected_update: monthly
-record_count: 44800
+record_count: 45024
 date_range: 2010-01-01 to 2026-06-01
 schema_version: 1.0
 schema_drift: none
@@ -20,17 +20,17 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Fresh
 
-**Freshness:** 20 days
+**Freshness:** 19 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 
-The checked resource is 1,342,133 bytes.
+The checked resource is 1,348,848 bytes.
 
 ## Provenance
 

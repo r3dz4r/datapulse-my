@@ -5,7 +5,7 @@ source_url: "https://storage.data.gov.my/healthcare/covid_deaths_linelist.csv"
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "annual"
-last_checked: 2026-10-08T14:24:19Z
+last_checked: 2026-11-07T07:08:21Z
 last_observed: 2024-05-18
 last_modified: 2025-06-04T03:46:32Z
 record_count: 37351
@@ -13,7 +13,7 @@ column_count: 15
 status: stale
 notes: "Tier-1 wave G newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: covid_deaths_linelist
-freshness_delta: 873 days
+freshness_delta: 903 days
 next_expected_update: "annual"
 schema_version: 1.0
 schema_drift: none
@@ -28,13 +28,13 @@ attribution: "Ministry of Health Malaysia via data.gov.my"
 
 **Status:** Stale
 
-**Freshness:** 873 days
+**Freshness:** 903 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-11-07 at 07:08:21 UTC.
 
 ## File size
 

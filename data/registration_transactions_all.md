@@ -1,11 +1,11 @@
 ---
 dataset_id: registration_transactions_all
-last_checked: 2026-10-08T14:24:19Z
-last_checked: 2026-10-08T14:24:19Z
+last_checked: 2026-11-07T07:08:21Z
+last_checked: 2026-11-07T07:08:21Z
 status: stale
 freshness_delta: 38 days
 next_expected_update: daily
-record_count: 1138937
+record_count: 1290648
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This dataset captures the registration of vehicles, not the sale or import or any other transaction. Therefore, if a vehicle is not registered for use on the road, it will not be present in this dataset (e.g. vehicles which are purchased purely for private display). Furthermore, it should be noted that this dataset was extremely difficult to prepare, especially for data from the early 2000s when data collection systems were not as sophisticated as they are now. Accordingly, if you spot any errors in the dataset or have any suggestions to improve its quality, please write to help.dtsa@jdn.gov.my so the data.gov.my team can work with JPJ to fix or improve it as soon as possible.", "The serving filename rotates by UTC year; the health probe resolves it at runtime."]
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-11-07 at 07:08:21 UTC.
 
 ## File size
 
-The checked resource is 59,762,911 bytes.
+The checked resource is 67,730,179 bytes.
 
 ## Provenance
 

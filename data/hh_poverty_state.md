@@ -1,8 +1,8 @@
 ---
 dataset_id: dgm_hh_poverty_state
-last_checked: 2026-09-26T02:49:53Z
+last_checked: 2026-10-26T02:57:40Z
 status: fresh
-freshness_delta: 1011 days
+freshness_delta: 1041 days
 next_expected_update: unknown
 record_count: 310
 date_range: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Fresh
 
-**Freshness:** 1011 days
+**Freshness:** 1041 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-26 at 02:49:53 UTC.
+2026-10-26 at 02:57:40 UTC.
 
 ## File size
 

@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_completion_school_state
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
-status: stale
-freshness_delta: 1741 days
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
+status: aging
+freshness_delta: 675 days
 next_expected_update: annual
-record_count: 1071
+record_count: 1530
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Because Malaysia's dropout rates are extremely low, completion rates may exceed 100% due to a small number of students repeating grades or transferring between states. Furthermore, it should be noted that the data refers to government schools only."]
@@ -18,19 +18,19 @@ attribution: Ministry of Education Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 1741 days
+**Freshness:** 675 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 115,491 bytes.
+The checked resource is 164,552 bytes.
 
 ## Provenance
 

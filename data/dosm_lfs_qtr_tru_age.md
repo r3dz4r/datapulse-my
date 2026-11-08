@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_lfs_qtr_tru_age
-last_checked: 2026-10-03T10:36:37Z
-last_checked: 2026-10-03T10:36:37Z
-status: stale
-freshness_delta: 464 days
+last_checked: 2026-10-31T13:12:59Z
+last_checked: 2026-10-31T13:12:59Z
+status: aging
+freshness_delta: 220 days
 next_expected_update: quarterly
-record_count: 350
+record_count: 380
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The sum of each category may not always equal to the totals shown in related tables because of independent rounding to one decimal place. However, the differences are not obvious."]
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 464 days
+**Freshness:** 220 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 
-The checked resource is 25,945 bytes.
+The checked resource is 28,168 bytes.
 
 ## Provenance
 

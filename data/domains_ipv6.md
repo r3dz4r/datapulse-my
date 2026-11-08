@@ -1,9 +1,9 @@
 ---
 dataset_id: dgm_domains_ipv6
-last_checked: 2026-10-03T10:36:37Z
-last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-31T13:12:59Z
+last_checked: 2026-10-31T13:12:59Z
 status: stale
-freshness_delta: 645 days
+freshness_delta: 675 days
 next_expected_update: monthly
 record_count: 4081
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: MYNIC and Ministry of Digital via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 645 days
+**Freshness:** 675 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 

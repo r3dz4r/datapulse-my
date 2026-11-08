@@ -1,8 +1,8 @@
 ---
 dataset_id: st_current_lss_licensees
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
 status: fresh
-freshness_delta: 50 days
+freshness_delta: 80 days
 next_expected_update: unknown
 file_size_bytes: 12391
 file_count: null
@@ -24,13 +24,13 @@ attribution: Suruhanjaya Tenaga (Malaysia Energy Commission) via MyEnergyStats
 
 **Status:** Fresh
 
-**Freshness:** 50 days
+**Freshness:** 80 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 

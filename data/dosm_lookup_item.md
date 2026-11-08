@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_lookup_item
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
 status: reference
-freshness_delta: 29 days
+freshness_delta: 59 days
 next_expected_update: as-required
 record_count: 797
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Ministry of Domestic Trade and Cost of Living and Department of Sta
 
 **Status:** Reference
 
-**Freshness:** 29 days
+**Freshness:** 59 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 

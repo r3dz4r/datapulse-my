@@ -1,8 +1,8 @@
 ---
 dataset_id: federal_finance_qtr
-last_checked: 2026-10-03T10:36:37Z
-status: stale
-freshness_delta: 1011 days
+last_checked: 2026-10-31T13:12:59Z
+status: aging
+freshness_delta: 220 days
 next_expected_update: quarterly
 schema_version: unknown
 schema_drift: none
@@ -16,16 +16,16 @@ attribution: Accountant General’s Department of Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 1011 days
+**Freshness:** 220 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 
-The checked resource is 112,423 bytes.
+The checked resource is 121,388 bytes.

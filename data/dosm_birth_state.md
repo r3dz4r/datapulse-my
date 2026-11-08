@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_birth_state
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
 status: aging
-freshness_delta: 1011 days
+freshness_delta: 675 days
 next_expected_update: annual
-record_count: 390
+record_count: 406
 date_range: 2000-01-01 to 2024-01-01
 schema_version: 1.0
 schema_drift: none
@@ -20,17 +20,17 @@ attribution: DOSM via OpenDOSM
 
 **Status:** Aging
 
-**Freshness:** 1011 days
+**Freshness:** 675 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 12,308 bytes.
+The checked resource is 12,799 bytes.
 
 ## Provenance
 

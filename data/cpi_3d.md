@@ -5,15 +5,15 @@ source_url: "https://storage.dosm.gov.my/cpi/cpi_3d.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-10-03T10:36:37Z
-last_observed: 2026-08-01
-last_modified: 2026-09-18T04:25:19Z
-record_count: 9400
+last_checked: 2026-10-31T13:12:59Z
+last_observed: 2026-09-01
+last_modified: 2026-10-19T05:11:57Z
+record_count: 9447
 column_count: 3
 status: fresh
 notes: "Tier-1 wave D newly verified direct-storage source; HTTP 200 and CSV header verified."
 dataset_id: cpi_3d
-freshness_delta: 20 days
+freshness_delta: 19 days
 next_expected_update: "monthly"
 schema_version: 1.0
 schema_drift: none
@@ -28,17 +28,17 @@ attribution: "Department of Statistics Malaysia via OpenDOSM"
 
 **Status:** Fresh
 
-**Freshness:** 20 days
+**Freshness:** 19 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 
-The checked resource is 194,843 bytes.
+The checked resource is 195,823 bytes.
 
 ## Provenance
 

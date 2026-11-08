@@ -1,0 +1,103 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "odin_countries",
+  "status": "unknown-freshness",
+  "last_checked": null,
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "as-required",
+  "record_count": null,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "countryId",
+      "type": "integer"
+    },
+    {
+      "name": "regionId",
+      "type": "integer"
+    },
+    {
+      "name": "incomeGroupId",
+      "type": "integer"
+    },
+    {
+      "name": "incomeRegionId",
+      "type": "integer"
+    },
+    {
+      "name": "developingRegionId",
+      "type": "integer"
+    },
+    {
+      "name": "countryCode",
+      "type": "string"
+    },
+    {
+      "name": "countryName",
+      "type": "string"
+    },
+    {
+      "name": "isInMap",
+      "type": "boolean"
+    },
+    {
+      "name": "nsoUrl",
+      "type": "string"
+    },
+    {
+      "name": "isSmallCountry",
+      "type": "boolean"
+    },
+    {
+      "name": "accentedCountryName",
+      "type": "string"
+    },
+    {
+      "name": "disseminationSubscriber",
+      "type": "string"
+    },
+    {
+      "name": "preferedLanguage",
+      "type": "string"
+    },
+    {
+      "name": "region",
+      "type": "string"
+    },
+    {
+      "name": "continent",
+      "type": "string"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Not probed; provisional onboarding status."
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://odin-aim.akroninc.net/api/api/client/GetCountries",
+    "access_method": "curl"
+  },
+  "licence": "CC-BY-4.0",
+  "attribution": "Open Data Watch -- Open Data Inventory (government_open_data)"
+}

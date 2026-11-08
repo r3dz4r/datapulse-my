@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_lfs_qtr
-last_checked: 2026-10-03T10:36:37Z
-status: stale
-freshness_delta: 464 days
+last_checked: 2026-10-31T13:12:59Z
+status: aging
+freshness_delta: 220 days
 next_expected_update: unknown
-record_count: 63
+record_count: 66
 date_range: unknown
 schema_version: 1.0
 schema_drift: unknown
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 464 days
+**Freshness:** 220 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 
-The checked resource is 9,954 bytes.
+The checked resource is 10,428 bytes.
 
 ## Provenance
 
