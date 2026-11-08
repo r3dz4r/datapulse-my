@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_government_apps_downloads
-last_checked: 2026-10-03T10:36:37Z
-last_checked: 2026-10-03T10:36:37Z
-status: stale
-freshness_delta: 170 days
+last_checked: 2026-10-31T17:30:43Z
+last_checked: 2026-10-31T17:30:43Z
+status: fresh
+freshness_delta: 8 days
 next_expected_update: monthly
-record_count: 573
+record_count: 324
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The data represents download statistics for applications published via GAMMA only. As a result, the number of applications with tracked download statistics is smaller than the [total number of applications](https://data.gov.my/data-catalogue/government_apps)."]
@@ -18,19 +18,19 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Fresh
 
-**Freshness:** 170 days
+**Freshness:** 8 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 17:30:43 UTC.
 
 ## File size
 
-The checked resource is 63,078 bytes.
+The checked resource is 32,596 bytes.
 
 ## Provenance
 

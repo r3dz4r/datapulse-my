@@ -1,6 +1,6 @@
 ---
 dataset_id: dosm_boundary_district_lookup
-last_checked: 2026-10-03T11:10:24Z
+last_checked: 2026-11-05T03:33:57Z
 status: reference
 freshness_delta: unknown
 ---
@@ -17,7 +17,7 @@ HTTP 200
 
 ## Last checked
 
-2026-10-03 at 11:10:24 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 

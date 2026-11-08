@@ -1,10 +1,10 @@
 ---
 dataset_id: population_district
-last_checked: 2026-10-05T06:46:30Z
-status: aging
-freshness_delta: 645 days
+last_checked: 2026-11-05T03:33:57Z
+status: fresh
+freshness_delta: 310 days
 next_expected_update: annual
-record_count: 383040
+record_count: 451668
 date_range: 2020-01-01 to 2025-01-01
 schema_version: 1.0
 schema_drift: none
@@ -18,19 +18,19 @@ attribution: DOSM via OpenDOSM
 
 ## Status
 
-**Status:** Aging
+**Status:** Fresh
 
-**Freshness:** 645 days
+**Freshness:** 310 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 20,857,972 bytes.
+The checked resource is 24,637,855 bytes.
 
 ## Provenance
 

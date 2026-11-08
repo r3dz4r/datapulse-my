@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_static_mybas_melaka
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
 status: fresh
-freshness_delta: 3 days
-record_count: 25107
+freshness_delta: 4 days
+record_count: 25599
 content_freshness_date: 2026-11-02
 schema_version: GTFS
 schema_drift: none
@@ -19,17 +19,17 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 **Status:** Fresh
 
-**Freshness:** 3 days
+**Freshness:** 4 days
 
 HTTP 200; valid GTFS static ZIP
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 2,226,530 bytes.
+The checked resource is 423,199 bytes.
 
 ## Provenance
 

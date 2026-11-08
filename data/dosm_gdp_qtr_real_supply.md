@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_gdp_qtr_real_supply
-last_checked: 2026-10-03T10:36:37Z
-last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-31T13:12:59Z
+last_checked: 2026-10-31T13:12:59Z
 status: aging
-freshness_delta: 190 days
+freshness_delta: 220 days
 next_expected_update: quarterly
 record_count: 931
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 190 days
+**Freshness:** 220 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 

@@ -5,10 +5,10 @@ source_url: "https://storage.data.gov.my/transportation/ktmb/ridership_ktmb_dail
 source_name: "data.gov.my"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "daily"
-last_checked: 2026-10-08T14:24:19Z
-last_observed: 2026-10-07
-last_modified: 2026-10-07T19:31:31Z
-record_count: 9248
+last_checked: 2026-11-07T07:08:21Z
+last_observed: 2026-11-06
+last_modified: 2026-11-06T19:31:53Z
+record_count: 9398
 column_count: 3
 status: fresh
 notes: "Tier-1 wave C already-active confirmation; HTTP 200 and CSV header verified."
@@ -34,11 +34,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-11-07 at 07:08:21 UTC.
 
 ## File size
 
-The checked resource is 244,896 bytes.
+The checked resource is 248,916 bytes.
 
 ## Provenance
 

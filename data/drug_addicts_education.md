@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_drug_addicts_education
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
-status: stale
-freshness_delta: 1376 days
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
+status: aging
+freshness_delta: 675 days
 next_expected_update: annual
-record_count: 792
+record_count: 1091
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The dataset is based on administrative records from NADA's treatment centers and may not capture all cases of drug addiction within the community. The education level is self-reported by the individuals and may not be verified. Additionally, the data does not account for individuals who may have relapsed or those who have not sought treatment."]
@@ -18,19 +18,19 @@ attribution: National Anti-Drugs Agency and Ministry of Home Affairs via data.go
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 1376 days
+**Freshness:** 675 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 66,033 bytes.
+The checked resource is 90,870 bytes.
 
 ## Provenance
 

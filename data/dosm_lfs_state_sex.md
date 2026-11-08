@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_lfs_state_sex
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
-status: stale
-freshness_delta: 1376 days
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
+status: aging
+freshness_delta: 675 days
 next_expected_update: annual
-record_count: 1732
+record_count: 1908
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Data for 1991 and 1994 are not available at all due to limitations in the sample data from those years; data for W.P. Labuan and W.P. Putrajaya begin in 1992 and 2011 respectively. Furthermore, the sum of each category may not always equal to the totals shown in related tables because of independent rounding to one decimal place. However, the differences are not obvious."]
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 1376 days
+**Freshness:** 675 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 336,802 bytes.
+The checked resource is 359,216 bytes.
 
 ## Provenance
 

@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_government_apps
-last_checked: 2026-10-03T10:36:37Z
-last_checked: 2026-10-03T10:36:37Z
-status: stale
-freshness_delta: 170 days
+last_checked: 2026-10-31T17:30:43Z
+last_checked: 2026-10-31T17:30:43Z
+status: fresh
+freshness_delta: 8 days
 next_expected_update: monthly
-record_count: 1360
+record_count: 1397
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The data represents applications tracked via the Malaysia Government Mobile Applications Gallery (GAMMA) only. As such, official applications not yet registered in GAMMA may be absent from this dataset."]
@@ -18,19 +18,19 @@ attribution: National Digital Department and Ministry of Digital via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Fresh
 
-**Freshness:** 170 days
+**Freshness:** 8 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 17:30:43 UTC.
 
 ## File size
 
-The checked resource is 277,865 bytes.
+The checked resource is 310,966 bytes.
 
 ## Provenance
 

@@ -5,10 +5,10 @@ source_url: "https://storage.dosm.gov.my/ppi/ppi_3d.csv"
 source_name: "OpenDOSM"
 licence: "Creative Commons Attribution 4.0"
 refresh_frequency: "monthly"
-last_checked: 2026-10-03T10:36:37Z
-last_observed: 2026-08-01
-last_modified: 2026-09-28T04:31:56Z
-record_count: 37476
+last_checked: 2026-10-31T13:12:59Z
+last_observed: 2026-09-01
+last_modified: 2026-10-28T04:49:20Z
+record_count: 37692
 column_count: 4
 status: fresh
 notes: "Tier-1 wave D newly verified direct-storage source; HTTP 200 and CSV header verified."
@@ -34,11 +34,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 
-The checked resource is 1,111,089 bytes.
+The checked resource is 1,117,517 bytes.
 
 ## Provenance
 

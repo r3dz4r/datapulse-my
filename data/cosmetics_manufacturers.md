@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_cosmetics_manufacturers
-last_checked: 2026-10-08T14:24:19Z
-last_checked: 2026-10-08T14:24:19Z
-status: stale
-freshness_delta: 6 days
+last_checked: 2026-11-07T07:08:21Z
+last_checked: 2026-11-07T07:08:21Z
+status: fresh
+freshness_delta: 1 days
 next_expected_update: daily
-record_count: 629
+record_count: 634
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: Although this data represents administrative records, it nevertheless remains a static dataset which is updated once per day, rather than in real time. As such, this dataset should not be used as the basis for any legal action. Any queries on enforcement of the relevant laws of Malaysia should always be referred to the National Pharmaceutical Regulatory Agency (NPRA)."]
@@ -18,19 +18,19 @@ attribution: National Pharmaceutical Regulatory Agency and Ministry of Health Ma
 
 ## Status
 
-**Status:** Stale
+**Status:** Fresh
 
-**Freshness:** 6 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-11-07 at 07:08:21 UTC.
 
 ## File size
 
-The checked resource is 71,380 bytes.
+The checked resource is 71,937 bytes.
 
 ## Provenance
 

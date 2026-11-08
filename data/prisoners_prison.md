@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_prisoners_prison
-last_checked: 2026-10-05T06:46:30Z
-status: stale
-freshness_delta: 1741 days
+last_checked: 2026-11-05T03:33:57Z
+status: aging
+freshness_delta: 1041 days
 next_expected_update: annual
-record_count: 648
+record_count: 954
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This data is intended to provide a snapshot of the prison population as at the end of each reporting year. It should not be used to assess trends in crime, recidivism, or other criminal justice indicators."]
@@ -17,19 +17,19 @@ attribution: Prisons Department of Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 1741 days
+**Freshness:** 1041 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 72,501 bytes.
+The checked resource is 107,031 bytes.
 
 ## Provenance
 

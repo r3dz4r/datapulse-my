@@ -1,8 +1,8 @@
 ---
 dataset_id: bnm_interbank_swap
-last_checked: 2026-10-08T14:24:19Z
-status: degraded
-freshness_delta: 0 days
+last_checked: 2026-11-07T13:01:47Z
+status: fresh
+freshness_delta: 1 days
 next_expected_update: daily (weekdays)
 schema_version: unknown
 schema_drift: none
@@ -16,16 +16,16 @@ attribution: Bank Negara Malaysia via BNM Open API
 
 ## Status
 
-**Status:** Degraded
+**Status:** Fresh
 
-**Freshness:** 0 days
+**Freshness:** 1 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-11-07 at 13:01:47 UTC.
 
 ## File size
 
-The checked resource is 317 bytes.
+The checked resource is 301 bytes.

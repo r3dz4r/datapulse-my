@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_lfs_month_youth
-last_checked: 2026-10-03T10:36:37Z
-last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-31T13:12:59Z
+last_checked: 2026-10-31T13:12:59Z
 status: stale
-freshness_delta: 129 days
+freshness_delta: 159 days
 next_expected_update: monthly
 record_count: 126
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Stale
 
-**Freshness:** 129 days
+**Freshness:** 159 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 

@@ -1,10 +1,10 @@
 ---
 dataset_id: dosm_ppi
-last_checked: 2026-10-03T10:36:37Z
+last_checked: 2026-10-31T13:12:59Z
 status: fresh
 freshness_delta: 10 days
 next_expected_update: monthly
-record_count: 587
+record_count: 590
 date_range: 2010-01-01 to 2026-06-01
 schema_version: 1.0
 schema_drift: none
@@ -26,11 +26,11 @@ HTTP 200
 
 ## Last checked
 
-2026-10-03 at 10:36:37 UTC.
+2026-10-31 at 13:12:59 UTC.
 
 ## File size
 
-The checked resource is 16,965 bytes.
+The checked resource is 17,056 bytes.
 
 ## Provenance
 

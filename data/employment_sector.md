@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_employment_sector
-last_checked: 2026-09-26T02:49:53Z
-status: stale
-freshness_delta: 1741 days
+last_checked: 2026-10-26T02:57:40Z
+status: aging
+freshness_delta: 675 days
 next_expected_update: unknown
-record_count: 198
+record_count: 225
 date_range: unknown
 schema_version: 1.0
 schema_drift: unknown
@@ -18,19 +18,19 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 1741 days
+**Freshness:** 675 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-26 at 02:49:53 UTC.
+2026-10-26 at 02:57:40 UTC.
 
 ## File size
 
-The checked resource is 16,529 bytes.
+The checked resource is 18,576 bytes.
 
 ## Provenance
 

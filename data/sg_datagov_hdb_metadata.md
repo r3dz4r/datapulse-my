@@ -1,8 +1,8 @@
 ---
 dataset_id: sg_datagov_hdb_metadata
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
 status: fresh
-freshness_delta: 3 days
+freshness_delta: 2 days
 ---
 
 # sg_datagov_hdb_metadata
@@ -11,13 +11,13 @@ freshness_delta: 3 days
 
 **Status:** Fresh
 
-**Freshness:** 3 days
+**Freshness:** 2 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 

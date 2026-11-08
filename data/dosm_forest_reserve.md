@@ -1,9 +1,9 @@
 ---
 dataset_id: dosm_forest_reserve
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
 status: stale
-freshness_delta: 1741 days
+freshness_delta: 1771 days
 next_expected_update: annual
 record_count: 20
 schema_version: unknown
@@ -20,13 +20,13 @@ attribution: Forestry Department and Department of Statistics Malaysia via data.
 
 **Status:** Stale
 
-**Freshness:** 1741 days
+**Freshness:** 1771 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 

@@ -1,10 +1,10 @@
 ---
 dataset_id: dgm_fertility
-last_checked: 2026-09-26T02:49:53Z
+last_checked: 2026-10-26T02:57:40Z
 status: aging
-freshness_delta: 1011 days
+freshness_delta: 675 days
 next_expected_update: unknown
-record_count: 536
+record_count: 544
 date_range: unknown
 schema_version: 1.0
 schema_drift: unknown
@@ -20,17 +20,17 @@ attribution: Department of Statistics Malaysia via data.gov.my
 
 **Status:** Aging
 
-**Freshness:** 1011 days
+**Freshness:** 675 days
 
 HTTP 200
 
 ## Last checked
 
-2026-09-26 at 02:49:53 UTC.
+2026-10-26 at 02:57:40 UTC.
 
 ## File size
 
-The checked resource is 37,558 bytes.
+The checked resource is 38,113 bytes.
 
 ## Provenance
 

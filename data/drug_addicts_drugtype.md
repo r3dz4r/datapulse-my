@@ -1,11 +1,11 @@
 ---
 dataset_id: dgm_drug_addicts_drugtype
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
-status: stale
-freshness_delta: 1376 days
+last_checked: 2026-11-05T08:19:42Z
+last_checked: 2026-11-05T08:19:42Z
+status: aging
+freshness_delta: 675 days
 next_expected_update: annual
-record_count: 93
+record_count: 709
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: The data represents annual records and may not reflect real-time changes or updates. Additionally, the number of addicts is reported as recorded and may not account for unreported cases or discrepancies in data collection methods across different states."]
@@ -18,19 +18,19 @@ attribution: National Anti-Drugs Agency and Ministry of Home Affairs via data.go
 
 ## Status
 
-**Status:** Stale
+**Status:** Aging
 
-**Freshness:** 1376 days
+**Freshness:** 675 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 08:19:42 UTC.
 
 ## File size
 
-The checked resource is 25,715 bytes.
+The checked resource is 58,375 bytes.
 
 ## Provenance
 

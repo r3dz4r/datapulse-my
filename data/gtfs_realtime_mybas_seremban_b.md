@@ -1,9 +1,9 @@
 ---
 dataset_id: gtfs_realtime_mybas_seremban_b
-last_checked: 2026-10-08T16:15:53Z
-status: aging
-freshness_delta: 0.0007060185185185185 days
-record_count: 0
+last_checked: 2026-11-07T13:01:47Z
+status: stale
+freshness_delta: 0.0009722222222222222 days
+record_count: 9
 content_freshness_date: 2026-08-03
 schema_version: GTFS
 schema_drift: none
@@ -17,19 +17,19 @@ attribution: BAS.MY via data.gov.my GTFS API
 
 ## Status
 
-**Status:** Aging
+**Status:** Stale
 
-**Freshness:** 0.0007060185185185185 days
+**Freshness:** 0.0009722222222222222 days
 
-HTTP 200; valid GTFS realtime protobuf (0 vehicles)
+HTTP 200; valid GTFS realtime protobuf (9 vehicles)
 
 ## Last checked
 
-2026-10-08 at 16:15:53 UTC.
+2026-11-07 at 13:01:47 UTC.
 
 ## File size
 
-The checked resource is 15 bytes.
+The checked resource is 1,248 bytes.
 
 ## Provenance
 

@@ -1,0 +1,75 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "odin_editions",
+  "status": "unknown-freshness",
+  "last_checked": null,
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "as-required",
+  "record_count": null,
+  "date_range": null,
+  "fields": [
+    {
+      "name": "useId",
+      "type": "integer"
+    },
+    {
+      "name": "year",
+      "type": "integer"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    },
+    {
+      "name": "dataCollecting",
+      "type": "boolean"
+    },
+    {
+      "name": "isLive",
+      "type": "boolean"
+    },
+    {
+      "name": "dateAdded",
+      "type": "date"
+    },
+    {
+      "name": "dateUpdated",
+      "type": "date"
+    },
+    {
+      "name": "dataUpdatedAt",
+      "type": "string"
+    }
+  ],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "warn",
+      "method": "Not probed; provisional onboarding status."
+    },
+    {
+      "name": "row_count",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "The underlying probe has not produced this measurement."
+    }
+  ],
+  "known_quirks": [],
+  "breaking_changes": [],
+  "reproducibility": {
+    "url": "https://odin-aim.akroninc.net/api/api/client/GetLiveYears",
+    "access_method": "curl"
+  },
+  "licence": "CC-BY-4.0",
+  "attribution": "Open Data Watch -- Open Data Inventory (government_open_data)"
+}

@@ -5,15 +5,15 @@ source_url: "https://raw.githubusercontent.com/MoH-Malaysia/kkmnow-data/main/pek
 source_name: "github.com/MoH-Malaysia/kkmnow-data"
 licence: "MIT License"
 refresh_frequency: "daily"
-last_checked: 2026-10-08T14:24:19Z
-last_observed: 2026-10-07
+last_checked: 2026-11-07T07:08:21Z
+last_observed: 2026-11-02
 last_modified: null
-record_count: 1226
+record_count: 1236
 column_count: null
-status: fresh
+status: stale
 notes: "Unprobed KKMNOW live-tail parquet source; health remains unknown until the first DataPulse probe."
 dataset_id: kkmnow_pekab40
-freshness_delta: 1 days
+freshness_delta: 5 days
 next_expected_update: "daily"
 schema_version: 1.0
 schema_drift: none
@@ -26,19 +26,19 @@ attribution: "Ministry of Health Malaysia via GitHub kkmnow-data"
 
 ## Status
 
-**Status:** Fresh
+**Status:** Stale
 
-**Freshness:** 1 days
+**Freshness:** 5 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-08 at 14:24:19 UTC.
+2026-11-07 at 07:08:21 UTC.
 
 ## File size
 
-The checked resource is 147,022 bytes.
+The checked resource is 148,262 bytes.
 
 ## Provenance
 

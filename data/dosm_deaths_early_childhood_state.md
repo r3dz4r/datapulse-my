@@ -1,11 +1,11 @@
 ---
 dataset_id: dosm_deaths_early_childhood_state
-last_checked: 2026-10-05T06:46:30Z
-last_checked: 2026-10-05T06:46:30Z
+last_checked: 2026-11-05T03:33:57Z
+last_checked: 2026-11-05T03:33:57Z
 status: aging
-freshness_delta: 1011 days
+freshness_delta: 675 days
 next_expected_update: annual
-record_count: 1950
+record_count: 2030
 schema_version: unknown
 schema_drift: none
 known_quirks: ["Official catalogue caveat: This data is derived based on deaths registered with JPN. Therefore, if an early childhood death is not registered with JPN (for instance, if the death of a foreign child is registered in their home country, or the death of a citizen in a remote area is not registered), it will generally not count in this dataset. However, adjustment has been made to the number of deaths in Sabah to account for the under-reporting of deaths detected based on the 'Study of Under Reporting of Deaths in Sabah', which was conducted by DOSM and approved by the Steering Committee on Implementation of Civil Registration and Vital Statistics in 2016."]
@@ -20,17 +20,17 @@ attribution: National Registration Department and Department of Statistics Malay
 
 **Status:** Aging
 
-**Freshness:** 1011 days
+**Freshness:** 675 days
 
 HTTP 200
 
 ## Last checked
 
-2026-10-05 at 06:46:30 UTC.
+2026-11-05 at 03:33:57 UTC.
 
 ## File size
 
-The checked resource is 174,142 bytes.
+The checked resource is 181,275 bytes.
 
 ## Provenance
 
