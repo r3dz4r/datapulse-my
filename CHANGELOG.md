@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.60.11](https://github.com/r3dz4r/datapulse-my/compare/v3.60.10...v3.60.11) (2026-11-08)
+
+
+### Bug Fixes
+
+* skip passports when health quality profile is absent ([#3111](https://github.com/r3dz4r/datapulse-my/issues/3111)) ([9f67240](https://github.com/r3dz4r/datapulse-my/commit/9f6724017da88af3292365cb307d96f7e29c7f60))
+
 ## [3.60.10](https://github.com/r3dz4r/datapulse-my/compare/v3.60.9...v3.60.10) (2026-11-07)
 
 
