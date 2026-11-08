@@ -8,7 +8,7 @@ sources:
   - {"id": "thevesh","resource": "https://raw.githubusercontent.com/Thevesh/paper-meco-maps/main/data/cartogram_electorate_k.csv","title": "Thevesh Theva"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-10-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:37:31Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:25:52Z"}
 status: "stable"
 datapulse:licence: "CC0-1.0"
 datapulse:attribution: "Thevesh Theva via github.com/Thevesh/paper-meco-maps"
