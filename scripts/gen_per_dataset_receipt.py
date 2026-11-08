@@ -67,12 +67,23 @@ def _validated_inputs(health_path: Path, manifest_path: Path) -> tuple[list[dict
         if identifier not in by_id:
             raise StatementError(f"health dataset {identifier} is absent from the manifest")
         identifiers.add(identifier)
+    if identifiers != set(by_id):
+        raise StatementError("manifest and health dataset identities must match")
+    probed_rows: list[dict[str, Any]] = []
+    for row in rows:
+        identifier = row["dataset_id"]
+        if "last_checked" in row and row["last_checked"] is None and row.get("status") == "unknown-freshness":
+            LOGGER.info(
+                "Skipping receipt for health dataset %s: unprobed "
+                "(last_checked is null and status is unknown-freshness)",
+                identifier,
+            )
+            continue
         for field in EVIDENCE_FIELDS:
             if field not in row:
                 raise StatementError(f"health dataset {identifier} is missing {field}")
-    if identifiers != set(by_id):
-        raise StatementError("manifest and health dataset identities must match")
-    return rows, by_id
+        probed_rows.append(row)
+    return probed_rows, by_id
 
 
 def canonical_evidence_row(row: dict[str, Any], manifest_entry: dict[str, Any]) -> dict[str, Any]:
@@ -126,7 +137,10 @@ def main() -> None:
         identifiers = generate_receipts(args.health, args.manifest, args.data_dir, quick_test=args.quick_test)
     except (OSError, StatementError, ValueError) as exc:
         raise SystemExit(f"Per-dataset receipt generation failed: {exc}") from exc
-    print(f"Generated {len(identifiers)} per-dataset receipts ({identifiers[0]} … {identifiers[-1]}).")
+    if identifiers:
+        print(f"Generated {len(identifiers)} per-dataset receipts ({identifiers[0]} … {identifiers[-1]}).")
+    else:
+        print("Generated 0 per-dataset receipts.")
 
 
 if __name__ == "__main__":
