@@ -8,7 +8,7 @@ sources:
   - {"id": "thevesh","resource": "https://raw.githubusercontent.com/Thevesh/paper-meco-results/main/data/lookup_dates.csv","title": "Thevesh Theva"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-10-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-08T14:33:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:25:52Z"}
 status: "stable"
 datapulse:licence: "CC0-1.0"
 datapulse:attribution: "Thevesh Theva via github.com/Thevesh/paper-meco-results"
@@ -26,7 +26,7 @@ MECo Election Date Lookup is published by Thevesh Theva and tracked by DataPulse
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:f46d9fb233be2d2cf77281ddb1b9ffffa1d9d213f2fabbe21e18b436226717a1`
-- `record_count`: `210`
+- `record_count`: `211`
 
 # Quirks
 

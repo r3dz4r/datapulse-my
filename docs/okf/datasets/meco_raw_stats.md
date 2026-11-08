@@ -8,7 +8,7 @@ sources:
   - {"id": "thevesh","resource": "https://raw.githubusercontent.com/Thevesh/paper-meco-results/main/data/raw_stats.csv","title": "Thevesh Theva"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-10-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-08T14:33:30Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:25:52Z"}
 status: "stable"
 datapulse:licence: "CC0-1.0"
 datapulse:attribution: "Thevesh Theva via github.com/Thevesh/paper-meco-results"
@@ -26,7 +26,7 @@ MECo Raw Contest Statistics is published by Thevesh Theva and tracked by DataPul
 
 - `column_count`: `8`
 - `first_row_hash`: `shape-v1:80dbb4ada4d0e52cadfc9c4107e232906eecb1cb71b77de29a8ca08163b89fbf`
-- `record_count`: `10092`
+- `record_count`: `10120`
 
 # Quirks
 

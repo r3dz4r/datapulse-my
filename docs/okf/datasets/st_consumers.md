@@ -12,22 +12,19 @@ verified:
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Suruhanjaya Tenaga (ST) via meih.st.gov.my"
-datapulse:real_status: "stale"
+datapulse:real_status: "unreachable"
 datapulse:health_report: "/data/st_consumers.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2021-02-16T12:00:00Z"
-datapulse:stale_after_basis: "cadence"
 ---
 
 # Summary
 
-Number of Electricity Consumers — Malaysia is published by Suruhanjaya Tenaga (Malaysia Energy Commission) and tracked by DataPulse. The latest published probe classifies it as `stale`.
+Number of Electricity Consumers — Malaysia is published by Suruhanjaya Tenaga (Malaysia Energy Commission) and tracked by DataPulse. The latest published probe classifies it as `unreachable`.
 
 # Schema
 
-- `column_count`: `10`
-- `record_count`: `33`
+No structural fingerprint was recorded by the latest probe.
 
 # Quirks
 

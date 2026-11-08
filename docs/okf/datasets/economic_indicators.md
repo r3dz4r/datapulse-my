@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=economic_indicators","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-10-31T13:12:59Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:25:52Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "stale"
 datapulse:health_report: "/data/economic_indicators.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 425
-stale_after: "2026-08-16T12:00:00Z"
+stale_after: "2026-09-16T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Malaysian Economic Indicators is published by Department of Statistics Malaysia 
 
 - `column_count`: `6`
 - `first_row_hash`: `shape-v1:cb85d62578dd73deb55541be1aadc915114fd639ac3e6291176c7bda9136dce8`
-- `record_count`: `427`
+- `record_count`: `428`
 
 # Quirks
 
